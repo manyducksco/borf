@@ -4,6 +4,7 @@
  */
 export interface Subscription<T> {
   active: boolean;
+  current: T;
   receiver?: (value: T) => void;
   cancel: () => void;
 }

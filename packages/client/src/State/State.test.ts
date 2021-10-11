@@ -1,4 +1,4 @@
-import { DerivedValue, State, StateBinding, StateSubscription } from "./State";
+import { MappedValue, State, StateBinding, StateSubscription } from "./State";
 
 interface StateType {
   message: string;
@@ -197,18 +197,18 @@ describe("bind", () => {
   });
 });
 
-describe("derive", () => {
-  test("returns a DerivedValue", () => {
+describe("map", () => {
+  test("returns a MappedValue", () => {
     const state = new State({
       firstName: "Dave",
       lastName: "Jones",
     });
 
-    const fullName = state.derive(
+    const fullName = state.map(
       ["firstName", "lastName"],
       (first, last) => `${first} ${last}`
     );
-    expect(fullName instanceof DerivedValue).toBe(true);
+    expect(fullName instanceof MappedValue).toBe(true);
   });
 
   test("starts with initial computed value", () => {
@@ -217,7 +217,7 @@ describe("derive", () => {
       lastName: "Jones",
     });
 
-    const fullName = state.derive(
+    const fullName = state.map(
       ["firstName", "lastName"],
       (first, last) => `${first} ${last}`
     );
@@ -230,7 +230,7 @@ describe("derive", () => {
       lastName: "Jones",
     });
 
-    const fullName = state.derive(
+    const fullName = state.map(
       ["firstName", "lastName"],
       (first, last) => `${first} ${last}`
     );
@@ -240,24 +240,33 @@ describe("derive", () => {
     expect(fullName.current).toBe("Dave Bones");
   });
 
-  test("can subscribe to new values", () => {
+  test("can subscribe to new values and cancel subscription", () => {
     const state = new State({
       firstName: "Dave",
       lastName: "Jones",
     });
 
-    const fullName = state.derive(
+    const fullName = state.map(
       ["firstName", "lastName"],
       (first, last) => `${first} ${last}`
     );
 
     const receiver = jest.fn();
 
-    fullName.subscribe(receiver);
+    const sub = fullName.subscribe(receiver);
 
     state.set("lastName", "Bones");
 
     expect(receiver).toHaveBeenCalledWith("Dave Bones");
+    expect(sub.current).toBe("Dave Bones");
+
+    sub.cancel();
+
+    state.set("lastName", "Drones");
+
+    expect(receiver).toHaveBeenLastCalledWith("Dave Bones");
+    expect(sub.current).toBe("Dave Bones");
+    expect(fullName.current).toBe("Dave Drones");
   });
 });
 

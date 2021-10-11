@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { StateSubscription } from "../states/State";
+import { StateSubscription } from "../State/State";
 import { Element } from "../elements/Element";
 import {
   isArray,

@@ -1,23 +1,32 @@
-import { Element } from "../elements/Element";
+import { Binding, Subscription } from "../types.js";
 
-export const isArray = (value: any) => Array.isArray(value);
+export const isArray = <T = unknown>(value: unknown): value is T[] =>
+  Array.isArray(value);
 
-export const isBoolean = (value: any) => typeof value === "boolean";
+export const isBoolean = (value: any): value is boolean =>
+  typeof value === "boolean";
 
-export const isFloat = (value: any) => isNumber(value) && !isInteger(value);
+export const isFloat = (value: any): value is number =>
+  isNumber(value) && !isInteger(value);
 
-export const isFunction = (value: any) => typeof value === "function";
+export const isFunction = (value: any): value is Function =>
+  typeof value === "function";
 
-export const isInteger = (value: any) => isNumber(value) && value % 1 === 0;
+export const isInteger = (value: any): value is number =>
+  isNumber(value) && value % 1 === 0;
 
-export const isNumber = (value: any) => typeof value === "number";
+export const isNumber = (value: any): value is number =>
+  typeof value === "number";
 
-export const isObject = (value: any) =>
+export const isObject = <T = any>(value: any): value is T =>
   value != null && typeof value === "object" && !isArray(value);
 
-export const isString = (value: any) => typeof value === "string";
+export const isString = (value: any): value is string =>
+  typeof value === "string";
 
-export const isSubscription = (value: any) => {
+export const isSubscription = <T = unknown>(
+  value: unknown
+): value is Subscription<T> => {
   if (isObject(value)) {
     if (
       isBoolean(value.active) &&
@@ -31,13 +40,5 @@ export const isSubscription = (value: any) => {
   return false;
 };
 
-export const isBinding = (value: any) =>
-  isSubscription(value) && isFunction(value.set);
-
-export const isElement = (value: any) => {
-  if (value instanceof Element) {
-    return true;
-  }
-
-  return false;
-};
+export const isBinding = <T = unknown>(value: any): value is Binding<T> =>
+  isSubscription(value) && isFunction((value as any).set);

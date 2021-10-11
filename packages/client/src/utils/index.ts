@@ -1,1 +1,1 @@
-export * from "./typeChecking";
+export * from "./typeChecking.js";

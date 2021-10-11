@@ -1,5 +1,5 @@
-import { isString, isObject, isArray } from "../utils";
-import { Binding, Subscription } from "../types";
+import { isString, isObject, isArray } from "../utils/index.js";
+import { Binding, Subscription } from "../types.js";
 
 export type StatePatch<T> = {
   [key in keyof T]: any;
@@ -141,20 +141,23 @@ export class State<T> {
   }
 
   /**
-   *
+   * Computes a new value from a key each time its value changes.
    */
-  derive<V>(key: keyof T, compute: (...values: any) => V): DerivedValue<T, V>;
+  map<V>(key: keyof T, compute: (...values: any) => V): MappedValue<T, V>;
 
-  derive<V>(
+  /**
+   * Computes a new value from multiple keys each time any of their values change.
+   */
+  map<V>(
     keys: Array<keyof T>,
     compute: (...values: any) => V
-  ): DerivedValue<T, V>;
+  ): MappedValue<T, V>;
 
-  derive<V>(
+  map<V>(
     keyOrKeys: keyof T | Array<keyof T>,
     compute: (...values: any) => V
-  ): DerivedValue<T, V> {
-    return new DerivedValue<T, V>(this, keyOrKeys, compute);
+  ): MappedValue<T, V> {
+    return new MappedValue<T, V>(this, keyOrKeys, compute);
   }
 
   /**
@@ -230,7 +233,7 @@ export class StateSubscription<T, V> implements Subscription<V> {
   active = true; // set to false to stop receiving changes without fully cancelling
 
   get current() {
-    return this.state.current[this.key];
+    return this.state.current[this.key] as any;
   }
 
   constructor(state: State<T>, key: keyof T) {
@@ -261,13 +264,17 @@ export class StateBinding<T, V> implements Binding<V> {
   key: keyof T;
   active = true;
 
+  get current() {
+    return this.state.current[this.key] as any;
+  }
+
   constructor(state: State<T>, key: keyof T) {
     this.state = state;
     this.key = key;
   }
 
   /**
-   * Callback function to receive values when the key gets a new value.
+   * Receives values when the key gets a new value.
    */
   receiver?: (value: V) => void;
 
@@ -295,7 +302,7 @@ export class StateBinding<T, V> implements Binding<V> {
  * Listens for changes on one or more keys and computes a new value with a custom function
  * when any of the keys get new values.
  */
-export class DerivedValue<T, V> {
+export class MappedValue<T, V> {
   private state: State<T>;
   private compute: (...values: any) => V;
   private keys: Array<keyof T> = [];
@@ -356,17 +363,35 @@ export class DerivedValue<T, V> {
 
     const computed = this.compute(...values);
 
-    if (computed !== this.value) {
+    if (this.value !== computed) {
       this.value = computed;
       this.notifySubscribers();
     }
   }
 
   subscribe(receiver?: (value: V) => void): Subscription<V> {
+    // store cancelled state and cached current value
+    // current should stop changing when this sub is cancelled
+    let cancelled = false;
+    let current = this.current;
+
+    const getCurrent = () => {
+      if (!cancelled) {
+        current = this.current;
+      }
+
+      return current;
+    };
+
     const sub = {
       active: true,
+      get current() {
+        return getCurrent();
+      },
       receiver,
       cancel: () => {
+        cancelled = true;
+
         // remove self from subscriptions array
         const index = this.subscriptions.indexOf(sub);
 
