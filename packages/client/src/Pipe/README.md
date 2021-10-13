@@ -24,14 +24,15 @@ messages
     // receive messages containing 'doggo' in all UPPERCASE
   });
 
-// receive the latest data pushed within a 300ms window
+// receive the latest data pushed within a 300ms window since the last was received
+// or immediately if outside the window
 messages.debounce(300).receive((data) => {});
 
 // group events and only receive once 5 have accumulated
-// if 5 haven't accumulated in 2 seconds, receive whatever there is now
+// if 5 haven't accumulated in 2 seconds, receive whatever is there now
 // timeout is optional
 messages.buffer(5, 2000).receive((data) => {
-  // data is now an array of 5 items
+  // data is now an array of 1 to 5 items
 });
 
 // get a subscription

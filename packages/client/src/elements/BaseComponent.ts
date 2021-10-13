@@ -3,6 +3,8 @@ export interface BaseComponentProps {
    * List of child components
    */
   children?: BaseComponent[];
+
+  onClick?: (event: MouseEvent) => any;
 }
 
 export class BaseComponent {
@@ -15,6 +17,10 @@ export class BaseComponent {
     this.props = Object.freeze(props ?? {});
 
     // TODO: apply props
+    if (this.props.onClick) {
+      // this is temporary for testing
+      this.root.addEventListener("click", this.props.onClick as any);
+    }
   }
 
   mount(parent: Node, after?: Node) {
@@ -26,11 +32,7 @@ export class BaseComponent {
       }
     }
 
-    if (after) {
-      parent.insertBefore(this.root, after.nextSibling);
-    } else {
-      parent.appendChild(this.root);
-    }
+    parent.insertBefore(this.root, after ? after.nextSibling : null);
   }
 
   unmount() {

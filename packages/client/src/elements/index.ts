@@ -19,6 +19,9 @@ export const ol = (props: BaseComponentProps) =>
 export const li = (props: BaseComponentProps) =>
   new BaseComponent(document.createElement("li"), props);
 
+export const button = (props: BaseComponentProps) =>
+  new BaseComponent(document.createElement("button"), props);
+
 // class Component<PropTypes> extends BaseComponent {
 //   constructor(props?: BaseComponentProps) {
 //     super(new DocumentFragment(), props);

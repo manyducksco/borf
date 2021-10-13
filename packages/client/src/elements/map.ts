@@ -5,7 +5,7 @@ import { BaseComponent } from "./BaseComponent.js";
 /**
  * Converts an array of objects into a list of elements. Updates list when array changes.
  *
- * @param array - an array of items or subscription to an array of items
+ * @param array - array of items or subscription to an array of items
  * @param key - key property name or a function to extract a key for each item in the list
  * @param create - function to create a component for each element in the list
  */

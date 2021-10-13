@@ -1,8 +1,8 @@
-import { isString, isObject, isArray } from "../utils/index.js";
+import { isString, isObject, isArray, isFunction } from "../utils/index.js";
 import { Binding, Subscription } from "../types.js";
 
 export type StatePatch<T> = {
-  [key in keyof T]: any;
+  [key in keyof T]: T[keyof T];
 };
 
 export type StateOptions = {
@@ -176,9 +176,9 @@ export class State<T> {
     this.index = this.history.length - 1;
 
     // truncate items from beginning if history is longer than undo limit
-    if (this.index > this.undoLimit) {
+    if (this.history.length > this.undoLimit) {
       this.history = this.history.slice(this.index - this.undoLimit + 1);
-      this.index -= this.undoLimit + 1;
+      this.index -= this.index - this.undoLimit + 1;
     }
   }
 
@@ -259,37 +259,10 @@ export class StateSubscription<T, V> implements Subscription<V> {
   }
 }
 
-export class StateBinding<T, V> implements Binding<V> {
-  state: State<T>;
-  key: keyof T;
-  active = true;
-
-  get current() {
-    return this.state.current[this.key] as any;
-  }
-
-  constructor(state: State<T>, key: keyof T) {
-    this.state = state;
-    this.key = key;
-  }
-
-  /**
-   * Receives values when the key gets a new value.
-   */
-  receiver?: (value: V) => void;
-
-  /**
-   * Cancels subscription and stops receiving changes.
-   */
-  cancel() {
-    // remove self from state's subscriptions array
-    const index = this.state.subscriptions.indexOf(this);
-
-    if (index > -1) {
-      this.state.subscriptions.splice(index, 1);
-    }
-  }
-
+export class StateBinding<T, V>
+  extends StateSubscription<T, V>
+  implements Binding<V>
+{
   /**
    * Updates the value of the subscribed key in state.
    */

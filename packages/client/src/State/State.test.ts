@@ -282,7 +282,9 @@ describe("options", () => {
     );
 
     state.set("message", "2");
+    expect(state.current.message).toBe("2");
     state.set("message", "3");
+    expect(state.current.message).toBe("3");
 
     expect(state.history).toStrictEqual([
       { message: "1" },
@@ -291,7 +293,9 @@ describe("options", () => {
     ]);
 
     state.set("message", "4");
+    expect(state.current.message).toBe("4");
     state.set("message", "5");
+    expect(state.current.message).toBe("5");
 
     expect(state.history).toStrictEqual([
       { message: "3" },

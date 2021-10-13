@@ -1,7 +1,7 @@
 // export * from "./State";
 
 import { State } from "./State/index.js";
-import { div, ul, li, map, when, text } from "./elements/index.js";
+import { div, ul, li, map, when, text, button } from "./elements/index.js";
 
 const root = document.getElementById("root");
 
@@ -10,13 +10,27 @@ if (root) {
     count: 0,
   });
 
+  const label = counter.map("count", (n) => `the number is: ${n}`);
+
+  const increment = () => {
+    counter.set("count", counter.current.count + 1);
+  };
+
+  const decrement = () => {
+    counter.set("count", counter.current.count - 1);
+  };
+
   const component = div({
     children: [
-      text(
-        counter
-          .map("count", (n) => `you have pressed enter ${n} times`)
-          .subscribe()
-      ),
+      text(label.subscribe()),
+      button({
+        onClick: increment,
+        children: [text("Increment")],
+      }),
+      button({
+        onClick: decrement,
+        children: [text("Decrement")],
+      }),
     ],
   });
 
@@ -24,9 +38,11 @@ if (root) {
     console.log("count: ", value);
   });
 
-  window.addEventListener("keydown", (e) => {
-    if (e.key.toLowerCase() === "enter") {
-      counter.set("count", counter.current.count + 1);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp") {
+      increment();
+    } else if (e.key === "ArrowDown") {
+      decrement();
     }
   });
 

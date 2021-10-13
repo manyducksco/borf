@@ -1,9 +1,3 @@
-/**
- * @jest-environment jsdom
- */
-
-import { StateSubscription } from "../State/State";
-import { Element } from "../elements/Element";
 import {
   isArray,
   isFloat,
@@ -13,7 +7,6 @@ import {
   isString,
   isSubscription,
   isBinding,
-  isElement,
 } from "./typeChecking";
 
 describe("isArray", () => {
@@ -116,16 +109,5 @@ describe("isBinding", () => {
         set: () => {},
       })
     ).toBe(true);
-  });
-});
-
-describe("isElement", () => {
-  test("identifies Elements", () => {
-    expect(isElement(null)).toBe(false);
-
-    const el = new Element({
-      extends: "div",
-    });
-    expect(isElement(el)).toBe(true);
   });
 });
