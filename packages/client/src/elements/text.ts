@@ -1,6 +1,6 @@
-import { Subscription } from "../types.js";
-import { isString, isSubscription } from "../utils/index.js";
-import { BaseComponent } from "./BaseComponent.js";
+import { Subscription } from "../types";
+import { isString, isSubscription } from "../utils";
+import { BaseComponent } from "./BaseComponent";
 
 /**
  * Displays text content.

@@ -1,9 +1,5 @@
-import { isString, isObject, isArray, isFunction } from "../utils/index.js";
-import { Binding, Subscription } from "../types.js";
-
-export type StatePatch<T> = {
-  [key in keyof T]: T[keyof T];
-};
+import { isString, isObject, isArray } from "../utils";
+import { Binding, Subscription } from "../types";
 
 export type StateOptions = {
   /**
@@ -72,9 +68,9 @@ export class State<T> {
    *
    * @param object - object with keys and their new values
    */
-  set(object: StatePatch<T>): this;
+  set(object: Partial<T>): this;
 
-  set(keyOrObject: keyof T | StatePatch<T>, value?: any) {
+  set(keyOrObject: keyof T | Partial<T>, value?: any) {
     if (isString(keyOrObject)) {
       const key = keyOrObject as keyof T;
 
@@ -92,7 +88,7 @@ export class State<T> {
 
     if (isObject(keyOrObject)) {
       const current = this.current;
-      const patch = keyOrObject as StatePatch<T>;
+      const patch = keyOrObject as Partial<T>;
       const merged = Object.assign({}, current, patch);
 
       const changed = this.diffChangedKeys(current, merged);
@@ -185,7 +181,7 @@ export class State<T> {
   /**
    * Runs receivers for all subscriptions on keys with updated values.
    */
-  private notifySubscribers(keys: Array<keyof T>) {
+  protected notifySubscribers(keys: Array<keyof T>) {
     if (keys.length === 0) return;
 
     const current = this.current;

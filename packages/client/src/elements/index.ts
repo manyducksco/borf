@@ -57,6 +57,6 @@ export const button = (props: BaseComponentProps) =>
 ||     Specialty Elements    ||
 \*===========================*/
 
-export * from "./text.js";
-export * from "./map.js";
-export * from "./when.js";
+export * from "./text";
+export * from "./map";
+export * from "./when";

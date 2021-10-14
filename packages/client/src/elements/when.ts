@@ -1,6 +1,6 @@
-import { Subscription } from "../types.js";
-import { isSubscription } from "../utils/index.js";
-import { BaseComponent } from "./BaseComponent.js";
+import { Subscription } from "../types";
+import { isSubscription } from "../utils";
+import { BaseComponent } from "./BaseComponent";
 
 /**
  * Mounts a component when a condition is true and unmounts it when the condition is false.
@@ -12,7 +12,7 @@ export const when = (
   condition: unknown | Subscription<unknown>,
   component: BaseComponent
 ) => {
-  if (isSubscription<unknown>(condition)) {
+  if (isSubscription(condition)) {
     const fragment = new DocumentFragment();
 
     condition.receiver = (newValue) => {

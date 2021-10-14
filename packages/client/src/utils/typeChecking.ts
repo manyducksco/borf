@@ -1,4 +1,4 @@
-import { Binding, Subscription } from "../types.js";
+import { Binding, Receiver, Subscription } from "../types";
 
 export const isArray = <T = unknown>(value: unknown): value is T[] =>
   Array.isArray(value);

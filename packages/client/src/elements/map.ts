@@ -1,6 +1,6 @@
-import { Subscription } from "../types.js";
-import { isArray, isSubscription } from "../utils/index.js";
-import { BaseComponent } from "./BaseComponent.js";
+import { Subscription } from "../types";
+import { isArray, isSubscription } from "../utils/index";
+import { BaseComponent } from "./BaseComponent";
 
 /**
  * Converts an array of objects into a list of elements. Updates list when array changes.

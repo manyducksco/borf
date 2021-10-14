@@ -180,7 +180,7 @@ const filtered = filter(receiver, value => /* return true or false */);
 // send as array when received messages accumulate to 5, or when there is at least one message and 2000 milliseconds have elapsed since the last send
 const batched = batch(receiver, 5, 2000);
 
-// sends only the latest message received within a 300ms window since the last send
+// sends only the latest message received within a 300ms window since the last message was sent
 const debounced = debounce(receiver, 300);
 
 // create a receiver for a DOM event where the receiver function is the handler
@@ -188,10 +188,10 @@ const receiver = receiveEvent(domNode, "name");
 
 // broadcast a single receiver to create multiple receivers out of it
 // like a radio station having an album and playing it for many listeners
-const station = broadcast(receiver);
+const broadcaster = broadcast(receiver);
 
-station.current // has current polled value at the moment
-station.receive() // returns new receiver
+broadcaster.current // has current polled value at the moment
+broadcaster.receive() // returns new receiver
 
 // TODO: need a way to subscribe to a list of errors or just one
 // syntax for doing this is kind of weird
@@ -201,12 +201,12 @@ station.receive() // returns new receiver
 // get a receiver and render the errors using a map element
 ul({
   children: [
-    map(form.errors.receive(), "key", (error) =>
+    map(form.errors.subscribe(), "key", (error) =>
       li({ children: [text(`${form.fieldNames[error.key]} ${error.message}`)] })
     ),
     when(
-      form.errors.receive("firstName")
-      text(form.errors.receive("firstName"))
+      form.errors.subscribe("firstName")
+      text(form.errors.subscribe("firstName"))
     ),
   ],
 });

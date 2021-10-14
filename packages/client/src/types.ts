@@ -9,6 +9,13 @@ export interface Subscription<T> {
   cancel: () => void;
 }
 
+export interface Receiver<T> {
+  active: boolean;
+  current?: T;
+  callback?: (value: T) => void;
+  cancel: () => void;
+}
+
 /**
  * Two way data binding. A subscription with an extra 'set' function that updates the subscribed value.
  */
