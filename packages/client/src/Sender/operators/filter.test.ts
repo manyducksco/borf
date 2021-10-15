@@ -1,5 +1,5 @@
 import { filter } from "./filter";
-import { TestSender } from "./_test/TestSender";
+import { TestSender } from "../_test/TestSender";
 
 test("forwards only values that match the condition", () => {
   const sender = new TestSender<number>();

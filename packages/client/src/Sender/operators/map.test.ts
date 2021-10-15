@@ -1,5 +1,5 @@
 import { map } from "./map";
-import { TestSender } from "./_test/TestSender";
+import { TestSender } from "../_test/TestSender";
 
 test("transforms received values", () => {
   const sender = new TestSender<number>();

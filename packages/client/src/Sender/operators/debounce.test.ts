@@ -1,5 +1,5 @@
 import { debounce } from "./debounce";
-import { TestSender } from "./_test/TestSender";
+import { TestSender } from "../_test/TestSender";
 
 test("forwards only latest value after specified milliseconds", async () => {
   const sender = new TestSender<number>();

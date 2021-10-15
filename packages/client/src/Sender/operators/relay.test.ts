@@ -1,5 +1,5 @@
 import { relay } from "./relay";
-import { TestSender } from "./_test/TestSender";
+import { TestSender } from "../_test/TestSender";
 
 test("creates a new receivable that forwards received values", () => {
   const sender = new TestSender<number>();
