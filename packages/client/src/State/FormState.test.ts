@@ -71,6 +71,7 @@ describe("validation", () => {
 
     expect(form.errors.current.length).toBe(2);
 
+    // names are prepended to the error message returned by the validator
     expect(form.errors.current[0].message).toBe(
       "First name must be at least 5 characters"
     );
