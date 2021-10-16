@@ -1,4 +1,5 @@
-import { Binding, Receiver, Subscription } from "../types";
+import { Receiver } from "../Sender";
+import { Binding, Subscription } from "../State/types";
 
 export const isArray = <T = unknown>(value: unknown): value is T[] =>
   Array.isArray(value);
@@ -31,7 +32,7 @@ export const isSubscription = <T = unknown>(
     if (
       isBoolean(value.active) &&
       isFunction(value.cancel) &&
-      (value.receiver == null || isFunction(value.receiver))
+      value.receiver instanceof Receiver
     ) {
       return true;
     }

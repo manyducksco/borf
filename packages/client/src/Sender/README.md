@@ -34,19 +34,19 @@ const time = new CronSender("*/5 * * * *");
 
 Create your own Sender:
 
-```js
+```ts
 import { Sender } from "***";
 
-class ShoutSender extends Sender {
+class ShoutySender extends Sender {
   shout(phrase) {
     this._send(phrase.toUpperCase());
   }
 }
 
-const sender = new ShoutSender();
+const sender = new ShoutySender();
 
 sender.receive((phrase) => {
-  console.log(phrase); // HELLO WORLD!
+  // phrase = "HELLO WORLD!"
 });
 
 sender.shout("hello world!");

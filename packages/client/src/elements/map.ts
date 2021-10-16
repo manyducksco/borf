@@ -1,4 +1,4 @@
-import { Subscription } from "../types";
+import { Subscription } from "../State/types";
 import { isArray, isSubscription } from "../utils/index";
 import { BaseComponent } from "./BaseComponent";
 
@@ -34,7 +34,7 @@ export const map = <T>(
 
   // Diff and update the mapped components when array changes
   if (isSubscription<T[]>(array)) {
-    array.receiver = (newValue) => {
+    array.receiver.callback = (newValue) => {
       const newKeys = newValue.map(getKey);
       const newComponents = [...components];
 
@@ -74,6 +74,9 @@ export const map = <T>(
         });
       });
     };
+
+    // set initial list
+    array.receiver.callback(array.current);
   }
 
   return new BaseComponent(fragment);

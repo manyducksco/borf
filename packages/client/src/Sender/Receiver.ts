@@ -1,16 +1,18 @@
+type ReceiverOptions<T> = {
+  cancel: (receiver: Receiver<T>) => void;
+  callback?: (data: T) => void;
+};
+
 /**
- * Receives messages from a Sender through its callback function.
+ * Receives data from a Sender through its callback function.
  */
 export class Receiver<T> {
   #cancel: (receiver: Receiver<T>) => void;
-  callback?: (message: T) => void;
+  callback?: (data: T) => void;
 
-  constructor(
-    cancel: (receiver: Receiver<T>) => void,
-    callback?: (message: T) => void
-  ) {
-    this.#cancel = cancel;
-    this.callback = callback;
+  constructor(options: ReceiverOptions<T>) {
+    this.#cancel = options.cancel;
+    this.callback = options.callback;
   }
 
   cancel() {

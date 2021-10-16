@@ -1,4 +1,4 @@
-import { Sender } from "../_base";
+import { Sender } from "..";
 
 export class TestSender<T> extends Sender<T> {
   send(value: T) {

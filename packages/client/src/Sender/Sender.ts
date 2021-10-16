@@ -2,13 +2,16 @@ import { Receiver } from "./Receiver";
 
 /**
  * Generic structure class implementing a Sender.
- * Subclass this to implement sending logic.
+ * Subclass this to implement your own sending logic with _send.
  */
 export abstract class Sender<T> {
   #receivers: Receiver<T>[] = [];
 
-  receive(callback?: (message: T) => void): Receiver<T> {
-    const receiver = new Receiver<T>(this._cancel.bind(this), callback);
+  receive(callback?: (data: T) => void): Receiver<T> {
+    const receiver = new Receiver<T>({
+      cancel: this._cancel.bind(this),
+      callback,
+    });
 
     this.#receivers.push(receiver);
     return receiver;
@@ -17,12 +20,12 @@ export abstract class Sender<T> {
   /**
    * Sends a message to all receivers.
    *
-   * @param message - message to send
+   * @param data - data to send
    */
-  protected _send(message: T) {
+  protected _send(data: T) {
     for (const receiver of this.#receivers) {
       if (receiver.callback) {
-        receiver.callback(message);
+        receiver.callback(data);
       }
     }
   }

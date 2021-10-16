@@ -1,18 +1,13 @@
+import { Receiver } from "../Sender";
+
 /**
- * One way data binding. Receiver function is called (if defined) each time the value changes while 'active' is true.
+ * One way data binding. Receiver gets the value each time it changes while 'active' is true.
  * The cancel function permanently stops receiving new values.
  */
 export interface Subscription<T> {
   active: boolean;
   current: T;
-  receiver?: (value: T) => void;
-  cancel: () => void;
-}
-
-export interface Receiver<T> {
-  active: boolean;
-  current?: T;
-  callback?: (value: T) => void;
+  receiver: Receiver<T>;
   cancel: () => void;
 }
 

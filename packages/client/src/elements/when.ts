@@ -1,4 +1,4 @@
-import { Subscription } from "../types";
+import { Subscription } from "../State/types";
 import { isSubscription } from "../utils";
 import { BaseComponent } from "./BaseComponent";
 
@@ -15,7 +15,7 @@ export const when = (
   if (isSubscription(condition)) {
     const fragment = new DocumentFragment();
 
-    condition.receiver = (newValue) => {
+    condition.receiver.callback = (newValue) => {
       if (newValue) {
         component.mount(fragment);
       } else {
@@ -24,7 +24,7 @@ export const when = (
     };
 
     // set initial mount status
-    condition.receiver(condition.current);
+    condition.receiver.callback(condition.current);
 
     return new BaseComponent(fragment);
   }

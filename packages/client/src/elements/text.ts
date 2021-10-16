@@ -1,4 +1,4 @@
-import { Subscription } from "../types";
+import { Subscription } from "../State/types";
 import { isString, isSubscription } from "../utils";
 import { BaseComponent } from "./BaseComponent";
 
@@ -15,7 +15,7 @@ export const text = (value: string | Subscription<string>) => {
   if (isSubscription<string>(value)) {
     const node = document.createTextNode(value.current);
 
-    value.receiver = (newValue) => {
+    value.receiver.callback = (newValue) => {
       node.textContent = newValue;
     };
 

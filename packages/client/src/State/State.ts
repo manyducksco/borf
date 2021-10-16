@@ -1,5 +1,6 @@
 import { isString, isObject, isArray } from "../utils";
-import { Binding, Subscription } from "../types";
+import { Binding, Subscription } from "./types";
+import { Receiver } from "../Sender";
 
 export type StateOptions = {
   /**
@@ -113,7 +114,7 @@ export class State<T> {
     const sub = new StateSubscription<T, any>(this, key);
 
     if (callback) {
-      sub.receiver = callback;
+      sub.receiver.callback = callback;
     }
 
     this.subscriptions.push(sub);
@@ -128,7 +129,7 @@ export class State<T> {
     const binding = new StateBinding<T, any>(this, key);
 
     if (callback) {
-      binding.receiver = callback;
+      binding.receiver.callback = callback;
     }
 
     this.subscriptions.push(binding);
@@ -187,8 +188,8 @@ export class State<T> {
     const current = this.current;
 
     for (const sub of this.subscriptions) {
-      if (sub.active && sub.receiver && keys.includes(sub.key)) {
-        sub.receiver(current[sub.key]);
+      if (sub.active && sub.receiver.callback && keys.includes(sub.key)) {
+        sub.receiver.callback(current[sub.key]);
       }
     }
   }
@@ -226,7 +227,8 @@ export class State<T> {
 export class StateSubscription<T, V> implements Subscription<V> {
   state: State<T>;
   key: keyof T;
-  active = true; // set to false to stop receiving changes without fully cancelling
+  active = true;
+  receiver: Receiver<V>;
 
   get current() {
     return this.state.current[this.key] as any;
@@ -235,12 +237,12 @@ export class StateSubscription<T, V> implements Subscription<V> {
   constructor(state: State<T>, key: keyof T) {
     this.state = state;
     this.key = key;
+    this.receiver = new Receiver({
+      cancel: () => {
+        this.active = false;
+      },
+    });
   }
-
-  /**
-   * Callback function to receive values when the key gets a new value.
-   */
-  receiver?: (value: V) => void;
 
   /**
    * Cancels subscription and stops receiving changes.
@@ -317,8 +319,8 @@ export class MappedValue<T, V> {
    */
   private notifySubscribers() {
     for (const sub of this.subscriptions) {
-      if (sub.active && sub.receiver) {
-        sub.receiver(this.value);
+      if (sub.active && sub.receiver.callback) {
+        sub.receiver.callback(this.value);
       }
     }
   }
@@ -338,7 +340,7 @@ export class MappedValue<T, V> {
     }
   }
 
-  subscribe(receiver?: (value: V) => void): Subscription<V> {
+  subscribe(callback?: (value: V) => void): Subscription<V> {
     // store cancelled state and cached current value
     // current should stop changing when this sub is cancelled
     let cancelled = false;
@@ -357,16 +359,15 @@ export class MappedValue<T, V> {
       get current() {
         return getCurrent();
       },
-      receiver,
+      receiver: new Receiver<V>({
+        cancel: () => {
+          sub.cancel();
+        },
+        callback,
+      }),
       cancel: () => {
         cancelled = true;
-
-        // remove self from subscriptions array
-        const index = this.subscriptions.indexOf(sub);
-
-        if (index > -1) {
-          this.subscriptions.splice(index, 1);
-        }
+        this.subscriptions.splice(this.subscriptions.indexOf(sub), 1);
       },
     };
 

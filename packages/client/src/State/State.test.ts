@@ -114,7 +114,7 @@ describe("subscribe", () => {
   });
 
   test("subscription receiver is called with new value when it changes", () => {
-    const receiver = jest.fn();
+    const fn = jest.fn();
 
     const state = new State<StateType>({
       message: "initial",
@@ -122,53 +122,53 @@ describe("subscribe", () => {
 
     // set by property
     const sub1 = state.subscribe("message");
-    sub1.receiver = receiver;
+    sub1.receiver.callback = fn;
 
     // set with subscribe function
-    const sub2 = state.subscribe("message", receiver);
+    const sub2 = state.subscribe("message", fn);
 
     state.set("message", "changed");
 
-    expect(receiver).toHaveBeenCalledTimes(2);
-    expect(receiver).toHaveBeenCalledWith("changed");
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveBeenCalledWith("changed");
   });
 
   test("subscription receives no changes when active=false", () => {
-    const receiver = jest.fn();
+    const fn = jest.fn();
 
     const state = new State<StateType>({
       message: "initial",
     });
 
-    const sub = state.subscribe("message", receiver);
+    const sub = state.subscribe("message", fn);
 
     sub.active = false;
     state.set("message", "changed");
-    expect(receiver).not.toHaveBeenCalled();
+    expect(fn).not.toHaveBeenCalled();
 
     sub.active = true;
     state.set("message", "changed again");
-    expect(receiver).toHaveBeenCalledTimes(1);
-    expect(receiver).toHaveBeenLastCalledWith("changed again");
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveBeenLastCalledWith("changed again");
   });
 
   test("subscription receives no changes after being cancelled", () => {
-    const receiver = jest.fn();
+    const fn = jest.fn();
 
     const state = new State<StateType>({
       message: "initial",
     });
 
-    const sub = state.subscribe("message", receiver);
+    const sub = state.subscribe("message", fn);
 
     state.set("message", "changed");
-    expect(receiver).toHaveBeenCalledTimes(1);
-    expect(receiver).toHaveBeenLastCalledWith("changed");
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveBeenLastCalledWith("changed");
 
     sub.cancel();
     state.set("message", "ignore this");
-    expect(receiver).toHaveBeenCalledTimes(1);
-    expect(receiver).toHaveBeenLastCalledWith("changed");
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveBeenLastCalledWith("changed");
   });
 });
 

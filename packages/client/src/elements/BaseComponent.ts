@@ -22,7 +22,7 @@ export interface Component<T> {
 export class BaseComponent implements Component<BaseComponentProps> {
   root: Node;
   props: Readonly<BaseComponentProps>;
-  key?: string;
+  key?: string | number;
 
   constructor(root: Node, props?: BaseComponentProps) {
     this.root = root;
