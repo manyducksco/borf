@@ -1,6 +1,5 @@
 import { isString, isObject, isArray } from "../utils";
-import { Binding, Subscription } from "./types";
-import { Receiver } from "../Sender";
+import { Binding, Subscription, Receiver } from "../types";
 
 export type StateOptions = {
   /**
@@ -188,7 +187,7 @@ export class State<T> {
     const current = this.current;
 
     for (const sub of this.subscriptions) {
-      if (sub.active && sub.receiver.callback && keys.includes(sub.key)) {
+      if (!sub.paused && sub.receiver.callback && keys.includes(sub.key)) {
         sub.receiver.callback(current[sub.key]);
       }
     }
@@ -225,35 +224,23 @@ export class State<T> {
 }
 
 export class StateSubscription<T, V> implements Subscription<V> {
-  state: State<T>;
+  protected state: State<T>;
   key: keyof T;
-  active = true;
+  paused = false;
   receiver: Receiver<V>;
 
-  get current() {
+  get initialValue() {
     return this.state.current[this.key] as any;
   }
 
   constructor(state: State<T>, key: keyof T) {
     this.state = state;
     this.key = key;
-    this.receiver = new Receiver({
+    this.receiver = {
       cancel: () => {
-        this.active = false;
+        state.subscriptions.splice(state.subscriptions.indexOf(this), 1);
       },
-    });
-  }
-
-  /**
-   * Cancels subscription and stops receiving changes.
-   */
-  cancel() {
-    // remove self from state's subscriptions array
-    const index = this.state.subscriptions.indexOf(this);
-
-    if (index > -1) {
-      this.state.subscriptions.splice(index, 1);
-    }
+    };
   }
 }
 
@@ -319,7 +306,7 @@ export class MappedValue<T, V> {
    */
   private notifySubscribers() {
     for (const sub of this.subscriptions) {
-      if (sub.active && sub.receiver.callback) {
+      if (sub.receiver.callback) {
         sub.receiver.callback(this.value);
       }
     }
@@ -355,19 +342,16 @@ export class MappedValue<T, V> {
     };
 
     const sub = {
-      active: true,
-      get current() {
+      paused: false,
+      get initialValue() {
         return getCurrent();
       },
-      receiver: new Receiver<V>({
+      receiver: {
         cancel: () => {
-          sub.cancel();
+          cancelled = true;
+          this.subscriptions.splice(this.subscriptions.indexOf(sub), 1);
         },
         callback,
-      }),
-      cancel: () => {
-        cancelled = true;
-        this.subscriptions.splice(this.subscriptions.indexOf(sub), 1);
       },
     };
 

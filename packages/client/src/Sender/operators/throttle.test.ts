@@ -24,8 +24,6 @@ test("ignores all values for X milliseconds after sending", async () => {
 
   sender.send(5); // ignored (+15ms remaining)
 
-  console.log(fn.mock.calls);
-
   expect(fn).toHaveBeenCalledTimes(2);
   expect(fn).toHaveBeenCalledWith(39);
   expect(fn).not.toHaveBeenCalledWith(22);

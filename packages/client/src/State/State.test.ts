@@ -133,7 +133,7 @@ describe("subscribe", () => {
     expect(fn).toHaveBeenCalledWith("changed");
   });
 
-  test("subscription receives no changes when active=false", () => {
+  test("subscription receives no changes when paused", () => {
     const fn = jest.fn();
 
     const state = new State<StateType>({
@@ -142,17 +142,17 @@ describe("subscribe", () => {
 
     const sub = state.subscribe("message", fn);
 
-    sub.active = false;
+    sub.paused = true;
     state.set("message", "changed");
     expect(fn).not.toHaveBeenCalled();
 
-    sub.active = true;
+    sub.paused = false;
     state.set("message", "changed again");
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenLastCalledWith("changed again");
   });
 
-  test("subscription receives no changes after being cancelled", () => {
+  test("subscription receives no changes after receiver is cancelled", () => {
     const fn = jest.fn();
 
     const state = new State<StateType>({
@@ -165,7 +165,7 @@ describe("subscribe", () => {
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenLastCalledWith("changed");
 
-    sub.cancel();
+    sub.receiver.cancel();
     state.set("message", "ignore this");
     expect(fn).toHaveBeenCalledTimes(1);
     expect(fn).toHaveBeenLastCalledWith("changed");
@@ -251,21 +251,21 @@ describe("map", () => {
       (first, last) => `${first} ${last}`
     );
 
-    const receiver = jest.fn();
+    const fn = jest.fn();
 
-    const sub = fullName.subscribe(receiver);
+    const sub = fullName.subscribe(fn);
 
     state.set("lastName", "Bones");
 
-    expect(receiver).toHaveBeenCalledWith("Dave Bones");
-    expect(sub.current).toBe("Dave Bones");
+    expect(fn).toHaveBeenCalledWith("Dave Bones");
+    expect(sub.initialValue).toBe("Dave Bones");
 
-    sub.cancel();
+    sub.receiver.cancel();
 
     state.set("lastName", "Drones");
 
-    expect(receiver).toHaveBeenLastCalledWith("Dave Bones");
-    expect(sub.current).toBe("Dave Bones");
+    expect(fn).toHaveBeenLastCalledWith("Dave Bones");
+    expect(sub.initialValue).toBe("Dave Bones");
     expect(fullName.current).toBe("Dave Drones");
   });
 });

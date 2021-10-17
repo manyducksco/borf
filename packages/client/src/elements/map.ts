@@ -1,4 +1,4 @@
-import { Subscription } from "../State/types";
+import { Subscription } from "../types";
 import { isArray, isSubscription } from "../utils/index";
 import { BaseComponent } from "./BaseComponent";
 

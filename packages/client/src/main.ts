@@ -2,67 +2,85 @@
 
 export * from "./Sender";
 
-import { operators, Sender } from "./Sender";
+import { State } from "./Sender";
+import { div, ul, li, map, input, when, text, button } from "./elements";
 
-import { State } from "./State";
-import { div, ul, li, map, when, text, button } from "./elements";
-
-class StateSender<T> extends Sender<T> {
-  #value: T;
-
-  get current() {
-    return this.#value;
-  }
-
-  constructor(initialState: T) {
-    super();
-    this.#value = initialState;
-  }
-
-  set(value: T) {
-    if (value !== this.#value) {
-      this.#value = value;
-      this._send(value);
-    }
+class ToggleState extends State<boolean> {
+  toggle() {
+    this.set(!this.current);
   }
 }
 
-const counter = new State({
-  count: 0,
+class CounterState extends State<number> {
+  increment() {
+    this.set(this.current + 1);
+  }
+
+  decrement() {
+    this.set(this.current - 1);
+  }
+}
+
+/*===========================*\
+||        Class Toggle       ||
+\*===========================*/
+
+const active = new ToggleState(false);
+
+setInterval(() => {
+  active.toggle();
+}, 1000);
+
+const classToggleExample = div({
+  class: {
+    example: true,
+    active: active.subscribe(),
+  },
 });
-const increment = () => counter.set("count", counter.current.count + 1);
-const decrement = () => counter.set("count", counter.current.count - 1);
-const label = counter.map("count", (n) => `the number is: ${n}`);
 
-// const counter = new StateSender(0);
-// const increment = () => counter.set(counter.current + 1);
-// const decrement = () => counter.set(counter.current - 1);
-// const label = operators.map(counter.receive(), (n) => `the number is: ${n}`);
+/*===========================*\
+||       Counter + Map       ||
+\*===========================*/
 
-const component = div({
+const counter = new CounterState(0);
+const label = counter.map((n) => `the number is: ${n}`);
+
+const counterExample = div({
   children: [
     text(label.subscribe()),
     button({
-      onClick: increment,
+      onClick: counter.increment,
       children: [text("Increment")],
     }),
     button({
-      onClick: decrement,
+      onClick: counter.decrement,
       children: [text("Decrement")],
     }),
   ],
 });
 
-counter.subscribe("count", (value) => {
-  console.log("count: ", value);
+/*===========================*\
+||      Two Way Binding      ||
+\*===========================*/
+
+const name = new State("");
+
+name.receive(console.log);
+
+const twoWayBindExample = div({
+  children: [
+    input({
+      value: name.bind(),
+    }),
+  ],
 });
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowUp") {
-    increment();
-  } else if (e.key === "ArrowDown") {
-    decrement();
-  }
+/*===========================*\
+||           Render          ||
+\*===========================*/
+
+const component = div({
+  children: [classToggleExample, counterExample, twoWayBindExample],
 });
 
 component.mount(document.getElementById("root")!);

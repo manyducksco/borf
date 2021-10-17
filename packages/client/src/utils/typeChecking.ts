@@ -1,5 +1,4 @@
-import { Receiver } from "../Sender";
-import { Binding, Subscription } from "../State/types";
+import { Binding, Subscription, Sender, Receiver } from "../types";
 
 export const isArray = <T = unknown>(value: unknown): value is T[] =>
   Array.isArray(value);
@@ -25,15 +24,19 @@ export const isObject = <T = any>(value: any): value is T =>
 export const isString = (value: any): value is string =>
   typeof value === "string";
 
+export const isSender = <T = unknown>(value: unknown): value is Sender<T> =>
+  isObject(value) && isFunction(value.receive);
+
+export const isReceiver = <T = unknown>(value: unknown): value is Receiver<T> =>
+  isObject(value) &&
+  isFunction(value.cancel) &&
+  (value.callback == null || isFunction(value.callback));
+
 export const isSubscription = <T = unknown>(
   value: unknown
 ): value is Subscription<T> => {
   if (isObject(value)) {
-    if (
-      isBoolean(value.active) &&
-      isFunction(value.cancel) &&
-      value.receiver instanceof Receiver
-    ) {
+    if (value.initialValue != null && isReceiver(value.receiver)) {
       return true;
     }
   }

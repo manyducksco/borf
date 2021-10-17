@@ -66,22 +66,20 @@ describe("isSubscription", () => {
     expect(isSubscription(5)).toBe(false);
     expect(
       isSubscription({
-        active: true,
-        receiver: () => {},
-        cancel: () => {},
+        paused: false,
+        current: 5,
+        receiver: { cancel: () => {} },
       })
     ).toBe(true);
     expect(
       isSubscription({
-        active: false,
+        current: 5,
         receiver: null,
-        cancel: () => {},
       })
-    ).toBe(true);
+    ).toBe(false);
     expect(
       isSubscription({
         receiver: null,
-        cancel: () => {},
       })
     ).toBe(false);
   });
@@ -95,17 +93,17 @@ describe("isBinding", () => {
     // subscription, but not binding
     expect(
       isBinding({
-        active: true,
-        receiver: () => {},
-        cancel: () => {},
+        paused: "wot",
+        current: null,
+        receiver: { cancel: () => {} },
       })
     ).toBe(false);
 
     expect(
       isBinding({
-        active: true,
-        receiver: () => {},
-        cancel: () => {},
+        paused: false,
+        current: 5,
+        receiver: { cancel: () => {} },
         set: () => {},
       })
     ).toBe(true);

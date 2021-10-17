@@ -22,6 +22,9 @@ export const li = (props: BaseComponentProps) =>
 export const button = (props: BaseComponentProps) =>
   new BaseComponent(document.createElement("button"), props);
 
+export const input = (props: BaseComponentProps) =>
+  new BaseComponent(document.createElement("input"), props);
+
 // class Component<PropTypes> extends BaseComponent {
 //   constructor(props?: BaseComponentProps) {
 //     super(new DocumentFragment(), props);
