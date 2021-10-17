@@ -24,7 +24,7 @@ export const when = (
     };
 
     // set initial mount status
-    condition.receiver.callback(condition.current);
+    condition.receiver.callback(condition.initialValue);
 
     return new BaseComponent(fragment);
   }

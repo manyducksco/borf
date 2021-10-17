@@ -107,7 +107,7 @@ export class BaseComponent implements Component<BaseComponentProps> {
   private attachBindings() {
     if (this.root instanceof HTMLInputElement) {
       if (isSubscription<string>(this.props.value)) {
-        this.root.value = this.props.value.current;
+        this.root.value = this.props.value.initialValue;
         this.props.value.receiver.callback = (value) => {
           (this.root as HTMLInputElement).value = value;
         };
@@ -147,15 +147,16 @@ export class BaseComponent implements Component<BaseComponentProps> {
     const root = this.root as HTMLElement;
 
     sub.receiver.callback = (value) => {
-      console.log(name, value, sub);
-      if (value) {
-        root.classList.add(name);
-      } else {
-        root.classList.remove(name);
-      }
+      requestAnimationFrame(() => {
+        if (value) {
+          root.classList.add(name);
+        } else {
+          root.classList.remove(name);
+        }
+      });
     };
 
-    sub.receiver.callback(sub.current);
+    sub.receiver.callback(sub.initialValue);
   }
 }
 

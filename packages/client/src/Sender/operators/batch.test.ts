@@ -3,7 +3,7 @@ import { TestSender } from "../_test/TestSender";
 
 test("batches a number of values into an array", async () => {
   const sender = new TestSender<number>();
-  const batched = batch(sender.receive(), 5, 20);
+  const batched = batch(sender, 5, 20);
   const fn = jest.fn();
 
   batched.receive(fn);

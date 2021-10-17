@@ -1,28 +1,21 @@
-import { Sender } from "../Sender";
-import { Receiver } from "../Receiver";
+import { Transmitter } from "../Transmitter";
+import { Receiver, Sender } from "../../types";
 
 /**
  * Returns a new Sender that ignores all values for `ms` milliseconds after a value is sent.
  *
- * @param receiver - a receiver
+ * @param source - a receiver
  * @param ms - amount of milliseconds to wait
  */
-export const throttle = <T>(receiver: Receiver<T>, ms: number) =>
-  new ThrottledSender(receiver, ms);
+export const throttle = <T>(source: Sender<T> | Receiver<T>, ms: number) => {
+  let next = 0;
 
-class ThrottledSender<T> extends Sender<T> {
-  #next: number = 0;
+  return new Transmitter<T, T>(source, (message, send) => {
+    const now = Date.now();
 
-  constructor(receiver: Receiver<T>, ms: number) {
-    super();
-
-    receiver.callback = (value) => {
-      const now = Date.now();
-
-      if (now >= this.#next) {
-        this._send(value);
-        this.#next = now + ms;
-      }
-    };
-  }
-}
+    if (now >= next) {
+      send(message);
+      next = now + ms;
+    }
+  });
+};

@@ -1,5 +1,5 @@
-import { Sender } from "../Sender";
-import { Receiver } from "../Receiver";
+import { Transmitter } from "../Transmitter";
+import { Receiver, Sender } from "../../types";
 
 /**
  * Returns a new Sender that forwards the most recent value within `ms` milliseconds
@@ -8,21 +8,14 @@ import { Receiver } from "../Receiver";
  * @param receiver - a receiver
  * @param ms - amount of milliseconds to wait
  */
-export const debounce = <T>(receiver: Receiver<T>, ms: number) =>
-  new DebouncedSender(receiver, ms);
+export const debounce = <T>(source: Sender<T> | Receiver<T>, ms: number) => {
+  let timeout: any;
 
-class DebouncedSender<T> extends Sender<T> {
-  #timeout?: any;
+  return new Transmitter<T>(source, (value, send) => {
+    clearTimeout(timeout);
 
-  constructor(receiver: Receiver<T>, ms: number) {
-    super();
-
-    receiver.callback = (value) => {
-      clearTimeout(this.#timeout);
-
-      this.#timeout = setTimeout(() => {
-        this._send(value);
-      }, ms);
-    };
-  }
-}
+    timeout = setTimeout(() => {
+      send(value);
+    }, ms);
+  });
+};

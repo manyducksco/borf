@@ -46,7 +46,7 @@ export const map = <T>(
 
           if (!match) {
             component.unmount();
-            newComponents.splice(i, 1);
+            newComponents.splice(newComponents.indexOf(component), 1);
           }
         });
 
@@ -63,21 +63,35 @@ export const map = <T>(
             component.key = key;
 
             // mount new component at its new index in the list
-            component.mount(fragment, newComponents[indexOfPreviousKey].root);
+            component.mount(fragment, newComponents[indexOfPreviousKey]?.root);
 
             newComponents.splice(indexOfPreviousKey, 0, component);
           }
-
-          components = newComponents;
-
-          console.log(newComponents);
         });
+
+        components = newComponents;
+
+        console.log(components, fragment.childNodes, fragment.parentElement);
       });
     };
 
     // set initial list
-    array.receiver.callback(array.current);
+    array.receiver.callback(array.initialValue);
   }
 
-  return new BaseComponent(fragment);
+  return new MapComponent(fragment);
 };
+
+class MapComponent extends BaseComponent {
+  mount(parent: Node, after?: Node) {
+    console.log(parent, after);
+    // parent.insertBefore(this.root, after ? after.nextSibling : null);
+    parent.appendChild(this.root);
+  }
+
+  unmount() {
+    if (this.root.parentNode) {
+      this.root.parentNode.removeChild(this.root);
+    }
+  }
+}

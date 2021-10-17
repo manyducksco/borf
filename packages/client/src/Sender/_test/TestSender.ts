@@ -1,6 +1,6 @@
-import { Sender } from "..";
+import { Transmitter } from "..";
 
-export class TestSender<T> extends Sender<T> {
+export class TestSender<T> extends Transmitter<T> {
   send(value: T) {
     this._send(value);
   }
