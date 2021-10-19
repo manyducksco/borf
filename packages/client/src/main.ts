@@ -15,6 +15,7 @@ import {
   p,
   span,
 } from "./elements";
+import { Component, ElementClasses } from "./elements/BaseComponent";
 import { StateTransmitter } from "./Sender/StateTransmitter";
 
 /*===========================*\
@@ -87,23 +88,28 @@ function counterExample() {
 \*===========================*/
 
 function twoWayBindExample() {
-  const name = new State("");
-  const age = new State(18);
+  const text = new State("");
+  const size = new State(18);
 
-  name.receive(console.log);
-  age.receive(console.log);
+  text.receive(console.log);
+  size.receive(console.log);
 
   return div({
     class: ["example", { three: true }],
     children: [
-      p({ children: [$text(name, "Type Below")] }),
       input({
-        value: name.bind(),
-        // placeholder: "Name"
+        value: text.bind(),
       }),
       input({
         type: "number",
-        value: age.bind(),
+        value: size.bind(),
+      }),
+
+      p({
+        children: [$text(text, "Type Above")],
+        style: {
+          fontSize: size.map((s) => `${s}px`),
+        },
       }),
     ],
   });
@@ -216,8 +222,8 @@ function mouseFollowerExample() {
   // backgroundColor.receive(console.log);
   // delay.receive(console.log);
 
-  return div({
-    class: ["example", "mouse-follower"],
+  return exampleSection({
+    class: ["mouse-follower"],
     children: [
       div({
         class: "follower",
@@ -245,6 +251,19 @@ function mouseFollowerExample() {
         children: [$text("Change Follower Color")],
       }),
     ],
+  });
+}
+
+interface ExampleSectionProps {
+  class?: ElementClasses;
+  children?: Array<Component>;
+}
+
+// Example of a component function
+function exampleSection(props: ExampleSectionProps) {
+  return div({
+    class: ["example", props.class],
+    children: [...(props.children || [])],
   });
 }
 

@@ -17,6 +17,30 @@ const forwardProps: (keyof BaseComponentProps)[] = [
   "step",
 ];
 
+/**
+ * Classes can be in a variety of formats:
+ *
+ * ElementClass = "classname"
+ * ElementClassObject = {
+ *   "classname": true,
+ *   "otherclass": false
+ * }
+ * ElementClassArray = ["classname", ["otherclass"], {
+ *   "active": true
+ * }]
+ */
+export type ElementClasses =
+  | ElementClass
+  | ElementClassObject
+  | ElementClassArray;
+type ElementClass = string | undefined | null | false;
+type ElementClassObject = {
+  [className: string]: unknown | Subscription<unknown>;
+};
+type ElementClassArray = Array<
+  ElementClass | ElementClassObject | ElementClassArray
+>;
+
 export interface BaseComponentProps {
   /**
    * List of child components
@@ -26,19 +50,7 @@ export interface BaseComponentProps {
   /**
    * String / class map object / array of strings, falsy values or class map objects
    */
-  class?:
-    | string
-    | Array<
-        | string
-        | null
-        | undefined
-        | false
-        | 0
-        | { [className: string]: unknown | Subscription<unknown> }
-      >
-    | {
-        [className: string]: unknown | Subscription<unknown>;
-      };
+  class?: ElementClasses;
 
   value?: Stringifyable | Binding<Stringifyable> | Subscribable<Stringifyable>;
 
@@ -287,6 +299,9 @@ function getClassMap(classData: unknown) {
   return mapped;
 }
 
+/**
+ * Attempts to convert a `source` value to the same type as a `target` value.
+ */
 function toSameType(target: any, source: any) {
   const type = typeof target;
 
@@ -296,6 +311,10 @@ function toSameType(target: any, source: any) {
 
   if (type === "number") {
     return Number(source);
+  }
+
+  if (type === "boolean") {
+    return Boolean(source);
   }
 
   return source;
