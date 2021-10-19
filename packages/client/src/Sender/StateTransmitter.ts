@@ -1,5 +1,13 @@
-import { Receiver, Sender, Subscription } from "../types";
-import { Transmitter, TransformFunc } from "./Transmitter";
+import {
+  Receiver,
+  Sender,
+  Subscribable,
+  Subscription,
+  TransformFunc,
+} from "../types";
+import { map, batch, filter } from "./operators";
+import { delay } from "./operators/delay";
+import { Transmitter } from "./Transmitter";
 
 /**
  * A read-only state sender. Values can be set from inside a StateTransmitter or a subclass of StateTransmitter.
@@ -33,14 +41,21 @@ export class StateTransmitter<I, O = I> extends Transmitter<I, O> {
     };
   }
 
-  map<R>(transform: (value: O) => R) {
-    return new StateTransmitter<O, R>(
-      transform(this._value),
-      this,
-      (message, send) => {
-        send(transform(message));
-      }
-    );
+  map<M>(fn: (value: O) => M) {
+    return new StateTransmitter<O, M>(fn(this._value), this, map(fn));
+  }
+
+  filter(condition: (value: O) => boolean) {
+    return new StateTransmitter<O, O>(this._value, this, filter(condition));
+  }
+
+  batch(size: number, ms: number) {
+    const transform = batch<O>(size, ms);
+    return new StateTransmitter<O, O[]>([this.current], this, transform);
+  }
+
+  delay(ms: number | Subscribable<number>) {
+    return new StateTransmitter<O, O>(this._value, this, delay(ms));
   }
 
   // filter(condition: (value: T) => boolean) {

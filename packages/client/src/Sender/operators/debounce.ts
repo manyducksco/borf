@@ -1,21 +1,19 @@
-import { Transmitter } from "../Transmitter";
-import { Receiver, Sender } from "../../types";
+import { TransformFunc } from "../../types";
 
 /**
- * Returns a new Sender that forwards the most recent value within `ms` milliseconds
- * since the last value was sent. All other values sent within that window are ignored.
+ * Forwards the most recent message within `ms` milliseconds since the last value was sent.
+ * All messages except the final one sent within that window are ignored.
  *
- * @param receiver - a receiver
  * @param ms - amount of milliseconds to wait
  */
-export const debounce = <T>(source: Sender<T> | Receiver<T>, ms: number) => {
+export function debounce<T>(ms: number): TransformFunc<T, T> {
   let timeout: any;
 
-  return new Transmitter<T>(source, (value, send) => {
+  return (value, send) => {
     clearTimeout(timeout);
 
     timeout = setTimeout(() => {
       send(value);
     }, ms);
-  });
-};
+  };
+}

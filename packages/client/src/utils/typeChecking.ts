@@ -1,4 +1,11 @@
-import { Binding, Subscription, Sender, Receiver } from "../types";
+import {
+  Binding,
+  Subscription,
+  Sender,
+  Receiver,
+  Subscribable,
+  Bindable,
+} from "../types";
 
 export const isArray = <T = unknown>(value: unknown): value is T[] =>
   Array.isArray(value);
@@ -46,3 +53,15 @@ export const isSubscription = <T = unknown>(
 
 export const isBinding = <T = unknown>(value: any): value is Binding<T> =>
   isSubscription(value) && isFunction((value as any).set);
+
+export const isSubscribable = <T = unknown>(
+  value: unknown
+): value is Subscribable<T> => {
+  return isObject(value) && isFunction(value.subscribe);
+};
+
+export const isBindable = <T = unknown>(
+  value: unknown
+): value is Bindable<T> => {
+  return isObject(value) && isFunction(value.subscribe);
+};

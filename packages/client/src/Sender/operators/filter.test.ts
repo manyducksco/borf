@@ -2,11 +2,11 @@ import { filter } from "./filter";
 import { TestSender } from "../_test/TestSender";
 
 test("forwards only values that match the condition", () => {
-  const sender = new TestSender<number>();
-  const evens = filter(sender.receive(), (n) => n % 2 === 0);
+  const condition = (n: number) => n % 2 === 0;
+  const sender = new TestSender<number>(filter(condition));
   const fn = jest.fn();
 
-  evens.receive(fn);
+  sender.receive(fn);
 
   sender.send(2);
   sender.send(3);

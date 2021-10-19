@@ -1,18 +1,27 @@
-import { Binding, Subscription } from "../types";
+import { Binding, Stringifyable, Subscribable, Subscription } from "../types";
 import {
   isArray,
   isBinding,
   isBoolean,
   isObject,
   isString,
+  isSubscribable,
   isSubscription,
 } from "../utils";
+
+// All props in this list will be forwarded verbatim to DOM node
+const forwardProps: (keyof BaseComponentProps)[] = [
+  "type",
+  "min",
+  "max",
+  "step",
+];
 
 export interface BaseComponentProps {
   /**
    * List of child components
    */
-  children?: BaseComponent[];
+  children?: Component[];
 
   /**
    * String / class map object / array of strings, falsy values or class map objects
@@ -31,52 +40,89 @@ export interface BaseComponentProps {
         [className: string]: unknown | Subscription<unknown>;
       };
 
-  value?: Binding<string> | Subscription<string>;
+  value?: Stringifyable | Binding<Stringifyable> | Subscribable<Stringifyable>;
 
+  style?: CSSProps;
+
+  type?: string;
+  min?: string | number;
+  max?: string | number;
+  step?: string | number;
+
+  // Event handlers
   onClick?: (event: MouseEvent) => any;
   onMouseDown?: (event: MouseEvent) => any;
   onMouseUp?: (event: MouseEvent) => any;
   onKeyDown?: (event: KeyboardEvent) => any;
   onKeyUp?: (event: KeyboardEvent) => any;
   onChange?: (event: InputEvent) => any;
+  onInput?: (event: InputEvent) => any;
+
+  // Component lifecycle
+  onMount?: () => void; // runs just after component is added to DOM
+  onUnmount?: () => void; // runs just after component is removed from DOM
 }
 
-export interface Component<T> {
-  root: Node;
-  props: T;
+type SubscribableProps<T> = {
+  [attr in keyof T as Exclude<attr, "length" | "parentRule">]:
+    | T[attr]
+    | Subscribable<T[attr]>;
+};
 
+type CSSProps = Partial<SubscribableProps<CSSStyleDeclaration>>;
+
+// document.createElement("div").style.marginRight = "5px"
+
+export interface Component {
+  root: Node;
   mount(parent: Node, after?: Node): void;
   unmount(): void;
+  isMounted: boolean;
 }
 
-export class BaseComponent implements Component<BaseComponentProps> {
+export class BaseComponent implements Component {
   root: Node;
   props: Readonly<BaseComponentProps>;
   key?: string | number;
+
+  get isMounted() {
+    return this.root.parentNode != null;
+  }
 
   constructor(root: Node, props?: BaseComponentProps) {
     this.root = root;
     this.props = Object.freeze(props ?? {});
 
     this.applyClasses();
+    this.applyStyles();
     this.attachEvents();
     this.attachBindings();
+    this.applyAttrs();
   }
 
   mount(parent: Node, after?: Node) {
-    const { children } = this.props;
+    const { children, onMount } = this.props;
+    const isMounted = this.isMounted;
 
-    if (children) {
+    // mount can be used to move a node while already mounted
+    // in this case we don't need to mount children or run lifecycle hooks
+    if (!isMounted && children) {
+      let previous = null;
       for (const child of children) {
-        child.mount(this.root);
+        child.mount(this.root, previous?.root);
+        previous = child;
       }
     }
 
     parent.insertBefore(this.root, after ? after.nextSibling : null);
+
+    if (!isMounted && onMount) {
+      onMount();
+    }
   }
 
   unmount() {
-    const { children } = this.props;
+    const { children, onUnmount } = this.props;
 
     if (this.root.parentNode) {
       this.root.parentNode.removeChild(this.root);
@@ -87,10 +133,18 @@ export class BaseComponent implements Component<BaseComponentProps> {
         child.unmount();
       }
     }
+
+    if (onUnmount) {
+      onUnmount();
+    }
   }
 
   private attachEvents() {
     for (const key in this.props) {
+      if (key === "onMount" || key === "onUnmount") {
+        continue;
+      }
+
       if (/^on[A-Z][a-zA-Z]+$/.test(key)) {
         const eventName = key.slice(2).toLowerCase();
 
@@ -106,17 +160,26 @@ export class BaseComponent implements Component<BaseComponentProps> {
 
   private attachBindings() {
     if (this.root instanceof HTMLInputElement) {
-      if (isSubscription<string>(this.props.value)) {
-        this.root.value = this.props.value.initialValue;
-        this.props.value.receiver.callback = (value) => {
-          (this.root as HTMLInputElement).value = value;
+      if (isBinding<Stringifyable>(this.props.value)) {
+        const { initialValue, receiver, set } = this.props.value;
+
+        this.root.value = initialValue.toString();
+        receiver.callback = (value) => {
+          (this.root as HTMLInputElement).value = value.toString();
         };
 
-        if (isBinding<string>(this.props.value)) {
-          this.root.addEventListener("input", (e) => {
-            (this.props.value! as Binding<string>).set((e.target as any).value);
-          });
-        }
+        // Set the value back after converting to the subscription's type
+        this.root.addEventListener("input", (e) => {
+          (this.props.value! as Binding<Stringifyable>).set(
+            toSameType(initialValue, (e.target as any).value)
+          );
+        });
+      } else if (isSubscribable<Stringifyable>(this.props.value)) {
+        const sub = this.props.value.subscribe();
+        this.root.value = sub.initialValue.toString();
+        sub.receiver.callback = (value) => {
+          (this.root as HTMLInputElement).value = value.toString();
+        };
       }
     }
   }
@@ -127,32 +190,72 @@ export class BaseComponent implements Component<BaseComponentProps> {
         const mapped = getClassMap(this.props.class);
 
         for (const name in mapped) {
-          if (isBoolean(mapped[name])) {
-            if (mapped[name]) {
+          const value = mapped[name];
+
+          if (isBoolean(value)) {
+            if (value) {
               this.root.classList.add(name);
             }
           }
 
-          if (isSubscription<boolean>(mapped[name])) {
-            this.bindClass(name, mapped[name] as Subscription<boolean>);
+          if (isSubscribable<boolean>(value)) {
+            this.subscribeTo(value, (value, root) => {
+              if (value) {
+                root.classList.add(name);
+              } else {
+                root.classList.remove(name);
+              }
+            });
           }
         }
-
-        console.log(mapped);
       }
     }
   }
 
-  private bindClass(name: string, sub: Subscription<boolean>) {
+  private applyStyles() {
+    if (this.root instanceof HTMLElement) {
+      if (this.props.style) {
+        for (const name in this.props.style) {
+          const prop = this.props.style[name];
+
+          if (isString(prop)) {
+            this.root.style[name] = prop;
+          } else if (isSubscribable<string>(prop)) {
+            this.subscribeTo(prop, (value, root) => {
+              root.style[name] = value;
+            });
+          }
+        }
+      }
+    }
+  }
+
+  private applyAttrs() {
+    if (this.root instanceof HTMLElement) {
+      for (const name of forwardProps) {
+        const attr = this.props[name];
+
+        if (isSubscribable<Stringifyable>(attr)) {
+          this.subscribeTo(attr, (value, root) => {
+            root.setAttribute(name, value.toString());
+          });
+        } else if (attr) {
+          this.root.setAttribute(name, String(attr));
+        }
+      }
+    }
+  }
+
+  private subscribeTo<T>(
+    source: Subscribable<T>,
+    callback: (value: T, root: HTMLElement) => void
+  ) {
     const root = this.root as HTMLElement;
+    const sub = source.subscribe();
 
     sub.receiver.callback = (value) => {
       requestAnimationFrame(() => {
-        if (value) {
-          root.classList.add(name);
-        } else {
-          root.classList.remove(name);
-        }
+        callback(value, root);
       });
     };
 
@@ -182,4 +285,18 @@ function getClassMap(classData: unknown) {
   }
 
   return mapped;
+}
+
+function toSameType(target: any, source: any) {
+  const type = typeof target;
+
+  if (type === "string") {
+    return String(source);
+  }
+
+  if (type === "number") {
+    return Number(source);
+  }
+
+  return source;
 }

@@ -1,1 +1,2 @@
-export * from "./typeChecking.js";
+export * from "./typeChecking";
+export * from "./subscribeTo";

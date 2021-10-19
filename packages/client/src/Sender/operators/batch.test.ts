@@ -2,11 +2,10 @@ import { batch } from "./batch";
 import { TestSender } from "../_test/TestSender";
 
 test("batches a number of values into an array", async () => {
-  const sender = new TestSender<number>();
-  const batched = batch(sender, 5, 20);
+  const sender = new TestSender<number, number[]>(batch(5, 20));
   const fn = jest.fn();
 
-  batched.receive(fn);
+  sender.receive(fn);
 
   sender.send(1);
   sender.send(2);
@@ -19,11 +18,10 @@ test("batches a number of values into an array", async () => {
 });
 
 test("sends array with fewer items if full count hasn't arrived before timeout", async () => {
-  const sender = new TestSender<number>();
-  const batched = batch(sender.receive(), 5, 20);
+  const sender = new TestSender<number, number[]>(batch(5, 20));
   const fn = jest.fn();
 
-  batched.receive(fn);
+  sender.receive(fn);
 
   sender.send(1);
   sender.send(2);

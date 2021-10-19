@@ -1,10 +1,5 @@
-import { Receiver, Sender } from "../types";
+import { Receiver, Sender, TransformFunc } from "../types";
 import { isReceiver, isSender } from "../utils";
-
-export type TransformFunc<I, O> = (
-  message: I,
-  send: (message: O) => void
-) => void;
 
 /**
  * Implementation of a Sender that manages a pool of receivers.

@@ -1,19 +1,16 @@
-import { Transmitter } from "../Transmitter";
-import { Sender, Receiver } from "../../types";
+import { TransformFunc } from "../../types";
 
 /**
- * Returns a new Sender that forwards values only when the condition returns truthy for that value.
+ * Forwards values only when the condition returns truthy for that value.
  *
- * @param receiver - a receiver
  * @param condition - function to decide whether to forward the message
  */
-export const filter = <T>(
-  source: Sender<T> | Receiver<T>,
+export function filter<T>(
   condition: (value: T) => boolean
-) => {
-  return new Transmitter<T, T>(source, (value, send) => {
+): TransformFunc<T, T> {
+  return (value, send) => {
     if (condition(value)) {
       send(value);
     }
-  });
-};
+  };
+}

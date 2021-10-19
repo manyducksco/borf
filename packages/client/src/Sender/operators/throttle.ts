@@ -1,21 +1,19 @@
-import { Transmitter } from "../Transmitter";
-import { Receiver, Sender } from "../../types";
+import { TransformFunc } from "../../types";
 
 /**
- * Returns a new Sender that ignores all values for `ms` milliseconds after a value is sent.
+ * Ignores all messages for `ms` milliseconds after a value is sent.
  *
- * @param source - a receiver
  * @param ms - amount of milliseconds to wait
  */
-export const throttle = <T>(source: Sender<T> | Receiver<T>, ms: number) => {
+export function throttle<T>(ms: number): TransformFunc<T, T> {
   let next = 0;
 
-  return new Transmitter<T, T>(source, (message, send) => {
+  return (message, send) => {
     const now = Date.now();
 
     if (now >= next) {
       send(message);
       next = now + ms;
     }
-  });
-};
+  };
+}

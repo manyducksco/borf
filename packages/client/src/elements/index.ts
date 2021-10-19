@@ -1,65 +1,31 @@
 import { BaseComponentProps, BaseComponent } from "./BaseComponent.js";
 
+const baseElement = (tag: string) => (props: BaseComponentProps) =>
+  new BaseComponent(document.createElement(tag), props);
+
 /*===========================*\
 ||       Basic Elements      ||
 \*===========================*/
 
-export const div = (props: BaseComponentProps) =>
-  new BaseComponent(document.createElement("div"), props);
-
-export const section = (props: BaseComponentProps) =>
-  new BaseComponent(document.createElement("section"), props);
-
-export const ul = (props: BaseComponentProps) =>
-  new BaseComponent(document.createElement("ul"), props);
-
-export const ol = (props: BaseComponentProps) =>
-  new BaseComponent(document.createElement("ol"), props);
-
-export const li = (props: BaseComponentProps) =>
-  new BaseComponent(document.createElement("li"), props);
-
-export const button = (props: BaseComponentProps) =>
-  new BaseComponent(document.createElement("button"), props);
-
-export const input = (props: BaseComponentProps) =>
-  new BaseComponent(document.createElement("input"), props);
-
-// class Component<PropTypes> extends BaseComponent {
-//   constructor(props?: BaseComponentProps) {
-//     super(new DocumentFragment(), props);
-//   }
-
-//   create(props: PropTypes) {
-//     return [];
-//   }
-
-//   mount(parent: Node, after?: Node) {
-//     super.mount(parent, after);
-//   }
-
-//   onMount() {
-//     this.root;
-//   }
-
-//   onUnmount() {}
-// }
-
-// interface ToolbarProps {
-//   left: BaseComponent[];
-//   right: BaseComponent[];
-// }
-
-// class ToolbarComponent extends Component<ToolbarProps> {
-//   create({ left, right }: ToolbarProps) {
-//     return;
-//   }
-// }
+export const div = baseElement("div");
+export const section = baseElement("section");
+export const ul = baseElement("ul");
+export const ol = baseElement("ol");
+export const li = baseElement("li");
+export const button = baseElement("button");
+export const input = baseElement("input");
+export const h1 = baseElement("h1");
+export const h2 = baseElement("h2");
+export const h3 = baseElement("h3");
+export const h4 = baseElement("h4");
+export const h5 = baseElement("h5");
+export const p = baseElement("p");
+export const span = baseElement("span");
 
 /*===========================*\
 ||     Specialty Elements    ||
 \*===========================*/
 
-export * from "./text";
-export * from "./map";
-export * from "./when";
+export * from "./$text";
+export * from "./$map";
+export * from "./$when";

@@ -1,17 +1,12 @@
-import { Transmitter } from "../Transmitter";
-import { Receiver, Sender } from "../../types";
+import { TransformFunc } from "../../types";
 
 /**
- * Returns a new Sender that forwards the result of the `transform` function for each value.
+ * Forwards the result of the `transform` function for each message.
  *
- * @param source - a receiver or sender to pull values from
- * @param transform - function to transform value from receiver
+ * @param transform - function to transform message
  */
-export const map = <I, O>(
-  source: Receiver<I> | Sender<I>,
-  transform: (value: I) => O
-) => {
-  return new Transmitter<I, O>(source, (value, send) => {
-    send(transform(value));
-  });
-};
+export function map<I, O>(transform: (value: I) => O): TransformFunc<I, O> {
+  return (message, send) => {
+    send(transform(message));
+  };
+}

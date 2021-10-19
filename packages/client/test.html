@@ -5,11 +5,24 @@
 
     <style>
       .example {
-        border: 1px solid blue;
+        background-color: transparent;
+        transition: background-color 200ms;
+        margin-bottom: 1em;
+        padding: 0.5em;
       }
 
       .example.active {
-        background-color: orange;
+        background-color: #b6eeb6;
+      }
+
+      .follower {
+        width: 32px;
+        height: 32px;
+        border-radius: 50px;
+        background-color: red;
+        position: fixed;
+        top: 0;
+        left: 0;
       }
     </style>
   </head>

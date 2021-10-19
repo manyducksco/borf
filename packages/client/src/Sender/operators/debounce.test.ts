@@ -2,11 +2,10 @@ import { debounce } from "./debounce";
 import { TestSender } from "../_test/TestSender";
 
 test("forwards only latest value after specified milliseconds", async () => {
-  const sender = new TestSender<number>();
-  const debounced = debounce(sender.receive(), 20);
+  const sender = new TestSender<number>(debounce(20));
   const fn = jest.fn();
 
-  debounced.receive(fn);
+  sender.receive(fn);
 
   sender.send(39);
   sender.send(22);
