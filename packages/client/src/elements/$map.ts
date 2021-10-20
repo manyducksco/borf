@@ -1,8 +1,14 @@
 import { Subscribable, Subscription } from "../types";
 import { BaseComponent, Component } from "./BaseComponent";
 
+type MapStateItem = {
+  index: number;
+  key: string | number;
+  component: Component;
+};
+
 /**
- * Converts an array of objects into a list of elements. Updates list when array changes.
+ * Converts an array of objects into a list of elements, updating dynamically when the array changes.
  *
  * @param array - subscribable list of items
  * @param getKey - function to extract a unique key for each item in the list
@@ -16,11 +22,8 @@ export const $map = <T>(
 
 class MapComponent<T> implements Component {
   private subscription: Subscription<T[]>;
-  private state: {
-    index: number;
-    key: string | number;
-    component: Component;
-  }[] = [];
+  private state: MapStateItem[] = [];
+  private parent?: Node;
   isMounted = false;
   root = document.createTextNode("");
 
@@ -66,35 +69,64 @@ class MapComponent<T> implements Component {
       }
     }
 
-    /**
-     * Start with     [1, 2, 3, 4, 5]
-     * Remove some    [ , 2, 3,  , 5]
-     * Leaves with    [2, 3, 5]            // 2: -1,   3: -1,   5: -2
-     * With Added     [2, 3, 5, 6, 7]
-     *
-     * Items that are still there from last update will likely need to be moved in the DOM.
-     * They would technically be moved by taking out the removed items. This could be calculated
-     * to operate with the fewest possible changes to end up in the new state.
-     *
-     * If an item is removed, will the item immediately following always have its index adjusted by -1?
-     */
+    // Determine what the next state is going to be, reusing components when possible.
+    const newState: MapStateItem[] = [];
 
-    console.log({ keys: newKeys, added, removed, moved });
+    for (let i = 0; i < list.length; i++) {
+      const key = newKeys[i];
+      const isAdded = added.some((x) => x.key === key);
+      let component: Component;
 
-    // every time the list changes:
-    //   - get keys for all items using `getKey`
-    //   - remove components with keys that aren't in the new keys list
-    //   - create new components for the missing keys
-    //   - insert new components to end up with the DOM items in the same order as keys list
+      if (isAdded) {
+        component = this.createItem(list[i]);
+      } else {
+        component = this.state.find((x) => x.key === key)!.component;
+      }
+
+      newState.push({
+        index: i,
+        key,
+        component,
+      });
+    }
+
+    console.log({ keys: newKeys, added, removed, moved, newState });
+
+    // Batch all changes into an animation frame
+    requestAnimationFrame(() => {
+      // Unmount removed components
+
+      for (const entry of removed) {
+        const item = this.state.find((x) => x.key === entry.key);
+
+        item?.component.unmount();
+      }
+
+      // Mount new components
+      let previous: Node = this.root;
+      for (const item of newState) {
+        item.component.mount(this.parent!, previous);
+
+        if (item.component.hasOwnProperty("root")) {
+          previous = item.component.root;
+        }
+      }
+
+      this.state = newState;
+    });
   }
 
   mount(parent: Node, after?: Node) {
-    let previous = after;
+    this.parent = parent;
+
+    parent.insertBefore(this.root, after ? after.nextSibling : null);
+
+    let previous: Node = this.root;
 
     for (const item of this.state) {
       item.component.mount(parent, previous);
 
-      if (item.component instanceof BaseComponent) {
+      if (item.component.hasOwnProperty("root")) {
         previous = item.component.root;
       }
     }

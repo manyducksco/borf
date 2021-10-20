@@ -5,7 +5,7 @@ import {
   Subscription,
   TransformFunc,
 } from "../types";
-import { map, batch, filter } from "./operators";
+import { map, batch, filter, throttle } from "./operators";
 import { delay } from "./operators/delay";
 import { Transmitter } from "./Transmitter";
 
@@ -41,14 +41,6 @@ export class StateTransmitter<I, O = I> extends Transmitter<I, O> {
     };
   }
 
-  map<M>(fn: (value: O) => M) {
-    return new StateTransmitter<O, M>(fn(this._value), this, map(fn));
-  }
-
-  filter(condition: (value: O) => boolean) {
-    return new StateTransmitter<O, O>(this._value, this, filter(condition));
-  }
-
   batch(size: number, ms: number) {
     const transform = batch<O>(size, ms);
     return new StateTransmitter<O, O[]>([this.current], this, transform);
@@ -58,14 +50,17 @@ export class StateTransmitter<I, O = I> extends Transmitter<I, O> {
     return new StateTransmitter<O, O>(this._value, this, delay(ms));
   }
 
-  // filter(condition: (value: T) => boolean) {
-  //   // TODO: Potential bug; filtered relay could end up with an initialValue that wouldn't have passed the filter.
-  //   return new StateRelay<T, T>(this, this.current, (value, send) => {
-  //     if (condition(value)) {
-  //       send(value);
-  //     }
-  //   });
-  // }
+  filter(condition: (value: O) => boolean) {
+    return new StateTransmitter<O, O>(this._value, this, filter(condition));
+  }
+
+  map<M>(fn: (value: O) => M) {
+    return new StateTransmitter<O, M>(fn(this._value), this, map(fn));
+  }
+
+  throttle(ms: number | Subscribable<number>) {
+    return new StateTransmitter<O, O>(this._value, this, throttle(ms));
+  }
 
   /**
    * Sets a new value and notifies receivers.

@@ -14,6 +14,7 @@ import {
   button,
   p,
   span,
+  h3,
 } from "./elements";
 import { Component, ElementClasses } from "./elements/BaseComponent";
 import { StateTransmitter } from "./Sender/StateTransmitter";
@@ -152,26 +153,40 @@ function conditionalExample() {
 ||      Rendering Lists      ||
 \*===========================*/
 
+// TODO: Implement 'sort' as a transform function
 function mapExample() {
-  const list = new State<string[]>(["initial", "items"]);
-
-  setInterval(() => {
-    const newList = list.current.filter(() => Math.random() > 0.5);
-
-    for (let i = 0; i < 10 - newList.length; i++) {
-      newList.push((Math.random() * 1000).toString(16));
-    }
-
-    list.set(newList);
-  }, 2000);
+  const list = new State<string[]>(["apple", "banana", "orange", "唐揚げ"]);
 
   return div({
     class: ["example", "five"],
     children: [
+      button({
+        onClick() {
+          list.set(list.current.map((x) => x).sort());
+        },
+        children: [$text("Sort A to Z")],
+      }),
+      button({
+        onClick() {
+          list.set(
+            list.current
+              .map((x) => x)
+              .sort()
+              .reverse()
+          );
+        },
+        children: [$text("Sort Z to A")],
+      }),
       $map(
         list,
         (x) => x,
-        (value) => li({ children: [$text(value)] })
+        (item) =>
+          li({
+            onClick() {
+              alert(item);
+            },
+            children: [$text(item)],
+          })
       ),
     ],
   });
@@ -206,8 +221,10 @@ function mouseFollowerExample() {
   const mouse = new MouseState();
   const backgroundColor = new State("#ff0088");
   const delay = new State<number>(50);
+  const throttle = new State<number>(50);
   const transform = mouse
     .delay(delay)
+    .throttle(throttle)
     .map((m) => `translate(${m.x}px, ${m.y}px)`);
 
   function setRandomColor() {
@@ -232,12 +249,31 @@ function mouseFollowerExample() {
           backgroundColor,
         },
       }),
-      input({
-        type: "range",
-        min: 0,
-        max: 300,
-        step: 1,
-        value: delay.bind(), // value bind automatically converts value back to the initialValue's type
+      div({
+        class: "input-group",
+        children: [
+          h3({ children: [$text(delay.map((n) => `Delay (${n}ms)`))] }),
+          input({
+            type: "range",
+            min: 0,
+            max: 300,
+            step: 1,
+            value: delay.bind(), // value bind automatically converts value back to the initialValue's type
+          }),
+        ],
+      }),
+      div({
+        class: "input-group",
+        children: [
+          h3({ children: [$text(throttle.map((n) => `Throttle (${n}ms)`))] }),
+          input({
+            type: "range",
+            min: 0,
+            max: 300,
+            step: 1,
+            value: throttle.bind(), // value bind automatically converts value back to the initialValue's type
+          }),
+        ],
       }),
       $when(
         backgroundColor.map((x) => x !== "#ff0088"),
@@ -277,7 +313,7 @@ const component = div({
     counterExample(),
     twoWayBindExample(),
     conditionalExample(),
-    // mapExample(),
+    mapExample(),
     mouseFollowerExample(),
   ],
 });

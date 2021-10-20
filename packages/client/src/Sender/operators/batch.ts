@@ -1,7 +1,7 @@
 import { TransformFunc } from "../../types";
 
 /**
- * Groups several values and sends them as an array, either when the `size` is reached
+ * Groups several messages and sends them as an array, either when the `size` is reached
  * or after `ms` milliseconds passes since the last message.
  *
  * @param size - Amount of items to accumulate before sending the array.
