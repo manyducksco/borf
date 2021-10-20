@@ -15,6 +15,7 @@ const forwardProps: (keyof BaseComponentProps)[] = [
   "min",
   "max",
   "step",
+  "disabled",
 ];
 
 /**
@@ -61,6 +62,8 @@ export interface BaseComponentProps {
   max?: string | number;
   step?: string | number;
 
+  disabled?: boolean | Subscribable<boolean>;
+
   // Event handlers
   onClick?: (event: MouseEvent) => any;
   onMouseDown?: (event: MouseEvent) => any;
@@ -105,6 +108,7 @@ export class BaseComponent implements Component {
     this.root = root;
     this.props = Object.freeze(props ?? {});
 
+    // TODO: Cancel receivers while unmounted
     this.applyClasses();
     this.applyStyles();
     this.attachEvents();
@@ -247,12 +251,27 @@ export class BaseComponent implements Component {
       for (const name of forwardProps) {
         const attr = this.props[name];
 
-        if (isSubscribable<Stringifyable>(attr)) {
-          this.subscribeTo(attr, (value, root) => {
-            root.setAttribute(name, value.toString());
-          });
-        } else if (attr) {
-          this.root.setAttribute(name, String(attr));
+        // TODO: Handle props based on their type (bool, string, etc.) instead of individually by name
+        if (name === "disabled") {
+          if (isSubscribable<boolean>(attr)) {
+            this.subscribeTo(attr, (value, root) => {
+              if (value) {
+                root.setAttribute(name, "disabled");
+              } else {
+                root.removeAttribute(name);
+              }
+            });
+          } else if (attr) {
+            this.root.setAttribute(name, "disabled");
+          }
+        } else {
+          if (isSubscribable<Stringifyable>(attr)) {
+            this.subscribeTo(attr, (value, root) => {
+              root.setAttribute(name, value.toString());
+            });
+          } else if (attr) {
+            this.root.setAttribute(name, String(attr));
+          }
         }
       }
     }

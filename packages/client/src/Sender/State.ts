@@ -1,4 +1,4 @@
-import { Binding, Receiver } from "../types";
+import { Binding } from "../types";
 import { StateTransmitter } from "./StateTransmitter";
 
 /**

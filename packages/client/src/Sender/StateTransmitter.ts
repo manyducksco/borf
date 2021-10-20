@@ -71,26 +71,4 @@ export class StateTransmitter<I, O = I> extends Transmitter<I, O> {
       this._send(value);
     }
   }
-
-  /**
-   * Sends a value to all receivers.
-   *
-   * @param value - Data to send
-   */
-  protected _send(value: O) {
-    for (const receiver of this._receivers) {
-      if (receiver.callback) {
-        receiver.callback(value);
-      }
-    }
-  }
-
-  /**
-   * Cancels a receiver, preventing it from receiving any new values.
-   *
-   * @param receiver - Receiver to cancel
-   */
-  protected _cancel(receiver: Receiver<O>) {
-    this._receivers.splice(this._receivers.indexOf(receiver), 1);
-  }
 }

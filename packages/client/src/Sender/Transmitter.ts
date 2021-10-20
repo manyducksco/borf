@@ -61,11 +61,16 @@ export class Transmitter<I, O = I> implements Sender<O> {
    * @param message - Data to send
    */
   protected _send(message: O) {
+    let count = 0;
+
     for (const receiver of this._receivers) {
       if (receiver.callback) {
+        count++;
         receiver.callback(message);
       }
     }
+
+    console.log(`sent to ${count} receivers`, message);
   }
 
   /**

@@ -202,14 +202,18 @@ interface MouseInfo {
 }
 
 class MouseState extends StateTransmitter<MouseInfo> {
+  paused: boolean = false;
+
   constructor() {
     super({ x: 0, y: 0 });
 
     window.addEventListener("mousemove", (e) => {
-      this._set({
-        x: e.pageX,
-        y: e.pageY,
-      });
+      if (!this.paused) {
+        this._set({
+          x: e.pageX,
+          y: e.pageY,
+        });
+      }
     });
   }
 }
@@ -218,14 +222,22 @@ class MouseState extends StateTransmitter<MouseInfo> {
 // const num = new TickState(1, 300, (n) => n + 1);
 
 function mouseFollowerExample() {
+  const enabled = new ToggleState(false);
   const mouse = new MouseState();
   const backgroundColor = new State("#ff0088");
-  const delay = new State<number>(50);
-  const throttle = new State<number>(50);
+  const delay = new State(50);
+  const throttle = new State(50);
   const transform = mouse
     .delay(delay)
     .throttle(throttle)
     .map((m) => `translate(${m.x}px, ${m.y}px)`);
+
+  mouse.paused = !enabled.current;
+
+  // pause mouse listener when disabled
+  enabled.receive((value) => {
+    mouse.paused = !value;
+  });
 
   function setRandomColor() {
     const hex = [Math.random() * 256, Math.random() * 256, Math.random() * 256]
@@ -242,13 +254,17 @@ function mouseFollowerExample() {
   return exampleSection({
     class: ["mouse-follower"],
     children: [
-      div({
-        class: "follower",
-        style: {
-          transform,
-          backgroundColor,
-        },
-      }),
+      // TODO: Optimize - unsubscribe while component is not mounted
+      $when(
+        enabled,
+        div({
+          class: "follower",
+          style: {
+            transform,
+            backgroundColor,
+          },
+        })
+      ),
       div({
         class: "input-group",
         children: [
@@ -279,12 +295,22 @@ function mouseFollowerExample() {
         backgroundColor.map((x) => x !== "#ff0088"),
         button({
           onClick: () => backgroundColor.set("#ff0088"),
+          disabled: enabled.map((x) => !x),
           children: [$text("Reset To Best Color")],
         })
       ),
       button({
         onClick: setRandomColor,
         children: [$text("Change Follower Color")],
+        disabled: enabled.map((x) => !x),
+      }),
+      button({
+        onClick: () => enabled.toggle(),
+        children: [
+          $text(
+            enabled.map((x) => (x ? "Turn Off Follower" : "Turn On Follower"))
+          ),
+        ],
       }),
     ],
   });
