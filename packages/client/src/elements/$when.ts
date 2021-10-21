@@ -1,5 +1,5 @@
 import { Subscribable, Subscription } from "../types";
-import { Component } from "./BaseComponent";
+import { Component } from "./Component";
 
 /**
  * Mounts a component when a condition is true and unmounts it when the condition is false.
@@ -10,54 +10,34 @@ import { Component } from "./BaseComponent";
 export const $when = (condition: Subscribable<boolean>, component: Component) =>
   new WhenComponent(condition, component);
 
-export class WhenComponent implements Component {
-  private node = document.createTextNode("");
-  private component: Component;
-  private subscription: Subscription<boolean>;
+export class WhenComponent extends Component {
+  private subscription?: Subscription<boolean>;
+  private currentValue = false;
 
-  private parent?: Node;
-  private after?: Node;
-
-  get root() {
-    return this.node;
+  constructor(
+    private condition: Subscribable<boolean>,
+    private component: Component
+  ) {
+    super(document.createTextNode(""));
   }
 
-  get isMounted() {
-    return this.parent != null;
-  }
+  beforeConnect() {
+    this.subscription = this.condition.subscribe();
 
-  constructor(condition: Subscribable<boolean>, component: Component) {
-    this.subscription = condition.subscribe();
-    this.component = component;
+    this.subscription.receiver.callback = (value) => {
+      this.currentValue = value;
 
-    this.subscription.receiver.callback = (newValue) => {
-      if (newValue && this.parent) {
-        if (this.node.parentNode) {
-          this.parent?.removeChild(this.node);
-        }
-
-        this.component.mount(this.parent, this.after);
+      if (value && this.root.parentNode) {
+        this.component.connect(this.root.parentNode, this.root);
       } else {
-        this.parent?.insertBefore(this.node, this.component.root);
-        this.component.unmount();
+        this.component.disconnect();
       }
     };
 
     this.subscription.receiver.callback(this.subscription.initialValue);
   }
 
-  mount(parent: Node, after?: Node) {
-    this.parent = parent;
-    this.after = after;
-  }
-
-  unmount() {
-    this.component.unmount();
-    if (this.node.parentNode) {
-      this.parent?.removeChild(this.node);
-    }
-
-    this.parent = undefined;
-    this.after = undefined;
+  disconnected() {
+    this.component.disconnect();
   }
 }

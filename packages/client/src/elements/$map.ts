@@ -1,5 +1,5 @@
 import { Subscribable, Subscription } from "../types";
-import { BaseComponent, Component } from "./BaseComponent";
+import { Component } from "./Component";
 
 type MapStateItem = {
   index: number;
@@ -20,18 +20,18 @@ export const $map = <T>(
   createItem: (item: T) => Component
 ) => new MapComponent<T>(list, getKey, createItem);
 
-class MapComponent<T> implements Component {
+class MapComponent<T> extends Component {
   private subscription: Subscription<T[]>;
   private state: MapStateItem[] = [];
   private parent?: Node;
-  isMounted = false;
-  root = document.createTextNode("");
 
   constructor(
     list: Subscribable<T[]>,
     private getKey: (item: T) => string | number,
     private createItem: (item: T) => Component
   ) {
+    super(document.createTextNode(""));
+
     this.subscription = list.subscribe();
 
     this.subscription.receiver.callback = this.update.bind(this);
@@ -90,22 +90,19 @@ class MapComponent<T> implements Component {
       });
     }
 
-    console.log({ keys: newKeys, added, removed, moved, newState });
-
     // Batch all changes into an animation frame
     requestAnimationFrame(() => {
       // Unmount removed components
-
       for (const entry of removed) {
         const item = this.state.find((x) => x.key === entry.key);
 
-        item?.component.unmount();
+        item?.component.disconnect();
       }
 
-      // Mount new components
+      // Remount components in new order
       let previous: Node = this.root;
       for (const item of newState) {
-        item.component.mount(this.parent!, previous);
+        item.component.connect(this.parent!, previous);
 
         if (item.component.hasOwnProperty("root")) {
           previous = item.component.root;
@@ -116,29 +113,18 @@ class MapComponent<T> implements Component {
     });
   }
 
-  mount(parent: Node, after?: Node) {
-    this.parent = parent;
-
-    parent.insertBefore(this.root, after ? after.nextSibling : null);
-
+  connected() {
     let previous: Node = this.root;
 
     for (const item of this.state) {
-      item.component.mount(parent, previous);
-
-      if (item.component.hasOwnProperty("root")) {
-        previous = item.component.root;
-      }
+      item.component.connect(this.root.parentNode!, previous);
+      previous = item.component.root;
     }
-
-    this.isMounted = true;
   }
 
-  unmount() {
+  disconnected() {
     for (const item of this.state) {
-      item.component.unmount();
+      item.component.disconnect();
     }
-
-    this.isMounted = false;
   }
 }

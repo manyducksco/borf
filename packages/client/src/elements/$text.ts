@@ -1,10 +1,6 @@
-import { Subscribable } from "../types";
-import { isString, isSubscribable } from "../utils";
-import { Component } from "./BaseComponent";
-
-interface Stringifyable {
-  toString(): string;
-}
+import { Stringifyable, Subscribable, Subscription } from "../types";
+import { isString } from "../utils";
+import { Component } from "./Component";
 
 /**
  * Displays text content.
@@ -13,45 +9,48 @@ interface Stringifyable {
  * @param defaultValue - optional value to display when value is an empty string
  */
 export const $text = (
-  value: Stringifyable | Subscribable<Stringifyable>,
+  source: string | Subscribable<Stringifyable>,
   defaultValue?: Stringifyable
-) => new TextComponent(value, defaultValue);
+) => new TextComponent(source, defaultValue);
 
-class TextComponent implements Component {
-  root = document.createTextNode("");
-
-  get isMounted() {
-    return this.root.parentNode != null;
-  }
+export class TextComponent extends Component {
+  declare root: Text;
+  protected subscription?: Subscription<Stringifyable>;
+  protected source?: Subscribable<Stringifyable>;
+  private isStatic: boolean;
 
   constructor(
-    value: Stringifyable | Subscribable<Stringifyable>,
-    defaultValue?: Stringifyable
+    source: string | Subscribable<Stringifyable>,
+    protected fallbackText?: Stringifyable
   ) {
-    if (isString(value)) {
-      this.root.textContent = value;
-    } else if (isSubscribable<Stringifyable>(value)) {
-      const { initialValue, receiver } = value.subscribe();
+    const isStatic = isString(source);
+    const initialValue = isStatic ? source : "";
 
-      receiver.callback = (newValue) => {
-        if (newValue || defaultValue == null) {
-          this.root.textContent = newValue.toString();
+    super(document.createTextNode(initialValue));
+
+    this.isStatic = false;
+  }
+
+  beforeConnect() {
+    if (!this.isStatic && !this.subscription) {
+      this.subscription = this.source!.subscribe();
+
+      this.subscription.receiver.callback = (value) => {
+        if (value || this.fallbackText == null) {
+          this.root.textContent = value.toString();
         } else {
-          this.root.textContent = defaultValue.toString();
+          this.root.textContent = this.fallbackText.toString();
         }
       };
 
-      receiver.callback(initialValue);
+      this.subscription.receiver.callback(this.subscription.initialValue);
     }
   }
 
-  mount(parent: Node, after?: Node) {
-    parent.insertBefore(this.root, after ? after.nextSibling : null);
-  }
-
-  unmount() {
-    if (this.root.parentNode) {
-      this.root.parentNode.removeChild(this.root);
+  disconnected() {
+    if (this.subscription) {
+      this.subscription.receiver.cancel();
+      this.subscription = undefined;
     }
   }
 }

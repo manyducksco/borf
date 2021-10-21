@@ -16,7 +16,8 @@ import {
   span,
   h3,
 } from "./elements";
-import { Component, ElementClasses } from "./elements/BaseComponent";
+import { Component } from "./elements/Component";
+import { ElementClasses } from "./elements/HTMLComponent";
 import { StateTransmitter } from "./Sender/StateTransmitter";
 
 /*===========================*\
@@ -136,13 +137,13 @@ function conditionalExample() {
       $when(
         show,
         span({
-          onMount() {
+          connected() {
             console.log("text was mounted");
           },
-          onUnmount() {
+          disconnected() {
             console.log("text was unmounted");
           },
-          children: [$text(" Hello there!")],
+          children: [" Hello there!"],
         })
       ),
     ],
@@ -164,7 +165,7 @@ function mapExample() {
         onClick() {
           list.set(list.current.map((x) => x).sort());
         },
-        children: [$text("Sort A to Z")],
+        children: ["Sort A to Z"],
       }),
       button({
         onClick() {
@@ -175,7 +176,7 @@ function mapExample() {
               .reverse()
           );
         },
-        children: [$text("Sort Z to A")],
+        children: ["Sort Z to A"],
       }),
       $map(
         list,
@@ -344,4 +345,4 @@ const component = div({
   ],
 });
 
-component.mount(document.getElementById("root")!);
+component.connect(document.getElementById("root")!);
