@@ -46,6 +46,349 @@
   <body>
     <div id="root"></div>
 
-    <script src="./dist/main.modern.js" type="module"></script>
+    <script type="module">
+      import {
+        State,
+        StateTransmitter,
+        Component,
+        $map,
+        $when,
+        $text,
+        E,
+      } from "./dist/main.modern.js";
+
+      /*===========================*\
+      ||        Class Toggle       ||
+      \*===========================*/
+
+      class ToggleState extends State {
+        toggle() {
+          this.set(!this.current);
+        }
+      }
+
+      function classToggleExample() {
+        const active = new ToggleState(false);
+        const status = active.map((active) => (active ? "ON" : "OFF"));
+
+        setInterval(() => {
+          active.toggle();
+        }, 2000);
+
+        return E("div", {
+          class: {
+            example: true,
+            active: active,
+          },
+          children: [$text(status)],
+        });
+      }
+
+      /*===========================*\
+      ||       Counter + Map       ||
+      \*===========================*/
+
+      class CounterState extends State {
+        increment() {
+          this.set(this.current + 1);
+        }
+
+        decrement() {
+          this.set(this.current - 1);
+        }
+      }
+
+      function counterExample() {
+        const counter = new CounterState(0);
+        const label = counter.map((n) => ` the number is: ${n}`);
+
+        return E("div", {
+          class: ["example", "two"],
+          children: [
+            E("button", {
+              onClick() {
+                counter.increment();
+              },
+              children: [$text("Increment")],
+            }),
+            E("button", {
+              onClick() {
+                counter.decrement();
+              },
+              children: [$text("Decrement")],
+            }),
+            $text(label),
+          ],
+        });
+      }
+
+      /*===========================*\
+      ||      Two Way Binding      ||
+      \*===========================*/
+
+      function twoWayBindExample() {
+        const text = new State("");
+        const size = new State(18);
+
+        text.receive(console.log);
+        size.receive(console.log);
+
+        return E("div", {
+          class: ["example", { three: true }],
+          children: [
+            E("input", {
+              value: text.bind(),
+            }),
+            E("input", {
+              type: "number",
+              value: size.bind(),
+            }),
+            E("p", {
+              children: [$text(text, "Type Above")],
+              style: {
+                fontSize: size.map((s) => `${s}px`),
+              },
+            }),
+          ],
+        });
+      }
+
+      /*===========================*\
+      ||   Conditional Rendering   ||
+      \*===========================*/
+
+      function conditionalExample() {
+        const show = new ToggleState(false);
+        const label = show.map((visible) =>
+          visible ? "Hide Text" : "Show Text"
+        );
+
+        return E("div", {
+          class: ["example", "four"],
+          children: [
+            E("button", {
+              onClick() {
+                show.toggle();
+              },
+              children: [$text(label)],
+            }),
+            $when(
+              show,
+              E("span", {
+                connected() {
+                  console.log("text was mounted");
+                },
+                disconnected() {
+                  console.log("text was unmounted");
+                },
+                children: [" Hello there!"],
+              })
+            ),
+          ],
+        });
+      }
+
+      /*===========================*\
+      ||      Rendering Lists      ||
+      \*===========================*/
+
+      // TODO: Implement 'sort' as a transform function
+      function mapExample() {
+        const shoppingList = new State([
+          "りんご",
+          "バナナ",
+          "じゃがいも",
+          "唐揚げ",
+        ]);
+
+        return E("div", {
+          class: ["example", "five"],
+          children: [
+            E("button", {
+              onClick() {
+                shoppingList.set(shoppingList.current.map((x) => x).sort());
+              },
+              children: ["Sort A to Z"],
+            }),
+            E("button", {
+              onClick() {
+                shoppingList.set(
+                  shoppingList.current
+                    .map((x) => x)
+                    .sort()
+                    .reverse()
+                );
+              },
+              children: ["Sort Z to A"],
+            }),
+            $map(
+              shoppingList,
+              (x) => x,
+              (item) =>
+                E("li", {
+                  onClick() {
+                    alert(item);
+                  },
+                  children: [$text(item)],
+                })
+            ),
+          ],
+        });
+      }
+
+      /*===========================*\
+      ||       Mouse Follower      ||
+      \*===========================*/
+
+      class MouseState extends StateTransmitter {
+        paused = false;
+
+        constructor() {
+          super({ x: 0, y: 0 });
+
+          window.addEventListener("mousemove", (e) => {
+            if (!this.paused) {
+              this._set({
+                x: e.pageX,
+                y: e.pageY,
+              });
+            }
+          });
+        }
+      }
+
+      // every X ms pass the function the old state and take its return value as the next state
+      // const num = new TickState(1, 300, (n) => n + 1);
+
+      function mouseFollowerExample() {
+        const enabled = new ToggleState(false);
+        const mouse = new MouseState();
+        const backgroundColor = new State("#ff0088");
+        const delay = new State(50);
+        const throttle = new State(50);
+        const transform = mouse
+          .delay(delay)
+          .throttle(throttle)
+          .map((m) => `translate(${m.x}px, ${m.y}px)`);
+
+        mouse.paused = !enabled.current;
+
+        // pause mouse listener when disabled
+        enabled.receive((value) => {
+          mouse.paused = !value;
+        });
+
+        function setRandomColor() {
+          const hex = [
+            Math.random() * 256,
+            Math.random() * 256,
+            Math.random() * 256,
+          ]
+            .map(Math.floor)
+            .map((n) => n.toString(16))
+            .join("");
+
+          backgroundColor.set("#" + hex);
+        }
+
+        // backgroundColor.receive(console.log);
+        // delay.receive(console.log);
+
+        return exampleSection({
+          class: ["mouse-follower"],
+          children: [
+            // TODO: Optimize - unsubscribe while component is not mounted
+            $when(
+              enabled,
+              E("div", {
+                class: "follower",
+                style: {
+                  transform,
+                  backgroundColor,
+                },
+              })
+            ),
+            E("div", {
+              class: "input-group",
+              children: [
+                E("h3", {
+                  children: [$text(delay.map((n) => `Delay (${n}ms)`))],
+                }),
+                E("input", {
+                  type: "range",
+                  min: 0,
+                  max: 300,
+                  step: 1,
+                  value: delay.bind(), // value bind automatically converts value back to the initialValue's type
+                }),
+              ],
+            }),
+            E("div", {
+              class: "input-group",
+              children: [
+                E("h3", {
+                  children: [$text(throttle.map((n) => `Throttle (${n}ms)`))],
+                }),
+                E("input", {
+                  type: "range",
+                  min: 0,
+                  max: 300,
+                  step: 1,
+                  value: throttle.bind(), // value bind automatically converts value back to the initialValue's type
+                }),
+              ],
+            }),
+            $when(
+              backgroundColor.map((x) => x !== "#ff0088"),
+              E("button", {
+                onClick: () => backgroundColor.set("#ff0088"),
+                disabled: enabled.map((x) => !x),
+                children: [$text("Reset To Best Color")],
+              })
+            ),
+            E("button", {
+              onClick: setRandomColor,
+              children: [$text("Change Follower Color")],
+              disabled: enabled.map((x) => !x),
+            }),
+            E("button", {
+              onClick: () => enabled.toggle(),
+              children: [
+                $text(
+                  enabled.map((x) =>
+                    x ? "Turn Off Follower" : "Turn On Follower"
+                  )
+                ),
+              ],
+            }),
+          ],
+        });
+      }
+
+      // Example of a component function
+      function exampleSection(props) {
+        return E("div", {
+          class: ["example", props.class],
+          children: [...(props.children || [])],
+        });
+      }
+
+      /*===========================*\
+      ||           Render          ||
+      \*===========================*/
+
+      const component = div({
+        children: [
+          classToggleExample(),
+          counterExample(),
+          twoWayBindExample(),
+          conditionalExample(),
+          mapExample(),
+          mouseFollowerExample(),
+        ],
+      });
+
+      component.connect(document.getElementById("root"));
+    </script>
   </body>
 </html>

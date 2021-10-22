@@ -61,3 +61,65 @@ Router.link({
   class: "super-link",
 });
 ```
+
+```js
+// Global state object
+interface Globals {
+  title: State;
+  route: {
+    switch: (routes) => Component,
+  };
+}
+```
+
+Routes take a path and then any number of route functions. Route functions take the route object, a `next` function and a third `data` parameter that is whatever the previous function passed when calling `next`.
+
+If the route function returns nothing the previous route will stay mounted until `next` is called. If the route function returns a Component, that component will be mounted when the route function is called and unmounted when `next` is called. Several components can be chained together like middleware to set up analytics, fetching, loading screens or whatever. You could probably build a text adventure with chained route functions and creative redirects.
+
+```js
+app.route(
+  "/some/:id",
+  (route, next) => {
+    fetch(`/api/example/${route.params.id}`)
+      .then((res) => res.json())
+      .then(next);
+
+    return LoaderComponent();
+  },
+  (route, next, data) => {
+    // data is the value the previous function called `next` with
+
+    if (data.userIsAdmin) {
+      next();
+    } else {
+      route.redirect("/other/page");
+    }
+  },
+  component
+);
+```
+
+Nested routes can be done with the route object's `switch` function. This takes an array of route arrays which follow the same pattern of one path string followed by one or more route functions.
+
+```js
+app.route("/test", (route) => {
+  return E("div", {
+    children: [
+      E("h1", {
+        children: ["Persistent Content"],
+      }),
+
+      E("p", {
+        children: [
+          "Subroutes will be rendered below but this content will remain unchanged.",
+        ],
+      }),
+
+      route.switch([
+        ["/edit", routeFunction],
+        ["/create", routeFunction],
+      ]),
+    ],
+  });
+});
+```

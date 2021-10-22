@@ -1,6 +1,10 @@
 import { Stringifyable, Subscribable, Subscription } from "../types";
-import { isString } from "../utils";
+import { isString, isSubscribable } from "../utils";
 import { Component } from "./Component";
+
+interface toStringable {
+  toString: () => string;
+}
 
 /**
  * Displays text content.
@@ -9,30 +13,38 @@ import { Component } from "./Component";
  * @param defaultValue - optional value to display when value is an empty string
  */
 export const $text = (
-  source: string | Subscribable<Stringifyable>,
-  defaultValue?: Stringifyable
+  source: toStringable | Subscribable<toStringable>,
+  defaultValue?: toStringable
 ) => new TextComponent(source, defaultValue);
 
 export class TextComponent extends Component {
   declare root: Text;
-  protected subscription?: Subscription<Stringifyable>;
-  protected source?: Subscribable<Stringifyable>;
+  protected subscription?: Subscription<toStringable>;
+  protected source?: Subscribable<toStringable>;
   private isStatic: boolean;
 
   constructor(
-    source: string | Subscribable<Stringifyable>,
-    protected fallbackText?: Stringifyable
+    source: toStringable | Subscribable<toStringable>,
+    protected fallbackText?: toStringable
   ) {
-    const isStatic = isString(source);
-    const initialValue = isStatic ? source : "";
+    const isStatic = !isSubscribable<toStringable>(source);
+    const initialValue = isStatic ? source.toString() : "";
 
     super(document.createTextNode(initialValue));
 
-    this.isStatic = false;
+    this.isStatic = isStatic;
+
+    if (!isStatic) {
+      this.source = source;
+    }
   }
 
   beforeConnect() {
-    if (!this.isStatic && !this.subscription) {
+    if (this.isStatic) {
+      return;
+    }
+
+    if (!this.subscription) {
       this.subscription = this.source!.subscribe();
 
       this.subscription.receiver.callback = (value) => {

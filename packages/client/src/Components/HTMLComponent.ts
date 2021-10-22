@@ -29,6 +29,8 @@ const booleanProps = [
   "translate",
 ];
 
+const eventRegex = /^on[A-Z]/;
+
 /**
  * Classes can be in a variety of formats:
  *
@@ -168,12 +170,12 @@ export class HTMLComponent extends Component {
   }
 
   beforeConnect() {
-    const { props } = this;
+    const { props, root, children } = this;
 
     let previous = null;
 
-    for (const child of this.children) {
-      child.connect(this.root, previous?.root);
+    for (const child of children) {
+      child.connect(root, previous?.root);
       previous = child;
     }
 
@@ -229,7 +231,7 @@ export class HTMLComponent extends Component {
 
   private attachEvents() {
     for (const key in this.props) {
-      if (/^on[A-Z][a-zA-Z]+$/.test(key)) {
+      if (eventRegex.test(key)) {
         const eventName = key.slice(2).toLowerCase();
         const listener = this.props[
           key as keyof HTMLComponentProps
@@ -323,7 +325,7 @@ export class HTMLComponent extends Component {
   private applyAttrs() {
     if (this.root instanceof HTMLElement) {
       for (const name in this.props) {
-        if (!customProps.includes(name)) {
+        if (!customProps.includes(name) && !eventRegex.test(name)) {
           const attr = this.props[name as keyof HTMLComponentProps];
 
           if (booleanProps.includes(name)) {

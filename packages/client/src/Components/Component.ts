@@ -6,7 +6,7 @@ export class Component {
   root: Node;
 
   get isConnected() {
-    return this.root.isConnected;
+    return this.root.parentNode != null;
   }
 
   constructor(root: Node) {

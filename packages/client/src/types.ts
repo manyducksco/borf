@@ -8,11 +8,7 @@ export interface Receiver<T> {
 }
 
 export interface Stringifyable {
-  toString(): string;
-}
-
-export interface Subscribable<T> {
-  subscribe(): Subscription<T>;
+  toString: () => string;
 }
 
 /**
@@ -24,15 +20,15 @@ export interface Subscription<T> {
   receiver: Receiver<T>;
 }
 
+export interface Subscribable<T> {
+  subscribe(): Subscription<T>;
+}
+
 /**
  * Two way data binding. A subscription with an extra 'set' function that updates the subscribed value.
  */
 export interface Binding<T> extends Subscription<T> {
   set: (value: T) => void;
-}
-
-export interface Subscribable<T> {
-  subscribe(): Subscription<T>;
 }
 
 export interface Bindable<T> {

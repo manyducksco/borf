@@ -21,9 +21,10 @@ export const $map = <T>(
 ) => new MapComponent<T>(list, getKey, createItem);
 
 class MapComponent<T> extends Component {
-  private subscription: Subscription<T[]>;
+  declare root: Text;
+  private source: Subscribable<T[]>;
+  private subscription?: Subscription<T[]>;
   private state: MapStateItem[] = [];
-  private parent?: Node;
 
   constructor(
     list: Subscribable<T[]>,
@@ -31,14 +32,14 @@ class MapComponent<T> extends Component {
     private createItem: (item: T) => Component
   ) {
     super(document.createTextNode(""));
-
-    this.subscription = list.subscribe();
-
-    this.subscription.receiver.callback = this.update.bind(this);
-    this.update(this.subscription.initialValue);
+    this.source = list;
   }
 
   private update(list: T[]) {
+    if (!this.isConnected) {
+      return;
+    }
+
     const newKeys = list.map(this.getKey);
     const added: { i: number; key: string | number }[] = [];
     const removed: { i: number; key: string | number }[] = [];
@@ -99,30 +100,47 @@ class MapComponent<T> extends Component {
         item?.component.disconnect();
       }
 
+      const fragment = new DocumentFragment();
+
       // Remount components in new order
-      let previous: Node = this.root;
+      let previous: Node | undefined = undefined;
       for (const item of newState) {
-        item.component.connect(this.parent!, previous);
+        item.component.connect(fragment, previous);
 
         if (item.component.hasOwnProperty("root")) {
           previous = item.component.root;
         }
       }
 
+      this.root.parentNode!.insertBefore(fragment, this.root.nextSibling);
+
       this.state = newState;
     });
   }
 
   connected() {
-    let previous: Node = this.root;
+    console.log(
+      this.root,
+      this.root.parentNode,
+      this.root.parentElement,
+      this.isConnected
+    );
 
-    for (const item of this.state) {
-      item.component.connect(this.root.parentNode!, previous);
-      previous = item.component.root;
+    if (!this.subscription) {
+      this.subscription = this.source.subscribe();
+
+      this.subscription.receiver.callback = this.update.bind(this);
+      this.update(this.subscription.initialValue);
+
+      console.log(this.isConnected);
     }
   }
 
   disconnected() {
+    if (this.subscription) {
+      this.subscription.receiver.cancel();
+    }
+
     for (const item of this.state) {
       item.component.disconnect();
     }
