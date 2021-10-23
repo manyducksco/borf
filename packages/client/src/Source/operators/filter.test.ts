@@ -1,12 +1,14 @@
 import { filter } from "./filter";
-import { TestSender } from "../_test/TestSender";
+import { TestSource } from "../_test/TestSource";
 
 test("forwards only values that match the condition", () => {
   const condition = (n: number) => n % 2 === 0;
-  const sender = new TestSender<number>(filter(condition));
+  const sender = new TestSource(1);
+  const filtered = filter(sender, condition);
   const fn = jest.fn();
 
-  sender.receive(fn);
+  const receiver = filtered.receive();
+  receiver.listen(fn);
 
   sender.send(2);
   sender.send(3);

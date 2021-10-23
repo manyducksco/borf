@@ -59,14 +59,13 @@ pipe.send(value, (response) => {
   // send data and process replies
 });
 
-pipe.receive((value, reply) => {});
+pipe.receive((value, reply) => {
+  // receive value and optionally reply
+});
 ```
 
 ## Terminology
 
-- Sender: Generates messages and transmits them to Receivers.
-- Receiver: Receives messages from a Sender and takes action.
-- Message: Data sent from a Sender to a Receiver.
-- Relay: A Sender that receives and retransmits messages; verbatim, conditionally, or after transforming the message into something else.
-- State: Type of Sender that retains data and transmits when it changes.
-- StateRelay: Type of Relay that retains the last data it sent.
+- Transmitter: The main source of data. Elements can receive transmitted properties and update when they change.
+- Component: 
+- State: Type of Transmitter that retains data and transmits when it changes
