@@ -1,41 +1,32 @@
-import { Listener, Operator, Receivable, Receiver } from "./types";
+import { map } from "./operators/map";
+import { Source } from "./Source";
+import { Listenable, Listener, Operator } from "./types";
 
 /**
  * Forwards values sent from a Source through an operator function.
  */
-export class Relay<Input, Output = Input> implements Receivable<Output> {
-  protected source: Receivable<Input>;
+export class Relay<Input, Output = Input> implements Listenable<Output> {
+  protected source: Listenable<Input>;
   protected operator: Operator<Input, Output>;
-  protected receiver: Receiver<Input>;
 
-  constructor(source: Receivable<Input>, operator: Operator<Input, Output>) {
+  constructor(source: Listenable<Input>, operator: Operator<Input, Output>) {
     this.source = source;
     this.operator = operator;
-    this.receiver = source.receive();
   }
 
-  /**
-   * Returns an object with methods for receiving values. The `pull` function retrieves the current value on demand,
-   * while the `listen` function takes a callback and returns a function to cancel the listener.
-   */
-  receive(): Receiver<Output> {
-    const { receiver, operator } = this;
+  get current() {
+    let pulled: Output;
 
-    return {
-      pull: () => {
-        let pulled: Output;
+    this.operator(this.source.current, (value) => {
+      pulled = value;
+    });
 
-        operator(receiver.pull(), (value) => {
-          pulled = value;
-        });
+    return pulled!;
+  }
 
-        return pulled!;
-      },
-      listen: (callback: Listener<Output>) => {
-        return receiver.listen((value) => {
-          operator(value, callback);
-        });
-      },
-    };
+  listen(callback: Listener<Output>) {
+    return this.source.listen((value) => {
+      this.operator(value, callback);
+    });
   }
 }

@@ -1,5 +1,5 @@
-import { Stringifyable, Subscribable, Subscription } from "../types";
-import { isString, isSubscribable } from "../utils";
+import { Listenable } from "../Source";
+import { isListenable } from "../utils";
 import { Component } from "./Component";
 
 interface toStringable {
@@ -13,26 +13,23 @@ interface toStringable {
  * @param defaultValue - optional value to display when value is an empty string
  */
 export const $text = (
-  source: toStringable | Subscribable<toStringable>,
+  source: toStringable | Listenable<toStringable>,
   defaultValue?: toStringable
 ) => new TextComponent(source, defaultValue);
 
 export class TextComponent extends Component {
   declare root: Text;
-  protected subscription?: Subscription<toStringable>;
-  protected source?: Subscribable<toStringable>;
-  private isStatic: boolean;
+  private source?: Listenable<toStringable>;
+  private cancel?: () => void;
 
   constructor(
-    source: toStringable | Subscribable<toStringable>,
+    source: toStringable | Listenable<toStringable>,
     protected fallbackText?: toStringable
   ) {
-    const isStatic = !isSubscribable<toStringable>(source);
+    const isStatic = !isListenable<toStringable>(source);
     const initialValue = isStatic ? source.toString() : "";
 
     super(document.createTextNode(initialValue));
-
-    this.isStatic = isStatic;
 
     if (!isStatic) {
       this.source = source;
@@ -40,14 +37,12 @@ export class TextComponent extends Component {
   }
 
   beforeConnect() {
-    if (this.isStatic) {
+    if (!this.source) {
       return;
     }
 
-    if (!this.subscription) {
-      this.subscription = this.source!.subscribe();
-
-      this.subscription.receiver.callback = (value) => {
+    if (!this.cancel) {
+      const callback = (value: toStringable) => {
         if (value || this.fallbackText == null) {
           this.root.textContent = value.toString();
         } else {
@@ -55,14 +50,16 @@ export class TextComponent extends Component {
         }
       };
 
-      this.subscription.receiver.callback(this.subscription.initialValue);
+      this.cancel = this.source.listen(callback);
+
+      callback(this.source.current);
     }
   }
 
   disconnected() {
-    if (this.subscription) {
-      this.subscription.receiver.cancel();
-      this.subscription = undefined;
+    if (this.cancel) {
+      this.cancel();
+      this.cancel = undefined;
     }
   }
 }

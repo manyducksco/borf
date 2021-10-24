@@ -6,10 +6,9 @@ test("transforms received values", () => {
   const mapped = map(source, (n) => n * 2);
   const fn = jest.fn();
 
-  const receiver = mapped.receive();
-  receiver.listen(fn);
+  mapped.listen(fn);
 
-  expect(receiver.pull()).toBe(2);
+  expect(mapped.current).toBe(2);
 
   source.send(2);
   source.send(600);

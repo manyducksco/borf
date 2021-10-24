@@ -6,8 +6,7 @@ test("forwards only latest value after specified milliseconds", async () => {
   const delayed = delay(source, 20);
   const fn = jest.fn();
 
-  const receiver = delayed.receive();
-  receiver.listen(fn);
+  delayed.listen(fn);
 
   source.send(39);
   source.send(22);

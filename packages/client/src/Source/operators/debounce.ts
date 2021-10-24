@@ -1,4 +1,5 @@
-import { Receivable, Relay } from "..";
+import { Relay } from "../Relay";
+import { Listenable } from "../types";
 
 /**
  * Forwards the most recent value after values stop being received for `ms` milliseconds.
@@ -8,7 +9,7 @@ import { Receivable, Relay } from "..";
  * @param immediate - Forward value immediately if time since last value is more than `wait` ms.
  */
 export function debounce<T>(
-  source: Receivable<T>,
+  source: Listenable<T>,
   wait: number,
   immediate: boolean = false
 ) {

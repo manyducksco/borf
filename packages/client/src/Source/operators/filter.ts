@@ -1,4 +1,5 @@
-import { Receivable, Relay } from "..";
+import { Relay } from "../Source";
+import { Listenable } from "../types";
 
 /**
  * Forwards values only when the condition returns truthy for that value.
@@ -7,7 +8,7 @@ import { Receivable, Relay } from "..";
  * @param condition - Function to decide whether to forward the value.
  */
 export function filter<Type>(
-  source: Receivable<Type>,
+  source: Listenable<Type>,
   condition: (value: Type) => boolean
 ) {
   return new Relay<Type>(source, (value, send) => {

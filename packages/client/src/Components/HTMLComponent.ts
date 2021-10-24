@@ -1,5 +1,5 @@
-import { Binding, Stringifyable, Subscribable, Subscription } from "../types";
-import { isBinding, isBoolean, isString, isSubscribable } from "../utils";
+import { Bindable, Listenable, Stringifyable } from "../Source";
+import { isBinding, isBoolean, isListenable, isString } from "../utils";
 import { Component } from "./Component";
 import { getClassMap } from "./utils/getClassMap";
 import { toSameType } from "./utils/toSameType";
@@ -49,7 +49,7 @@ export type ElementClasses =
   | ElementClassArray;
 type ElementClass = string | undefined | null | false;
 type ElementClassObject = {
-  [className: string]: unknown | Subscription<unknown>;
+  [className: string]: unknown | Listenable<unknown>;
 };
 type ElementClassArray = Array<
   ElementClass | ElementClassObject | ElementClassArray
@@ -66,7 +66,7 @@ export interface HTMLComponentProps {
    */
   class?: ElementClasses;
 
-  value?: Stringifyable | Binding<Stringifyable> | Subscribable<Stringifyable>;
+  value?: Stringifyable | Bindable<Stringifyable> | Listenable<Stringifyable>;
 
   style?: CSSProps;
 
@@ -75,7 +75,7 @@ export interface HTMLComponentProps {
   max?: string | number;
   step?: string | number;
 
-  disabled?: boolean | Subscribable<boolean>;
+  disabled?: boolean | Listenable<boolean>;
 
   /**
    * Keyboard shortcut to activate or add focus to the element.
@@ -84,27 +84,27 @@ export interface HTMLComponentProps {
    */
   accessKey?: string;
 
-  contentEditable?: boolean | Subscribable<boolean>;
+  contentEditable?: boolean | Listenable<boolean>;
 
-  draggable?: boolean | Subscribable<boolean>;
+  draggable?: boolean | Listenable<boolean>;
 
-  hidden?: boolean | Subscribable<boolean>;
+  hidden?: boolean | Listenable<boolean>;
 
   id?: string;
 
-  lang?: string | Subscribable<string>;
+  lang?: string | Listenable<string>;
 
-  spellCheck?: boolean | Subscribable<boolean>;
+  spellCheck?: boolean | Listenable<boolean>;
 
-  autoComplete?: boolean | Subscribable<boolean>;
+  autoComplete?: boolean | Listenable<boolean>;
 
-  autoFocus?: boolean | Subscribable<boolean>;
+  autoFocus?: boolean | Listenable<boolean>;
 
-  title?: string | Subscribable<string>;
+  title?: string | Listenable<string>;
 
-  translate?: boolean | Subscribable<boolean>;
+  translate?: boolean | Listenable<boolean>;
 
-  tabIndex?: number | Subscribable<number>;
+  tabIndex?: number | Listenable<number>;
 
   /**
    * Data attributes. Any keys in this object will be appended to 'data-' and added to the element.
@@ -130,13 +130,13 @@ export interface HTMLComponentProps {
   disconnected?: () => void; // runs just after component is added to DOM
 }
 
-type SubscribableProps<T> = {
+type ListenableProps<T> = {
   [attr in keyof T as Exclude<attr, "length" | "parentRule">]:
     | T[attr]
-    | Subscribable<T[attr]>;
+    | Listenable<T[attr]>;
 };
 
-type CSSProps = Partial<SubscribableProps<CSSStyleDeclaration>>;
+type CSSProps = Partial<ListenableProps<CSSStyleDeclaration>>;
 
 export class TextNodeComponent extends Component {
   declare root: Text;
@@ -150,8 +150,7 @@ export class HTMLComponent extends Component {
   declare root: HTMLElement;
   protected props: Readonly<HTMLComponentProps>;
   protected children: Component[] = [];
-  protected subCancellers: Array<() => void> = [];
-  protected eventCancellers: Array<() => void> = [];
+  protected cancellers: Array<() => void> = [];
 
   constructor(tagName: string, props?: HTMLComponentProps) {
     super(document.createElement(tagName));
@@ -214,13 +213,8 @@ export class HTMLComponent extends Component {
       child.disconnect();
     }
 
-    // Cancel active subscriptions
-    for (const cancel of this.subCancellers) {
-      cancel();
-    }
-
-    // Cancel event listeners
-    for (const cancel of this.eventCancellers) {
+    // Cancel listens, bindings and event handlers
+    for (const cancel of this.cancellers) {
       cancel();
     }
 
@@ -239,7 +233,7 @@ export class HTMLComponent extends Component {
 
         this.root.addEventListener(eventName, listener);
 
-        this.eventCancellers.push(() => {
+        this.cancellers.push(() => {
           this.root.removeEventListener(eventName, listener);
         });
       }
@@ -249,29 +243,29 @@ export class HTMLComponent extends Component {
   private attachBindings() {
     if (this.root instanceof HTMLInputElement) {
       if (isBinding<Stringifyable>(this.props.value)) {
-        const { initialValue, receiver, set } = this.props.value;
+        const binding = this.props.value;
 
-        this.root.value = initialValue.toString();
-        receiver.callback = (value) => {
+        this.root.value = binding.get().toString();
+        const cancel = binding.listen((value) => {
           (this.root as HTMLInputElement).value = value.toString();
-        };
+        });
 
         // Set the value back after converting to the subscription's type
         this.root.addEventListener("input", (e) => {
-          set(toSameType(initialValue, (e.target as any).value));
+          binding.set(toSameType(binding.get(), (e.target as any).value));
         });
 
-        this.subCancellers.push(receiver.cancel.bind(receiver));
-      } else if (isSubscribable<Stringifyable>(this.props.value)) {
-        const sub = this.props.value.subscribe();
+        this.cancellers.push(cancel);
+      } else if (isListenable<Stringifyable>(this.props.value)) {
+        const listenable = this.props.value;
 
-        this.root.value = sub.initialValue.toString();
-
-        sub.receiver.callback = (value) => {
+        const cancel = listenable.listen((value: Stringifyable) => {
           (this.root as HTMLInputElement).value = value.toString();
-        };
+        });
 
-        this.subCancellers.push(sub.receiver.cancel.bind(sub.receiver));
+        this.root.value = listenable.current.toString();
+
+        this.cancellers.push(cancel);
       }
     }
   }
@@ -290,8 +284,8 @@ export class HTMLComponent extends Component {
             }
           }
 
-          if (isSubscribable<boolean>(value)) {
-            this.subscribeTo(value, (value, root) => {
+          if (isListenable<boolean>(value)) {
+            this.listenTo(value, (value, root) => {
               if (value) {
                 root.classList.add(name);
               } else {
@@ -312,8 +306,8 @@ export class HTMLComponent extends Component {
 
           if (isString(prop)) {
             this.root.style[name] = prop;
-          } else if (isSubscribable<string>(prop)) {
-            this.subscribeTo(prop, (value, root) => {
+          } else if (isListenable<string>(prop)) {
+            this.listenTo(prop, (value, root) => {
               root.style[name] = value;
             });
           }
@@ -329,8 +323,8 @@ export class HTMLComponent extends Component {
           const attr = this.props[name as keyof HTMLComponentProps];
 
           if (booleanProps.includes(name)) {
-            if (isSubscribable<boolean>(attr)) {
-              this.subscribeTo(attr, (value, root) => {
+            if (isListenable<boolean>(attr)) {
+              this.listenTo(attr, (value, root) => {
                 if (value) {
                   root.setAttribute(name, "");
                 } else {
@@ -341,8 +335,8 @@ export class HTMLComponent extends Component {
               this.root.setAttribute(name, "");
             }
           } else {
-            if (isSubscribable<Stringifyable>(attr)) {
-              this.subscribeTo(attr, (value, root) => {
+            if (isListenable<Stringifyable>(attr)) {
+              this.listenTo(attr, (value, root) => {
                 root.setAttribute(name, value.toString());
               });
             } else if (attr) {
@@ -354,21 +348,20 @@ export class HTMLComponent extends Component {
     }
   }
 
-  private subscribeTo<T>(
-    source: Subscribable<T>,
+  private listenTo<T>(
+    source: Listenable<T>,
     callback: (value: T, root: HTMLElement) => void
   ) {
     const root = this.root as HTMLElement;
-    const sub = source.subscribe();
 
-    sub.receiver.callback = (value) => {
+    const cancel = source.listen((value) => {
       requestAnimationFrame(() => {
         callback(value, root);
       });
-    };
+    });
 
-    sub.receiver.callback(sub.initialValue);
+    this.cancellers.push(cancel);
 
-    this.subCancellers.push(sub.receiver.cancel.bind(sub.receiver));
+    callback(source.current, root);
   }
 }

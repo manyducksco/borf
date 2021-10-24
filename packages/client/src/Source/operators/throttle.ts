@@ -1,4 +1,5 @@
-import { Receivable, Relay } from "..";
+import { Relay } from "../Relay";
+import { Listenable } from "../types";
 
 /**
  * Ignores all values sent for `ms` milliseconds after a value is sent.
@@ -6,7 +7,7 @@ import { Receivable, Relay } from "..";
  * @param source - Source from which to relay values.
  * @param wait - Milliseconds to wait before accepting values again.
  */
-export function throttle<Type>(source: Receivable<Type>, wait: number) {
+export function throttle<Type>(source: Listenable<Type>, wait: number) {
   let next = 0;
 
   return new Relay<Type>(source, (value, send) => {

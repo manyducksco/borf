@@ -1,4 +1,5 @@
-import { Receivable, Relay } from "..";
+import { Relay } from "../Relay";
+import { Listenable } from "../types";
 
 /**
  * Groups several messages and sends them as an array, either when the `size` is reached
@@ -9,7 +10,7 @@ import { Receivable, Relay } from "..";
  * @param wait - Milliseconds to wait before sending an incomplete array.
  */
 export function batch<Type>(
-  source: Receivable<Type>,
+  source: Listenable<Type>,
   size: number,
   wait: number
 ) {

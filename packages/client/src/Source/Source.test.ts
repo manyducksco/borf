@@ -10,25 +10,15 @@ describe("current", () => {
   });
 });
 
-describe("broadcast and receive", () => {
-  test("'pull' function returns current source value", () => {
-    const source = new TestSource(1);
-    const receiver = source.receive();
-
-    expect(receiver.pull()).toBe(1);
-    source.send(2);
-    expect(receiver.pull()).toBe(2);
-  });
-
+describe("broadcast and listen", () => {
   test("'listen' function listens for broadcasted values until cancelled", () => {
     const source = new TestSource(5);
-    const receiver = source.receive();
 
     const callbackOne = jest.fn();
     const callbackTwo = jest.fn();
 
-    const cancelOne = receiver.listen(callbackOne);
-    const cancelTwo = receiver.listen(callbackTwo);
+    const cancelOne = source.listen(callbackOne);
+    const cancelTwo = source.listen(callbackTwo);
 
     source.broadcast();
 

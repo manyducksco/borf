@@ -1,32 +1,42 @@
+export interface Stringifyable {
+  toString: () => string;
+}
+
 /**
  * Callback function that receives values broadcasted from a Source.
  */
-export type Listener<T> = (value: T) => void;
+export type Listener<Type> = (value: Type) => void;
 
 /**
- * Object that supplies methods for receiving values from a Source.
+ * Object that can take a callback to listen for value changes with a `listen` function.
+ * The `listen` function returns a function to cancel it.
  */
-export type Receiver<T> = {
-  pull: () => T;
-  listen: (callback: Listener<T>) => () => void;
+export type Listenable<Type> = {
+  current: Type;
+  listen: (callback: Listener<Type>) => () => void;
 };
 
 /**
  * A Receiver that also provides a set function to update the value.
  */
-export interface Binding<T> extends Receiver<T> {
-  set: (value: T) => void;
+export interface Binding<Type> {
+  get: () => Type;
+  set: (value: Type) => void;
+  listen: (callback: Listener<Type>) => () => void;
 }
 
 /**
- * Object with a value that can be received through a `receive` function.
+ * Object that can have its value bound with a `bind` function.
  */
-export type Receivable<T> = {
-  receive: () => Receiver<T>;
+export type Bindable<Type> = {
+  bind: () => Binding<Type>;
 };
 
 /**
  * A function through which values pass in a Relay.
  * It can choose whether to send and can optionally convert the value before sending.
  */
-export type Operator<I, O> = (value: I, send: (value: O) => void) => void;
+export type Operator<Input, Output> = (
+  value: Input,
+  send: (value: Output) => void
+) => void;

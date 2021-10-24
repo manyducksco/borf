@@ -1,9 +1,12 @@
-import { Listener, Receivable, Receiver } from "./types";
+import { map } from "./operators/map";
+import { filter } from "./operators/filter";
+import { delay } from "./operators/delay";
+import { Listenable, Listener, Operator } from "./types";
 
 /**
  * Base class for objects that broadcast one value to many listeners.
  */
-export abstract class Source<Type> implements Receivable<Type> {
+export abstract class Source<Type> implements Listenable<Type> {
   protected value: Type;
   protected listeners: Listener<Type>[] = [];
 
@@ -28,21 +31,69 @@ export abstract class Source<Type> implements Receivable<Type> {
   }
 
   /**
-   * Returns an object with methods for receiving values. The `pull` function retrieves the current value on demand,
-   * while the `listen` function takes a callback and returns a function to cancel the listener.
+   * Takes a callback and returns a function to cancel the listener.
+   *
+   * @param callback - Callback to listen for changed values.
    */
-  receive(): Receiver<Type> {
+  listen(callback: Listener<Type>) {
     const { listeners } = this;
 
-    return {
-      pull: () => this.value,
-      listen: (callback: Listener<Type>) => {
-        listeners.push(callback);
+    listeners.push(callback);
 
-        return function cancel() {
-          listeners.splice(listeners.indexOf(callback), 1);
-        };
-      },
+    return function cancel() {
+      listeners.splice(listeners.indexOf(callback), 1);
     };
+  }
+
+  map<To>(transform: (value: Type) => To) {
+    return new Relay<Type, To>(this, (value, send) => {
+      send(transform(value));
+    });
+  }
+
+  // filter(condition: (value: Type) => boolean) {
+  //   return filter(this, condition);
+  // }
+
+  delay(wait: number) {
+    return new Relay<Type>(this, (value, send) => {
+      setTimeout(() => {
+        send(value);
+      }, wait);
+    });
+  }
+}
+
+/**
+ * Forwards values sent from a Source through an operator function.
+ */
+export class Relay<Input, Output = Input> extends Source<Output> {
+  constructor(
+    private source: Listenable<Input>,
+    private operator: Operator<Input, Output>
+  ) {
+    let value: any;
+
+    operator(source.current, (x) => {
+      value = x;
+    });
+
+    super(value);
+  }
+
+  get current() {
+    let pulled: Output;
+
+    this.operator(this.source.current, (value) => {
+      pulled = value;
+    });
+
+    return pulled!;
+  }
+
+  listen(callback: Listener<Output>) {
+    return this.source.listen((value) => {
+      this.operator(value, callback);
+    });
   }
 }

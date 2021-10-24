@@ -1,4 +1,3 @@
-import { isString } from "../utils";
 import { HTMLComponent, HTMLComponentProps } from "./HTMLComponent";
 
 export * from "./Component";

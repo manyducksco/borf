@@ -7,8 +7,7 @@ test("ignores all values for 'wait' milliseconds after sending", async () => {
   const throttled = throttle(source, 20);
   const fn = jest.fn();
 
-  const receiver = throttled.receive();
-  receiver.listen(fn);
+  throttled.listen(fn);
 
   source.send(39); // received
   source.send(22); // ignored (+20ms remaining)

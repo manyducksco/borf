@@ -6,8 +6,7 @@ test("forwards only latest value after specified milliseconds", async () => {
   const debounced = debounce(source, 10);
   const fn = jest.fn();
 
-  const receiver = debounced.receive();
-  receiver.listen(fn);
+  debounced.listen(fn);
 
   source.send(39);
   source.send(22);
@@ -26,8 +25,7 @@ test("forwards immediately if immediate is true and not awaiting timeout", async
   const debounced = debounce(source, 10, true);
   const fn = jest.fn();
 
-  const receiver = debounced.receive();
-  receiver.listen(fn);
+  debounced.listen(fn);
 
   source.send(39);
   source.send(22);

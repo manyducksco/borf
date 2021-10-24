@@ -8,8 +8,8 @@ test("relays values through an operator function", () => {
   });
 
   const fn = jest.fn();
-  const receiver = relay.receive();
-  receiver.listen(fn);
+
+  relay.listen(fn);
 
   source.send(2);
 

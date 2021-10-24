@@ -1,11 +1,11 @@
 import { Source } from "./Source";
-import { Binding } from "./types";
+import { Bindable, Binding } from "./types";
 
 /**
  * A Source that enables setting its value with a `set` function
  * and two way bindings to the value it holds with a `bind` function.
  */
-export class State<Type> extends Source<Type> {
+export class State<Type> extends Source<Type> implements Bindable<Type> {
   /**
    * Sets the current value and broadcasts the change to all listeners.
    */
@@ -23,8 +23,9 @@ export class State<Type> extends Source<Type> {
    */
   bind(): Binding<Type> {
     return {
-      ...this.receive(),
+      get: () => this.current,
       set: this.set.bind(this),
+      listen: this.listen.bind(this),
     };
   }
 }

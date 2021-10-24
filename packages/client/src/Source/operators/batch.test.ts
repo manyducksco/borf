@@ -6,8 +6,7 @@ test("batches a number of values into an array", async () => {
   const batched = batch(source, 5, 20);
   const fn = jest.fn();
 
-  const receiver = batched.receive();
-  receiver.listen(fn);
+  batched.listen(fn);
 
   source.send(1);
   source.send(2);
@@ -24,8 +23,7 @@ test("sends array with fewer items if full count hasn't arrived before wait time
   const batched = batch(source, 5, 20);
   const fn = jest.fn();
 
-  const receiver = batched.receive();
-  receiver.listen(fn);
+  batched.listen(fn);
 
   source.send(1);
   source.send(2);

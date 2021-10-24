@@ -7,8 +7,7 @@ test("forwards only values that match the condition", () => {
   const filtered = filter(sender, condition);
   const fn = jest.fn();
 
-  const receiver = filtered.receive();
-  receiver.listen(fn);
+  filtered.listen(fn);
 
   sender.send(2);
   sender.send(3);
