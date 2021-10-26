@@ -31,9 +31,7 @@ export const isListenable = <T = unknown>(
   value: unknown
 ): value is Listenable<T> => {
   return (
-    isObject(value) &&
-    isFunction(value.listen) &&
-    value.hasOwnProperty("current")
+    isObject(value) && isFunction(value.listen) && value.current !== undefined
   );
 };
 

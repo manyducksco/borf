@@ -1,4 +1,4 @@
-import { Listenable } from "../Source";
+import { Listenable } from "../Source/types";
 import { isListenable } from "../utils";
 import { Component } from "./Component";
 

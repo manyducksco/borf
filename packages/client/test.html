@@ -46,6 +46,11 @@
   <body>
     <div id="root"></div>
 
+    <div id="router-test">
+      <a href="/test/5?other=ok">Test</a>
+      <a href="https://www.duckduckgo.com">External</a>
+    </div>
+
     <script type="module">
       import {
         State,
@@ -54,7 +59,6 @@
         $when,
         $text,
         E,
-        map
       } from "./dist/main.modern.js";
 
       /*===========================*\
@@ -69,7 +73,7 @@
 
       function classToggleExample() {
         const active = new ToggleState(false);
-        const status = map(active, (value) => (value ? "ON" : "OFF"));
+        const status = active.map((value) => (value ? "ON" : "OFF"));
 
         setInterval(() => {
           active.toggle();
@@ -100,7 +104,7 @@
 
       function counterExample() {
         const counter = new CounterState(0);
-        const label = map(counter, (n) => ` the number is: ${n}`);
+        const label = counter.map((n) => ` the number is: ${n}`);
 
         return E("div", {
           class: ["example", "two"],
@@ -146,7 +150,7 @@
             E("p", {
               children: [$text(text, "Type Above")],
               style: {
-                fontSize: map(size, (s) => `${s}px`),
+                fontSize: size.map((s) => `${s}px`),
               },
             }),
           ],
@@ -159,9 +163,7 @@
 
       function conditionalExample() {
         const show = new ToggleState(false);
-        const label = map(show, (on) =>
-          on ? "Hide Text" : "Show Text"
-        );
+        const label = show.map((on) => (on ? "Hide Text" : "Show Text"));
 
         return E("div", {
           class: ["example", "four"],
@@ -195,10 +197,10 @@
       // TODO: Implement 'sort' as a transform function
       function mapExample() {
         const shoppingList = new State([
-          "りんご",
-          "バナナ",
-          "じゃがいも",
-          "唐揚げ",
+          "apple",
+          "banana",
+          "potato",
+          "fried chicken",
         ]);
 
         return E("div", {
@@ -261,15 +263,29 @@
       // every X ms pass the function the old state and take its return value as the next state
       // const num = new TickState(1, 300, (n) => n + 1);
 
+      function getRandomHex() {
+        const hex = [
+          Math.random() * 256,
+          Math.random() * 256,
+          Math.random() * 256,
+        ]
+          .map(Math.floor)
+          .map((n) => n.toString(16))
+          .join("");
+
+        return "#" + hex;
+      }
+
       function mouseFollowerExample() {
         const enabled = new ToggleState(false);
         const mouse = new MouseSource();
         const backgroundColor = new State("#ff0088");
-        const delay = new State(50);
-        const throttle = new State(50);
-        const transform = mouse
-          .delay(50)
-          .map((m) => `translate(${m.x}px, ${m.y}px)`);
+        const transform = mouse.map((m) => `translate(${m.x}px, ${m.y}px)`);
+
+        const bestColor = "#ff0088";
+        const notBestColor = backgroundColor.map(
+          (hex) => hex.toLowerCase() !== bestColor
+        );
 
         mouse.paused = !enabled.current;
 
@@ -277,22 +293,6 @@
         enabled.listen((value) => {
           mouse.paused = !value;
         });
-
-        function setRandomColor() {
-          const hex = [
-            Math.random() * 256,
-            Math.random() * 256,
-            Math.random() * 256,
-          ]
-            .map(Math.floor)
-            .map((n) => n.toString(16))
-            .join("");
-
-          backgroundColor.set("#" + hex);
-        }
-
-        // backgroundColor.receive(console.log);
-        // delay.receive(console.log);
 
         return exampleSection({
           class: ["mouse-follower"],
@@ -308,54 +308,27 @@
                 },
               })
             ),
-            E("div", {
-              class: "input-group",
-              children: [
-                E("h3", {
-                  children: [$text(delay.map((n) => `Delay (${n}ms)`))],
-                }),
-                E("input", {
-                  type: "range",
-                  min: 0,
-                  max: 300,
-                  step: 1,
-                  value: delay.bind(), // value bind automatically converts value back to the initialValue's type
-                }),
-              ],
-            }),
-            E("div", {
-              class: "input-group",
-              children: [
-                E("h3", {
-                  children: [$text(throttle.map((n) => `Throttle (${n}ms)`))],
-                }),
-                E("input", {
-                  type: "range",
-                  min: 0,
-                  max: 300,
-                  step: 1,
-                  value: throttle.bind(), // value bind automatically converts value back to the initialValue's type
-                }),
-              ],
+
+            E("button", {
+              onClick: () => {
+                backgroundColor.set(getRandomHex());
+              },
+              children: [$text("Change Follower Color")],
+              disabled: enabled.map((x) => !x),
             }),
             $when(
-              map(backgroundColor, (x) => x !== "#ff0088"),
+              notBestColor,
               E("button", {
-                onClick: () => backgroundColor.set("#ff0088"),
-                disabled: map(enabled, (x) => !x),
+                onClick: () => backgroundColor.set(bestColor),
+                disabled: enabled.map((x) => !x),
                 children: [$text("Reset To Best Color")],
               })
             ),
             E("button", {
-              onClick: setRandomColor,
-              children: [$text("Change Follower Color")],
-              disabled: map(enabled, (x) => !x),
-            }),
-            E("button", {
               onClick: () => enabled.toggle(),
               children: [
                 $text(
-                  map(enabled, (x) =>
+                  enabled.map((x) =>
                     x ? "Turn Off Follower" : "Turn On Follower"
                   )
                 ),

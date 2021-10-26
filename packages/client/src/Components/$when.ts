@@ -1,4 +1,4 @@
-import { Subscribable, Subscription } from "../types";
+import { Listenable } from "../Source";
 import { Component } from "./Component";
 
 /**
@@ -7,37 +7,43 @@ import { Component } from "./Component";
  * @param condition - value or a subscription to a value
  * @param component - component to display
  */
-export const $when = (condition: Subscribable<boolean>, component: Component) =>
+export const $when = (condition: Listenable<boolean>, component: Component) =>
   new WhenComponent(condition, component);
 
 export class WhenComponent extends Component {
-  private subscription?: Subscription<boolean>;
-  private currentValue = false;
+  private unlisten?: () => void;
 
   constructor(
-    private condition: Subscribable<boolean>,
+    private condition: Listenable<boolean>,
     private component: Component
   ) {
     super(document.createTextNode(""));
   }
 
+  private update(value: boolean) {
+    if (value && this.root.parentNode) {
+      this.component.connect(this.root.parentNode, this.root);
+    } else {
+      this.component.disconnect();
+    }
+  }
+
   beforeConnect() {
-    this.subscription = this.condition.subscribe();
+    if (!this.unlisten) {
+      this.unlisten = this.condition.listen(this.update.bind(this));
+    }
+  }
 
-    this.subscription.receiver.callback = (value) => {
-      this.currentValue = value;
-
-      if (value && this.root.parentNode) {
-        this.component.connect(this.root.parentNode, this.root);
-      } else {
-        this.component.disconnect();
-      }
-    };
-
-    this.subscription.receiver.callback(this.subscription.initialValue);
+  connected() {
+    this.update(this.condition.current);
   }
 
   disconnected() {
     this.component.disconnect();
+
+    if (this.unlisten) {
+      this.unlisten();
+      this.unlisten = undefined;
+    }
   }
 }

@@ -67,5 +67,98 @@ pipe.receive((value, reply) => {
 ## Terminology
 
 - Transmitter: The main source of data. Elements can receive transmitted properties and update when they change.
-- Component: 
+- Component:
 - State: Type of Transmitter that retains data and transmits when it changes
+
+## Problems a Web Framework Should Solve
+
+- Keep state close to the place where it's being used (component state)
+- Effortlessly keep the DOM in sync with the data. You should never even need to think about this.
+- Guide you toward doing things correctly, especially when you don't know what that looks like
+  - Conventions should steer you toward good solutions (a.k.a "Pit of Success")
+- Solve all the major problems without stepping out of the framework
+  - Views
+  - Routes
+  - State management
+  - Local data caching (API calls)
+  - HTTP requests
+- Should be easy to think about what all the parts are and how they're related
+
+```js
+import webframework from "webframework";
+
+const app = webframework();
+
+app.route(/* ... */);
+
+app.route("/", ({ cache, route, ...state }, next) => {
+  const title = new PageTitleState();
+  state.setTitle("New Page Title");
+  emit(events.DOMTITLECHANGE, "New Title");
+
+  title.set("New Page Title");
+
+  SomeInput({
+    value,
+  });
+
+  console.log(state.title);
+});
+
+function SomeInput({ value, onClick }) {
+  return E("input", {
+    value: value.bind(),
+  });
+}
+
+function Layout(route) {
+  return E("div", {
+    class: "layout",
+    children: [
+      ChannelSidebar(route),
+      E("main", {
+        children: [
+          route.switch([
+            ["", emptyPage],
+            ["all/tasks", allTasksPage],
+            ["profile/:id", profilePage],
+            ["channel/:id", channelPage],
+            [
+              "*",
+              (route) => {
+                route.redirect("");
+              },
+            ],
+          ]),
+        ],
+      }),
+    ],
+  });
+}
+
+function ChannelSidebar(route) {}
+
+const router = new Router();
+
+router.on(
+  "",
+  (route) => {
+    fetch("/some-data")
+      .then((res) => res.json())
+      .then((json) => {
+        route.next(json);
+      });
+
+    return LoadingScreen();
+  },
+  (route, data) => {
+    return Component(data);
+  }
+);
+
+router.on("*", (route) => {
+  route.redirect("/somewhere/else");
+});
+
+router.connect("#root");
+```

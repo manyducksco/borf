@@ -1,4 +1,4 @@
-import { Subscribable, Subscription } from "../types";
+import { Listenable } from "../Source";
 import { Component } from "./Component";
 
 type MapStateItem = {
@@ -15,19 +15,19 @@ type MapStateItem = {
  * @param createItem - function to create a component for each element in the list
  */
 export const $map = <T>(
-  list: Subscribable<T[]>,
+  list: Listenable<T[]>,
   getKey: (item: T) => string | number,
   createItem: (item: T) => Component
 ) => new MapComponent<T>(list, getKey, createItem);
 
 class MapComponent<T> extends Component {
   declare root: Text;
-  private source: Subscribable<T[]>;
-  private subscription?: Subscription<T[]>;
+  private source: Listenable<T[]>;
+  private unlisten?: () => void;
   private state: MapStateItem[] = [];
 
   constructor(
-    list: Subscribable<T[]>,
+    list: Listenable<T[]>,
     private getKey: (item: T) => string | number,
     private createItem: (item: T) => Component
   ) {
@@ -118,31 +118,24 @@ class MapComponent<T> extends Component {
     });
   }
 
-  connected() {
-    console.log(
-      this.root,
-      this.root.parentNode,
-      this.root.parentElement,
-      this.isConnected
-    );
-
-    if (!this.subscription) {
-      this.subscription = this.source.subscribe();
-
-      this.subscription.receiver.callback = this.update.bind(this);
-      this.update(this.subscription.initialValue);
-
-      console.log(this.isConnected);
+  beforeConnect() {
+    if (!this.unlisten) {
+      this.unlisten = this.source.listen(this.update.bind(this));
     }
   }
 
-  disconnected() {
-    if (this.subscription) {
-      this.subscription.receiver.cancel();
-    }
+  connected() {
+    this.update(this.source.current);
+  }
 
+  disconnected() {
     for (const item of this.state) {
       item.component.disconnect();
+    }
+
+    if (this.unlisten) {
+      this.unlisten();
+      this.unlisten = undefined;
     }
   }
 }

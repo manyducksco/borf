@@ -1,125 +1,156 @@
 # Router
 
-Mounts pages when the browser's URL changes.
+Mounts different components when the browser's URL changes.
 
-Problems:
+## How to Use
 
-- Need a way to structure pages for a single page app
-- Need a way to define nested routes that render inside of another component
+Import and instantiate:
 
 ```js
-Router.map(function () {
-  // '.route(string, function)' defines a nested route
-  this.route("notes", function () {
-    // '.route(string, object)' defines an endpoint that mounts a component - access this at '/notes/new'
-    this.route("new", { component: ASDF });
+import { Router } from "***";
 
-    this.route(":id", {
-      preload: async () => {},
-      component: ASDF,
-    });
-  });
-});
-
-function SomeComponent(props) {
-  const { preloaded, path } = props;
-}
-
-const router = new Router({
-  basePath: "",
-  routes: [
-    {
-      path: "notes",
-      component: SomeComponent,
-    },
-    {
-      path: "notes/new",
-      component: SomeComponent,
-    },
-    {
-      path: "notes/:id",
-      preload: async () => {
-        // whatever this resolves to is passed as 'preloaded' in the component's props
-      },
-      component: SomeComponent,
-      fallback: LoadingComponent, // shows while route is preloading
-    },
-  ],
-});
-
-// start listening to route changes
-router.listen({
-  bindLinks: true, // hijack clicks on <a> tags with local hrefs
-});
-
-// Router is an element, so you can mount it or pass it in as a child of another element
-router.mount(document.getElementById("#app"));
-
-// Router.link() returns a decorated <a> tag that changes the page history instead of redirecting
-Router.link({
-  href: "/notes/5",
-  class: "super-link",
-});
+const router = new Router();
 ```
 
+Define a route:
+
 ```js
-// Global state object
-interface Globals {
-  title: State;
-  route: {
-    switch: (routes) => Component,
-  };
-}
+router.on("/", HomeComponent);
 ```
 
-Routes take a path and then any number of route functions. Route functions take the route object, a `next` function and a third `data` parameter that is whatever the previous function passed when calling `next`.
-
-If the route function returns nothing the previous route will stay mounted until `next` is called. If the route function returns a Component, that component will be mounted when the route function is called and unmounted when `next` is called. Several components can be chained together like middleware to set up analytics, fetching, loading screens or whatever. You could probably build a text adventure with chained route functions and creative redirects.
+Listen for route changes:
 
 ```js
-app.route(
-  "/some/:id",
-  (route, next) => {
-    fetch(`/api/example/${route.params.id}`)
+router.start();
+```
+
+### Stacked Routes
+
+Routes take a path and then any number of route functions, each of which can trigger the next in line by calling `route.next()`. You can use this to preload data:
+
+```js
+router.on(
+  "/person/:id",
+  // DATA HANDLER
+  (route) => {
+    fetch(`/api/people/${route.params.id}`) // 1.
       .then((res) => res.json())
-      .then(next);
+      .then((json) => {
+        route.next(json); // 3.
+      });
 
-    return LoaderComponent();
+    return LoaderComponent(); // 2.
   },
-  (route, next, data) => {
-    // data is the value the previous function called `next` with
-
-    if (data.userIsAdmin) {
-      next();
-    } else {
-      route.redirect("/other/page");
-    }
-  },
-  component
+  // PAGE HANDLER
+  (route, data) => {
+    return PersonPage(data); // 4.
+  }
 );
 ```
 
-Nested routes can be done with the route object's `switch` function. This takes an array of route arrays which follow the same pattern of one path string followed by one or more route functions.
+1. Begin an API call
+2. Return a component to display while loading
+3. When the API call finishes, call `route.next(data)`, passing the preloaded data
+4. Page component is displayed, replacing loading component
+
+If a route function does not return a component, the previous route will remain mounted until the router runs a handler that does return a component.
+
+> TODO: On a fresh page load, if a data handler doesn't return something the page will be blank until the data finishes loading. Maybe we could have a fallback route that displays until the first route loads that returns a component. Or we could have a way to tell if there was a previous route and handle it in function.
+>
+> I would handle this by including a loading screen with the app HTML. Use an onFirstMount event on the router to remove that loading screen when the first route kicks in.
+
+### The Route Object
+
+The first argument passed to each handler function is an object with these fields:
+
+```ts
+interface RouteObject {
+  /**
+   * Full path as it appears in the URL bar.
+   */
+  href: string;
+
+  /**
+   * Router path as it was written to register the route.
+   */
+  path: string;
+
+  /**
+   * Keys and values for each :param matched in the route.
+   */
+  params: {
+    [name: string]: string;
+  };
+
+  /**
+   * Keys and values for each query parameter. All values are strings until parsed by you.
+   */
+  query: {
+    [name: string]: string;
+  };
+
+  /**
+   * Continues to the next handler if there is one. Throws an error if there isn't.
+   * Call this function with a value and it will be passed as the second parameter to the next handler.
+   */
+  next: (data?: any) => void;
+
+  /**
+   * Go to another route.
+   */
+  redirect: (path: string) => void;
+
+  /**
+   * Define subroutes and render their contents wherever this component is placed when the route is matched.
+   */
+  switch: (routes: RouteArray[]) => Component;
+}
+```
+
+### Nested Routes
+
+The `switch` function takes an array of arrays, also known as a two-dimensional array. The outer array is a list of routes, and each inner array is a path followed by one or more handler functions; the same pattern as `router.on` in the top-level router object.
 
 ```js
-app.route("/test", (route) => {
+router.on("/example", (route) => {
   return E("div", {
+    class: "container",
     children: [
-      E("h1", {
-        children: ["Persistent Content"],
-      }),
-
-      E("p", {
-        children: [
-          "Subroutes will be rendered below but this content will remain unchanged.",
-        ],
-      }),
-
       route.switch([
-        ["/edit", routeFunction],
-        ["/create", routeFunction],
+        ["sub", subroute],
+        ["sub2/:id", subroute2],
       ]),
     ],
+  });
+});
+
+// This handler is now reachable at /example/sub
+function subroute(route) {
+  // return component
+}
+
+// This handler is now reachable at /example/sub2/:id
+function subroute2(route) {
+  // return component
+}
+```
+
+### Idea: Transitions
+
+Wrap a component with a transition handler. The router will perform these transitions when this component is mounted or unmounted.
+
+```js
+router.on("/example", (route) => {
+  return route.transition({
+    component: SomeComponent,
+    enter: {
+      duration: 400,
+      name: "fadeInUp",
+    },
+    exit: {
+      duration: 600,
+      name: "fadeOutDown",
+    },
   });
 });
 ```
