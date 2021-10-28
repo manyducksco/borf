@@ -137,12 +137,11 @@ function subroute2(route) {
 
 ### Idea: Transitions
 
-Wrap a component with a transition handler. The router will perform these transitions when this component is mounted or unmounted.
+Wrap a component with a transition handler. The router will perform an `enter` transition when this component is mounted and an `exit` transtion when unmounted.
 
 ```js
 router.on("/example", (route) => {
-  return route.transition({
-    component: SomeComponent,
+  return route.transition(SomeComponent, {
     enter: {
       duration: 400,
       name: "fadeInUp",

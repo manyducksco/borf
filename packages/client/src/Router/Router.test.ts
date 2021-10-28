@@ -1,16 +1,19 @@
 import { Router } from "./Router";
+import { createMemoryHistory } from "history";
 
-function createMockHistory() {
-  return {
-    pushState: jest.fn(),
-  };
-}
-
-test("asdf", () => {
-  const history = createMockHistory();
+test("runs route handler when its path is matched", () => {
+  const history = createMemoryHistory();
   const router = new Router({
     history,
   });
 
-  router.on("/example", (route) => {});
+  expect.assertions(1);
+
+  router.on("/example", (route) => {
+    expect(route.path).toBe("/example");
+  });
+
+  router.connect(document.createElement("div"));
+
+  history.push("/example");
 });
