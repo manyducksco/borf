@@ -139,21 +139,23 @@ type ListenableProps<T> = {
 type CSSProps = Partial<ListenableProps<CSSStyleDeclaration>>;
 
 export class TextNodeComponent extends Component {
-  declare root: Text;
+  constructor(private value: string) {
+    super();
+  }
 
-  constructor(value: string) {
-    super(document.createTextNode(value));
+  createElement() {
+    return document.createTextNode(this.value);
   }
 }
 
 export class HTMLComponent extends Component {
-  declare root: HTMLElement;
+  declare element: HTMLElement;
   protected props: Readonly<HTMLComponentProps>;
   protected children: Component[] = [];
   protected cancellers: Array<() => void> = [];
 
-  constructor(tagName: string, props?: HTMLComponentProps) {
-    super(document.createElement(tagName));
+  constructor(protected tagName: string, props?: HTMLComponentProps) {
+    super();
 
     this.props = Object.freeze(props ?? {});
 
@@ -168,13 +170,17 @@ export class HTMLComponent extends Component {
     }
   }
 
+  createElement() {
+    return document.createElement(this.tagName);
+  }
+
   beforeConnect() {
-    const { props, root, children } = this;
+    const { props, element: root, children } = this;
 
     let previous = null;
 
     for (const child of children) {
-      child.connect(root, previous?.root);
+      child.connect(root, previous?.element);
       previous = child;
     }
 
@@ -231,27 +237,27 @@ export class HTMLComponent extends Component {
           key as keyof HTMLComponentProps
         ] as EventListenerOrEventListenerObject;
 
-        this.root.addEventListener(eventName, listener);
+        this.element.addEventListener(eventName, listener);
 
         this.cancellers.push(() => {
-          this.root.removeEventListener(eventName, listener);
+          this.element.removeEventListener(eventName, listener);
         });
       }
     }
   }
 
   private attachBindings() {
-    if (this.root instanceof HTMLInputElement) {
+    if (this.element instanceof HTMLInputElement) {
       if (isBinding<Stringifyable>(this.props.value)) {
         const binding = this.props.value;
 
-        this.root.value = binding.get().toString();
+        this.element.value = binding.get().toString();
         const cancel = binding.listen((value) => {
-          (this.root as HTMLInputElement).value = value.toString();
+          (this.element as HTMLInputElement).value = value.toString();
         });
 
         // Set the value back after converting to the subscription's type
-        this.root.addEventListener("input", (e) => {
+        this.element.addEventListener("input", (e) => {
           binding.set(toSameType(binding.get(), (e.target as any).value));
         });
 
@@ -260,10 +266,10 @@ export class HTMLComponent extends Component {
         const listenable = this.props.value;
 
         const cancel = listenable.listen((value: Stringifyable) => {
-          (this.root as HTMLInputElement).value = value.toString();
+          (this.element as HTMLInputElement).value = value.toString();
         });
 
-        this.root.value = listenable.current.toString();
+        this.element.value = listenable.current.toString();
 
         this.cancellers.push(cancel);
       }
@@ -271,7 +277,7 @@ export class HTMLComponent extends Component {
   }
 
   private applyClasses() {
-    if (this.root instanceof HTMLElement) {
+    if (this.element instanceof HTMLElement) {
       if (this.props.class) {
         const mapped = getClassMap(this.props.class);
 
@@ -280,7 +286,7 @@ export class HTMLComponent extends Component {
 
           if (isBoolean(value)) {
             if (value) {
-              this.root.classList.add(name);
+              this.element.classList.add(name);
             }
           }
 
@@ -299,13 +305,13 @@ export class HTMLComponent extends Component {
   }
 
   private applyStyles() {
-    if (this.root instanceof HTMLElement) {
+    if (this.element instanceof HTMLElement) {
       if (this.props.style) {
         for (const name in this.props.style) {
           const prop = this.props.style[name];
 
           if (isString(prop)) {
-            this.root.style[name] = prop;
+            this.element.style[name] = prop;
           } else if (isListenable<string>(prop)) {
             this.listenTo(prop, (value, root) => {
               root.style[name] = value;
@@ -317,7 +323,7 @@ export class HTMLComponent extends Component {
   }
 
   private applyAttrs() {
-    if (this.root instanceof HTMLElement) {
+    if (this.element instanceof HTMLElement) {
       for (const name in this.props) {
         if (!customProps.includes(name) && !eventRegex.test(name)) {
           const attr = this.props[name as keyof HTMLComponentProps];
@@ -332,7 +338,7 @@ export class HTMLComponent extends Component {
                 }
               });
             } else if (attr) {
-              this.root.setAttribute(name, "");
+              this.element.setAttribute(name, "");
             }
           } else {
             if (isListenable<Stringifyable>(attr)) {
@@ -340,7 +346,7 @@ export class HTMLComponent extends Component {
                 root.setAttribute(name, value.toString());
               });
             } else if (attr) {
-              this.root.setAttribute(name, String(attr));
+              this.element.setAttribute(name, String(attr));
             }
           }
         }
@@ -352,7 +358,7 @@ export class HTMLComponent extends Component {
     source: Listenable<T>,
     callback: (value: T, root: HTMLElement) => void
   ) {
-    const root = this.root as HTMLElement;
+    const root = this.element as HTMLElement;
 
     const cancel = source.listen((value) => {
       requestAnimationFrame(() => {

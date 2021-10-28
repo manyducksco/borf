@@ -7,6 +7,8 @@ export type RouterOptions = {
    * Pass your own history instance from the 'history' module.
    */
   history?: History;
+
+  basePath?: string;
 };
 
 export type RouteHandler = (route: RouteObject, data?: any) => Component | void;

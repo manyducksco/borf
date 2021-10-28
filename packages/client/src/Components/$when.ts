@@ -17,12 +17,12 @@ export class WhenComponent extends Component {
     private condition: Listenable<boolean>,
     private component: Component
   ) {
-    super(document.createTextNode(""));
+    super();
   }
 
   private update(value: boolean) {
-    if (value && this.root.parentNode) {
-      this.component.connect(this.root.parentNode, this.root);
+    if (value && this.element.parentNode) {
+      this.component.connect(this.element.parentNode, this.element);
     } else {
       this.component.disconnect();
     }

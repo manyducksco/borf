@@ -18,22 +18,29 @@ export const $text = (
 ) => new TextComponent(source, defaultValue);
 
 export class TextComponent extends Component {
-  declare root: Text;
+  declare element: Text;
   private source?: Listenable<toStringable>;
   private cancel?: () => void;
+  private initialValue: string;
 
   constructor(
     source: toStringable | Listenable<toStringable>,
     protected fallbackText?: toStringable
   ) {
+    super();
+
     const isStatic = !isListenable<toStringable>(source);
-    const initialValue = isStatic ? source.toString() : "";
 
-    super(document.createTextNode(initialValue));
-
-    if (!isStatic) {
+    if (isStatic) {
+      this.initialValue = source.toString();
+    } else {
+      this.initialValue = source.current.toString();
       this.source = source;
     }
+  }
+
+  createElement() {
+    return document.createTextNode(this.initialValue);
   }
 
   beforeConnect() {
@@ -44,9 +51,9 @@ export class TextComponent extends Component {
     if (!this.cancel) {
       const callback = (value: toStringable) => {
         if (value || this.fallbackText == null) {
-          this.root.textContent = value.toString();
+          this.element.textContent = value.toString();
         } else {
-          this.root.textContent = this.fallbackText.toString();
+          this.element.textContent = this.fallbackText.toString();
         }
       };
 

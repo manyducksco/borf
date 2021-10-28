@@ -1,16 +1,20 @@
 /**
  * The basic Component class. It can be connected and disconnected and supports lifecycle hooks.
- * It makes no assumptions about its root other than that it is a Node (which all DOM nodes are).
+ * It makes no assumptions about its element other than that it is a Node (which all DOM nodes are).
  */
 export class Component {
-  root: Node;
+  element: Node;
 
   get isConnected() {
-    return this.root.parentNode != null;
+    return this.element.parentNode != null;
   }
 
-  constructor(root: Node) {
-    this.root = root;
+  constructor() {
+    this.element = this.createElement();
+  }
+
+  createElement(): Node {
+    return document.createTextNode("");
   }
 
   connect(parent: Node, after?: Node): void {
@@ -21,7 +25,7 @@ export class Component {
       this.beforeConnect();
     }
 
-    parent.insertBefore(this.root, after ? after.nextSibling : null);
+    parent.insertBefore(this.element, after ? after.nextSibling : null);
 
     if (!wasConnected) {
       this.connected();
@@ -32,8 +36,8 @@ export class Component {
     if (this.isConnected) {
       this.beforeDisconnect();
 
-      if (this.root.parentNode) {
-        this.root.parentNode.removeChild(this.root);
+      if (this.element.parentNode) {
+        this.element.parentNode.removeChild(this.element);
       }
 
       this.disconnected();

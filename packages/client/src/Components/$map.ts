@@ -21,7 +21,7 @@ export const $map = <T>(
 ) => new MapComponent<T>(list, getKey, createItem);
 
 class MapComponent<T> extends Component {
-  declare root: Text;
+  declare element: Text;
   private source: Listenable<T[]>;
   private unlisten?: () => void;
   private state: MapStateItem[] = [];
@@ -31,7 +31,7 @@ class MapComponent<T> extends Component {
     private getKey: (item: T) => string | number,
     private createItem: (item: T) => Component
   ) {
-    super(document.createTextNode(""));
+    super();
     this.source = list;
   }
 
@@ -108,11 +108,11 @@ class MapComponent<T> extends Component {
         item.component.connect(fragment, previous);
 
         if (item.component.hasOwnProperty("root")) {
-          previous = item.component.root;
+          previous = item.component.element;
         }
       }
 
-      this.root.parentNode!.insertBefore(fragment, this.root.nextSibling);
+      this.element.parentNode!.insertBefore(fragment, this.element.nextSibling);
 
       this.state = newState;
     });
