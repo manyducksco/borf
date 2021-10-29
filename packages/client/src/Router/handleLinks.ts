@@ -1,3 +1,5 @@
+import { History } from "history";
+
 const safeExternalLink = /(noopener|noreferrer) (noopener|noreferrer)/;
 const protocolLink = /^[\w-_]+:/;
 
@@ -8,10 +10,16 @@ type LinkCallback = (element: HTMLAnchorElement) => void;
  *
  * This is adapted from https://github.com/choojs/nanohref/blob/master/index.js
  *
+ * @param history - History instance to use for href comparisons
  * @param root - Element under which to intercept link clicks
  * @param callback - Function to call when a click event is intercepted
  */
-export default function handleLinks(root: Node, callback: LinkCallback) {
+export default function handleLinks(
+  history: History,
+  root: Node,
+  callback: LinkCallback,
+  _window = window
+) {
   function traverse(node: any): HTMLAnchorElement | undefined {
     if (!node || node === root) {
       return;
@@ -42,10 +50,12 @@ export default function handleLinks(root: Node, callback: LinkCallback) {
       return;
     }
 
+    console.log(history.location, anchor.pathname, anchor.search);
+
     if (
-      window.location.protocol !== anchor.protocol ||
-      window.location.hostname !== anchor.hostname ||
-      window.location.port !== anchor.port ||
+      _window.location.protocol !== anchor.protocol ||
+      _window.location.hostname !== anchor.hostname ||
+      _window.location.port !== anchor.port ||
       anchor.hasAttribute("data-router-ignore") ||
       anchor.hasAttribute("download") ||
       (anchor.getAttribute("target") === "_blank" &&
@@ -59,9 +69,9 @@ export default function handleLinks(root: Node, callback: LinkCallback) {
     callback(anchor);
   }
 
-  window.addEventListener("click", handler);
+  root.addEventListener("click", handler);
 
   return function cancel() {
-    window.removeEventListener("click", handler);
+    root.removeEventListener("click", handler);
   };
 }

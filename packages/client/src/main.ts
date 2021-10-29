@@ -27,11 +27,29 @@ router.on(
       ],
     });
   },
-  (router, data) => {
-    console.log("HELLO", router);
+  (route, data) => {
+    console.log("HELLO", route);
 
     return E("span", {
-      children: ["I AM MOUNTED: ", data],
+      children: [
+        "I AM MOUNTED: ",
+        data,
+        route.switch([
+          [
+            "edit",
+            (route) => {
+              return E("span", { children: [route.path] });
+            },
+          ],
+          [
+            "*",
+            (route) => {
+              console.log(route);
+              route.redirect("edit", { replace: true });
+            },
+          ],
+        ]),
+      ],
     });
   }
 );

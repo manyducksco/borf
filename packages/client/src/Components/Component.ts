@@ -3,14 +3,10 @@
  * It makes no assumptions about its element other than that it is a Node (which all DOM nodes are).
  */
 export class Component {
-  element: Node;
+  element?: Node;
 
   get isConnected() {
-    return this.element.parentNode != null;
-  }
-
-  constructor() {
-    this.element = this.createElement();
+    return this.element?.parentNode != null;
   }
 
   createElement(): Node {
@@ -18,6 +14,10 @@ export class Component {
   }
 
   connect(parent: Node, after?: Node): void {
+    if (!this.element) {
+      this.element = this.createElement();
+    }
+
     const wasConnected = this.isConnected;
 
     // Run lifecycle callback only if connecting. Connecting a connected component moves the node without unmounting.
@@ -36,7 +36,7 @@ export class Component {
     if (this.isConnected) {
       this.beforeDisconnect();
 
-      if (this.element.parentNode) {
+      if (this.element?.parentNode) {
         this.element.parentNode.removeChild(this.element);
       }
 

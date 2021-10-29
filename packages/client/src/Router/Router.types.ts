@@ -53,7 +53,7 @@ export type RouteObject = {
   /**
    * Go to another route.
    */
-  redirect: (path: string) => void;
+  redirect: (path: string, options?: RouteRedirectOptions) => void;
 
   /**
    * Define subroutes and render their contents wherever this component is placed when the route is matched.

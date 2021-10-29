@@ -16,7 +16,7 @@ import type {
 } from "./Router.types";
 
 export class Router {
-  private outlet?: Node;
+  private outlet?: Element;
   private cancellers: Array<() => void> = [];
   private history: History;
   private routes: RouterEntry[] = [];
@@ -60,8 +60,8 @@ export class Router {
    *
    * @param outlet - Target DOM node for routes to be rendered into
    */
-  connect(outlet: Node | string) {
-    let node: Node | null;
+  connect(outlet: Element | string) {
+    let node: Element | null;
 
     if (isString(outlet)) {
       node = document.querySelector(outlet);
@@ -74,6 +74,10 @@ export class Router {
     }
 
     this.outlet = node;
+    this.outlet.setAttribute(
+      "data-router-outlet",
+      this.joinPath(this.basePath, "*")
+    );
 
     const onRouteChanged: HistoryListener = ({ location }) => {
       this.matchRoute(location.pathname + location.search);
@@ -81,7 +85,7 @@ export class Router {
 
     this.cancellers.push(this.history.listen(onRouteChanged));
     this.cancellers.push(
-      handleLinks(node, (anchor) => {
+      handleLinks(this.history, node, (anchor) => {
         const href = anchor.getAttribute("href")!;
         this.history.push(href);
       })
@@ -92,6 +96,8 @@ export class Router {
   }
 
   disconnect() {
+    this.outlet?.removeAttribute("data-router-outlet");
+
     for (const cancel of this.cancellers) {
       cancel();
     }
@@ -131,6 +137,8 @@ export class Router {
     matched: MatchResult
   ) {
     let handlerIndex = -1;
+
+    console.trace(matched.params, target.query);
 
     const routeObject: RouteObject = {
       href: matched.path,
@@ -173,7 +181,7 @@ export class Router {
           Object.assign(query, options.query);
         }
 
-        // Current route relative
+        // Paths without slash are relative to current URL
         if (url[0] !== "/") {
           url = this.joinPath(target.url, url);
         }
@@ -201,6 +209,14 @@ export class Router {
   private matchRoute(href: string) {
     const target = queryString.parseUrl(href);
 
+    if (this.basePath) {
+      const basePath = this.joinPath(this.basePath, "(.*)?");
+
+      if (!match(basePath)(target.url)) {
+        return;
+      }
+    }
+
     let wildcard: RouterEntry | undefined;
 
     for (const route of this.routes) {
@@ -221,7 +237,7 @@ export class Router {
       this.initRoute(target, wildcard, {
         path: target.url,
         index: 0,
-        params: target.query,
+        params: {},
       });
     }
   }
@@ -234,19 +250,10 @@ type RouteSwitchComponentOptions = {
 };
 
 class RouteSwitchComponent extends Component {
-  router: Router;
+  router?: Router;
 
-  constructor(options: RouteSwitchComponentOptions) {
+  constructor(private options: RouteSwitchComponentOptions) {
     super();
-
-    this.router = new Router({
-      history: options.history,
-      basePath: options.basePath,
-    });
-
-    for (const route of options.routes) {
-      this.router.on(...route);
-    }
   }
 
   createElement() {
@@ -254,10 +261,26 @@ class RouteSwitchComponent extends Component {
   }
 
   beforeConnect() {
-    this.router.connect(this.element);
+    if (!this.router) {
+      const { element, options } = this;
+
+      this.router = new Router({
+        history: options.history,
+        basePath: options.basePath,
+      });
+
+      for (const route of options.routes) {
+        this.router.on(...route);
+      }
+
+      this.router.connect(element as Element);
+    }
   }
 
-  disconnected() {
-    this.router.disconnect();
+  beforeDisconnect() {
+    if (this.router) {
+      this.router.disconnect();
+      this.router = undefined;
+    }
   }
 }

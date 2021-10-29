@@ -1,6 +1,6 @@
 # Router
 
-Mounts different components when the browser's URL changes.
+Mounts different components when the browser's URL changes. This is a "lazy" router, so the previous components will not be unmounted until another route that returns a component is mounted to replace it.
 
 ## How to Use
 
@@ -18,10 +18,10 @@ Define a route:
 router.on("/", HomeComponent);
 ```
 
-Listen for route changes:
+Listen for route changes and render route components into an element:
 
 ```js
-router.start();
+router.connect("#app");
 ```
 
 ### Stacked Routes

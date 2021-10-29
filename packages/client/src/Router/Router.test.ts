@@ -48,7 +48,7 @@ describe("routing", () => {
 
 describe("route object", () => {
   describe("redirect", () => {
-    test("redirects", () => {
+    test("redirects to another path", () => {
       const { history, router } = createRouter();
 
       router.on("/test", (route) => {
@@ -89,4 +89,8 @@ describe("route object", () => {
       expect.hasAssertions();
     });
   });
+
+  // describe("switch", () => {
+  //   test("returns a component");
+  // });
 });
