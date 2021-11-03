@@ -175,12 +175,12 @@ export class HTMLComponent extends Component {
   }
 
   beforeConnect() {
-    const { props, element: root, children } = this;
+    const { props } = this;
 
     let previous = null;
 
-    for (const child of children) {
-      child.connect(root, previous?.element);
+    for (const child of this.children) {
+      child.connect(this.element, previous?.element);
       previous = child;
     }
 
@@ -277,97 +277,86 @@ export class HTMLComponent extends Component {
   }
 
   private applyClasses() {
-    if (this.element instanceof HTMLElement) {
-      if (this.props.class) {
-        const mapped = getClassMap(this.props.class);
+    if (this.props.class) {
+      const mapped = getClassMap(this.props.class);
 
-        for (const name in mapped) {
-          const value = mapped[name];
+      for (const name in mapped) {
+        const value = mapped[name];
 
-          if (isBoolean(value)) {
+        if (isBoolean(value)) {
+          if (value) {
+            this.element.classList.add(name);
+          }
+        }
+
+        if (isListenable<boolean>(value)) {
+          this.listenTo(value, (value) => {
             if (value) {
               this.element.classList.add(name);
+            } else {
+              this.element.classList.remove(name);
             }
-          }
-
-          if (isListenable<boolean>(value)) {
-            this.listenTo(value, (value, root) => {
-              if (value) {
-                root.classList.add(name);
-              } else {
-                root.classList.remove(name);
-              }
-            });
-          }
+          });
         }
       }
     }
   }
 
   private applyStyles() {
-    if (this.element instanceof HTMLElement) {
-      if (this.props.style) {
-        for (const name in this.props.style) {
-          const prop = this.props.style[name];
+    if (this.props.style) {
+      for (const name in this.props.style) {
+        const prop = this.props.style[name];
 
-          if (isString(prop)) {
-            this.element.style[name] = prop;
-          } else if (isListenable<string>(prop)) {
-            this.listenTo(prop, (value, root) => {
-              root.style[name] = value;
-            });
-          }
+        if (isString(prop)) {
+          this.element.style[name] = prop;
+        } else if (isListenable<string>(prop)) {
+          this.listenTo(prop, (value) => {
+            this.element.style[name] = value;
+          });
         }
       }
     }
   }
 
   private applyAttrs() {
-    if (this.element instanceof HTMLElement) {
-      for (const name in this.props) {
-        if (!customProps.includes(name) && !eventRegex.test(name)) {
-          const attr = this.props[name as keyof HTMLComponentProps];
+    for (const name in this.props) {
+      if (!customProps.includes(name) && !eventRegex.test(name)) {
+        const attr = this.props[name as keyof HTMLComponentProps];
 
-          if (booleanProps.includes(name)) {
-            if (isListenable<boolean>(attr)) {
-              this.listenTo(attr, (value, root) => {
-                if (value) {
-                  root.setAttribute(name, "");
-                } else {
-                  root.removeAttribute(name);
-                }
-              });
-            } else if (attr) {
-              this.element.setAttribute(name, "");
-            }
-          } else {
-            if (isListenable<Stringifyable>(attr)) {
-              this.listenTo(attr, (value, root) => {
-                root.setAttribute(name, value.toString());
-              });
-            } else if (attr) {
-              this.element.setAttribute(name, String(attr));
-            }
+        if (booleanProps.includes(name)) {
+          if (isListenable<boolean>(attr)) {
+            this.listenTo(attr, (value) => {
+              if (value) {
+                this.element.setAttribute(name, "");
+              } else {
+                this.element.removeAttribute(name);
+              }
+            });
+          } else if (attr) {
+            this.element.setAttribute(name, "");
+          }
+        } else {
+          if (isListenable<Stringifyable>(attr)) {
+            this.listenTo(attr, (value) => {
+              this.element.setAttribute(name, value.toString());
+            });
+          } else if (attr) {
+            this.element.setAttribute(name, String(attr));
           }
         }
       }
     }
   }
 
-  private listenTo<T>(
-    source: Listenable<T>,
-    callback: (value: T, root: HTMLElement) => void
-  ) {
-    const root = this.element as HTMLElement;
-
+  private listenTo<T>(source: Listenable<T>, callback: (value: T) => void) {
     const cancel = source.listen((value) => {
       requestAnimationFrame(() => {
-        callback(value, root);
+        callback(value);
       });
     });
 
     this.cancellers.push(cancel);
 
-    callback(source.current, root);
+    callback(source.current);
   }
 }
