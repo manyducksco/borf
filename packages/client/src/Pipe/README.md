@@ -45,7 +45,7 @@ messages.receive((data, reply) => {
 });
 
 // you can pass a function to handle replies
-messages.send(data, (reply) => {
+messages.send(data, (response) => {
   // do something with reply value
   // this function is called once for each reply in the order the replies were sent
   // replies are only received by the sender
@@ -64,10 +64,10 @@ hub
   .receive((value) => {
     // subscribe to messages, but uppercased
   });
-hub.pipe("nonexistent"); // will throw error because pipe isn't registered
+hub.pipe("nonexistent"); // throws error because pipe isn't registered
 
-hub.receive("messages", (data) => {});
-hub.receive("nonexistent", (data) => {}); // will throw error because pipe isn't registered
+hub.receive("messages", (data) => {}); // registers a listener function on 'messages'
+hub.receive("nonexistent", (data) => {}); // throws error because pipe isn't registered
 ```
 
 ```js
@@ -78,13 +78,6 @@ const hub = new Hub({
 hub.receive("user:status", (data) => {
   console.log(`user ${data.userId} is ${data.status}`);
 });
-
-hub
-  .pipe("user:status")
-  .filter((data) => data.status === "online")
-  .receive((data) => {
-    // receive data only when users come online.
-  });
 
 hub.send("user:status", {
   userId: 1,

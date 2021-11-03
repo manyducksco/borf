@@ -97,30 +97,3 @@ await store.saveAll("post"); // saves all unsaved changes on all post records
 await store.invalidate("post", 5); // invalidates cache data for post with ID 5
 await store.invalidateAll("post"); // invalidates cache data for all post records
 ```
-
-React adapter:
-
-```js
-import { PostModel, CommentModel } from "./models";
-
-const store = new Store();
-
-store.addModel("post", PostModel);
-store.addModel("comment", CommentModel);
-
-// Provide store in app somewhere and all components below can use the hooks
-<StoreProvider store={store}>
-  <ExampleComponent />
-</StoreProvider>;
-
-function ExampleComponent() {
-  const store = useStore();
-  const { isLoading, isSuccess, isError, record, error } = useQuery("post", 5); // or useQueryAll("post") and 'records' will contain an array
-
-  record.set("title", "new value"); // causes re-render
-  record.save();
-
-  store.refresh("post", 5);
-  store.refreshAll("post");
-}
-```
