@@ -1,6 +1,3 @@
-import { map } from "./operators/map";
-import { filter } from "./operators/filter";
-import { delay } from "./operators/delay";
 import { Listenable, Listener, Operator } from "./types";
 
 /**
@@ -31,7 +28,7 @@ export abstract class Source<Type> implements Listenable<Type> {
   }
 
   /**
-   * Takes a callback and returns a function to cancel the listener.
+   * Takes a listener function and returns a cancel function.
    *
    * @param callback - Callback to listen for changed values.
    */
@@ -45,21 +42,112 @@ export abstract class Source<Type> implements Listenable<Type> {
     };
   }
 
+  /**
+   * Forwards the result of each value run through the `transform` function.
+   *
+   * @param transform - Function to transform values before forwarding.
+   */
   map<To>(transform: (value: Type) => To) {
     return new Relay<Type, To>(this, (value, send) => {
       send(transform(value));
     });
   }
 
-  // filter(condition: (value: Type) => boolean) {
-  //   return filter(this, condition);
-  // }
+  /**
+   * Forwards only values for which the condition returns truthy.
+   *
+   * @param condition - Function to decide whether to forward the value.
+   */
+  filter(condition: (value: Type) => boolean) {
+    return new Relay<Type>(this, (value, send) => {
+      if (condition(value)) {
+        send(value);
+      }
+    });
+  }
 
+  /**
+   * Forwards values after `wait` milliseconds.
+   *
+   * @param wait - Milliseconds to wait before forwarding value.
+   */
   delay(wait: number) {
     return new Relay<Type>(this, (value, send) => {
       setTimeout(() => {
         send(value);
       }, wait);
+    });
+  }
+
+  /**
+   * Forwards the most recent value after no values are received for `ms` milliseconds.
+   *
+   * @param wait - Milliseconds to wait from last value.
+   * @param immediate - Forward value immediately if time since last value is more than `wait` ms.
+   */
+  debounce(wait: number, immediate: boolean = false) {
+    let timeout: any;
+
+    return new Relay<Type>(this, (value, send) => {
+      clearTimeout(timeout);
+
+      if (immediate && !timeout) {
+        send(value);
+      }
+
+      timeout = setTimeout(() => {
+        timeout = null;
+
+        if (!immediate) {
+          send(value);
+        }
+      }, wait);
+    });
+  }
+
+  /**
+   * Ignores all values sent for `ms` milliseconds after a value is sent.
+   *
+   * @param wait - Milliseconds to wait before accepting values again.
+   */
+  throttle(wait: number) {
+    let next = 0;
+
+    return new Relay<Type>(this, (value, send) => {
+      const now = Date.now();
+
+      if (now >= next) {
+        send(value);
+        next = now + wait;
+      }
+    });
+  }
+
+  /**
+   * Groups several messages and sends them as an array, either when the `size` is reached
+   * or after `ms` milliseconds passes since the last message.
+   *
+   * @param size - Items to accumulate before sending the array.
+   * @param wait - Milliseconds to wait before sending an incomplete array.
+   */
+  batch(size: number, wait: number) {
+    let timeout: any;
+    let batch: Type[] = [];
+
+    return new Relay<Type, Type[]>(this, (value, send) => {
+      clearTimeout(timeout);
+
+      batch.push(value);
+
+      if (batch.length === size) {
+        send(batch);
+        batch = [];
+      } else {
+        timeout = setTimeout(() => {
+          send(batch);
+          batch = [];
+        }, wait);
+      }
     });
   }
 }

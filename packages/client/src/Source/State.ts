@@ -2,8 +2,8 @@ import { Source } from "./Source";
 import { Bindable, Binding } from "./types";
 
 /**
- * A Source that enables setting its value with a `set` function
- * and two way bindings to the value it holds with a `bind` function.
+ * A Source that enables setting the value with a `set` function
+ * and two way bindings with a `bind` function.
  */
 export class State<Type> extends Source<Type> implements Bindable<Type> {
   /**
@@ -17,9 +17,8 @@ export class State<Type> extends Source<Type> implements Bindable<Type> {
   }
 
   /**
-   * Returns an object with methods for binding a value. The `pull` function retrieves the current value on demand,
-   * the `listen` function takes a callback and returns a function to cancel the listener, and the `set` function
-   * updates the value and notifies all listeners.
+   * Returns an object with methods for two way binding. The `get` function retrieves the current value,
+   * `listen` takes a listener function and returns a cancel function, and `set` updates the value and calls all listeners.
    */
   bind(): Binding<Type> {
     return {

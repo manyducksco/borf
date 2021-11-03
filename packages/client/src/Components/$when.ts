@@ -21,7 +21,7 @@ export class WhenComponent extends Component {
   }
 
   private update(value: boolean) {
-    if (value && this.element.parentNode) {
+    if (value && this.element?.parentNode) {
       this.component.connect(this.element.parentNode, this.element);
     } else {
       this.component.disconnect();

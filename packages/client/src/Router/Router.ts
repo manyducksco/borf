@@ -16,7 +16,7 @@ import type {
 } from "./Router.types";
 
 export class Router {
-  private outlet?: Element;
+  private outlet?: HTMLElement;
   private cancellers: Array<() => void> = [];
   private history: History;
   private routes: RouterEntry[] = [];
@@ -38,8 +38,8 @@ export class Router {
     if (route.trim() === "*") {
       this.routes.push({
         path: "*",
-        match: ((path: string) => {}) as MatchFunction,
         handlers,
+        match: ((path: string) => {}) as MatchFunction,
       });
     } else {
       const path = this.joinPath(this.basePath, this.normalizePath(route));
@@ -60,8 +60,8 @@ export class Router {
    *
    * @param outlet - Target DOM node for routes to be rendered into
    */
-  connect(outlet: Element | string) {
-    let node: Element | null;
+  connect(outlet: HTMLElement | string) {
+    let node: HTMLElement | null;
 
     if (isString(outlet)) {
       node = document.querySelector(outlet);
@@ -111,6 +111,9 @@ export class Router {
     return path;
   }
 
+  /**
+   * Joins several path fragments into a single string.
+   */
   private joinPath(...parts: string[]) {
     parts = parts.filter((x) => x);
 
@@ -137,8 +140,6 @@ export class Router {
     matched: MatchResult
   ) {
     let handlerIndex = -1;
-
-    console.trace(matched.params, target.query);
 
     const routeObject: RouteObject = {
       href: matched.path,
@@ -273,7 +274,7 @@ class RouteSwitchComponent extends Component {
         this.router.on(...route);
       }
 
-      this.router.connect(element as Element);
+      this.router.connect(element as HTMLElement);
     }
   }
 

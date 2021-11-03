@@ -47,33 +47,28 @@ class ShoutySource extends Source {
 
 const source = new ShoutySource("");
 
-const receiver = source.receive();
-receiver.listen((phrase) => {
+source.listen((phrase) => {
   // phrase = "HELLO WORLD!"
 });
 
 source.shout("hello world!");
 ```
 
-Control how values are received through operators:
+Control how values are received:
 
 ```js
 // There are utility functions that take a Receivable and return a new Receivable:
 
-const mapped = map(receiver, value => /* return derived value */);
+const mapped = source.map(value => /* return derived value */);
 
-const filtered = filter(receiver, value => /* return true or false */);
+const filtered = source.filter(value => /* return true or false */);
+
+// receives events delayed by a number of milliseconds
+const delayed = source.delay(200);
 
 // send as array when received messages accumulate to 5, or when there is at least one message and 2000 milliseconds have elapsed since the last send
-const batched = batch(receiver, 5, 2000);
+const batched = source.batch(5, 2000);
 
 // sends only the latest value received within a 300ms value since the last message was sent
-const debounced = debounce(receiver, 300);
-
-// create a chain where the return value of the previous function is passed to the next
-const chained = chain(receiver, [
-  s => debounce(s, 300)
-  s => filter(s, value => value % 2 === 0),
-  s => map(s, value => value * 2),
-]);
+const debounced = source.debounce(300);
 ```
