@@ -55,10 +55,11 @@
       import {
         State,
         Source,
+        Router,
+        E,
         $map,
         $when,
         $text,
-        E,
       } from "./dist/main.modern.js";
 
       /*===========================*\
@@ -362,6 +363,80 @@
       });
 
       component.connect(document.getElementById("root"));
+
+      /*===========================*\
+      ||          Routing          ||
+      \*===========================*/
+
+      const router = new Router();
+
+      router.on(
+        "test/:id",
+        (route) => {
+          // setTimeout(() => {
+          //   route.next(route.params.id);
+          // }, 500);
+
+          return E("span", {
+            children: [
+              "TEMPORARY...",
+              E("button", {
+                onClick: () => {
+                  route.next(route.params.id);
+                },
+                children: ["Click for next route"],
+              }),
+            ],
+          });
+        },
+        (route, data) => {
+          console.log("HELLO", route);
+
+          return E("span", {
+            children: [
+              "I AM MOUNTED: ",
+              data,
+              route.switch([
+                [
+                  "edit",
+                  (route) => {
+                    return E("span", { children: [route.path] });
+                  },
+                ],
+                [
+                  "*",
+                  (route) => {
+                    console.log(route);
+                    route.redirect("edit", { replace: true });
+                  },
+                ],
+              ]),
+
+              // route.switch({
+              //   tagName: "span",
+              //   class: "some-class",
+              //   routes: [
+              //     [
+              //       "edit",
+              //       (route) => {
+              //         return E("span", { children: [route.path] });
+              //       },
+              //     ],
+              //     [
+              //       "*",
+              //       (route) => {
+              //         console.log(route);
+              //         route.redirect("edit", { replace: true });
+              //       },
+              //     ],
+              //   ],
+              // }),
+            ],
+          });
+        }
+      );
+
+      router.connect("#router-test");
     </script>
   </body>
 </html>
