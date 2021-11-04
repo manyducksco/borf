@@ -1,5 +1,3 @@
-import { History } from "history";
-
 const safeExternalLink = /(noopener|noreferrer) (noopener|noreferrer)/;
 const protocolLink = /^[\w-_]+:/;
 
@@ -15,7 +13,6 @@ type LinkCallback = (element: HTMLAnchorElement) => void;
  * @param callback - Function to call when a click event is intercepted
  */
 export default function handleLinks(
-  history: History,
   root: Node,
   callback: LinkCallback,
   _window = window
@@ -49,8 +46,6 @@ export default function handleLinks(
     if (!anchor) {
       return;
     }
-
-    console.log(history.location, anchor.pathname, anchor.search);
 
     if (
       _window.location.protocol !== anchor.protocol ||

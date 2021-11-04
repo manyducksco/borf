@@ -21,7 +21,7 @@ export abstract class Source<Type> implements Listenable<Type> {
   /**
    * Broadcasts the current value to all listeners.
    */
-  broadcast(): void {
+  protected broadcast(): void {
     for (const listener of this.listeners) {
       listener(this.value);
     }

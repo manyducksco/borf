@@ -2,8 +2,8 @@ import { Source } from "./Source";
 import { Bindable, Binding } from "./types";
 
 /**
- * A Source that enables setting the value with a `set` function
- * and two way bindings with a `bind` function.
+ * A Source that exposes a `set` function to update its value
+ * and a `bind` function for two way data binding.
  */
 export class State<Type> extends Source<Type> implements Bindable<Type> {
   /**

@@ -85,7 +85,7 @@ export class Router {
 
     this.cancellers.push(this.history.listen(onRouteChanged));
     this.cancellers.push(
-      handleLinks(this.history, node, (anchor) => {
+      handleLinks(node, (anchor) => {
         const href = anchor.getAttribute("href")!;
         this.history.push(href);
       })

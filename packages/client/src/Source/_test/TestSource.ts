@@ -8,4 +8,11 @@ export class TestSource<T> extends Source<T> {
     this.value = value;
     this.broadcast();
   }
+
+  /**
+   * Exposes broadcast function for calling in tests.
+   */
+  broadcast() {
+    super.broadcast();
+  }
 }

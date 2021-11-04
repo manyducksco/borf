@@ -38,17 +38,22 @@ messages.buffer(5, 2000).receive((data) => {
 // get a subscription
 messages.subscribe();
 
+// 1. Make reply func undefined if the sender doesn't pass it
+//    + all receivers would need to check before calling, removes some confusion
+// 2. Make reply func do nothing if the sender doesn't pass it
+//    -
+
 // data can also be replied to with the .reply function
 // reply takes an async function and its resolved value becomes the response
 messages.receive((data, reply) => {
-  reply("received data #1");
+  if (reply) reply("received data #1");
 });
 
 // you can pass a function to handle replies
 messages.send(data, (response) => {
-  // do something with reply value
-  // this function is called once for each reply in the order the replies were sent
-  // replies are only received by the sender
+  // do something with response value
+  // this function is called once for each response in the order the replies were sent
+  // responses are only received by the sender
 });
 
 // pass array of pipe names
