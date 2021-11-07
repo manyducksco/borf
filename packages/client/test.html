@@ -60,7 +60,24 @@
         $map,
         $when,
         $text,
+        HTTP,
       } from "./dist/main.modern.js";
+
+      const req = HTTP.get(
+        "https://dog.ceo/api/breeds/image/random",
+        async (ctx, next) => {
+          await next();
+          ctx.body = ctx.body.message;
+        }
+      );
+
+      req.listen((ctx) => {
+        console.log(ctx);
+      });
+
+      setTimeout(() => {
+        req.reload();
+      }, 5000);
 
       /*===========================*\
       ||        Class Toggle       ||

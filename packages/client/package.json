@@ -28,6 +28,7 @@
     "jest": "^27.2.5",
     "jest-ts-webcompat-resolver": "^1.0.0",
     "microbundle": "^0.14.0",
+    "msw": "^0.35.0",
     "path-to-regexp": "^6.2.0",
     "query-string": "^7.0.1",
     "ts-jest": "^27.0.5",
