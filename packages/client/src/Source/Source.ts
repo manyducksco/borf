@@ -43,7 +43,7 @@ export abstract class Source<Type> implements Listenable<Type> {
   }
 
   /**
-   * Forwards the result of each value run through the `transform` function.
+   * Forwards the result of each value as returned by the `transform` function.
    *
    * @param transform - Function to transform values before forwarding.
    */
@@ -54,7 +54,7 @@ export abstract class Source<Type> implements Listenable<Type> {
   }
 
   /**
-   * Forwards only values for which the condition returns truthy.
+   * Forwards values for which the condition returns truthy.
    *
    * @param condition - Function to decide whether to forward the value.
    */
@@ -80,7 +80,7 @@ export abstract class Source<Type> implements Listenable<Type> {
   }
 
   /**
-   * Forwards the most recent value after no values are received for `ms` milliseconds.
+   * Forwards the most recent value after none are received for `wait` milliseconds.
    *
    * @param wait - Milliseconds to wait from last value.
    * @param immediate - Forward value immediately if time since last value is more than `wait` ms.
@@ -106,7 +106,7 @@ export abstract class Source<Type> implements Listenable<Type> {
   }
 
   /**
-   * Ignores all values sent for `ms` milliseconds after a value is sent.
+   * Ignores further value changes for `wait` milliseconds after value is changed.
    *
    * @param wait - Milliseconds to wait before accepting values again.
    */
@@ -125,7 +125,7 @@ export abstract class Source<Type> implements Listenable<Type> {
 
   /**
    * Groups several messages and sends them as an array, either when the `size` is reached
-   * or after `ms` milliseconds passes since the last message.
+   * or after `wait` milliseconds passes since the last message.
    *
    * @param size - Items to accumulate before sending the array.
    * @param wait - Milliseconds to wait before sending an incomplete array.

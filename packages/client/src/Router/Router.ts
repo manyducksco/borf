@@ -1,5 +1,9 @@
 import type { History } from "history";
-import { createBrowserHistory, Listener as HistoryListener } from "history";
+import {
+  createHashHistory,
+  createBrowserHistory,
+  Listener as HistoryListener,
+} from "history";
 import type { MatchFunction, MatchResult } from "path-to-regexp";
 import { match } from "path-to-regexp";
 import queryString from "query-string";
@@ -24,7 +28,14 @@ export class Router {
   private basePath: string;
 
   constructor(options?: RouterOptions) {
-    this.history = options?.history ?? createBrowserHistory();
+    if (options?.history) {
+      this.history = options.history;
+    } else if (options?.useHash) {
+      this.history = createHashHistory();
+    } else {
+      this.history = createBrowserHistory();
+    }
+
     this.basePath = options?.basePath ?? "";
   }
 

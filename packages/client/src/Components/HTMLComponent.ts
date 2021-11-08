@@ -70,6 +70,8 @@ export interface HTMLComponentProps {
 
   style?: CSSProps;
 
+  src?: string;
+
   type?: string;
   min?: string | number;
   max?: string | number;
@@ -184,7 +186,6 @@ export class HTMLComponent extends Component {
       previous = child;
     }
 
-    this.attachBindings();
     this.applyAttrs();
     this.applyStyles();
     this.applyClasses();
@@ -246,36 +247,6 @@ export class HTMLComponent extends Component {
     }
   }
 
-  private attachBindings() {
-    if (this.element instanceof HTMLInputElement) {
-      if (isBinding<Stringifyable>(this.props.value)) {
-        const binding = this.props.value;
-
-        this.element.value = binding.get().toString();
-        const cancel = binding.listen((value) => {
-          (this.element as HTMLInputElement).value = value.toString();
-        });
-
-        // Set the value back after converting to the subscription's type
-        this.element.addEventListener("input", (e) => {
-          binding.set(toSameType(binding.get(), (e.target as any).value));
-        });
-
-        this.cancellers.push(cancel);
-      } else if (isListenable<Stringifyable>(this.props.value)) {
-        const listenable = this.props.value;
-
-        const cancel = listenable.listen((value: Stringifyable) => {
-          (this.element as HTMLInputElement).value = value.toString();
-        });
-
-        this.element.value = listenable.current.toString();
-
-        this.cancellers.push(cancel);
-      }
-    }
-  }
-
   private applyClasses() {
     if (this.props.class) {
       const mapped = getClassMap(this.props.class);
@@ -320,8 +291,41 @@ export class HTMLComponent extends Component {
 
   private applyAttrs() {
     for (const name in this.props) {
+      if (name === "value") {
+        if (
+          isBinding<Stringifyable>(this.props.value) &&
+          this.element instanceof HTMLInputElement
+        ) {
+          const binding = this.props.value;
+
+          this.element.value = binding.get().toString();
+          const cancel = binding.listen((value) => {
+            (this.element as HTMLInputElement).value = value.toString();
+          });
+
+          // Set the value back after converting to the subscription's type
+          this.element.addEventListener("input", (e) => {
+            binding.set(toSameType(binding.get(), (e.target as any).value));
+          });
+
+          this.cancellers.push(cancel);
+        } else if (isListenable<Stringifyable>(this.props.value)) {
+          const listenable = this.props.value;
+
+          const cancel = listenable.listen((value: Stringifyable) => {
+            (this.element as any).value = value.toString();
+          });
+
+          (this.element as any).value = listenable.current.toString();
+
+          this.cancellers.push(cancel);
+        }
+      }
+
       if (!customProps.includes(name) && !eventRegex.test(name)) {
         const attr = this.props[name as keyof HTMLComponentProps];
+
+        console.log(name, attr, isListenable(attr));
 
         if (booleanProps.includes(name)) {
           if (isListenable<boolean>(attr)) {
@@ -338,7 +342,11 @@ export class HTMLComponent extends Component {
         } else {
           if (isListenable<Stringifyable>(attr)) {
             this.listenTo(attr, (value) => {
-              this.element.setAttribute(name, value.toString());
+              if (value) {
+                this.element.setAttribute(name, value.toString());
+              } else {
+                this.element.removeAttribute(name);
+              }
             });
           } else if (attr) {
             this.element.setAttribute(name, String(attr));

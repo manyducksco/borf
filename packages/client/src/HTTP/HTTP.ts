@@ -121,9 +121,11 @@ class StatusSource extends Source<boolean> {
 }
 
 class RequestSource<T> extends Source<RequestContext<T>> {
+  // implements Promise<RequestContext<T>>
   private _isLoadingPipe = new Pipe<boolean>();
   private _isSuccessPipe = new Pipe<boolean>();
   private _isErrorPipe = new Pipe<boolean>();
+  private _promise?: Promise<RequestContext<T>>;
 
   isLoading = new StatusSource(this._isLoadingPipe);
   isSuccess = new StatusSource(this._isSuccessPipe);
@@ -169,7 +171,6 @@ class RequestSource<T> extends Source<RequestContext<T>> {
       ctx.status = res.status;
       res.headers.forEach((value, key) => {
         ctx.headers[key] = value;
-        ctx.headers[key.toLowerCase()] = value;
       });
 
       if (ctx.headers["content-type"] === "application/json") {
@@ -177,9 +178,6 @@ class RequestSource<T> extends Source<RequestContext<T>> {
       } else {
         ctx.body = (await res.text()) as unknown as T;
       }
-
-      this.value = ctx;
-      this.broadcast();
     };
 
     const wrapMiddleware = (index: number): NextFunction => {
@@ -188,19 +186,25 @@ class RequestSource<T> extends Source<RequestContext<T>> {
         ? wrapMiddleware(index + 1)
         : handler;
 
-      return async () => {
-        current(ctx, next);
-      };
+      return async () => current(ctx, next);
     };
 
     if (this.middleware.length > 0) {
-      for (let i = 0; i < this.middleware.length; i++) {
-        const current = wrapMiddleware(i);
-
-        await current();
-      }
+      await wrapMiddleware(0)();
     } else {
       await handler();
+    }
+
+    this.value = ctx;
+    this.broadcast();
+    this._isLoadingPipe.send(false);
+
+    if (ctx.status && ctx.status >= 200 && ctx.status < 400) {
+      this._isSuccessPipe.send(true);
+      this._isErrorPipe.send(false);
+    } else {
+      this._isSuccessPipe.send(false);
+      this._isErrorPipe.send(true);
     }
   }
 }

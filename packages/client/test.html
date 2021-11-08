@@ -52,32 +52,7 @@
     </div>
 
     <script type="module">
-      import {
-        State,
-        Source,
-        Router,
-        E,
-        $map,
-        $when,
-        $text,
-        HTTP,
-      } from "./dist/main.modern.js";
-
-      const req = HTTP.get(
-        "https://dog.ceo/api/breeds/image/random",
-        async (ctx, next) => {
-          await next();
-          ctx.body = ctx.body.message;
-        }
-      );
-
-      req.listen((ctx) => {
-        console.log(ctx);
-      });
-
-      setTimeout(() => {
-        req.reload();
-      }, 5000);
+      import { State, Source, Router, $, HTTP } from "./dist/main.modern.js";
 
       /*===========================*\
       ||        Class Toggle       ||
@@ -97,12 +72,12 @@
           active.toggle();
         }, 2000);
 
-        return E("div", {
+        return $("div", {
           class: {
             example: true,
             active: active,
           },
-          children: [$text(status)],
+          children: [$.text(status)],
         });
       }
 
@@ -124,22 +99,22 @@
         const counter = new CounterState(0);
         const label = counter.map((n) => ` the number is: ${n}`);
 
-        return E("div", {
+        return $("div", {
           class: ["example", "two"],
           children: [
-            E("button", {
+            $("button", {
               onClick() {
                 counter.increment();
               },
-              children: [$text("Increment")],
+              children: [$.text("Increment")],
             }),
-            E("button", {
+            $("button", {
               onClick() {
                 counter.decrement();
               },
-              children: [$text("Decrement")],
+              children: [$.text("Decrement")],
             }),
-            $text(label),
+            $.text(label),
           ],
         });
       }
@@ -155,18 +130,18 @@
         text.listen(console.log);
         size.listen(console.log);
 
-        return E("div", {
+        return $("div", {
           class: ["example", { three: true }],
           children: [
-            E("input", {
+            $("input", {
               value: text.bind(),
             }),
-            E("input", {
+            $("input", {
               type: "number",
               value: size.bind(),
             }),
-            E("p", {
-              children: [$text(text, "Type Above")],
+            $("p", {
+              children: [$.text(text, "Type Above")],
               style: {
                 fontSize: size.map((s) => `${s}px`),
               },
@@ -183,18 +158,18 @@
         const show = new ToggleState(false);
         const label = show.map((on) => (on ? "Hide Text" : "Show Text"));
 
-        return E("div", {
+        return $("div", {
           class: ["example", "four"],
           children: [
-            E("button", {
+            $("button", {
               onClick() {
                 show.toggle();
               },
-              children: [$text(label)],
+              children: [$.text(label)],
             }),
-            $when(
+            $.when(
               show,
-              E("span", {
+              $("span", {
                 connected() {
                   console.log("text was mounted");
                 },
@@ -221,16 +196,16 @@
           "fried chicken",
         ]);
 
-        return E("div", {
+        return $("div", {
           class: ["example", "five"],
           children: [
-            E("button", {
+            $("button", {
               onClick() {
                 shoppingList.set(shoppingList.current.map((x) => x).sort());
               },
               children: ["Sort A to Z"],
             }),
-            E("button", {
+            $("button", {
               onClick() {
                 shoppingList.set(
                   shoppingList.current
@@ -241,15 +216,15 @@
               },
               children: ["Sort Z to A"],
             }),
-            $map(
+            $.map(
               shoppingList,
               (x) => x,
               (item) =>
-                E("li", {
+                $("li", {
                   onClick() {
                     alert(item);
                   },
-                  children: [$text(item)],
+                  children: [$.text(item)],
                 })
             ),
           ],
@@ -316,9 +291,9 @@
           class: ["mouse-follower"],
           children: [
             // TODO: Optimize - unsubscribe while component is not mounted
-            $when(
+            $.when(
               enabled,
-              E("div", {
+              $("div", {
                 class: "follower",
                 style: {
                   transform,
@@ -327,25 +302,25 @@
               })
             ),
 
-            E("button", {
+            $("button", {
               onClick: () => {
                 backgroundColor.set(getRandomHex());
               },
-              children: [$text("Change Follower Color")],
+              children: [$.text("Change Follower Color")],
               disabled: enabled.map((x) => !x),
             }),
-            $when(
+            $.when(
               notBestColor,
-              E("button", {
+              $("button", {
                 onClick: () => backgroundColor.set(bestColor),
                 disabled: enabled.map((x) => !x),
-                children: [$text("Reset To Best Color")],
+                children: [$.text("Reset To Best Color")],
               })
             ),
-            E("button", {
+            $("button", {
               onClick: () => enabled.toggle(),
               children: [
-                $text(
+                $.text(
                   enabled.map((x) =>
                     x ? "Turn Off Follower" : "Turn On Follower"
                   )
@@ -358,9 +333,47 @@
 
       // Example of a component function
       function exampleSection(props) {
-        return E("div", {
+        return $("div", {
           class: ["example", props.class],
           children: [...(props.children || [])],
+        });
+      }
+
+      /*===========================*\
+      ||        HTTP Request       ||
+      \*===========================*/
+
+      function httpRequestExample() {
+        const req = HTTP.get(
+          "https://dog.ceo/api/breeds/image/random",
+          async (ctx, next) => {
+            await next();
+            console.log(ctx);
+            ctx.body = ctx.body.message;
+          }
+        );
+        const src = req.map((ctx) => ctx.body);
+
+        setInterval(() => {
+          req.reload();
+        }, 10000);
+
+        return $("div", {
+          class: ["example", "http"],
+          children: [
+            $("img", {
+              src,
+              style: {
+                height: "200px",
+                border: "2px solid orange",
+              },
+            }),
+            $.text(
+              req.isLoading.map((isLoading) =>
+                isLoading ? "NOW LOADING..." : "Loaded!"
+              )
+            ),
+          ],
         });
       }
 
@@ -368,7 +381,7 @@
       ||           Render          ||
       \*===========================*/
 
-      const component = E("div", {
+      const component = $("div", {
         children: [
           classToggleExample(),
           counterExample(),
@@ -376,6 +389,7 @@
           conditionalExample(),
           mapExample(),
           mouseFollowerExample(),
+          httpRequestExample(),
         ],
       });
 
@@ -394,10 +408,10 @@
           //   route.next(route.params.id);
           // }, 500);
 
-          return E("span", {
+          return $("span", {
             children: [
               "TEMPORARY...",
-              E("button", {
+              $("button", {
                 onClick: () => {
                   route.next(route.params.id);
                 },
@@ -409,7 +423,7 @@
         (route, data) => {
           console.log("HELLO", route);
 
-          return E("span", {
+          return $("span", {
             children: [
               "I AM MOUNTED: ",
               data,
@@ -417,7 +431,7 @@
                 [
                   "edit",
                   (route) => {
-                    return E("span", { children: [route.path] });
+                    return $("span", { children: [route.path] });
                   },
                 ],
                 [

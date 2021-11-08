@@ -9,6 +9,8 @@ export type RouterOptions = {
   history?: History;
 
   basePath?: string;
+
+  useHash?: boolean;
 };
 
 export type RouteHandler = (route: RouteObject, data?: any) => Component | void;

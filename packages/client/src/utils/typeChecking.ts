@@ -30,9 +30,7 @@ export const isBinding = <T = unknown>(value: any): value is Binding<T> =>
 export const isListenable = <T = unknown>(
   value: unknown
 ): value is Listenable<T> => {
-  return (
-    isObject(value) && isFunction(value.listen) && value.current !== undefined
-  );
+  return isObject(value) && isFunction(value.listen);
 };
 
 export const isBindable = <T = unknown>(
