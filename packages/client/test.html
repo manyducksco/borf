@@ -52,422 +52,382 @@
     </div>
 
     <script type="module">
-      import { State, Source, Router, $, HTTP } from "./dist/main.modern.js";
+      import woof, { state } from "./dist/woof.js";
+
+      const app = woof();
+
+      app.service("test", function () {
+        return {
+          count: state(5),
+        };
+      });
+
+      app.route(
+        "*",
+        ({ app, next, http }) => {
+          console.log("HELLO", app);
+
+          app.title = "Loading...";
+
+          http
+            .get("https://dog.ceo/api/breeds/image/random")
+            .body((data, cancel) => {
+              app.cache.dog = data;
+              cancel();
+              next();
+            });
+        },
+        ({ app }) => {
+          app.title = "DOG";
+          console.log("HELLO AGAIN", app.query);
+          console.log(app.cache);
+
+          console.log(app.services("test").count());
+        }
+      );
+
+      app.start("#root");
 
       /*===========================*\
       ||        Class Toggle       ||
       \*===========================*/
 
-      class ToggleState extends State {
-        toggle() {
-          this.set(!this.current);
-        }
-      }
+      // class ToggleState extends State {
+      //   toggle() {
+      //     this.set(!this.current);
+      //   }
+      // }
 
-      function classToggleExample() {
-        const active = new ToggleState(false);
-        const status = active.map((value) => (value ? "ON" : "OFF"));
+      // function classToggleExample() {
+      //   const active = new ToggleState(false);
+      //   const status = active.map((value) => (value ? "ON" : "OFF"));
 
-        setInterval(() => {
-          active.toggle();
-        }, 2000);
+      //   setInterval(() => {
+      //     active.toggle();
+      //   }, 2000);
 
-        return $("div", {
-          class: {
-            example: true,
-            active: active,
-          },
-          children: [$.text(status)],
-        });
-      }
+      //   return $("div", {
+      //     class: {
+      //       example: true,
+      //       active: active,
+      //     },
+      //     children: [$.text(status)],
+      //   });
+      // }
 
       /*===========================*\
       ||       Counter + Map       ||
       \*===========================*/
 
-      class CounterState extends State {
-        increment() {
-          this.set(this.current + 1);
-        }
+      // class CounterState extends State {
+      //   increment() {
+      //     this.set(this.current + 1);
+      //   }
 
-        decrement() {
-          this.set(this.current - 1);
-        }
-      }
+      //   decrement() {
+      //     this.set(this.current - 1);
+      //   }
+      // }
 
-      function counterExample() {
-        const counter = new CounterState(0);
-        const label = counter.map((n) => ` the number is: ${n}`);
+      // function counterExample() {
+      //   const counter = new CounterState(0);
+      //   const label = counter.map((n) => ` the number is: ${n}`);
 
-        return $("div", {
-          class: ["example", "two"],
-          children: [
-            $("button", {
-              onClick() {
-                counter.increment();
-              },
-              children: [$.text("Increment")],
-            }),
-            $("button", {
-              onClick() {
-                counter.decrement();
-              },
-              children: [$.text("Decrement")],
-            }),
-            $.text(label),
-          ],
-        });
-      }
+      //   return $("div", {
+      //     class: ["example", "two"],
+      //     children: [
+      //       $("button", {
+      //         onClick() {
+      //           counter.increment();
+      //         },
+      //         children: [$.text("Increment")],
+      //       }),
+      //       $("button", {
+      //         onClick() {
+      //           counter.decrement();
+      //         },
+      //         children: [$.text("Decrement")],
+      //       }),
+      //       $.text(label),
+      //     ],
+      //   });
+      // }
 
       /*===========================*\
       ||      Two Way Binding      ||
       \*===========================*/
 
-      function twoWayBindExample() {
-        const text = new State("");
-        const size = new State(18);
+      // function twoWayBindExample() {
+      //   const text = new State("");
+      //   const size = new State(18);
 
-        text.listen(console.log);
-        size.listen(console.log);
+      //   text.listen(console.log);
+      //   size.listen(console.log);
 
-        return $("div", {
-          class: ["example", { three: true }],
-          children: [
-            $("input", {
-              value: text.bind(),
-            }),
-            $("input", {
-              type: "number",
-              value: size.bind(),
-            }),
-            $("p", {
-              children: [$.text(text, "Type Above")],
-              style: {
-                fontSize: size.map((s) => `${s}px`),
-              },
-            }),
-          ],
-        });
-      }
+      //   return $("div", {
+      //     class: ["example", { three: true }],
+      //     children: [
+      //       $("input", {
+      //         value: text.bind(),
+      //       }),
+      //       $("input", {
+      //         type: "number",
+      //         value: size.bind(),
+      //       }),
+      //       $("p", {
+      //         children: [$.text(text, "Type Above")],
+      //         style: {
+      //           fontSize: size.map((s) => `${s}px`),
+      //         },
+      //       }),
+      //     ],
+      //   });
+      // }
 
       /*===========================*\
       ||   Conditional Rendering   ||
       \*===========================*/
 
-      function conditionalExample() {
-        const show = new ToggleState(false);
-        const label = show.map((on) => (on ? "Hide Text" : "Show Text"));
+      // function conditionalExample() {
+      //   const show = new ToggleState(false);
+      //   const label = show.map((on) => (on ? "Hide Text" : "Show Text"));
 
-        return $("div", {
-          class: ["example", "four"],
-          children: [
-            $("button", {
-              onClick() {
-                show.toggle();
-              },
-              children: [$.text(label)],
-            }),
-            $.when(
-              show,
-              $("span", {
-                connected() {
-                  console.log("text was mounted");
-                },
-                disconnected() {
-                  console.log("text was unmounted");
-                },
-                children: [" Hello there!"],
-              })
-            ),
-          ],
-        });
-      }
+      //   return $("div", {
+      //     class: ["example", "four"],
+      //     children: [
+      //       $("button", {
+      //         onClick() {
+      //           show.toggle();
+      //         },
+      //         children: [$.text(label)],
+      //       }),
+      //       $.when(
+      //         show,
+      //         $("span", {
+      //           connected() {
+      //             console.log("text was mounted");
+      //           },
+      //           disconnected() {
+      //             console.log("text was unmounted");
+      //           },
+      //           children: [" Hello there!"],
+      //         })
+      //       ),
+      //     ],
+      //   });
+      // }
 
       /*===========================*\
       ||      Rendering Lists      ||
       \*===========================*/
 
       // TODO: Implement 'sort' as a transform function
-      function mapExample() {
-        const shoppingList = new State([
-          "apple",
-          "banana",
-          "potato",
-          "fried chicken",
-        ]);
+      // function mapExample() {
+      //   const shoppingList = new State([
+      //     "apple",
+      //     "banana",
+      //     "potato",
+      //     "fried chicken",
+      //   ]);
 
-        return $("div", {
-          class: ["example", "five"],
-          children: [
-            $("button", {
-              onClick() {
-                shoppingList.set(shoppingList.current.map((x) => x).sort());
-              },
-              children: ["Sort A to Z"],
-            }),
-            $("button", {
-              onClick() {
-                shoppingList.set(
-                  shoppingList.current
-                    .map((x) => x)
-                    .sort()
-                    .reverse()
-                );
-              },
-              children: ["Sort Z to A"],
-            }),
-            $.map(
-              shoppingList,
-              (x) => x,
-              (item) =>
-                $("li", {
-                  onClick() {
-                    alert(item);
-                  },
-                  children: [$.text(item)],
-                })
-            ),
-          ],
-        });
-      }
+      //   return $("div", {
+      //     class: ["example", "five"],
+      //     children: [
+      //       $("button", {
+      //         onClick() {
+      //           shoppingList.set(shoppingList.current.map((x) => x).sort());
+      //         },
+      //         children: ["Sort A to Z"],
+      //       }),
+      //       $("button", {
+      //         onClick() {
+      //           shoppingList.set(
+      //             shoppingList.current
+      //               .map((x) => x)
+      //               .sort()
+      //               .reverse()
+      //           );
+      //         },
+      //         children: ["Sort Z to A"],
+      //       }),
+      //       $.map(
+      //         shoppingList,
+      //         (x) => x,
+      //         (item) =>
+      //           $("li", {
+      //             onClick() {
+      //               alert(item);
+      //             },
+      //             children: [$.text(item)],
+      //           })
+      //       ),
+      //     ],
+      //   });
+      // }
 
       /*===========================*\
       ||       Mouse Follower      ||
       \*===========================*/
 
-      class MouseSource extends Source {
-        paused = false;
+      // class MouseSource extends Source {
+      //   paused = false;
 
-        constructor() {
-          super({ x: 0, y: 0 });
+      //   constructor() {
+      //     super({ x: 0, y: 0 });
 
-          window.addEventListener("mousemove", (e) => {
-            if (!this.paused) {
-              this.value = {
-                x: e.pageX,
-                y: e.pageY,
-              };
-              this.broadcast();
-            }
-          });
-        }
-      }
+      //     window.addEventListener("mousemove", (e) => {
+      //       if (!this.paused) {
+      //         this.value = {
+      //           x: e.pageX,
+      //           y: e.pageY,
+      //         };
+      //         this.broadcast();
+      //       }
+      //     });
+      //   }
+      // }
 
       // every X ms pass the function the old state and take its return value as the next state
       // const num = new TickState(1, 300, (n) => n + 1);
 
-      function getRandomHex() {
-        const hex = [
-          Math.random() * 256,
-          Math.random() * 256,
-          Math.random() * 256,
-        ]
-          .map(Math.floor)
-          .map((n) => n.toString(16))
-          .join("");
+      // function getRandomHex() {
+      //   const hex = [
+      //     Math.random() * 256,
+      //     Math.random() * 256,
+      //     Math.random() * 256,
+      //   ]
+      //     .map(Math.floor)
+      //     .map((n) => n.toString(16))
+      //     .join("");
 
-        return "#" + hex;
-      }
+      //   return "#" + hex;
+      // }
 
-      function mouseFollowerExample() {
-        const enabled = new ToggleState(false);
-        const mouse = new MouseSource();
-        const backgroundColor = new State("#ff0088");
-        const transform = mouse.map((m) => `translate(${m.x}px, ${m.y}px)`);
+      // function mouseFollowerExample() {
+      //   const enabled = new ToggleState(false);
+      //   const mouse = new MouseSource();
+      //   const backgroundColor = new State("#ff0088");
+      //   const transform = mouse.map((m) => `translate(${m.x}px, ${m.y}px)`);
 
-        const bestColor = "#ff0088";
-        const notBestColor = backgroundColor.map(
-          (hex) => hex.toLowerCase() !== bestColor
-        );
+      //   const bestColor = "#ff0088";
+      //   const notBestColor = backgroundColor.map(
+      //     (hex) => hex.toLowerCase() !== bestColor
+      //   );
 
-        mouse.paused = !enabled.current;
+      //   mouse.paused = !enabled.current;
 
-        // pause mouse listener when disabled
-        enabled.listen((value) => {
-          mouse.paused = !value;
-        });
+      //   // pause mouse listener when disabled
+      //   enabled.listen((value) => {
+      //     mouse.paused = !value;
+      //   });
 
-        return exampleSection({
-          class: ["mouse-follower"],
-          children: [
-            // TODO: Optimize - unsubscribe while component is not mounted
-            $.when(
-              enabled,
-              $("div", {
-                class: "follower",
-                style: {
-                  transform,
-                  backgroundColor,
-                },
-              })
-            ),
+      //   return exampleSection({
+      //     class: ["mouse-follower"],
+      //     children: [
+      //       // TODO: Optimize - unsubscribe while component is not mounted
+      //       $.when(
+      //         enabled,
+      //         $("div", {
+      //           class: "follower",
+      //           style: {
+      //             transform,
+      //             backgroundColor,
+      //           },
+      //         })
+      //       ),
 
-            $("button", {
-              onClick: () => {
-                backgroundColor.set(getRandomHex());
-              },
-              children: [$.text("Change Follower Color")],
-              disabled: enabled.map((x) => !x),
-            }),
-            $.when(
-              notBestColor,
-              $("button", {
-                onClick: () => backgroundColor.set(bestColor),
-                disabled: enabled.map((x) => !x),
-                children: [$.text("Reset To Best Color")],
-              })
-            ),
-            $("button", {
-              onClick: () => enabled.toggle(),
-              children: [
-                $.text(
-                  enabled.map((x) =>
-                    x ? "Turn Off Follower" : "Turn On Follower"
-                  )
-                ),
-              ],
-            }),
-          ],
-        });
-      }
+      //       $("button", {
+      //         onClick: () => {
+      //           backgroundColor.set(getRandomHex());
+      //         },
+      //         children: [$.text("Change Follower Color")],
+      //         disabled: enabled.map((x) => !x),
+      //       }),
+      //       $.when(
+      //         notBestColor,
+      //         $("button", {
+      //           onClick: () => backgroundColor.set(bestColor),
+      //           disabled: enabled.map((x) => !x),
+      //           children: [$.text("Reset To Best Color")],
+      //         })
+      //       ),
+      //       $("button", {
+      //         onClick: () => enabled.toggle(),
+      //         children: [
+      //           $.text(
+      //             enabled.map((x) =>
+      //               x ? "Turn Off Follower" : "Turn On Follower"
+      //             )
+      //           ),
+      //         ],
+      //       }),
+      //     ],
+      //   });
+      // }
 
       // Example of a component function
-      function exampleSection(props) {
-        return $("div", {
-          class: ["example", props.class],
-          children: [...(props.children || [])],
-        });
-      }
+      // function exampleSection(props) {
+      //   return $("div", {
+      //     class: ["example", props.class],
+      //     children: [...(props.children || [])],
+      //   });
+      // }
 
       /*===========================*\
       ||        HTTP Request       ||
       \*===========================*/
 
-      function httpRequestExample() {
-        const req = HTTP.get(
-          "https://dog.ceo/api/breeds/image/random",
-          async (ctx, next) => {
-            await next();
-            console.log(ctx);
-            ctx.body = ctx.body.message;
-          }
-        );
-        const src = req.map((ctx) => ctx.body);
+      // function httpRequestExample() {
+      //   const req = HTTP.get(
+      //     "https://dog.ceo/api/breeds/image/random",
+      //     async (ctx, next) => {
+      //       await next();
+      //       console.log(ctx);
+      //       ctx.body = ctx.body.message;
+      //     }
+      //   );
+      //   const src = req.map((ctx) => ctx.body);
 
-        setInterval(() => {
-          req.reload();
-        }, 10000);
+      //   setInterval(() => {
+      //     req.reload();
+      //   }, 10000);
 
-        return $("div", {
-          class: ["example", "http"],
-          children: [
-            $("img", {
-              src,
-              style: {
-                height: "200px",
-                border: "2px solid orange",
-              },
-            }),
-            $.text(
-              req.isLoading.map((isLoading) =>
-                isLoading ? "NOW LOADING..." : "Loaded!"
-              )
-            ),
-          ],
-        });
-      }
+      //   return $("div", {
+      //     class: ["example", "http"],
+      //     children: [
+      //       $("img", {
+      //         src,
+      //         style: {
+      //           height: "200px",
+      //           border: "2px solid orange",
+      //         },
+      //       }),
+      //       $.text(
+      //         req.isLoading.map((isLoading) =>
+      //           isLoading ? "NOW LOADING..." : "Loaded!"
+      //         )
+      //       ),
+      //     ],
+      //   });
+      // }
 
       /*===========================*\
       ||           Render          ||
       \*===========================*/
 
-      const component = $("div", {
-        children: [
-          classToggleExample(),
-          counterExample(),
-          twoWayBindExample(),
-          conditionalExample(),
-          mapExample(),
-          mouseFollowerExample(),
-          httpRequestExample(),
-        ],
-      });
+      // const component = $("div", {
+      //   children: [
+      //     classToggleExample(),
+      //     counterExample(),
+      //     twoWayBindExample(),
+      //     conditionalExample(),
+      //     mapExample(),
+      //     mouseFollowerExample(),
+      //     httpRequestExample(),
+      //   ],
+      // });
 
-      component.connect(document.getElementById("root"));
-
-      /*===========================*\
-      ||          Routing          ||
-      \*===========================*/
-
-      const router = new Router();
-
-      router.on(
-        "test/:id",
-        (route) => {
-          // setTimeout(() => {
-          //   route.next(route.params.id);
-          // }, 500);
-
-          return $("span", {
-            children: [
-              "TEMPORARY...",
-              $("button", {
-                onClick: () => {
-                  route.next(route.params.id);
-                },
-                children: ["Click for next route"],
-              }),
-            ],
-          });
-        },
-        (route, data) => {
-          console.log("HELLO", route);
-
-          return $("span", {
-            children: [
-              "I AM MOUNTED: ",
-              data,
-              route.switch([
-                [
-                  "edit",
-                  (route) => {
-                    return $("span", { children: [route.path] });
-                  },
-                ],
-                [
-                  "*",
-                  (route) => {
-                    console.log(route);
-                    route.redirect("edit", { replace: true });
-                  },
-                ],
-              ]),
-
-              // route.switch({
-              //   tagName: "span",
-              //   class: "some-class",
-              //   routes: [
-              //     [
-              //       "edit",
-              //       (route) => {
-              //         return E("span", { children: [route.path] });
-              //       },
-              //     ],
-              //     [
-              //       "*",
-              //       (route) => {
-              //         console.log(route);
-              //         route.redirect("edit", { replace: true });
-              //       },
-              //     ],
-              //   ],
-              // }),
-            ],
-          });
-        }
-      );
-
-      router.connect("#router-test");
+      // component.connect(document.getElementById("root"));
     </script>
   </body>
 </html>

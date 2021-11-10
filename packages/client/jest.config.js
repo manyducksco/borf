@@ -1,6 +1,6 @@
 /** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
-module.exports = {
-  preset: "ts-jest",
+export default {
+  // preset: "ts-jest",
   testEnvironment: "jsdom",
-  resolver: "jest-ts-webcompat-resolver",
+  // resolver: "jest-ts-webcompat-resolver",
 };
