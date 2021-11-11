@@ -1,3 +1,4 @@
+import { makeDolla } from "./Dolla";
 import { HTTP } from "./HTTP";
 import { Router } from "./Router";
 
@@ -7,24 +8,22 @@ export class Woof {
   #services = {};
   #cache = {};
   #http = new HTTP();
+  #dolla;
 
   constructor(options = {}) {
-    const gi = this.#getInjectables.bind(this);
+    const injectables = this.#getInjectables.bind(this);
 
     if (options.hash) {
-      this.#router = new Router(
-        {
-          useHash: true,
-        },
-        gi
-      );
+      this.#router = new Router({ hash: true }, injectables);
     } else {
-      this.#router = new Router({}, gi);
+      this.#router = new Router({}, injectables);
     }
+
+    this.#dolla = makeDolla(injectables());
   }
 
   /**
-   * Takes an init function to configure the app before it starts. If the function returns
+   * Takes a function to configure the app before it starts. If the function returns
    * a Promise, the app will not be started until the Promise resolves.
    *
    * @param fn - App config function.
@@ -67,6 +66,10 @@ export class Woof {
 
       service.app = injectables.app;
       service.http = injectables.http;
+
+      if (typeof service.init === "function") {
+        service.init();
+      }
     }
 
     if (this.#initFn) {
@@ -79,11 +82,12 @@ export class Woof {
   }
 
   #getInjectables() {
-    const router = this.#router;
-    const cache = this.#cache;
-    const { location } = this.#router.history;
+    const self = this;
 
     return {
+      get $() {
+        return self.#dolla;
+      },
       app: Object.freeze({
         get title() {
           return document.title;
@@ -92,26 +96,26 @@ export class Woof {
           document.title = value;
         },
         get path() {
-          return router.path;
+          return self.#router.path;
         },
         get route() {
-          return router.route;
+          return self.#router.route;
         },
         get params() {
-          return router.params;
+          return self.#router.params;
         },
         get query() {
-          return router.query;
+          return self.#router.query;
         },
         get wildcard() {
-          return router.wildcard;
+          return self.#router.wildcard;
         },
         get cache() {
-          return cache;
+          return self.#cache;
         },
         services: (name) => {
-          if (this.#services[name]) {
-            return this.#services[name];
+          if (self.#services[name]) {
+            return self.#services[name];
           }
 
           throw new Error(
@@ -120,7 +124,9 @@ export class Woof {
         },
         navigate: this.#router.navigate.bind(this.#router),
       }),
-      http: this.#http,
+      get http() {
+        return self.#http;
+      },
     };
   }
 }

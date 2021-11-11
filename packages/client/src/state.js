@@ -1,8 +1,18 @@
 /**
- * Returns a function that takes either:
- *  - nothing (returns the current value)
- *  - a new value to replace the current value (returns the new value)
- *  - a function to receive new values (returns a cancel function)
+ * Creates a state container in the form of a function. This function can be called three ways with different results.
+ *
+ * @example
+ * const count = state(0);
+ *
+ * count(); // returns 0
+ * count(1); // sets value to 1
+ * const cancel = count((n, cancel) => {
+ *   // listen for changes
+ *   cancel(); // cancel at any time from within the listener
+ * });
+ * cancel(); // cancel from outside the listener
+ *
+ * @param initialValue - Starting value (optional)
  */
 export function state(initialValue) {
   let value = initialValue;

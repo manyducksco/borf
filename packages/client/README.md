@@ -1,10 +1,11 @@
 # Woof
 
-A web framework with these goals:
+A web framework that aims to:
 
-- Made up of individual tools that compose well together
-- Doesn't require any transpiling or build system
-- Runs the minimal amount of logic to get the job done (including DOM updates)
+- Be easy to understand
+- Make good solutions the obvious solutions (a.k.a. "pit of success")
+- Not require a build system if you don't want to use one
+- Run the minimal amount of logic to get the job done (including DOM updates)
 
 ## Install
 
@@ -14,11 +15,10 @@ npm i @manyducksco/woof
 
 ## What a good web framework should be
 
-- Easy to think about. _What are all the pieces and how are they related?_
 - Effortlessly keeps the DOM in sync with the data. You should never need to think about this.
 - Guides you toward doing things correctly, especially when you don't know what that looks like.
   - Obvious solutions should be good solutions (a.k.a "Pit of Success")
-- Solves all the everyday problems without stepping too far out of the framework:
+- Solves all the everyday problems without stepping out of the framework:
   - Views
   - Routing
   - State management
@@ -33,42 +33,17 @@ import woof from "@manyducksco/woof";
 
 const app = woof();
 
-// init function is run before the app is started
-// use it to set up middleware, preload caches, etc.
-// if it is async, the app won't be started until the promise resolves
-app.init(async ({ app, http }) => {
-  http.use((ctx, next) => {
-    const url = new URL(ctx.url);
-
-    if (/* is local API call */ && app.cache.authToken) {
-      ctx.headers["authorization"] = `Bearer ${app.cache.authToken}`;
-    }
-
-    await next();
-  });
-
-  http.get("/api/preload").body((value, cancel) => {
-    if (res.isSuccess()) {
-      app.cache.preloaded = value;
-    }
-
-    // Remove loading screen embedded in HTML
-    const loader = document.querySelector("#loader");
-    loader.parentNode.removeChild(loader);
-
-    cancel();
-  });
-});
-
+// add services to hold shared state
 app.service("name", Service);
 
-// handlers are functions that return a Component or null
-// you can also pass a component directly
-app.route("some/:id", ...handlers);
+// add routes to display components when the browser's location matches
+app.route("some/:id", Component);
 
+// routes take any number of handler functions before the component if you
+// need to prepare data or state before the component is mounted
 app.route(
   "other/path",
-  ({ app, http, next }) => {
+  function ({ app, http, next }) {
     console.log("one");
 
     http.get("/api/example").then((res) => {
@@ -84,6 +59,8 @@ app.start("#app");
 // render HTML for the given path to a string (for server side rendering)?
 app.toString(path);
 ```
+
+## Route handler functions
 
 Multiple handler functions can be stacked on one route, activated when the previous handler calls `next()`. Handlers look like this:
 
@@ -166,6 +143,8 @@ const handler = ({ $, app, next, http }) => {
 };
 ```
 
+## Reusable views with Component
+
 You can make an entire app out of render functions, but Component offers an object with lifecycle methods and local state.
 
 ```js
@@ -229,6 +208,8 @@ class MyComponent extends Component {
 }
 ```
 
+## Shared state and logic with Service
+
 Services are single instances of a class, registered on app, that can be used from any route handler or component.
 
 ```js
@@ -272,6 +253,8 @@ app.route("*", ({ app }) => {
 app.start("#app");
 ```
 
+## Reactive state with `state()`
+
 Woof has no virtual DOM, so any data that is going to change and be reacted to should be defined as a `state`.
 
 ```js
@@ -302,4 +285,27 @@ doubled(5); // throws an Error("State copies cannot be set.")
 doubled((value) => {
   console.log(value);
 });
+```
+
+## Advanced setup
+
+```js
+import woof from "@manyducksco/woof";
+
+const app = woof();
+
+// Use `.init(fn)` to configure the app before it starts.
+// If the function returns a Promise, the app will wait for resolved before starting
+app.init(async function ({ app, http }) {
+  http.use((ctx, next) => {
+    // Configure some HTTP middleware
+  });
+
+  // Preload some data from an API
+  const data = await http.get("/prefetched/data");
+
+  app.cache.data = data;
+});
+
+app.start("#app");
 ```

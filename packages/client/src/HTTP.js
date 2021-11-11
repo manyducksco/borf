@@ -80,8 +80,6 @@ export class HTTPRequest {
     this.#options = options;
     this.#middleware = middleware;
 
-    console.log(this);
-
     this.refresh();
   }
 

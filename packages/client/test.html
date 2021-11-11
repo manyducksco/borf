@@ -52,37 +52,65 @@
     </div>
 
     <script type="module">
-      import woof, { state } from "./dist/woof.js";
+      import woof, { state, Service, Component } from "./dist/woof.js";
 
-      const app = woof();
+      const app = woof({ hash: true });
 
-      app.service("test", function () {
-        return {
-          count: state(5),
-        };
-      });
+      class Counter extends Service {
+        init() {
+          this.count = state(5);
+        }
+      }
+
+      class View extends Component {
+        init($) {
+          return $("div")("This is the view");
+        }
+      }
+
+      app.service("counter", Counter);
 
       app.route(
         "*",
-        ({ app, next, http }) => {
-          console.log("HELLO", app);
+        // function ({ app, next, http }) {
+        //   console.log("HELLO", app);
 
-          app.title = "Loading...";
+        //   app.title = "Loading...";
 
-          http
-            .get("https://dog.ceo/api/breeds/image/random")
-            .body((data, cancel) => {
-              app.cache.dog = data;
-              cancel();
-              next();
-            });
-        },
-        ({ app }) => {
+        //   http
+        //     .get("https://dog.ceo/api/breeds/image/random")
+        //     .body((data, cancel) => {
+        //       app.cache.dog = data;
+        //       cancel();
+        //       next();
+        //     });
+        // },
+        function ({ $, app }) {
           app.title = "DOG";
-          console.log("HELLO AGAIN", app.query);
-          console.log(app.cache);
 
-          console.log(app.services("test").count());
+          const [div, ul, li, a] = ["div", "ul", "li", "a"].map($);
+
+          // return $(View);
+          return div(
+            ul(
+              li(
+                a(
+                  {
+                    href: "/one",
+                  },
+                  "One"
+                )
+              ),
+              li(
+                a(
+                  {
+                    href: "/two",
+                  },
+                  "Two"
+                )
+              )
+            )
+          );
         }
       );
 

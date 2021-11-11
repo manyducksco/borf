@@ -14,3 +14,5 @@ export const isObject = (value) =>
   value != null && typeof value === "object" && !isArray(value);
 
 export const isString = (value) => typeof value === "string";
+
+export const isDolla = (value) => isFunction(value) && value.isDolla == true;

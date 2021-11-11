@@ -75,7 +75,6 @@ class KeyLayer {
       key = keyAlias[key] || key;
 
       const pressed = Array.from(this.#keysDown).sort().join("+");
-      console.log(pressed);
       const binding = this.#bindings.find(
         (b) => b.event === "keyup" && b.hash === pressed
       );

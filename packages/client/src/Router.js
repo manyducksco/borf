@@ -2,15 +2,15 @@ import { createHashHistory, createBrowserHistory } from "history";
 import { match } from "path-to-regexp";
 import queryString from "query-string";
 import catchLinks from "./utils/catchLinks";
-import { isString } from "./utils/typeChecking";
-import { Component } from "./Component";
+import { isFunction, isString } from "./utils/typeChecking";
+import { $Node } from "./$Node";
 
 export class Router {
   #basePath = "";
   #routes = [];
   #cancellers = [];
-  #outlet = null;
-  #mountedComponent = null;
+  #outlet;
+  #mounted;
   #getInjectables;
 
   history;
@@ -38,7 +38,7 @@ export class Router {
   /**
    * Registers a new route and its handler function(s).
    *
-   * @param route - path string (like '/example/:id/edit')
+   * @param route - Path string (like '/example/:id/edit')
    * @param handlers - One or more route handler functions
    */
   on(route, ...handlers) {
@@ -62,7 +62,33 @@ export class Router {
     return this;
   }
 
-  navigate() {}
+  /**
+   * Navigates to another route or traverses navigation history with a number of steps.
+   *
+   * @example
+   * router.navigate(-1);
+   * router.navigate(2);
+   * router.navigate("/other/path");
+   * router.navigate("/other/path", { replace: true });
+   *
+   * @param to - Path string or number of history entries
+   * @param options - `replace: true` to replace state
+   */
+  navigate(to, options = {}) {
+    if (typeof to === "number") {
+      this.history.go(to);
+    } else if (typeof to === "string") {
+      if (options.replace) {
+        this.history.replace(to);
+      } else {
+        this.history.push(to);
+      }
+    } else {
+      throw new TypeError(
+        `Expected a number or string as the first parameter but received ${typeof to}`
+      );
+    }
+  }
 
   /**
    * Starts routing, rendering the current route component into the `outlet` element.
@@ -187,35 +213,33 @@ export class Router {
     this.params = matched.params;
     this.query = target.query;
 
-    // const injectables = this.#getInjectables();
+    const { $, app, http } = this.#getInjectables();
 
-    const injectables = {
-      ...this.#getInjectables(),
-      $: () => alert("Not Yet"),
-      next,
-    };
-
-    function next() {
+    const next = () => {
       if (route.handlers[handlerIndex + 1]) {
         handlerIndex++;
-        const result = route.handlers[handlerIndex](injectables);
+        let result = route.handlers[handlerIndex]({ $, app, http, next });
 
-        if (result instanceof Component) {
-          // Mount the component
+        if (result.isComponent) {
+          result = $(result);
+        }
+
+        if (isFunction(result) && result.isDolla) {
+          result = result();
+        }
+
+        if (result instanceof $Node) {
           requestAnimationFrame(() => {
-            if (this.#mountedComponent) {
-              this.#mountedComponent.disconnect();
+            if (this.#mounted) {
+              this.#mounted.disconnect();
             }
-
-            this.#mountedComponent = result;
-            this.#mountedComponent.connect(this.#outlet);
+            this.#mounted = result;
+            this.#mounted.connect(this.#outlet);
           });
         } else if (result !== undefined) {
           throw new TypeError(
-            `Route handler returned ${typeof result} but expected a component or undefined.`
+            `Route handler returned ${typeof result} but expected a $Node or undefined.`
           );
-          // Keep current component
-          // console.log("not mounting any component");
         }
       } else {
         if (handlerIndex === 0) {
@@ -226,7 +250,7 @@ export class Router {
           );
         }
       }
-    }
+    };
 
     next();
   }

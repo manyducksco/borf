@@ -10,7 +10,7 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "npm run test -- --watch",
     "test:coverage": "npm run test -- --coverage",
-    "build": "esbuild src/index.js --bundle --format=esm --minify --sourcemap --outfile=dist/woof.js",
+    "build": "esbuild src/index.js --bundle --format=esm --sourcemap --outfile=dist/woof.js",
     "build:watch": "npm run build -- --watch"
   },
   "keywords": [],

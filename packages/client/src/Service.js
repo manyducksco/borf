@@ -1,1 +1,6 @@
-export class Service {}
+export class Service {
+  app;
+  http;
+
+  init() {}
+}
