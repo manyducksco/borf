@@ -91,13 +91,15 @@ const handler = ({ $, app, next, http }) => {
   next(); // continue to next route in the stack with `next`
 
   // create templates with $ object:
-  const div = $("div"); // creates an element constructor
+  const div = $("div", { class: "first-class" }); // creates an element constructor
 
   // takes an (optional) attributes object and any number of children
+  // attributes will be merged with attributes passed to the constructor
   // children can be strings, falsy values (ignored), Component instances, or render functions
-  const element = div({ class: "some-class" }, "Child", () =>
-    $("span")("Child2")
+  const element = div({ class: "second-class" }, "Child", () =>
+    $("span")(" Child2 ")
   );
+  // this creates: <div class="first-class second-class">Child<span> Child2 </span></div>
 
   // components can be used in the same way by passing the class to $()
   // this binds special properties like the global 'app' object when the component is initialized

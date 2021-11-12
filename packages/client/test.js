@@ -150,11 +150,15 @@ class ConditionalExample extends Component {
 
 class MapExample extends Component {
   init($) {
-    const shoppingList = state(["apple", "banana", "potato", "fried chicken"], {
+    const initialList = ["apple", "banana", "potato", "fried chicken"];
+    const shoppingList = state(initialList, {
       append: (current, value) => [...current, value],
+      reset: () => initialList,
     });
 
     const inputValue = state("");
+
+    inputValue((value) => console.log(value));
 
     return $("div")(
       $("button")(
@@ -201,6 +205,14 @@ class MapExample extends Component {
             },
           },
           "Add Item"
+        ),
+        $("button")(
+          {
+            onclick: () => {
+              shoppingList.reset();
+            },
+          },
+          "Reset List"
         )
       ),
 
