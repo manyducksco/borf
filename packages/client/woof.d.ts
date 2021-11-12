@@ -1,9 +1,14 @@
 declare module "@manyducksco/woof" {
-  interface WoofOptions {}
+  interface AppOptions {}
 
-  class Woof {}
+  class App {}
 
-  export default function (options?: WoofOptions): Woof;
+  /**
+   * Creates a new app.
+   *
+   * @param options - Customize your app with an options object. `hash: true` for hash routing.
+   */
+  export default function (options?: AppOptions): App;
 
   export function state();
 }

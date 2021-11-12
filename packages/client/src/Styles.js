@@ -1,17 +1,38 @@
-interface StyleData {
-  [className: string]: {
-    [property: string]: any;
-  };
-}
-
+/**
+ * Creates a stylesheet object with class names as properties.
+ * Styles are scoped with a random ID and appended to the document <head>.
+ *
+ * @example
+ * const styles = new Styles({
+ *   button: {
+ *     color: "yellow",
+ *     backgroundColor: "red",
+ *     border: "4px dashed magenta"
+ *   }
+ * });
+ *
+ * $("button")({
+ *   class: styles.button,
+ *   onclick: () => {
+ *     alert("Greetings from the world's ugliest button")
+ *   }
+ * })
+ */
 export class Styles {
   id = Math.ceil(Math.random() * 99999999999999).toString(16);
+  styles;
 
-  constructor(private styles: StyleData) {
-    this.mount();
+  constructor(styles) {
+    this.styles = styles;
+
+    for (const className in styles) {
+      this[className] = `${className}_${this.id}`;
+    }
+
+    this.#mount();
   }
 
-  private mount() {
+  #mount() {
     const root = document.createElement("style");
     root.appendChild(document.createTextNode(this.toString()));
     document.head.appendChild(root);

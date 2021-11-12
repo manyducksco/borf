@@ -1,6 +1,31 @@
-import woof, { state, Service, Component } from "./dist/woof.js";
+import woof, { state, Service, Component, Styles } from "./dist/woof.js";
 
 const app = woof({ hash: true });
+
+const styles = new Styles({
+  testing: {
+    backgroundColor: "red",
+  },
+  example: {
+    backgroundColor: "transparent",
+    transition: "background-color 200ms",
+    marginBottom: "1em",
+    padding: "0.5em",
+    border: "1px solid #ccc",
+  },
+  active: {
+    backgroundColor: "#b6eeb6",
+  },
+  follower: {
+    width: "32px",
+    height: "32px",
+    borderRadius: "50px",
+    backgroundColor: "red",
+    position: "fixed",
+    top: "0",
+    left: "0",
+  },
+});
 
 /*===========================*\
 ||        Class Toggle       ||
@@ -17,7 +42,7 @@ class ToggleExample extends Component {
     return $("div")(
       {
         class: {
-          active: this.active, // class "active" is applied while this.active is true
+          [styles.active]: this.active, // class "active" is applied while this.active is true
         },
         onclick: () => {
           this.active.toggle();
@@ -306,12 +331,10 @@ class MouseFollowerExample extends Component {
     );
 
     return $(ExampleSection)(
-      { class: "mouse-follower" },
-
       $.if(
         enabled,
         $("div")({
-          class: "follower",
+          class: styles.follower,
           style: {
             transform,
             backgroundColor,
@@ -381,10 +404,10 @@ app.route("*", function ({ $, app }) {
     app.title = `x:${Math.round(current.x)} y:${Math.round(current.y)}`;
   });
 
-  const example = $("div", { class: "example" });
+  const example = $("div", { class: styles.example });
 
   return $("div")(
-    { class: "demo" },
+    { class: styles.demo },
     example($(ToggleExample)),
     example($(CounterExample), $(CounterViewLabel)),
     example($(ConditionalExample)),
