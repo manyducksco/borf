@@ -1,4 +1,3 @@
-import { $Element } from "./$Element";
 import { $Node } from "./$Node";
 
 export class Component extends $Node {
@@ -6,7 +5,7 @@ export class Component extends $Node {
     return true;
   }
 
-  element;
+  #element;
   #dolla;
 
   set $(dolla) {
@@ -17,6 +16,10 @@ export class Component extends $Node {
   http;
   attributes;
   children;
+
+  get isConnected() {
+    return this.#element && this.#element.isConnected();
+  }
 
   constructor(attributes = {}, children = []) {
     super();
@@ -29,17 +32,38 @@ export class Component extends $Node {
     throw new Error(`Component needs an 'init' method`);
   }
 
-  createElement() {
-    let node = this.init(this.#dolla);
+  connect(parent, after = null) {
+    const wasConnected = this.isConnected;
 
-    if (node instanceof $Node) {
-      console.log(node);
+    // Run lifecycle callback only if connecting.
+    // Connecting a node that is already connected moves it without unmounting.
+    if (!wasConnected) {
+      this.#element = this.init(this.#dolla);
 
-      return node.createElement();
-    } else {
-      throw new Error(
-        `Component 'init' method must return an $(element). Received: ${typeof node}`
-      );
+      if (this.#element instanceof $Node == false) {
+        throw new Error(
+          `Component 'init' method must return an $(element). Received: ${typeof node}`
+        );
+      }
+
+      this.beforeConnect();
+    }
+
+    this.#element.connect(parent, after);
+
+    if (!wasConnected) {
+      this.connected();
+    }
+  }
+
+  disconnect() {
+    if (this.isConnected) {
+      this.beforeDisconnect();
+
+      this.#element.disconnect();
+
+      this.disconnected();
+      this.#element = null;
     }
   }
 }

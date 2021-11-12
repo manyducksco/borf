@@ -7,7 +7,7 @@ import { isObject, isString } from "./utils/typeChecking";
  * Creates a $ function with bound injectables.
  */
 export function makeDolla({ app, http }) {
-  function Dolla(element) {
+  function Dolla(element, defaultAttrs = {}) {
     let type = null;
 
     if (element.isComponent) {
@@ -24,12 +24,23 @@ export function makeDolla({ app, http }) {
      * @param args - Attributes object (optional) followed by any number of children
      */
     function create(...args) {
-      let attributes = {};
+      let attributes = { ...defaultAttrs };
       let children = args;
+      const firstArg = args[0];
 
-      if (!(args[0] instanceof $Node) && isObject(args[0])) {
+      if (firstArg instanceof $Node == false && isObject(firstArg)) {
         attributes = children.shift();
       }
+
+      children = children
+        .filter((x) => x != null && x !== false)
+        .map((child) => {
+          if (child.isDolla) {
+            return child();
+          }
+
+          return child;
+        });
 
       let node;
 

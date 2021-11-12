@@ -8,8 +8,7 @@ import {
 import { $Node } from "./$Node";
 import { $Text } from "./$Text";
 
-// Any props in this list will NOT be forwarded to the DOM node.
-// These can be component-specific props or props that need special handling to apply.
+// Props in this list will not be forwarded to the DOM node.
 const privateProps = [
   "children",
   "class",
@@ -228,19 +227,6 @@ export class $Element extends $Node {
     callback(state());
   }
 }
-
-// Syntax for two way data binding?
-// $("input")({
-//   type: "text",
-//   value: $.bind(value),
-// });
-// $("input")({
-//   type: "text",
-//   value: value,
-//   onchange: (e) => {
-//     value(e.target.value);
-//   }
-// });
 
 function getClassMap(classes) {
   let mapped = {};

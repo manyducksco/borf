@@ -1,54 +1,52 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <title>Demo</title>
 
-<head>
-  <title>Demo</title>
+    <style>
+      body {
+        padding: 1em;
+        margin: 0;
+      }
 
-  <style>
-    body {
-      padding: 1em;
-      margin: 0;
-    }
+      .example {
+        background-color: transparent;
+        transition: background-color 200ms;
+        margin-bottom: 1em;
+        padding: 0.5em;
+        border: 1px solid #ccc;
+      }
 
-    .example {
-      background-color: transparent;
-      transition: background-color 200ms;
-      margin-bottom: 1em;
-      padding: 0.5em;
-      border: 1px solid #ccc;
-    }
+      .active {
+        background-color: #b6eeb6;
+      }
 
-    .example.active {
-      background-color: #b6eeb6;
-    }
+      .follower {
+        width: 32px;
+        height: 32px;
+        border-radius: 50px;
+        background-color: red;
+        position: fixed;
+        top: 0;
+        left: 0;
+      }
 
-    .follower {
-      width: 32px;
-      height: 32px;
-      border-radius: 50px;
-      background-color: red;
-      position: fixed;
-      top: 0;
-      left: 0;
-    }
+      .input-group {
+        display: flex;
+        flex-flow: column nowrap;
+        margin-bottom: 1em;
+      }
 
-    .input-group {
-      display: flex;
-      flex-flow: column nowrap;
-      margin-bottom: 1em;
-    }
+      .input-group h3 {
+        padding: 0;
+        margin: 0;
+      }
+    </style>
+  </head>
 
-    .input-group h3 {
-      padding: 0;
-      margin: 0;
-    }
-  </style>
-</head>
+  <body>
+    <div id="app"></div>
 
-<body>
-  <div id="app"></div>
-
-  <script type="module" src="./test.js"></script>
-</body>
-
+    <script type="module" src="./test.js"></script>
+  </body>
 </html>

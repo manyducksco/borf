@@ -2,357 +2,397 @@ import woof, { state, Service, Component } from "./dist/woof.js";
 
 const app = woof({ hash: true });
 
-class Counter extends Service {
-  init() {
-    this.count = state(5);
+/*===========================*\
+||        Class Toggle       ||
+\*===========================*/
+
+class ToggleExample extends Component {
+  active = state(false, {
+    toggle: (current) => !current,
+  });
+
+  status = state.map(this.active, (current) => (current ? "ON" : "OFF"));
+
+  init($) {
+    return $("div")(
+      {
+        class: {
+          active: this.active, // class "active" is applied while this.active is true
+        },
+        onclick: () => {
+          this.active.toggle();
+        },
+      },
+      $.text(this.status),
+      "  (click to toggle)"
+    );
   }
 }
 
-class View extends Component {
-  init($) {
-    return $("div")("This is the view");
+/*===========================*\
+||    Counter with Service   ||
+\*===========================*/
+
+class Counter extends Service {
+  count = state(0);
+
+  init() {
+    setInterval(() => {
+      this.count(this.count() + 1);
+    }, 1000);
+  }
+
+  reset() {
+    this.count(0);
   }
 }
 
 app.service("counter", Counter);
 
-app.route("*", function ({ $, app, http }) {
-  app.title = "DOGGO";
+/**
+ * Component with controls and a mapped label based on the state inside the service.
+ */
+class CounterExample extends Component {
+  init($) {
+    const counter = this.app.services("counter");
+    const label = state.map(counter.count, (n) => ` the number is: ${n}`);
 
-  return $("div")(
-    { class: "demo" },
-    // $(ToggleExample),
-    // $(CounterExample),
-    classToggleExample($),
-    counterExample($),
-    conditionalExample($),
-    twoWayBindExample($),
-    httpRequestExample($, http)
-    // mapExample($)
-    // mouseFollowerExample($),
-  );
-});
-
-app.start("#app");
-
-/*===========================*\
-||        Class Toggle       ||
-\*===========================*/
-
-function classToggleExample($) {
-  const active = state(false, {
-    toggle: (current) => !current,
-  });
-  const status = state.map(active, (current) => (current ? "ON" : "OFF"));
-
-  setInterval(() => {
-    active.toggle();
-  }, 2000);
-
-  return $("div")(
-    {
-      class: {
-        example: true,
-        active: active,
-      },
-    },
-    $.text(status)
-  );
-}
-
-/*===========================*\
-||       Counter + Map       ||
-\*===========================*/
-
-function counterExample($) {
-  const counter = state(0, {
-    increment: (current) => current + 1,
-    decrement: (current) => current - 1,
-  });
-  const label = state.map(counter, (n) => ` the number is: ${n}`);
-
-  return $("div")(
-    {
-      class: ["example", "two"],
-    },
-    $("button")({ onclick: counter.increment }, "Increment"),
-    $("button")({ onclick: counter.decrement }, "Decrement"),
-    $.text(label)
-  );
-}
-
-/*===========================*\
-||      Two Way Binding      ||
-\*===========================*/
-
-function twoWayBindExample($) {
-  const text = state("default");
-  const size = state(18);
-
-  return $("div")(
-    {
-      class: ["example", { three: true }],
-    },
-    $("input")({
-      value: text,
-      oninput: (e) => {
-        text(e.target.value);
-      },
-    }),
-    $("input")({
-      type: "number",
-      value: size,
-      oninput: (e) => {
-        size(Number(e.target.value));
-      },
-    }),
-    $("p")(
-      {
-        style: {
-          fontSize: state.map(size, (s) => `${s}px`),
+    return $("div")(
+      $("button")(
+        {
+          onclick: () => counter.reset(),
         },
-      },
-      $.text(text, "Type Above")
-    )
-  );
+        "Reset"
+      ),
+      $.text(label)
+    );
+  }
+}
+
+/**
+ * Second component with a view only. Displays the same information from the same service.
+ */
+class CounterViewLabel extends Component {
+  init($) {
+    const counter = this.app.services("counter");
+
+    return $("h1")($.text(counter.count));
+  }
 }
 
 /*===========================*\
 ||   Conditional Rendering   ||
 \*===========================*/
 
-function conditionalExample($) {
-  const show = state(false, {
+class ConditionalExample extends Component {
+  show = state(false, {
     toggle: (current) => !current,
   });
-  const label = state.map(show, (on) => (on ? "Hide Text" : "Show Text"));
 
-  return $("div")(
-    {
-      class: ["example", "four"],
-    },
-    $("button")(
-      {
-        onclick() {
-          show.toggle();
-        },
-      },
-      $.text(label)
-    ),
-    $.if(
-      show,
-      $("span")(
+  label = state.map(this.show, (on) => (on ? "Hide Text" : "Show Text"));
+
+  init($) {
+    return $("div")(
+      $("button")(
         {
-          connected() {
-            console.log("text was mounted");
-          },
-          disconnected() {
-            console.log("text was unmounted");
+          onclick: () => {
+            this.show.toggle();
           },
         },
-        "Hello there!"
+        $.text(this.label)
+      ),
+      $.if(
+        this.show,
+        $("span")(
+          {
+            connected() {
+              console.log("text was mounted");
+            },
+            disconnected() {
+              console.log("text was unmounted");
+            },
+          },
+          "Hello there!"
+        )
       )
-    )
-  );
+    );
+  }
 }
 
 /*===========================*\
 ||      Rendering Lists      ||
 \*===========================*/
 
-function mapExample($) {
-  const shoppingList = state(["apple", "banana", "potato", "fried chicken"]);
+class MapExample extends Component {
+  init($) {
+    const shoppingList = state(["apple", "banana", "potato", "fried chicken"], {
+      append: (current, value) => [...current, value],
+    });
 
-  return $("div")(
-    {
-      class: ["example", "five"],
-    },
-    $(
-      "button",
-      {
-        onClick() {
-          const sorted = shoppingList()
-            .map((x) => x)
-            .sort();
+    const inputValue = state("");
 
-          shoppingList(sorted);
+    return $("div")(
+      $("button")(
+        {
+          onclick: () => {
+            const sorted = shoppingList()
+              .map((x) => x)
+              .sort();
+
+            shoppingList(sorted);
+          },
         },
-      },
-      "Sort A to Z"
-    ),
-    $(
-      "button",
-      {
-        onClick() {
-          const sorted = shoppingList()
-            .map((x) => x)
-            .sort()
-            .reverse();
+        "Sort A to Z"
+      ),
+      $("button")(
+        {
+          onclick: () => {
+            const sorted = shoppingList()
+              .map((x) => x)
+              .sort()
+              .reverse();
 
-          shoppingList(sorted);
+            shoppingList(sorted);
+          },
         },
-      },
-      "Sort Z to A"
-    ),
-    $.map(
-      shoppingList,
-      (x) => x,
-      (item) =>
-        $("li")(
+        "Sort Z to A"
+      ),
+
+      $("div")(
+        { style: { display: "flex", alignItems: "center" } },
+        $("input")({
+          type: "text",
+          value: inputValue,
+          oninput: (e) => {
+            inputValue(e.target.value);
+          },
+        }),
+        $("button")(
           {
-            onClick() {
-              alert(item);
+            disabled: state.map(inputValue, (current) => current.trim() == ""),
+            onclick: () => {
+              shoppingList.append(inputValue());
+              inputValue("");
             },
           },
-          $.text(item)
+          "Add Item"
         )
-    )
-  );
+      ),
+
+      $.map(
+        shoppingList,
+        (x) => x, // use items as keys as they are already unique strings
+        (item) =>
+          $("li")(
+            {
+              onclick() {
+                alert(item);
+              },
+            },
+            $.text(item)
+          )
+      )
+    );
+  }
+}
+
+/*===========================*\
+||      Two Way Binding      ||
+\*===========================*/
+
+class TwoWayBindExample extends Component {
+  text = state("edit me");
+  size = state(18);
+
+  init($) {
+    return $("div")(
+      $("input")({
+        value: this.text,
+        oninput: (e) => {
+          this.text(e.target.value);
+        },
+      }),
+      $("input")({
+        type: "number",
+        value: this.size,
+        oninput: (e) => {
+          this.size(Number(e.target.value));
+        },
+      }),
+      $("p")(
+        {
+          style: {
+            fontSize: state.map(this.size, (s) => `${s}px`),
+          },
+        },
+        $.text(this.text)
+      )
+    );
+  }
+}
+
+/*===========================*\
+||        HTTP Request       ||
+\*===========================*/
+
+class HTTPRequestExample extends Component {
+  init($) {
+    this.request = this.http.get(
+      "https://dog.ceo/api/breeds/image/random",
+      async (ctx, next) => {
+        await next();
+        ctx.body = ctx.body.message;
+      }
+    );
+
+    const label = state.map(this.request.isLoading, (yes) =>
+      yes ? "NOW LOADING..." : "Loaded!"
+    );
+
+    return $("div")(
+      $("img")({
+        src: this.request.body,
+        style: {
+          height: "400px",
+          border: "2px solid orange",
+        },
+      }),
+      $("button")(
+        {
+          onclick: () => this.request.refresh(),
+        },
+        "Next Doggo"
+      ),
+      $.text(label)
+    );
+  }
 }
 
 /*===========================*\
 ||       Mouse Follower      ||
 \*===========================*/
 
-// class MouseSource extends Source {
-//   paused = false;
+class MouseInfo extends Service {
+  position = state({ x: 0, y: 0 });
 
-//   constructor() {
-//     super({ x: 0, y: 0 });
+  init() {
+    window.addEventListener("mousemove", (e) => {
+      this.position({
+        x: e.clientX,
+        y: e.clientY,
+      });
+    });
+  }
+}
 
-//     window.addEventListener("mousemove", (e) => {
-//       if (!this.paused) {
-//         this.value = {
-//           x: e.pageX,
-//           y: e.pageY,
-//         };
-//         this.broadcast();
-//       }
-//     });
-//   }
-// }
+app.service("mouse", MouseInfo);
 
-// every X ms pass the function the old state and take its return value as the next state
-// const num = new TickState(1, 300, (n) => n + 1);
+class MouseFollowerExample extends Component {
+  init($) {
+    const enabled = state(false, {
+      toggle: (current) => !current,
+    });
+    const mouse = this.app.services("mouse");
+    const transform = state.map(
+      mouse.position,
+      (m) => `translate(${m.x}px, ${m.y}px)`
+    );
 
-// function getRandomHex() {
-//   const hex = [
-//     Math.random() * 256,
-//     Math.random() * 256,
-//     Math.random() * 256,
-//   ]
-//     .map(Math.floor)
-//     .map((n) => n.toString(16))
-//     .join("");
+    const backgroundColor = state("#ff0088");
+    const bestColor = "#ff0088";
+    const notBestColor = state.map(
+      backgroundColor,
+      (hex) => hex.toLowerCase() !== bestColor
+    );
 
-//   return "#" + hex;
-// }
+    return $(ExampleSection)(
+      { class: "mouse-follower" },
 
-// function mouseFollowerExample() {
-//   const enabled = new ToggleState(false);
-//   const mouse = new MouseSource();
-//   const backgroundColor = new State("#ff0088");
-//   const transform = mouse.map((m) => `translate(${m.x}px, ${m.y}px)`);
+      $.if(
+        enabled,
+        $("div")({
+          class: "follower",
+          style: {
+            transform,
+            backgroundColor,
+          },
+        })
+      ),
 
-//   const bestColor = "#ff0088";
-//   const notBestColor = backgroundColor.map(
-//     (hex) => hex.toLowerCase() !== bestColor
-//   );
+      $("button")(
+        {
+          onclick: () => {
+            backgroundColor(this.getRandomHex());
+          },
+          disabled: state.map(enabled, (x) => !x),
+        },
+        "Change Follower Color"
+      ),
 
-//   mouse.paused = !enabled.current;
+      $.if(
+        notBestColor,
+        $("button")(
+          {
+            onclick: () => backgroundColor(bestColor),
+            disabled: state.map(enabled, (x) => !x),
+          },
+          "Reset To Best Color"
+        )
+      ),
 
-//   // pause mouse listener when disabled
-//   enabled.listen((value) => {
-//     mouse.paused = !value;
-//   });
+      $("button")(
+        {
+          onclick: () => enabled.toggle(),
+        },
+        $.text(
+          state.map(enabled, (x) =>
+            x ? "Turn Off Follower" : "Turn On Follower"
+          )
+        )
+      )
+    );
+  }
 
-//   return exampleSection({
-//     class: ["mouse-follower"],
-//     children: [
-//       // TODO: Optimize - unsubscribe while component is not mounted
-//       $.when(
-//         enabled,
-//         $("div", {
-//           class: "follower",
-//           style: {
-//             transform,
-//             backgroundColor,
-//           },
-//         })
-//       ),
+  getRandomHex() {
+    const hex = [Math.random() * 256, Math.random() * 256, Math.random() * 256]
+      .map(Math.floor)
+      .map((n) => n.toString(16))
+      .join("");
 
-//       $("button", {
-//         onClick: () => {
-//           backgroundColor.set(getRandomHex());
-//         },
-//         children: [$.text("Change Follower Color")],
-//         disabled: enabled.map((x) => !x),
-//       }),
-//       $.when(
-//         notBestColor,
-//         $("button", {
-//           onClick: () => backgroundColor.set(bestColor),
-//           disabled: enabled.map((x) => !x),
-//           children: [$.text("Reset To Best Color")],
-//         })
-//       ),
-//       $("button", {
-//         onClick: () => enabled.toggle(),
-//         children: [
-//           $.text(
-//             enabled.map((x) =>
-//               x ? "Turn Off Follower" : "Turn On Follower"
-//             )
-//           ),
-//         ],
-//       }),
-//     ],
-//   });
-// }
+    return "#" + hex;
+  }
+}
 
-// Example of a component function
-// function exampleSection(props) {
-//   return $("div", {
-//     class: ["example", props.class],
-//     children: [...(props.children || [])],
-//   });
-// }
+class ExampleSection extends Component {
+  init($) {
+    return $("div")({ class: this.attributes.class }, ...this.children);
+  }
+}
 
 /*===========================*\
-||        HTTP Request       ||
+||         Start App         ||
 \*===========================*/
 
-function httpRequestExample($, http) {
-  const request = http.get(
-    "https://dog.ceo/api/breeds/image/random",
-    async (ctx, next) => {
-      await next();
-      console.log(ctx);
-      ctx.body = ctx.body.message;
-    }
-  );
-  const src = state.map(request.body, (body) => body);
-  const label = state.map(request.isLoading, (yes) =>
-    yes ? "NOW LOADING..." : "Loaded!"
-  );
+app.route("*", function ({ $, app }) {
+  const mouse = app.services("mouse");
 
-  setInterval(() => {
-    request.refresh();
-  }, 10000);
+  // Display current mouse coordinates as tab title
+  mouse.position((current) => {
+    app.title = `x:${Math.round(current.x)} y:${Math.round(current.y)}`;
+  });
 
-  src(console.log);
+  const example = $("div", { class: "example" });
 
   return $("div")(
-    {
-      class: ["example", "http"],
-    },
-    $("img")({
-      src,
-      style: {
-        height: "400px",
-        border: "2px solid orange",
-      },
-    }),
-    $.text(label)
+    { class: "demo" },
+    example($(ToggleExample)),
+    example($(CounterExample), $(CounterViewLabel)),
+    example($(ConditionalExample)),
+    example($(MapExample)),
+    example($(TwoWayBindExample)),
+    example($(HTTPRequestExample)),
+    example($(MouseFollowerExample))
   );
-}
+});
+
+app.start("#app");
