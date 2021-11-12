@@ -1,3 +1,5 @@
+import { isFunction } from "./utils/typeChecking";
+
 /**
  * Creates a state container in the form of a function. This function can be called three ways with different results.
  *
@@ -12,14 +14,26 @@
  * });
  * cancel(); // cancel from outside the listener
  *
+ * const count = state(0, {
+ *   increment: value => value + 1,
+ *   decrement: value => value - 1,
+ *   add: (value, amount) => value + amount,
+ *   subtract: (value, amount) => value - amount
+ * });
+ * count.increment();
+ * count.decrement();
+ * count.add(5);
+ * count.subtract(3);
+ *
  * @param initialValue - Starting value (optional)
+ * @param methods - Methods taking a value and returning an updated value
  */
-export function state(initialValue) {
+export function state(initialValue, methods = {}) {
   let value = initialValue;
 
   const listeners = [];
 
-  return function (arg) {
+  function action(arg) {
     if (arg instanceof Function) {
       listeners.push(arg);
 
@@ -28,25 +42,38 @@ export function state(initialValue) {
       };
     }
 
-    if (arg !== undefined) {
+    if (arg !== undefined && value !== arg) {
       value = arg;
 
-      if (value !== undefined) {
-        const cancelled = [];
+      const cancelled = [];
 
-        for (const listener of listeners) {
-          // pass the value and a cancel function
-          listener(value, () => {
-            cancelled.push(listener);
-          });
-        }
-
-        listeners.filter((x) => !cancelled.includes(x));
+      for (const listener of listeners) {
+        // pass the value and a cancel function
+        listener(value, () => {
+          cancelled.push(listener);
+        });
       }
+
+      listeners.filter((x) => !cancelled.includes(x));
     }
 
     return value;
-  };
+  }
+
+  // Add methods to exported function with prefilled value argument.
+  for (const method in methods) {
+    action[method] = function (...args) {
+      const updated = methods[method](value, ...args);
+
+      if (isFunction(updated)) {
+        throw new TypeError(`State methods cannot return functions.`);
+      }
+
+      action(updated);
+    };
+  }
+
+  return action;
 }
 
 /**
@@ -58,7 +85,7 @@ export function state(initialValue) {
 state.map = function map(source, transform) {
   let stored;
 
-  return function (listener = null) {
+  return function (listener) {
     if (listener instanceof Function) {
       const cancel = source((value) => {
         const t = transform(value);

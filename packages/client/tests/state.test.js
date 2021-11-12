@@ -1,4 +1,4 @@
-// import { state } from "../dist/woof";
+import { state } from "../dist/woof";
 
 test("get, set and listen signatures", () => {
   const value = state(5);
@@ -17,6 +17,39 @@ test("get, set and listen signatures", () => {
 
   value(12);
   expect(value()).toBe(12);
+});
+
+test("listener can be cancelled from within", () => {
+  const value = state(5);
+
+  value((n, cancel) => {
+    expect(n).toBe(10);
+    cancel(); // cancelled after first value is received
+  });
+
+  value(10);
+  value(20); // not received
+});
+
+test("methods", () => {
+  const count = state(31, {
+    increment: (value) => value + 1,
+    decrement: (value) => value - 1,
+    add: (value, amount) => value + amount,
+    subtract: (value, amount) => value - amount,
+  });
+
+  count.increment();
+  expect(count()).toBe(32);
+
+  count.decrement();
+  expect(count()).toBe(31);
+
+  count.add(5);
+  expect(count()).toBe(36);
+
+  count.subtract(3);
+  expect(count()).toBe(33);
 });
 
 test("state.map", () => {
