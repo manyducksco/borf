@@ -1,10 +1,10 @@
-import { Woof } from "./Woof";
+import { App } from "./App";
 
 export * from "./Component";
-export * from "./Keys";
+export * from "./Keyboard";
 export * from "./Service";
 export * from "./state";
 
 export default function woof(options) {
-  return new Woof(options);
+  return new App(options);
 }

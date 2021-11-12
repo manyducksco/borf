@@ -191,13 +191,13 @@ export class Router {
       const matched = route.match(target.url);
 
       if (matched) {
-        this.#initRoute(target, route, matched);
+        this.#mountRoute(target, route, matched);
         return;
       }
     }
 
     if (wildcard) {
-      this.#initRoute(target, wildcard, {
+      this.#mountRoute(target, wildcard, {
         path: target.url,
         index: 0,
         params: {},
@@ -205,7 +205,7 @@ export class Router {
     }
   }
 
-  #initRoute(target, route, matched) {
+  #mountRoute(target, route, matched) {
     let handlerIndex = -1;
 
     this.path = matched.path;

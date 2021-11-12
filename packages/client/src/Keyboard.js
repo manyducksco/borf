@@ -1,23 +1,3 @@
-export function parseCombo(combo) {
-  return combo
-    .toLowerCase()
-    .split("+")
-    .map((part) => part.trim())
-    .sort();
-}
-
-const cancellers = [];
-
-export const Keys = {
-  onDown(combo, handler) {},
-
-  onUp(combo, handler) {},
-
-  createLayer() {
-    return new KeyLayer();
-  },
-};
-
 const keyAlias = {
   arrowup: "up",
   arrowdown: "down",
@@ -26,11 +6,10 @@ const keyAlias = {
   " ": "space",
 };
 
-class KeyLayer {
+export class KeySet {
   #cancellers = [];
   #bindings = [];
   #keysDown = new Set();
-  #upHandlerFired = false;
 
   onUp(combo, handler) {
     this.#bindings.push({
@@ -60,13 +39,13 @@ class KeyLayer {
       this.#keysDown.add(key);
 
       const pressed = Array.from(this.#keysDown).sort().join("+");
-      const binding = this.#bindings.find(
+      const bound = this.#bindings.find(
         (b) => b.event === "keydown" && b.hash === pressed
       );
 
-      if (binding) {
+      if (bound) {
         e.preventDefault();
-        binding.handler();
+        bound.handler();
       }
     };
 
@@ -75,20 +54,15 @@ class KeyLayer {
       key = keyAlias[key] || key;
 
       const pressed = Array.from(this.#keysDown).sort().join("+");
-      const binding = this.#bindings.find(
+      const bound = this.#bindings.find(
         (b) => b.event === "keyup" && b.hash === pressed
       );
 
       this.#keysDown.delete(key);
 
-      if (this.#keysDown.size === 0) {
-        this.#upHandlerFired = false;
-      }
-
-      if (binding) {
-        this.#upHandlerFired = true;
+      if (bound) {
         e.preventDefault();
-        binding.handler();
+        bound.handler();
       }
     };
 
@@ -99,11 +73,25 @@ class KeyLayer {
       window.removeEventListener("keydown", handleDown);
       window.removeEventListener("keyup", handleUp);
     });
+
+    return this;
   }
 
   unbind() {
     for (const cancel of this.#cancellers) {
       cancel();
     }
+
+    return this;
   }
+}
+
+export const Keyboard = new KeySet().bind();
+
+function parseCombo(combo) {
+  return combo
+    .toLowerCase()
+    .split("+")
+    .map((part) => part.trim())
+    .sort();
 }

@@ -2,7 +2,7 @@ import { makeDolla } from "./Dolla";
 import { HTTP } from "./HTTP";
 import { Router } from "./Router";
 
-export class Woof {
+export class App {
   #initFn;
   #router;
   #services = {};

@@ -13,7 +13,7 @@ export class $Node {
     const wasConnected = this.isConnected;
 
     // Run lifecycle callback only if connecting.
-    // Connecting a connected node moves the node without unmounting.
+    // Connecting a node that is already connected moves it without unmounting.
     if (!wasConnected) {
       this.element = this.createElement();
       this.beforeConnect();

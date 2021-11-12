@@ -6,6 +6,7 @@ import {
   isNumber,
 } from "./utils/typeChecking";
 import { $Node } from "./$Node";
+import { $Text } from "./$Text";
 
 // Any props in this list will NOT be forwarded to the DOM node.
 // These can be component-specific props or props that need special handling to apply.
@@ -33,18 +34,6 @@ const booleanProps = [
 ];
 
 const eventRegex = /^on[a-z]/;
-
-export class $Text extends $Node {
-  constructor(value) {
-    super();
-
-    this.value = value;
-  }
-
-  createElement() {
-    return document.createTextNode(this.value);
-  }
-}
 
 export class $Element extends $Node {
   tag;
@@ -80,9 +69,9 @@ export class $Element extends $Node {
       previous = child;
     }
 
-    this.applyAttributes();
-    this.applyStyles();
-    this.applyClasses();
+    this.#applyAttributes();
+    this.#applyStyles();
+    this.#applyClasses();
 
     if (props.beforeConnect) {
       props.beforeConnect();
@@ -92,7 +81,7 @@ export class $Element extends $Node {
   connected() {
     const { props } = this;
 
-    this.attachEvents();
+    this.#attachEvents();
 
     if (props.connected) {
       props.connected();
@@ -124,7 +113,7 @@ export class $Element extends $Node {
     }
   }
 
-  attachEvents() {
+  #attachEvents() {
     for (const key in this.props) {
       if (!privateProps.includes(key) && eventRegex.test(key)) {
         const eventName = key.slice(2).toLowerCase();
@@ -139,7 +128,7 @@ export class $Element extends $Node {
     }
   }
 
-  applyClasses() {
+  #applyClasses() {
     if (this.props.class) {
       const mapped = getClassMap(this.props.class);
 
@@ -147,7 +136,7 @@ export class $Element extends $Node {
         const value = mapped[name];
 
         if (isFunction(value)) {
-          this.listenTo(value, (value) => {
+          this.#listenTo(value, (value) => {
             if (value) {
               this.element.classList.add(name);
             } else {
@@ -161,13 +150,13 @@ export class $Element extends $Node {
     }
   }
 
-  applyStyles() {
+  #applyStyles() {
     if (this.props.style) {
       for (const name in this.props.style) {
         const prop = this.props.style[name];
 
         if (isFunction(prop)) {
-          this.listenTo(prop, (value) => {
+          this.#listenTo(prop, (value) => {
             this.element.style[name] = value;
           });
         } else if (isString(prop)) {
@@ -181,13 +170,13 @@ export class $Element extends $Node {
     }
   }
 
-  applyAttributes() {
+  #applyAttributes() {
     for (const name in this.props) {
       if (name === "value") {
         if (isFunction(this.props.value)) {
           const state = this.props.value;
 
-          this.listenTo(state, (value) => {
+          this.#listenTo(state, (value) => {
             this.element.value = String(value);
           });
         } else {
@@ -200,7 +189,7 @@ export class $Element extends $Node {
 
         if (booleanProps.includes(name)) {
           if (isFunction(attr)) {
-            this.listenTo(attr, (value) => {
+            this.#listenTo(attr, (value) => {
               if (value) {
                 this.element.setAttribute(name, "");
               } else {
@@ -212,7 +201,7 @@ export class $Element extends $Node {
           }
         } else {
           if (isFunction(attr)) {
-            this.listenTo(attr, (value) => {
+            this.#listenTo(attr, (value) => {
               if (value) {
                 this.element.setAttribute(name, value.toString());
               } else {
@@ -225,22 +214,9 @@ export class $Element extends $Node {
         }
       }
     }
-
-    // Syntax for two way data binding?
-    // $("input")({
-    //   type: "text",
-    //   value: $.bind(value),
-    // });
-    // $("input")({
-    //   type: "text",
-    //   value: value,
-    //   onchange: (e) => {
-    //     value(e.target.value);
-    //   }
-    // });
   }
 
-  listenTo(state, callback) {
+  #listenTo(state, callback) {
     const cancel = state((value) => {
       requestAnimationFrame(() => {
         callback(value);
@@ -253,6 +229,19 @@ export class $Element extends $Node {
   }
 }
 
+// Syntax for two way data binding?
+// $("input")({
+//   type: "text",
+//   value: $.bind(value),
+// });
+// $("input")({
+//   type: "text",
+//   value: value,
+//   onchange: (e) => {
+//     value(e.target.value);
+//   }
+// });
+
 function getClassMap(classes) {
   let mapped = {};
 
@@ -261,7 +250,7 @@ function getClassMap(classes) {
   } else if (isObject(classes)) {
     mapped = {
       ...mapped,
-      ...getClassMap(classes),
+      ...classes,
     };
   } else if (isArray(classes)) {
     Array.from(classes).forEach((item) => {
@@ -273,4 +262,25 @@ function getClassMap(classes) {
   }
 
   return mapped;
+}
+
+/**
+ * Attempts to convert a `source` value to the same type as a `target` value.
+ */
+function toSameType(target, source) {
+  const type = typeof target;
+
+  if (type === "string") {
+    return String(source);
+  }
+
+  if (type === "number") {
+    return Number(source);
+  }
+
+  if (type === "boolean") {
+    return Boolean(source);
+  }
+
+  return source;
 }
