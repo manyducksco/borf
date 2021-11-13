@@ -30,8 +30,7 @@ import { isFunction } from "./utils/typeChecking";
  */
 export function state(initialValue, methods = {}) {
   let value = initialValue;
-
-  const listeners = [];
+  let listeners = [];
 
   function action(arg) {
     if (arg instanceof Function) {
@@ -54,7 +53,7 @@ export function state(initialValue, methods = {}) {
         });
       }
 
-      listeners.filter((x) => !cancelled.includes(x));
+      listeners = listeners.filter((x) => !cancelled.includes(x));
     }
 
     return value;

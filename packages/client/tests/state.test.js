@@ -31,7 +31,7 @@ test("listener can be cancelled from within", () => {
   value(20); // not received
 });
 
-test("methods", () => {
+test("methods object", () => {
   const count = state(31, {
     increment: (value) => value + 1,
     decrement: (value) => value - 1,
