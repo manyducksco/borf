@@ -21,8 +21,13 @@ npm i @manyducksco/woof
 - Solves all the everyday problems without stepping out of the framework:
   - Views
   - Routing
-  - State management
+  - State management (local and global)
   - HTTP requests and caching
+
+## TO DO
+
+- Dolla router (nested routing)
+-
 
 ## A Woof App
 
@@ -73,7 +78,7 @@ Multiple handler functions can be stacked on one route, activated when the previ
  * - http: HTTP client
  */
 
-const handler = ({ $, app, next, http }) => {
+const handler = ($, { app, http, next }) => {
   app.title = "New Page Title"; // contains current page title; updates page title when set
   app.path; // (read only) current URL path
   app.route; // (read only) current matched route
@@ -91,27 +96,33 @@ const handler = ({ $, app, next, http }) => {
   next(); // continue to next route in the stack with `next`
 
   // create templates with $ object:
-  const div = $("div", { class: "first-class" }); // creates an element constructor
+  const div = $("div"); // creates an element constructor
 
   // takes an (optional) attributes object and any number of children
   // attributes will be merged with attributes passed to the constructor
   // children can be strings, falsy values (ignored), Component instances, or render functions
-  const element = div({ class: "second-class" }, "Child", () =>
+  const element = div({ class: "a-class" }, "Child", () =>
     $("span")(" Child2 ")
   );
-  // this creates: <div class="first-class second-class">Child<span> Child2 </span></div>
+  // this creates: <div class="a-class">Child<span> Child2 </span></div>
 
   // components can be used in the same way by passing the class to $()
   // this binds special properties like the global 'app' object when the component is initialized
   // components can access `this.app`, `this.attributes` and `this.children` to get these values
   $(Component)({ ...attributes }, ...children);
 
+  // The dolla function takes an optional second argument of default attributes.
+  const element = $("div", { ...attributes });
+  element(attributes, children); // merge these attributes with the defaults
+  element(children); // use only the defaults
+
   // nested routes like this?
   // paths are automatically joined to the current app path
-  $.router()
-    .route("sub/route", handler)
-    .route("sub/other", handler)
-    .route("*", ({ app }) => app.navigate("sub/route"));
+
+  $.route()
+    .when("sub/route", handler)
+    .when("sub/other", handler)
+    .when("*", ($, { app }) => app.navigate("sub/route"));
 
   // conditionals
   const maybe = $.if(
@@ -163,9 +174,8 @@ class MyComponent extends Component {
   error = state(null);
 
   // render function - run once before `beforeConnect` and cleaned up after `disconnected`
-  init($) {
+  createElement($) {
     // access injected stuff from here
-    // dolla is passed and not injected because `init` is the only place you should use it
     const { app } = this;
 
     app.title = "This Page";
@@ -194,7 +204,7 @@ class MyComponent extends Component {
     // if data is cached, cached data is returned and a new request is sent to update it behind the scenes
     // if the new data is different the listen function will be called again
     // the HTTP client implements its own Promise-compatible methods, so .then is the same as .listen but only gets the first change
-    this.http.get("/api/component-data").listen((res) => {
+    this.http.get("/api/component-data").then((res) => {
       if (res.ok) {
         this.data(res.body);
       } else {
@@ -228,13 +238,12 @@ const app = woof();
 class Counter extends Service {
   count = state();
 
-  init() {
+  created() {
     // gets called when the service is created
     this.count(0);
   }
 
   customMethod() {
-    // services can define methods that can be called by route functions and components
     // you can also access injected properties from within a service, similar to components
     this.http;
     this.app;
@@ -243,7 +252,7 @@ class Counter extends Service {
 
 app.service("counter", Counter);
 
-app.route("*", ({ app }) => {
+app.route("*", ($, { app }) => {
   // once registered, you can access the services in route functions with
   // `app.services(name)` or in components with `this.app.services(name)`.
   const counter = app.services("counter");

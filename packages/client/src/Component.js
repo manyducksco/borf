@@ -28,8 +28,8 @@ export class Component extends $Node {
     this.children = children;
   }
 
-  init() {
-    throw new Error(`Component needs an 'init' method`);
+  createElement($) {
+    throw new Error(`Component needs a 'createElement' method`);
   }
 
   connect(parent, after = null) {
@@ -38,11 +38,12 @@ export class Component extends $Node {
     // Run lifecycle callback only if connecting.
     // Connecting a node that is already connected moves it without unmounting.
     if (!wasConnected) {
-      this.#element = this.init(this.#dolla);
+      this.#element = this.createElement(this.#dolla);
 
       if (this.#element instanceof $Node == false) {
         throw new Error(
-          `Component 'init' method must return an $(element). Received: ${typeof node}`
+          `Component 'createElement' method must return an $(element). Received: ${typeof this
+            .#element}`
         );
       }
 

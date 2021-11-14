@@ -26,13 +26,14 @@ describe("get", () => {
     const res = http.get("/test");
 
     expect.assertions(2);
-    expect(res.isLoading()).toBe(true);
 
     res.body((value) => {
       expect(res.isLoading()).toBe(false);
-      console.log(value);
+      expect(value).toStrictEqual({
+        example: 123,
+      });
     });
 
-    console.log(res);
+    expect(res.isLoading()).toBe(true);
   });
 });

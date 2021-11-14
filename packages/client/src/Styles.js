@@ -29,13 +29,7 @@ export class Styles {
       this[className] = `${className}_${this.id}`;
     }
 
-    this.#mount();
-  }
-
-  #mount() {
-    const root = document.createElement("style");
-    root.appendChild(document.createTextNode(this.toString()));
-    document.head.appendChild(root);
+    this.#append();
   }
 
   toString() {
@@ -68,5 +62,11 @@ export class Styles {
     }
 
     return output;
+  }
+
+  #append() {
+    const root = document.createElement("style");
+    root.appendChild(document.createTextNode(this.toString()));
+    document.head.appendChild(root);
   }
 }

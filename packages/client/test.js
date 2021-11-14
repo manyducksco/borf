@@ -25,6 +25,10 @@ const styles = new Styles({
     top: "0",
     left: "0",
   },
+  flexCenter: {
+    display: "flex",
+    alignItems: "center",
+  },
 });
 
 /*===========================*\
@@ -188,7 +192,7 @@ class MapExample extends Component {
       ),
 
       $("div")(
-        { style: { display: "flex", alignItems: "center" } },
+        { class: styles.flexCenter },
         $("input")({
           type: "text",
           value: inputValue,
@@ -274,13 +278,12 @@ class TwoWayBindExample extends Component {
 
 class HTTPRequestExample extends Component {
   init($) {
-    this.request = this.http.get(
-      "https://dog.ceo/api/breeds/image/random",
-      async (ctx, next) => {
-        await next();
-        ctx.body = ctx.body.message;
-      }
-    );
+    this.request = this.http.get("https://dog.ceo/api/breeds/image/random", {
+      parse: async (ctx, res) => {
+        const json = await res.json();
+        return json.message;
+      },
+    });
 
     const label = state.map(this.request.isLoading, (yes) =>
       yes ? "NOW LOADING..." : "Loaded!"
@@ -408,7 +411,7 @@ class ExampleSection extends Component {
 ||         Start App         ||
 \*===========================*/
 
-app.route("*", function ({ $, app }) {
+app.route("*", function ($, { app }) {
   const mouse = app.services("mouse");
 
   // Display current mouse coordinates as tab title
@@ -418,15 +421,27 @@ app.route("*", function ({ $, app }) {
 
   const example = $("div", { class: styles.example });
 
-  return $("div")(
-    { class: styles.demo },
-    example($(ToggleExample)),
-    example($(CounterExample), $(CounterViewLabel)),
-    example($(ConditionalExample)),
-    example($(MapExample)),
-    example($(TwoWayBindExample)),
-    example($(HTTPRequestExample)),
-    example($(MouseFollowerExample))
+  return $("div", { class: styles.demo })(
+    $("div", { class: "nav" })(
+      $("ul")(
+        $("li")($("a", { href: "/test1" })("Test One")),
+        $("li")($("a", { href: "/test2" })("Test Two"))
+      )
+    ),
+    $.route()
+      .when("/test1", ($) =>
+        $("div")(
+          example($(ToggleExample)),
+          example($(CounterExample), $(CounterViewLabel)),
+          example($(ConditionalExample)),
+          example($(MapExample)),
+          example($(TwoWayBindExample)),
+          example($(HTTPRequestExample)),
+          example($(MouseFollowerExample))
+        )
+      )
+      .when("/test2", ($) => $("h1")("This is the other page"))
+      .when("*", ($, { app }) => app.navigate("/test1"))
   );
 });
 

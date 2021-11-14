@@ -76,9 +76,16 @@ export function makeDolla({ app, http }) {
     return new $Text(value);
   };
 
-  Dolla.router = function () {
+  Dolla.route = function () {
     return {
-      route() {},
+      when(route, ...handlers) {
+        return this;
+      },
+      fallback(path) {
+        return this;
+      },
+      connect() {},
+      disconnect() {},
     };
   };
 
