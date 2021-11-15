@@ -1,4 +1,4 @@
-import { $Node } from "./$Node";
+import { $Node } from "../templating/$Node";
 
 export class Component extends $Node {
   static get isComponent() {

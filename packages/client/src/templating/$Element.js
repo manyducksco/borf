@@ -4,7 +4,7 @@ import {
   isString,
   isFunction,
   isNumber,
-} from "./utils/typeChecking";
+} from "../_helpers/typeChecking";
 import { $Node } from "./$Node";
 import { $Text } from "./$Text";
 

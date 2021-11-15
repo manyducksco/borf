@@ -1,5 +1,5 @@
 import { $Node } from "./$Node";
-import { isFunction } from "./utils/typeChecking";
+import { isFunction } from "../_helpers/typeChecking";
 
 export class $Text extends $Node {
   constructor(value) {

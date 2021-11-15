@@ -1,4 +1,4 @@
-import { isFunction } from "./utils/typeChecking";
+import { isFunction } from "../_helpers/typeChecking";
 
 /**
  * Creates a state container in the form of a function. This function can be called three ways with different results.

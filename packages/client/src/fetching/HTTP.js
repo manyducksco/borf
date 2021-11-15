@@ -1,5 +1,5 @@
-import { state } from "./state";
-import { isFunction, isObject } from "./utils/typeChecking";
+import { state } from "../storing/state";
+import { isFunction, isObject } from "../_helpers/typeChecking";
 
 export class HTTP {
   #middleware = [];
@@ -72,7 +72,9 @@ export class HTTPRequest {
   isLoading = state(false);
   isSuccess = state(false);
   isError = state(false);
+  status = state(null);
   body = state(null);
+  headers = state(null);
 
   constructor(method, url, options, middleware) {
     this.#method = method;
@@ -107,24 +109,24 @@ export class HTTPRequest {
         ctx.headers[key] = value;
       });
 
-      if (ctx.headers["content-type"] === "application/json") {
+      if (isFunction(this.#options.parse)) {
+        ctx.body = await this.#options.parse(ctx, res);
+      } else if (ctx.headers["content-type"] === "application/json") {
         ctx.body = await res.json();
       } else {
         ctx.body = await res.text();
       }
     };
 
-    const wrapMiddleware = (index) => {
+    const mount = (index = 0) => {
       const current = this.#middleware[index];
-      const next = this.#middleware[index + 1]
-        ? wrapMiddleware(index + 1)
-        : handler;
+      const next = this.#middleware[index + 1] ? mount(index + 1) : handler;
 
       return async () => current(ctx, next);
     };
 
     if (this.#middleware.length > 0) {
-      await wrapMiddleware(0)();
+      await mount()();
     } else {
       await handler();
     }
@@ -135,9 +137,13 @@ export class HTTPRequest {
     if (ctx.status && ctx.status >= 200 && ctx.status < 400) {
       this.isSuccess(true);
       this.isError(false);
+      this.status(ctx.status);
+      this.headers(ctx.headers);
     } else {
       this.isSuccess(false);
       this.isError(true);
+      this.status(ctx.status);
+      this.headers(ctx.headers);
     }
   }
 }

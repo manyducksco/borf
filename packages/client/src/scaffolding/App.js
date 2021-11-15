@@ -1,6 +1,6 @@
-import { makeDolla } from "./Dolla";
-import { HTTP } from "./HTTP";
-import { Router } from "./Router";
+import { makeDolla } from "../templating/Dolla";
+import { HTTP } from "../fetching/HTTP";
+import { Router } from "../routing/Router";
 
 export class App {
   #initFn;
@@ -19,7 +19,11 @@ export class App {
       this.#router = new Router({}, injectables);
     }
 
-    this.#dolla = makeDolla(injectables());
+    this.#dolla = makeDolla({
+      ...injectables(),
+      router: this.#router,
+      getInjectables: injectables,
+    });
   }
 
   /**

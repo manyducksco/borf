@@ -1,9 +1,10 @@
-import { HTTP } from "../src/HTTP.js";
+import { HTTP } from "../src/fetching/HTTP.js/index.js";
 import { rest } from "msw";
 import { setupServer } from "msw/node";
 
 const server = setupServer(
   rest.get("/test", (req, res, ctx) => {
+    console.log({ req, res, ctx });
     setTimeout(() => {
       res(ctx.json({ example: 123 }));
     }, 10);
@@ -25,7 +26,7 @@ describe("get", () => {
     const http = new HTTP();
     const res = http.get("/test");
 
-    expect.assertions(2);
+    console.log(res.body());
 
     res.body((value) => {
       expect(res.isLoading()).toBe(false);
@@ -35,5 +36,6 @@ describe("get", () => {
     });
 
     expect(res.isLoading()).toBe(true);
+    expect.assertions(2);
   });
 });

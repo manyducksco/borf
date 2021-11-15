@@ -42,7 +42,7 @@ class ToggleExample extends Component {
 
   status = state.map(this.active, (current) => (current ? "ON" : "OFF"));
 
-  init($) {
+  createElement($) {
     return $("div")(
       {
         class: {
@@ -82,7 +82,7 @@ app.service("counter", Counter);
  * Component with controls and a mapped label based on the state inside the service.
  */
 class CounterExample extends Component {
-  init($) {
+  createElement($) {
     const counter = this.app.services("counter");
     const label = state.map(counter.count, (n) => ` the number is: ${n}`);
 
@@ -102,7 +102,7 @@ class CounterExample extends Component {
  * Second component with a view only. Displays the same information from the same service.
  */
 class CounterViewLabel extends Component {
-  init($) {
+  createElement($) {
     const counter = this.app.services("counter");
 
     return $("h1")($.text(counter.count));
@@ -120,7 +120,7 @@ class ConditionalExample extends Component {
 
   label = state.map(this.show, (on) => (on ? "Hide Text" : "Show Text"));
 
-  init($) {
+  createElement($) {
     return $("div")(
       $("button")(
         {
@@ -153,7 +153,7 @@ class ConditionalExample extends Component {
 \*===========================*/
 
 class MapExample extends Component {
-  init($) {
+  createElement($) {
     const initialList = ["apple", "banana", "potato", "fried chicken"];
     const shoppingList = state(initialList, {
       append: (current, value) => [...current, value],
@@ -245,7 +245,7 @@ class TwoWayBindExample extends Component {
   text = state("edit me");
   size = state(18);
 
-  init($) {
+  createElement($) {
     return $("div")(
       $("input")({
         value: this.text,
@@ -277,7 +277,7 @@ class TwoWayBindExample extends Component {
 \*===========================*/
 
 class HTTPRequestExample extends Component {
-  init($) {
+  createElement($) {
     this.request = this.http.get("https://dog.ceo/api/breeds/image/random", {
       parse: async (ctx, res) => {
         const json = await res.json();
@@ -328,8 +328,8 @@ class MouseInfo extends Service {
 app.service("mouse", MouseInfo);
 
 class MouseFollowerExample extends Component {
-  init($) {
-    const enabled = state(false, {
+  createElement($) {
+    const isEnabled = state(false, {
       toggle: (current) => !current,
     });
     const mouse = this.app.services("mouse");
@@ -340,14 +340,14 @@ class MouseFollowerExample extends Component {
 
     const backgroundColor = state("#ff0088");
     const bestColor = "#ff0088";
-    const notBestColor = state.map(
+    const isNotBestColor = state.map(
       backgroundColor,
       (hex) => hex.toLowerCase() !== bestColor
     );
 
     return $(ExampleSection)(
       $.if(
-        enabled,
+        isEnabled,
         $("div")({
           class: styles.follower,
           style: {
@@ -362,17 +362,17 @@ class MouseFollowerExample extends Component {
           onclick: () => {
             backgroundColor(this.getRandomHex());
           },
-          disabled: state.map(enabled, (x) => !x),
+          disabled: state.map(isEnabled, (x) => !x),
         },
         "Change Follower Color"
       ),
 
       $.if(
-        notBestColor,
+        isNotBestColor,
         $("button")(
           {
             onclick: () => backgroundColor(bestColor),
-            disabled: state.map(enabled, (x) => !x),
+            disabled: state.map(isEnabled, (x) => !x),
           },
           "Reset To Best Color"
         )
@@ -380,10 +380,10 @@ class MouseFollowerExample extends Component {
 
       $("button")(
         {
-          onclick: () => enabled.toggle(),
+          onclick: () => isEnabled.toggle(),
         },
         $.text(
-          state.map(enabled, (x) =>
+          state.map(isEnabled, (x) =>
             x ? "Turn Off Follower" : "Turn On Follower"
           )
         )
@@ -402,7 +402,7 @@ class MouseFollowerExample extends Component {
 }
 
 class ExampleSection extends Component {
-  init($) {
+  createElement($) {
     return $("div")({ class: this.attributes.class }, ...this.children);
   }
 }
@@ -410,6 +410,10 @@ class ExampleSection extends Component {
 /*===========================*\
 ||         Start App         ||
 \*===========================*/
+
+// TODO: Routes should need to end with wildcard to contain subroutes.
+//       This way we can use wildcard matches to signal a check for subroutes.
+//       $.route() throws helpful error when called on a non-wildcard route.
 
 app.route("*", function ($, { app }) {
   const mouse = app.services("mouse");
@@ -429,7 +433,7 @@ app.route("*", function ($, { app }) {
       )
     ),
     $.route()
-      .when("/test1", ($) =>
+      .when("test1", ($) =>
         $("div")(
           example($(ToggleExample)),
           example($(CounterExample), $(CounterViewLabel)),
@@ -440,7 +444,7 @@ app.route("*", function ($, { app }) {
           example($(MouseFollowerExample))
         )
       )
-      .when("/test2", ($) => $("h1")("This is the other page"))
+      .when("test2", ($) => $("h1")("This is the other page"))
       .when("*", ($, { app }) => app.navigate("/test1"))
   );
 });

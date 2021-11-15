@@ -1,4 +1,9 @@
-import { FragTypes, parseRoute, matchRoute, sortedRoutes } from "./Router.js";
+import {
+  FragTypes,
+  parseRoute,
+  matchRoute,
+  sortedRoutes,
+} from "./routing/Router.js/index.js";
 
 test("parses routes", () => {
   expect(parseRoute("/some-path/:id/edit")).toStrictEqual([

@@ -1,8 +1,8 @@
 import { createBrowserHistory, createHashHistory } from "history";
 import queryString from "query-string";
-import catchLinks from "./utils/catchLinks";
-import { isFunction, isString } from "./utils/typeChecking";
-import { $Node } from "./$Node";
+import catchLinks from "../_helpers/catchLinks";
+import { isFunction, isString } from "../_helpers/typeChecking";
+import { $Node } from "../templating/$Node";
 
 export class Router {
   #basePath = "";
@@ -17,6 +17,7 @@ export class Router {
   route;
   params = {};
   query = {};
+  wildcard = false;
 
   constructor(options = {}, getInjectables) {
     this.#getInjectables = getInjectables;
@@ -41,12 +42,12 @@ export class Router {
    * @param handlers - One or more route handler functions
    */
   on(route, ...handlers) {
-    this.#routes.push({
+    const entry = {
       fragments: parseRoute(route),
       handlers,
-    });
+    };
 
-    return this;
+    this.#routes.push(entry);
   }
 
   /**
@@ -95,11 +96,10 @@ export class Router {
       throw new Error(`Outlet was not found.`);
     }
 
-    this.#routes = sortedRoutes(this.#routes);
     this.#outlet = node;
     this.#outlet.setAttribute(
       "data-router-outlet",
-      this.#joinPath(this.#basePath, "*")
+      joinPath(this.#basePath, "*")
     );
 
     const onRouteChanged = ({ location }) => {
@@ -124,9 +124,15 @@ export class Router {
     this.#cancellers.push(
       catchLinks(node, (anchor) => {
         const href = anchor.getAttribute("href");
+
+        // TODO: Handle relative links
+
         this.history.push(href);
       })
     );
+
+    // Sort routes by specificity.
+    this.#routes = sortedRoutes(this.#routes);
 
     // Do initial match
     onRouteChanged(this.history);
@@ -140,66 +146,42 @@ export class Router {
     }
   }
 
-  /**
-   * Joins several path fragments into a single string.
-   */
-  #joinPath(...parts) {
-    parts = parts.filter((x) => x);
-
-    let joined = parts.shift();
-
-    if (joined) {
-      for (const part of parts) {
-        if (joined[joined.length - 1] !== "/") {
-          if (part[0] !== "/") {
-            joined += "/" + part;
-          } else {
-            joined += part;
-          }
-        }
-      }
-    }
-
-    return joined ?? "";
-  }
-
   #mountRoute(matched) {
-    let handlerIndex = -1;
-
     this.path = matched.path;
     this.route = matched.route;
     this.params = matched.params;
     this.query = matched.query;
+    this.wildcard = matched.wildcard;
+    this.index = -1;
 
     const { $, app, http } = this.#getInjectables();
 
     const next = () => {
-      if (matched.handlers[handlerIndex + 1]) {
-        let result = matched.handlers[++handlerIndex]($, { app, http, next });
+      if (matched.handlers[this.index + 1]) {
+        let handler = matched.handlers[++this.index];
+        let result;
 
-        if (result.isComponent) {
-          result = $(result);
-        }
-
-        if (isFunction(result) && result.isDolla) {
-          result = result();
+        if (isFunction(handler)) {
+          if (handler.isDolla) {
+            result = handler();
+          } else {
+            result = handler($, { app, http, next });
+          }
         }
 
         if (result instanceof $Node) {
-          requestAnimationFrame(() => {
-            if (this.#mounted) {
-              this.#mounted.disconnect();
-            }
-            this.#mounted = result;
-            this.#mounted.connect(this.#outlet);
-          });
+          if (this.#mounted) {
+            this.#mounted.disconnect();
+          }
+          this.#mounted = result;
+          this.#mounted.connect(this.#outlet);
         } else if (result !== undefined) {
           throw new TypeError(
-            `Route handler returned ${typeof result} but expected a $Node or undefined.`
+            `Route handlers must be a Component, $(element) or function that returns an $(element). Received: ${result}`
           );
         }
       } else {
-        if (handlerIndex === 0) {
+        if (this.index === 0) {
           throw new Error(`Route has no handler function.`);
         } else {
           throw new Error(
@@ -232,6 +214,26 @@ export function splitFragments(path) {
     .split("/")
     .map((f) => f.trim())
     .filter((f) => f !== "");
+}
+
+export function joinPath(...parts) {
+  parts = parts.filter((x) => x);
+
+  let joined = parts.shift();
+
+  if (joined) {
+    for (const part of parts) {
+      if (joined[joined.length - 1] !== "/") {
+        if (part[0] !== "/") {
+          joined += "/" + part;
+        } else {
+          joined += part;
+        }
+      }
+    }
+  }
+
+  return joined ?? "";
 }
 
 /**
@@ -287,7 +289,7 @@ export function matchRoute(routes, path, query) {
 
     const matched = [];
 
-    route: for (let i = 0; i < fragments.length; i++) {
+    fragments: for (let i = 0; i < fragments.length; i++) {
       const part = parts[i];
       const frag = fragments[i];
 
@@ -308,13 +310,14 @@ export function matchRoute(routes, path, query) {
           break;
         case FragTypes.Wildcard:
           matched.push({ ...frag, value: parts.slice(i).join("/") });
-          break route;
+          break fragments;
         default:
           throw new Error(`Unknown fragment type: ${frag.type}`);
       }
     }
 
     const params = Object.create(null);
+    let wildcard = false;
 
     for (const frag of matched) {
       if (frag.type === FragTypes.Param) {
@@ -322,6 +325,7 @@ export function matchRoute(routes, path, query) {
       }
 
       if (frag.type === FragTypes.Wildcard) {
+        wildcard = true;
         params.wildcard = frag.value;
       }
     }
@@ -334,6 +338,7 @@ export function matchRoute(routes, path, query) {
       params,
       query: query ? queryString.parse(query) : {},
       handlers: handlers,
+      wildcard,
     };
   }
 }
@@ -345,9 +350,12 @@ export function matchRoute(routes, path, query) {
 export function sortedRoutes(routes) {
   const withParams = [];
   const withoutParams = [];
+  const wildcard = [];
 
   for (const route of routes) {
-    if (route.fragments.some((f) => f.type === FragTypes.Param)) {
+    if (route.fragments.some((f) => f.type === FragTypes.WildCard)) {
+      wildcard.push(route);
+    } else if (route.fragments.some((f) => f.type === FragTypes.Param)) {
       withParams.push(route);
     } else {
       withoutParams.push(route);
@@ -370,5 +378,13 @@ export function sortedRoutes(routes) {
     }
   });
 
-  return [...withoutParams, ...withParams];
+  wildcard.sort((a, b) => {
+    if (a.length > b.length) {
+      return -1;
+    } else {
+      return 1;
+    }
+  });
+
+  return [...withoutParams, ...withParams, ...wildcard];
 }

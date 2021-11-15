@@ -19,15 +19,19 @@ npm i @manyducksco/woof
 - Guides you toward doing things correctly, especially when you don't know what that looks like.
   - Obvious solutions should be good solutions (a.k.a "Pit of Success")
 - Solves all the everyday problems without stepping out of the framework:
-  - Views
+  - Components
   - Routing
-  - State management (local and global)
+  - State management (components/local and services/global)
   - HTTP requests and caching
 
 ## TO DO
 
 - Dolla router (nested routing)
--
+
+## Interesting Trivia
+
+- Routes have to end with `*` to have sub-routes. `$.route()` will throw an error otherwise.
+- `$` is only available in route handlers and a component's `createElement` method.
 
 ## A Woof App
 
@@ -36,29 +40,53 @@ The basic app structure starts with an App instance:
 ```js
 import woof from "@manyducksco/woof";
 
+import Logger from "./services/Logger.js";
+
+import Counter from "./components/Counter.js";
+import UserProfile from "./components/UserProfile.js";
+
 const app = woof();
 
-// add services to hold shared state
-app.service("name", Service);
+// Services are singletons that hold shared state and methods.
+app.service("logger", Logger);
 
-// add routes to display components when the browser's location matches
-app.route("some/:id", Component);
+// Routes display content when the browser's URL matches.
+app.route("/counter", Counter);
 
-// routes take any number of handler functions before the component if you
-// need to prepare data or state before the component is mounted
+// Routes support named params and a wildcard at the end.
+// A wildcard means that this route may have sub-routes.
 app.route(
-  "other/path",
-  function ({ app, http, next }) {
-    console.log("one");
-
-    http.get("/api/example").then((res) => {
-      app.cache.exampleData = res;
+  "/users/:id/*",
+  ($, { app, http, next }) => {
+    // When the request is done, set some global state and continue to the next handler.
+    http.get(`/api/users/${app.params.id}`).then(res => {
+      app.cache.users[app.params.id] = res.body;
+      app.cache.currentUser = app.params.id;
       next();
     });
+
+    // Component is displayed from the time the handler is loaded until `next()` is called.
+    return $("div")({ class: "loader" }, "Loading...");
   },
-  Component
+  ($, { app } => {
+    const { currentUser, users } = app.cache;
+
+    return $(UserProfile)({
+      user: users[currentUser]
+    });
+  })
 );
 
+// Wildcard routes match anything that didn't match another registered route.
+// Wildcards don't need to come last. You can register routes in any order.
+app.route("*", ($, { app }) => {
+  const logger = app.services("logger");
+
+  logger.log(`No page found at ${app.path}. Redirecting.`);
+  app.navigate("/counter");
+});
+
+// Mount the app.
 app.start("#app");
 
 // render HTML for the given path to a string (for server side rendering)?
@@ -72,7 +100,7 @@ Multiple handler functions can be stacked on one route, activated when the previ
 ```js
 /**
  * Available items in handler:
- * - $: the dolla function - template function and helpers
+ * - $: template function and helpers
  * - app: Global properties and state
  * - next: Function to continue to next handler
  * - http: HTTP client
@@ -87,21 +115,28 @@ const handler = ($, { app, http, next }) => {
   app.cache; // mutable object to store arbitrary global variables
 
   app.navigate("/some/other/path", { replace: true }); // specific absolute path (with replace)
-  app.navigate("relative/path"); // no leading slash: relative to current path
+  app.navigate("relative/path"); // no leading slash -- navigate relative to current path
   app.navigate(-1); // back
   app.navigate(1); // forward
 
-  const service = app.services("name");
+  // Get a reference to a service.
+  const logger = app.services("logger");
 
   next(); // continue to next route in the stack with `next`
 
-  // create templates with $ object:
-  const div = $("div"); // creates an element constructor
+  // Create element templates with $(tag, attrs?):
+  const div = $("div");
+  const customDiv = $("div", {
+    style: {
+      backgroundColor: "red",
+      color: "white",
+    },
+  });
 
   // takes an (optional) attributes object and any number of children
   // attributes will be merged with attributes passed to the constructor
   // children can be strings, falsy values (ignored), Component instances, or render functions
-  const element = div({ class: "a-class" }, "Child", () =>
+  const element = customDiv({ class: "a-class" }, "Child", () =>
     $("span")(" Child2 ")
   );
   // this creates: <div class="a-class">Child<span> Child2 </span></div>
