@@ -3,8 +3,13 @@ import { isFunction, isObject } from "../_helpers/typeChecking";
 
 export class HTTP {
   #middleware = [];
+  #fetch;
 
-  _fetch;
+  constructor(options = {}) {
+    if (options.fetch) {
+      this.#fetch = options.fetch;
+    }
+  }
 
   request(method, url, ...args) {
     const { middleware, options } = this.#parseArgs(args);
@@ -14,7 +19,7 @@ export class HTTP {
       url,
       options,
       middleware: [...middleware, ...this.#middleware],
-      fetch: this._fetch || window.fetch,
+      fetch: this.#fetch || window.fetch,
     });
   }
 

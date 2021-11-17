@@ -350,8 +350,8 @@ export function matchRoute(routes, path, query) {
  * Routes without params and longer routes are weighted more heavily.
  */
 export function sortedRoutes(routes) {
-  const withParams = [];
   const withoutParams = [];
+  const withParams = [];
   const wildcard = [];
 
   for (const route of routes) {
@@ -364,29 +364,17 @@ export function sortedRoutes(routes) {
     }
   }
 
-  withParams.sort((a, b) => {
-    if (a.length > b.length) {
+  const bySizeDesc = (a, b) => {
+    if (a.fragments.length > b.fragments.length) {
       return -1;
     } else {
       return 1;
     }
-  });
+  };
 
-  withoutParams.sort((a, b) => {
-    if (a.length > b.length) {
-      return -1;
-    } else {
-      return 1;
-    }
-  });
-
-  wildcard.sort((a, b) => {
-    if (a.length > b.length) {
-      return -1;
-    } else {
-      return 1;
-    }
-  });
+  withoutParams.sort(bySizeDesc);
+  withParams.sort(bySizeDesc);
+  wildcard.sort(bySizeDesc);
 
   return [...withoutParams, ...withParams, ...wildcard];
 }
