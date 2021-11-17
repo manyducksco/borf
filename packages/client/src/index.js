@@ -1,7 +1,7 @@
-import { App } from "./scaffolding/App.js";
+import { App } from "./structuring/App.js";
 
-export * from "./scaffolding/Component.js";
-export * from "./scaffolding/Service.js";
+export * from "./structuring/Component.js";
+export * from "./structuring/Service.js";
 export * from "./storing/state.js";
 
 export * from "./Keyboard.js";

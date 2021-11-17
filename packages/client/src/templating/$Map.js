@@ -5,7 +5,7 @@ export class $Map extends $Node {
   getKey;
   createItem;
   unlisten;
-  state = [];
+  nodes = [];
 
   constructor(list, getKey, createItem) {
     super();
@@ -26,7 +26,7 @@ export class $Map extends $Node {
 
     for (let i = 0; i < newKeys.length; i++) {
       const key = newKeys[i];
-      const tracked = this.state.find((item) => item.key === key);
+      const tracked = this.nodes.find((item) => item.key === key);
 
       if (tracked) {
         if (tracked.index !== i) {
@@ -41,7 +41,7 @@ export class $Map extends $Node {
       }
     }
 
-    for (const tracked of this.state) {
+    for (const tracked of this.nodes) {
       const stillPresent = newKeys.includes(tracked.key);
 
       if (!stillPresent) {
@@ -50,7 +50,7 @@ export class $Map extends $Node {
     }
 
     // Determine what the next state is going to be, reusing components when possible.
-    const newState = [];
+    const newNodes = [];
 
     for (let i = 0; i < list.length; i++) {
       const key = newKeys[i];
@@ -60,10 +60,10 @@ export class $Map extends $Node {
       if (isAdded) {
         component = this.createItem(list[i]);
       } else {
-        component = this.state.find((x) => x.key === key).component;
+        component = this.nodes.find((x) => x.key === key).component;
       }
 
-      newState.push({
+      newNodes.push({
         index: i,
         key,
         component,
@@ -74,7 +74,7 @@ export class $Map extends $Node {
     requestAnimationFrame(() => {
       // Unmount removed components
       for (const entry of removed) {
-        const item = this.state.find((x) => x.key === entry.key);
+        const item = this.nodes.find((x) => x.key === entry.key);
 
         item?.component.disconnect();
       }
@@ -83,7 +83,7 @@ export class $Map extends $Node {
 
       // Remount components in new order
       let previous = undefined;
-      for (const item of newState) {
+      for (const item of newNodes) {
         item.component.connect(fragment, previous);
 
         if (item.component.hasOwnProperty("root")) {
@@ -93,7 +93,7 @@ export class $Map extends $Node {
 
       this.element.parentNode.insertBefore(fragment, this.element.nextSibling);
 
-      this.state = newState;
+      this.nodes = newNodes;
     });
   }
 
@@ -108,7 +108,7 @@ export class $Map extends $Node {
   }
 
   disconnected() {
-    for (const item of this.state) {
+    for (const item of this.nodes) {
       item.component.disconnect();
     }
 

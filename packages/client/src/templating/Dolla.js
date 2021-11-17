@@ -9,7 +9,7 @@ import { isObject, isString } from "../_helpers/typeChecking";
 /**
  * Creates a $ function with bound injectables.
  */
-export function makeDolla({ app, http, router, getInjectables }) {
+export function makeDolla({ app, http, route }) {
   function $(element, defaultAttrs = {}) {
     let type = null;
 
@@ -79,18 +79,30 @@ export function makeDolla({ app, http, router, getInjectables }) {
     return new $Text(value);
   };
 
+  /**
+   * Creates a two way binding with the value updated on the specified event.
+   *
+   * @param state
+   * @param event
+   */
+  $.bind = function (state, event = "input") {
+    return {
+      isBinding: true,
+      event,
+      state,
+    };
+  };
+
   $.route = function (element = "div", defaultAttrs) {
-    if (router.wildcard == false) {
+    if (route.wildcard == false) {
       throw new Error(
-        `$.route() can only be used on wildcard routes. Current route: ${app.route}`
+        `$.route() can only be used on wildcard routes. Current route: ${route.route}`
       );
     }
 
-    console.log({ element, defaultAttrs, router });
-
     const node = $(element, defaultAttrs);
 
-    return new $Route(node, router.params.wildcard, getInjectables);
+    return new $Route(node, route.params.wildcard, () => ({ app, http }));
   };
 
   return $;

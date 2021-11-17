@@ -1,4 +1,8 @@
 declare module "@manyducksco/woof" {
+  /*==================================*\
+  ||               App                ||
+  \*==================================*/
+
   interface AppOptions {
     /**
      * Use hash-based routing.
@@ -11,39 +15,13 @@ declare module "@manyducksco/woof" {
   /**
    * Creates a new app.
    *
-   * @param options - Customize your app with an options object. `hash: true` for hash routing.
+   * @param options - Customize your app with an options object.
    */
   export default function (options?: AppOptions): App;
 
-  export interface State<V> {
-    /**
-     * Returns the current value.
-     */
-    (): V;
-
-    /**
-     * Updates the value.
-     */
-    (value: V): void;
-
-    /**
-     * Subscribes to value changes. Returns a cancel function to unsubscribe.
-     */
-    (callback: (value: V) => void): () => void;
-  }
-
-  /**
-   * Custom methods that are added to the state object.
-   * Each one takes the current value and returns the new value.
-   */
-  export interface StateMethods<T> {
-    [name: string]: (current: V, ...args: any[]) => V;
-  }
-
-  /**
-   * Creates a get/set/listen function to track a variable.
-   */
-  export function state<V>(initialValue: V, methods?: StateMethods): State;
+  /*==================================*\
+  ||           Injectables            ||
+  \*==================================*/
 
   export interface AppInfo {
     title: string;
@@ -53,6 +31,70 @@ declare module "@manyducksco/woof" {
      */
     services(name: string): Service;
   }
+
+  /*==================================*\
+  ||              State               ||
+  \*==================================*/
+
+  export interface State<Value> {
+    /**
+     * Returns the current value.
+     */
+    (): Value;
+
+    /**
+     * Updates the value.
+     */
+    (value: Value): void;
+
+    /**
+     * Subscribes to value changes. Returns a cancel function to unsubscribe.
+     */
+    (callback: (value: Value) => void): () => void;
+  }
+
+  /**
+   * Custom methods that are added to the state object.
+   * Each one takes the current value and returns the new value.
+   */
+  export interface StateMethods<Value> {
+    [name: string]: (current: Value, ...args: any[]) => Value;
+  }
+
+  /**
+   * Creates a get/set/listen function to track a variable.
+   */
+  export function state<Value>(
+    initialValue: Value,
+    methods?: StateMethods<Value>
+  ): State<Value>;
+
+  /*==================================*\
+  ||              Dolla               ||
+  \*==================================*/
+
+  export interface $Node {
+    connect(): void;
+    disconnect(): void;
+  }
+
+  export interface $Element extends $Node {}
+
+  export type Dolla = {
+    (): $Node;
+    (tag: string, attributes?: any): $Node;
+    (component: Component, attributes?: any): $Node;
+
+    if(
+      condition: State<any>,
+      then: $Node | (() => $Node),
+      otherwise?: $Node | (() => $Node)
+    ): $Node;
+  };
+
+  /*==================================*\
+  ||               HTTP               ||
+  \*==================================*/
 
   type HTTPRequestContext = {};
 
@@ -69,6 +111,10 @@ declare module "@manyducksco/woof" {
     ): HTTPRequest;
   }
 
+  /*==================================*\
+  ||             Service              ||
+  \*==================================*/
+
   /**
    * Singleton to store shared state and methods between components.
    */
@@ -79,6 +125,23 @@ declare module "@manyducksco/woof" {
     /**
      * Called when service is first created.
      */
-    init() {}
+    init(): void;
+  }
+
+  /*==================================*\
+  ||             Component            ||
+  \*==================================*/
+
+  /**
+   * Testing.
+   */
+  export class Component {
+    app: AppInfo;
+    http: HTTP;
+
+    /**
+     * Creates an element.
+     */
+    createElement($: Dolla): $Element;
   }
 }

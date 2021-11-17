@@ -171,12 +171,22 @@ export class $Element extends $Node {
 
   #applyAttributes() {
     for (const name in this.props) {
-      if (name === "value") {
-        if (isFunction(this.props.value)) {
-          const state = this.props.value;
+      const attr = this.props[name];
 
-          this.#listenTo(state, (value) => {
+      if (name === "value") {
+        if (isFunction(attr)) {
+          this.#listenTo(attr, (value) => {
             this.element.value = String(value);
+          });
+        } else if (isObject(attr) && attr.isBinding) {
+          this.#listenTo(attr.state, (value) => {
+            this.element.value = String(value);
+          });
+
+          this.element.addEventListener(attr.event, (e) => {
+            const value = toSameType(attr.state(), e.target.value);
+
+            attr.state(value);
           });
         } else {
           this.element.value = String(this.props.value);
@@ -184,8 +194,6 @@ export class $Element extends $Node {
       }
 
       if (!privateProps.includes(name) && !eventRegex.test(name)) {
-        const attr = this.props[name];
-
         if (booleanProps.includes(name)) {
           if (isFunction(attr)) {
             this.#listenTo(attr, (value) => {

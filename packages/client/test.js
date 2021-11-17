@@ -162,8 +162,6 @@ class MapExample extends Component {
 
     const inputValue = state("");
 
-    inputValue((value) => console.log(value));
-
     return $("div")(
       $("button")(
         {
@@ -248,17 +246,11 @@ class TwoWayBindExample extends Component {
   createElement($) {
     return $("div")(
       $("input")({
-        value: this.text,
-        oninput: (e) => {
-          this.text(e.target.value);
-        },
+        value: $.bind(this.text),
       }),
       $("input")({
         type: "number",
-        value: this.size,
-        oninput: (e) => {
-          this.size(Number(e.target.value));
-        },
+        value: $.bind(this.size), // number value gets converted back to number
       }),
       $("p")(
         {
@@ -279,7 +271,7 @@ class TwoWayBindExample extends Component {
 class HTTPRequestExample extends Component {
   createElement($) {
     this.request = this.http.get("https://dog.ceo/api/breeds/image/random", {
-      parse: async (ctx, res) => {
+      parse: async (res) => {
         const json = await res.json();
         return json.message;
       },
@@ -428,12 +420,15 @@ app.route("*", function ($, { app }) {
   return $("div", { class: styles.demo })(
     $("div", { class: "nav" })(
       $("ul")(
-        $("li")($("a", { href: "/test1" })("Test One")),
-        $("li")($("a", { href: "/test2" })("Test Two"))
+        $("li")($("a", { href: "/examples" })("Examples")),
+        $("li")($("a", { href: "/test2" })("Test Two")),
+        $("li")($("a", { href: "/test2/chunk1" })("Test Two - Chunk One")),
+        $("li")($("a", { href: "/test2/chunk2" })("Test Two - Chunk Two"))
       )
     ),
+    // Nested routes are relative to the current route.
     $.route()
-      .when("test1", ($) =>
+      .when("examples", ($) =>
         $("div")(
           example($(ToggleExample)),
           example($(CounterExample), $(CounterViewLabel)),
@@ -444,8 +439,19 @@ app.route("*", function ($, { app }) {
           example($(MouseFollowerExample))
         )
       )
-      .when("test2", ($) => $("h1")("This is the other page"))
-      .when("*", ($, { app }) => app.navigate("/test1"))
+      // Routes can be nested further with wildcards.
+      // This $ function will be pre-loaded with the fragments after 'test2' to match against with $.route().
+      // $.route() acts like a switch statement. When it is connected, it picks the best route and renders it.
+      .when("test2/*", ($) =>
+        $("div")(
+          $("h1")("ROUTER"),
+          $.route()
+            .when("/", ($) => $("div")("default"))
+            .when("chunk1", ($) => $("h1")("This is the chunk1 page"))
+            .when("chunk2", ($) => $.text("HELLO CHUNK2"))
+        )
+      )
+    // .when("*", ($, { app }) => app.navigate("/test1"))
   );
 });
 

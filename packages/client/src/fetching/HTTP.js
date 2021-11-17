@@ -4,13 +4,18 @@ import { isFunction, isObject } from "../_helpers/typeChecking";
 export class HTTP {
   #middleware = [];
 
+  _fetch;
+
   request(method, url, ...args) {
     const { middleware, options } = this.#parseArgs(args);
 
-    return new HTTPRequest(method, url, options, [
-      ...middleware,
-      ...this.#middleware,
-    ]);
+    return new HTTPRequest({
+      method,
+      url,
+      options,
+      middleware: [...middleware, ...this.#middleware],
+      fetch: this._fetch || window.fetch,
+    });
   }
 
   use(...middleware) {
@@ -44,7 +49,7 @@ export class HTTP {
       if (arg !== lastArg) {
         if (!isFunction(arg)) {
           throw new TypeError(
-            `Expecting middleware function but got ${typeof arg}`
+            `Expected a middleware function. Received: ${arg}`
           );
         }
       }
@@ -68,6 +73,8 @@ export class HTTPRequest {
   #url;
   #options;
   #middleware;
+  #promise;
+  #fetch;
 
   isLoading = state(false);
   isSuccess = state(false);
@@ -76,17 +83,44 @@ export class HTTPRequest {
   body = state(null);
   headers = state(null);
 
-  constructor(method, url, options, middleware) {
+  constructor({ method, url, options, middleware, fetch }) {
     this.#method = method;
     this.#url = url;
     this.#options = options;
     this.#middleware = middleware;
+    this.#fetch = fetch;
 
     this.refresh();
   }
 
+  then(...args) {
+    return this.#promise.then(...args);
+  }
+
+  catch(...args) {
+    return this.#promise.catch(...args);
+  }
+
+  finally(...args) {
+    return this.#promise.finally(...args);
+  }
+
   async refresh() {
     this.isLoading(true);
+
+    this.#promise = new Promise((resolve, reject) => {
+      this.isLoading((status, cancel) => {
+        if (status == false) {
+          cancel();
+
+          if (this.isSuccess()) {
+            resolve(this.body());
+          } else {
+            reject(this.body());
+          }
+        }
+      });
+    });
 
     const ctx = {
       ok: true,
@@ -97,7 +131,7 @@ export class HTTPRequest {
     };
 
     const handler = async () => {
-      const res = await fetch(this.#url, {
+      const res = await this.#fetch(this.#url, {
         method: this.#method,
         headers: ctx.headers,
         body: ctx.body,
@@ -131,19 +165,18 @@ export class HTTPRequest {
       await handler();
     }
 
-    this.isLoading(false);
+    this.status(ctx.status);
+    this.headers(ctx.headers);
     this.body(ctx.body);
 
     if (ctx.status && ctx.status >= 200 && ctx.status < 400) {
-      this.isSuccess(true);
       this.isError(false);
-      this.status(ctx.status);
-      this.headers(ctx.headers);
+      this.isSuccess(true);
     } else {
-      this.isSuccess(false);
       this.isError(true);
-      this.status(ctx.status);
-      this.headers(ctx.headers);
+      this.isSuccess(false);
     }
+
+    this.isLoading(false);
   }
 }

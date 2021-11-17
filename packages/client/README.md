@@ -24,9 +24,15 @@ npm i @manyducksco/woof
   - State management (components/local and services/global)
   - HTTP requests and caching
 
-## TO DO
+## Main doc sections and order
 
-- Dolla router (nested routing)
+- hello world example
+- state
+- routing
+- dolla
+- components
+- services
+- testing
 
 ## Interesting Trivia
 
@@ -77,10 +83,10 @@ app.route(
   })
 );
 
-// Wildcard routes match anything that didn't match another registered route.
+// Wildcard routes match anything that didn't match another route.
 // Wildcards don't need to come last. You can register routes in any order.
 app.route("*", ($, { app }) => {
-  const logger = app.services("logger");
+  const logger = app.services("logger").prefix("Main Route");
 
   logger.log(`No page found at ${app.path}. Redirecting.`);
   app.navigate("/counter");
@@ -234,7 +240,13 @@ class MyComponent extends Component {
     );
   }
 
-  // lifecycle methods
+  /*========================*\
+  ||    Lifecycle Methods   ||
+  \*========================*/
+
+  created() {
+    // Runs when the component object is first created
+  }
   beforeConnect() {
     // if data is cached, cached data is returned and a new request is sent to update it behind the scenes
     // if the new data is different the listen function will be called again

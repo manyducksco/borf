@@ -32,7 +32,8 @@ export function state(initialValue, methods = {}) {
   let value = initialValue;
   let listeners = [];
 
-  function action(arg) {
+  function instance(arg) {
+    // Calling with a function adds it as a listener.
     if (arg instanceof Function) {
       listeners.push(arg);
 
@@ -41,7 +42,7 @@ export function state(initialValue, methods = {}) {
       };
     }
 
-    if (arg !== undefined && value !== arg) {
+    if (arg !== undefined && arg !== value) {
       value = arg;
 
       const cancelled = [];
@@ -61,18 +62,18 @@ export function state(initialValue, methods = {}) {
 
   // Add methods to exported function with prefilled value argument.
   for (const method in methods) {
-    action[method] = function (...args) {
+    instance[method] = function (...args) {
       const updated = methods[method](value, ...args);
 
       if (isFunction(updated)) {
         throw new TypeError(`State methods cannot return functions.`);
       }
 
-      action(updated);
+      instance(updated);
     };
   }
 
-  return action;
+  return instance;
 }
 
 /**
@@ -86,7 +87,9 @@ state.map = function map(source, transform) {
 
   return function (listener) {
     if (listener instanceof Function) {
+      // Listen for changes to source.
       const cancel = source((value) => {
+        // Transform the value and, if not undefined, store and notify listener.
         const t = transform(value);
         if (t !== undefined) {
           stored = t;
@@ -98,9 +101,10 @@ state.map = function map(source, transform) {
     }
 
     if (listener !== undefined) {
-      throw new Error("Tried to set a read only state.");
+      throw new Error(`Read only state cannot be set. Received: ${listener}`);
     }
 
+    // Calling without listener returns the value.
     const t = transform(source());
     if (t !== undefined) {
       stored = t;

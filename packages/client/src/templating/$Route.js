@@ -7,6 +7,17 @@ import {
   FragTypes,
 } from "../routing/Router";
 import { makeDolla } from "./Dolla";
+import { isFunction } from "../_helpers/typeChecking";
+
+/**
+ * TODO:
+ * - $.route() returns a $Route node
+ * - $Route node registers a listener when mounted; receives the wildcard portion of the nearest route up
+ * - When route changes, matching cascades:
+ *   - Top level router matches, tests first level subroutes
+ *   - When subroute matches, it tests its subroutes
+ * - Each $.route() needs to create its own matching context
+ */
 
 /**
  * Creates a router outlet for a nested route. Multiple routes
@@ -24,21 +35,18 @@ export class $Route extends $Node {
   #path;
   #getInjectables;
 
-  path;
-  route;
-  params;
-  query;
-  wildcard;
+  mounted;
   index = -1;
 
   get isConnected() {
     return this.#outlet && this.#outlet.isConnected;
   }
 
-  constructor(element, path) {
+  constructor(element, path, getInjectables) {
     super();
 
     this.#path = path;
+    this.#getInjectables = getInjectables;
     this.createElement = () => {
       return element();
     };
@@ -50,7 +58,7 @@ export class $Route extends $Node {
       handlers,
     };
 
-    this.#routes.push(entry);
+    this.#routes = sortedRoutes([...this.#routes, entry]);
 
     return this;
   }
@@ -64,26 +72,19 @@ export class $Route extends $Node {
       this.#outlet = this.createElement();
     }
 
-    const onRouteChanged = () => {
-      const matched = matchRoute(this.#routes, this.#path);
+    const matched = matchRoute(this.#routes, this.#path);
 
-      console.log(matched, this.#path, this.#routes);
-
-      if (matched) {
-        if (matched.path !== this.#path) {
-          this.#mountRoute(matched);
-        }
-      } else {
-        console.warn(
-          `No route was matched. Consider adding a wildcard ("*") route to catch this.`
-        );
+    if (matched) {
+      if (this.mounted == null || matched.path !== this.mounted.path) {
+        this.#mountRoute(matched);
       }
-    };
+    } else {
+      console.warn(
+        `No route was matched. Consider adding a wildcard ("*") route to catch this.`
+      );
+    }
 
-    this.#routes = sortedRoutes(this.#routes);
     this.#outlet.connect(parent, after);
-
-    onRouteChanged();
 
     if (!wasConnected) {
       this.connected();
@@ -101,20 +102,11 @@ export class $Route extends $Node {
   }
 
   #mountRoute(matched) {
-    this.path = matched.path;
-    this.route = matched.route;
-    this.params = matched.params;
-    this.query = matched.query;
-    this.wildcard = matched.wildcard;
+    this.mounted = matched;
     this.index = -1;
 
     const { app, http } = this.#getInjectables();
-    const $ = makeDolla({
-      app,
-      http,
-      router: this,
-      getInjectables: this.#getInjectables,
-    });
+    const $ = makeDolla({ app, http, route: matched });
 
     const next = () => {
       if (matched.handlers[this.index + 1]) {

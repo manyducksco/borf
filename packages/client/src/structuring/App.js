@@ -1,4 +1,3 @@
-import { makeDolla } from "../templating/Dolla";
 import { HTTP } from "../fetching/HTTP";
 import { Router } from "../routing/Router";
 
@@ -8,7 +7,6 @@ export class App {
   #services = {};
   #cache = {};
   #http = new HTTP();
-  #dolla;
 
   constructor(options = {}) {
     const injectables = this.#getInjectables.bind(this);
@@ -18,12 +16,6 @@ export class App {
     } else {
       this.#router = new Router({}, injectables);
     }
-
-    this.#dolla = makeDolla({
-      ...injectables(),
-      router: this.#router,
-      getInjectables: injectables,
-    });
   }
 
   /**
@@ -32,7 +24,7 @@ export class App {
    *
    * @param fn - App config function.
    */
-  init(fn) {
+  setup(fn) {
     this.#initFn = async () => fn();
   }
 
@@ -89,9 +81,6 @@ export class App {
     const self = this;
 
     return {
-      get $() {
-        return self.#dolla;
-      },
       app: Object.freeze({
         get title() {
           return document.title;
@@ -100,19 +89,19 @@ export class App {
           document.title = value;
         },
         get path() {
-          return self.#router.path;
+          return self.#router.matched?.path;
         },
         get route() {
-          return self.#router.route;
+          return self.#router.matched?.route;
         },
         get params() {
-          return self.#router.params;
+          return self.#router.matched?.params;
         },
         get query() {
-          return self.#router.query;
+          return self.#router.matched?.query;
         },
         get wildcard() {
-          return self.#router.wildcard;
+          return self.#router.matched?.wildcard;
         },
         get cache() {
           return self.#cache;
@@ -123,14 +112,12 @@ export class App {
           }
 
           throw new Error(
-            `Tried to get service '${name}' but it is undefined.`
+            `A service was requested but not found. Received: ${name}`
           );
         },
         navigate: this.#router.navigate.bind(this.#router),
       }),
-      get http() {
-        return self.#http;
-      },
+      http: this.#http,
     };
   }
 }

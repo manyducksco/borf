@@ -3,6 +3,7 @@ import queryString from "query-string";
 import catchLinks from "../_helpers/catchLinks";
 import { isFunction, isString } from "../_helpers/typeChecking";
 import { $Node } from "../templating/$Node";
+import { makeDolla } from "../templating/Dolla";
 
 export class Router {
   #basePath = "";
@@ -11,23 +12,19 @@ export class Router {
   #outlet;
   #mounted;
   #getInjectables;
-  history;
+  #history;
 
-  path;
-  route;
-  params = {};
-  query = {};
-  wildcard = false;
+  matched;
 
   constructor(options = {}, getInjectables) {
     this.#getInjectables = getInjectables;
 
     if (options.history) {
-      this.history = options.history;
+      this.#history = options.history;
     } else if (options.hash) {
-      this.history = createHashHistory();
+      this.#history = createHashHistory();
     } else {
-      this.history = createBrowserHistory();
+      this.#history = createBrowserHistory();
     }
 
     if (options.basePath) {
@@ -47,7 +44,7 @@ export class Router {
       handlers,
     };
 
-    this.#routes.push(entry);
+    this.#routes = sortedRoutes([...this.#routes, entry]);
   }
 
   /**
@@ -64,12 +61,12 @@ export class Router {
    */
   navigate(to, options = {}) {
     if (typeof to === "number") {
-      this.history.go(to);
+      this.#history.go(to);
     } else if (typeof to === "string") {
       if (options.replace) {
-        this.history.replace(to);
+        this.#history.replace(to);
       } else {
-        this.history.push(to);
+        this.#history.push(to);
       }
     } else {
       throw new TypeError(
@@ -110,7 +107,11 @@ export class Router {
       );
 
       if (matched) {
-        if (matched.path !== this.path || matched.query !== this.query) {
+        if (
+          !this.matched ||
+          matched.path !== this.matched.path ||
+          matched.query !== this.matched.query
+        ) {
           this.#mountRoute(matched);
         }
       } else {
@@ -120,22 +121,19 @@ export class Router {
       }
     };
 
-    this.#cancellers.push(this.history.listen(onRouteChanged));
+    this.#cancellers.push(this.#history.listen(onRouteChanged));
     this.#cancellers.push(
       catchLinks(node, (anchor) => {
         const href = anchor.getAttribute("href");
 
         // TODO: Handle relative links
 
-        this.history.push(href);
+        this.#history.push(href);
       })
     );
 
-    // Sort routes by specificity.
-    this.#routes = sortedRoutes(this.#routes);
-
     // Do initial match
-    onRouteChanged(this.history);
+    onRouteChanged(this.#history);
   }
 
   disconnect() {
@@ -147,14 +145,11 @@ export class Router {
   }
 
   #mountRoute(matched) {
-    this.path = matched.path;
-    this.route = matched.route;
-    this.params = matched.params;
-    this.query = matched.query;
-    this.wildcard = matched.wildcard;
     this.index = -1;
+    this.matched = matched;
 
-    const { $, app, http } = this.#getInjectables();
+    const { app, http } = this.#getInjectables();
+    const $ = makeDolla({ app, http, route: matched });
 
     const next = () => {
       if (matched.handlers[this.index + 1]) {
@@ -275,6 +270,13 @@ export function parseRoute(route) {
   return parsed;
 }
 
+/**
+ * Match a path against a list of parsed routes. Returns metadata for the matched route, or undefined if no match is found.
+ *
+ * @param routes - Array of parsed routes.
+ * @param path - String to match against routes.
+ * @param query - Query string parameters to parse.
+ */
 export function matchRoute(routes, path, query) {
   const parts = splitFragments(path);
 
@@ -353,7 +355,7 @@ export function sortedRoutes(routes) {
   const wildcard = [];
 
   for (const route of routes) {
-    if (route.fragments.some((f) => f.type === FragTypes.WildCard)) {
+    if (route.fragments.some((f) => f.type === FragTypes.Wildcard)) {
       wildcard.push(route);
     } else if (route.fragments.some((f) => f.type === FragTypes.Param)) {
       withParams.push(route);
