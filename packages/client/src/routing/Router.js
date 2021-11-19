@@ -3,16 +3,14 @@ import {
   createHashHistory,
   createMemoryHistory,
 } from "history";
-import queryString from "query-string";
 import catchLinks from "../_helpers/catchLinks";
 import { isFunction, isString } from "../_helpers/typeChecking";
 import { $Node } from "../templating/$Node";
 import { makeDolla } from "../templating/Dolla";
-import { createRouter, sortedRoutes, parseRoute, joinPath } from "./utils";
+import { createRouter, joinPath } from "./utils";
 
 export class Router {
   #basePath = "";
-  #routes = [];
   #cancellers = [];
   #outlet;
   #mounted;
@@ -45,12 +43,7 @@ export class Router {
    * @param handlers - One or more route handler functions
    */
   on(route, ...handlers) {
-    const entry = {
-      fragments: parseRoute(route),
-      handlers,
-    };
-
-    this.#routes = sortedRoutes([...this.#routes, entry]);
+    this.#router.on(route, { handlers });
   }
 
   /**
@@ -106,13 +99,7 @@ export class Router {
     );
 
     const onRouteChanged = ({ location }) => {
-      const route = Router.match(location.pathname + location.search);
-
-      const matched = matchRoute(
-        this.#routes,
-        location.pathname,
-        location.search
-      );
+      const matched = this.#router.match(location.pathname + location.search);
 
       if (matched) {
         if (
@@ -156,12 +143,13 @@ export class Router {
     this.index = -1;
     this.matched = matched;
 
+    const { handlers } = matched.attributes;
     const { app, http } = this.#getInjectables();
     const $ = makeDolla({ app, http, route: matched });
 
     const next = () => {
-      if (matched.handlers[this.index + 1]) {
-        let handler = matched.handlers[++this.index];
+      if (handlers[this.index + 1]) {
+        let handler = handlers[++this.index];
         let result;
 
         if (isFunction(handler)) {

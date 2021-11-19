@@ -1,3 +1,5 @@
+import queryString from "query-string";
+
 /*===============================*\
 ||         ROUTING TOOLS         ||
 \*===============================*/
@@ -205,6 +207,7 @@ export function sortedRoutes(routes) {
   const wildcard = [];
 
   for (const route of routes) {
+    console.trace(route);
     if (route.fragments.some((f) => f.type === FragTypes.Wildcard)) {
       wildcard.push(route);
     } else if (route.fragments.some((f) => f.type === FragTypes.Param)) {
