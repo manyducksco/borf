@@ -19,7 +19,7 @@ export class HTTP {
       url,
       options,
       middleware: [...middleware, ...this.#middleware],
-      fetch: this.#fetch || window.fetch,
+      fetch: this.#fetch || window.fetch.bind(window),
     });
   }
 
@@ -149,7 +149,7 @@ export class HTTPRequest {
       });
 
       if (isFunction(this.#options.parse)) {
-        ctx.body = await this.#options.parse(ctx, res);
+        ctx.body = await this.#options.parse(res);
       } else if (ctx.headers["content-type"] === "application/json") {
         ctx.body = await res.json();
       } else {

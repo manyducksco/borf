@@ -33,11 +33,17 @@ export function createRouter(options) {
     },
     /**
      * Matches the path against registered routes. Returns the route if matched or null otherwise.
+     *
+     * Pass a `filter` function in options to decide if potential matches are the final match. Receives the matched route and returns `true` or `false`.
+     *
+     * @param path - Path to match
+     * @param options -
      */
-    match(path) {
+    match(path, options = {}) {
       const [main, query] = path.split("?");
+      const { filter } = options;
 
-      return matchRoute(routes, main, query);
+      return matchRoute(routes, main, query, filter);
     },
   };
 }
@@ -128,8 +134,9 @@ export function parseRoute(route) {
  * @param routes - Array of parsed routes.
  * @param path - String to match against routes.
  * @param query - Query string parameters to parse.
+ * @param filter - Function for final say on matching. Receives matched route and returns true or false.
  */
-export function matchRoute(routes, path, query) {
+export function matchRoute(routes, path, query, filter) {
   const parts = splitPath(path);
 
   routes: for (const route of routes) {
@@ -184,7 +191,7 @@ export function matchRoute(routes, path, query) {
       }
     }
 
-    return {
+    const routeInfo = {
       ...route,
       path: matched.map((f) => f.value).join("/"),
       route: fragments
@@ -194,6 +201,10 @@ export function matchRoute(routes, path, query) {
       query: query ? queryString.parse(query) : Object.create(null),
       wildcard,
     };
+
+    if (filter == null || filter(routeInfo)) {
+      return routeInfo;
+    }
   }
 }
 
@@ -207,7 +218,6 @@ export function sortedRoutes(routes) {
   const wildcard = [];
 
   for (const route of routes) {
-    console.trace(route);
     if (route.fragments.some((f) => f.type === FragTypes.Wildcard)) {
       wildcard.push(route);
     } else if (route.fragments.some((f) => f.type === FragTypes.Param)) {
