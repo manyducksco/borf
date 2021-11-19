@@ -1,5 +1,5 @@
-import { HTTP } from "../fetching/HTTP";
-import { parseRoute, matchRoute, sortedRoutes } from "../routing/Router";
+import { HTTP } from "../data/HTTP";
+import { parseRoute, matchRoute, sortedRoutes } from "../routing/utils";
 
 export const route = {
   get: (path, responder) => ({
@@ -34,6 +34,7 @@ const responder = (ctx, res) => {
   ctx.request.params;
   ctx.request.url;
 
+  // To respond, call the res function with any number of helpers to modify the response.
   return res(
     ctx.status(200),
     ctx.headers("name", "value"),

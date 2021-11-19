@@ -1,4 +1,4 @@
-import { HTTP } from "../src/fetching/HTTP.js/index.js";
+import { HTTP } from "../src/data/HTTP";
 import { rest } from "msw";
 import { setupServer } from "msw/node";
 

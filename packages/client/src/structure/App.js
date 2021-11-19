@@ -1,4 +1,4 @@
-import { HTTP } from "../fetching/HTTP";
+import { HTTP } from "../data/HTTP";
 import { Router } from "../routing/Router";
 
 export class App {

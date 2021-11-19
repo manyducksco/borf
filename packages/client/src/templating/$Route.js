@@ -5,7 +5,7 @@ import {
   sortedRoutes,
   joinPath,
   FragTypes,
-} from "../routing/Router";
+} from "../routing/utils";
 import { makeDolla } from "./Dolla";
 import { isFunction } from "../_helpers/typeChecking";
 

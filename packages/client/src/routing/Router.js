@@ -1,9 +1,14 @@
-import { createBrowserHistory, createHashHistory } from "history";
+import {
+  createBrowserHistory,
+  createHashHistory,
+  createMemoryHistory,
+} from "history";
 import queryString from "query-string";
 import catchLinks from "../_helpers/catchLinks";
 import { isFunction, isString } from "../_helpers/typeChecking";
 import { $Node } from "../templating/$Node";
 import { makeDolla } from "../templating/Dolla";
+import { createRouter, sortedRoutes, parseRoute, joinPath } from "./utils";
 
 export class Router {
   #basePath = "";
@@ -13,6 +18,7 @@ export class Router {
   #mounted;
   #getInjectables;
   #history;
+  #router = createRouter();
 
   matched;
 
@@ -100,6 +106,8 @@ export class Router {
     );
 
     const onRouteChanged = ({ location }) => {
+      const route = Router.match(location.pathname + location.search);
+
       const matched = matchRoute(
         this.#routes,
         location.pathname,
@@ -188,193 +196,4 @@ export class Router {
 
     next();
   }
-}
-
-/**
- * Route matching strategy:
- *
- * 1. Parse route string into an array of segments
- * 2. Order routes by most specific to least specific
- * 3. Match path against each route in descending order, returning on the first match
- */
-
-export const FragTypes = {
-  Literal: 1,
-  Param: 2,
-  Wildcard: 3,
-};
-
-export function splitFragments(path) {
-  return path
-    .split("/")
-    .map((f) => f.trim())
-    .filter((f) => f !== "");
-}
-
-export function joinPath(...parts) {
-  parts = parts.filter((x) => x);
-
-  let joined = parts.shift();
-
-  if (joined) {
-    for (const part of parts) {
-      if (joined[joined.length - 1] !== "/") {
-        if (part[0] !== "/") {
-          joined += "/" + part;
-        } else {
-          joined += part;
-        }
-      }
-    }
-  }
-
-  return joined ?? "";
-}
-
-/**
- *
- */
-export function parseRoute(route) {
-  const parts = splitFragments(route);
-  const parsed = [];
-
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-
-    if (part === "*") {
-      if (i !== parts.length - 1) {
-        throw new Error(
-          `Wildcard must be at the end of a route. Received: ${route}`
-        );
-      }
-      parsed.push({
-        type: FragTypes.Wildcard,
-        name: "*",
-        value: null,
-      });
-    } else if (part[0] === ":") {
-      parsed.push({
-        type: FragTypes.Param,
-        name: part.slice(1),
-        value: null,
-      });
-    } else {
-      parsed.push({
-        type: FragTypes.Literal,
-        name: part,
-        value: part,
-      });
-    }
-  }
-
-  return parsed;
-}
-
-/**
- * Match a path against a list of parsed routes. Returns metadata for the matched route, or undefined if no match is found.
- *
- * @param routes - Array of parsed routes.
- * @param path - String to match against routes.
- * @param query - Query string parameters to parse.
- */
-export function matchRoute(routes, path, query) {
-  const parts = splitFragments(path);
-
-  routes: for (const route of routes) {
-    const { fragments, handlers } = route;
-    const hasWildcard =
-      fragments[fragments.length - 1]?.type === FragTypes.Wildcard;
-
-    if (!hasWildcard && fragments.length !== parts.length) {
-      continue routes;
-    }
-
-    const matched = [];
-
-    fragments: for (let i = 0; i < fragments.length; i++) {
-      const part = parts[i];
-      const frag = fragments[i];
-
-      if (part == null && frag.type !== FragTypes.Wildcard) {
-        continue routes;
-      }
-
-      switch (frag.type) {
-        case FragTypes.Literal:
-          if (frag.value.toLowerCase() === part.toLowerCase()) {
-            matched.push(frag);
-            break;
-          } else {
-            continue routes;
-          }
-        case FragTypes.Param:
-          matched.push({ ...frag, value: part });
-          break;
-        case FragTypes.Wildcard:
-          matched.push({ ...frag, value: parts.slice(i).join("/") });
-          break fragments;
-        default:
-          throw new Error(`Unknown fragment type: ${frag.type}`);
-      }
-    }
-
-    const params = Object.create(null);
-    let wildcard = false;
-
-    for (const frag of matched) {
-      if (frag.type === FragTypes.Param) {
-        params[frag.name] = frag.value;
-      }
-
-      if (frag.type === FragTypes.Wildcard) {
-        wildcard = true;
-        params.wildcard = frag.value;
-      }
-    }
-
-    return {
-      path: matched.map((f) => f.value).join("/"),
-      route: fragments
-        .map((f) => (f.type === FragTypes.Param ? ":" + f.name : f.name))
-        .join("/"),
-      params,
-      query: query ? queryString.parse(query) : {},
-      handlers: handlers,
-      wildcard,
-    };
-  }
-}
-
-/**
- * Sorts routes in order of specificity.
- * Routes without params and longer routes are weighted more heavily.
- */
-export function sortedRoutes(routes) {
-  const withoutParams = [];
-  const withParams = [];
-  const wildcard = [];
-
-  for (const route of routes) {
-    if (route.fragments.some((f) => f.type === FragTypes.Wildcard)) {
-      wildcard.push(route);
-    } else if (route.fragments.some((f) => f.type === FragTypes.Param)) {
-      withParams.push(route);
-    } else {
-      withoutParams.push(route);
-    }
-  }
-
-  const bySizeDesc = (a, b) => {
-    if (a.fragments.length > b.fragments.length) {
-      return -1;
-    } else {
-      return 1;
-    }
-  };
-
-  withoutParams.sort(bySizeDesc);
-  withParams.sort(bySizeDesc);
-  wildcard.sort(bySizeDesc);
-
-  return [...withoutParams, ...withParams, ...wildcard];
 }

@@ -1,8 +1,8 @@
-import { App } from "./structuring/App.js";
+import { App } from "./structure/App.js";
 
-export * from "./structuring/Component.js";
-export * from "./structuring/Service.js";
-export * from "./storing/state.js";
+export * from "./structure/Component.js";
+export * from "./structure/Service.js";
+export * from "./data/state.js";
 
 export * from "./Keyboard.js";
 export * from "./Styles.js";

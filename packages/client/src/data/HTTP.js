@@ -1,4 +1,4 @@
-import { state } from "../storing/state";
+import { state } from "./state";
 import { isFunction, isObject } from "../_helpers/typeChecking";
 
 export class HTTP {
