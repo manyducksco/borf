@@ -16,7 +16,7 @@ export class Router {
   #mounted;
   #getInjectables;
   #history;
-  #router = createRouter();
+  #matcher = createRouter();
 
   matched;
 
@@ -43,7 +43,7 @@ export class Router {
    * @param handlers - One or more route handler functions
    */
   on(route, ...handlers) {
-    this.#router.on(route, { handlers });
+    this.#matcher.on(route, { handlers });
   }
 
   /**
@@ -99,7 +99,7 @@ export class Router {
     );
 
     const onRouteChanged = ({ location }) => {
-      const matched = this.#router.match(location.pathname + location.search);
+      const matched = this.#matcher.match(location.pathname + location.search);
 
       if (matched) {
         if (

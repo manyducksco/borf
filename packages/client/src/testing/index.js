@@ -1,4 +1,6 @@
 import "cross-fetch/polyfill";
 
-export * from "./makeMockHTTP";
+export { route } from "./makeMockHTTP";
 export * from "./wrapService";
+export * from "./wrapComponent";
+export * from "./suite";
