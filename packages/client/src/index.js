@@ -4,7 +4,7 @@ export * from "./structure/Component.js";
 export * from "./structure/Service.js";
 export * from "./data/state.js";
 
-export * from "./Keyboard.js";
+// export * from "./Keyboard.js";
 export * from "./Styles.js";
 export * from "./assert.js";
 

@@ -5,14 +5,15 @@
   "source": "src/index.js",
   "main": "dist/woof.js",
   "types": "woof.d.ts",
-  "type": "module",
+  "module": "dist/woof.js",
   "scripts": {
     "demo": "http-server demo",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
     "test:coverage": "npm run test -- --coverage",
-    "build:testing": "esbuild src/testing/index.js --platform=browser --target=es2018 --format=esm --bundle --sourcemap --outfile=dist/testing.js",
+    "build:test": "esbuild src/testing/index.js --platform=browser --target=es2018 --format=esm --bundle --sourcemap --outfile=dist/testing.js",
     "build": "esbuild woof=src/index.js --platform=browser --target=es2018 --format=esm --bundle --sourcemap --outfile=dist/woof.js",
+    "build:node": "esbuild woof=src/index.js --platform=node --target=es2015 --format=cjs --bundle --sourcemap --outfile=dist/woof.node.js",
     "build:watch": "npm run build -- --watch",
     "build:prod": "npm run build:testing -- --minify && npm run build -- --minify"
   },
