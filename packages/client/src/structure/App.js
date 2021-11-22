@@ -63,8 +63,8 @@ export class App {
       service.app = injectables.app;
       service.http = injectables.http;
 
-      if (typeof service.init === "function") {
-        service.init();
+      if (typeof service.created === "function") {
+        service.created();
       }
     }
 
