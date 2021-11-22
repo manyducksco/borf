@@ -1,10 +1,4 @@
-import woof, {
-  state,
-  Component,
-  Service,
-  Keyboard,
-  Styles,
-} from "../dist/woof";
+import woof, { state, Component, Service, Keyboard, Styles } from "./index.js";
 
 test("exports expected things", () => {
   expect(typeof woof).toBe("function");
@@ -19,7 +13,7 @@ test("exports expected things", () => {
 test("default function creates an App instance", () => {
   const app = woof();
 
-  expect(typeof app.init).toBe("function");
+  expect(typeof app.setup).toBe("function");
   expect(typeof app.service).toBe("function");
   expect(typeof app.route).toBe("function");
   expect(typeof app.start).toBe("function");

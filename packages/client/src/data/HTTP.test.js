@@ -1,4 +1,4 @@
-import { HTTP } from "../src/data/HTTP";
+import { HTTP } from "./HTTP.js";
 import { rest } from "msw";
 import { setupServer } from "msw/node";
 

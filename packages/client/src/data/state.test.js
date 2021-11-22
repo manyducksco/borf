@@ -1,4 +1,4 @@
-import { state } from "../dist/woof";
+import { state } from "./state.js";
 
 test("get, set and listen signatures", () => {
   const value = state(5);

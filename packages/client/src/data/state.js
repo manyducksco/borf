@@ -1,4 +1,4 @@
-import { isFunction } from "../_helpers/typeChecking";
+import { isFunction } from "../_helpers/typeChecking.js";
 
 /**
  * Creates a state container in the form of a function. This function can be called three ways with different results.

@@ -1,5 +1,5 @@
-import { state } from "./state";
-import { isFunction, isObject } from "../_helpers/typeChecking";
+import { state } from "./state.js";
+import { isFunction, isObject } from "../_helpers/typeChecking.js";
 
 export class HTTP {
   #middleware = [];
