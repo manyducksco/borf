@@ -1,22 +1,60 @@
+import { isFunction, isString } from "../_helpers/typeChecking";
+import { state } from "../data/state";
 import { $Node } from "./$Node";
+import { $Text } from "./$Text";
 
 export class $If extends $Node {
   condition;
-  component;
+  then;
+  otherwise;
+  mounted;
+  mountedIs = null;
   unlisten;
 
-  constructor(value, component) {
+  constructor(value, then, otherwise = null) {
     super();
-    this.condition = value;
-    this.component = component;
+    this.condition = isFunction(value) ? value : state(value);
+    this.then = this.#wrap(then);
+    this.otherwise = otherwise && this.#wrap(otherwise);
+  }
+
+  #wrap(result) {
+    if (result.isDolla) {
+      return () => result;
+    } else if (isString(result)) {
+      return () => new $Text(result);
+    } else {
+      return result;
+    }
   }
 
   update(value) {
-    if (value && this.element?.parentNode) {
-      this.component.connect(this.element.parentNode, this.element);
-    } else {
-      this.component.disconnect();
-    }
+    requestAnimationFrame(() => {
+      if (this.element?.parentNode) {
+        if (value) {
+          if (this.mountedIs !== "then") {
+            if (this.mounted) this.mounted.disconnect();
+            this.mounted = this.then();
+            this.mounted.connect(this.element.parentNode, this.element);
+            this.mountedIs = "then";
+          }
+        } else {
+          if (this.otherwise) {
+            if (this.mountedIs !== "otherwise") {
+              if (this.mounted) this.mounted.disconnect();
+              this.mounted = this.otherwise();
+              this.mounted.connect(this.element.parentNode, this.element);
+              this.mountedIs = "otherwise";
+            }
+          }
+        }
+      } else {
+        if (this.mounted) {
+          this.mounted.disconnect();
+          this.mountedIs = null;
+        }
+      }
+    });
   }
 
   beforeConnect() {
@@ -30,7 +68,9 @@ export class $If extends $Node {
   }
 
   disconnected() {
-    this.component.disconnect();
+    if (this.mounted) {
+      this.mounted.disconnect();
+    }
 
     if (this.unlisten) {
       this.unlisten();

@@ -27,10 +27,15 @@ import { isFunction } from "../_helpers/typeChecking.js";
  *
  * @param initialValue - Starting value (optional)
  * @param methods - Methods taking a value and returning an updated value
+ * @param options -
  */
-export function state(initialValue, methods = {}) {
+export function state(initialValue, methods = {}, options = {}) {
+  methods = methods || {};
+  options = options || {};
+
   let value = initialValue;
   let listeners = [];
+  let isInnerSet = false;
 
   function instance(arg) {
     // Calling with a function adds it as a listener.
@@ -42,39 +47,61 @@ export function state(initialValue, methods = {}) {
       };
     }
 
-    if (arg !== undefined && arg !== value) {
-      value = arg;
-
-      const cancelled = [];
-
-      for (const listener of listeners) {
-        // pass the value and a cancel function
-        listener(value, () => {
-          cancelled.push(listener);
-        });
+    if (arg !== undefined) {
+      if (!isInnerSet && options.immutable) {
+        throw new Error(
+          `Immutable states cannot be directly set. Received: ${arg}`
+        );
       }
 
-      listeners = listeners.filter((x) => !cancelled.includes(x));
+      if (arg !== value) {
+        value = arg;
+
+        const cancelled = [];
+
+        for (const listener of listeners) {
+          // pass the value and a cancel function
+          listener(value, () => {
+            cancelled.push(listener);
+          });
+        }
+
+        listeners = listeners.filter((x) => !cancelled.includes(x));
+      }
     }
 
+    isInnerSet = false;
     return value;
   }
 
   // Add methods to exported function with prefilled value argument.
   for (const method in methods) {
     instance[method] = function (...args) {
-      const updated = methods[method](value, ...args);
+      const newValue = methods[method](value, ...args);
 
-      if (isFunction(updated)) {
+      if (isFunction(newValue)) {
         throw new TypeError(`State methods cannot return functions.`);
       }
 
-      instance(updated);
+      isInnerSet = true;
+      instance(newValue);
+
+      return instance;
     };
   }
 
   return instance;
 }
+
+/**
+ * Returns a state that can only be modified through methods. Throws an error if called with a value.
+ *
+ * @param initialValue - Starting value (optional)
+ * @param methods - Methods taking a value and returning an updated value
+ */
+state.immut = function immut(initialValue, methods = {}, options = {}) {
+  return state(initialValue, methods, { ...options, immutable: true });
+};
 
 /**
  * Receives values modified by a `transform` function.

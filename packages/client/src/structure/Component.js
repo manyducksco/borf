@@ -18,7 +18,7 @@ export class Component extends $Node {
   children;
 
   get isConnected() {
-    return this.#element && this.#element.isConnected();
+    return this.#element && this.#element.isConnected;
   }
 
   constructor(attributes = {}, children = []) {

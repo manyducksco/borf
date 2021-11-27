@@ -1,10 +1,12 @@
 const esbuild = require("esbuild");
 
+const minify = false;
+
 esbuild
   .build({
     entryPoints: ["src/index.js"],
     bundle: true,
-    minify: true,
+    minify,
     sourcemap: true,
     platform: "browser",
     format: "esm",
@@ -19,7 +21,7 @@ esbuild
   .build({
     entryPoints: ["src/index.js"],
     bundle: true,
-    minify: true,
+    minify,
     sourcemap: true,
     platform: "node",
     format: "cjs",
@@ -34,7 +36,7 @@ esbuild
   .build({
     entryPoints: ["src/testing/index.js"],
     bundle: true,
-    minify: true,
+    minify,
     sourcemap: true,
     platform: "browser",
     format: "esm",

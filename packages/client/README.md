@@ -354,7 +354,7 @@ const app = woof();
 
 // Use `.init(fn)` to configure the app before it starts.
 // If the function returns a Promise, the app will wait for resolved before starting
-app.init(async function ({ app, http }) {
+app.setup(async function ({ app, http }) {
   http.use((ctx, next) => {
     // Configure some HTTP middleware
   });
@@ -367,3 +367,13 @@ app.init(async function ({ app, http }) {
 
 app.start("#app");
 ```
+
+## Ideas
+
+- Implement core framework parts as services that you can override
+  - $dolla provider
+  - http client
+  - routing
+  - cache (might be pointless if you can implement your own services)
+
+This keeps structure consistent and modular. Easy to swap out services or add new ones.

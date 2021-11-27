@@ -1,4 +1,6 @@
+import { isFunction } from "../_helpers/typeChecking";
 import { $Node } from "./$Node";
+import { state } from "../data/state";
 
 export class $Map extends $Node {
   source;
@@ -9,7 +11,7 @@ export class $Map extends $Node {
 
   constructor(list, getKey, createItem) {
     super();
-    this.source = list;
+    this.source = isFunction(list) ? list : state(list);
     this.getKey = getKey;
     this.createItem = createItem;
   }

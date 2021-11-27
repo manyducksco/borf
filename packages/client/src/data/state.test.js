@@ -52,6 +52,23 @@ test("methods object", () => {
   expect(count()).toBe(33);
 });
 
+test("state.immut", () => {
+  const value = state.immut(5, {
+    inc: (value) => value + 1,
+    dec: (value) => value - 1,
+  });
+
+  expect(value()).toBe(5);
+  value.inc();
+  expect(value()).toBe(6);
+  value.inc().inc().dec();
+  expect(value()).toBe(7);
+
+  expect(() => value(6)).toThrowError(
+    /Immutable states cannot be directly set/
+  );
+});
+
 test("state.map", () => {
   const value = state(5);
   const mapped = state.map(value, (n) => n * 2);
