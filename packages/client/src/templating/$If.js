@@ -18,13 +18,27 @@ export class $If extends $Node {
     this.otherwise = otherwise && this.#wrap(otherwise);
   }
 
+  // TODO: Consolidate this wrapping into a utility function.
+  //       This is standard logic needed anywhere rendering happens.
   #wrap(result) {
     if (result.isDolla) {
       return () => result;
     } else if (isString(result)) {
       return () => new $Text(result);
+    } else if (isFunction(result)) {
+      return () => {
+        const value = result();
+
+        if (value && value.isDolla) {
+          return value();
+        }
+
+        return value;
+      };
     } else {
-      return result;
+      throw new Error(
+        `Expected a string, function or $(element). Received: ${result}`
+      );
     }
   }
 

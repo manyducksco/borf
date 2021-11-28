@@ -1,4 +1,5 @@
 import { $Node } from "../templating/$Node";
+import { isFunction } from "../_helpers/typeChecking";
 
 export class Component extends $Node {
   static get isComponent() {
@@ -26,6 +27,10 @@ export class Component extends $Node {
 
     this.attributes = attributes;
     this.children = children;
+
+    if (isFunction(this.created)) {
+      this.created();
+    }
   }
 
   createElement($) {
@@ -40,10 +45,11 @@ export class Component extends $Node {
     if (!wasConnected) {
       this.#element = this.createElement(this.#dolla);
 
-      if (this.#element instanceof $Node == false) {
+      if (!this.#element.isNode) {
         throw new Error(
-          `Component 'createElement' method must return an $(element). Received: ${typeof this
-            .#element}`
+          `Component 'createElement' method must return an $(element). Received: ${
+            this.#element
+          }`
         );
       }
 

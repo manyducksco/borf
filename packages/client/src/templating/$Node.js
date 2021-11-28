@@ -1,5 +1,11 @@
+import { isFunction } from "../_helpers/typeChecking";
+
 export class $Node {
   element;
+
+  get isNode() {
+    return true;
+  }
 
   get isConnected() {
     return this.element?.parentNode != null;
