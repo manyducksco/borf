@@ -377,3 +377,19 @@ app.start("#app");
   - cache (might be pointless if you can implement your own services)
 
 This keeps structure consistent and modular. Easy to swap out services or add new ones.
+
+### All attributes are states?
+
+I had to implement attr() using states to make the views reactive in the testbed. Consider automatically making all attributes into states if they aren't already.
+
+Pass through functions as-is, but wrap anything else in a state. This guarantees components are written with changing attributes in mind.
+
+To go with that, consider changing `app` object props to be states as well, to make things consistent and allow changing routes without recreating elements. This makes the naming of `app.services()` kind of weird.
+
+### Cleaning up listeners
+
+Need to somehow proxy attributes and `app` object so any listeners created within createElement get removed when the component is disconnected. Might need to proxy states on services too.
+
+### Filter/map changes
+
+Returning undefined in a state.map to filter is convenient, but causes confusing non-running code when you're mapping things in real life. You have to go in and fall back to null if you want it to set. I don't feel like this is expected behavior from a map.

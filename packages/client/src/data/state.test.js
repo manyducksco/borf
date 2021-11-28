@@ -33,10 +33,12 @@ test("listener can be cancelled from within", () => {
 
 test("methods object", () => {
   const count = state(31, {
-    increment: (value) => value + 1,
-    decrement: (value) => value - 1,
-    add: (value, amount) => value + amount,
-    subtract: (value, amount) => value - amount,
+    methods: {
+      increment: (value) => value + 1,
+      decrement: (value) => value - 1,
+      add: (value, amount) => value + amount,
+      subtract: (value, amount) => value - amount,
+    },
   });
 
   count.increment();
@@ -52,10 +54,13 @@ test("methods object", () => {
   expect(count()).toBe(33);
 });
 
-test("state.immut", () => {
-  const value = state.immut(5, {
-    inc: (value) => value + 1,
-    dec: (value) => value - 1,
+test("immutable", () => {
+  const value = state(5, {
+    immutable: true,
+    methods: {
+      inc: (value) => value + 1,
+      dec: (value) => value - 1,
+    },
   });
 
   expect(value()).toBe(5);
@@ -112,4 +117,24 @@ test("state.filter", () => {
 
   expect(value()).toBe(7);
   expect(filtered()).toBe(4);
+});
+
+test("state.combine", () => {
+  const value1 = state(false);
+  const value2 = state(true);
+  const bothTrue = state.combine(
+    value1,
+    value2,
+    (...args) => !args.some((a) => a === false)
+  );
+
+  expect(bothTrue()).toBe(false);
+
+  value1(true);
+
+  expect(bothTrue()).toBe(true);
+
+  value2(false);
+
+  expect(bothTrue()).toBe(false);
 });

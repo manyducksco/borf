@@ -1,20 +1,69 @@
+import { createBrowserHistory, createHashHistory } from "history";
 import { HTTP } from "../data/HTTP";
-import { Router } from "../routing/Router";
+import { state } from "../data/state";
+import { createRouter } from "../routing/utils";
+import catchLinks from "../_helpers/catchLinks";
+import { isNumber, isString } from "../_helpers/typeChecking";
+import { makeDolla } from "../templating/Dolla";
 
 export class App {
-  #initFn;
-  #router;
+  #setup;
   #services = {};
-  #cache = {};
+  #router = createRouter();
+  #history;
+  #outlet;
+  #mounted;
   #http = new HTTP();
+  #app = Object.freeze({
+    title: state(document.title),
+    path: state(""),
+    route: state(""),
+    params: state({}),
+    query: state({}),
+    wildcard: state(false),
+    services: (name) => {
+      if (this.#services[name]) {
+        return this.#services[name];
+      }
+
+      throw new Error(
+        `A service was requested but not found. Received: ${name}`
+      );
+    },
+    /**
+     * Navigates to another route or traverses navigation history with a number of steps.
+     *
+     * @example
+     * app.navigate(-1);
+     * app.navigate(2);
+     * app.navigate("/other/path");
+     * app.navigate("/other/path", { replace: true });
+     *
+     * @param to - Path string or number of history entries
+     * @param options - `replace: true` to replace state
+     */
+    navigate: (to, options = {}) => {
+      if (isNumber(to)) {
+        this.#history.go(to);
+      } else if (isString(to)) {
+        if (options.replace) {
+          this.#history.replace(to);
+        } else {
+          this.#history.push(to);
+        }
+      } else {
+        throw new TypeError(`Expected a number or string. Received: ${to}`);
+      }
+    },
+  });
 
   constructor(options = {}) {
-    const injectables = this.#getInjectables.bind(this);
-
-    if (options.hash) {
-      this.#router = new Router({ hash: true }, injectables);
+    if (options.history) {
+      this.#history = options.history;
+    } else if (options.hash) {
+      this.#history = createHashHistory();
     } else {
-      this.#router = new Router({}, injectables);
+      this.#history = createBrowserHistory();
     }
   }
 
@@ -25,17 +74,17 @@ export class App {
    * @param fn - App config function.
    */
   setup(fn) {
-    this.#initFn = async () => fn();
+    this.#setup = async () => fn();
   }
 
   /**
-   * Adds a route to the router's list for matching.
+   * Adds a route to the list for matching when the URL changes.
    *
    * @param path - Path to match before calling handlers.
-   * @param handlers - One or more route handler functions or zero or more handlers followed by one Component.
+   * @param component - Component to display when route matches.
    */
-  route(path, ...handlers) {
-    this.#router.on(path, ...handlers);
+  route(path, component) {
+    this.#router.on(path, { component });
   }
 
   /**
@@ -55,69 +104,84 @@ export class App {
    * @param element - Selector string or DOM node to attach to.
    */
   start(element) {
-    const injectables = this.#getInjectables();
+    if (isString(element)) {
+      element = document.querySelector(element);
+    }
+
+    if (element instanceof Node == false) {
+      throw new TypeError(`Expected a DOM node. Received: ${element}`);
+    }
+
+    this.#outlet = element;
 
     for (const name in this.#services) {
       const service = this.#services[name];
 
-      service.app = injectables.app;
-      service.http = injectables.http;
+      service.app = this.#app;
+      service.http = this.#http;
 
       if (typeof service.created === "function") {
         service.created();
       }
     }
 
-    if (this.#initFn) {
-      this.#initFn().then(() => {
-        this.#router.connect(element);
+    const done = () => {
+      // Subscribe to value changes on app's title to update document.
+      this.#app.title((value) => {
+        document.title = value;
       });
+
+      this.#history.listen(this.onRouteChanged.bind(this));
+
+      catchLinks(this.#outlet, (anchor) => {
+        const href = anchor.getAttribute("href");
+        this.#history.push(href);
+
+        // TODO: Handle relative links
+      });
+
+      // Do initial match
+      this.onRouteChanged(this.#history);
+    };
+
+    if (this.#setup) {
+      this.#setup().then(done);
     } else {
-      this.#router.connect(element);
+      done();
     }
   }
 
-  #getInjectables() {
-    const self = this;
+  onRouteChanged({ location }) {
+    const matched = this.#router.match(location.pathname + location.search);
 
-    return {
-      app: Object.freeze({
-        get title() {
-          return document.title;
-        },
-        set title(value) {
-          document.title = value;
-        },
-        get path() {
-          return self.#router.matched?.path;
-        },
-        get route() {
-          return self.#router.matched?.route;
-        },
-        get params() {
-          return self.#router.matched?.params;
-        },
-        get query() {
-          return self.#router.matched?.query;
-        },
-        get wildcard() {
-          return self.#router.matched?.wildcard;
-        },
-        get cache() {
-          return self.#cache;
-        },
-        services: (name) => {
-          if (self.#services[name]) {
-            return self.#services[name];
-          }
+    console.log(location, matched);
 
-          throw new Error(
-            `A service was requested but not found. Received: ${name}`
-          );
-        },
-        navigate: this.#router.navigate.bind(this.#router),
-      }),
-      http: this.#http,
-    };
+    if (matched) {
+      this.#app.path(matched.path);
+      this.#app.params(matched.params);
+      this.#app.query(matched.query);
+      this.#app.wildcard(matched.wildcard);
+
+      if (matched.route !== this.#app.route()) {
+        this.#app.route(matched.route);
+
+        const { component } = matched.attributes;
+        const $ = makeDolla({
+          app: this.#app,
+          http: this.#http,
+          route: matched,
+        });
+
+        if (this.#mounted) {
+          this.#mounted.disconnect();
+        }
+        this.#mounted = $(component)();
+        this.#mounted.connect(this.#outlet);
+      }
+    } else {
+      console.warn(
+        `No route was matched. Consider adding a wildcard ("*") route to catch this.`
+      );
+    }
   }
 }

@@ -15,10 +15,12 @@ import { isFunction } from "../_helpers/typeChecking.js";
  * cancel(); // cancel from outside the listener
  *
  * const count = state(0, {
- *   increment: value => value + 1,
- *   decrement: value => value - 1,
- *   add: (value, amount) => value + amount,
- *   subtract: (value, amount) => value - amount
+ *   methods: {
+ *     increment: value => value + 1,
+ *     decrement: value => value - 1,
+ *     add: (value, amount) => value + amount,
+ *     subtract: (value, amount) => value - amount
+ *   }
  * });
  * count.increment();
  * count.decrement();
@@ -29,8 +31,7 @@ import { isFunction } from "../_helpers/typeChecking.js";
  * @param methods - Methods taking a value and returning an updated value
  * @param options -
  */
-export function state(initialValue, methods = {}, options = {}) {
-  methods = methods || {};
+export function state(initialValue, options = {}) {
   options = options || {};
 
   let value = initialValue;
@@ -74,20 +75,24 @@ export function state(initialValue, methods = {}, options = {}) {
     return value;
   }
 
-  // Add methods to exported function with prefilled value argument.
-  for (const method in methods) {
-    instance[method] = function (...args) {
-      const newValue = methods[method](value, ...args);
+  if (options.methods) {
+    const { methods } = options;
 
-      if (isFunction(newValue)) {
-        throw new TypeError(`State methods cannot return functions.`);
-      }
+    // Add methods to exported function with prefilled value argument.
+    for (const method in methods) {
+      instance[method] = function (...args) {
+        const newValue = methods[method](value, ...args);
 
-      isInnerSet = true;
-      instance(newValue);
+        if (isFunction(newValue)) {
+          throw new TypeError(`State methods cannot return functions.`);
+        }
 
-      return instance;
-    };
+        isInnerSet = true;
+        instance(newValue);
+
+        return instance;
+      };
+    }
   }
 
   instance.toString = function () {
@@ -96,16 +101,6 @@ export function state(initialValue, methods = {}, options = {}) {
 
   return instance;
 }
-
-/**
- * Returns a state that can only be modified through methods. Throws an error if called with a value.
- *
- * @param initialValue - Starting value (optional)
- * @param methods - Methods taking a value and returning an updated value
- */
-state.immut = function immut(initialValue, methods = {}, options = {}) {
-  return state(initialValue, methods, { ...options, immutable: true });
-};
 
 /**
  * Receives values modified by a `transform` function.
@@ -155,4 +150,28 @@ state.filter = function filter(source, condition) {
   return this.map(source, (value) => {
     if (condition(value)) return value;
   });
+};
+
+state.combine = function combine(...args) {
+  const fn = args.pop();
+  const states = args;
+  const listeners = [];
+
+  const initialValue = fn(...states.map((s) => s()));
+  const value = state(initialValue, {
+    immutable: true,
+    methods: {
+      _set: (current, newValue) => newValue,
+    },
+  });
+
+  for (const item of states) {
+    listeners.push(
+      item(() => {
+        value._set(fn(...states.map((s) => s())));
+      })
+    );
+  }
+
+  return value;
 };

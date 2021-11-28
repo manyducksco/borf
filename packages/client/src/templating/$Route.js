@@ -36,8 +36,8 @@ export class $Route extends $Node {
     };
   }
 
-  when(route, ...handlers) {
-    this.#router.on(route, { handlers });
+  when(route, component) {
+    this.#router.on(route, { component });
 
     return this;
   }
@@ -55,7 +55,17 @@ export class $Route extends $Node {
 
     if (matched) {
       if (this.mounted == null || matched.path !== this.mounted.path) {
-        this.#mountRoute(matched);
+        this.mounted = matched;
+
+        const { component } = matched.attributes;
+        const { app, http } = this.#getInjectables();
+        const $ = makeDolla({ app, http, route: matched });
+
+        if (this.#mounted) {
+          this.#mounted.disconnect();
+        }
+        this.#mounted = $(component)();
+        this.#mounted.connect(this.#outlet);
       }
     } else {
       console.warn(
@@ -78,53 +88,5 @@ export class $Route extends $Node {
         cancel();
       }
     }
-  }
-
-  #mountRoute(matched) {
-    this.mounted = matched;
-    this.index = -1;
-
-    const { handlers } = matched.attributes;
-    const { app, http } = this.#getInjectables();
-    const $ = makeDolla({ app, http, route: matched });
-
-    const next = () => {
-      if (handlers[this.index + 1]) {
-        let handler = handlers[++this.index];
-        let result;
-
-        if (isFunction(handler)) {
-          if (handler.isDolla) {
-            result = handler();
-          } else {
-            result = handler($, { app, http, next });
-          }
-        }
-
-        if (result instanceof $Node) {
-          requestAnimationFrame(() => {
-            if (this.#mounted) {
-              this.#mounted.disconnect();
-            }
-            this.#mounted = result;
-            this.#mounted.connect(this.#outlet.element);
-          });
-        } else if (result !== undefined) {
-          throw new TypeError(
-            `Route handlers must be a Component, $(element) or function that returns an $(element). Received: ${result}`
-          );
-        }
-      } else {
-        if (this.index === 0) {
-          throw new Error(`Route has no handler function.`);
-        } else {
-          throw new Error(
-            `Route called .next() but there is no handler after it.`
-          );
-        }
-      }
-    };
-
-    next();
   }
 }

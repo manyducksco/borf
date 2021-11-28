@@ -407,52 +407,59 @@ class ExampleSection extends Component {
 //       This way we can use wildcard matches to signal a check for subroutes.
 //       $.route() throws helpful error when called on a non-wildcard route.
 
-app.route("*", function ($, { app }) {
-  const mouse = app.services("mouse");
+app.route(
+  "*",
+  class extends Component {
+    createElement($) {
+      const { app } = this;
 
-  // Display current mouse coordinates as tab title
-  mouse.position((current) => {
-    app.title = `x:${Math.round(current.x)} y:${Math.round(current.y)}`;
-  });
+      const mouse = app.services("mouse");
 
-  const example = $("div", { class: styles.example });
+      // Display current mouse coordinates as tab title
+      mouse.position((current) => {
+        app.title = `x:${Math.round(current.x)} y:${Math.round(current.y)}`;
+      });
 
-  return $("div", { class: styles.demo })(
-    $("div", { class: "nav" })(
-      $("ul")(
-        $("li")($("a", { href: "/examples" })("Examples")),
-        $("li")($("a", { href: "/test2" })("Test Two")),
-        $("li")($("a", { href: "/test2/chunk1" })("Test Two - Chunk One")),
-        $("li")($("a", { href: "/test2/chunk2" })("Test Two - Chunk Two"))
-      )
-    ),
-    // Nested routes are relative to the current route.
-    $.route()
-      .when("examples", ($) =>
-        $("div")(
-          example($(ToggleExample)),
-          example($(CounterExample), $(CounterViewLabel)),
-          example($(ConditionalExample)),
-          example($(MapExample)),
-          example($(TwoWayBindExample)),
-          example($(HTTPRequestExample)),
-          example($(MouseFollowerExample))
-        )
-      )
-      // Routes can be nested further with wildcards.
-      // This $ function will be pre-loaded with the fragments after 'test2' to match against with $.route().
-      // $.route() acts like a switch statement. When it is connected, it picks the best route and renders it.
-      .when("test2/*", ($) =>
-        $("div")(
-          $("h1")("ROUTER"),
-          $.route()
-            .when("/", ($) => $("div")("default"))
-            .when("chunk1", ($) => $("h1")("This is the chunk1 page"))
-            .when("chunk2", ($) => $.text("HELLO CHUNK2"))
-        )
-      )
-    // .when("*", ($, { app }) => app.navigate("/test1"))
-  );
-});
+      const example = $("div", { class: styles.example });
+
+      return $("div", { class: styles.demo })(
+        $("div", { class: "nav" })(
+          $("ul")(
+            $("li")($("a", { href: "/examples" })("Examples")),
+            $("li")($("a", { href: "/test2" })("Test Two")),
+            $("li")($("a", { href: "/test2/chunk1" })("Test Two - Chunk One")),
+            $("li")($("a", { href: "/test2/chunk2" })("Test Two - Chunk Two"))
+          )
+        ),
+        // Nested routes are relative to the current route.
+        $.route()
+          .when("examples", ($) =>
+            $("div")(
+              example($(ToggleExample)),
+              example($(CounterExample), $(CounterViewLabel)),
+              example($(ConditionalExample)),
+              example($(MapExample)),
+              example($(TwoWayBindExample)),
+              example($(HTTPRequestExample)),
+              example($(MouseFollowerExample))
+            )
+          )
+          // Routes can be nested further with wildcards.
+          // This $ function will be pre-loaded with the fragments after 'test2' to match against with $.route().
+          // $.route() acts like a switch statement. When it is connected, it picks the best route and renders it.
+          .when("test2/*", ($) =>
+            $("div")(
+              $("h1")("ROUTER"),
+              $.route()
+                .when("/", ($) => $("div")("default"))
+                .when("chunk1", ($) => $("h1")("This is the chunk1 page"))
+                .when("chunk2", ($) => $.text("HELLO CHUNK2"))
+            )
+          )
+        // .when("*", ($, { app }) => app.navigate("/test1"))
+      );
+    }
+  }
+);
 
 app.start("#app");

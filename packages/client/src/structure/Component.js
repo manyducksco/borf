@@ -1,3 +1,4 @@
+import { state } from "../data/state";
 import { $Node } from "../templating/$Node";
 import { isFunction } from "../_helpers/typeChecking";
 
@@ -25,7 +26,18 @@ export class Component extends $Node {
   constructor(attributes = {}, children = []) {
     super();
 
-    this.attributes = attributes;
+    // All attributes are turned into functions.
+    // Anything that isn't a function already becomes a state.
+    this.attributes = {};
+
+    for (const key in attributes) {
+      if (isFunction(attributes[key])) {
+        this.attributes[key] = attributes[key];
+      } else {
+        this.attributes[key] = state(attributes[key], { immutable: true });
+      }
+    }
+
     this.children = children;
 
     if (isFunction(this.created)) {
