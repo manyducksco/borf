@@ -90,6 +90,10 @@ export function state(initialValue, methods = {}, options = {}) {
     };
   }
 
+  instance.toString = function () {
+    return value.toString();
+  };
+
   return instance;
 }
 
