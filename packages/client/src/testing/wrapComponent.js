@@ -19,7 +19,7 @@ export function wrapComponent(component, options = {}) {
       route: "/test",
       params: {},
       query: {},
-      ...options,
+      ...(options.app || {}),
       services(name) {
         if (options.app?.services[name]) {
           return options.app.services[name];

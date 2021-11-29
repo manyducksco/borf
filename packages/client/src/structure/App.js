@@ -131,7 +131,7 @@ export class App {
         document.title = value;
       });
 
-      this.#history.listen(this.onRouteChanged.bind(this));
+      this.#history.listen(this.#onRouteChanged.bind(this));
 
       catchLinks(this.#outlet, (anchor) => {
         const href = anchor.getAttribute("href");
@@ -141,7 +141,7 @@ export class App {
       });
 
       // Do initial match
-      this.onRouteChanged(this.#history);
+      this.#onRouteChanged(this.#history);
     };
 
     if (this.#setup) {
@@ -151,10 +151,8 @@ export class App {
     }
   }
 
-  onRouteChanged({ location }) {
+  #onRouteChanged({ location }) {
     const matched = this.#router.match(location.pathname + location.search);
-
-    console.log(location, matched);
 
     if (matched) {
       this.#app.path(matched.path);

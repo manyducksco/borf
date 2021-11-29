@@ -28,8 +28,7 @@ import { isFunction } from "../_helpers/typeChecking.js";
  * count.subtract(3);
  *
  * @param initialValue - Starting value (optional)
- * @param methods - Methods taking a value and returning an updated value
- * @param options -
+ * @param options - Configure this state (supports `immutable` bool and `methods` object)
  */
 export function state(initialValue, options = {}) {
   options = options || {};
@@ -42,6 +41,10 @@ export function state(initialValue, options = {}) {
     // Calling with a function adds it as a listener.
     if (arg instanceof Function) {
       listeners.push(arg);
+
+      if (listeners.length > 10) {
+        console.warn(`State has 10 listeners. Possible memory leak.`);
+      }
 
       return function () {
         listeners.splice(listeners.indexOf(arg), 1);
