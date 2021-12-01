@@ -12,7 +12,11 @@ export function wrapComponent(component, options = {}) {
     throw new TypeError(`Expected a component. Received: ${component}`);
   }
 
-  return function (attributes = {}, ...children) {
+  options = {
+    ...options,
+  };
+
+  function create(attributes = {}, ...children) {
     const app = {
       title: "Test Wrapper",
       path: "/test",
@@ -49,5 +53,42 @@ export function wrapComponent(component, options = {}) {
     };
 
     return instance;
+  }
+
+  create.mockResponse = function (config) {
+    if (!options.http) {
+      options.http = {};
+    }
+
+    if (!options.http.routes) {
+      options.http.routes = [];
+    }
+
+    const method = config.method?.toLowerCase();
+    const handler = route[method];
+
+    if (handler == null) {
+      throw new Error(`Expected known HTTP method. Received: ${method}`);
+    }
+
+    options.http.routes.push(handler(config.path, config.respond));
+
+    return create;
   };
+
+  create.mockService = function (name, instance) {
+    if (!options.app) {
+      options.app = {};
+    }
+
+    if (!options.app.services) {
+      options.app.services = {};
+    }
+
+    options.app.services[name] = instance;
+
+    return create;
+  };
+
+  return create;
 }

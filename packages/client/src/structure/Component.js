@@ -14,6 +14,8 @@ export class Component extends $Node {
     this.#dolla = dolla;
   }
 
+  cancellers = [];
+
   app;
   http;
   attributes;
@@ -27,7 +29,7 @@ export class Component extends $Node {
     super();
 
     // All attributes are turned into functions.
-    // Anything that isn't a function already becomes a state.
+    // Anything that isn't already a function becomes a state.
     this.attributes = {};
 
     for (const key in attributes) {
@@ -69,6 +71,7 @@ export class Component extends $Node {
     }
 
     this.#element.connect(parent, after);
+    this.element = this.#element.element;
 
     if (!wasConnected) {
       this.connected();
@@ -83,6 +86,12 @@ export class Component extends $Node {
 
       this.disconnected();
       this.#element = null;
+      this.element = null;
     }
+
+    for (const cancel of this.cancellers) {
+      cancel();
+    }
+    this.cancellers = [];
   }
 }

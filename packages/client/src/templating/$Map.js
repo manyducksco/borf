@@ -81,6 +81,10 @@ export class $Map extends $Node {
         item?.component.disconnect();
       }
 
+      if (!this.isConnected) {
+        return;
+      }
+
       const fragment = new DocumentFragment();
 
       // Remount components in new order
@@ -88,8 +92,9 @@ export class $Map extends $Node {
       for (const item of newNodes) {
         item.component.connect(fragment, previous);
 
-        if (item.component.hasOwnProperty("root")) {
+        if (item.component.hasOwnProperty("element")) {
           previous = item.component.element;
+          item.component.element.dataset.mapKey = item.key;
         }
       }
 
@@ -99,13 +104,11 @@ export class $Map extends $Node {
     });
   }
 
-  beforeConnect() {
+  connected() {
     if (!this.unlisten) {
       this.unlisten = this.source(this.update.bind(this));
     }
-  }
 
-  connected() {
     this.update(this.source());
   }
 

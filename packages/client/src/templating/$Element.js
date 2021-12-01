@@ -106,6 +106,7 @@ export class $Element extends $Node {
     for (const cancel of this.cancellers) {
       cancel();
     }
+    this.cancellers = [];
 
     if (props.disconnected) {
       props.disconnected();
