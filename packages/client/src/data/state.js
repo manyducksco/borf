@@ -1,4 +1,4 @@
-import { isFunction } from "../_helpers/typeChecking.js";
+import { isArray, isFunction, isObject } from "../_helpers/typeChecking.js";
 
 /**
  * Creates a state container in the form of a function. This function can be called three ways with different results.
@@ -30,36 +30,67 @@ import { isFunction } from "../_helpers/typeChecking.js";
  * @param initialValue - Starting value (optional)
  * @param options - Configure this state (supports `immutable` bool and `methods` object)
  */
-export function state(initialValue, options = {}) {
+export function state(initialValue, options) {
   options = options || {};
 
   let value = initialValue;
   let listeners = [];
   let isInnerSet = false;
 
-  function instance(arg) {
-    // Calling with a function adds it as a listener.
-    if (arg instanceof Function) {
-      listeners.push(arg);
+  function instance(one, two) {
+    // Calling with a context and a function adds the listener and pushes the cancel function into context.cancellers.
+    if (two) {
+      if (isObject(one) && isArray(one.cancellers) && isFunction(two)) {
+        listeners.push(two);
 
-      if (listeners.length > 10) {
-        console.warn(`State has 10 listeners. Possible memory leak.`);
+        if (listeners.length > 10) {
+          console.trace(
+            `State has ${
+              listeners.length
+            } listeners. Possible memory leak. Value: ${JSON.stringify(value)}`
+          );
+        }
+
+        const cancel = function () {
+          listeners.splice(listeners.indexOf(one), 1);
+        };
+
+        one.cancellers.push(cancel);
+
+        return cancel;
       }
 
-      return function () {
-        listeners.splice(listeners.indexOf(arg), 1);
-      };
+      throw new TypeError(
+        `Expected a context object and a listener function. Received: ${one} and ${two}`
+      );
     }
 
-    if (arg !== undefined) {
-      if (!isInnerSet && options.immutable) {
-        throw new Error(
-          `Immutable states cannot be directly set. Received: ${arg}`
+    // Calling with a function adds it as a listener.
+    if (one instanceof Function) {
+      listeners.push(one);
+
+      if (listeners.length > 10) {
+        console.trace(
+          `State has ${
+            listeners.length
+          } listeners. Possible memory leak. Value: ${JSON.stringify(value)}`
         );
       }
 
-      if (arg !== value) {
-        value = arg;
+      return function () {
+        listeners.splice(listeners.indexOf(one), 1);
+      };
+    }
+
+    if (one !== undefined) {
+      if (!isInnerSet && options.immutable) {
+        throw new Error(
+          `Immutable states can only be set through their methods. Received: ${one}`
+        );
+      }
+
+      if (one !== value) {
+        value = one;
 
         const cancelled = [];
 
@@ -102,6 +133,8 @@ export function state(initialValue, options = {}) {
     return value.toString();
   };
 
+  instance.isState = true;
+
   return instance;
 }
 
@@ -114,23 +147,41 @@ export function state(initialValue, options = {}) {
 state.map = function map(source, transform) {
   let stored;
 
-  return function (listener) {
-    if (listener instanceof Function) {
+  return function (one, two) {
+    if (two) {
+      if (isObject(one) && isArray(one.cancellers) && isFunction(two)) {
+        const cancel = source(one, (value) => {
+          const t = transform(value);
+          if (t !== undefined) {
+            stored = t;
+            two(t, cancel);
+          }
+        });
+
+        return cancel;
+      }
+
+      throw new TypeError(
+        `Expected a context object and a listener function. Received: ${one} and ${two}`
+      );
+    }
+
+    if (one instanceof Function) {
       // Listen for changes to source.
       const cancel = source((value) => {
         // Transform the value and, if not undefined, store and notify listener.
         const t = transform(value);
         if (t !== undefined) {
           stored = t;
-          listener(t, cancel);
+          one(t, cancel);
         }
       });
 
       return cancel;
     }
 
-    if (listener !== undefined) {
-      throw new Error(`Read only state cannot be set. Received: ${listener}`);
+    if (one !== undefined) {
+      throw new Error(`Read only states cannot be set. Received: ${one}`);
     }
 
     // Calling without listener returns the value.
@@ -144,17 +195,9 @@ state.map = function map(source, transform) {
 };
 
 /**
- * Receives values for which the condition returns truthy.
- *
- * @param source - State to receive values from.
- * @param condition - Function to decide whether to receive the value.
+ * Takes any number of states followed by a function. This function takes the states as arguments
+ * and returns a new value for this state whenever any of the dependent states gets a new value.
  */
-state.filter = function filter(source, condition) {
-  return this.map(source, (value) => {
-    if (condition(value)) return value;
-  });
-};
-
 state.combine = function combine(...args) {
   const fn = args.pop();
   const states = args;
