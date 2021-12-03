@@ -1,13 +1,12 @@
 import { $Node } from "./$Node";
 import { createRouter } from "../routing/utils";
 import { makeDolla } from "./Dolla";
-import { isFunction } from "../_helpers/typeChecking";
 
 /**
  * Creates a router outlet for a nested route. Multiple routes
  * are attached and the best match is displayed at this element's position.
  */
-export class $Route extends $Node {
+export class $Outlet extends $Node {
   static get isComponent() {
     return true;
   }
@@ -20,7 +19,6 @@ export class $Route extends $Node {
   #router = createRouter();
 
   mounted;
-  index = -1;
 
   get isConnected() {
     return this.#outlet && this.#outlet.isConnected;
@@ -36,7 +34,7 @@ export class $Route extends $Node {
     };
   }
 
-  when(route, component) {
+  route(route, component) {
     this.#router.on(route, { component });
 
     return this;

@@ -34,12 +34,12 @@ value((updated, cancel) => {
 });
 ```
 
-Use this context pattern to collect multiple listeners and cancel them all at once.
+Use the context pattern to collect multiple listeners and cancel them all at once.
 
 ```js
 const context = {
   cancellers: [],
-  cancel() {
+  cancelAll() {
     for (const cancel of this.cancellers) {
       cancel();
     }
@@ -61,7 +61,7 @@ value(context, (updated) => {
   console.log("updated value 3: " + updated);
 });
 
-context.cancel(); // cancels all three listeners
+context.cancelAll(); // cancels all three listeners
 ```
 
 ## Mapping values from one state into another

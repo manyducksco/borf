@@ -68,13 +68,20 @@ export class App {
   }
 
   /**
-   * Takes a function to configure the app before it starts. If the function returns
+   * Takes a function that configures the app before it starts.
+   * This function is called after services have been created
+   *
+   * If the function returns
    * a Promise, the app will not be started until the Promise resolves.
    *
    * @param fn - App config function.
    */
   setup(fn) {
-    this.#setup = async () => fn();
+    this.#setup = async () =>
+      fn({
+        app: this.#app,
+        http: this.#http,
+      });
   }
 
   /**
@@ -103,7 +110,7 @@ export class App {
    *
    * @param element - Selector string or DOM node to attach to.
    */
-  start(element) {
+  connect(element) {
     if (isString(element)) {
       element = document.querySelector(element);
     }
@@ -126,7 +133,7 @@ export class App {
     }
 
     const done = () => {
-      // Subscribe to value changes on app's title to update document.
+      // Update document title when app title is changed.
       this.#app.title((value) => {
         document.title = value;
       });
@@ -140,8 +147,7 @@ export class App {
         // TODO: Handle relative links
       });
 
-      // Do initial match
-      this.#onRouteChanged(this.#history);
+      this.#onRouteChanged(this.#history); // Do initial match
     };
 
     if (this.#setup) {

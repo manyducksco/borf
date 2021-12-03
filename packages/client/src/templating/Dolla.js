@@ -3,14 +3,14 @@ import { $Element } from "./$Element";
 import { $Text } from "./$Text";
 import { $If } from "./$If";
 import { $Map } from "./$Map";
-import { $Route } from "./$Route";
+import { $Outlet } from "./$Outlet";
 import { isObject, isString } from "../_helpers/typeChecking";
 
 /**
  * Creates a $ function with bound injectables.
  */
 export function makeDolla({ app, http, route }) {
-  function $(element, defaultAttrs = {}) {
+  function $(element, defaultAttrs = {}, defaultChildren = []) {
     let type = null;
 
     if (element.isComponent) {
@@ -28,7 +28,8 @@ export function makeDolla({ app, http, route }) {
      */
     function create(...args) {
       let attributes = { ...defaultAttrs };
-      let children = args;
+      let children = args.length === 0 ? defaultChildren : args;
+
       const firstArg = args[0];
 
       if (firstArg instanceof $Node == false && isObject(firstArg)) {
@@ -36,23 +37,22 @@ export function makeDolla({ app, http, route }) {
       }
 
       children = children
-        .filter((x) => x != null && x !== false)
+        .filter((x) => x != null && x !== false) // ignore null, undefined and false
         .map((child) => {
           if (child.isDolla) {
-            return child();
+            return child(); // create $(element) from a dolla create function
           }
 
-          return child;
+          return child; // pass through untouched otherwise
         });
 
       let node;
 
       switch (type) {
         case "component":
-          node = new element(attributes, children);
+          node = new element($, attributes, children);
           node.app = app;
           node.http = http;
-          node.$ = $;
           return node;
         case "element":
           node = new $Element(element, attributes, children);
@@ -79,6 +79,18 @@ export function makeDolla({ app, http, route }) {
     return new $Text(value);
   };
 
+  $.outlet = function (element = "div", defaultAttrs) {
+    if (route.wildcard == false) {
+      throw new Error(
+        `$.route() can only be used on wildcard routes. Current route: ${route.route}`
+      );
+    }
+
+    const node = $(element, defaultAttrs);
+
+    return new $Outlet(node, route.params.wildcard, () => ({ app, http }));
+  };
+
   /**
    * Creates a two way binding with the value updated on the specified event.
    *
@@ -91,18 +103,6 @@ export function makeDolla({ app, http, route }) {
       event,
       state,
     };
-  };
-
-  $.route = function (element = "div", defaultAttrs) {
-    if (route.wildcard == false) {
-      throw new Error(
-        `$.route() can only be used on wildcard routes. Current route: ${route.route}`
-      );
-    }
-
-    const node = $(element, defaultAttrs);
-
-    return new $Route(node, route.params.wildcard, () => ({ app, http }));
   };
 
   return $;

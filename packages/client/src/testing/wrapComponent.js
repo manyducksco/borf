@@ -43,10 +43,9 @@ export function wrapComponent(component, options = {}) {
       },
     });
 
-    const instance = new component(attributes, children);
+    const instance = new component($, attributes, children);
     instance.app = app;
     instance.http = mockHTTP.http;
-    instance.$ = $;
 
     instance._mock = {
       http: mockHTTP.stats,

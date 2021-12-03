@@ -10,10 +10,6 @@ export class Component extends $Node {
   #element;
   #dolla;
 
-  set $(dolla) {
-    this.#dolla = dolla;
-  }
-
   cancellers = [];
 
   app;
@@ -25,8 +21,10 @@ export class Component extends $Node {
     return this.#element && this.#element.isConnected;
   }
 
-  constructor(attributes = {}, children = []) {
+  constructor(dolla, attributes = {}, children = []) {
     super();
+
+    this.#dolla = dolla;
 
     // All attributes are turned into functions.
     // Anything that isn't already a function becomes a state.
