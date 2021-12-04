@@ -45,13 +45,7 @@ export class $Element extends $Node {
 
     this.tag = tag;
     this.props = Object.freeze({ ...props });
-    this.children = children.map((child) => {
-      if (isString(child) || isNumber(child)) {
-        return new $Text(child);
-      }
-
-      return child;
-    });
+    this.children = children;
   }
 
   createElement() {

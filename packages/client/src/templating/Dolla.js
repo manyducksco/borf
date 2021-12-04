@@ -1,10 +1,11 @@
-import { $Node } from "./$Node";
+import { isObject, isString } from "../_helpers/typeChecking";
 import { $Element } from "./$Element";
-import { $Text } from "./$Text";
 import { $If } from "./$If";
 import { $Map } from "./$Map";
 import { $Outlet } from "./$Outlet";
-import { isObject, isString } from "../_helpers/typeChecking";
+import { $Text } from "./$Text";
+import { $Watch } from "./$Watch";
+import { makeRender } from "./makeRender";
 
 /**
  * Creates a $ function with bound injectables.
@@ -32,34 +33,25 @@ export function makeDolla({ app, http, route }) {
 
       const firstArg = args[0];
 
-      if (firstArg instanceof $Node == false && isObject(firstArg)) {
+      if (isObject(firstArg) && !firstArg.isNode) {
         attributes = children.shift();
       }
 
       children = children
         .filter((x) => x != null && x !== false) // ignore null, undefined and false
-        .map((child) => {
-          if (child.isDolla) {
-            return child(); // create $(element) from a dolla create function
-          }
-
-          return child; // pass through untouched otherwise
-        });
+        .map((child) => makeRender(child)());
 
       let node;
 
-      switch (type) {
-        case "component":
-          node = new element($, attributes, children);
-          node.app = app;
-          node.http = http;
-          return node;
-        case "element":
-          node = new $Element(element, attributes, children);
-          node.app = app;
-          node.http = http;
-          return node;
+      if (type === "component") {
+        node = new element($, attributes, children);
+      } else if (type === "element") {
+        node = new $Element(element, attributes, children);
       }
+
+      node.app = app;
+      node.http = http;
+      return node;
     }
 
     create.isDolla = true;
@@ -73,6 +65,10 @@ export function makeDolla({ app, http, route }) {
 
   $.map = function (items, keyer, create) {
     return new $Map(items, keyer, create);
+  };
+
+  $.watch = function (source, create) {
+    return new $Watch(source, create);
   };
 
   $.text = function (value) {

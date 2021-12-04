@@ -6,7 +6,6 @@ test("exports expected things", () => {
   expect(typeof Component).toBe("function");
   expect(Component.isComponent).toBe(true);
   expect(typeof Service).toBe("function");
-  expect(typeof Keyboard).toBe("object");
   expect(typeof Styles).toBe("function");
 });
 
@@ -16,5 +15,5 @@ test("default function creates an App instance", () => {
   expect(typeof app.setup).toBe("function");
   expect(typeof app.service).toBe("function");
   expect(typeof app.route).toBe("function");
-  expect(typeof app.start).toBe("function");
+  expect(typeof app.connect).toBe("function");
 });

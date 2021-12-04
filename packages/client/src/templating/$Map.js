@@ -1,13 +1,21 @@
-import { isFunction } from "../_helpers/typeChecking";
-import { $Node } from "./$Node";
 import { state } from "../data/state";
+import { isFunction } from "../_helpers/typeChecking";
+import { deepEqual } from "../_helpers/deepEqual";
+import { $Node } from "./$Node";
+import { makeRender } from "./makeRender";
 
+/**
+ * Transform a list of items into a list of `$(element)`s.
+ *
+ * Removes old and adds new items without touching existing ones.
+ * Re-renders existing items if the previous item with the same key is not equal to the new one.
+ */
 export class $Map extends $Node {
   source;
   getKey;
   createItem;
   unlisten;
-  nodes = [];
+  list = [];
 
   constructor(list, getKey, createItem) {
     super();
@@ -28,12 +36,12 @@ export class $Map extends $Node {
 
     for (let i = 0; i < newKeys.length; i++) {
       const key = newKeys[i];
-      const tracked = this.nodes.find((item) => item.key === key);
+      const current = this.list.find((item) => item.key === key);
 
-      if (tracked) {
-        if (tracked.index !== i) {
+      if (current) {
+        if (current.index !== i) {
           moved.push({
-            from: tracked.index,
+            from: current.index,
             to: i,
             key,
           });
@@ -43,42 +51,51 @@ export class $Map extends $Node {
       }
     }
 
-    for (const tracked of this.nodes) {
-      const stillPresent = newKeys.includes(tracked.key);
+    for (const item of this.list) {
+      const stillPresent = newKeys.includes(item.key);
 
       if (!stillPresent) {
-        removed.push({ i: tracked.index, key: tracked.key });
+        removed.push({ i: item.index, key: item.key });
       }
     }
 
     // Determine what the next state is going to be, reusing components when possible.
-    const newNodes = [];
+    const newItems = [];
 
     for (let i = 0; i < list.length; i++) {
       const key = newKeys[i];
+      const value = list[i];
       const isAdded = added.some((x) => x.key === key);
-      let component;
+
+      let node;
 
       if (isAdded) {
-        component = this.createItem(list[i]);
+        node = makeRender(this.createItem(value))();
       } else {
-        component = this.nodes.find((x) => x.key === key).component;
+        const item = this.list.find((x) => x.key === key);
+
+        if (deepEqual(item.value, value)) {
+          node = item.node;
+        } else {
+          node = this.createItem(value);
+        }
       }
 
-      newNodes.push({
+      newItems.push({
         index: i,
         key,
-        component,
+        value,
+        node,
       });
     }
 
     // Batch all changes into an animation frame
     requestAnimationFrame(() => {
-      // Unmount removed components
+      // Unmount removed items
       for (const entry of removed) {
-        const item = this.nodes.find((x) => x.key === entry.key);
+        const item = this.list.find((x) => x.key === entry.key);
 
-        item?.component.disconnect();
+        item?.node.disconnect();
       }
 
       if (!this.isConnected) {
@@ -87,20 +104,21 @@ export class $Map extends $Node {
 
       const fragment = new DocumentFragment();
 
-      // Remount components in new order
+      // Remount items in new order
       let previous = undefined;
-      for (const item of newNodes) {
-        item.component.connect(fragment, previous);
 
-        if (item.component.hasOwnProperty("element")) {
-          previous = item.component.element;
-          item.component.element.dataset.mapKey = item.key;
+      for (const item of newItems) {
+        item.node.connect(fragment, previous);
+
+        if (item.node.isConnected) {
+          previous = item.node.element;
+          item.node.element.dataset.mapKey = item.key;
         }
       }
 
       this.element.parentNode.insertBefore(fragment, this.element.nextSibling);
 
-      this.nodes = newNodes;
+      this.list = newItems;
     });
   }
 
@@ -113,8 +131,8 @@ export class $Map extends $Node {
   }
 
   disconnected() {
-    for (const item of this.nodes) {
-      item.component.disconnect();
+    for (const item of this.list) {
+      item.node.disconnect();
     }
 
     if (this.unlisten) {

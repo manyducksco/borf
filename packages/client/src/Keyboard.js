@@ -82,6 +82,8 @@ export class KeySet {
       cancel();
     }
 
+    this.#cancellers = [];
+
     return this;
   }
 }
