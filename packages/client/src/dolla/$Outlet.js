@@ -1,5 +1,5 @@
 import { $Node } from "./$Node";
-import { createRouter } from "../routing/utils";
+import { createRouter } from "../_helpers/routing";
 import { makeDolla } from "./Dolla";
 
 /**
@@ -14,21 +14,21 @@ export class $Outlet extends $Node {
   #outlet;
   #mounted;
   #cancellers = [];
+  #getService;
   #path;
-  #getInjectables;
   #router = createRouter();
 
   mounted;
 
-  get isConnected() {
-    return this.#outlet && this.#outlet.isConnected;
+  get $isConnected() {
+    return this.#outlet && this.#outlet.$isConnected;
   }
 
-  constructor(element, path, getInjectables) {
+  constructor(getService, element, path) {
     super();
 
+    this.#getService = getService;
     this.#path = path;
-    this.#getInjectables = getInjectables;
     this.createElement = () => {
       return element();
     };
@@ -40,8 +40,8 @@ export class $Outlet extends $Node {
     return this;
   }
 
-  connect(parent, after = null) {
-    const wasConnected = this.isConnected;
+  $connect(parent, after = null) {
+    const wasConnected = this.$isConnected;
 
     // Run lifecycle callback only if connecting.
     // Connecting a node that is already connected moves it without unmounting.
@@ -56,14 +56,16 @@ export class $Outlet extends $Node {
         this.mounted = matched;
 
         const { component } = matched.attributes;
-        const { app, http } = this.#getInjectables();
-        const $ = makeDolla({ app, http, route: matched });
+        const $ = makeDolla({
+          getService: this.#getService,
+          route: matched,
+        });
 
         if (this.#mounted) {
-          this.#mounted.disconnect();
+          this.#mounted.$disconnect();
         }
         this.#mounted = $(component)();
-        this.#mounted.connect(this.#outlet);
+        this.#mounted.$connect(this.#outlet);
       }
     } else {
       console.warn(
@@ -71,16 +73,16 @@ export class $Outlet extends $Node {
       );
     }
 
-    this.#outlet.connect(parent, after);
+    this.#outlet.$connect(parent, after);
 
     if (!wasConnected) {
-      this.connected();
+      this._connected();
     }
   }
 
-  disconnect() {
-    if (this.isConnected) {
-      this.#outlet.disconnect();
+  $disconnect() {
+    if (this.$isConnected) {
+      this.#outlet.$disconnect();
 
       for (const cancel of this.#cancellers) {
         cancel();

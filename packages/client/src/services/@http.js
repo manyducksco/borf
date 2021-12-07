@@ -1,11 +1,17 @@
-import { state } from "./state.js";
+import { state } from "../state/state.js";
 import { isFunction, isObject } from "../_helpers/typeChecking.js";
+import { Service } from "../Service.js";
+import alphaId from "../_helpers/alphaId.js";
 
-export class HTTP {
+export default class HTTP extends Service {
   #middleware = [];
   #fetch;
+  #debug;
+  #requestId = 0;
 
-  constructor(options = {}) {
+  _created(options = {}) {
+    this.#debug = this.service("@debug").channel("woof:http");
+
     if (options.fetch) {
       this.#fetch = options.fetch;
     }
@@ -15,11 +21,13 @@ export class HTTP {
     const { middleware, options } = this.#parseArgs(args);
 
     return new HTTPRequest({
+      id: alphaId(++this.#requestId),
       method,
       url,
       options,
       middleware: [...middleware, ...this.#middleware],
       fetch: this.#fetch || window.fetch.bind(window),
+      debug: this.#debug,
     });
   }
 
@@ -74,6 +82,8 @@ export class HTTP {
 }
 
 export class HTTPRequest {
+  #id;
+  #debug;
   #method;
   #url;
   #options;
@@ -88,7 +98,9 @@ export class HTTPRequest {
   body = state(null);
   headers = state(null);
 
-  constructor({ method, url, options, middleware, fetch }) {
+  constructor({ id, debug, method, url, options, middleware, fetch }) {
+    this.#id = id;
+    this.#debug = debug;
     this.#method = method;
     this.#url = url;
     this.#options = options;
@@ -136,6 +148,11 @@ export class HTTPRequest {
     };
 
     const handler = async () => {
+      this.#debug.log(
+        `[request:${this.#id}] ${this.#method.toUpperCase()} ${this.#url}`
+      );
+      const start = Date.now();
+
       const res = await this.#fetch(this.#url, {
         method: this.#method,
         headers: ctx.headers,
@@ -155,6 +172,16 @@ export class HTTPRequest {
       } else {
         ctx.body = await res.text();
       }
+
+      this.#debug.log(
+        `[response:${this.#id}] ${this.#method.toUpperCase()} ${this.#url}`,
+        `(+${Math.round(Date.now() - start)}ms)`,
+        {
+          status: ctx.status,
+          headers: ctx.headers,
+          body: ctx.body,
+        }
+      );
     };
 
     const mount = (index = 0) => {

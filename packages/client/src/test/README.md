@@ -19,3 +19,15 @@ One part backend express app:
 
 - Watches files for changes and sends signals to client
 - Serves client test runner app
+
+```js
+http.get("/route/")
+
+const mock = new MockHTTP();
+
+mock.get("/route", (req, res, ctx) => {
+  return res(ctx.json({ message: "hello" }))
+});
+
+.service("@http", mockHTTP.service);
+```

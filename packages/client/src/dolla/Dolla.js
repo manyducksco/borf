@@ -1,4 +1,9 @@
-import { isObject, isString } from "../_helpers/typeChecking";
+import {
+  isComponent,
+  isNode,
+  isObject,
+  isString,
+} from "../_helpers/typeChecking";
 import { $Element } from "./$Element";
 import { $If } from "./$If";
 import { $Map } from "./$Map";
@@ -10,11 +15,11 @@ import { makeRender } from "./makeRender";
 /**
  * Creates a $ function with bound injectables.
  */
-export function makeDolla({ app, http, route }) {
+export function makeDolla({ getService, route }) {
   function $(element, defaultAttrs = {}, defaultChildren = []) {
     let type = null;
 
-    if (element.isComponent) {
+    if (isComponent(element)) {
       type = "component";
     } else if (isString(element)) {
       type = "element";
@@ -33,7 +38,7 @@ export function makeDolla({ app, http, route }) {
 
       const firstArg = args[0];
 
-      if (isObject(firstArg) && !firstArg.isNode) {
+      if (!isNode(firstArg) && isObject(firstArg)) {
         attributes = children.shift();
       }
 
@@ -44,17 +49,15 @@ export function makeDolla({ app, http, route }) {
       let node;
 
       if (type === "component") {
-        node = new element($, attributes, children);
+        node = new element(getService, $, attributes, children);
       } else if (type === "element") {
         node = new $Element(element, attributes, children);
       }
 
-      node.app = app;
-      node.http = http;
       return node;
     }
 
-    create.isDolla = true;
+    create.$isDolla = true;
 
     return create;
   }
@@ -84,7 +87,7 @@ export function makeDolla({ app, http, route }) {
 
     const node = $(element, defaultAttrs);
 
-    return new $Outlet(node, route.params.wildcard, () => ({ app, http }));
+    return new $Outlet(getService, node, route.params.wildcard);
   };
 
   /**

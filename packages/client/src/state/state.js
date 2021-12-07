@@ -1,31 +1,7 @@
 import { isArray, isFunction, isObject } from "../_helpers/typeChecking.js";
 
 /**
- * Creates a state container in the form of a function. This function can be called three ways with different results.
- *
- * @example
- * const count = state(0);
- *
- * count(); // returns 0
- * count(1); // sets value to 1
- * const cancel = count((n, cancel) => {
- *   // listen for changes
- *   cancel(); // cancel at any time from within the listener
- * });
- * cancel(); // cancel from outside the listener
- *
- * const count = state(0, {
- *   methods: {
- *     increment: value => value + 1,
- *     decrement: value => value - 1,
- *     add: (value, amount) => value + amount,
- *     subtract: (value, amount) => value - amount
- *   }
- * });
- * count.increment();
- * count.decrement();
- * count.add(5);
- * count.subtract(3);
+ * Creates a state container in the form of a function.
  *
  * @param initialValue - Starting value (optional)
  * @param options - Configure this state (supports `immutable` bool and `methods` object)

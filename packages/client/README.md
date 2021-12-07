@@ -39,6 +39,27 @@ npm i @manyducksco/woof
 - Routes have to end with `*` to have sub-routes. `$.route()` will throw an error otherwise.
 - `$` is only available in route handlers and a component's `createElement` method.
 
+## TODO
+
+#### `@engine`
+
+Move render/update logic into an `@engine` service. The `@engine` service provides the function that gets passed to createElement. It also provides callbacks for Components to handle the logic behind their lifecycle methods.
+
+Methods implemented by `@engine`:
+- create(component) // calls .createElement, passing the template function and receiving return value.
+- connect(component, parent, after)
+- disconnect(component, parent, after)
+
+Problems with this:
+- Component extends $Node but it needs to be its own thing so various @engines can handle it.
+
+#### Simplify `@http` service
+
+Remove the states on the response object. Just make the request return a promise and handle middleware.
+
+- Requests return a promise that resolves to an object with status, headers and an auto-parsed body.
+- Add caching support with `.invalidate(pattern)` function and `fresh` bool option on requests.
+
 ## A Woof App
 
 The basic app structure starts with an App instance:

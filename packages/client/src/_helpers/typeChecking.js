@@ -15,4 +15,9 @@ export const isObject = (value) =>
 
 export const isString = (value) => typeof value === "string";
 
-export const isDolla = (value) => isFunction(value) && value.isDolla == true;
+export const isDolla = (value) => isFunction(value) && value.$isDolla == true;
+
+export const isNode = (value) => isObject(value) && value.$isNode == true;
+
+export const isComponent = (value) =>
+  isFunction(value) && value.isComponent == true;

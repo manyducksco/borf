@@ -71,11 +71,15 @@ const value = state("hello");
 const louder = state.map(value, v => v.toUpperCase());
 
 louder(); // returns "HELLO"
+
+value("please stop yelling");
+
+louder(); // returns "PLEASE STOP YELLING"
 ```
 
 ## Composing multiple states
 
-Pass any number of states plus a function to resolve a new value given the existing states.
+Pass any number of states followed by a function. This function takes all values in the order the states were passed, and whatever value the function returns becomes the value of the combined state.
 
 ```js
 const one = state(true);

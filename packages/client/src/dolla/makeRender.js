@@ -1,14 +1,19 @@
-import { isString, isNumber, isFunction } from "../_helpers/typeChecking";
+import {
+  isString,
+  isNumber,
+  isFunction,
+  isNode,
+  isDolla,
+} from "../_helpers/typeChecking";
 import { $Text } from "./$Text";
 
 /**
- * Normalizes many types of children and renderables by returning
- * a render function that returns a $Node.
+ * Takes any element valid as a child and returns a render function that produces a $Node.
  */
 export function makeRender(element) {
-  if (element.isNode) {
+  if (isNode(element)) {
     return () => element;
-  } else if (element.isDolla) {
+  } else if (isDolla(element)) {
     return () => element();
   } else if (isString(element) || isNumber(element)) {
     return () => new $Text(element);

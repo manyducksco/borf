@@ -1,1 +1,1 @@
-export * from "../dist/testing.js";
+export * from "../dist/woof.test.js";

@@ -1,4 +1,4 @@
-import { state } from "../data/state";
+import { state } from "../state/state";
 import { isFunction } from "../_helpers/typeChecking";
 import { deepEqual } from "../_helpers/deepEqual";
 import { $Node } from "./$Node";
@@ -17,15 +17,15 @@ export class $Map extends $Node {
   unlisten;
   list = [];
 
-  constructor(list, getKey, createItem) {
+  constructor(source, getKey, createItem) {
     super();
-    this.source = isFunction(list) ? list : state(list);
+    this.source = isFunction(source) ? source : state(source);
     this.getKey = getKey;
     this.createItem = createItem;
   }
 
   update(list) {
-    if (!this.isConnected) {
+    if (!this.$isConnected) {
       return;
     }
 
@@ -95,10 +95,10 @@ export class $Map extends $Node {
       for (const entry of removed) {
         const item = this.list.find((x) => x.key === entry.key);
 
-        item?.node.disconnect();
+        item?.node.$disconnect();
       }
 
-      if (!this.isConnected) {
+      if (!this.$isConnected) {
         return;
       }
 
@@ -108,21 +108,24 @@ export class $Map extends $Node {
       let previous = undefined;
 
       for (const item of newItems) {
-        item.node.connect(fragment, previous);
+        item.node.$connect(fragment, previous);
 
-        if (item.node.isConnected) {
-          previous = item.node.element;
-          item.node.element.dataset.mapKey = item.key;
+        if (item.node.$isConnected) {
+          previous = item.node.$element;
+          item.node.$element.dataset.mapKey = item.key;
         }
       }
 
-      this.element.parentNode.insertBefore(fragment, this.element.nextSibling);
+      this.$element.parentNode.insertBefore(
+        fragment,
+        this.$element.nextSibling
+      );
 
       this.list = newItems;
     });
   }
 
-  connected() {
+  _connected() {
     if (!this.unlisten) {
       this.unlisten = this.source(this.update.bind(this));
     }
@@ -130,9 +133,9 @@ export class $Map extends $Node {
     this.update(this.source());
   }
 
-  disconnected() {
+  _disconnected() {
     for (const item of this.list) {
-      item.node.disconnect();
+      item.node.$disconnect();
     }
 
     if (this.unlisten) {

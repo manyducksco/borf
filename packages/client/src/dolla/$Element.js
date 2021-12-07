@@ -3,25 +3,13 @@ import {
   isObject,
   isString,
   isFunction,
-  isNumber,
 } from "../_helpers/typeChecking";
 import { $Node } from "./$Node";
-import { $Text } from "./$Text";
 
-// Props in this list will not be forwarded to the DOM node.
-const privateProps = [
-  "children",
-  "class",
-  "value",
-  "style",
-  "data",
-  "beforeConnect",
-  "connected",
-  "beforeDisconnect",
-  "disconnected",
-];
+// Attributes in this list will not be forwarded to the DOM node.
+const privateAttrs = ["children", "class", "value", "style", "data"];
 
-const booleanProps = [
+const booleanAttrs = [
   "disabled",
   "contenteditable",
   "draggable",
@@ -32,19 +20,58 @@ const booleanProps = [
   "translate",
 ];
 
-const eventRegex = /^on[a-z]/;
+const eventAttrs = [
+  "onclick",
+  "ondblclick",
+  "onmousedown",
+  "onmouseup",
+  "onmouseover",
+  "onmousemove",
+  "onmouseout",
+  "onmouseenter",
+  "onmouseleave",
+  "ontouchcancel",
+  "ontouchend",
+  "ontouchmove",
+  "ontouchstart",
+  "ondragstart",
+  "ondrag",
+  "ondragenter",
+  "ondragleave",
+  "ondragover",
+  "ondrop",
+  "ondragend",
+  "onkeydown",
+  "onkeypress",
+  "onkeyup",
+  "onunload",
+  "onabort",
+  "onerror",
+  "onresize",
+  "onscroll",
+  "onselect",
+  "onchange",
+  "onsubmit",
+  "onreset",
+  "onfocus",
+  "onblur",
+  "oninput",
+  "onanimationend",
+  "onanimationiteration",
+  "onanimationstart",
+];
 
 export class $Element extends $Node {
   tag;
-  props;
+  attributes;
   children;
   cancellers = [];
 
-  constructor(tag, props = {}, children = []) {
+  constructor(tag, attributes = {}, children = []) {
     super();
 
     this.tag = tag;
-    this.props = Object.freeze({ ...props });
+    this.attributes = attributes;
     this.children = children;
   }
 
@@ -52,48 +79,26 @@ export class $Element extends $Node {
     return document.createElement(this.tag);
   }
 
-  beforeConnect() {
-    const { props } = this;
-
+  _beforeConnect() {
     let previous = null;
 
     for (const child of this.children) {
-      child.connect(this.element, previous?.element);
+      child.$connect(this.$element, previous?.$element);
       previous = child;
     }
 
     this.#applyAttributes();
     this.#applyStyles();
     this.#applyClasses();
-
-    if (props.beforeConnect) {
-      props.beforeConnect();
-    }
   }
 
-  connected() {
-    const { props } = this;
-
+  _connected() {
     this.#attachEvents();
-
-    if (props.connected) {
-      props.connected();
-    }
   }
 
-  beforeDisconnect() {
-    const { props } = this;
-
-    if (props.beforeDisconnect) {
-      props.beforeDisconnect();
-    }
-  }
-
-  disconnected() {
-    const { props } = this;
-
+  _disconnected() {
     for (const child of this.children) {
-      child.disconnect();
+      child.$disconnect();
     }
 
     // Cancel listens, bindings and event handlers
@@ -101,30 +106,26 @@ export class $Element extends $Node {
       cancel();
     }
     this.cancellers = [];
-
-    if (props.disconnected) {
-      props.disconnected();
-    }
   }
 
   #attachEvents() {
-    for (const key in this.props) {
-      if (!privateProps.includes(key) && eventRegex.test(key)) {
+    for (const key in this.attributes) {
+      if (!privateAttrs.includes(key) && eventAttrs.includes(key)) {
         const eventName = key.slice(2).toLowerCase();
-        const listener = this.props[key];
+        const listener = this.attributes[key];
 
-        this.element.addEventListener(eventName, listener);
+        this.$element.addEventListener(eventName, listener);
 
         this.cancellers.push(() => {
-          this.element.removeEventListener(eventName, listener);
+          this.$element.removeEventListener(eventName, listener);
         });
       }
     }
   }
 
   #applyClasses() {
-    if (this.props.class) {
-      const mapped = getClassMap(this.props.class);
+    if (this.attributes.class) {
+      const mapped = getClassMap(this.attributes.class);
 
       for (const name in mapped) {
         const value = mapped[name];
@@ -132,29 +133,29 @@ export class $Element extends $Node {
         if (isFunction(value)) {
           this.#listenTo(value, (value) => {
             if (value) {
-              this.element.classList.add(name);
+              this.$element.classList.add(name);
             } else {
-              this.element.classList.remove(name);
+              this.$element.classList.remove(name);
             }
           });
         } else if (value) {
-          this.element.classList.add(name);
+          this.$element.classList.add(name);
         }
       }
     }
   }
 
   #applyStyles() {
-    if (this.props.style) {
-      for (const name in this.props.style) {
-        const prop = this.props.style[name];
+    if (this.attributes.style) {
+      for (const name in this.attributes.style) {
+        const prop = this.attributes.style[name];
 
         if (isFunction(prop)) {
           this.#listenTo(prop, (value) => {
-            this.element.style[name] = value;
+            this.$element.style[name] = value;
           });
         } else if (isString(prop)) {
-          this.element.style[name] = prop;
+          this.$element.style[name] = prop;
         } else {
           throw new TypeError(
             `Style value should be a string (${name}: ${prop})`
@@ -165,53 +166,53 @@ export class $Element extends $Node {
   }
 
   #applyAttributes() {
-    for (const name in this.props) {
-      const attr = this.props[name];
+    for (const name in this.attributes) {
+      const attr = this.attributes[name];
 
       if (name === "value") {
         if (isFunction(attr)) {
           this.#listenTo(attr, (value) => {
-            this.element.value = String(value);
+            this.$element.value = String(value);
           });
         } else if (isObject(attr) && attr.isBinding) {
           this.#listenTo(attr.state, (value) => {
-            this.element.value = String(value);
+            this.$element.value = String(value);
           });
 
-          this.element.addEventListener(attr.event, (e) => {
+          this.$element.addEventListener(attr.event, (e) => {
             const value = toSameType(attr.state(), e.target.value);
 
             attr.state(value);
           });
         } else {
-          this.element.value = String(this.props.value);
+          this.$element.value = String(this.attributes.value);
         }
       }
 
-      if (!privateProps.includes(name) && !eventRegex.test(name)) {
-        if (booleanProps.includes(name)) {
+      if (!privateAttrs.includes(name) && !eventAttrs.includes(name)) {
+        if (booleanAttrs.includes(name)) {
           if (isFunction(attr)) {
             this.#listenTo(attr, (value) => {
               if (value) {
-                this.element.setAttribute(name, "");
+                this.$element.setAttribute(name, "");
               } else {
-                this.element.removeAttribute(name);
+                this.$element.removeAttribute(name);
               }
             });
           } else if (attr) {
-            this.element.setAttribute(name, "");
+            this.$element.setAttribute(name, "");
           }
         } else {
           if (isFunction(attr)) {
             this.#listenTo(attr, (value) => {
               if (value) {
-                this.element.setAttribute(name, value.toString());
+                this.$element.setAttribute(name, value.toString());
               } else {
-                this.element.removeAttribute(name);
+                this.$element.removeAttribute(name);
               }
             });
           } else if (attr) {
-            this.element.setAttribute(name, String(attr));
+            this.$element.setAttribute(name, String(attr));
           }
         }
       }

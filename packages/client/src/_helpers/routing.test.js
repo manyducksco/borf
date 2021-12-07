@@ -4,7 +4,7 @@ import {
   parseRoute,
   matchRoute,
   sortedRoutes,
-} from "./utils.js";
+} from "./routing.js";
 
 describe("createRouter", () => {
   test("routes", () => {
