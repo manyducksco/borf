@@ -60,6 +60,10 @@ Remove the states on the response object. Just make the request return a promise
 - Requests return a promise that resolves to an object with status, headers and an auto-parsed body.
 - Add caching support with `.invalidate(pattern)` function and `fresh` bool option on requests.
 
+#### Create dev tools
+
+Add a dev tool service that collects info on service access. Eventually build a map to see which components and services are bringing in a given service.
+
 ## A Woof App
 
 The basic app structure starts with an App instance:
