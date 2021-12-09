@@ -1,0 +1,39 @@
+<html>
+  <head>
+    <title>Tests</title>
+    <link rel="stylesheet" href="/index.css" />
+    <base href="http://localhost:7071" />
+  </head>
+  <body>
+    <div id="tests">
+      <div class="static-loader">
+        <span>LOADING</span>
+      </div>
+    </div>
+
+    <script>
+      const events = new EventSource("/events");
+
+      events.addEventListener("message", (message) => {
+        window.location.reload();
+      });
+
+      window.addEventListener("beforeunload", () => {
+        events.close();
+      });
+    </script>
+
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "$bundle": "./suites.bundle.js",
+          "@manyducksco/woof": "../../node_modules/@manyducksco/woof/dist/woof.js",
+          "@manyducksco/woof/test": "../../node_modules/@manyducksco/woof/dist/woof.test.js"
+        }
+      }
+    </script>
+    <script src="./es-module-shims.js"></script>
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>
