@@ -1,25 +1,6 @@
-const { Command } = require("@ratwizard/cli");
+const { Command, print, println } = require("@ratwizard/cli");
 
 module.exports = new Command().action(() => {
-  console.log("Ran tests");
-
-  /**
-   * How does this work?
-   *
-   * 1. Run `woof test`
-   * 2. Starts web server to serve test runner UI for browser
-   * 3. Scans project .test.js files and imports them somehow
-   * 4. Sends tests to browser app to be run
-   *
-   * Scan tests and build an index file, then bundle it with esbuild?
-   * The imported test() function needs to register tests for the correct component
-   * The server will do the grouping based on the filesystem, but those functions
-   * are called as soon as the module is imported. This means there needs to be some
-   * kind of global context to register tests against at import time.
-   *
-   *
-   */
-
   const path = require("path");
   const fs = require("fs-extra");
   const express = require("express");
@@ -148,9 +129,28 @@ module.exports = new Command().action(() => {
     imports = [];
     registrations = [];
 
-    console.time("bundle");
+    const now = new Date();
+
+    print(`  -> Rebuilding...`);
     build();
-    console.timeEnd("bundle");
+
+    let hours = now.getHours();
+    const minutes = now.getMinutes();
+    const meridiem = hours > 12 ? "PM" : "AM";
+
+    hours = hours % 12;
+
+    const time =
+      hours.toString() +
+      ":" +
+      minutes.toString().padStart(2, "0") +
+      " " +
+      meridiem;
+    println(
+      ` finished in <green>${
+        Date.now() - now.valueOf()
+      }ms</green> <gray>[${time}]</gray>`
+    );
 
     buildId.increment();
   };
@@ -163,7 +163,11 @@ module.exports = new Command().action(() => {
   app.use(express.static(bundleDir));
 
   app.listen(7071, () => {
-    console.log("Running test environment at http://localhost:7071");
+    println(
+      `\nVisit <green>http://localhost:7071</green> in a browser to miru.\n`
+    );
+
+    println("Watching for file changes");
   });
 
   app.get("/events", (req, res) => {
@@ -198,7 +202,7 @@ module.exports = new Command().action(() => {
     }
   });
 
-  // process.on("exit", () => {
-  //   fs.rmSync(bundleDir, { recursive: true, force: true });
-  // });
+  process.on("exit", () => {
+    fs.rmSync(bundleDir, { recursive: true, force: true });
+  });
 });
