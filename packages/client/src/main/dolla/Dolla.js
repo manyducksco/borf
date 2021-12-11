@@ -3,7 +3,7 @@ import {
   isNode,
   isObject,
   isString,
-} from "../_helpers/typeChecking";
+} from "../../_helpers/typeChecking";
 import { $Element } from "./$Element";
 import { $If } from "./$If";
 import { $Map } from "./$Map";

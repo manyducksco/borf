@@ -1,12 +1,11 @@
-import woof from "..";
-import HTTP from "../services/@http";
-import Debug from "../services/@debug";
-import { state } from "../state/state";
-import { isFunction, isObject } from "../_helpers/typeChecking";
-import { makeDolla } from "../dolla/Dolla";
 import { createMemoryHistory } from "history";
-import Router from "../services/@router";
-import Page from "../services/@page";
+import { isFunction, isObject } from "../_helpers/typeChecking";
+import { makeDolla } from "../main/dolla/Dolla";
+
+import Debug from "../main/services/@debug";
+import HTTP from "../main/services/@http";
+import Router from "../main/services/@router";
+import Page from "../main/services/@page";
 
 /**
  * Wraps a component or service inside a mock app container.

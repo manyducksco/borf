@@ -1,3 +1,0 @@
-Include multiple template/render engines you can swap out at the app level. An engine would define how attributes and children are passed, what args createElement gets called with, and the overall component lifecycle specifics. Components themselves stay the same as far as structure goes, but when the lifecycle hooks are called changes depending on the engine.
-
-Dolla is the default engine. Could do a Dolla variant with VDOM behind the scenes, or one that uses choo's `nanohtml` and `nanomorph`.

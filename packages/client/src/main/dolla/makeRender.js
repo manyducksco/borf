@@ -4,7 +4,7 @@ import {
   isFunction,
   isNode,
   isDolla,
-} from "../_helpers/typeChecking";
+} from "../../_helpers/typeChecking";
 import { $Text } from "./$Text";
 
 /**

@@ -22,7 +22,7 @@ if (process.argv.includes("--watch")) {
 
 esbuild
   .build({
-    entryPoints: ["src/index.js"],
+    entryPoints: ["src/main/index.js"],
     bundle: true,
     watch,
     minify,
@@ -39,7 +39,7 @@ esbuild
 
 esbuild
   .build({
-    entryPoints: ["src/index.js"],
+    entryPoints: ["src/main/index.js"],
     bundle: true,
     watch,
     minify,
@@ -68,5 +68,22 @@ esbuild
   })
   .then(() => {
     console.log("Created testing bundle");
+  })
+  .catch(() => process.exit(1));
+
+esbuild
+  .build({
+    entryPoints: ["src/server/index.js"],
+    bundle: true,
+    watch,
+    minify,
+    target,
+    sourcemap: true,
+    platform: "node",
+    format: "cjs",
+    outfile: "dist/woof.server.js",
+  })
+  .then(() => {
+    console.log("Created server bundle");
   })
   .catch(() => process.exit(1));

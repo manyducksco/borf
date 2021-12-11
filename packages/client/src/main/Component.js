@@ -1,6 +1,6 @@
 import { state } from "./state/state";
 import { $Node } from "./dolla/$Node";
-import { isFunction, isNode } from "./_helpers/typeChecking";
+import { isFunction, isNode } from "../_helpers/typeChecking";
 
 export class Component extends $Node {
   static get isComponent() {

@@ -1,4 +1,4 @@
-import { isArray, isFunction, isObject } from "../_helpers/typeChecking.js";
+import { isArray, isFunction, isObject } from "../../_helpers/typeChecking.js";
 
 /**
  * Creates a state container in the form of a function.

@@ -1,4 +1,4 @@
-import HTTP from "../services/@http";
+import HTTP from "../main/services/@http";
 import { createRouter } from "../_helpers/routing";
 import { flatMap } from "../_helpers/flatMap";
 import { isFunction } from "../_helpers/typeChecking";

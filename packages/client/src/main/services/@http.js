@@ -1,7 +1,7 @@
 import { state } from "../state/state.js";
-import { isFunction, isObject } from "../_helpers/typeChecking.js";
+import { isFunction, isObject } from "../../_helpers/typeChecking.js";
 import { Service } from "../Service.js";
-import alphaId from "../_helpers/alphaId.js";
+import alphaId from "../../_helpers/alphaId.js";
 
 export default class HTTP extends Service {
   #middleware = [];

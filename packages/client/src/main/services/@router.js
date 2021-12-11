@@ -1,8 +1,8 @@
 import { createBrowserHistory, createHashHistory } from "history";
 import { state } from "../state/state";
-import { createRouter } from "../_helpers/routing";
+import { createRouter } from "../../_helpers/routing";
 import { Service } from "../Service";
-import catchLinks from "../_helpers/catchLinks";
+import catchLinks from "../../_helpers/catchLinks";
 
 export default class Router extends Service {
   #router = createRouter();

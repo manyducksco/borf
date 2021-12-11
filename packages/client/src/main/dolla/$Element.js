@@ -3,7 +3,7 @@ import {
   isObject,
   isString,
   isFunction,
-} from "../_helpers/typeChecking";
+} from "../../_helpers/typeChecking";
 import { $Node } from "./$Node";
 
 // Attributes in this list will not be forwarded to the DOM node.

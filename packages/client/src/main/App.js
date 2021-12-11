@@ -1,4 +1,4 @@
-import { isFunction, isString } from "./_helpers/typeChecking";
+import { isFunction, isString } from "../_helpers/typeChecking";
 import { makeDolla } from "./dolla/Dolla";
 
 import Debug from "./services/@debug";
