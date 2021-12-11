@@ -64,6 +64,8 @@ module.exports = new Command().action(() => {
     }
   });
 
+  println();
+
   for (const meta of blueprints) {
     const outPath = meta.blueprint.output
       .replace(config.path.root, "")
@@ -71,7 +73,7 @@ module.exports = new Command().action(() => {
     const count = meta.blueprint.files.length;
 
     println(
-      `<cyan>${meta.name}</cyan> adds <green>${count}</green> file${
+      `<cyan>${meta.name}</cyan> adds ${count} file${
         count === 1 ? "" : "s"
       } to <bold>${outPath}</bold>` + (meta.path ? ` [${meta.path}]` : "")
     );

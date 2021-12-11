@@ -1,9 +1,9 @@
-import woof, { Component, Styles } from "@manyducksco/woof";
+import { App, Component, Styles } from "@manyducksco/woof";
 import TestBed from "./services/TestBed.js";
 import Content from "./components/Content.js";
 import Sidebar from "./components/Sidebar.js";
 
-const app = woof();
+const app = new App();
 
 const styles = new Styles({
   layout: {

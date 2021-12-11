@@ -1,6 +1,6 @@
 module.exports = function (args, project) {
   return {
-    output: `${project.path.src}/components/${args.name}`, // path is relative to src path
+    output: `${project.path.app}/components/${args.name}`, // path is relative to src path
     files: [
       // each file in this array is written to `output` directory above.
       {
@@ -12,7 +12,7 @@ module.exports = function (args, project) {
         create: () => componentTemplate(args.name),
       },
       {
-        path: `${args.name}.miru.js`,
+        path: `${args.name}.test.js`,
         create: () => testTemplate(args.name),
       },
     ],

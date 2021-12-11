@@ -1,6 +1,6 @@
 module.exports = function (args, project) {
   return {
-    output: `services/${args.name}`,
+    output: `${project.path.app}/services/${args.name}`,
     files: [
       {
         path: "index.js",
@@ -11,7 +11,7 @@ module.exports = function (args, project) {
         create: () => serviceTemplate(args.name),
       },
       {
-        path: `${args.name}.miru.js`,
+        path: `${args.name}.test.js`,
         create: () => testTemplate(args.name),
       },
     ],
