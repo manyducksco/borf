@@ -17,7 +17,18 @@ module.exports = new Command()
       "Do not open a web browser when starting the browser-based test runner",
     boolean: true,
   })
-  .action(({ options }) => {
+  .action(async ({ options }) => {
+    if (options.cli) {
+      println(`\n<bold><red>TODO</red></bold> Not yet implemented.`);
+      return;
+    } else {
+      if (options.watch) {
+        println(
+          `\n<bold><yellow>WARNING</yellow></bold> --watch has no effect with the browser test runner`
+        );
+      }
+    }
+
     const path = require("path");
     const fs = require("fs-extra");
     const open = require("open");
@@ -40,7 +51,14 @@ module.exports = new Command()
     const bundleDir = path.join(config.path.temp, "apptest");
     const webRunnerDir = path.join(__dirname, "webrunner");
 
+    /*==========================*\
+    ||      Watch & Bundle      ||
+    \*==========================*/
+
     fs.mkdirSync(bundleDir, { recursive: true });
+
+    const ENTRY_PATH = path.join(bundleDir, "_suites.js");
+    const BUNDLE_PATH = path.join(bundleDir, "suites.bundle.js");
 
     let imports = [];
     let registrations = [];
@@ -85,9 +103,6 @@ module.exports = new Command()
 
       index += "}";
 
-      const ENTRY_PATH = path.join(bundleDir, "_suites.js");
-      const BUNDLE_PATH = path.join(bundleDir, "suites.bundle.js");
-
       // fs.copySync(templateDir, filesDir);
       fs.writeFileSync(ENTRY_PATH, index);
 
@@ -103,28 +118,9 @@ module.exports = new Command()
         path.join(webRunnerDir, "es-module-shims.js"),
         path.join(bundleDir, "es-module-shims.js")
       );
-
-      esbuild.buildSync({
-        entryPoints: [ENTRY_PATH],
-        bundle: true,
-        sourcemap: true,
-        target: "es2018",
-        format: "esm",
-        external: ["@manyducksco/woof", "@manyducksco/woof/test"],
-        outfile: BUNDLE_PATH,
-      });
-
-      esbuild.buildSync({
-        entryPoints: [path.join(webRunnerDir, "index.js")],
-        bundle: true,
-        sourcemap: true,
-        target: "es2018",
-        format: "esm",
-        external: ["@manyducksco/woof", "@manyducksco/woof/test", "$bundle"],
-        outfile: path.join(bundleDir, "index.js"),
-      });
     }
 
+    // Symlink node modules to load @manyducksco/woof from node_modules in the browser
     try {
       fs.symlinkSync(
         path.join(__dirname, "../../node_modules"),
@@ -143,17 +139,43 @@ module.exports = new Command()
       },
     });
 
+    build(); // Do initial build
+
+    const testBundle = await esbuild.build({
+      entryPoints: [ENTRY_PATH],
+      bundle: true,
+      sourcemap: true,
+      target: "es2018",
+      format: "esm",
+      incremental: true,
+      external: ["@manyducksco/woof", "@manyducksco/woof/test"],
+      outfile: BUNDLE_PATH,
+    });
+
+    const runnerBundle = await esbuild.build({
+      entryPoints: [path.join(webRunnerDir, "index.js")],
+      bundle: true,
+      sourcemap: true,
+      target: "es2018",
+      format: "esm",
+      incremental: true,
+      external: ["@manyducksco/woof", "@manyducksco/woof/test", "$bundle"],
+      outfile: path.join(bundleDir, "index.js"),
+    });
+
     const bundle = () => {
       imports = [];
       registrations = [];
 
       const start = Date.now();
 
-      print(`  -> Rebuilding...`);
+      print(`  -> Rebuilding... `);
       build();
+      testBundle.rebuild();
+      runnerBundle.rebuild();
 
       println(
-        ` finished in <green>${
+        `finished in <green>${
           Date.now() - start
         }ms</green> <gray>[${getClock()}]</gray>`
       );
@@ -161,8 +183,11 @@ module.exports = new Command()
       buildId.increment();
     };
 
-    watcher.on("ready", bundle);
-    watcher.on("add", bundle).on("unlink", bundle).on("change", bundle);
+    watcher.on("all", bundle);
+
+    /*==========================*\
+    ||          Server          ||
+    \*==========================*/
 
     const app = express();
 

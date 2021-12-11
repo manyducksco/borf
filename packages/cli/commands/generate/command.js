@@ -9,10 +9,10 @@ module.exports = new Command()
     description: "",
   })
   .arg("name", {
-    description: "name of the item to create (e.g. NavHeader)",
+    description: "Name of the item to create (e.g. NavHeader)",
   })
   .arg("options", {
-    description: "other args to be passed to the blueprint",
+    description: "Other args to be passed to the blueprint",
     splat: true,
     optional: true,
   })
