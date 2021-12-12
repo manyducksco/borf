@@ -1,6 +1,7 @@
 import { state } from "../state/state.js";
-import { isFunction, isObject } from "../../_helpers/typeChecking.js";
+import { isFunction, isObject, isString } from "../../_helpers/typeChecking.js";
 import { Service } from "../Service.js";
+import queryString from "query-string";
 import alphaId from "../../_helpers/alphaId.js";
 
 export default class HTTP extends Service {
@@ -17,14 +18,11 @@ export default class HTTP extends Service {
     }
   }
 
-  request(method, url, ...args) {
-    const { middleware, options } = this.#parseArgs(args);
-
+  request(method, url, ...middleware) {
     return new HTTPRequest({
       id: alphaId(++this.#requestId),
       method,
       url,
-      options,
       middleware: [...middleware, ...this.#middleware],
       fetch: this.#fetch || window.fetch.bind(window),
       debug: this.#debug,
@@ -35,152 +33,221 @@ export default class HTTP extends Service {
     this.#middleware.push(...middleware);
   }
 
-  get(url, ...args) {
-    return this.request("get", url, ...args);
+  get(url, ...middleware) {
+    return this.request("get", url, ...middleware);
   }
 
-  put(url, ...args) {
-    return this.request("put", url, ...args);
+  put(url, ...middleware) {
+    return this.request("put", url, ...middleware);
   }
 
-  patch(url, ...args) {
-    return this.request("patch", url, ...args);
+  patch(url, ...middleware) {
+    return this.request("patch", url, ...middleware);
   }
 
-  post(url, ...args) {
-    return this.request("post", url, ...args);
+  post(url, ...middleware) {
+    return this.request("post", url, ...middleware);
   }
 
-  delete(url, ...args) {
-    return this.request("delete", url, ...args);
+  delete(url, ...middleware) {
+    return this.request("delete", url, ...middleware);
   }
 
-  #parseArgs(args) {
-    const lastArg = args[args.length - 1];
-
-    for (const arg of args) {
-      if (arg !== lastArg) {
-        if (!isFunction(arg)) {
-          throw new TypeError(
-            `Expected a middleware function. Received: ${arg}`
-          );
-        }
-      }
-    }
-
-    let middleware = [];
-    let options = {};
-
-    if (isObject(lastArg)) {
-      options = args.pop();
-    }
-
-    middleware = args;
-
-    return { middleware, options };
+  head(url, ...middleware) {
+    return this.request("head", url, ...middleware);
   }
 }
 
 export class HTTPRequest {
   #id;
   #debug;
-  #method;
   #url;
-  #options;
+  #query;
+  #ctx;
   #middleware;
-  #promise;
   #fetch;
+  #parse;
+  #serialize;
 
-  isLoading = state(false);
-  isSuccess = state(false);
-  isError = state(false);
-  status = state(null);
-  body = state(null);
-  headers = state(null);
+  #contentTypeAuto = true; // disabled when header is explicitly set
 
-  constructor({ id, debug, method, url, options, middleware, fetch }) {
+  constructor({ id, debug, method, url, middleware, fetch }) {
+    const parsed = queryString.parseUrl(url);
+
     this.#id = id;
     this.#debug = debug;
-    this.#method = method;
-    this.#url = url;
-    this.#options = options;
+    this.#url = parsed.url;
     this.#middleware = middleware;
     this.#fetch = fetch;
-
-    this.refresh();
+    this.#query = new URLSearchParams(parsed.query);
+    this.#ctx = {
+      method,
+      headers: new Headers(),
+      body: undefined,
+    };
   }
 
+  /**
+   * Sets headers to send with the request.
+   *
+   * @example
+   * // Set a single header
+   * .header("content-type", "application/json")
+   *
+   * // Remove a header
+   * .header("content-type", null)
+   *
+   * // Get a header's current value
+   * .header("content-type")
+   *
+   * // Set multiple headers
+   * .header({
+   *   "content-type": "application/json",
+   *   "authorization": "bearer acbdef"
+   * })
+   *
+   * @param header - Header name or object with multiple headers.
+   * @param value - Value to set if passing header name, otherwise undefined.
+   */
+  header(header, value) {
+    if (isString(header)) {
+      // Return header's current value
+      if (value === undefined) {
+        return this.#ctx.headers.get(header);
+      }
+
+      if (header.toLowerCase() === "content-type") {
+        this.#contentTypeAuto = false;
+      }
+
+      // Remove header
+      if (value === null) {
+        this.#ctx.headers.delete(value);
+        return this;
+      }
+
+      // Set header to value
+      if (isString(value)) {
+        this.#ctx.headers.set(header, value);
+        return this;
+      }
+    } else if (isObject(header) && value == null) {
+      // Set an object full of keys and values
+      for (const key in header) {
+        this.header(key, header[key]);
+      }
+      return this;
+    }
+
+    throw new Error(
+      `Expected a key and value, an object, or a header name only. Received: ${header} and ${value}`
+    );
+  }
+
+  /**
+   * Sets headers to be sent with the request. Alias for `.header(header, value)`.
+   */
+  headers(header, value) {
+    this.header(header, value);
+    return this;
+  }
+
+  query(query, value) {
+    if (isString(query)) {
+      // Return query param's current value
+      if (value === undefined) {
+        return this.#query.get(query);
+      }
+
+      // Remove query param
+      if (value === null) {
+        this.#query.delete(value);
+        return this;
+      }
+
+      // Set query param to value
+      if (isString(value)) {
+        this.#query.set(header, value);
+        return this;
+      }
+    } else if (isObject(query) && value == null) {
+      // Set an object full of keys and values
+      for (const key in query) {
+        this.query(key, query[key]);
+      }
+    }
+
+    throw new Error(
+      `Expected a key and value, an object, or a parameter name only. Received: ${query} and ${value}`
+    );
+  }
+
+  body(value) {
+    if (isObject(value)) {
+      if (this.#contentTypeAuto) {
+        this.header("content-type", "application/json");
+      }
+      this.#ctx.body = JSON.stringify(value);
+    } else if (value instanceof FormData) {
+      if (this.#contentTypeAuto) {
+        this.header("content-type", "application/x-www-form-urlencoded");
+      }
+      this.#ctx.body = value;
+    } else {
+      this.#ctx.body = value;
+    }
+
+    return this;
+  }
+
+  /**
+   * Sends the request.
+   */
   then(...args) {
-    return this.#promise.then(...args);
+    return this.#send().then(...args);
   }
 
-  catch(...args) {
-    return this.#promise.catch(...args);
-  }
-
-  finally(...args) {
-    return this.#promise.finally(...args);
-  }
-
-  async refresh() {
-    this.isLoading(true);
-
-    this.#promise = new Promise((resolve, reject) => {
-      this.isLoading((status, cancel) => {
-        if (status == false) {
-          cancel();
-
-          if (this.isSuccess()) {
-            resolve(this.body());
-          } else {
-            reject(this.body());
-          }
-        }
-      });
-    });
-
-    const ctx = {
+  async #send() {
+    const res = {
       ok: true,
-      url: this.#url,
+      status: 200,
       headers: {},
-      status: undefined,
       body: undefined,
     };
 
     const handler = async () => {
       this.#debug.log(
-        `[request:${this.#id}] ${this.#method.toUpperCase()} ${this.#url}`
+        `[request:${this.#id}] ${this.#ctx.method.toUpperCase()} ${this.#url}`
       );
       const start = Date.now();
 
-      const res = await this.#fetch(this.#url, {
-        method: this.#method,
-        headers: ctx.headers,
-        body: ctx.body,
+      const query = this.#query.toString();
+      const url = query.length > 0 ? this.#url + "?" + query : this.#url;
+
+      const fetched = await this.#fetch(url, this.#ctx);
+
+      res.ok = fetched.ok;
+      res.status = fetched.status;
+      fetched.headers.forEach((value, key) => {
+        res.headers[key] = value;
       });
 
-      ctx.ok = res.ok;
-      ctx.status = res.status;
-      res.headers.forEach((value, key) => {
-        ctx.headers[key] = value;
-      });
-
-      if (isFunction(this.#options.parse)) {
-        ctx.body = await this.#options.parse(res);
-      } else if (ctx.headers["content-type"] === "application/json") {
-        ctx.body = await res.json();
+      if (isFunction(this.#parse)) {
+        res.body = await this.#parse(fetched);
+      } else if (res.headers["content-type"] === "application/json") {
+        res.body = await fetched.json();
+      } else if (
+        res.headers["content-type"] === "application/x-www-form-urlencoded"
+      ) {
+        res.body = await fetched.formData();
       } else {
-        ctx.body = await res.text();
+        res.body = await fetched.text();
       }
 
       this.#debug.log(
-        `[response:${this.#id}] ${this.#method.toUpperCase()} ${this.#url}`,
+        `[response:${this.#id}] ${this.#ctx.method.toUpperCase()} ${this.#url}`,
         `(+${Math.round(Date.now() - start)}ms)`,
-        {
-          status: ctx.status,
-          headers: ctx.headers,
-          body: ctx.body,
-        }
+        res
       );
     };
 
@@ -188,7 +255,7 @@ export class HTTPRequest {
       const current = this.#middleware[index];
       const next = this.#middleware[index + 1] ? mount(index + 1) : handler;
 
-      return async () => current(ctx, next);
+      return async () => current(this, next);
     };
 
     if (this.#middleware.length > 0) {
@@ -197,18 +264,6 @@ export class HTTPRequest {
       await handler();
     }
 
-    this.status(ctx.status);
-    this.headers(ctx.headers);
-    this.body(ctx.body);
-
-    if (ctx.status && ctx.status >= 200 && ctx.status < 400) {
-      this.isError(false);
-      this.isSuccess(true);
-    } else {
-      this.isError(true);
-      this.isSuccess(false);
-    }
-
-    this.isLoading(false);
+    return res;
   }
 }

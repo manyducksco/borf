@@ -36,6 +36,8 @@ export class App {
    */
   setup(fn) {
     this.#setup = async () => fn((name) => this.#getService(name));
+
+    return this;
   }
 
   /**
@@ -50,7 +52,6 @@ export class App {
       callback: () => {
         const router = this.#getService("@router");
 
-        // TODO: Make this into generic @template service or something.
         const $ = makeDolla({
           getService: (name) => this.#getService(name),
           route: {
@@ -69,6 +70,8 @@ export class App {
         this.#mounted.$connect(this.#outlet);
       },
     });
+
+    return this;
   }
 
   /**
@@ -94,6 +97,8 @@ export class App {
     if (options !== undefined) {
       this.#services[name].options = options;
     }
+
+    return this;
   }
 
   /**

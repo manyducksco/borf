@@ -5,12 +5,42 @@ declare module "@manyducksco/woof" {
 
   interface AppOptions {
     /**
+     * Options for @debug service.
+     */
+    debug?: {
+      /**
+       * Determines which debug channels are printed.
+       * Supports multiple filters with commas, prepended `-` to exclude a channel
+       * and wildcards to match partial channels.
+       *
+       * @example
+       * "*" // print everything
+       * "woof:*" // display all woof internal logging
+       * "-woof:http,component:*" // hide woof:http and display all channels starting with `component:`
+       */
+      filter?: string;
+    };
+
+    /**
      * Use hash-based routing.
      */
     hash?: boolean;
   }
 
-  class App {}
+  /**
+   *
+   */
+  export class App {
+    /**
+     * Registers a service on the app. Services can be referenced on
+     * Services and Components using `this.service(name)`.
+     *
+     * @param name - Unique string to name this service.
+     * @param service - Service class. One instance will be created and shared.
+     * @param options - Object to be passed to service.created() function when called.
+     */
+    service(name: string, service: Service, options: any): this;
+  }
 
   /**
    * Creates a new app.
@@ -18,19 +48,6 @@ declare module "@manyducksco/woof" {
    * @param options - Customize your app with an options object.
    */
   export default function (options?: AppOptions): App;
-
-  /*==================================*\
-  ||           Injectables            ||
-  \*==================================*/
-
-  export interface AppInfo {
-    title: string;
-
-    /**
-     * Retrieves a service by name and returns it.
-     */
-    services(name: string): Service;
-  }
 
   /*==================================*\
   ||              State               ||

@@ -1,12 +1,28 @@
 import { createRouter } from "../_helpers/routing";
-import { isNumber } from "../_helpers/typeChecking";
+import { isNumber, isObject } from "../_helpers/typeChecking";
 
 import Debug from "../main/services/@debug";
+
+// TODO: Finalize this object
+const ctx = {
+  request: {},
+  response: {
+    status: 204,
+    body: null,
+  },
+  set status(value) {
+    this.response.status = value;
+  },
+  set body(value) {
+    this.response.body = value;
+    if (isObject(value) && this.response.headers) {
+    }
+  },
+};
 
 export class Server {
   #setup;
   #services = {};
-  #routes = [];
   #router = createRouter();
 
   constructor(options = {}) {

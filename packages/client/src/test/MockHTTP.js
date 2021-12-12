@@ -107,23 +107,42 @@ export class MockHTTP {
     return this;
   }
 
-  async #fetch(path, options = {}) {
+  async #fetch(url, options = {}) {
     return new Promise((resolve, reject) => {
       const method = (options.method || "get").toLowerCase();
-      const matched = this.#router.match(path, {
+      const matched = this.#router.match(url, {
         filter: (route) => {
           return route.attributes.method === method;
         },
       });
 
-      this.calls.push({
-        method,
-        url: path,
-        params: matched.params,
-        headers: options.headers || {},
-      });
+      const headers = {};
+      let body;
 
-      const req = {};
+      if (options.headers) {
+        for (const entry of options.headers.entries()) {
+          headers[entry[0]] = entry[1];
+        }
+      }
+
+      if (options.body) {
+        if (headers["content-type"] === "application/json") {
+          body = JSON.parse(options.body);
+        } else {
+          body = options.body;
+        }
+      }
+
+      const req = {
+        method,
+        url,
+        headers,
+        body,
+        params: matched.params,
+        query: matched.query,
+      };
+
+      this.calls.push(req);
 
       const res = (...fields) => {
         const ctx = {

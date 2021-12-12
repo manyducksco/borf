@@ -114,7 +114,13 @@ export function wrap(object) {
 
           return new object(getService, $, attributes, children);
         } else if (object.isService) {
-          return new object(getService);
+          const service = new object(getService);
+
+          if (isFunction(service._created)) {
+            service._created();
+          }
+
+          return service;
         } else {
           throw new Error(
             `Expected a Component or Service. Received: ${object}`

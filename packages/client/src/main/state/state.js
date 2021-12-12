@@ -19,13 +19,13 @@ export function state(initialValue, options) {
       if (isObject(one) && isArray(one.cancellers) && isFunction(two)) {
         listeners.push(two);
 
-        if (listeners.length > 10) {
-          console.trace(
-            `State has ${
-              listeners.length
-            } listeners. Possible memory leak. Value: ${JSON.stringify(value)}`
-          );
-        }
+        // if (listeners.length > 10) {
+        //   console.trace(
+        //     `State has ${
+        //       listeners.length
+        //     } listeners. Possible memory leak. Value: ${JSON.stringify(value)}`
+        //   );
+        // }
 
         const cancel = function () {
           listeners.splice(listeners.indexOf(one), 1);
@@ -45,13 +45,13 @@ export function state(initialValue, options) {
     if (one instanceof Function) {
       listeners.push(one);
 
-      if (listeners.length > 10) {
-        console.trace(
-          `State has ${
-            listeners.length
-          } listeners. Possible memory leak. Value: ${JSON.stringify(value)}`
-        );
-      }
+      // if (listeners.length > 10) {
+      //   console.trace(
+      //     `State has ${
+      //       listeners.length
+      //     } listeners. Possible memory leak. Value: ${JSON.stringify(value)}`
+      //   );
+      // }
 
       return function () {
         listeners.splice(listeners.indexOf(one), 1);
