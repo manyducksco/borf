@@ -15,6 +15,7 @@ const styles = new Styles({
   viewContent: {
     flex: "1 1 100%",
     padding: "0.5em",
+    overflowY: "auto",
   },
   testResults: {
     padding: "0.5em",
@@ -32,6 +33,7 @@ const styles = new Styles({
     display: "flex",
     flexFlow: "column nowrap",
     alignItems: "stretch",
+    overflowY: "auto",
   },
   attr: {
     padding: "0.5em",
