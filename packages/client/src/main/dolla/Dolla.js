@@ -4,6 +4,7 @@ import {
   isObject,
   isString,
 } from "../../_helpers/typeChecking";
+import { state } from "../state/state";
 import { $Element } from "./$Element";
 import { $If } from "./$If";
 import { $Map } from "./$Map";
@@ -11,12 +12,14 @@ import { $Outlet } from "./$Outlet";
 import { $Text } from "./$Text";
 import { $Watch } from "./$Watch";
 import { makeRender } from "./makeRender";
+import htmlTags from "html-tags";
+import htmlVoidTags from "html-tags/void";
 
 /**
  * Creates a $ function with bound injectables.
  */
 export function makeDolla({ getService, route }) {
-  function $(element, defaultAttrs = {}, defaultChildren = []) {
+  function $(element, defaultAttrs = {}, ...defaultChildren) {
     let type = null;
 
     if (isComponent(element)) {
@@ -103,6 +106,31 @@ export function makeDolla({ getService, route }) {
       state,
     };
   };
+
+  /**
+   * Creates a new state that is true if the value of `source` is equal to `value`, and false otherwise.
+   *
+   * @param source - Source state to receive values from.
+   * @param value - Target value to match against.
+   */
+  $.is = function (source, value) {
+    return state.map(source, (current) => current === value);
+  };
+
+  Object.defineProperty($, "elements", {
+    get() {
+      const elements = {};
+
+      for (const tag of [...htmlTags, ...htmlVoidTags]) {
+        elements[tag] = function (...args) {
+          console.log({ tag, args });
+          return $(tag, ...args);
+        };
+      }
+
+      return elements;
+    },
+  });
 
   return $;
 }
