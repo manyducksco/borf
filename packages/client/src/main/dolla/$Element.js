@@ -236,7 +236,11 @@ function getClassMap(classes) {
   let mapped = {};
 
   if (isString(classes)) {
-    mapped[classes] = true;
+    // Support multiple classes in one string like HTML.
+    const names = classes.split(" ");
+    for (const name of names) {
+      mapped[name] = true;
+    }
   } else if (isObject(classes)) {
     mapped = {
       ...mapped,

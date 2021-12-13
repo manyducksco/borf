@@ -1,5 +1,10 @@
 import { createMemoryHistory } from "history";
-import { isFunction, isObject } from "../_helpers/typeChecking";
+import {
+  isComponent,
+  isFunction,
+  isNode,
+  isObject,
+} from "../_helpers/typeChecking";
 import { makeDolla } from "../main/dolla/Dolla";
 
 import Debug from "../main/services/@debug";
@@ -93,11 +98,11 @@ export function wrap(object) {
 
         setup(getService);
 
-        if (object.isComponent) {
+        if (isComponent(object)) {
           let attributes = {};
           let children = [];
 
-          if (isObject(args[0]) && !args[0].$isNode) {
+          if (isObject(args[0]) && !isNode(args[0])) {
             attributes = args.shift();
           }
 
