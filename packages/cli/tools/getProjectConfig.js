@@ -13,8 +13,8 @@ function getDefaultConfig(dir) {
       get server() {
         return path.join(this.root, "server");
       },
-      get dist() {
-        return path.join(this.root, "dist");
+      get build() {
+        return path.join(this.root, "build");
       },
       get temp() {
         return path.join(this.root, "temp");

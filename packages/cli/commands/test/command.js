@@ -148,6 +148,9 @@ module.exports = new Command()
       target: "es2018",
       format: "esm",
       incremental: true,
+      loader: { ".js": "jsx" },
+      jsxFactory: "$", // compile JSX to dolla
+      jsxFragment: '""', // pass empty string for fragments
       external: ["@manyducksco/woof", "@manyducksco/woof/test"],
       outfile: BUNDLE_PATH,
     });

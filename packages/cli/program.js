@@ -4,7 +4,7 @@ const { program } = require("@ratwizard/cli");
 
 program
   .command("start", {
-    description: "Runs the app for local development",
+    description: "Runs app for local development",
     path: "./commands/start/command.js",
   })
   .command("test", {
@@ -12,11 +12,11 @@ program
     path: "./commands/test/command.js",
   })
   .command("build", {
-    description: "Creates a production-ready app bundle",
+    description: "Builds a production-ready app bundle",
     path: "./commands/build/command.js",
   })
   .command("generate", {
-    description: "Generates project file boilerplate from blueprints",
+    description: "Generates boilterplate project files from blueprints",
     path: "./commands/generate/command.js",
   })
   .command("blueprints", {
@@ -24,7 +24,7 @@ program
     path: "./commands/blueprints/command.js",
   })
   .command("routes", {
-    description: "Lists all routes mounted on the server",
+    description: "Prints a list of routes mounted on the server",
     path: "./commands/routes/command.js",
   })
 
