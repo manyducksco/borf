@@ -1,32 +1,80 @@
+import http from "http";
+import fs from "fs";
+import path from "path";
+import callsite from "callsite";
+import queryString from "query-string";
 import { createRouter } from "../_helpers/routing";
-import { isNumber, isObject } from "../_helpers/typeChecking";
+import { isNumber, isObject, isFunction } from "../_helpers/typeChecking";
 
 import Debug from "../main/services/@debug";
-
-// TODO: Finalize this object
-const ctx = {
-  request: {},
-  response: {
-    status: 204,
-    body: null,
-  },
-  set status(value) {
-    this.response.status = value;
-  },
-  set body(value) {
-    this.response.body = value;
-    if (isObject(value) && this.response.headers) {
-    }
-  },
-};
 
 export class Server {
   #setup;
   #services = {};
   #router = createRouter();
+  #server;
+  #static;
 
   constructor(options = {}) {
     this.service("@debug", Debug, options.debug);
+    this.#server = http.createServer(async (req, res) => {
+      const method = req.method.toLowerCase();
+      const { url, query } = queryString.parseUrl(req.url);
+
+      const matched = this.#router.match(req.url, {
+        filter(route) {
+          console.log(route);
+        },
+      });
+
+      if (matched) {
+        // TODO: Finalize this object
+        const ctx = {
+          request: {
+            url: req.url,
+            method: req.method,
+            headers: req.headers,
+          },
+          response: {
+            status: 204,
+            body: null,
+          },
+          set status(value) {
+            this.response.status = value;
+          },
+          set body(value) {
+            this.response.body = value;
+            if (isObject(value) && this.response.headers) {
+            }
+          },
+        };
+
+        console.log(ctx);
+
+        req.on("data", (chunk) => {
+          console.log("BODY", chunk);
+        });
+      } else {
+        if (this.#static && req.method === "GET") {
+          const ext = path.extname(url).toLowerCase();
+
+          if (ext === "") {
+            fs.createReadStream(
+              path.posix.join(this.#static, "index.html")
+            ).pipe(res);
+            return;
+          }
+
+          console.log("IS STATIC");
+          const filePath = path.posix.join(this.#static, url);
+          if (fs.existsSync(filePath)) {
+            const stream = fs.createReadStream(filePath);
+            stream.pipe(res);
+            return;
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -39,6 +87,20 @@ export class Server {
    */
   setup(fn) {
     this.#setup = async () => fn((name) => this.#getService(name));
+  }
+
+  /**
+   * Serve static files from the given path.
+   *
+   * @param folder - Directory for static files
+   */
+  static(directory) {
+    if (path.isAbsolute(directory)) {
+      this.#static = directory;
+    } else {
+      const callerDir = path.dirname(callsite()[0].getFileName());
+      this.#static = path.join(callerDir, directory);
+    }
   }
 
   /**
@@ -119,6 +181,12 @@ export class Server {
       }
     }
 
+    const done = () => {
+      this.#server.listen(port);
+
+      console.log(`[woof:server] listening on port ${port}`);
+    };
+
     if (this.#setup) {
       this.#setup().then(done);
     } else {
@@ -131,8 +199,6 @@ export class Server {
       return this.#services[name].instance;
     }
 
-    throw new Error(
-      `Service is not registered on this server. Received: ${name}`
-    );
+    throw new Error(`Service is not registered. Received: ${name}`);
   }
 }
