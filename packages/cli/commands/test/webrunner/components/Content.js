@@ -5,6 +5,7 @@ const styles = new Styles({
   content: {
     // border: "1px solid blue",
     flex: "1 1 100%",
+    overflowY: "auto",
   },
   view: {
     position: "relative",
@@ -19,6 +20,7 @@ const styles = new Styles({
   },
   testResults: {
     padding: "0.5em",
+    overflowY: "auto",
   },
   testMetaTag: {
     color: "#555",
