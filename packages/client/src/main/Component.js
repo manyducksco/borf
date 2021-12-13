@@ -1,6 +1,6 @@
 import { state } from "./state/state";
 import { $Node } from "./dolla/$Node";
-import { isFunction, isNode } from "../_helpers/typeChecking";
+import { isDolla, isFunction, isNode } from "../_helpers/typeChecking";
 
 export class Component extends $Node {
   static get isComponent() {
@@ -59,6 +59,10 @@ export class Component extends $Node {
     // Connecting a node that is already connected moves it without unmounting.
     if (!wasConnected) {
       this.#root = this.createElement(this.#dolla);
+
+      if (isDolla(this.#root)) {
+        this.#root = this.#root();
+      }
 
       if (!isNode(this.#root)) {
         throw new Error(
