@@ -5,7 +5,7 @@ module.exports = function (args, project) {
     files: [
       {
         path: "blueprint.js",
-        create: () => blueprintTemplate(),
+        create: () => blueprintTemplate(args),
       },
       {
         path: "files/[name].txt.mustache",
@@ -15,12 +15,20 @@ module.exports = function (args, project) {
   };
 };
 
-const blueprintTemplate = () => `module.exports = function (args, project) {
+const blueprintTemplate = (args) => `/**
+ * Generates ${args.name} boilerplate from mustache templates.
+ * 
+ * For a rundown of mustache, see https://mustache.github.io/mustache.5.html
+ * 
+ * @param args - An object of parsed command line arguments this blueprint was called with
+ * @param project - The top-level woof config for this project
+ */
+module.exports = function (args, project) {
   return {
-    // all generated files are placed in this directory
+    // all generated files are placed relative to this directory
     output: \`app/widgets/\${args.name}\`,
 
-    // variables can be used in mustache templates with {{name}} and in file names with [name]
+    // variables can be referenced in file names with [name] and in mustache templates with {{name}}
     variables: {
       name: args.name
     }
