@@ -116,6 +116,12 @@ export class MockHTTP {
         },
       });
 
+      if (matched == null) {
+        throw new Error(
+          `Requested URL has no handlers. Received: ${method.toUpperCase()} ${url}`
+        );
+      }
+
       const headers = {};
       let body;
 
