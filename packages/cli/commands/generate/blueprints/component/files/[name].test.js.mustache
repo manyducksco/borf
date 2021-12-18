@@ -1,0 +1,16 @@
+import { suite, wrap } from "@manyducksco/woof/test";
+import { {{name}} } from "./{{name}}";
+
+export default suite(({ view, test }) => {
+  const createComponent = wrap({{name}}).create();
+
+  view("default", ($, { attr }) => {
+    return createComponent({
+      /* ... attributes ... */
+    });
+  });
+
+  test("is implemented", (t) => {
+    t.assert(false, "is implemented");
+  });
+});

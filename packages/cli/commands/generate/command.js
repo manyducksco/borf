@@ -1,6 +1,7 @@
 const { Command, println } = require("@ratwizard/cli");
 const fs = require("fs");
 const path = require("path");
+const loadBlueprint = require("../../tools/loadBlueprint");
 const getProjectConfig = require("../../tools/getProjectConfig");
 
 module.exports = new Command()
@@ -29,13 +30,14 @@ module.exports = new Command()
     if (config) {
       let blueprintPath = path.join(
         config.path.blueprints,
-        args.blueprint + ".js"
+        args.blueprint,
+        "blueprint.js"
       );
 
       if (!fs.existsSync(blueprintPath)) {
         blueprintPath = path.join(
           __dirname,
-          `./blueprints/${args.blueprint}.js`
+          `./blueprints/${args.blueprint}/blueprint.js`
         );
 
         if (!fs.existsSync(blueprintPath)) {
@@ -47,26 +49,26 @@ module.exports = new Command()
       }
 
       try {
-        template = require(blueprintPath)(args, config);
+        const blueprint = loadBlueprint(blueprintPath, args, config);
 
-        const outPath = path.isAbsolute(template.output)
-          ? template.output
-          : path.join(config.path.root, template.output);
+        const outDir = path.isAbsolute(blueprint.output)
+          ? blueprint.output
+          : path.join(config.path.root, blueprint.output);
 
-        if (!outPath.startsWith(config.path.root)) {
+        if (!outDir.startsWith(config.path.root)) {
           println(
             `\n<red><bold>ERROR</bold></red> Blueprint output folder is outside project directory. Blueprints can only generate files inside the same project.`
           );
         }
 
         println(
-          `\nAdding <green>${template.files.length}</green> new file${
-            template.files.length === 1 ? "" : "s"
+          `\nAdding <green>${blueprint.files.length}</green> new file${
+            blueprint.files.length === 1 ? "" : "s"
           }`
         );
 
-        template.files.forEach((file) => {
-          const fullPath = path.join(outPath, file.path);
+        blueprint.files.forEach((file) => {
+          const fullPath = path.join(outDir, file.path);
 
           if (!fullPath.startsWith(config.path.root)) {
             println(
@@ -79,7 +81,7 @@ module.exports = new Command()
 
           println(
             `  <green>-></green> ${path.join(
-              template.output.replace(config.path.root, "").replace(/^\//, ""),
+              blueprint.output.replace(config.path.root, "").replace(/^\//, ""),
               file.path
             )}`
           );

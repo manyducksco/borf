@@ -1,0 +1,23 @@
+import { suite, wrap, MockHTTP } from "@manyducksco/woof/test";
+import { {{name}} } from "./{{name}}";
+
+export default suite(({ test }) => {
+  const http = new MockHTTP();
+
+  http.get("/mock/route", (req, res, ctx) => {
+    res(ctx.json({
+      message: "replace me"
+    }));
+  });
+
+  const createService = wrap({{name}})
+    .service("@http", http.service)
+    .create();
+
+  test("is implemented", (t) => {
+    const service = createService();
+  
+    t.assert(false);
+  });
+})
+

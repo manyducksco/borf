@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { Command, println } = require("@ratwizard/cli");
 const getProjectConfig = require("../../tools/getProjectConfig");
-const getProjectRoot = require("../../tools/getProjectRoot");
+const loadBlueprint = require("../../tools/loadBlueprint");
 
 module.exports = new Command().action(() => {
   const config = getProjectConfig(process.cwd());
@@ -13,32 +13,48 @@ module.exports = new Command().action(() => {
     );
   }
 
+  let blueprintsDir = path.join(__dirname, "../generate/blueprints");
+
   let blueprints = fs
-    .readdirSync(path.join(__dirname, "../generate/blueprints"))
-    .filter((f) => f[0] != "." && f[0] != "_" && path.extname(f) === ".js")
+    .readdirSync(blueprintsDir)
+    .filter(
+      (f) =>
+        f[0] != "." &&
+        f[0] != "_" &&
+        fs.statSync(path.join(blueprintsDir, f)).isDirectory()
+    )
     .map((f) => {
-      const blueprint = require(path.join(
-        __dirname,
-        "../generate/blueprints",
-        f
-      ));
+      const blueprint = loadBlueprint(
+        path.join(blueprintsDir, f, "blueprint.js"),
+        { name: "[name]" },
+        config
+      );
 
       return {
         name: path.basename(f, path.extname(f)),
-        blueprint: blueprint({ name: "NAME" }, config),
+        blueprint,
         path: null,
       };
     });
 
   if (fs.existsSync(config.path.blueprints)) {
     fs.readdirSync(config.path.blueprints)
-      .filter((f) => f[0] != "." && f[0] != "_" && path.extname(f) === ".js")
+      .filter(
+        (f) =>
+          f[0] != "." &&
+          f[0] != "_" &&
+          fs.statSync(path.join(config.path.blueprints, f)).isDirectory()
+      )
       .map((f) => {
-        const blueprint = require(path.join(config.path.blueprints, f));
+        const blueprint = loadBlueprint(
+          path.join(config.path.blueprints, f, "blueprint.js"),
+          { name: "[name]" },
+          config
+        );
 
         return {
           name: path.basename(f, path.extname(f)),
-          blueprint: blueprint({ name: "NAME" }, config),
+          blueprint,
           path: path.join(
             config.path.blueprints
               .replace(config.path.root, "")
@@ -75,7 +91,8 @@ module.exports = new Command().action(() => {
     println(
       `<cyan>${meta.name}</cyan> adds ${count} file${
         count === 1 ? "" : "s"
-      } to <bold>${outPath}</bold>` + (meta.path ? ` [${meta.path}]` : "")
+      } to <bold>${outPath}</bold>` +
+        (meta.path ? ` <dim>(loaded from ${meta.path})</dim>` : "")
     );
   }
 });

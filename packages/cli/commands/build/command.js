@@ -5,7 +5,6 @@ module.exports = new Command().action(async () => {
   const fs = require("fs-extra");
   const esbuild = require("esbuild");
   const mustache = require("mustache");
-  const { customAlphabet } = require("nanoid");
   const gzipSize = require("gzip-size");
   const superbytes = require("superbytes");
   const getProjectConfig = require("../../tools/getProjectConfig");
@@ -29,57 +28,49 @@ module.exports = new Command().action(async () => {
   fs.emptyDirSync(publicDir);
 
   // Create app bundle
-  const bundleId = customAlphabet("abcdef0123456789", 8)();
-  const bundleName = `app.${bundleId}.js`;
-  const stylesName = `app.${bundleId}.css`;
-
   const appBundle = await esbuild.build({
     entryPoints: [path.join(config.path.app, "app.js")],
+    entryNames: "[dir]/[name].[hash]",
     bundle: true,
     sourcemap: true,
     minify: true,
+    write: false,
     target: "es2018",
     format: "iife",
     loader: { ".js": "jsx" },
     jsxFactory: "$", // compile JSX to dolla
     jsxFragment: '""', // pass empty string for fragments
-    outfile: path.join(publicDir, bundleName),
+    outbase: config.path.app,
+    outdir: publicDir,
   });
-
-  const wroteStyles = fs.existsSync(path.join(publicDir, stylesName));
 
   // Copy public dir files (transforming .mustache)
   const srcStaticDir = path.join(config.path.app, "static");
+  const bundleOut = appBundle.outputFiles.find(
+    (f) => path.extname(f.path) === ".js"
+  );
+  const stylesOut = appBundle.outputFiles.find(
+    (f) => path.extname(f.path) === ".css"
+  );
   const context = {
-    bundlePath: "/" + bundleName,
-    stylesPath: wroteStyles ? "/" + stylesName : null,
+    bundlePath: bundleOut.path.replace(publicDir, ""),
+    stylesPath: stylesOut ? stylesOut.path.replace(publicDir, "") : null,
     config,
   };
-
-  const bundleSize = superbytes(
-    fs.statSync(path.join(publicDir, bundleName)).size
-  );
-  const bundleSizeGzip = superbytes(
-    gzipSize.fileSync(path.join(publicDir, bundleName))
-  );
 
   println();
   println("build/");
   println("  <green>+</green> public/");
-  println(
-    `    <green>+</green> ${bundleName} <dim>(${bundleSize} / ${bundleSizeGzip} gzipped)</dim>`
-  );
-  println(`    <green>+</green> ${bundleName}.map`);
-  if (wroteStyles) {
-    const stylesSize = superbytes(
-      fs.statSync(path.join(publicDir, stylesName)).size
-    );
-    const stylesSizeGzip = superbytes(
-      gzipSize.fileSync(path.join(publicDir, stylesName))
-    );
+
+  for (const file of appBundle.outputFiles) {
+    const size = superbytes(file.contents.length);
+    const gsize = superbytes(gzipSize.sync(file.contents));
+    const name = path.basename(file.path);
+
+    fs.writeFileSync(file.path, file.contents);
 
     println(
-      `  <green>+</green> ${stylesName} <dim>(${stylesSize} / ${stylesSizeGzip} gzipped)</dim>`
+      `    <green>+</green> ${name} <dim>(${size} -- ${gsize} gzipped)</dim>`
     );
   }
 
@@ -87,20 +78,18 @@ module.exports = new Command().action(async () => {
     const fullPath = path.join(srcStaticDir, entry);
 
     if (entry.endsWith(".mustache")) {
-      const outPath = path.join(publicDir, path.basename(entry, ".mustache"));
+      const name = path.basename(entry, ".mustache");
+      const outPath = path.join(publicDir, name);
       const template = fs.readFileSync(fullPath, "utf8");
       const rendered = mustache.render(template, context);
 
       fs.writeFileSync(outPath, rendered);
 
       const size = superbytes(Buffer.from(rendered).length);
-      const gzipped = superbytes(gzipSize.sync(rendered));
+      const gsize = superbytes(gzipSize.sync(rendered));
 
       println(
-        `    <green>+</green> ${path.basename(
-          entry,
-          ".mustache"
-        )} <dim>(${size} / ${gzipped} gzipped)</dim>`
+        `    <green>+</green> ${name} <dim>(${size} -- ${gsize} gzipped)</dim>`
       );
     } else {
       const outPath = path.join(publicDir, entry);
@@ -108,10 +97,10 @@ module.exports = new Command().action(async () => {
       fs.copySync(fullPath, outPath);
 
       const size = superbytes(fs.statSync(outPath).size);
-      const gzipped = superbytes(gzipSize.fileSync(outPath));
+      const gsize = superbytes(gzipSize.fileSync(outPath));
 
       println(
-        `    <green>+</green> ${entry} <dim>(${size} / ${gzipped} gzipped)</dim>`
+        `    <green>+</green> ${entry} <dim>(${size} -- ${gsize} gzipped)</dim>`
       );
     }
   });
@@ -120,7 +109,7 @@ module.exports = new Command().action(async () => {
   const serverEntry = path.join(config.path.server, "server.js");
 
   if (fs.existsSync(serverEntry)) {
-    const serverBundle = await esbuild.build({
+    await esbuild.build({
       entryPoints: [serverEntry],
       bundle: true,
       sourcemap: true,
