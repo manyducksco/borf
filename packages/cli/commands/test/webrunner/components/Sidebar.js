@@ -85,7 +85,7 @@ export default class Sidebar extends Component {
                               "?view=" +
                               encodeURIComponent(view.name),
                           },
-                          "👁️ ",
+                          "🌆 ",
                           view.name
                         )
                       )

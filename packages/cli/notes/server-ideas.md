@@ -10,11 +10,17 @@ users -> messages(users.id) -> message.author -> users.get(id)
 In the above example, the Users resource somehow invoked the Messages resource and passed the user's ID. The messages resource can also be accessed independently.
 
 ```js
-import { Server, Resource, route } from "@manyducksco/woof/server";
+import { Server, Resource, route } from "@woofjs/server";
 
 class Users extends Resource {
-  @route("GET") // no route is passed, so this is the root (v1/users)
-  async list(ctx) {
+  _setup(route) {
+    route.get("", this.getAll);
+    route.get(":id", this.getOne);
+    route.get(":id/messages", this.getMessages);
+  }
+
+  // GET /
+  async getAll(ctx) {
     if (!ctx.state.isAdmin) {
       ctx.status = 403;
       ctx.body = {
@@ -28,11 +34,9 @@ class Users extends Resource {
       users,
     };
   }
-
-  // If this function crashes the server will return a 500.
-  // If a verbose errors option is enabled on the server, error details will be included.
-  @route("GET", ":id") // :id is passed, so this is accessed at v1/users/:id
-  async get(ctx) {
+ 
+  // GET /:id
+  async getOne(ctx) {
     const user = await this.service("db")
       .query("users")
       .where("id", ctx.params.id);
@@ -51,7 +55,7 @@ class Users extends Resource {
     }
   }
 
-  @route("GET", ":id/messages") // v1/users/:id/messages
+  // GET /:id/messages
   async getMessages(ctx) {
     const user = await this.service("db")
       .query("users")
@@ -86,7 +90,7 @@ server.route(
     if (ctx.state.loggedIn) {
       next();
     } else {
-      ctx.redirect("some/other/route");
+      ctx.redirect("/some/other/route");
     }
   },
   Users

@@ -14,10 +14,10 @@
   "license": "ISC",
   "dependencies": {
     "@manyducksco/woof": "file:../woof",
-    "@ratwizard/cli": "^0.16.0",
+    "@ratwizard/cli": "^0.17.0",
     "chokidar": "^3.5.2",
-    "esbuild": "^0.14.2",
-    "express": "^4.17.1",
+    "esbuild": "^0.14.5",
+    "express": "^4.17.2",
     "fs-extra": "^10.0.0",
     "gzip-size": "^6.0.0",
     "mustache": "^4.2.0",

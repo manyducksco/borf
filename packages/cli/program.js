@@ -6,18 +6,22 @@ program.version(require("./package.json").version);
 
 program
   .command("start", {
+    alias: "s",
     description: "Runs app for local development",
     path: "./commands/start/command.js",
   })
   .command("test", {
+    alias: "t",
     description: "Runs unit tests",
     path: "./commands/test/command.js",
   })
   .command("build", {
+    alias: "b",
     description: "Builds a production-ready app bundle",
     path: "./commands/build/command.js",
   })
   .command("generate", {
+    alias: "g",
     description: "Generates boilerplate project files from blueprints",
     path: "./commands/generate/command.js",
   })
