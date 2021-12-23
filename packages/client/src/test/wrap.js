@@ -68,7 +68,9 @@ export function wrap(object) {
             return services[name];
           }
 
-          throw new Error(``);
+          throw new Error(
+            `Service is not registered in this wrapper. Received: ${name}`
+          );
         };
 
         services["@debug"] = new Debug(getService);

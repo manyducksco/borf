@@ -68,6 +68,8 @@ export class HTTPRequest {
   #fetch;
   #parse;
   #serialize;
+  #promise;
+  #isOk;
 
   #contentTypeAuto = true; // disabled when header is explicitly set
 
@@ -85,6 +87,7 @@ export class HTTPRequest {
       headers: new Headers(),
       body: undefined,
     };
+    this.#isOk = (status) => status >= 200 && status < 300;
   }
 
   /**
@@ -175,6 +178,7 @@ export class HTTPRequest {
       for (const key in query) {
         this.query(key, query[key]);
       }
+      return this;
     }
 
     throw new Error(
@@ -201,16 +205,45 @@ export class HTTPRequest {
   }
 
   /**
+   * Takes a function to determine whether a response is a success or an error.
+   *
+   * @param fn - Takes the status code and returns true if response is successful or false if it should be treated as an error.
+   */
+  ok(fn) {
+    this.#isOk = fn;
+  }
+
+  /**
    * Sends the request.
    */
   then(...args) {
-    return this.#send().then(...args);
+    if (!this.#promise) {
+      this.#promise = this.#send();
+    }
+
+    return this.#promise.then(...args);
+  }
+
+  catch(...args) {
+    if (!this.#promise) {
+      this.#promise = this.#send();
+    }
+
+    return this.#promise.catch(...args);
+  }
+
+  finally(...args) {
+    if (!this.#promise) {
+      this.#promise = this.#send();
+    }
+
+    return this.#promise.finally(...args);
   }
 
   async #send() {
     const res = {
-      ok: true,
       status: 200,
+      statusText: "OK",
       headers: {},
       body: undefined,
     };
@@ -226,19 +259,19 @@ export class HTTPRequest {
 
       const fetched = await this.#fetch(url, this.#ctx);
 
-      res.ok = fetched.ok;
       res.status = fetched.status;
+      res.statusText = fetched.statusText;
       fetched.headers.forEach((value, key) => {
         res.headers[key] = value;
       });
 
+      const contentType = res.headers["content-type"];
+
       if (isFunction(this.#parse)) {
         res.body = await this.#parse(fetched);
-      } else if (res.headers["content-type"] === "application/json") {
+      } else if (contentType === "application/json") {
         res.body = await fetched.json();
-      } else if (
-        res.headers["content-type"] === "application/x-www-form-urlencoded"
-      ) {
+      } else if (contentType === "application/x-www-form-urlencoded") {
         res.body = await fetched.formData();
       } else {
         res.body = await fetched.text();
@@ -264,6 +297,35 @@ export class HTTPRequest {
       await handler();
     }
 
+    // Throw non-OK response codes as errors to force explicit handling.
+    // With fetch's req.ok way there are two error handling paths; response errors (then) and network errors (catch).
+    // In most cases, a 404 or 500 is the same as a network error from the app's point of view.
+    // If needed, the .ok() function can control what is thrown as an error.
+    if (this.#isOk(res.status) == false) {
+      const err = new HTTPError(
+        `${res.status} ${
+          res.statusText
+        }: Request failed (${this.#ctx.method.toUpperCase()} ${this.#url})`
+      );
+      err.method = this.#ctx.method;
+      err.url = this.#url;
+      err.status = res.status;
+      err.statusText = res.statusText;
+      err.headers = res.headers;
+      err.body = res.body;
+
+      throw err;
+    }
+
     return res;
   }
+}
+
+class HTTPError extends Error {
+  method;
+  url;
+  status;
+  statusText;
+  headers;
+  body;
 }

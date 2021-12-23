@@ -31,21 +31,18 @@ export class MockHTTP {
     this.calls = [];
   }
 
-  service = (getService) => {
-    const http = new HTTP(getService);
-    const _created = http._created.bind(http);
+  get service() {
+    const fetch = this.#fetch.bind(this);
 
-    // Override created callback to inject fetch override.
-    http._created = (options) => {
-      if (isFunction)
-        _created({
-          fetch: (...args) => this.#fetch(...args),
+    return class extends HTTP {
+      _created(options) {
+        super._created({
           ...options,
+          fetch,
         });
+      }
     };
-
-    return http;
-  };
+  }
 
   /**
    * Registers a new mock response handler for a GET request.

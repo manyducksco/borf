@@ -29,6 +29,7 @@
     "history": "^5.1.0",
     "html-tags": "^3.1.0",
     "http-server": "^14.0.0",
+    "immer": "^9.0.7",
     "isomorphic-fetch": "^3.0.0",
     "jest": "^27.3.1",
     "msw": "^0.35.0",

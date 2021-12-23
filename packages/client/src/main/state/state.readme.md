@@ -87,3 +87,47 @@ const two = state(false);
 
 const bothTrue = state.combine(one, two, (one, two) => one && two);
 ```
+
+## State methods
+
+States can provide methods for working with the data they hold. Methods take the current value and return a new value.
+
+```js
+const value = state(5, {
+  methods: {
+    increment: (current) => current + 1,
+    decrement: (current) => current - 1
+  }
+});
+
+value.increment(); // now 6
+value.increment(); // now 7
+value.decrement(); // now 6
+```
+
+A state method takes the current value as the first argument, followed by any arguments you pass to the method when it is called. Methods work even on an immutable state, so you can use them to control how your state can be modified.
+
+```js
+const defaults = {
+  name: "Siri Keeton",
+  age: 32,
+  profession: "Synthesist"
+}
+
+const form = state(defaults, {
+  immutable: true,
+  methods: {
+    setName: (current, value) => {
+      current.name = value;
+    },
+    setProfession: (current, value) => {
+      current.profession = value;
+    }
+  }
+});
+
+form.setName("Dan Brüks");
+form.setProfession("Biologist");
+```
+
+The form defined above provides no way to change the age, but gives controlled ways to set the values we want to expose. Methods use [immer](https://immerjs.github.io/immer/) under the hood, so it's safe to mutate the `current` value because it will result in a new state without actually touching the existing one.

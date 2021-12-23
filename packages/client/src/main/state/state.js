@@ -1,4 +1,5 @@
 import { isArray, isFunction, isObject } from "../../_helpers/typeChecking.js";
+import produce from "immer";
 
 /**
  * Creates a state container in the form of a function.
@@ -91,7 +92,9 @@ export function state(initialValue, options) {
     // Add methods to exported function with prefilled value argument.
     for (const method in methods) {
       instance[method] = function (...args) {
-        const newValue = methods[method](value, ...args);
+        const newValue = produce(value, (draft) => {
+          return methods[method](draft, ...args);
+        });
 
         if (isFunction(newValue)) {
           throw new TypeError(`State methods cannot return functions.`);
