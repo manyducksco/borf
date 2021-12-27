@@ -1,9 +1,9 @@
-import { Service, state } from "@manyducksco/woof";
+import { Service, createState } from "@manyducksco/woof";
 import setup from "$bundle";
 
 export default class TestBed extends Service {
-  selected = state(null);
-  suites = state([], {
+  selected = createState(null);
+  suites = createState([], {
     methods: {
       add: (current, path, suite) => [...current, { path, ...suite }],
     },
@@ -14,13 +14,13 @@ export default class TestBed extends Service {
       this.suites.add(path, this.#loadSuite(suite));
     });
 
-    this.suites((items) => {
+    this.suites.watch((items) => {
       console.log(items);
     });
   }
 
   getSuite(path) {
-    const suite = this.suites().find((s) => s.path === path);
+    const suite = this.suites.get().find((s) => s.path === path);
 
     return suite;
   }

@@ -35,7 +35,7 @@ module.exports = new Command()
     const express = require("express");
     const esbuild = require("esbuild");
     const chokidar = require("chokidar");
-    const { state } = require("@manyducksco/woof/node");
+    const { createState } = require("@manyducksco/woof/node");
     const getProjectConfig = require("../../tools/getProjectConfig");
 
     const config = getProjectConfig(process.cwd());
@@ -133,7 +133,7 @@ module.exports = new Command()
       ignoreInitial: true,
     });
 
-    const buildId = state(0, {
+    const buildId = createState(0, {
       methods: {
         increment: (value) => value + 1,
       },
@@ -219,7 +219,7 @@ module.exports = new Command()
       // Tell the client to retry every 10 seconds if connectivity is lost
       res.write("retry: 10000\n\n");
 
-      const cancel = buildId((value) => {
+      const cancel = buildId.watch((value) => {
         res.write(`data: ${value}\n\n`);
       });
 

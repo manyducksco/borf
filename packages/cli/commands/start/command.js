@@ -137,7 +137,7 @@ module.exports = new Command()
   //   println(`\nBundled app in <green>${Date.now() - start}</green>ms\n`);
   // })
   .action(async ({ options }) => {
-    const { state } = require("@manyducksco/woof/node");
+    const { createState } = require("@manyducksco/woof/node");
     const EventEmitter = require("events");
     const path = require("path");
     const fs = require("fs-extra");
@@ -168,7 +168,7 @@ module.exports = new Command()
     fs.emptyDirSync(buildDir);
     fs.emptyDirSync(publicDir);
 
-    const appBuildId = state(0, {
+    const appBuildId = createState(0, {
       methods: {
         increment: (current) => current + 1,
       },
@@ -326,7 +326,7 @@ module.exports = new Command()
       // Tell the client to retry every 10 seconds if connectivity is lost
       res.write("retry: 10000\n\n");
 
-      const cancel = appBuildId((value) => {
+      const cancel = appBuildId.watch((value) => {
         res.write(`data: ${value}\n\n`);
       });
 

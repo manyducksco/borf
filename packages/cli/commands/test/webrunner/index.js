@@ -42,7 +42,7 @@ app.route(
   }
 );
 
-app.setup((getService) => {
+app.setup(() => {
   document.querySelector(".static-loader").remove();
 });
 

@@ -1,4 +1,4 @@
-import { Component, Styles, state } from "@manyducksco/woof";
+import { Component, Styles, createState } from "@manyducksco/woof";
 import { wrap } from "@manyducksco/woof/test";
 
 const styles = new Styles({
@@ -59,8 +59,8 @@ export default class Content extends Component {
     const { params, query } = this.service("@router");
     const testbed = this.service("testbed");
 
-    const suite = state.map(params, (p) => testbed.getSuite(p.wildcard));
-    const view = state.map(query, (q) => q.view || null);
+    const suite = params.map((p) => testbed.getSuite(p.wildcard));
+    const view = query.map((q) => q.view || null);
 
     return $("div")(
       { class: styles.content },
@@ -74,7 +74,7 @@ export default class Content extends Component {
 }
 
 class SuiteTests extends Component {
-  results = state(null, {
+  results = createState(null, {
     methods: {
       push: (current, ...items) => {
         if (current == null) {
@@ -85,7 +85,7 @@ class SuiteTests extends Component {
       },
     },
   });
-  progress = state(
+  progress = createState(
     { total: 0, done: 0 },
     {
       methods: {
@@ -104,25 +104,26 @@ class SuiteTests extends Component {
       },
     }
   );
-  hasResults = state.map(this.results, (value) => value != null);
-  isRunning = state.map(this.progress, (value) => value.done < value.total);
+  hasResults = this.results.map((value) => value != null);
+  isRunning = this.progress.map((value) => value.done < value.total);
 
   _connected() {
     if (this.attributes.suite) {
-      this.runTestSuite(this.attributes.suite());
+      console.log(this.attributes.suite.get());
+      this.runTestSuite(this.attributes.suite.get());
     }
   }
 
   createElement($) {
-    this.attributes.suite(this, (value) => {
-      this.runTestSuite(value);
-    });
+    this.watchers.push(
+      this.attributes.suite.watch((value) => {
+        this.runTestSuite(value);
+      })
+    );
 
     return $("div")(
       { class: styles.testResults },
-      $.text(
-        state.map(this.progress, (p) => `Tests run: ${p.done} of ${p.total}`)
-      ),
+      $.text(this.progress.map((p) => `Tests run: ${p.done} of ${p.total}`)),
       $.if(
         this.hasResults,
         () =>
@@ -174,7 +175,7 @@ class SuiteTests extends Component {
   }
 
   async runTestSuite(suite) {
-    this.results([]);
+    this.results.set([]);
     this.progress.start(suite.tests.length);
 
     for (const test of suite.tests) {
@@ -249,9 +250,9 @@ class SuiteTests extends Component {
               createElement($) {
                 return view.fn($, {
                   attr: (name, value) =>
-                    value instanceof Function
+                    value.isState || value instanceof Function
                       ? value
-                      : state(value, { immutable: true }),
+                      : createState(value, { immutable: true }),
                 });
               }
             }
@@ -319,20 +320,20 @@ class SuiteTests extends Component {
 class SuiteView extends Component {
   createElement($) {
     const { suite, view } = this.attributes;
-    const selectedView = state.map(suite, (s) =>
-      s.views.find((v) => v.name === view())
+    const selectedView = suite.map((s) =>
+      s.views.find((v) => v.name === view.get())
     );
-    const attrs = state([], {
-      immutable: true,
+    const attrs = createState([], {
+      settable: true,
       methods: {
         push: (current, value) => [...current, value],
         clear: () => [],
       },
     });
-    const hasAttrs = state.map(attrs, (x) => x.length > 0);
+    const hasAttrs = attrs.map((x) => x.length > 0);
 
     const makeAttr = (name, value, options = {}) => {
-      const s = state(value);
+      const s = createState(value);
 
       attrs.push({
         name,
@@ -374,7 +375,7 @@ class SuiteView extends Component {
 
 class ViewAttr extends Component {
   createElement($) {
-    const attr = this.attributes.attr();
+    const attr = this.attributes.attr.get();
 
     return $("div", { class: styles.attr })(
       $("h4", { class: styles.attrLabel })(attr.name),

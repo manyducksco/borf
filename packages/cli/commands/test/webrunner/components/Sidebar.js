@@ -1,4 +1,4 @@
-import { Component, Styles, state } from "@manyducksco/woof";
+import { Component, Styles, combineStates } from "@manyducksco/woof";
 
 const styles = new Styles({
   sidebar: {
@@ -34,7 +34,7 @@ export default class Sidebar extends Component {
     const { query, params } = this.service("@router");
     const testbed = this.service("testbed");
 
-    const currentView = state.map(query, (q) => q.view || null);
+    const currentView = query.map((q) => q.view || null);
 
     return $("div")(
       { class: styles.sidebar },
@@ -49,7 +49,7 @@ export default class Sidebar extends Component {
                   href: "/" + suite.path,
                   class: {
                     [styles.link]: true,
-                    [styles.linkActive]: state.combine(
+                    [styles.linkActive]: combineStates(
                       currentView,
                       params,
                       (current, params) =>
@@ -71,7 +71,7 @@ export default class Sidebar extends Component {
                             class: {
                               [styles.link]: true,
                               [styles.viewLink]: true,
-                              [styles.viewLinkActive]: state.combine(
+                              [styles.viewLinkActive]: combineStates(
                                 currentView,
                                 params,
                                 (current, params) =>
