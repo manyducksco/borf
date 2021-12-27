@@ -1,6 +1,8 @@
 import { $Node } from "./$Node";
 import { createRouter } from "../../_helpers/routing";
+import { isFunction, isNode } from "../../_helpers/typeChecking";
 import { makeDolla } from "./Dolla";
+import { makeRender } from "./makeRender";
 
 /**
  * Creates a router outlet for a nested route. Multiple routes
@@ -18,8 +20,6 @@ export class $Outlet extends $Node {
   #path;
   #router = createRouter();
 
-  mounted;
-
   get $isConnected() {
     return this.#outlet && this.#outlet.$isConnected;
   }
@@ -29,9 +29,7 @@ export class $Outlet extends $Node {
 
     this.#getService = getService;
     this.#path = path;
-    this.createElement = () => {
-      return element();
-    };
+    this.createElement = makeRender(element);
   }
 
   route(route, component) {
@@ -49,31 +47,21 @@ export class $Outlet extends $Node {
       this.#outlet = this.createElement();
     }
 
+    this.#outlet.$connect(parent, after);
+
     const matched = this.#router.match(this.#path);
 
     if (matched) {
-      if (this.mounted == null || matched.path !== this.mounted.path) {
-        this.mounted = matched;
-
+      if (this.#mounted == null || matched.path !== this.#mounted.path) {
         const { component } = matched.attributes;
-        const $ = makeDolla({
-          getService: this.#getService,
-          route: matched,
-        });
 
-        if (this.#mounted) {
-          this.#mounted.$disconnect();
-        }
-        this.#mounted = $(component)();
-        this.#mounted.$connect(this.#outlet);
+        this.#mountRoute(matched, component);
       }
     } else {
       console.warn(
         `No route was matched. Consider adding a wildcard ("*") route to catch this.`
       );
     }
-
-    this.#outlet.$connect(parent, after);
 
     if (!wasConnected) {
       this._connected();
@@ -87,6 +75,45 @@ export class $Outlet extends $Node {
       for (const cancel of this.#cancellers) {
         cancel();
       }
+    }
+  }
+
+  #mountRoute(route, component) {
+    const $ = makeDolla({
+      getService: (name) => this.#getService(name),
+      route,
+    });
+    const node = $(component)();
+
+    const mount = (newNode) => {
+      if (this.#mounted !== newNode) {
+        if (this.#mounted) {
+          this.#mounted.$disconnect();
+        }
+        this.#mounted = newNode;
+        this.#mounted.$connect(this.#outlet.$element);
+      }
+    };
+
+    if (isFunction(node.preload)) {
+      // Mount preload's returned element while preloading
+      let tempNode = node.preload($, () => mount(node));
+
+      if (tempNode) {
+        if (isDolla(tempNode)) {
+          tempNode = tempNode();
+        }
+
+        if (isNode(tempNode)) {
+          mount(tempNode);
+        } else {
+          throw new Error(
+            `Expected component's preload function to return an $element or undefined. Received: ${tempNode}`
+          );
+        }
+      }
+    } else {
+      mount(node);
     }
   }
 }

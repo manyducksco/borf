@@ -4,6 +4,7 @@ import {
   isFunction,
   isNode,
   isDolla,
+  isState,
 } from "../../_helpers/typeChecking";
 import { $Text } from "./$Text";
 
@@ -17,6 +18,8 @@ export function makeRender(element) {
     return () => element();
   } else if (isString(element) || isNumber(element)) {
     return () => new $Text(element);
+  } else if (isState(element)) {
+    return makeRender(element.get());
   } else if (isFunction(element)) {
     return makeRender(element());
   } else {

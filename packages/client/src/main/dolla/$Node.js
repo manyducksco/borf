@@ -23,6 +23,10 @@ export class $Node {
       this._beforeConnect();
     }
 
+    if (parent instanceof Node == false) {
+      console.trace(parent);
+    }
+
     parent.insertBefore(this.$element, after ? after.nextSibling : null);
 
     if (!wasConnected) {

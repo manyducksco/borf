@@ -1,8 +1,6 @@
-import { state } from "../state/state.js";
 import { isFunction, isObject, isString } from "../../_helpers/typeChecking.js";
 import { Service } from "../Service.js";
 import queryString from "query-string";
-import alphaId from "../../_helpers/alphaId.js";
 
 export default class HTTP extends Service {
   #middleware = [];
@@ -20,7 +18,7 @@ export default class HTTP extends Service {
 
   request(method, url, ...middleware) {
     return new HTTPRequest({
-      id: alphaId(++this.#requestId),
+      id: ++this.#requestId,
       method,
       url,
       middleware: [...middleware, ...this.#middleware],

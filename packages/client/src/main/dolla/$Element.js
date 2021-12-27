@@ -2,7 +2,8 @@ import {
   isArray,
   isObject,
   isString,
-  isFunction,
+  isState,
+  isNumber,
 } from "../../_helpers/typeChecking";
 import { $Node } from "./$Node";
 
@@ -65,7 +66,7 @@ export class $Element extends $Node {
   tag;
   attributes;
   children;
-  cancellers = [];
+  watchers = [];
 
   constructor(tag, attributes = {}, children = []) {
     super();
@@ -102,10 +103,10 @@ export class $Element extends $Node {
     }
 
     // Cancel listens, bindings and event handlers
-    for (const cancel of this.cancellers) {
+    for (const cancel of this.watchers) {
       cancel();
     }
-    this.cancellers = [];
+    this.watchers = [];
   }
 
   #attachEvents() {
@@ -116,7 +117,7 @@ export class $Element extends $Node {
 
         this.$element.addEventListener(eventName, listener);
 
-        this.cancellers.push(() => {
+        this.watchers.push(() => {
           this.$element.removeEventListener(eventName, listener);
         });
       }
@@ -130,8 +131,8 @@ export class $Element extends $Node {
       for (const name in mapped) {
         const value = mapped[name];
 
-        if (isFunction(value)) {
-          this.#listenTo(value, (value) => {
+        if (isState(value)) {
+          this.#watch(value, (value) => {
             if (value) {
               this.$element.classList.add(name);
             } else {
@@ -150,15 +151,17 @@ export class $Element extends $Node {
       for (const name in this.attributes.style) {
         const prop = this.attributes.style[name];
 
-        if (isFunction(prop)) {
-          this.#listenTo(prop, (value) => {
+        if (isState(prop)) {
+          this.#watch(prop, (value) => {
             this.$element.style[name] = value;
           });
         } else if (isString(prop)) {
           this.$element.style[name] = prop;
+        } else if (isNumber(prop)) {
+          this.$element.style[name] = prop + "px";
         } else {
           throw new TypeError(
-            `Style value should be a string (${name}: ${prop})`
+            `Style value should be a string or number. Received (${name}: ${prop})`
           );
         }
       }
@@ -170,19 +173,19 @@ export class $Element extends $Node {
       const attr = this.attributes[name];
 
       if (name === "value") {
-        if (isFunction(attr)) {
-          this.#listenTo(attr, (value) => {
+        if (isState(attr)) {
+          this.#watch(attr, (value) => {
             this.$element.value = String(value);
           });
         } else if (isObject(attr) && attr.isBinding) {
-          this.#listenTo(attr.state, (value) => {
+          this.#watch(attr.state, (value) => {
             this.$element.value = String(value);
           });
 
           this.$element.addEventListener(attr.event, (e) => {
-            const value = toSameType(attr.state(), e.target.value);
+            const value = toSameType(attr.state.get(), e.target.value);
 
-            attr.state(value);
+            attr.state.set(value);
           });
         } else {
           this.$element.value = String(this.attributes.value);
@@ -191,8 +194,8 @@ export class $Element extends $Node {
 
       if (!privateAttrs.includes(name) && !eventAttrs.includes(name)) {
         if (booleanAttrs.includes(name)) {
-          if (isFunction(attr)) {
-            this.#listenTo(attr, (value) => {
+          if (isState(attr)) {
+            this.#watch(attr, (value) => {
               if (value) {
                 this.$element.setAttribute(name, "");
               } else {
@@ -203,8 +206,8 @@ export class $Element extends $Node {
             this.$element.setAttribute(name, "");
           }
         } else {
-          if (isFunction(attr)) {
-            this.#listenTo(attr, (value) => {
+          if (isState(attr)) {
+            this.#watch(attr, (value) => {
               if (value) {
                 this.$element.setAttribute(name, value.toString());
               } else {
@@ -219,16 +222,18 @@ export class $Element extends $Node {
     }
   }
 
-  #listenTo(state, callback) {
-    const cancel = state((value) => {
-      requestAnimationFrame(() => {
-        callback(value);
-      });
-    });
+  #watch(state, callback) {
+    // TODO: Batch updates -- does this batch efficiently?
 
-    this.cancellers.push(cancel);
+    this.watchers.push(
+      state.watch((value) => {
+        requestAnimationFrame(() => {
+          callback(value);
+        });
+      })
+    );
 
-    callback(state());
+    callback(state.get());
   }
 }
 

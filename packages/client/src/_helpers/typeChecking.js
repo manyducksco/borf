@@ -21,3 +21,5 @@ export const isNode = (value) => isObject(value) && value.$isNode == true;
 
 export const isComponent = (value) =>
   isFunction(value) && value.isComponent == true;
+
+export const isState = (value) => isObject(value) && value.isState;

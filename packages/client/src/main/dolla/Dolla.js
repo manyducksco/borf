@@ -4,7 +4,6 @@ import {
   isObject,
   isString,
 } from "../../_helpers/typeChecking";
-import { state } from "../state/state";
 import { $Element } from "./$Element";
 import { $If } from "./$If";
 import { $Map } from "./$Map";
@@ -28,14 +27,14 @@ export function makeDolla({ getService, route }) {
       type = "element";
     } else {
       throw new TypeError(
-        `Expected tagname string or Component. Received: ${element}`
+        `Expected a tag name or a Component. Received: ${element}`
       );
     }
 
     /**
      * @param args - Attributes object (optional) followed by any number of children
      */
-    function create(...args) {
+    function dolla(...args) {
       let attributes = { ...defaultAttrs };
       let children = args.length === 0 ? defaultChildren : args;
 
@@ -60,9 +59,9 @@ export function makeDolla({ getService, route }) {
       return node;
     }
 
-    create.$isDolla = true;
+    dolla.$isDolla = true;
 
-    return create;
+    return dolla;
   }
 
   $.if = function (value, then, otherwise) {
@@ -107,23 +106,12 @@ export function makeDolla({ getService, route }) {
     };
   };
 
-  /**
-   * Creates a new state that is true if the value of `source` is equal to `value`, and false otherwise.
-   *
-   * @param source - Source state to receive values from.
-   * @param value - Target value to match against.
-   */
-  $.is = function (source, value) {
-    return state.map(source, (current) => current === value);
-  };
-
   Object.defineProperty($, "elements", {
     get() {
       const elements = {};
 
       for (const tag of [...htmlTags, ...htmlVoidTags]) {
         elements[tag] = function (...args) {
-          console.log({ tag, args });
           return $(tag, ...args);
         };
       }

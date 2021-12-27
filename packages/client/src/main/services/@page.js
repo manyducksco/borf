@@ -1,12 +1,12 @@
-import { state } from "../state/state";
+import { createState } from "../state/createState";
 import { Service } from "../Service";
 
 export default class Page extends Service {
-  title = state(document?.title);
+  title = createState(document?.title);
 
   _created() {
     if (document) {
-      this.title((value) => {
+      this.title.watch((value) => {
         document.title = value;
       });
     }

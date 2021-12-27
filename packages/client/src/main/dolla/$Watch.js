@@ -1,5 +1,5 @@
-import { state } from "../state/state";
-import { isFunction } from "../../_helpers/typeChecking";
+import { createState } from "../state/createState";
+import { isState } from "../../_helpers/typeChecking";
 import { $Node } from "./$Node";
 import { makeRender } from "./makeRender";
 
@@ -11,11 +11,11 @@ export class $Watch extends $Node {
   source;
   createItem;
   connectedItem;
-  unlisten;
+  unwatch;
 
   constructor(source, createItem) {
     super();
-    this.source = isFunction(source) ? source : state(source);
+    this.source = isState(source) ? source : createState(source);
     this.createItem = createItem;
   }
 
@@ -47,11 +47,11 @@ export class $Watch extends $Node {
   }
 
   _connected() {
-    if (!this.unlisten) {
-      this.unlisten = this.source(this.update.bind(this));
+    if (!this.unwatch) {
+      this.unwatch = this.source.watch(this.update.bind(this));
     }
 
-    this.update(this.source());
+    this.update(this.source.get());
   }
 
   _disconnected() {
@@ -59,9 +59,9 @@ export class $Watch extends $Node {
       this.connectedItem.$disconnect();
     }
 
-    if (this.unlisten) {
-      this.unlisten();
-      this.unlisten = undefined;
+    if (this.unwatch) {
+      this.unwatch();
+      this.unwatch = undefined;
     }
   }
 }

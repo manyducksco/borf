@@ -45,6 +45,19 @@ export function createRouter(options) {
 
       return matchRoute(routes, main, query, filter);
     },
+
+    /**
+     * Adds an array of parsed routes to this router.
+     */
+    merge(others) {
+      routes = sortedRoutes([...routes, ...others]);
+
+      return this;
+    },
+
+    routes() {
+      return routes.map((x) => x);
+    },
   };
 }
 

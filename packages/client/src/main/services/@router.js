@@ -1,5 +1,5 @@
 import { createBrowserHistory, createHashHistory } from "history";
-import { state } from "../state/state";
+import { createState } from "../state/createState";
 import { createRouter } from "../../_helpers/routing";
 import { Service } from "../Service";
 import catchLinks from "../../_helpers/catchLinks";
@@ -9,11 +9,11 @@ export default class Router extends Service {
   #history;
   #debug;
 
-  route = state();
-  path = state();
-  params = state({});
-  query = state({});
-  wildcard = state(false);
+  route = createState();
+  path = createState();
+  params = createState({});
+  query = createState({});
+  wildcard = createState(false);
 
   _created(options) {
     this.#debug = this.service("@debug").channel("woof:router");
@@ -42,9 +42,7 @@ export default class Router extends Service {
     });
   }
 
-  _started() {
-    this.#debug.log("started");
-
+  _connected() {
     // Do initial match
     this.#onRouteChanged(this.#history);
   }
@@ -79,13 +77,13 @@ export default class Router extends Service {
     const matched = this.#router.match(location.pathname + location.search);
 
     if (matched) {
-      this.path(matched.path);
-      this.params(matched.params);
-      this.query(matched.query);
-      this.wildcard(matched.wildcard);
+      this.path.set(matched.path);
+      this.params.set(matched.params);
+      this.query.set(matched.query);
+      this.wildcard.set(matched.wildcard);
 
-      if (matched.route !== this.route()) {
-        this.route(matched.route);
+      if (matched.route !== this.route.get()) {
+        this.route.set(matched.route);
 
         const { callback } = matched.attributes;
 

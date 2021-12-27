@@ -1,4 +1,9 @@
-import { isFunction, isString } from "../_helpers/typeChecking";
+import {
+  isDolla,
+  isFunction,
+  isNode,
+  isString,
+} from "../_helpers/typeChecking";
 import { makeDolla } from "./dolla/Dolla";
 
 import Debug from "./services/@debug";
@@ -7,7 +12,7 @@ import Page from "./services/@page";
 import Router from "./services/@router";
 
 export class App {
-  #setup;
+  #setup = async () => true;
   #services = {};
   #routes = [];
   #outlet;
@@ -50,24 +55,7 @@ export class App {
     this.#routes.push({
       path,
       callback: () => {
-        const router = this.#getService("@router");
-
-        const $ = makeDolla({
-          getService: (name) => this.#getService(name),
-          route: {
-            params: router.params(),
-            query: router.query(),
-            path: router.path(),
-            route: router.route(),
-            wildcard: router.wildcard(),
-          },
-        });
-
-        if (this.#mounted) {
-          this.#mounted.$disconnect();
-        }
-        this.#mounted = $(component)();
-        this.#mounted.$connect(this.#outlet);
+        this.#mountRoute(component);
       },
     });
 
@@ -135,15 +123,14 @@ export class App {
       }
     }
 
-    const done = () => {
-      this.#getService("@router")._started();
-    };
-
-    if (this.#setup) {
-      this.#setup().then(done);
-    } else {
-      done();
-    }
+    this.#setup().then(() => {
+      for (const name in this.#services) {
+        const { instance } = this.#services[name];
+        if (isFunction(instance._connected)) {
+          instance._connected();
+        }
+      }
+    });
   }
 
   #getService(name) {
@@ -152,5 +139,54 @@ export class App {
     }
 
     throw new Error(`Service is not registered in this app. Received: ${name}`);
+  }
+
+  #mountRoute(component) {
+    const debug = this.#getService("@debug").channel("woof:app");
+    const router = this.#getService("@router");
+
+    const $ = makeDolla({
+      getService: (name) => this.#getService(name),
+      route: {
+        params: router.params.get(),
+        query: router.query.get(),
+        path: router.path.get(),
+        route: router.route.get(),
+        wildcard: router.wildcard.get(),
+      },
+    });
+
+    const node = $(component)();
+
+    const mount = (newNode) => {
+      debug.log("mounting node", newNode);
+
+      if (this.#mounted) {
+        this.#mounted.$disconnect();
+      }
+      this.#mounted = newNode;
+      this.#mounted.$connect(this.#outlet);
+    };
+
+    if (isFunction(node.preload)) {
+      // Mount preload's returned element while preloading
+      let tempNode = node.preload($, () => mount(node));
+
+      if (tempNode) {
+        if (isDolla(tempNode)) {
+          tempNode = tempNode();
+        }
+
+        if (isNode(tempNode)) {
+          mount(tempNode);
+        } else {
+          throw new Error(
+            `Expected component's preload function to return an $element or undefined. Received: ${tempNode}`
+          );
+        }
+      }
+    } else {
+      mount(node);
+    }
   }
 }

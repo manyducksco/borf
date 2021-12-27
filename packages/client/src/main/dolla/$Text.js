@@ -1,11 +1,11 @@
 import { $Node } from "./$Node";
-import { isFunction } from "../../_helpers/typeChecking";
+import { isState } from "../../_helpers/typeChecking";
 
 export class $Text extends $Node {
   constructor(value) {
     super();
 
-    if (isFunction(value)) {
+    if (isState(value)) {
       this.state = value;
     } else {
       this.value = value;
@@ -18,20 +18,20 @@ export class $Text extends $Node {
 
   _beforeConnect() {
     if (this.state) {
-      this.cancel = this.state((value) => {
+      this.unwatch = this.state.watch((value) => {
         this.value = value;
         this.$element.textContent = value;
       });
 
-      this.value = this.state();
+      this.value = this.state.get();
       this.$element.textContent = this.value;
     }
   }
 
   _disconnected() {
-    if (this.cancel) {
-      this.cancel();
-      this.cancel = null;
+    if (this.unwatch) {
+      this.unwatch();
+      this.unwatch = null;
     }
   }
 }

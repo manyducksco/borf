@@ -1,6 +1,11 @@
-import { state } from "./state/state";
-import { $Node } from "./dolla/$Node";
-import { isDolla, isFunction, isNode } from "../_helpers/typeChecking";
+import { createState } from "./state/createState.js";
+import { $Node } from "./dolla/$Node.js";
+import {
+  isDolla,
+  isFunction,
+  isNode,
+  isState,
+} from "../_helpers/typeChecking.js";
 
 export class Component extends $Node {
   static get isComponent() {
@@ -11,7 +16,7 @@ export class Component extends $Node {
   #root; // mounted node from createElement
   #dolla;
 
-  cancellers = [];
+  watchers = [];
 
   attributes;
   children;
@@ -28,12 +33,14 @@ export class Component extends $Node {
 
     this.attributes = {};
 
-    // Any attribute that isn't already a function becomes a state.
+    // Any attribute that isn't already a state or function becomes a state.
     for (const key in attributes) {
-      if (isFunction(attributes[key])) {
+      if (isState(attributes[key]) || isFunction(attributes[key])) {
         this.attributes[key] = attributes[key];
       } else {
-        this.attributes[key] = state(attributes[key], { immutable: true });
+        this.attributes[key] = createState(attributes[key], {
+          settable: false,
+        });
       }
     }
 
@@ -94,10 +101,9 @@ export class Component extends $Node {
       this.$element = null;
     }
 
-    for (const cancel of this.cancellers) {
+    for (const cancel of this.watchers) {
       cancel();
     }
-
-    this.cancellers = [];
+    this.watchers = [];
   }
 }
