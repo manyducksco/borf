@@ -82,7 +82,7 @@ export function createState(initialValue, options) {
 
       watchers.push(callback);
 
-      return function cancel() {
+      return function unwatch() {
         watchers.splice(watchers.indexOf(callback), 1);
       };
     },

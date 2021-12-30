@@ -18,13 +18,20 @@ import htmlVoidTags from "html-tags/void";
  * Creates a $ function with bound injectables.
  */
 export function makeDolla({ getService, route }) {
-  function $(element, defaultAttrs = {}, ...defaultChildren) {
-    let type = null;
+  function $(element, ...args) {
+    let defaultAttrs = {};
+
+    if (args[0] && !isNode(args[0]) && isObject(args[0])) {
+      defaultAttrs = args.shift();
+    }
+
+    let defaultChildren = args;
+    let elementType = null;
 
     if (isComponent(element)) {
-      type = "component";
+      elementType = "component";
     } else if (isString(element)) {
-      type = "element";
+      elementType = "element";
     } else {
       throw new TypeError(
         `Expected a tag name or a Component. Received: ${element}`
@@ -38,9 +45,7 @@ export function makeDolla({ getService, route }) {
       let attributes = { ...defaultAttrs };
       let children = args.length === 0 ? defaultChildren : args;
 
-      const firstArg = args[0];
-
-      if (!isNode(firstArg) && isObject(firstArg)) {
+      if (args[0] && !isNode(args[0]) && isObject(args[0])) {
         attributes = children.shift();
       }
 
@@ -50,9 +55,9 @@ export function makeDolla({ getService, route }) {
 
       let node;
 
-      if (type === "component") {
+      if (elementType === "component") {
         node = new element(getService, $, attributes, children);
-      } else if (type === "element") {
+      } else if (elementType === "element") {
         node = new $Element(element, attributes, children);
       }
 

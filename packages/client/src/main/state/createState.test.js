@@ -5,7 +5,7 @@ test("get, set and watch", () => {
 
   expect(state.get()).toBe(5);
 
-  const cancel = state.watch((value) => {
+  const unwatch = state.watch((value) => {
     expect(value).toBe(8);
     expect(value).not.toBe(12);
   });
@@ -13,7 +13,7 @@ test("get, set and watch", () => {
   state.set(8);
   expect(state.get()).toBe(8);
 
-  cancel();
+  unwatch();
 
   state.set(12);
   expect(state.get()).toBe(12);
