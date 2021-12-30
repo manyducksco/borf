@@ -174,6 +174,8 @@ module.exports = new Command()
       },
     });
 
+    const appBundleHash = createState();
+
     const writeAppBundle = async (result) => {
       const bundleOut = result.outputFiles.find(
         (f) => path.extname(f.path) === ".js"
@@ -193,6 +195,7 @@ module.exports = new Command()
         bundlePath: bundleOut.path.replace(publicDir, ""),
         stylesPath: stylesOut ? stylesOut.path.replace(publicDir, "") : null,
         config,
+        devMode: true,
       };
 
       fs.readdirSync(srcStaticDir).forEach((file) => {
@@ -212,7 +215,11 @@ module.exports = new Command()
         }
       });
 
-      appBuildId.increment();
+      const hash = path
+        .basename(bundleOut.path, path.extname(bundleOut.path))
+        .replace(/^app\./, "");
+
+      appBundleHash.set(hash);
     };
 
     const writeServerBundle = (result) => {
@@ -295,11 +302,12 @@ module.exports = new Command()
 
     const app = express();
 
-    /**
-     * === TO DO ===
-     * [ ] Watch for changes on app & server
-     * [ ]
-     */
+    ////
+    // This server exists to serve the app and proxy requests to the API server.
+    // Why proxy? This server can inject things and handle Server Sent Events for auto-reload.
+    ////
+
+    // TODO: Proxy requests with relative URLs to the server if it's running.
 
     app.use(express.static(publicDir));
 
@@ -312,10 +320,12 @@ module.exports = new Command()
         open("http://localhost:7072");
       }
 
-      println("\nWatching for file changes");
+      println(
+        `\n<magenta>CLI</magenta> app will auto reload when files are saved`
+      );
     });
 
-    app.get("/events", (req, res) => {
+    app.get("/_bundle", (req, res) => {
       res.set({
         "Cache-Control": "no-cache",
         "Content-Type": "text/event-stream",
@@ -326,12 +336,12 @@ module.exports = new Command()
       // Tell the client to retry every 10 seconds if connectivity is lost
       res.write("retry: 10000\n\n");
 
-      const cancel = appBuildId.watch((value) => {
+      const unwatch = appBundleHash.watch((value) => {
         res.write(`data: ${value}\n\n`);
       });
 
       res.on("close", () => {
-        cancel();
+        unwatch();
         res.end();
       });
     });
