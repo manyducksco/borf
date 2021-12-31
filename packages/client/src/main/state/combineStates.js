@@ -25,8 +25,8 @@ export function combineStates(...args) {
       return true;
     },
 
-    get() {
-      return value.get();
+    get(key) {
+      return value.get(key);
     },
 
     watch(callback) {

@@ -1,6 +1,7 @@
 import produce from "immer";
 import { isFunction } from "../../_helpers/typeChecking.js";
 import { deepEqual } from "../../_helpers/deepEqual.js";
+import { getProperty } from "../../_helpers/getProperty.js";
 
 const methodBlacklist = ["get", "set", "watch", "map", "toString"];
 
@@ -50,7 +51,11 @@ export function makeState(initialValue, options) {
       return true;
     },
 
-    get() {
+    get(key) {
+      if (key !== undefined) {
+        return getProperty(current, key);
+      }
+
       return current;
     },
 
@@ -109,8 +114,14 @@ export function mapState(source, transform) {
       return true;
     },
 
-    get() {
-      return transform(source.get());
+    get(key) {
+      let value = transform(source.get());
+
+      if (key !== undefined) {
+        value = getProperty(value, key);
+      }
+
+      return value;
     },
 
     watch(callback) {

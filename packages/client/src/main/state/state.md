@@ -41,12 +41,12 @@ When called with a function, that function will receive all new values until you
 
 ```js
 // watch for changes
-const cancel = state.watch((value) => {
+const unwatch = state.watch((value) => {
   console.log("updated value: " + value);
 });
 
 // stop listening
-cancel();
+unwatch();
 ```
 
 ## Mapping values from one state into another
@@ -109,10 +109,18 @@ const form = makeState(defaults, {
       current.profession = value;
     },
   },
+  validate: (value) => {
+    // Runs after value is set. If it returns a string, that string is used a message for an error that is then thrown.
+    if (value.profession === "Llama Jockey") {
+      return "Llama Jockeys aren't welcome 'round these parts...";
+    }
+  },
 });
 
 form.setName("Dan Brüks");
 form.setProfession("Biologist");
+
+form.setProfession("Llama Jockey"); // Throws an error on validate
 ```
 
 The form defined above provides no way to change the age, but gives controlled ways to set the values we want to expose. Methods use [immer](https://immerjs.github.io/immer/) under the hood, so it's safe to mutate the `current` value because it will result in a new state without actually touching the existing one.
