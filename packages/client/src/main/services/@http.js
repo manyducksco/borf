@@ -89,6 +89,26 @@ export class HTTPRequest {
   }
 
   /**
+   * True if this request's URL is a relative path (same domain).
+   */
+  get isRelative() {
+    return !/^https?\:\/\//.test(this.#url);
+  }
+
+  /**
+   * Gets or sets the URL for this request.
+   */
+  url(value) {
+    if (value === undefined) {
+      return this.#url;
+    } else if (isString(value)) {
+      this.#url = value;
+    } else {
+      throw new TypeError(`Expected a string. Received: ${value}`);
+    }
+  }
+
+  /**
    * Sets headers to send with the request.
    *
    * @example
@@ -267,9 +287,9 @@ export class HTTPRequest {
 
       if (isFunction(this.#parse)) {
         res.body = await this.#parse(fetched);
-      } else if (contentType === "application/json") {
+      } else if (contentType.includes("application/json")) {
         res.body = await fetched.json();
-      } else if (contentType === "application/x-www-form-urlencoded") {
+      } else if (contentType.includes("application/x-www-form-urlencoded")) {
         res.body = await fetched.formData();
       } else {
         res.body = await fetched.text();
