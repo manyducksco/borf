@@ -1,4 +1,4 @@
-import { createState } from "../state/createState";
+import { makeState } from "../state/makeState";
 import { isState } from "../../_helpers/typeChecking";
 import { $Node } from "./$Node";
 import { makeRender } from "./makeRender";
@@ -15,7 +15,7 @@ export class $Watch extends $Node {
 
   constructor(source, createItem) {
     super();
-    this.source = isState(source) ? source : createState(source);
+    this.source = isState(source) ? source : makeState(source);
     this.createItem = createItem;
   }
 

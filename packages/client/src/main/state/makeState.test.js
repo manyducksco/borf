@@ -1,7 +1,7 @@
-import { createState } from "./createState.js";
+import { makeState } from "./makeState.js";
 
 test("get, set and watch", () => {
-  const state = createState(5);
+  const state = makeState(5);
 
   expect(state.get()).toBe(5);
 
@@ -20,7 +20,7 @@ test("get, set and watch", () => {
 });
 
 test("methods object", () => {
-  const count = createState(31, {
+  const count = makeState(31, {
     methods: {
       increment: (current) => current + 1,
       decrement: (current) => current - 1,
@@ -43,7 +43,7 @@ test("methods object", () => {
 });
 
 test("settable", () => {
-  const state = createState(5, {
+  const state = makeState(5, {
     settable: false,
     methods: {
       inc: (current) => current + 1,

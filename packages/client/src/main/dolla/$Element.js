@@ -77,7 +77,11 @@ export class $Element extends $Node {
   }
 
   createElement() {
-    return document.createElement(this.tag);
+    if (this.tag === "") {
+      return document.createDocumentFragment();
+    } else {
+      return document.createElement(this.tag);
+    }
   }
 
   _beforeConnect() {

@@ -2,10 +2,10 @@
 
 ## Getter and setter
 
-Calling `createState()` gets you a state container.
+Calling `makeState()` gets you a state container.
 
 ```js
-const counter = createState(5, {
+const counter = makeState(5, {
   // disables .set() function, throwing an error when called
   // non-settable states can only be modified with methods
   settable: false,
@@ -52,7 +52,7 @@ cancel();
 ## Mapping values from one state into another
 
 ```js
-const greeting = createState("hello");
+const greeting = makeState("hello");
 const louder = greeting.map((value) => value.toUpperCase());
 
 louder.get(); // returns "HELLO"
@@ -67,8 +67,8 @@ louder.get(); // returns "PLEASE STOP YELLING"
 Pass any number of states followed by a function. This function takes all values in the order the states were passed, and whatever value the function returns becomes the value of the combined state.
 
 ```js
-const one = createState(true);
-const two = createState(false);
+const one = makeState(true);
+const two = makeState(false);
 
 const bothTrue = combineStates(one, two, (v1, v2) => v1 && v2);
 ```
@@ -78,7 +78,7 @@ const bothTrue = combineStates(one, two, (v1, v2) => v1 && v2);
 States can provide methods for working with the data they hold. Methods take the current value and return a new value.
 
 ```js
-const count = createState(5, {
+const count = makeState(5, {
   methods: {
     increment: (current) => current + 1,
     decrement: (current) => current - 1,
@@ -99,7 +99,7 @@ const defaults = {
   profession: "Synthesist",
 };
 
-const form = createState(defaults, {
+const form = makeState(defaults, {
   settable: false,
   methods: {
     setName: (current, value) => {

@@ -1,4 +1,4 @@
-import { createState, mapState } from "./createState.js";
+import { makeState, mapState } from "./makeState.js";
 
 /**
  * Takes any number of states followed by a function. This function takes the states as arguments
@@ -10,7 +10,7 @@ export function combineStates(...args) {
   const watchers = [];
 
   const initialValue = combine(...states.map(toValue));
-  const value = createState(initialValue);
+  const value = makeState(initialValue);
 
   for (const state of states) {
     watchers.push(

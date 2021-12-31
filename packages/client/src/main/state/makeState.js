@@ -10,7 +10,7 @@ const methodBlacklist = ["get", "set", "watch", "map", "toString"];
  * @param initialValue - Starting value (optional)
  * @param options - Configure this state (supports `immutable` bool and `methods` object)
  */
-export function createState(initialValue, options) {
+export function makeState(initialValue, options) {
   options = options || {};
 
   let current = initialValue;

@@ -1,4 +1,4 @@
-import { createState } from "./state/createState.js";
+import { makeState } from "./state/makeState.js";
 import { $Node } from "./dolla/$Node.js";
 import {
   isDolla,
@@ -38,7 +38,7 @@ export class Component extends $Node {
       if (isState(attributes[key]) || isFunction(attributes[key])) {
         this.attributes[key] = attributes[key];
       } else {
-        this.attributes[key] = createState(attributes[key], {
+        this.attributes[key] = makeState(attributes[key], {
           settable: false,
         });
       }

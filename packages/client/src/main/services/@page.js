@@ -1,8 +1,8 @@
-import { createState } from "../state/createState";
+import { makeState } from "../state/makeState";
 import { Service } from "../Service";
 
 export default class Page extends Service {
-  title = createState(document?.title);
+  title = makeState(document?.title);
 
   _created() {
     if (document) {

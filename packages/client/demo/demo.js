@@ -1,4 +1,4 @@
-import { App, Service, Component, Styles, createState } from "./dist/woof.js";
+import { App, Service, Component, Styles, makeState } from "./dist/woof.js";
 
 const app = new App({ hash: true });
 
@@ -36,7 +36,7 @@ const styles = new Styles({
 \*===========================*/
 
 class ToggleExample extends Component {
-  active = createState(false, {
+  active = makeState(false, {
     methods: {
       toggle: (current) => !current,
     },
@@ -65,7 +65,7 @@ class ToggleExample extends Component {
 \*===========================*/
 
 class Counter extends Service {
-  current = createState(0);
+  current = makeState(0);
 
   _created() {
     setInterval(() => {
@@ -116,7 +116,7 @@ class CounterViewLabel extends Component {
 \*===========================*/
 
 class ConditionalExample extends Component {
-  show = createState(false, {
+  show = makeState(false, {
     methods: {
       toggle: (current) => !current,
     },
@@ -159,14 +159,14 @@ class ConditionalExample extends Component {
 class MapExample extends Component {
   createElement($) {
     const initialList = ["apple", "banana", "potato", "fried chicken"];
-    const shoppingList = createState(initialList, {
+    const shoppingList = makeState(initialList, {
       methods: {
         append: (current, value) => [...current, value],
         reset: () => initialList,
       },
     });
 
-    const inputValue = createState("");
+    const inputValue = makeState("");
 
     return $("div")(
       $("button")(
@@ -248,8 +248,8 @@ class MapExample extends Component {
 \*===========================*/
 
 class TwoWayBindExample extends Component {
-  text = createState("edit me");
-  size = createState(18);
+  text = makeState("edit me");
+  size = makeState(18);
 
   createElement($) {
     return $("div")(
@@ -277,8 +277,8 @@ class TwoWayBindExample extends Component {
 \*===========================*/
 
 class HTTPRequestExample extends Component {
-  loading = createState(false);
-  image = createState(null);
+  loading = makeState(false);
+  image = makeState(null);
 
   _connected() {
     this.refresh();
@@ -325,7 +325,7 @@ class HTTPRequestExample extends Component {
 \*===========================*/
 
 class MouseInfo extends Service {
-  position = createState({ x: 0, y: 0 });
+  position = makeState({ x: 0, y: 0 });
 
   _created() {
     window.addEventListener("mousemove", (e) => {
@@ -341,7 +341,7 @@ app.service("mouse", MouseInfo);
 
 class MouseFollowerExample extends Component {
   createElement($) {
-    const isEnabled = createState(false, {
+    const isEnabled = makeState(false, {
       methods: {
         toggle: (current) => !current,
       },
@@ -352,7 +352,7 @@ class MouseFollowerExample extends Component {
     );
 
     const bestColor = "#ff0088";
-    const backgroundColor = createState(bestColor);
+    const backgroundColor = makeState(bestColor);
     const isNotBestColor = backgroundColor.map(
       (hex) => hex.toLowerCase() !== bestColor
     );
@@ -445,13 +445,11 @@ app.route(
 
       // Display current mouse coordinates as tab title
       // Push to watchers array to be cleaned up on disconnect
-      this.watchers.push(
-        mouse.position.watch((current) => {
-          page.title.set(
-            `x:${Math.round(current.x)} y:${Math.round(current.y)}`
-          );
-        })
-      );
+      const unwatch = mouse.position.watch((current) => {
+        page.title.set(`x:${Math.round(current.x)} y:${Math.round(current.y)}`);
+      });
+
+      this.watchers.push(unwatch);
     }
 
     createElement($) {
@@ -490,6 +488,7 @@ app.route(
           .route(
             "test2/*",
             class extends Component {
+              // TODO: Rename createElement to view
               createElement($) {
                 return $("div")(
                   $("h1")("ROUTER"),
@@ -522,7 +521,6 @@ app.route(
               }
             }
           )
-        // .when("*", ($, { app }) => app.navigate("/test1"))
       );
     }
   }

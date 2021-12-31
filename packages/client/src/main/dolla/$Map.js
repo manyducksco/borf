@@ -1,4 +1,4 @@
-import { createState } from "../state/createState";
+import { makeState } from "../state/makeState";
 import { isState } from "../../_helpers/typeChecking";
 import { deepEqual } from "../../_helpers/deepEqual";
 import { $Node } from "./$Node";
@@ -19,7 +19,7 @@ export class $Map extends $Node {
 
   constructor(source, getKey, createItem) {
     super();
-    this.source = isState(source) ? source : createState(source);
+    this.source = isState(source) ? source : makeState(source);
     this.getKey = getKey;
     this.createItem = createItem;
   }
