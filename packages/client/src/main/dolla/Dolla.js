@@ -13,6 +13,7 @@ import { $Watch } from "./$Watch";
 import { makeRender } from "./makeRender";
 import htmlTags from "html-tags";
 import htmlVoidTags from "html-tags/void";
+import { makeState } from "../state/makeState";
 
 /**
  * Creates a $ function with bound injectables.
@@ -96,6 +97,13 @@ export function makeDolla({ getService, route }) {
 
     return new $Outlet(getService, node, route.params.wildcard);
   };
+
+  $.route = Object.freeze({
+    path: makeState(route.path, { settable: false }),
+    params: makeState(route.params, { settable: false }),
+    query: makeState(route.query, { settable: false }),
+    wildcard: makeState(route.wildcard, { settable: false }),
+  });
 
   /**
    * Creates a two way binding with the value updated on the specified event.

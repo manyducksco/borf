@@ -444,12 +444,9 @@ app.route(
       const mouse = this.service("mouse");
 
       // Display current mouse coordinates as tab title
-      // Push to watchers array to be cleaned up on disconnect
-      const unwatch = mouse.position.watch((current) => {
+      this.watchState(mouse.position, (current) => {
         page.title.set(`x:${Math.round(current.x)} y:${Math.round(current.y)}`);
       });
-
-      this.watchers.push(unwatch);
     }
 
     createElement($) {

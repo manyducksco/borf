@@ -4,7 +4,6 @@ export class Service {
   }
 
   #getService;
-  cancellers = []; // For compatibility with state(this, fn) calls. Not really needed because services are singletons.
 
   constructor(getService) {
     this.#getService = getService;
