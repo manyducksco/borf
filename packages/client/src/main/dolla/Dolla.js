@@ -5,6 +5,7 @@ import {
   isString,
 } from "../../_helpers/typeChecking";
 import { $Element } from "./$Element";
+import { $Fragment } from "./$Fragment";
 import { $If } from "./$If";
 import { $Map } from "./$Map";
 import { $Outlet } from "./$Outlet";
@@ -32,7 +33,11 @@ export function makeDolla({ getService, match }) {
     if (isComponent(element)) {
       elementType = "component";
     } else if (isString(element)) {
-      elementType = "element";
+      if (element === "") {
+        elementType = "fragment";
+      } else {
+        elementType = "element";
+      }
     } else {
       throw new TypeError(
         `Expected a tag name or a Component. Received: ${element}`
@@ -54,15 +59,14 @@ export function makeDolla({ getService, match }) {
         .filter((x) => x != null && x !== false) // ignore null, undefined and false
         .map((child) => makeRender(child)());
 
-      let node;
-
-      if (elementType === "component") {
-        node = new element(getService, $, attributes, children);
-      } else if (elementType === "element") {
-        node = new $Element(element, attributes, children);
+      switch (elementType) {
+        case "component":
+          return new element(getService, $, attributes, children);
+        case "element":
+          return new $Element(element, attributes, children);
+        case "fragment":
+          return new $Fragment(children);
       }
-
-      return node;
     }
 
     Dolla.$isDolla = true;
