@@ -18,7 +18,7 @@ import { makeState } from "../state/makeState";
 /**
  * Creates a $ function with bound injectables.
  */
-export function makeDolla({ getService, route }) {
+export function makeDolla({ getService, match }) {
   function $(element, ...args) {
     let defaultAttrs = {};
 
@@ -42,7 +42,7 @@ export function makeDolla({ getService, route }) {
     /**
      * @param args - Attributes object (optional) followed by any number of children
      */
-    function dolla(...args) {
+    function Dolla(...args) {
       let attributes = { ...defaultAttrs };
       let children = args.length === 0 ? defaultChildren : args;
 
@@ -65,9 +65,9 @@ export function makeDolla({ getService, route }) {
       return node;
     }
 
-    dolla.$isDolla = true;
+    Dolla.$isDolla = true;
 
-    return dolla;
+    return Dolla;
   }
 
   $.if = function (value, then, otherwise) {
@@ -86,27 +86,20 @@ export function makeDolla({ getService, route }) {
     return new $Text(value);
   };
 
-  $.outlet = function (element = "div", defaultAttrs) {
-    if (route.wildcard == false) {
+  $.outlet = function (element = "div", attributes = {}) {
+    if (match.wildcard.get() == false) {
       throw new Error(
-        `$.route() can only be used on wildcard routes. Current route: ${route.route}`
+        `$.route() can only be used on wildcard routes. Current route: ${match.route.get()}`
       );
     }
 
-    const node = $(element, defaultAttrs);
+    const node = $(element, attributes);
 
-    return new $Outlet(getService, node, route.params.wildcard);
+    return new $Outlet(getService, node, match);
   };
 
-  $.route = Object.freeze({
-    path: makeState(route.path, { settable: false }),
-    params: makeState(route.params, { settable: false }),
-    query: makeState(route.query, { settable: false }),
-    wildcard: makeState(route.wildcard, { settable: false }),
-  });
-
   /**
-   * Creates a two way binding with the value updated on the specified event.
+   * Creates a two way binding for input elements. Pass this as an $element's `value` attribute.
    *
    * @param state
    * @param event
@@ -118,6 +111,8 @@ export function makeDolla({ getService, route }) {
       state,
     };
   };
+
+  $.route = match;
 
   Object.defineProperty($, "elements", {
     get() {
@@ -132,6 +127,8 @@ export function makeDolla({ getService, route }) {
       return elements;
     },
   });
+
+  Object.freeze($);
 
   return $;
 }

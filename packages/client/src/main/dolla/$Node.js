@@ -1,5 +1,6 @@
 export class $Node {
   $element;
+  #watchers = [];
 
   get $isNode() {
     return true;
@@ -11,6 +12,10 @@ export class $Node {
 
   createElement() {
     return document.createTextNode("");
+  }
+
+  watchState(state, callback) {
+    this.#watchers.push(state.watch(callback));
   }
 
   $connect(parent, after = null) {
@@ -45,6 +50,11 @@ export class $Node {
       this._disconnected();
       this.$element = null;
     }
+
+    for (const unwatch of this.#watchers) {
+      unwatch();
+    }
+    this.#watchers = [];
   }
 
   _beforeConnect() {}

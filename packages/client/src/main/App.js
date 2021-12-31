@@ -15,6 +15,7 @@ export class App {
   #setup = async () => true;
   #services = {};
   #routes = [];
+  #dolla;
   #outlet;
   #mounted;
 
@@ -124,6 +125,20 @@ export class App {
     }
 
     this.#setup().then(() => {
+      const { params, query, path, route, wildcard } =
+        this.#getService("@router");
+
+      this.#dolla = makeDolla({
+        getService: (name) => this.#getService(name),
+        match: {
+          params,
+          query,
+          path,
+          route,
+          wildcard,
+        },
+      });
+
       for (const name in this.#services) {
         const { instance } = this.#services[name];
         if (isFunction(instance._connected)) {
@@ -143,18 +158,7 @@ export class App {
 
   #mountRoute(component) {
     const debug = this.#getService("@debug").channel("woof:app");
-    const router = this.#getService("@router");
-
-    const $ = makeDolla({
-      getService: (name) => this.#getService(name),
-      route: {
-        params: router.params.get(),
-        query: router.query.get(),
-        path: router.path.get(),
-        route: router.route.get(),
-        wildcard: router.wildcard.get(),
-      },
-    });
+    const $ = this.#dolla;
 
     const node = $(component)();
 
@@ -166,6 +170,8 @@ export class App {
       }
       this.#mounted = newNode;
       this.#mounted.$connect(this.#outlet);
+
+      this.#mounted.$element.dataset.appRoute = $.route.route.get();
     };
 
     if (isFunction(node.preload)) {

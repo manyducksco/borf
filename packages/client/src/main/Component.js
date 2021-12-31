@@ -15,7 +15,6 @@ export class Component extends $Node {
   #getService;
   #root; // mounted node from createElement
   #dolla;
-  #watchers = [];
 
   attributes;
   children;
@@ -52,13 +51,6 @@ export class Component extends $Node {
 
   service(name) {
     return this.#getService(name);
-  }
-
-  /**
-   * Watches a state and automatically cleans up when the component is unmounted.
-   */
-  watchState(state, callback) {
-    this.#watchers.push(state.watch(callback));
   }
 
   createElement($) {
@@ -106,10 +98,5 @@ export class Component extends $Node {
       this.#root = null;
       this.$element = null;
     }
-
-    for (const cancel of this.#watchers) {
-      cancel();
-    }
-    this.#watchers = [];
   }
 }

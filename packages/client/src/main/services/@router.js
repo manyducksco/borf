@@ -2,16 +2,8 @@ import { createBrowserHistory, createHashHistory } from "history";
 import { makeState } from "../state/makeState";
 import { createRouter } from "../../_helpers/routing";
 import { Service } from "../Service";
-import { isFunction, isDolla, isNode } from "../../_helpers/typeChecking";
+import { isNumber, isString } from "../../_helpers/typeChecking";
 import catchLinks from "../../_helpers/catchLinks";
-
-/**
- * NOTES:
- *
- * Outlets need to mount themselves on the router as they're connected.
- * Route matching should go through all levels of outlets and adjust matches
- * as needed when route changes.
- */
 
 export default class Router extends Service {
   #router = createRouter();
@@ -98,64 +90,17 @@ export default class Router extends Service {
       this.query.set(matched.query);
       this.wildcard.set(matched.wildcard);
 
-      // TODO: Implement proper routing. Outlets only work because everything is remounted every time the route changes. Need a way of rerouting reactively.
-      // if (matched.route !== this.route.get()) {
-      this.route.set(matched.route);
+      if (matched.route !== this.route.get()) {
+        this.route.set(matched.route);
 
-      const { callback } = matched.attributes;
+        const { callback } = matched.attributes;
 
-      return callback(matched);
-      // }
+        return callback(matched);
+      }
     } else {
       console.warn(
         `No route was matched. Consider adding a wildcard ("*") route to catch this.`
       );
     }
   }
-
-  // #mountRoute(component) {
-  //   const $ = makeDolla({
-  //     getService: (name) => this.service(name),
-  //     route: {
-  //       params: this.params.get(),
-  //       query: this.query.get(),
-  //       path: this.path.get(),
-  //       route: this.route.get(),
-  //       wildcard: this.wildcard.get(),
-  //     },
-  //   });
-
-  //   const node = $(component)();
-
-  //   const mount = (newNode) => {
-  //     this.#debug.log("mounting node", newNode);
-
-  //     if (this.#mounted) {
-  //       this.#mounted.$disconnect();
-  //     }
-  //     this.#mounted = newNode;
-  //     this.#mounted.$connect(this.#outlet);
-  //   };
-
-  //   if (isFunction(node.preload)) {
-  //     // Mount preload's returned element while preloading
-  //     let tempNode = node.preload($, () => mount(node));
-
-  //     if (tempNode) {
-  //       if (isDolla(tempNode)) {
-  //         tempNode = tempNode();
-  //       }
-
-  //       if (isNode(tempNode)) {
-  //         mount(tempNode);
-  //       } else {
-  //         throw new Error(
-  //           `Expected component's preload function to return an $element or undefined. Received: ${tempNode}`
-  //         );
-  //       }
-  //     }
-  //   } else {
-  //     mount(node);
-  //   }
-  // }
 }

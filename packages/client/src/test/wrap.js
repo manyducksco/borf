@@ -11,6 +11,7 @@ import Debug from "../main/services/@debug";
 import HTTP from "../main/services/@http";
 import Router from "../main/services/@router";
 import Page from "../main/services/@page";
+import { makeState } from "../main/state/makeState";
 
 /**
  * Wraps a component or service inside a mock app container.
@@ -73,10 +74,10 @@ export function wrap(object) {
 
       const $ = makeDolla({
         getService,
-        route: {
-          route: "test",
-          params: {},
-          wildcard: null,
+        match: {
+          route: makeState("test", { settable: false }),
+          params: makeState({}, { settable: false }),
+          wildcard: makeState(null, { settable: false }),
         },
       });
 
