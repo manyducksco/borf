@@ -115,11 +115,9 @@ class SuiteTests extends Component {
   }
 
   createElement($) {
-    this.watchers.push(
-      this.attributes.suite.watch((value) => {
-        this.runTestSuite(value);
-      })
-    );
+    this.watchState(this.attributes.suite, (value) => {
+      this.runTestSuite(value);
+    });
 
     return $("div")(
       { class: styles.testResults },
