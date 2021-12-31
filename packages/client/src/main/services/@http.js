@@ -29,6 +29,8 @@ export default class HTTP extends Service {
 
   use(...middleware) {
     this.#middleware.push(...middleware);
+
+    return this;
   }
 
   get(url, ...middleware) {
