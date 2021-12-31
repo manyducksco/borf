@@ -137,7 +137,7 @@ module.exports = new Command()
   //   println(`\nBundled app in <green>${Date.now() - start}</green>ms\n`);
   // })
   .action(async ({ options }) => {
-    const { createState } = require("@manyducksco/woof/node");
+    const { makeState } = require("@manyducksco/woof/node");
     const EventEmitter = require("events");
     const path = require("path");
     const fs = require("fs-extra");
@@ -168,13 +168,7 @@ module.exports = new Command()
     fs.emptyDirSync(buildDir);
     fs.emptyDirSync(publicDir);
 
-    const appBuildId = createState(0, {
-      methods: {
-        increment: (current) => current + 1,
-      },
-    });
-
-    const appBundleHash = createState();
+    const appBundleHash = makeState();
 
     const writeAppBundle = async (result) => {
       const bundleOut = result.outputFiles.find(

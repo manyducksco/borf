@@ -1,4 +1,4 @@
-import { Component, Styles, createState } from "@manyducksco/woof";
+import { Component, Styles, makeState } from "@manyducksco/woof";
 import { wrap } from "@manyducksco/woof/test";
 
 const styles = new Styles({
@@ -74,7 +74,7 @@ export default class Content extends Component {
 }
 
 class SuiteTests extends Component {
-  results = createState(null, {
+  results = makeState(null, {
     methods: {
       push: (current, ...items) => {
         if (current == null) {
@@ -85,7 +85,7 @@ class SuiteTests extends Component {
       },
     },
   });
-  progress = createState(
+  progress = makeState(
     { total: 0, done: 0 },
     {
       methods: {
@@ -252,7 +252,7 @@ class SuiteTests extends Component {
                   attr: (name, value) =>
                     value.isState || value instanceof Function
                       ? value
-                      : createState(value, { immutable: true }),
+                      : makeState(value, { immutable: true }),
                 });
               }
             }
@@ -323,7 +323,7 @@ class SuiteView extends Component {
     const selectedView = suite.map((s) =>
       s.views.find((v) => v.name === view.get())
     );
-    const attrs = createState([], {
+    const attrs = makeState([], {
       settable: true,
       methods: {
         push: (current, value) => [...current, value],
@@ -333,7 +333,7 @@ class SuiteView extends Component {
     const hasAttrs = attrs.map((x) => x.length > 0);
 
     const makeAttr = (name, value, options = {}) => {
-      const s = createState(value);
+      const s = makeState(value);
 
       attrs.push({
         name,

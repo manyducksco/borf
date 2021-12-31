@@ -35,7 +35,7 @@ module.exports = new Command()
     const express = require("express");
     const esbuild = require("esbuild");
     const chokidar = require("chokidar");
-    const { createState } = require("@manyducksco/woof/node");
+    const { makeState } = require("@manyducksco/woof/node");
     const getProjectConfig = require("../../tools/getProjectConfig");
 
     const config = getProjectConfig(process.cwd());
@@ -133,7 +133,7 @@ module.exports = new Command()
       ignoreInitial: true,
     });
 
-    const buildId = createState(0, {
+    const buildId = makeState(0, {
       methods: {
         increment: (value) => value + 1,
       },

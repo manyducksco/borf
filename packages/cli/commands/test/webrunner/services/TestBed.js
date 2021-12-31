@@ -1,9 +1,9 @@
-import { Service, createState } from "@manyducksco/woof";
+import { Service, makeState } from "@manyducksco/woof";
 import setup from "$bundle";
 
 export default class TestBed extends Service {
-  selected = createState(null);
-  suites = createState([], {
+  selected = makeState(null);
+  suites = makeState([], {
     methods: {
       add: (current, path, suite) => [...current, { path, ...suite }],
     },
