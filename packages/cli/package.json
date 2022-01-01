@@ -16,6 +16,7 @@
     "@manyducksco/woof": "file:../woof",
     "@ratwizard/cli": "^0.17.0",
     "chokidar": "^3.5.2",
+    "dedent": "^0.7.0",
     "esbuild": "^0.14.5",
     "express": "^4.17.2",
     "fs-extra": "^10.0.0",

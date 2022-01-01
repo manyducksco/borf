@@ -52,9 +52,13 @@ module.exports = new Command().action(async () => {
   const stylesOut = appBundle.outputFiles.find(
     (f) => path.extname(f.path) === ".css"
   );
+
+  const bundlePath = bundleOut.path.replace(publicDir, "");
+  const stylesPath = stylesOut ? stylesOut.path.replace(publicDir, "") : null;
+
   const context = {
-    bundlePath: bundleOut.path.replace(publicDir, ""),
-    stylesPath: stylesOut ? stylesOut.path.replace(publicDir, "") : null,
+    scripts: `<script src="${bundlePath}"></script>`,
+    styles: stylesPath ? `<link rel="stylesheet" href="${stylesPath}">` : null,
     config,
   };
 

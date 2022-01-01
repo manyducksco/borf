@@ -1,4 +1,5 @@
 const { Command, print, println } = require("@ratwizard/cli");
+const dedent = require("dedent");
 
 module.exports = new Command()
   .option("no-browser", {
@@ -185,11 +186,30 @@ module.exports = new Command()
       // --- Write Static Files --- //
 
       const srcStaticDir = path.join(config.path.app, "static");
+      const bundlePath = bundleOut.path.replace(publicDir, "");
+      const stylesPath = stylesOut
+        ? stylesOut.path.replace(publicDir, "")
+        : null;
+
       const context = {
-        bundlePath: bundleOut.path.replace(publicDir, ""),
-        stylesPath: stylesOut ? stylesOut.path.replace(publicDir, "") : null,
+        scripts: dedent`
+          <script>
+            const events = new EventSource("/_bundle");
+
+            events.addEventListener("message", (message) => {
+              window.location.reload();
+            });
+
+            window.addEventListener("beforeunload", () => {
+              events.close();
+            });
+          </script>
+          <script src="${bundlePath}"></script>
+        `,
+        styles: stylesPath
+          ? `<link rel="stylesheet" href="${stylesPath}">`
+          : null,
         config,
-        devMode: true,
       };
 
       fs.readdirSync(srcStaticDir).forEach((file) => {

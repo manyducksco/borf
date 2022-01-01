@@ -322,7 +322,7 @@ class SuiteView extends Component {
       s.views.find((v) => v.name === view.get())
     );
     const attrs = makeState([], {
-      settable: true,
+      settable: false,
       methods: {
         push: (current, value) => [...current, value],
         clear: () => [],

@@ -22,20 +22,6 @@ app.service("testbed", TestBed);
 app.route(
   "*",
   class extends Component {
-    // TODO: Implement preload callback for route components
-    preload($, done) {
-      // Special hook for route components.
-      // If it returns an $(element), that element will be displayed until done() is called.
-      // If it doesn't return anything, the previous route will stay loaded until done() is called.
-      // Can be used to preload data before finally mounting the component.
-
-      setTimeout(() => {
-        done();
-      }, 300);
-
-      return $("span")("Loading...");
-    }
-
     createElement($) {
       return $("div", { class: styles.layout })($(Sidebar), $(Content));
     }

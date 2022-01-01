@@ -35,6 +35,7 @@ module.exports = new Command()
     const express = require("express");
     const esbuild = require("esbuild");
     const chokidar = require("chokidar");
+    const mustache = require("mustache");
     const { makeState } = require("@manyducksco/woof/node");
     const getProjectConfig = require("../../tools/getProjectConfig");
 
@@ -166,6 +167,69 @@ module.exports = new Command()
       outfile: path.join(bundleDir, "index.js"),
     });
 
+    const viewsBundle = await esbuild.build({
+      entryPoints: [path.join(webRunnerDir, "views.js")],
+      bundle: true,
+      sourcemap: true,
+      target: "es2018",
+      format: "esm",
+      incremental: true,
+      external: ["@manyducksco/woof", "@manyducksco/woof/test", "$bundle"],
+      outfile: path.join(bundleDir, "views/index.js"),
+    });
+
+    function buildStatic() {
+      const context = {
+        scripts: `
+          <script>
+            const events = new EventSource("/events");
+
+            events.addEventListener("message", (message) => {
+              window.location.reload();
+            });
+
+            window.addEventListener("beforeunload", () => {
+              events.close();
+            });
+          </script>
+
+          <script type="importmap">
+            {
+              "imports": {
+                "$bundle": "../suites.bundle.js",
+                "@manyducksco/woof": "../../../node_modules/@manyducksco/woof/dist/woof.js",
+                "@manyducksco/woof/test": "../../../node_modules/@manyducksco/woof/dist/woof.test.js"
+              }
+            }
+          </script>
+          <script src="../es-module-shims.js"></script>
+          <script type="module" src="./index.js"></script>
+        `,
+        styles: null,
+        config,
+      };
+
+      fs.readdirSync(srcStaticDir).forEach((file) => {
+        const fullPath = path.join(srcStaticDir, file);
+
+        if (file.endsWith(".mustache")) {
+          const name = path.basename(file, ".mustache");
+          const outPath = path.join(viewStaticDir, name);
+          const template = fs.readFileSync(fullPath, "utf8");
+          const rendered = mustache.render(template, context);
+
+          fs.writeFileSync(outPath, rendered);
+        } else {
+          const outPath = path.join(viewStaticDir, file);
+
+          fs.copySync(fullPath, outPath, { overwrite: true });
+        }
+      });
+    }
+
+    const srcStaticDir = path.join(config.path.app, "static");
+    const viewStaticDir = path.join(bundleDir, "views");
+
     const bundle = () => {
       imports = [];
       registrations = [];
@@ -176,6 +240,9 @@ module.exports = new Command()
       build();
       testBundle.rebuild();
       runnerBundle.rebuild();
+      viewsBundle.rebuild();
+
+      buildStatic();
 
       println(
         `finished in <green>${
@@ -187,6 +254,8 @@ module.exports = new Command()
     };
 
     watcher.on("all", bundle);
+
+    buildStatic();
 
     /*==========================*\
     ||          Server          ||
@@ -232,7 +301,9 @@ module.exports = new Command()
     app.get("*", (req, res, next) => {
       const extname = path.extname(req.path);
 
-      if (extname === "") {
+      console.log(req.path);
+
+      if (extname === "" && !req.path.startsWith("/views")) {
         res.sendFile(path.join(bundleDir, "index.html"));
       } else {
         next();
