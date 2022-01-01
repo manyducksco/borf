@@ -1,5 +1,5 @@
 import { Component, Styles, makeState } from "@manyducksco/woof";
-import { wrap } from "@manyducksco/woof/test";
+import { wrapComponent } from "@manyducksco/woof/test";
 
 const styles = new Styles({
   content: {
@@ -243,7 +243,7 @@ class SuiteTests extends Component {
             );
           }
 
-          const createComponent = wrap(
+          const createComponent = wrapComponent(
             class extends Component {
               createElement($) {
                 return view.fn($, {
@@ -254,7 +254,7 @@ class SuiteTests extends Component {
                 });
               }
             }
-          ).create();
+          );
 
           const frag = new DocumentFragment();
           const node = createComponent();
