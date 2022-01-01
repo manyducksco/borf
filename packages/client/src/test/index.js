@@ -1,3 +1,4 @@
 export { suite } from "./suite";
-export { wrap } from "./wrap";
+export { wrapComponent } from "./wrapComponent";
+export { wrapService } from "./wrapService";
 export { MockHTTP } from "./MockHTTP";

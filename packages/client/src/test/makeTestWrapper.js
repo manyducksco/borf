@@ -1,23 +1,11 @@
 import { createMemoryHistory } from "history";
-import {
-  isComponent,
-  isFunction,
-  isNode,
-  isObject,
-} from "../_helpers/typeChecking";
-import { makeDolla } from "../main/dolla/Dolla";
-
+import { isFunction, isObject } from "../_helpers/typeChecking";
 import Debug from "../main/services/@debug";
 import HTTP from "../main/services/@http";
 import Router from "../main/services/@router";
 import Page from "../main/services/@page";
-import { makeState } from "../main/state/makeState";
 
-/**
- * Wraps a component or service inside a mock app container.
- *
- */
-export function wrap(object) {
+export function makeTestWrapper(init) {
   const _services = {};
   let setup = () => {};
 
@@ -62,37 +50,7 @@ export function wrap(object) {
 
     setup(getService);
 
-    if (isComponent(object)) {
-      let attributes = {};
-      let children = [];
-
-      if (isObject(args[0]) && !isNode(args[0])) {
-        attributes = args.shift();
-      }
-
-      children = [...args];
-
-      const $ = makeDolla({
-        getService,
-        match: {
-          route: makeState("test", { settable: false }),
-          params: makeState({}, { settable: false }),
-          wildcard: makeState(null, { settable: false }),
-        },
-      });
-
-      return new object(getService, $, attributes, children);
-    } else if (object.isService) {
-      const service = new object(getService);
-
-      if (isFunction(service._created)) {
-        service._created();
-      }
-
-      return service;
-    } else {
-      throw new Error(`Expected a Component or Service. Received: ${object}`);
-    }
+    return init(getService, ...args);
   }
 
   /**
