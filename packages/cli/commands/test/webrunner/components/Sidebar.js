@@ -39,7 +39,7 @@ export default class Sidebar extends Component {
     return $("div")(
       { class: styles.sidebar },
       $("ul")(
-        $.map(
+        $.each(
           testbed.suites,
           (suite) => suite.path,
           (suite) => {
@@ -61,7 +61,7 @@ export default class Sidebar extends Component {
               ),
               $.if(suite.views.length > 0, () =>
                 $("ul")(
-                  $.map(
+                  $.each(
                     suite.views,
                     (view) => view.name,
                     (view) =>

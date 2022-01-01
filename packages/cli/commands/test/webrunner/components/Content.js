@@ -126,14 +126,14 @@ class SuiteTests extends Component {
         this.hasResults,
         () =>
           $("div")(
-            $.map(
+            $.each(
               this.results,
               (result) => result.name,
               (result) => {
                 return $("div")(
                   $("h2")(result.name),
                   $("ul", { style: { listStyle: "none" } })(
-                    $.map(
+                    $.each(
                       result.meta,
                       (m) => m.label,
                       (m) =>
@@ -144,7 +144,7 @@ class SuiteTests extends Component {
                           $("span", { class: styles.testMetaText })(m.label)
                         )
                     ),
-                    $.map(
+                    $.each(
                       result.assertions,
                       (a) => a.label,
                       (a) =>
@@ -357,7 +357,7 @@ class SuiteView extends Component {
           ),
           $.if(hasAttrs, () => {
             return $("div", { class: styles.viewAttrs })(
-              $.map(
+              $.each(
                 attrs,
                 (attr) => attr.name,
                 (attr) => $(ViewAttr)({ attr })
