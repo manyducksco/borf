@@ -1,13 +1,12 @@
 import HTTP from "../main/services/@http";
 import { createRouter } from "../_helpers/routing";
 import { flatMap } from "../_helpers/flatMap";
-import { isFunction } from "../_helpers/typeChecking";
 
 /**
  * Creates a mocked HTTP service with custom responses defined by you.
  *
  * @example
- * import { MockHTTP, wrap } from "@manyducksco/woof/test";
+ * import { MockHTTP, wrapComponent } from "@manyducksco/woof/test";
  *
  * // Create a mock HTTP instance
  * const http = new MockHTTP();
@@ -20,7 +19,7 @@ import { isFunction } from "../_helpers/typeChecking";
  * });
  *
  * // Add mocked http service to a wrapped service or component
- * const createComponent = wrap(ExampleComponent).service("@http", http.service);
+ * const createComponent = wrapComponent(ExampleComponent).service("@http", http.service);
  */
 export class MockHTTP {
   #router = createRouter();
