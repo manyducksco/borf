@@ -19,7 +19,7 @@ export function getProperty(object, key) {
     let value = object;
 
     while (parsed.length > 0) {
-      part = parsed.shift();
+      const part = parsed.shift();
 
       if (value != null) {
         value = value[part];

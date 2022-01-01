@@ -91,10 +91,13 @@ export class $Element extends $Node {
     this.#applyAttributes();
     this.#applyStyles();
     this.#applyClasses();
+    this.#attachEvents();
   }
 
   _connected() {
-    this.#attachEvents();
+    if (this.attributes.ref) {
+      this.attributes.ref.set(this.$element);
+    }
   }
 
   _disconnected() {

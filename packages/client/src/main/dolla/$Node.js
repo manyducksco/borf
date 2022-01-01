@@ -14,8 +14,12 @@ export class $Node {
     return document.createTextNode("");
   }
 
-  watchState(state, callback) {
+  watchState(state, callback, options = {}) {
     this.#watchers.push(state.watch(callback));
+
+    if (options.immediate) {
+      callback(state.get());
+    }
   }
 
   $connect(parent, after = null) {
