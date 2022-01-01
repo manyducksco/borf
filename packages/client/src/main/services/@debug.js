@@ -1,31 +1,47 @@
+import ColorHash from "color-hash";
 import { Service } from "../Service.js";
+import { makeState } from "../state/makeState.js";
 
 /**
  * Debug logging service used internally and exposed for use in apps.
  */
 export default class Debug extends Service {
-  #filter = "*,-woof:*";
+  filter = makeState();
+
   #matchers = {
     positive: [],
     negative: [],
   };
   #transports = [new ConsoleTransport()];
 
-  _created(options = {}) {
-    this.setFilter(options.filter || this.#filter);
+  /**
+   * Creates a new logger channel prefixed with a name.
+   */
+  channel(name) {
+    if (name.includes(",")) {
+      throw new Error(`Channel names cannot contain commas. Received: ${name}`);
+    }
+
+    return {
+      log: (...args) => {
+        if (this.#matchFilter(this.#matchers, name)) {
+          for (const transport of this.#transports) {
+            transport.receive(name, ...args);
+          }
+        }
+      },
+    };
   }
 
-  /**
-   * Sets the filter string.
-   *
-   * @example
-   * .setFilter("*,-woof:*")
-   * .setFilter("*")
-   * .setFilter("woof:http,messages,-auth:*")
-   *
-   * @param filter - Comma separated list of names. Ones starting in - will hide channels with matching names.
-   */
-  setFilter(filter) {
+  _created(options = {}) {
+    this.filter.watch((value) => {
+      this.#matchers = this.#parseFilter(value);
+    });
+
+    this.filter.set(options.filter || "*,-woof:*");
+  }
+
+  #parseFilter(filter) {
     const matchers = {
       positive: [],
       negative: [],
@@ -53,31 +69,11 @@ export default class Debug extends Service {
       }
     }
 
-    this.#filter = filter;
-    this.#matchers = matchers;
+    return matchers;
   }
 
-  /**
-   * Creates a new logger channel prefixed with a name.
-   */
-  channel(name) {
-    if (name.includes(",")) {
-      throw new Error(`Channel names cannot contain commas. Received: ${name}`);
-    }
-
-    return {
-      log: (...args) => {
-        if (this.#matchFilter(name)) {
-          for (const transport of this.#transports) {
-            transport.receive(name, ...args);
-          }
-        }
-      },
-    };
-  }
-
-  #matchFilter(name) {
-    const { positive, negative } = this.#matchers;
+  #matchFilter(matchers, name) {
+    const { positive, negative } = matchers;
 
     // Matching any negative matcher disqualifies.
     if (negative.some((fn) => fn(name))) {
@@ -94,7 +90,16 @@ export default class Debug extends Service {
 }
 
 class ConsoleTransport {
+  hash = new ColorHash({
+    lightness: [0.6, 0.7],
+    saturation: [0.6, 0.7],
+  });
+
   receive(name, ...args) {
-    console.log(`%c${name}`, "color: orange; font-weight: bold;", ...args);
+    console.log(
+      `%c[${name}]`,
+      `color:${this.hash.hex(name)};font-weight:bold`,
+      ...args
+    );
   }
 }

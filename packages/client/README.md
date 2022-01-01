@@ -46,11 +46,13 @@ npm i @manyducksco/woof
 Move render/update logic into an `@engine` service. The `@engine` service provides the function that gets passed to createElement. It also provides callbacks for Components to handle the logic behind their lifecycle methods.
 
 Methods implemented by `@engine`:
+
 - create(component) // calls .createElement, passing the template function and receiving return value.
 - connect(component, parent, after)
 - disconnect(component, parent, after)
 
 Problems with this:
+
 - Component extends $Node but it needs to be its own thing so various @engines can handle it.
 
 #### Simplify `@http` service
@@ -198,7 +200,7 @@ const handler = ($, { app, http, next }) => {
   );
 
   // lists
-  const list = $.map(
+  const list = $.each(
     items,
     (item) => item.id,
     (item) => {
@@ -212,7 +214,7 @@ const handler = ($, { app, http, next }) => {
       other: "4",
     },
     $("ul")(
-      $.map(
+      $.each(
         something,
         (x) => x.id,
         (x) => $("li")({})

@@ -1,6 +1,6 @@
 import { createBrowserHistory, createHashHistory } from "history";
 import { makeState } from "../state/makeState";
-import { createRouter } from "../../_helpers/routing";
+import { createRouter, joinPath } from "../../_helpers/routing";
 import { Service } from "../Service";
 import { isNumber, isString } from "../../_helpers/typeChecking";
 import catchLinks from "../../_helpers/catchLinks";
@@ -36,16 +36,20 @@ export default class Router extends Service {
     this.#history.listen(this.#onRouteChanged.bind(this));
 
     catchLinks(options.root, (anchor) => {
-      const href = anchor.getAttribute("href");
-      this.#history.push(href);
+      let href = anchor.getAttribute("href");
 
-      // TODO: Handle relative links
+      if (!/^https?:\/\/|^\//.test(href)) {
+        href = joinPath(window.location.pathname, href);
+      }
+
+      this.#debug.log("caught link click: " + href);
+
+      this.#history.push(href);
     });
   }
 
   _connected() {
-    // Do initial match
-    this.#onRouteChanged(this.#history);
+    this.#onRouteChanged(this.#history); // Do initial match when app starts.
   }
 
   /**

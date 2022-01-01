@@ -19,7 +19,6 @@ export class $Outlet extends $Node {
   #dolla;
   #router = createRouter();
   #path;
-  #parentMatch;
   #match = {
     route: makeState(undefined),
     path: makeState(undefined),
@@ -37,7 +36,6 @@ export class $Outlet extends $Node {
 
     this.createElement = makeRender(element);
 
-    this.#parentMatch = match;
     this.#path = match.path.map((value) => value);
     this.#dolla = makeDolla({
       getService,

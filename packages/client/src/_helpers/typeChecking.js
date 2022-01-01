@@ -15,11 +15,10 @@ export const isObject = (value) =>
 
 export const isString = (value) => typeof value === "string";
 
-export const isDolla = (value) => isFunction(value) && value.$isDolla == true;
+export const isDolla = (value) => value && value.$isDolla == true;
 
-export const isNode = (value) => isObject(value) && value.$isNode == true;
+export const isNode = (value) => value && value.$isNode == true;
 
-export const isComponent = (value) =>
-  isFunction(value) && value.isComponent == true;
+export const isComponent = (value) => value && value.isComponent == true;
 
-export const isState = (value) => isObject(value) && value.isState;
+export const isState = (value) => value && value.isState;

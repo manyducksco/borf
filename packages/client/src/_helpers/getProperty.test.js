@@ -2,35 +2,12 @@ import { getProperty } from "./getProperty";
 
 test("reads nested properties from an object or array", () => {
   const data = {
-    name: {
-      first: "Frank",
-      last: "Sinatra",
-    },
+    name: { first: "Frank", last: "Sinatra" },
     friends: [
-      {
-        name: {
-          first: "Dean",
-          last: "Martin",
-        },
-      },
-      {
-        name: {
-          first: "Sammy",
-          last: "Davis Jr.",
-        },
-      },
-      {
-        name: {
-          first: "Peter",
-          last: "Lawford",
-        },
-      },
-      {
-        name: {
-          first: "Joey",
-          last: "Bishop",
-        },
-      },
+      { name: { first: "Dean", last: "Martin" } },
+      { name: { first: "Sammy", last: "Davis", suffix: "Jr." } },
+      { name: { first: "Peter", last: "Lawford" } },
+      { name: { first: "Joey", last: "Bishop" } },
     ],
   };
 

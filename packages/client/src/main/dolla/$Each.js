@@ -10,7 +10,7 @@ import { makeRender } from "./makeRender";
  * Removes old and adds new items without touching existing ones.
  * Re-renders existing items if the previous item with the same key is not equal to the new one.
  */
-export class $Map extends $Node {
+export class $Each extends $Node {
   source;
   getKey;
   createItem;

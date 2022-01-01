@@ -7,7 +7,7 @@ import {
 import { $Element } from "./$Element";
 import { $Fragment } from "./$Fragment";
 import { $If } from "./$If";
-import { $Map } from "./$Map";
+import { $Each } from "./$Each";
 import { $Outlet } from "./$Outlet";
 import { $Text } from "./$Text";
 import { $Watch } from "./$Watch";
@@ -78,8 +78,8 @@ export function makeDolla({ getService, match }) {
     return new $If(value, then, otherwise);
   };
 
-  $.map = function (items, keyer, create) {
-    return new $Map(items, keyer, create);
+  $.each = function (list, makeKey, makeItem) {
+    return new $Each(list, makeKey, makeItem);
   };
 
   $.watch = function (source, create) {

@@ -46,7 +46,7 @@ export function wrap(object) {
     services["@router"] = new Router(getService);
     services["@page"] = new Page(getService);
 
-    services["@debug"].setFilter("*");
+    services["@debug"].filter.set("*");
 
     for (const name in _services) {
       services[name] = _services[name](getService);

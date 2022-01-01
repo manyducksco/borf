@@ -226,7 +226,7 @@ class MapExample extends Component {
         )
       ),
 
-      $.map(
+      $.each(
         shoppingList,
         (x) => x, // use items as keys as they are already unique strings
         (item) =>
@@ -524,7 +524,7 @@ app.route(
 );
 
 app.setup((service) => {
-  service("@debug").setFilter("*");
+  service("@debug").filter.set("*");
 });
 
 app.connect("#app");

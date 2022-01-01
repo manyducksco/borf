@@ -12,10 +12,6 @@ import { isArray, isObject } from "./typeChecking";
  * };
  *
  * const firstName = getProperty(user, "name.first"); // firstName === "Bob"
- *
- * "friends[3].name.last" // also use array notation for getting array items at an index?
- * "[2].name" // when object is an array, this would get the property "name" of the item at index 2
- * // pass just a number to get an array index?
  */
 export function getProperty(object, key) {
   if (object != null) {
