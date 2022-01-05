@@ -1,13 +1,13 @@
 import { getProperty } from "./getProperty.js";
 import { mapState } from "./makeState.js";
 
-export function combineStates(...args) {
-  const combine = args.pop();
+export function mergeStates(...args) {
+  const merge = args.pop();
   const states = args;
 
   return {
     get(key) {
-      const value = combine(...states.map((state) => state.get()));
+      const value = merge(...states.map((state) => state.get()));
 
       if (key !== undefined) {
         return getProperty(value, key);

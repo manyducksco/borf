@@ -1,5 +1,7 @@
 # @woofjs/state
 
+> These functions are also exported from `@woofjs/app`. This package is a standalone version.
+
 ```
 $ npm i --dev @woofjs/state
 ```
@@ -178,60 +180,21 @@ A state produced by `.map()` supports everything aside from `.set()` (because ma
 [See test suite for code examples](./makeState.test.js)<br>
 [See implementation](./makeState.js)
 
-### `combineStates`
+### `mergeStates`
 
 ```js
-import { combineStates } from "@woofjs/state";
+import { mergeStates } from "@woofjs/state";
 
 const $isLoading = makeState(true);
 const $hasData = makeState(false);
 
-const $isReady = combineStates($isLoading, $hasData, (isLoading, hasData) => {
+const $isReady = mergeStates($isLoading, $hasData, (isLoading, hasData) => {
   return hasData && !isLoading;
 });
 ```
 
-[See test suite for code examples](./combineStates.test.js)<br>
-[See implementation](./combineStates.js)
-
-### `makeGetters` and `makeSetters`
-
-```js
-import { makeState, makeGetters, makeSetters } from "@woofjs/state";
-
-const $count = makeState(31);
-
-const getters = makeGetters($state, {
-  doubled: (current) => current * 2,
-  multiplied: (current, by) => current * by,
-});
-
-const setters = makeSetters($state, {
-  add: (current, value) => current + value,
-  subtract: (current, value) => current - value,
-  multiply: (current, value) => current * value,
-});
-
-getters.doubled(); // 62
-getters.multiplied(4); // 124
-
-setters.add(1).subtract(5).multiply(2); // setters are chainable
-
-$count.get(); // 54
-```
-
-When you need something spicier than `.get()` and `.set()` you can make a whole object full of customized ones and attach them to a state.
-
-These functions can be called two ways:
-
-- `makeGetters(state, getters)` to make a getters object that reads from a state
-- `makeGetters(getters)` to make a factory function that takes a state and returns getters for that state &ndash; like the function above but with `getters` already passed
-  <br><br>
-- `makeSetters(state, setters)` to make a setters object that writes to a state
-- `makeSetters(setters)` to make a factory function that takes a state and returns setters for that state &ndash; like the function above but with `setters` already passed
-
-[See test suite for code examples](./makeMethods.test.js)<br>
-[See implementation](./makeMethods.js)
+[See test suite for code examples](./mergeStates.test.js)<br>
+[See implementation](./mergeStates.js)
 
 ---
 

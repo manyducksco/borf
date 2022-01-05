@@ -9,7 +9,12 @@
     "build": "node scripts/build.js",
     "test": "jest"
   },
-  "keywords": [],
+  "keywords": [
+    "state",
+    "reactive",
+    "emitter",
+    "observable"
+  ],
   "author": "Tony McCoy <tony@manyducks.co>",
   "license": "MIT",
   "devDependencies": {

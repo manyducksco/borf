@@ -53,19 +53,10 @@ declare module "@woofjs/state" {
    */
   export function makeState<T>(initialValue?: T): State<T>;
 
-  type Getters<T> = {
-    [name in keyof T]: <V>(current: T, ...args: any[]) => V;
-  };
+  export function mergeStates(): State<any>;
 
-  export function makeGetters<T>(state: State<T>, getters: Getters<T>): Getters<T>;
-  export function makeGetters<T>(getters: Getters<T>): (state: State<T>) => Getters<T>;
-
-  type Setters<T> = {
-    [name in keyof T]: <V>(current: T, ...args: any[]) => V;
-  };
-
-  export function makeSetters<T>(state: State<T>, setters: Setters<T>): Setters<T>;
-  export function makeSetters<T>(setters: Setters<T>): (state: State<T>) => Setters<T>;
-
-  export function combineStates(): State<any>;
+  /**
+   * Determines whether or not an object is a state.
+   */
+  export function isState(value: unknown): boolean;
 }
