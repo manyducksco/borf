@@ -1,7 +1,7 @@
 {
   "name": "@woofjs/state",
-  "version": "0.1.0",
-  "description": "",
+  "version": "0.1.1",
+  "description": "Reactive state for Woof and beyond.",
   "main": "dist/state.node.js",
   "module": "dist/state.js",
   "types": "types.d.ts",
@@ -15,8 +15,18 @@
     "emitter",
     "observable"
   ],
+  "exports": {
+    ".": {
+      "require": "./dist/state.node.js",
+      "import": "./dist/state.js"
+    }
+  },
   "author": "Tony McCoy <tony@manyducks.co>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/woofjs/state"
+  },
   "devDependencies": {
     "es-jest": "^1.5.0",
     "esbuild": "^0.14.10",
