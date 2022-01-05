@@ -62,7 +62,7 @@ export function makeState(initialValue) {
         // Track changes to this particular key and only fire when its value changes.
         let previous = undefined;
 
-        fn = callback;
+        let fn = callback;
         callback = (value) => {
           value = getProperty(value, key);
 
@@ -97,7 +97,7 @@ export function makeState(initialValue) {
       }
 
       if (key) {
-        fn = transform;
+        let fn = transform;
         transform = (value) => {
           return fn(getProperty(value, key));
         };
@@ -158,7 +158,7 @@ export function mapState(source, transform) {
       if (key) {
         let previous = undefined;
 
-        fn = callback;
+        let fn = callback;
         callback = (value) => {
           value = getProperty(value, key);
 
@@ -187,7 +187,7 @@ export function mapState(source, transform) {
       }
 
       if (key) {
-        fn = transform;
+        let fn = transform;
         transform = (value) => {
           return fn(getProperty(value, key));
         };
