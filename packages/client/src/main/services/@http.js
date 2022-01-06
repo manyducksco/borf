@@ -1,62 +1,67 @@
 import { isFunction, isObject, isString } from "../../_helpers/typeChecking.js";
-import { Service } from "../Service.js";
+import { makeService } from "../makeService.js";
 import queryString from "query-string";
 
-export default class HTTP extends Service {
-  #middleware = [];
-  #fetch;
-  #debug;
-  #requestId = 0;
+const HTTPService = makeService((self) => {
+  self.debug.label = "woof:@http";
 
-  _created(options = {}) {
-    this.#debug = this.service("@debug").channel("woof:http");
+  const _middleware = [];
+  let fetch;
+  let requestId = 0;
 
+  self.created((options) => {
     if (options.fetch) {
-      this.#fetch = options.fetch;
+      fetch = options.fetch;
     }
-  }
+  });
 
-  request(method, url, ...middleware) {
+  function request(method, url) {
     return new HTTPRequest({
-      id: ++this.#requestId,
+      id: ++requestId,
       method,
       url,
-      middleware: [...middleware, ...this.#middleware],
-      fetch: this.#fetch || window.fetch.bind(window),
-      debug: this.#debug,
+      middleware: _middleware,
+      fetch: fetch || window.fetch.bind(window),
+      debug: self.debug,
     });
   }
 
-  use(...middleware) {
-    this.#middleware.push(...middleware);
+  return {
+    request,
 
-    return this;
-  }
+    use(...middleware) {
+      _middleware.push(...middleware);
 
-  get(url, ...middleware) {
-    return this.request("get", url, ...middleware);
-  }
+      return this;
+    },
 
-  put(url, ...middleware) {
-    return this.request("put", url, ...middleware);
-  }
+    get(url) {
+      return request("get", url);
+    },
 
-  patch(url, ...middleware) {
-    return this.request("patch", url, ...middleware);
-  }
+    put(url) {
+      return request("put", url);
+    },
 
-  post(url, ...middleware) {
-    return this.request("post", url, ...middleware);
-  }
+    patch(url) {
+      return request("patch", url);
+    },
 
-  delete(url, ...middleware) {
-    return this.request("delete", url, ...middleware);
-  }
+    post(url) {
+      return request("post", url);
+    },
 
-  head(url, ...middleware) {
-    return this.request("head", url, ...middleware);
-  }
-}
+    delete(url) {
+      return request("delete", url);
+    },
+
+    head(url) {
+      return request("head", url);
+    },
+  };
+});
+
+export default HTTPService;
 
 export class HTTPRequest {
   #id;

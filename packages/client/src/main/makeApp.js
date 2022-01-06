@@ -1,13 +1,14 @@
 import { createHashHistory, createBrowserHistory } from "history";
 import { makeRouter } from "@woofjs/router";
-import { isDolla, isFunction, isNode, isString } from "../_helpers/typeChecking";
-import { makeDolla } from "./dolla/Dolla";
+import { isFunction, isString, isService, isComponent } from "../_helpers/typeChecking";
+import { makeDolla } from "./dolla/makeDolla";
 import catchLinks from "../_helpers/catchLinks";
 import { joinPath } from "../_helpers/joinPath";
+import { makeComponent } from "./makeComponent.js";
 
-import Debug from "./services/@debug";
-import HTTP from "./services/@http";
-import Page from "./services/@page";
+import DebugService from "./services/@debug";
+import HTTPService from "./services/@http";
+import PageService from "./services/@page";
 
 export function makeApp(options = {}) {
   const router = makeRouter();
@@ -53,6 +54,14 @@ export function makeApp(options = {}) {
      * @param component - Component to display when route matches.
      */
     route(path, component) {
+      if (isFunction(component)) {
+        component = makeComponent(component);
+      }
+
+      if (!isComponent(component)) {
+        throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
+      }
+
       router.on(path, { component });
 
       return methods;
@@ -63,10 +72,14 @@ export function makeApp(options = {}) {
      * Services and Components using `this.service(name)`.
      *
      * @param name - Unique string to name this service.
-     * @param service - Service class. One instance will be created and shared.
+     * @param service - A service. One instance will be created and shared.
      * @param options - Object to be passed to service.created() function when called.
      */
     service(name, service, options) {
+      if (!isService(service)) {
+        throw new TypeError(`Expected a service. Got: ${service}`);
+      }
+
       if (!services[name]) {
         services[name] = {
           template: service,
@@ -118,13 +131,11 @@ export function makeApp(options = {}) {
 
       for (const name in services) {
         const service = services[name];
-        const instance = new service.template(getService);
+        const instance = service.template.create(getService);
 
         service.instance = instance;
 
-        if (isFunction(instance._created)) {
-          instance._created(service.options);
-        }
+        instance._created(service.options);
       }
 
       debug = getService("@debug").channel("woof:app");
@@ -173,7 +184,7 @@ export function makeApp(options = {}) {
    */
   function getService(name) {
     if (services[name]) {
-      return services[name].instance;
+      return services[name].instance.exports;
     }
 
     throw new Error(`Service is not registered in this app. Received: ${name}`);
@@ -186,12 +197,12 @@ export function makeApp(options = {}) {
     const matched = router.match(location.pathname + location.search);
 
     if (matched) {
-      const page = getService("@page");
-      const routeChanged = matched.route !== page.$route.get("route");
+      const { $route } = getService("@page");
+      const routeChanged = matched.route !== $route.get("route");
 
       // Top level route details are stored on @page, where they can be read by apps and services.
       // Nested route info is found in `this.$route` in components.
-      page.$route.set((current) => {
+      $route.set((current) => {
         current.path = matched.path;
         current.route = matched.route;
         current.params = matched.params;
@@ -200,8 +211,6 @@ export function makeApp(options = {}) {
       });
 
       if (routeChanged) {
-        const node = dolla(matched.props.component)();
-
         // Mounting is deferred in case the component implements a `preload` method.
         const mount = (newNode) => {
           debug.log("mounting node", newNode);
@@ -212,33 +221,11 @@ export function makeApp(options = {}) {
           mounted = newNode;
           mounted.$connect(outlet);
 
-          mounted.$element.dataset.appRoute = page.$route.get("route");
+          mounted.$element.dataset.appRoute = $route.get("route");
         };
 
-        // Preloading allows components to get their shit together asynchronously before being rendered.
-        // Preload can return a dolla element to display until `done` is called, otherwise the previous
-        // route is left up until preload finishes.
-        if (isFunction(node.preload)) {
-          const done = () => mount(node);
-
-          let tempNode = node.preload(dolla, done);
-
-          if (tempNode) {
-            if (isDolla(tempNode)) {
-              tempNode = tempNode();
-            }
-
-            if (isNode(tempNode)) {
-              mount(tempNode);
-            } else {
-              throw new Error(
-                `Expected preload function to return a node to render, or return undefined. Received: ${tempNode}`
-              );
-            }
-          }
-        } else {
-          mount(node);
-        }
+        const component = matched.props.component.create(getService, dolla, {}, [], $route);
+        component.load(mount);
       }
     } else {
       console.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
@@ -249,9 +236,9 @@ export function makeApp(options = {}) {
   // Built-in services
   ////
 
-  methods.service("@debug", Debug, options.debug);
-  methods.service("@http", HTTP);
-  methods.service("@page", Page, { history });
+  methods.service("@debug", DebugService, options.debug);
+  methods.service("@http", HTTPService);
+  methods.service("@page", PageService, { history });
 
   return methods;
 }

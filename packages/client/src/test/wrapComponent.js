@@ -1,5 +1,5 @@
 import { isComponent, isNode, isObject } from "../_helpers/typeChecking";
-import { makeDolla } from "../main/dolla/Dolla";
+import { makeDolla } from "../main/dolla/makeDolla";
 import { makeState } from "@woofjs/state";
 import { makeTestWrapper } from "./makeTestWrapper";
 

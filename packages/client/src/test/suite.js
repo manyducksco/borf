@@ -1,6 +1,6 @@
 import { deepEqual } from "../_helpers/deepEqual";
 import { makeState } from "@woofjs/state";
-import { makeDolla } from "../main/dolla/Dolla";
+import { makeDolla } from "../main/dolla/makeDolla";
 import { makeTestWrapper } from "./makeTestWrapper";
 
 /**

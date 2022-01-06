@@ -1,9 +1,10 @@
 import { makeState } from "@woofjs/state";
 import { makeRouter } from "@woofjs/router";
-import { $Node } from "./$Node";
-import { isFunction, isNode } from "../../_helpers/typeChecking";
-import { makeDolla } from "./Dolla";
-import { makeRender } from "./makeRender";
+import { $Node } from "./$Node.js";
+import { isFunction, isNode, isComponent } from "../../_helpers/typeChecking.js";
+import { makeDolla } from "./makeDolla.js";
+import { makeRender } from "./makeRender.js";
+import { makeComponent } from "../makeComponent.js";
 
 /**
  * Creates a router outlet for a nested route. Multiple routes
@@ -45,6 +46,14 @@ export class $Outlet extends $Node {
   }
 
   route(route, component) {
+    if (isFunction(component)) {
+      component = makeComponent(component);
+    }
+
+    if (!isComponent(component)) {
+      throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
+    }
+
     this.#router.on(route, { component });
 
     return this;

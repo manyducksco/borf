@@ -1,4 +1,4 @@
-import { isComponent, isNode, isObject, isString } from "../../_helpers/typeChecking";
+import { isComponent, isFunction, isNode, isObject, isString } from "../../_helpers/typeChecking";
 import { $Element } from "./$Element";
 import { $Fragment } from "./$Fragment";
 import { $If } from "./$If";
@@ -53,7 +53,11 @@ export function makeDolla({ getService, $route }) {
 
       switch (elementType) {
         case "component":
-          return new element(getService, $, attributes, children, $route);
+          if (isFunction(element.create)) {
+            return element.create(getService, $, attributes, children, $route); // Function components
+          } else {
+            return new element(getService, $, attributes, children, $route); // Class components
+          }
         case "element":
           return new $Element(element, attributes, children);
         case "fragment":
@@ -61,7 +65,9 @@ export function makeDolla({ getService, $route }) {
       }
     }
 
-    Dolla.$isDolla = true;
+    Object.defineProperty(Dolla, "isDolla", {
+      get: () => true,
+    });
 
     return Dolla;
   }

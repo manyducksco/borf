@@ -1,92 +1,97 @@
 import { makeState } from "@woofjs/state";
+import { makeService } from "../makeService.js";
 import ColorHash from "color-hash";
-import { Service } from "../Service.js";
 
 /**
  * Debug logging service used internally and exposed for use in apps.
  */
-export default class Debug extends Service {
-  filter = makeState();
+const DebugService = makeService((self) => {
+  self.debug.label = "woof:@debug";
 
-  #matchers = {
+  const $filter = makeState();
+
+  let matchers = {
     positive: [],
     negative: [],
   };
-  #transports = [new ConsoleTransport()];
+  let transports = [new ConsoleTransport()];
 
-  /**
-   * Creates a new logger channel prefixed with a name.
-   */
-  channel(name) {
-    if (name.includes(",")) {
-      throw new Error(`Channel names cannot contain commas. Received: ${name}`);
-    }
+  self.watchState($filter, (current) => {
+    matchers = parseFilter(current);
+  });
 
-    return {
-      log: (...args) => {
-        if (this.#matchFilter(this.#matchers, name)) {
-          for (const transport of this.#transports) {
-            transport.receive(name, ...args);
-          }
-        }
-      },
-    };
-  }
+  self.created((options) => {
+    $filter.set(options.filter || "*,-woof:*");
+  });
 
-  _created(options = {}) {
-    this.filter.watch((value) => {
-      this.#matchers = this.#parseFilter(value);
-    });
+  return {
+    $filter,
 
-    this.filter.set(options.filter || "*,-woof:*");
-  }
-
-  #parseFilter(filter) {
-    const matchers = {
-      positive: [],
-      negative: [],
-    };
-    const parts = filter
-      .split(",")
-      .map((p) => p.trim())
-      .filter((p) => p !== "");
-
-    for (const part of parts) {
-      const section = part.startsWith("-") ? "negative" : "positive";
-
-      if (part === "*") {
-        matchers[section].push(function (value) {
-          return true;
-        });
-      } else if (part.endsWith("*")) {
-        matchers[section].push(function (value) {
-          return value.startsWith(part.slice(1, part.length - 1));
-        });
-      } else {
-        matchers[section].push(function (value) {
-          return value === part.slice(1, part.length - 1);
-        });
+    channel(name) {
+      if (name.includes(",")) {
+        throw new Error(`Channel names cannot contain commas. Received: ${name}`);
       }
-    }
 
-    return matchers;
+      return {
+        log: (...args) => {
+          if (matchFilter(matchers, name)) {
+            for (const transport of transports) {
+              transport.receive(name, ...args);
+            }
+          }
+        },
+      };
+    },
+  };
+});
+
+export default DebugService;
+
+function parseFilter(filter) {
+  const matchers = {
+    positive: [],
+    negative: [],
+  };
+  const parts = filter
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p !== "");
+
+  for (const part of parts) {
+    const section = part.startsWith("-") ? "negative" : "positive";
+
+    if (part === "*") {
+      matchers[section].push(function (value) {
+        return true;
+      });
+    } else if (part.endsWith("*")) {
+      matchers[section].push(function (value) {
+        return value.startsWith(part.slice(1, part.length - 1));
+      });
+    } else {
+      matchers[section].push(function (value) {
+        return value === part.slice(1, part.length - 1);
+      });
+    }
   }
 
-  #matchFilter(matchers, name) {
-    const { positive, negative } = matchers;
+  return matchers;
+}
 
-    // Matching any negative matcher disqualifies.
-    if (negative.some((fn) => fn(name))) {
-      return false;
-    }
+function matchFilter(matchers, name) {
+  const { positive, negative } = matchers;
 
-    // Matching at least one positive matcher is required if any are specified.
-    if (positive.length > 0 && !positive.some((fn) => fn(name))) {
-      return false;
-    }
-
-    return true;
+  // Matching any negative matcher disqualifies.
+  if (negative.some((fn) => fn(name))) {
+    return false;
   }
+
+  // Matching at least one positive matcher is required if any are specified.
+  if (positive.length > 0 && !positive.some((fn) => fn(name))) {
+    return false;
+  }
+
+  return true;
 }
 
 class ConsoleTransport {

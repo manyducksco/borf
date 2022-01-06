@@ -60,29 +60,29 @@ const attrMap = {
 // One base type - DollaElement
 // Separate function for rendering that receives the element
 
-function renderToDOM(component) {
-  const $ = makeDolla();
-  const el = component.createElement($);
-}
+// function renderToDOM(component) {
+//   const $ = makeDolla();
+//   const el = component.createElement($);
+// }
 
-function renderToString() {}
+// function renderToString() {}
 
-// Returns the root DOM node
-const node = renderToDOM(SomeElement);
+// // Returns the root DOM node
+// const node = renderToDOM(SomeElement);
 
-// Returns an HTML string (sans event listeners)
-const html = renderToString(SomeElement);
+// // Returns an HTML string (sans event listeners)
+// const html = renderToString(SomeElement);
 
-// Some kind of theoretical binding to a native UI library, a la React Native
-const native = renderToNative(SomeElement);
+// // Some kind of theoretical binding to a native UI library, a la React Native
+// const native = renderToNative(SomeElement);
 
-class Label extends Component {}
+// class Label extends Component {}
 
-class NativeElement extends Component {
-  render($) {
-    return $(Label)({ text: "THIS IS TEXT" });
-  }
-}
+// class NativeElement extends Component {
+//   render($) {
+//     return $(Label)({ text: "THIS IS TEXT" });
+//   }
+// }
 
 export class $Element extends $Node {
   tag;

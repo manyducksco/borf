@@ -1,4 +1,4 @@
-import { makeApp, makeState, Service, Component, Styles } from "./dist/woof.js";
+import { makeApp, makeState, makeService, makeComponent, Component, Styles } from "./dist/woof.js";
 
 const app = makeApp({ hash: true });
 
@@ -69,52 +69,69 @@ class ToggleExample extends Component {
 ||    Counter with Service   ||
 \*===========================*/
 
-class Counter extends Service {
-  $current = makeState(0);
+// class Counter extends Service {
+//   $current = makeState(0);
 
-  _created() {
+//   _created() {
+//     setInterval(() => {
+//       this.$current.set((current) => current + 1);
+//     }, 1000);
+//   }
+
+//   reset() {
+//     this.$current.set(0);
+//   }
+// }
+
+const CounterService = makeService((self) => {
+  self.name = "CounterService"; // TODO: Default this to the name the service is registered under
+
+  const $current = makeState(0);
+
+  self.connected(() => {
     setInterval(() => {
-      this.$current.set((current) => current + 1);
+      self.debug.log("tick", Date.now());
+      $current.set((current) => current + 1);
     }, 1000);
-  }
+  });
 
-  reset() {
-    this.$current.set(0);
-  }
-}
+  return {
+    $current,
 
-app.service("counter", Counter);
+    reset() {
+      $current.set(0);
+    },
+  };
+});
+
+app.service("counter", CounterService);
 
 /**
  * Component with controls and a mapped label based on the state inside the service.
  */
-class CounterExample extends Component {
-  createElement($) {
-    const counter = this.service("counter");
-    const label = counter.$current.map((n) => ` the number is: ${n}`);
+const CounterExample = makeComponent(($, self) => {
+  const counter = self.getService("counter");
+  const label = counter.$current.map((n) => ` the number is: ${n}`);
 
-    return $("div")(
-      $("button")(
-        {
-          onclick: () => counter.reset(),
-        },
-        "Reset"
-      ),
-      $.text(label)
-    );
-  }
-}
+  return $("div")($("button")({ onclick: () => counter.reset() }, "Reset"), $.text(label));
+});
 
 /**
  * Second component with a view only. Displays the same information from the same service.
  */
-class CounterViewLabel extends Component {
-  createElement($) {
-    const counter = this.service("counter");
+// class CounterViewLabel extends Component {
+//   createElement($) {
+//     const counter = this.service("counter");
 
-    return $("h1")($.text(counter.$current));
-  }
-}
+//     return $("h1")($.text(counter.$current));
+//   }
+// }
+
+const CounterViewLabel = makeComponent(($, self) => {
+  const { $current } = self.getService("counter");
+
+  return $("h1")($.text($current));
+});
 
 /*===========================*\
 ||   Conditional Rendering   ||
@@ -273,57 +290,47 @@ class TwoWayBindExample extends Component {
 ||        HTTP Request       ||
 \*===========================*/
 
-class HTTPRequestExample extends Component {
-  $loading = makeState(false);
-  $image = makeState(null);
+// class HTTPRequestExample extends Component {
+//   $loading = makeState(false);
+//   $image = makeState(null);
 
-  _connected() {
-    this.refresh();
-  }
+//   _connected() {
+//     this.refresh();
+//   }
 
-  refresh() {
-    this.$loading.set(true);
-    this.service("@http")
-      .get("https://dog.ceo/api/breeds/image/random")
-      .then((res) => {
-        this.$image.set(res.body.message);
-      })
-      .finally(() => {
-        this.$loading.set(false);
-      });
-  }
+//   refresh() {
+//     this.$loading.set(true);
+//     this.service("@http")
+//       .get("https://dog.ceo/api/breeds/image/random")
+//       .then((res) => {
+//         this.$image.set(res.body.message);
+//       })
+//       .finally(() => {
+//         this.$loading.set(false);
+//       });
+//   }
 
-  createElement($) {
-    const label = this.$loading.map((yes) => (yes ? "NOW LOADING..." : "Loaded!"));
+//   createElement($) {
+//     const label = this.$loading.map((yes) => (yes ? "NOW LOADING..." : "Loaded!"));
 
-    return $("div")(
-      $("img")({
-        src: this.$image,
-        style: {
-          height: "400px",
-          border: "2px solid orange",
-        },
-      }),
-      $("button")(
-        {
-          onclick: () => this.refresh(),
-        },
-        "Next Doggo"
-      ),
-      $.text(label)
-    );
-  }
-}
-
-// Same as makeComponent but with no $ and returns a plain object
-const CounterService = makeService((self) => {
-  self.created(() => {});
-  self.connected(() => {});
-
-  return {
-    $data: makeState(5),
-  };
-});
+//     return $("div")(
+//       $("img")({
+//         src: this.$image,
+//         style: {
+//           height: "400px",
+//           border: "2px solid orange",
+//         },
+//       }),
+//       $("button")(
+//         {
+//           onclick: () => this.refresh(),
+//         },
+//         "Next Doggo"
+//       ),
+//       $.text(label)
+//     );
+//   }
+// }
 
 /**
  * Woof function components. How does this work?
@@ -339,7 +346,7 @@ const CounterService = makeService((self) => {
  * This approach lets us add methods on the component itself
  * that make it easy to connect
  */
-const FunctionExample = makeComponent(($, self) => {
+const HTTPRequestExample = makeComponent(($, self) => {
   const $loading = makeState(false);
   const $image = makeState();
 
@@ -366,13 +373,6 @@ const FunctionExample = makeComponent(($, self) => {
       });
   };
 
-  // Preload would be run once the element is already created. This is good because
-  // preload can just update variables in this scope to prepare, but possibly bad
-  // because things in this scope would run before preload.
-  self.preload((done) => {
-    refresh().then(done);
-  });
-
   self.connected(() => {
     refresh();
   });
@@ -396,97 +396,104 @@ const FunctionExample = makeComponent(($, self) => {
   );
 });
 
-const component = FunctionExample.create(getService, $route, attrs, ...children);
+// const component = FunctionExample.create(getService, $route, attrs, ...children);
 
-component.connect(domNode);
-component.disconnect();
+// // This needs to work with multiple renderers (string, DOM, etc.)
+
+// component.connect(domNode);
+// component.disconnect();
 
 /*===========================*\
 ||       Mouse Follower      ||
 \*===========================*/
 
-class MouseInfo extends Service {
-  $position = makeState({ x: 0, y: 0 });
+// self object has:
+// getService
+// connected
+// watchState
 
-  _created() {
-    window.addEventListener("mousemove", (e) => {
-      this.$position.set({
-        x: e.clientX,
-        y: e.clientY,
-      });
+const MouseInfoService = makeService((self) => {
+  self.name = "MouseInfoService";
+
+  const $position = makeState({ x: 0, y: 0 });
+
+  window.addEventListener("mousemove", (e) => {
+    $position.set({
+      x: e.clientX,
+      y: e.clientY,
     });
-  }
-}
+  });
 
-app.service("mouse", MouseInfo);
+  return {
+    $position,
+  };
+});
 
-class MouseFollowerExample extends Component {
-  createElement($) {
-    const mouse = this.service("mouse");
-    const bestColor = "#ff0088";
+app.service("mouse", MouseInfoService);
 
-    const $isEnabled = makeState(false);
-    const $transform = mouse.$position.map((m) => `translate(${m.x}px, ${m.y}px)`);
-    const $backgroundColor = makeState(bestColor);
-    const $isNotBestColor = $backgroundColor.map((hex) => hex.toLowerCase() !== bestColor);
+const MouseFollowerExample = makeComponent(($, self) => {
+  const mouse = self.getService("mouse");
+  const bestColor = "#ff0088";
 
-    return $(ExampleSection)(
-      $.if(
-        $isEnabled,
-        $("div")({
-          class: styles.follower,
-          style: {
-            transform: $transform,
-            backgroundColor: $backgroundColor,
-          },
-        })
-      ),
+  const $isEnabled = makeState(false);
+  const $backgroundColor = makeState(bestColor);
+  const $transform = mouse.$position.map((m) => `translate(${m.x}px, ${m.y}px)`);
+  const $isNotBestColor = $backgroundColor.map((hex) => hex.toLowerCase() !== bestColor);
 
-      $("button")(
-        {
-          onclick: () => {
-            $backgroundColor.set(this.getRandomHex());
-          },
-          disabled: $isEnabled.map((x) => !x),
-        },
-        "Change Follower Color"
-      ),
-
-      $.if(
-        $isNotBestColor,
-        $("button")(
-          {
-            onclick: () => $backgroundColor.set(bestColor),
-            disabled: $isEnabled.map((x) => !x),
-          },
-          "Reset To Best Color"
-        )
-      ),
-
-      $("button")(
-        {
-          onclick: () => $isEnabled.set((current) => !current),
-        },
-        $.text($isEnabled.map((x) => (x ? "Turn Off Follower" : "Turn On Follower")))
-      )
-    );
-  }
-
-  getRandomHex() {
+  const getRandomHex = () => {
     const hex = [Math.random() * 256, Math.random() * 256, Math.random() * 256]
       .map(Math.floor)
       .map((n) => n.toString(16))
       .join("");
 
     return "#" + hex;
-  }
-}
+  };
 
-class ExampleSection extends Component {
-  createElement($) {
-    return $("div")({ class: this.attributes.class }, ...this.children);
-  }
-}
+  return $(ExampleSection)(
+    $.if(
+      $isEnabled,
+      $("div")({
+        class: styles.follower,
+        style: {
+          transform: $transform,
+          backgroundColor: $backgroundColor,
+        },
+      })
+    ),
+
+    $("button")(
+      {
+        onclick: () => {
+          $backgroundColor.set(getRandomHex());
+        },
+        disabled: $isEnabled.map((x) => !x),
+      },
+      "Change Follower Color"
+    ),
+
+    $.if(
+      $isNotBestColor,
+      $("button")(
+        {
+          onclick: () => $backgroundColor.set(bestColor),
+          disabled: $isEnabled.map((x) => !x),
+        },
+        "Reset To Best Color"
+      )
+    ),
+
+    $("button")(
+      { onclick: () => $isEnabled.set((current) => !current) },
+      $.text($isEnabled.map((x) => (x ? "Turn Off Follower" : "Turn On Follower")))
+    )
+  );
+});
+
+const ExampleSection = makeComponent(($, self) => {
+  console.log(self.$attrs.get());
+
+  return $("div")({ class: self.$attrs.map("class") }, ...self.children);
+});
 
 /*===========================*\
 ||         Start App         ||
@@ -496,106 +503,133 @@ class ExampleSection extends Component {
 //       This way we can use wildcard matches to signal a check for subroutes.
 //       $.route() throws helpful error when called on a non-wildcard route.
 
-app.route(
-  "*",
-  class extends Component {
-    preload($, done) {
-      console.log("TESTING PRELOAD");
+// NOTE: Passing just a function will create a new component with that function
+app.route("*", ($, self) => {
+  self.preload((done) => {
+    console.log("TESTING PRELOAD");
 
-      setTimeout(() => {
-        done();
-        console.log("DONE");
-      }, 500);
+    setTimeout(() => {
+      done();
+      console.log("DONE");
+    }, 500);
 
-      return $("h1")("Yo preloading...");
-    }
+    return $("h1")("Yo preloading...");
+  });
 
-    _connected() {
-      const page = this.service("@page");
-      const mouse = this.service("mouse");
+  self.connected(() => {
+    const page = self.getService("@page");
+    const mouse = self.getService("mouse");
 
-      // Display current mouse coordinates as tab title
-      this.watchState(mouse.$position, (current) => {
-        page.$title.set(`x:${Math.round(current.x)} y:${Math.round(current.y)}`);
-      });
-    }
+    // Display current mouse coordinates as tab title
+    self.watchState(mouse.$position, (current) => {
+      page.$title.set(`x:${Math.round(current.x)} y:${Math.round(current.y)}`);
+    });
+  });
 
-    createElement($) {
-      const example = $("div", { class: styles.example });
+  const example = $("div", { class: styles.example });
 
-      return $("div", { class: styles.demo })(
-        $("div", { class: "nav" })(
-          $("ul")(
-            $("li")($("a", { href: "/examples" })("Examples")),
-            $("li")($("a", { href: "/test2" })("Test Two")),
-            $("li")($("a", { href: "/test2/chunk1" })("Test Two - Chunk One")),
-            $("li")($("a", { href: "/test2/chunk2" })("Test Two - Chunk Two"))
-          )
-        ),
-        // Nested routes are relative to the current route.
-        $.outlet()
-          .route(
-            "examples",
-            class extends Component {
-              createElement($) {
-                return $("div")(
-                  example($(ToggleExample)),
-                  example($(CounterExample), $(CounterViewLabel)),
-                  example($(ConditionalExample)),
-                  example($(MapExample)),
-                  example($(TwoWayBindExample)),
-                  example($(HTTPRequestExample)),
-                  example($(MouseFollowerExample))
-                );
-              }
-            }
-          )
-          // Routes can be nested further with wildcards.
-          // This $ function will be pre-loaded with the fragments after 'test2' to match against with $.route().
-          // $.route() acts like a switch statement. When it is connected, it picks the best route and renders it.
-          .route(
-            "test2/*",
-            class extends Component {
-              // TODO: Rename createElement to view
-              createElement($) {
-                return $("div")(
-                  $("h1")("ROUTER"),
-                  $.outlet()
-                    .route(
-                      "/",
-                      class extends Component {
-                        createElement($) {
-                          return $("div")("default");
-                        }
-                      }
-                    )
-                    .route(
-                      "chunk1",
-                      class extends Component {
-                        createElement($) {
-                          return $("h1")("This is the chunk1 page");
-                        }
-                      }
-                    )
-                    .route(
-                      "chunk2",
-                      class extends Component {
-                        createElement($) {
-                          return $.text("HELLO CHUNK2");
-                        }
-                      }
-                    )
-                );
-              }
-            }
-          )
-      );
-    }
-  }
-);
+  return $("div", { class: styles.demo })(
+    $("div", { class: "nav" })(
+      $("ul")(
+        $("li")($("a", { href: "/examples" })("Examples")),
+        $("li")($("a", { href: "/test2" })("Test Two")),
+        $("li")($("a", { href: "/test2/chunk1" })("Test Two - Chunk One")),
+        $("li")($("a", { href: "/test2/chunk2" })("Test Two - Chunk Two"))
+      )
+    ),
+    // Nested routes are relative to the current route.
+    $.outlet()
+      .route("examples", ($) =>
+        $("div")(
+          example($(ToggleExample)),
+          example($(CounterExample), $(CounterViewLabel)),
+          example($(ConditionalExample)),
+          example($(MapExample)),
+          example($(TwoWayBindExample)),
+          example($(HTTPRequestExample)),
+          example($(MouseFollowerExample))
+        )
+      )
+      // Routes can be nested further with wildcards.
+      // This $ function will be pre-loaded with the fragments after 'test2' to match against with $.route().
+      // $.route() acts like a switch statement. When it is connected, it picks the best route and renders it.
+      .route("test2/*", ($) =>
+        $("div")(
+          $("h1")("ROUTER"),
+          $.outlet()
+            .route("/", ($) => $("div")("default"))
+            .route("chunk1", ($) => $("h1")("This is the chunk1 page"))
+            .route("chunk2", ($) => $.text("HELLO CHUNK2"))
+        )
+      )
+  );
+});
 
-app.setup((service) => {
-  service("@debug").filter.set("*");
+// class extends Component {
+//   preload($, done) {
+//     console.log("TESTING PRELOAD");
+
+//     setTimeout(() => {
+//       done();
+//       console.log("DONE");
+//     }, 500);
+
+//     return $("h1")("Yo preloading...");
+//   }
+
+//   _connected() {
+//     const page = this.service("@page");
+//     const mouse = this.service("mouse");
+
+//     // Display current mouse coordinates as tab title
+//     this.watchState(mouse.$position, (current) => {
+//       page.$title.set(`x:${Math.round(current.x)} y:${Math.round(current.y)}`);
+//     });
+//   }
+
+//   createElement($) {
+//     const example = $("div", { class: styles.example });
+
+//     return $("div", { class: styles.demo })(
+//       $("div", { class: "nav" })(
+//         $("ul")(
+//           $("li")($("a", { href: "/examples" })("Examples")),
+//           $("li")($("a", { href: "/test2" })("Test Two")),
+//           $("li")($("a", { href: "/test2/chunk1" })("Test Two - Chunk One")),
+//           $("li")($("a", { href: "/test2/chunk2" })("Test Two - Chunk Two"))
+//         )
+//       ),
+//       // Nested routes are relative to the current route.
+//       $.outlet()
+//         .route("examples", ($) =>
+//           $("div")(
+//             example($(ToggleExample)),
+//             example($(CounterExample), $(CounterViewLabel)),
+//             example($(ConditionalExample)),
+//             example($(MapExample)),
+//             example($(TwoWayBindExample)),
+//             example($(HTTPRequestExample)),
+//             example($(MouseFollowerExample))
+//           )
+//         )
+//         // Routes can be nested further with wildcards.
+//         // This $ function will be pre-loaded with the fragments after 'test2' to match against with $.route().
+//         // $.route() acts like a switch statement. When it is connected, it picks the best route and renders it.
+//         .route("test2/*", ($) =>
+//           $("div")(
+//             $("h1")("ROUTER"),
+//             $.outlet()
+//               .route("/", ($) => $("div")("default"))
+//               .route("chunk1", ($) => $("h1")("This is the chunk1 page"))
+//               .route("chunk2", ($) => $.text("HELLO CHUNK2"))
+//           )
+//         )
+//     );
+//   }
+// }
+
+app.setup((getService) => {
+  getService("@debug").$filter.set("*");
 });
 
 app.connect("#app");
