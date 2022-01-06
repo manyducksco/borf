@@ -1,6 +1,5 @@
 import { isFunction, isObject, isString } from "../../_helpers/typeChecking.js";
 import { makeService } from "../makeService.js";
-import queryString from "query-string";
 
 const HTTPService = makeService((self) => {
   self.debug.label = "woof:@http";
@@ -79,14 +78,14 @@ export class HTTPRequest {
   #contentTypeAuto = true; // disabled when header is explicitly set
 
   constructor({ id, debug, method, url, middleware, fetch }) {
-    const parsed = queryString.parseUrl(url);
+    const [path, query] = url.split("?");
 
     this.#id = id;
     this.#debug = debug;
-    this.#url = parsed.url;
+    this.#url = path;
     this.#middleware = middleware;
     this.#fetch = fetch;
-    this.#query = new URLSearchParams(parsed.query);
+    this.#query = new URLSearchParams(query || "");
     this.#ctx = {
       method,
       headers: new Headers(),

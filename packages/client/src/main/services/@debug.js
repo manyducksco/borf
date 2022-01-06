@@ -36,7 +36,21 @@ const DebugService = makeService((self) => {
         log: (...args) => {
           if (matchFilter(matchers, name)) {
             for (const transport of transports) {
-              transport.receive(name, ...args);
+              transport.receive(name, "log", ...args);
+            }
+          }
+        },
+        warn: (...args) => {
+          if (matchFilter(matchers, name)) {
+            for (const transport of transports) {
+              transport.receive(name, "warn", ...args);
+            }
+          }
+        },
+        error: (...args) => {
+          if (matchFilter(matchers, name)) {
+            for (const transport of transports) {
+              transport.receive(name, "error", ...args);
             }
           }
         },
@@ -100,7 +114,13 @@ class ConsoleTransport {
     saturation: [0.6, 0.7],
   });
 
-  receive(name, ...args) {
-    console.log(`%c[${name}]`, `color:${this.hash.hex(name)};font-weight:bold`, ...args);
+  receive(name, level, ...args) {
+    if (level === "error") {
+      console.error(`%c[${name}]`, `color:${this.hash.hex(name)};font-weight:bold`, ...args);
+    } else if (level === "warn") {
+      console.warn(`%c[${name}]`, `color:${this.hash.hex(name)};font-weight:bold`, ...args);
+    } else {
+      console.log(`%c[${name}]`, `color:${this.hash.hex(name)};font-weight:bold`, ...args);
+    }
   }
 }

@@ -417,10 +417,12 @@ const MouseInfoService = makeService((self) => {
 
   const $position = makeState({ x: 0, y: 0 });
 
-  window.addEventListener("mousemove", (e) => {
-    $position.set({
-      x: e.clientX,
-      y: e.clientY,
+  self.connected(() => {
+    window.addEventListener("mousemove", (e) => {
+      $position.set({
+        x: e.clientX,
+        y: e.clientY,
+      });
     });
   });
 
@@ -505,12 +507,14 @@ const ExampleSection = makeComponent(($, self) => {
 
 // NOTE: Passing just a function will create a new component with that function
 app.route("*", ($, self) => {
+  self.debug.label = "routes:root";
+
   self.preload((done) => {
-    console.log("TESTING PRELOAD");
+    self.debug.log("TESTING PRELOAD");
 
     setTimeout(() => {
       done();
-      console.log("DONE");
+      self.debug.log("DONE");
     }, 500);
 
     return $("h1")("Yo preloading...");
@@ -540,6 +544,8 @@ app.route("*", ($, self) => {
     // Nested routes are relative to the current route.
     $.outlet()
       .route("examples", ($) =>
+        // TODO: Throw error if the wrong dolla is used in a route.
+        // New dollas are established for each outlet, so using the component-level one may cause route matching problems
         $("div")(
           example($(ToggleExample)),
           example($(CounterExample), $(CounterViewLabel)),
@@ -562,8 +568,17 @@ app.route("*", ($, self) => {
             .route("chunk2", ($) => $.text("HELLO CHUNK2"))
         )
       )
+      .route("*", makeRedirect("/examples"))
   );
 });
+
+const makeRedirect = (path) => {
+  return makeComponent(($, self) => {
+    self.getService("@page").go(path);
+
+    return $("span")();
+  });
+};
 
 // class extends Component {
 //   preload($, done) {
