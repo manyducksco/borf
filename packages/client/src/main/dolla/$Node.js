@@ -14,12 +14,8 @@ export class $Node {
     return document.createTextNode("");
   }
 
-  watchState(state, callback, options = {}) {
-    this.#watchers.push(state.watch(callback));
-
-    if (options.immediate) {
-      callback(state.get());
-    }
+  watchState(state, ...args) {
+    this.#watchers.push(state.watch(...args));
   }
 
   $connect(parent, after = null) {
@@ -30,10 +26,6 @@ export class $Node {
     if (!wasConnected) {
       this.$element = this.createElement();
       this._beforeConnect();
-    }
-
-    if (parent instanceof Node == false) {
-      console.trace(parent);
     }
 
     parent.insertBefore(this.$element, after ? after.nextSibling : null);

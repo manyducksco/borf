@@ -1,9 +1,4 @@
-import {
-  isComponent,
-  isNode,
-  isObject,
-  isString,
-} from "../../_helpers/typeChecking";
+import { isComponent, isNode, isObject, isString } from "../../_helpers/typeChecking";
 import { $Element } from "./$Element";
 import { $Fragment } from "./$Fragment";
 import { $If } from "./$If";
@@ -14,12 +9,11 @@ import { $Watch } from "./$Watch";
 import { makeRender } from "./makeRender";
 import htmlTags from "html-tags";
 import htmlVoidTags from "html-tags/void";
-import { makeState } from "../state/makeState";
 
 /**
  * Creates a $ function with bound injectables.
  */
-export function makeDolla({ getService, match }) {
+export function makeDolla({ getService, $route }) {
   function $(element, ...args) {
     let defaultAttrs = {};
 
@@ -33,15 +27,13 @@ export function makeDolla({ getService, match }) {
     if (isComponent(element)) {
       elementType = "component";
     } else if (isString(element)) {
-      if (element === "") {
+      if (element === "" || element === "fragment") {
         elementType = "fragment";
       } else {
         elementType = "element";
       }
     } else {
-      throw new TypeError(
-        `Expected a tag name or a Component. Received: ${element}`
-      );
+      throw new TypeError(`Expected a tag name or a Component. Received: ${element}`);
     }
 
     /**
@@ -61,7 +53,7 @@ export function makeDolla({ getService, match }) {
 
       switch (elementType) {
         case "component":
-          return new element(getService, $, attributes, children);
+          return new element(getService, $, attributes, children, $route);
         case "element":
           return new $Element(element, attributes, children);
         case "fragment":
@@ -91,15 +83,15 @@ export function makeDolla({ getService, match }) {
   };
 
   $.outlet = function (element = "div", attributes = {}) {
-    if (match.wildcard.get() == false) {
+    if ($route.get("wildcard") == null) {
       throw new Error(
-        `$.route() can only be used on wildcard routes. Current route: ${match.route.get()}`
+        `$.outlet() can only be used on routes that end with a wildcard. Current route: ${$route.get("route")}`
       );
     }
 
     const node = $(element, attributes);
 
-    return new $Outlet(getService, node, match);
+    return new $Outlet(getService, node, $route);
   };
 
   /**
@@ -115,8 +107,6 @@ export function makeDolla({ getService, match }) {
       state,
     };
   };
-
-  $.route = match;
 
   Object.defineProperty($, "elements", {
     get() {

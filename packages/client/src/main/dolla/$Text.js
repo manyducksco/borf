@@ -1,5 +1,5 @@
 import { $Node } from "./$Node";
-import { isState } from "../../_helpers/typeChecking";
+import { isState } from "@woofjs/state";
 
 export class $Text extends $Node {
   constructor(value) {

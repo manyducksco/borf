@@ -1,5 +1,4 @@
-import { makeState } from "../state/makeState";
-import { isState } from "../../_helpers/typeChecking";
+import { makeState, isState } from "@woofjs/state";
 import { $Node } from "./$Node";
 import { makeRender } from "./makeRender";
 

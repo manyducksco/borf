@@ -1,6 +1,6 @@
 import { isComponent, isNode, isObject } from "../_helpers/typeChecking";
 import { makeDolla } from "../main/dolla/Dolla";
-import { makeState } from "../main/state/makeState";
+import { makeState } from "@woofjs/state";
 import { makeTestWrapper } from "./makeTestWrapper";
 
 export function wrapComponent(component) {
@@ -15,18 +15,17 @@ export function wrapComponent(component) {
 
       children = [...args];
 
-      const $ = makeDolla({
-        getService,
-        match: {
-          route: makeState("test", { settable: false }),
-          path: makeState("/test", { settable: false }),
-          params: makeState({}, { settable: false }),
-          query: makeState({}, { settable: false }),
-          wildcard: makeState(null, { settable: false }),
-        },
+      const $route = makeState({
+        route: "test",
+        path: "/test",
+        params: {},
+        query: {},
+        wildcard: null,
       });
 
-      return new component(getService, $, attributes, children);
+      const $ = makeDolla({ getService, $route });
+
+      return new component(getService, $, attributes, children, $route);
     } else {
       throw new Error(`Expected a Component. Received: ${component}`);
     }

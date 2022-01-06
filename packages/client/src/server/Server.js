@@ -3,78 +3,18 @@ import fs from "fs";
 import path from "path";
 import callsite from "callsite";
 import queryString from "query-string";
-import { createRouter } from "../_helpers/routing";
 import { isNumber, isObject, isFunction } from "../_helpers/typeChecking";
 
 import Debug from "../main/services/@debug";
+import { Router } from "./Router";
 
-export class Server {
+export class Server extends Router {
   #setup;
   #services = {};
-  #router = createRouter();
-  #server;
   #static;
 
   constructor(options = {}) {
     this.service("@debug", Debug, options.debug);
-    this.#server = http.createServer(async (req, res) => {
-      const method = req.method.toLowerCase();
-      const { url, query } = queryString.parseUrl(req.url);
-
-      const matched = this.#router.match(req.url, {
-        filter(route) {
-          console.log(route);
-        },
-      });
-
-      if (matched) {
-        // TODO: Finalize this object
-        const ctx = {
-          request: {
-            url: req.url,
-            method: req.method,
-            headers: req.headers,
-          },
-          response: {
-            status: 204,
-            body: null,
-          },
-          set status(value) {
-            this.response.status = value;
-          },
-          set body(value) {
-            this.response.body = value;
-            if (isObject(value) && this.response.headers) {
-            }
-          },
-        };
-
-        console.log(ctx);
-
-        req.on("data", (chunk) => {
-          console.log("BODY", chunk);
-        });
-      } else {
-        if (this.#static && req.method === "GET") {
-          const ext = path.extname(url).toLowerCase();
-
-          if (ext === "") {
-            fs.createReadStream(
-              path.posix.join(this.#static, "index.html")
-            ).pipe(res);
-            return;
-          }
-
-          console.log("IS STATIC");
-          const filePath = path.posix.join(this.#static, url);
-          if (fs.existsSync(filePath)) {
-            const stream = fs.createReadStream(filePath);
-            stream.pipe(res);
-            return;
-          }
-        }
-      }
-    });
   }
 
   /**
@@ -101,38 +41,6 @@ export class Server {
       const callerDir = path.dirname(callsite()[0].getFileName());
       this.#static = path.join(callerDir, directory);
     }
-  }
-
-  /**
-   * Adds a route to the list for matching when the URL changes.
-   *
-   * @param path - Path to match before calling handlers.
-   * @param handlers - One or more middleware or a Resource.
-   */
-  route(path, ...handlers) {
-    // this.#routes.push({
-    //   path,
-    //   callback: () => {
-    //     const router = this.#getService("@router");
-    //     // TODO: Make this into generic @template service or something.
-    //     const $ = makeDolla({
-    //       getService: (name) => this.#getService(name),
-    //       route: {
-    //         params: router.params(),
-    //         query: router.query(),
-    //         path: router.path(),
-    //         route: router.route(),
-    //         wildcard: router.wildcard(),
-    //       },
-    //     });
-    //     if (this.#mounted) {
-    //       this.#mounted.$disconnect();
-    //     }
-    //     this.#mounted = $(component)();
-    //     this.#mounted.$connect(this.#outlet);
-    //   },
-    // });
-    // this.#router.on(path);
   }
 
   /**
@@ -167,7 +75,7 @@ export class Server {
    */
   listen(port) {
     if (!isNumber(port)) {
-      throw new TypeError(`Expected port number. Received: ${element}`);
+      throw new TypeError(`Expected port number. Received: ${port}`);
     }
 
     for (const name in this.#services) {
@@ -182,7 +90,7 @@ export class Server {
     }
 
     const done = () => {
-      this.#server.listen(port);
+      http.createServer(this.callback()).listen(port);
 
       console.log(`[woof:server] listening on port ${port}`);
     };
@@ -192,6 +100,63 @@ export class Server {
     } else {
       done();
     }
+  }
+
+  /**
+   * Returns an HTTP handler function for Node `http.createServer`
+   */
+  callback() {
+    return async (req, res) => {
+      const method = req.method.toLowerCase();
+      const { url, query } = queryString.parseUrl(req.path);
+
+      const matched = this.$match(method, path);
+
+      if (matched) {
+        // TODO: Finalize this object
+        const ctx = {
+          request: {
+            url: req.url,
+            method: req.method,
+            headers: req.headers,
+          },
+          response: {
+            status: 204,
+            body: null,
+          },
+          set status(value) {
+            this.response.status = value;
+          },
+          set body(value) {
+            this.response.body = value;
+            if (isObject(value) && this.response.headers) {
+            }
+          },
+        };
+
+        console.log(ctx);
+
+        req.on("data", (chunk) => {
+          console.log("BODY", chunk);
+        });
+      } else {
+        if (this.#static && req.method === "GET") {
+          const ext = path.extname(url).toLowerCase();
+
+          if (ext === "") {
+            fs.createReadStream(path.posix.join(this.#static, "index.html")).pipe(res);
+            return;
+          }
+
+          const filePath = path.posix.join(this.#static, url);
+          if (fs.existsSync(filePath)) {
+            const stream = fs.createReadStream(filePath);
+            stream.pipe(res);
+            return;
+          }
+        }
+      }
+    };
   }
 
   #getService(name) {

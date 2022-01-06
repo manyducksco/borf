@@ -41,15 +41,34 @@ npm i @manyducksco/woof
 
 ## TODO
 
+```js
+class Example extends Component {
+  createElement($) {
+    const { $route, $attrs } = this;
+
+    // Components get this.$route injected?
+    // Then it can be accessed outside of createElement and preload
+    this.watchState($route, (route) => {
+      console.log(`Path is now ${route.path}`);
+    });
+
+    // Dynamically map the 'title' attribute to an element
+    return $("h1")($.text($attrs.map("title")));
+
+    // Map the title attribute but don't update if it changes in the future
+    return $("h1")($attrs.get("title"));
+  }
+}
+```
+
 #### `@engine`
 
 Move render/update logic into an `@engine` service. The `@engine` service provides the function that gets passed to createElement. It also provides callbacks for Components to handle the logic behind their lifecycle methods.
 
 Methods implemented by `@engine`:
 
-- create(component) // calls .createElement, passing the template function and receiving return value.
-- connect(component, parent, after)
-- disconnect(component, parent, after)
+- connect(component, parentComponent, afterComponent?)
+- disconnect(component, parentComponent, afterComponent?)
 
 Problems with this:
 
@@ -169,9 +188,7 @@ const handler = ($, { app, http, next }) => {
   // takes an (optional) attributes object and any number of children
   // attributes will be merged with attributes passed to the constructor
   // children can be strings, falsy values (ignored), Component instances, or render functions
-  const element = customDiv({ class: "a-class" }, "Child", () =>
-    $("span")(" Child2 ")
-  );
+  const element = customDiv({ class: "a-class" }, "Child", () => $("span")(" Child2 "));
   // this creates: <div class="a-class">Child<span> Child2 </span></div>
 
   // components can be used in the same way by passing the class to $()
@@ -258,10 +275,7 @@ class MyComponent extends Component {
             ...this.attributes,
             class: ["my-container", this.attributes.class],
           },
-          $("span")(
-            "This is a component, also: ",
-            $.text(this.data, "loading...")
-          ),
+          $("span")("This is a component, also: ", $.text(this.data, "loading...")),
           ...this.children
         )
     );

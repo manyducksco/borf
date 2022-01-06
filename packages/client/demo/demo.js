@@ -1,6 +1,16 @@
-import { App, Service, Component, Styles, makeState } from "./dist/woof.js";
+import { makeApp, makeState, Service, Component, Styles } from "./dist/woof.js";
 
-const app = new App({ hash: true });
+const app = makeApp({ hash: true });
+
+// TODO: Plugins
+
+// app.use((plugin) => {
+//   // Plugins take the form of a function. This function gets a plugin object
+//   // which is similar to an App, but only provides a handful of methods:
+//   plugin.service("someName", class extends Service {});
+//   plugin.route("*", class extends Component {});
+//   plugin.setup((getService) => {}); // Plugin setups are all called at once and awaited with Promise.all before starting the app.
+// });
 
 const styles = new Styles({
   testing: {
@@ -36,25 +46,20 @@ const styles = new Styles({
 \*===========================*/
 
 class ToggleExample extends Component {
-  active = makeState(false, {
-    methods: {
-      toggle: (current) => !current,
-    },
-  });
-
-  status = this.active.map((current) => (current ? "ON" : "OFF"));
+  $active = makeState(false);
+  $status = this.$active.map((current) => (current ? "ON" : "OFF"));
 
   createElement($) {
     return $("div")(
       {
         class: {
-          [styles.active]: this.active, // class "active" is applied while this.active is true
+          [styles.active]: this.$active, // class "active" is applied while this.$active is true
         },
         onclick: () => {
-          this.active.toggle();
+          this.$active.set((current) => !current);
         },
       },
-      $.text(this.status),
+      $.text(this.$status),
       "  (click to toggle)"
     );
   }
@@ -65,16 +70,16 @@ class ToggleExample extends Component {
 \*===========================*/
 
 class Counter extends Service {
-  current = makeState(0);
+  $current = makeState(0);
 
   _created() {
     setInterval(() => {
-      this.current.set((current) => current + 1);
+      this.$current.set((current) => current + 1);
     }, 1000);
   }
 
   reset() {
-    this.current.set(0);
+    this.$current.set(0);
   }
 }
 
@@ -86,7 +91,7 @@ app.service("counter", Counter);
 class CounterExample extends Component {
   createElement($) {
     const counter = this.service("counter");
-    const label = counter.current.map((n) => ` the number is: ${n}`);
+    const label = counter.$current.map((n) => ` the number is: ${n}`);
 
     return $("div")(
       $("button")(
@@ -107,7 +112,7 @@ class CounterViewLabel extends Component {
   createElement($) {
     const counter = this.service("counter");
 
-    return $("h1")($.text(counter.current));
+    return $("h1")($.text(counter.$current));
   }
 }
 
@@ -116,26 +121,21 @@ class CounterViewLabel extends Component {
 \*===========================*/
 
 class ConditionalExample extends Component {
-  show = makeState(false, {
-    methods: {
-      toggle: (current) => !current,
-    },
-  });
-
-  label = this.show.map((on) => (on ? "Hide Text" : "Show Text"));
+  $show = makeState(false);
+  $label = this.$show.map((on) => (on ? "Hide Text" : "Show Text"));
 
   createElement($) {
     return $("div")(
       $("button")(
         {
           onclick: () => {
-            this.show.toggle();
+            this.$show.set((current) => !current);
           },
         },
-        $.text(this.label)
+        $.text(this.$label)
       ),
       $.if(
-        this.show,
+        this.$show,
         $("span")(
           {
             connected() {
@@ -159,25 +159,20 @@ class ConditionalExample extends Component {
 class MapExample extends Component {
   createElement($) {
     const initialList = ["apple", "banana", "potato", "fried chicken"];
-    const shoppingList = makeState(initialList, {
-      methods: {
-        append: (current, value) => [...current, value],
-        reset: () => initialList,
-      },
-    });
 
-    const inputValue = makeState("");
+    const $shoppingList = makeState(initialList);
+    const $inputValue = makeState("");
 
     return $("div")(
       $("button")(
         {
           onclick: () => {
-            const sorted = shoppingList
+            const sorted = $shoppingList
               .get()
               .map((x) => x)
               .sort();
 
-            shoppingList.set(sorted);
+            $shoppingList.set(sorted);
           },
         },
         "Sort A to Z"
@@ -185,13 +180,13 @@ class MapExample extends Component {
       $("button")(
         {
           onclick: () => {
-            const sorted = shoppingList
+            const sorted = $shoppingList
               .get()
               .map((x) => x)
               .sort()
               .reverse();
 
-            shoppingList.set(sorted);
+            $shoppingList.set(sorted);
           },
         },
         "Sort Z to A"
@@ -201,17 +196,19 @@ class MapExample extends Component {
         { class: styles.flexCenter },
         $("input")({
           type: "text",
-          value: inputValue,
+          value: $inputValue,
           oninput: (e) => {
-            inputValue.set(e.target.value);
+            $inputValue.set(e.target.value);
           },
         }),
         $("button")(
           {
-            disabled: inputValue.map((current) => current.trim() == ""),
+            disabled: $inputValue.map((current) => current.trim() == ""),
             onclick: () => {
-              shoppingList.append(inputValue.get());
-              inputValue.set("");
+              $shoppingList.set((current) => {
+                current.push($inputValue.get());
+              });
+              $inputValue.set("");
             },
           },
           "Add Item"
@@ -219,7 +216,7 @@ class MapExample extends Component {
         $("button")(
           {
             onclick: () => {
-              shoppingList.reset();
+              $shoppingList.set(initialList);
             },
           },
           "Reset List"
@@ -227,8 +224,8 @@ class MapExample extends Component {
       ),
 
       $.each(
-        shoppingList,
-        (x) => x, // use items as keys as they are already unique strings
+        $shoppingList,
+        (item) => item, // use items as keys as they are already unique strings
         (item) =>
           $("li")(
             {
@@ -248,25 +245,25 @@ class MapExample extends Component {
 \*===========================*/
 
 class TwoWayBindExample extends Component {
-  text = makeState("edit me");
-  size = makeState(18);
+  $text = makeState("edit me");
+  $size = makeState(18);
 
   createElement($) {
     return $("div")(
       $("input")({
-        value: $.bind(this.text),
+        value: $.bind(this.$text),
       }),
       $("input")({
         type: "number",
-        value: $.bind(this.size), // number value gets converted back to number
+        value: $.bind(this.$size), // number value gets converted back to number
       }),
       $("p")(
         {
           style: {
-            fontSize: this.size.map((s) => `${s}px`),
+            fontSize: this.$size.map((s) => `${s}px`),
           },
         },
-        $.text(this.text)
+        $.text(this.$text)
       )
     );
   }
@@ -277,33 +274,31 @@ class TwoWayBindExample extends Component {
 \*===========================*/
 
 class HTTPRequestExample extends Component {
-  loading = makeState(false);
-  image = makeState(null);
+  $loading = makeState(false);
+  $image = makeState(null);
 
   _connected() {
     this.refresh();
   }
 
   refresh() {
-    this.loading.set(true);
+    this.$loading.set(true);
     this.service("@http")
       .get("https://dog.ceo/api/breeds/image/random")
       .then((res) => {
-        console.log(res);
+        this.$image.set(res.body.message);
       })
       .finally(() => {
-        this.loading.set(false);
+        this.$loading.set(false);
       });
   }
 
   createElement($) {
-    const label = this.loading.map((yes) =>
-      yes ? "NOW LOADING..." : "Loaded!"
-    );
+    const label = this.$loading.map((yes) => (yes ? "NOW LOADING..." : "Loaded!"));
 
     return $("div")(
       $("img")({
-        src: this.image,
+        src: this.$image,
         style: {
           height: "400px",
           border: "2px solid orange",
@@ -320,16 +315,102 @@ class HTTPRequestExample extends Component {
   }
 }
 
+// Same as makeComponent but with no $ and returns a plain object
+const CounterService = makeService((self) => {
+  self.created(() => {});
+  self.connected(() => {});
+
+  return {
+    $data: makeState(5),
+  };
+});
+
+/**
+ * Woof function components. How does this work?
+ *
+ * The main function body is the createElement function.
+ * But it has to run to get the lifecycle methods.
+ * Is that a problem?
+ *
+ * Function is called once just before mounting
+ * gets lifecycle hooks registered, calls them
+ * mounts the element returned from the function
+ *
+ * This approach lets us add methods on the component itself
+ * that make it easy to connect
+ */
+const FunctionExample = makeComponent(($, self) => {
+  const $loading = makeState(false);
+  const $image = makeState();
+
+  const $label = $loading.map((yes) => (yes ? "NOW LOADING..." : "Loaded!"));
+
+  // self object has:
+  // getService
+  // beforeConnect, connected
+  // beforeDisconnect, disconnected
+  // watchState
+  // $route, $attrs
+
+  const refresh = () => {
+    $loading.set(true);
+
+    return self
+      .getService("@http")
+      .get("https://dog.ceo/api/breeds/image/random")
+      .then((res) => {
+        $image.set(res.body.message);
+      })
+      .finally(() => {
+        $loading.set(false);
+      });
+  };
+
+  // Preload would be run once the element is already created. This is good because
+  // preload can just update variables in this scope to prepare, but possibly bad
+  // because things in this scope would run before preload.
+  self.preload((done) => {
+    refresh().then(done);
+  });
+
+  self.connected(() => {
+    refresh();
+  });
+
+  const { $title } = self.getService("@page");
+
+  self.watchState($title, (title) => {
+    console.log("Page title: " + title);
+  });
+
+  return $("div")(
+    $("img")({
+      src: $image,
+      style: {
+        height: "400px",
+        border: "2px solid orange",
+      },
+    }),
+    $("button")({ onclick: refresh }, "Next Doggo"),
+    $.text($label)
+  );
+});
+
+const component = FunctionExample.create(getService, $route, attrs, ...children);
+
+component.connect(domNode);
+component.disconnect();
+
 /*===========================*\
 ||       Mouse Follower      ||
 \*===========================*/
 
 class MouseInfo extends Service {
-  position = makeState({ x: 0, y: 0 });
+  $position = makeState({ x: 0, y: 0 });
 
   _created() {
     window.addEventListener("mousemove", (e) => {
-      this.position.set({
+      this.$position.set({
         x: e.clientX,
         y: e.clientY,
       });
@@ -341,30 +422,22 @@ app.service("mouse", MouseInfo);
 
 class MouseFollowerExample extends Component {
   createElement($) {
-    const isEnabled = makeState(false, {
-      methods: {
-        toggle: (current) => !current,
-      },
-    });
     const mouse = this.service("mouse");
-    const transform = mouse.position.map(
-      (m) => `translate(${m.x}px, ${m.y}px)`
-    );
-
     const bestColor = "#ff0088";
-    const backgroundColor = makeState(bestColor);
-    const isNotBestColor = backgroundColor.map(
-      (hex) => hex.toLowerCase() !== bestColor
-    );
+
+    const $isEnabled = makeState(false);
+    const $transform = mouse.$position.map((m) => `translate(${m.x}px, ${m.y}px)`);
+    const $backgroundColor = makeState(bestColor);
+    const $isNotBestColor = $backgroundColor.map((hex) => hex.toLowerCase() !== bestColor);
 
     return $(ExampleSection)(
       $.if(
-        isEnabled,
+        $isEnabled,
         $("div")({
           class: styles.follower,
           style: {
-            transform,
-            backgroundColor,
+            transform: $transform,
+            backgroundColor: $backgroundColor,
           },
         })
       ),
@@ -372,19 +445,19 @@ class MouseFollowerExample extends Component {
       $("button")(
         {
           onclick: () => {
-            backgroundColor.set(this.getRandomHex());
+            $backgroundColor.set(this.getRandomHex());
           },
-          disabled: isEnabled.map((x) => !x),
+          disabled: $isEnabled.map((x) => !x),
         },
         "Change Follower Color"
       ),
 
       $.if(
-        isNotBestColor,
+        $isNotBestColor,
         $("button")(
           {
-            onclick: () => backgroundColor.set(bestColor),
-            disabled: isEnabled.map((x) => !x),
+            onclick: () => $backgroundColor.set(bestColor),
+            disabled: $isEnabled.map((x) => !x),
           },
           "Reset To Best Color"
         )
@@ -392,11 +465,9 @@ class MouseFollowerExample extends Component {
 
       $("button")(
         {
-          onclick: () => isEnabled.toggle(),
+          onclick: () => $isEnabled.set((current) => !current),
         },
-        $.text(
-          isEnabled.map((x) => (x ? "Turn Off Follower" : "Turn On Follower"))
-        )
+        $.text($isEnabled.map((x) => (x ? "Turn Off Follower" : "Turn On Follower")))
       )
     );
   }
@@ -444,8 +515,8 @@ app.route(
       const mouse = this.service("mouse");
 
       // Display current mouse coordinates as tab title
-      this.watchState(mouse.position, (current) => {
-        page.title.set(`x:${Math.round(current.x)} y:${Math.round(current.y)}`);
+      this.watchState(mouse.$position, (current) => {
+        page.$title.set(`x:${Math.round(current.x)} y:${Math.round(current.y)}`);
       });
     }
 

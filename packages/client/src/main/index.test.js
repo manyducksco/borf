@@ -1,4 +1,4 @@
-import { App, Component, Service, Styles, makeState } from "./index.js";
+import { App, Component, Service, Styles, makeState, mergeStates } from "./index.js";
 
 test("exports expected things", () => {
   expect(typeof App).toBe("function");
@@ -8,4 +8,5 @@ test("exports expected things", () => {
   expect(Service.isService).toBe(true);
   expect(typeof Styles).toBe("function");
   expect(typeof makeState).toBe("function");
+  expect(typeof mergeStates).toBe("function");
 });

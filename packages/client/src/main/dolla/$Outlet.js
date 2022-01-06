@@ -1,9 +1,9 @@
+import { makeState } from "@woofjs/state";
+import { makeRouter } from "@woofjs/router";
 import { $Node } from "./$Node";
-import { createRouter } from "../../_helpers/routing";
 import { isFunction, isNode } from "../../_helpers/typeChecking";
 import { makeDolla } from "./Dolla";
 import { makeRender } from "./makeRender";
-import { makeState } from "../state/makeState";
 
 /**
  * Creates a router outlet for a nested route. Multiple routes
@@ -17,29 +17,30 @@ export class $Outlet extends $Node {
   #outlet;
   #mounted;
   #dolla;
-  #router = createRouter();
+  #router = makeRouter();
   #path;
-  #match = {
-    route: makeState(undefined),
-    path: makeState(undefined),
-    params: makeState({}),
-    query: makeState({}),
-    wildcard: makeState(false),
-  };
+
+  $route = makeState({
+    route: "",
+    path: "",
+    params: {},
+    query: {},
+    wildcard: null,
+  });
 
   get $isConnected() {
     return this.#outlet && this.#outlet.$isConnected;
   }
 
-  constructor(getService, element, match) {
+  constructor(getService, element, $route) {
     super();
 
     this.createElement = makeRender(element);
 
-    this.#path = match.path.map((value) => value);
+    this.#path = $route.map("path");
     this.#dolla = makeDolla({
       getService,
-      match: this.#match,
+      $route: this.$route,
     });
   }
 
@@ -62,11 +63,11 @@ export class $Outlet extends $Node {
 
     if (!wasConnected) {
       this.watchState(this.#path, (value) => this.#matchRoute(value));
-      this.watchState(this.#match.route, (value) => {
+      this.watchState(this.$route, "route", (value) => {
         this.#outlet.$element.dataset.outletRoute = value;
       });
       this.#matchRoute(this.#path.get());
-      this.#outlet.$element.dataset.outletRoute = this.#match.route.get();
+      this.#outlet.$element.dataset.outletRoute = this.$route.get("route");
 
       this._connected();
     }
@@ -80,24 +81,31 @@ export class $Outlet extends $Node {
 
   #matchRoute(path) {
     const matched = this.#router.match(path);
-    const currentRoute = this.#match.route.get();
-
-    this.#match.path.set(matched ? matched.path : null);
-    this.#match.route.set(matched ? matched.route : null);
-    this.#match.query.set(matched ? matched.query : {});
-    this.#match.params.set(matched ? matched.params : {});
-    this.#match.wildcard.set(matched ? matched.wildcard : false);
 
     if (matched) {
-      if (this.#mounted == null || matched.route !== currentRoute) {
-        const { component } = matched.attributes;
+      const currentRoute = this.$route.get("route");
 
-        this.#mountRoute(component);
+      this.$route.set((current) => {
+        current.path = matched.path;
+        current.route = matched.route;
+        current.query = matched.query;
+        current.params = matched.params;
+        current.wildcard = matched.wildcard;
+      });
+
+      if (this.#mounted == null || matched.route !== currentRoute) {
+        this.#mountRoute(matched.props.component);
       }
     } else {
-      console.warn(
-        `No route was matched. Consider adding a wildcard ("*") route to catch this.`
-      );
+      this.$route.set({
+        path: null,
+        route: null,
+        query: {},
+        params: {},
+        wildcard: null,
+      });
+
+      console.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
     }
   }
 

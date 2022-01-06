@@ -1,6 +1,6 @@
+import { makeState } from "@woofjs/state";
 import ColorHash from "color-hash";
 import { Service } from "../Service.js";
-import { makeState } from "../state/makeState.js";
 
 /**
  * Debug logging service used internally and exposed for use in apps.
@@ -96,10 +96,6 @@ class ConsoleTransport {
   });
 
   receive(name, ...args) {
-    console.log(
-      `%c[${name}]`,
-      `color:${this.hash.hex(name)};font-weight:bold`,
-      ...args
-    );
+    console.log(`%c[${name}]`, `color:${this.hash.hex(name)};font-weight:bold`, ...args);
   }
 }

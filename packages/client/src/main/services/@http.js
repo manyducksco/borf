@@ -162,9 +162,7 @@ export class HTTPRequest {
       return this;
     }
 
-    throw new Error(
-      `Expected a key and value, an object, or a header name only. Received: ${header} and ${value}`
-    );
+    throw new Error(`Expected a key and value, an object, or a header name only. Received: ${header} and ${value}`);
   }
 
   /**
@@ -201,9 +199,7 @@ export class HTTPRequest {
       return this;
     }
 
-    throw new Error(
-      `Expected a key and value, an object, or a parameter name only. Received: ${query} and ${value}`
-    );
+    throw new Error(`Expected a key and value, an object, or a parameter name only. Received: ${query} and ${value}`);
   }
 
   body(value) {
@@ -269,9 +265,7 @@ export class HTTPRequest {
     };
 
     const handler = async () => {
-      this.#debug.log(
-        `[request:${this.#id}] ${this.#ctx.method.toUpperCase()} ${this.#url}`
-      );
+      this.#debug.log(`[request:${this.#id}] ${this.#ctx.method.toUpperCase()} ${this.#url}`);
       const start = Date.now();
 
       const query = this.#query.toString();
@@ -323,9 +317,7 @@ export class HTTPRequest {
     // If needed, the .ok() function can control what is thrown as an error.
     if (this.#isOk(res.status) == false) {
       const err = new HTTPError(
-        `${res.status} ${
-          res.statusText
-        }: Request failed (${this.#ctx.method.toUpperCase()} ${this.#url})`
+        `${res.status} ${res.statusText}: Request failed (${this.#ctx.method.toUpperCase()} ${this.#url})`
       );
       err.method = this.#ctx.method;
       err.url = this.#url;

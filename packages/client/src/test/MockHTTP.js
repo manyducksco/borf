@@ -1,5 +1,5 @@
 import HTTP from "../main/services/@http";
-import { createRouter } from "../_helpers/routing";
+import { makeRouter } from "@woofjs/router";
 import { flatMap } from "../_helpers/flatMap";
 
 /**
@@ -22,7 +22,7 @@ import { flatMap } from "../_helpers/flatMap";
  * const createComponent = wrapComponent(ExampleComponent).service("@http", http.service);
  */
 export class MockHTTP {
-  #router = createRouter();
+  #router = makeRouter();
 
   calls = []; // stores one object for each HTTP call made since .reset() was called
 
@@ -113,9 +113,7 @@ export class MockHTTP {
       });
 
       if (matched == null) {
-        throw new Error(
-          `Requested URL has no handlers. Received: ${method.toUpperCase()} ${url}`
-        );
+        throw new Error(`Requested URL has no handlers. Received: ${method.toUpperCase()} ${url}`);
       }
 
       const headers = {};

@@ -1,11 +1,6 @@
-import { makeState } from "./state/makeState.js";
+import { makeState, isState } from "@woofjs/state";
 import { $Node } from "./dolla/$Node.js";
-import {
-  isDolla,
-  isFunction,
-  isNode,
-  isState,
-} from "../_helpers/typeChecking.js";
+import { isDolla, isFunction, isNode } from "../_helpers/typeChecking.js";
 
 export class Component extends $Node {
   static get isComponent() {
@@ -19,28 +14,27 @@ export class Component extends $Node {
   attributes;
   children;
 
+  // Store the route this component is mounted under as this.$route.
+  $route;
+
+  $attrs = makeState({});
+
   get $isConnected() {
     return this.#root && this.#root.$isConnected;
   }
 
-  constructor(getService, dolla, attributes = {}, children = []) {
+  constructor(getService, dolla, attributes = {}, children = [], $route) {
     super();
 
     this.#getService = getService;
     this.#dolla = dolla;
 
-    this.attributes = {};
-
-    // Any attribute that isn't already a state or function becomes a state.
-    for (const key in attributes) {
-      if (isState(attributes[key]) || isFunction(attributes[key])) {
-        this.attributes[key] = attributes[key];
-      } else {
-        this.attributes[key] = makeState(attributes[key], {
-          settable: false,
-        });
+    this.$route = $route || makeState(null);
+    this.$attrs.set((current) => {
+      for (const key in attributes) {
+        current[key] = attributes[key];
       }
-    }
+    });
 
     this.children = children;
 
@@ -70,11 +64,7 @@ export class Component extends $Node {
       }
 
       if (!isNode(this.#root)) {
-        throw new Error(
-          `Component 'createElement' method must return an $(element). Received: ${
-            this.#root
-          }`
-        );
+        throw new Error(`Component 'createElement' method must return an $(element). Received: ${this.#root}`);
       }
 
       this._beforeConnect();

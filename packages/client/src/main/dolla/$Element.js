@@ -1,66 +1,88 @@
-import {
-  isArray,
-  isObject,
-  isString,
-  isState,
-  isNumber,
-} from "../../_helpers/typeChecking";
+import { isState } from "@woofjs/state";
+import { isArray, isObject, isString, isNumber } from "../../_helpers/typeChecking";
 import { $Node } from "./$Node";
 
-// Attributes in this list will not be forwarded to the DOM node.
-const privateAttrs = ["children", "class", "value", "style", "data"];
+const attrMap = {
+  // Attributes in this list will not be forwarded to the DOM node.
+  private: ["ref", "children", "class", "value", "style", "data"],
+  boolean: [
+    "disabled",
+    "contenteditable",
+    "draggable",
+    "hidden",
+    "spellcheck",
+    "autocomplete",
+    "autofocus",
+    "translate",
+  ],
+  events: [
+    "onclick",
+    "ondblclick",
+    "onmousedown",
+    "onmouseup",
+    "onmouseover",
+    "onmousemove",
+    "onmouseout",
+    "onmouseenter",
+    "onmouseleave",
+    "ontouchcancel",
+    "ontouchend",
+    "ontouchmove",
+    "ontouchstart",
+    "ondragstart",
+    "ondrag",
+    "ondragenter",
+    "ondragleave",
+    "ondragover",
+    "ondrop",
+    "ondragend",
+    "onkeydown",
+    "onkeypress",
+    "onkeyup",
+    "onunload",
+    "onabort",
+    "onerror",
+    "onresize",
+    "onscroll",
+    "onselect",
+    "onchange",
+    "onsubmit",
+    "onreset",
+    "onfocus",
+    "onblur",
+    "oninput",
+    "onanimationend",
+    "onanimationiteration",
+    "onanimationstart",
+  ],
+};
 
-const booleanAttrs = [
-  "disabled",
-  "contenteditable",
-  "draggable",
-  "hidden",
-  "spellcheck",
-  "autocomplete",
-  "autofocus",
-  "translate",
-];
+// One base type - DollaElement
+// Separate function for rendering that receives the element
 
-const eventAttrs = [
-  "onclick",
-  "ondblclick",
-  "onmousedown",
-  "onmouseup",
-  "onmouseover",
-  "onmousemove",
-  "onmouseout",
-  "onmouseenter",
-  "onmouseleave",
-  "ontouchcancel",
-  "ontouchend",
-  "ontouchmove",
-  "ontouchstart",
-  "ondragstart",
-  "ondrag",
-  "ondragenter",
-  "ondragleave",
-  "ondragover",
-  "ondrop",
-  "ondragend",
-  "onkeydown",
-  "onkeypress",
-  "onkeyup",
-  "onunload",
-  "onabort",
-  "onerror",
-  "onresize",
-  "onscroll",
-  "onselect",
-  "onchange",
-  "onsubmit",
-  "onreset",
-  "onfocus",
-  "onblur",
-  "oninput",
-  "onanimationend",
-  "onanimationiteration",
-  "onanimationstart",
-];
+function renderToDOM(component) {
+  const $ = makeDolla();
+  const el = component.createElement($);
+}
+
+function renderToString() {}
+
+// Returns the root DOM node
+const node = renderToDOM(SomeElement);
+
+// Returns an HTML string (sans event listeners)
+const html = renderToString(SomeElement);
+
+// Some kind of theoretical binding to a native UI library, a la React Native
+const native = renderToNative(SomeElement);
+
+class Label extends Component {}
+
+class NativeElement extends Component {
+  render($) {
+    return $(Label)({ text: "THIS IS TEXT" });
+  }
+}
 
 export class $Element extends $Node {
   tag;
@@ -114,7 +136,7 @@ export class $Element extends $Node {
 
   #attachEvents() {
     for (const key in this.attributes) {
-      if (!privateAttrs.includes(key) && eventAttrs.includes(key)) {
+      if (!attrMap.private.includes(key) && attrMap.events.includes(key)) {
         const eventName = key.slice(2).toLowerCase();
         const listener = this.attributes[key];
 
@@ -163,9 +185,7 @@ export class $Element extends $Node {
         } else if (isNumber(prop)) {
           this.$element.style[name] = prop + "px";
         } else {
-          throw new TypeError(
-            `Style value should be a string or number. Received (${name}: ${prop})`
-          );
+          throw new TypeError(`Style value should be a string or number. Received (${name}: ${prop})`);
         }
       }
     }
@@ -195,8 +215,8 @@ export class $Element extends $Node {
         }
       }
 
-      if (!privateAttrs.includes(name) && !eventAttrs.includes(name)) {
-        if (booleanAttrs.includes(name)) {
+      if (!attrMap.private.includes(name) && !attrMap.events.includes(name)) {
+        if (attrMap.boolean.includes(name)) {
           if (isState(attr)) {
             this.#watch(attr, (value) => {
               if (value) {
@@ -226,8 +246,6 @@ export class $Element extends $Node {
   }
 
   #watch(state, callback) {
-    // TODO: Batch updates -- does this batch efficiently?
-
     this.watchers.push(
       state.watch((value) => {
         requestAnimationFrame(() => {

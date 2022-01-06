@@ -2,7 +2,6 @@ import { createMemoryHistory } from "history";
 import { isFunction, isObject } from "../_helpers/typeChecking";
 import Debug from "../main/services/@debug";
 import HTTP from "../main/services/@http";
-import Router from "../main/services/@router";
 import Page from "../main/services/@page";
 
 export function makeTestWrapper(init) {
@@ -18,9 +17,7 @@ export function makeTestWrapper(init) {
         return services[name];
       }
 
-      throw new Error(
-        `Service is not registered in this wrapper. Received: ${name}`
-      );
+      throw new Error(`Service is not registered in this wrapper. Received: ${name}`);
     };
 
     services["@debug"] = new Debug(getService);
@@ -31,7 +28,6 @@ export function makeTestWrapper(init) {
         );
       }
     })();
-    services["@router"] = new Router(getService);
     services["@page"] = new Page(getService);
 
     services["@debug"].filter.set("*");
@@ -40,7 +36,7 @@ export function makeTestWrapper(init) {
       services[name] = _services[name](getService);
 
       if (isFunction(services[name]._created)) {
-        if (name === "@router") {
+        if (name === "@page") {
           services[name]._created({ history });
         } else {
           services[name]._created();
@@ -67,9 +63,7 @@ export function makeTestWrapper(init) {
     } else if (isObject(service)) {
       _services[name] = () => service;
     } else {
-      throw new TypeError(
-        `Expected a service, function or object for service ${name}. Received: ${service}`
-      );
+      throw new TypeError(`Expected a service, function or object for service ${name}. Received: ${service}`);
     }
 
     return makeWrapped;

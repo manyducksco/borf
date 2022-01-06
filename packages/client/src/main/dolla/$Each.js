@@ -1,5 +1,4 @@
-import { makeState } from "../state/makeState";
-import { isState } from "../../_helpers/typeChecking";
+import { makeState, isState } from "@woofjs/state";
 import { deepEqual } from "../../_helpers/deepEqual";
 import { $Node } from "./$Node";
 import { makeRender } from "./makeRender";
@@ -116,10 +115,7 @@ export class $Each extends $Node {
         }
       }
 
-      this.$element.parentNode.insertBefore(
-        fragment,
-        this.$element.nextSibling
-      );
+      this.$element.parentNode.insertBefore(fragment, this.$element.nextSibling);
 
       this.list = newItems;
     });

@@ -1,11 +1,5 @@
-import {
-  isString,
-  isNumber,
-  isFunction,
-  isNode,
-  isDolla,
-  isState,
-} from "../../_helpers/typeChecking";
+import { isString, isNumber, isFunction, isNode, isDolla } from "../../_helpers/typeChecking";
+import { isState } from "@woofjs/state";
 import { $Text } from "./$Text";
 
 /**
@@ -23,8 +17,6 @@ export function makeRender(element) {
   } else if (isFunction(element)) {
     return makeRender(element());
   } else {
-    throw new Error(
-      `Expected a string, function or $(element). Received: ${element}`
-    );
+    throw new Error(`Expected a string, function or $(element). Received: ${element}`);
   }
 }
