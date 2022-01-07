@@ -1,4 +1,5 @@
 import { makeState } from "@woofjs/state";
+import { isObject } from "../_helpers/typeChecking";
 
 /**
  * @param create - constructor function
@@ -9,8 +10,8 @@ export function makeService(create) {
       return true;
     },
 
-    create(getService) {
-      let onCreated = [];
+    create(getService, options = {}) {
+      let onBeforeConnect = [];
       let onConnected = [];
       let watchers = [];
 
@@ -23,13 +24,13 @@ export function makeService(create) {
       });
 
       const self = {
-        get name() {
-          return $name.get();
-        },
-        set name(value) {
-          $name.set(value);
-        },
         debug: {
+          get name() {
+            return $name.get();
+          },
+          set name(value) {
+            $name.set(value);
+          },
           get label() {
             return $label.get();
           },
@@ -53,8 +54,8 @@ export function makeService(create) {
               .error(...args);
           },
         },
-        created(callback) {
-          onCreated.push(callback);
+        beforeConnect(callback) {
+          onBeforeConnect.push(callback);
         },
         connected(callback) {
           onConnected.push(callback);
@@ -63,16 +64,23 @@ export function makeService(create) {
           watchers.push($state.watch(...args));
         },
         getService,
+        options,
       };
+
+      const exports = create(self);
+
+      if (!isObject(exports)) {
+        throw new TypeError(`Service must return an object. Got: ${exports}`);
+      }
 
       return {
         exports: create(self),
-        _created(options = {}) {
-          for (const callback of onCreated) {
-            callback(options);
+        beforeConnect() {
+          for (const callback of onBeforeConnect) {
+            callback();
           }
         },
-        _connected() {
+        connected() {
           for (const callback of onConnected) {
             callback();
           }

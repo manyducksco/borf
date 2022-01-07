@@ -5,22 +5,16 @@ const HTTPService = makeService((self) => {
   self.debug.label = "woof:@http";
 
   const _middleware = [];
-  let fetch;
+  let fetch = self.options.fetch || window.fetch.bind(window);
   let requestId = 0;
-
-  self.created((options) => {
-    if (options.fetch) {
-      fetch = options.fetch;
-    }
-  });
 
   function request(method, url) {
     return new HTTPRequest({
       id: ++requestId,
       method,
       url,
+      fetch,
       middleware: _middleware,
-      fetch: fetch || window.fetch.bind(window),
       debug: self.debug,
     });
   }

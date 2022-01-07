@@ -10,10 +10,73 @@ import DebugService from "./services/@debug";
 import HTTPService from "./services/@http";
 import PageService from "./services/@page";
 
+// Just a working location for this.
+function makeDOM(node) {
+  const { element } = node;
+  let dom;
+
+  if (element.tag === ":text:") {
+    if (element.children.some((x) => !isString(x))) {
+      throw new Error(`All children of a :text: node must be strings.`);
+    }
+    dom = document.createTextNode(element.children.length > 0 ? element.children.join(" ") : "");
+    return dom;
+  } else if (element.tag === ":fragment:") {
+    dom = document.createDocumentFragment();
+
+    for (const child of children) {
+      dom.appendChild(makeDOM(child));
+    }
+    return;
+  }
+
+  dom = document.createElement(element.tag);
+
+  const children = [];
+
+  return {
+    connect(parent, after) {
+      const wasConnected = dom.parentNode != null;
+
+      if (!wasConnected) {
+        node.beforeConnect();
+
+        let after;
+        for (const node of element.children) {
+          const child = makeDOM(node);
+          children.push(child);
+          child.connect(dom, after);
+          after = child;
+        }
+      }
+
+      parent.insertBefore(dom, after ? after.nextSibling : null);
+
+      if (!wasConnected) {
+        node.connected();
+      }
+    },
+    disconnect() {
+      if (dom.parentNode) {
+        node.beforeDisconnect();
+        dom.parentNode.removeChild(dom);
+
+        while (children.length > 0) {
+          const child = children.pop();
+          child.disconnect();
+        }
+
+        node.disconnected();
+      }
+    },
+  };
+}
+
 export function makeApp(options = {}) {
   const router = makeRouter();
   const services = {};
 
+  let servicesCreated = false;
   let setup = async () => true;
   let history;
   let outlet;
@@ -131,12 +194,12 @@ export function makeApp(options = {}) {
 
       for (const name in services) {
         const service = services[name];
-        const instance = service.template.create(getService);
 
-        service.instance = instance;
-
-        instance._created(service.options);
+        service.instance = service.template.create(getService, service.options);
       }
+
+      // Restrict service access until all have been created
+      servicesCreated = true;
 
       debug = getService("@debug").channel("woof:app");
       dolla = makeDolla({
@@ -144,15 +207,16 @@ export function makeApp(options = {}) {
         $route: getService("@page").$route,
       });
 
+      for (const name in services) {
+        services[name].instance.beforeConnect();
+      }
+
       setup().then(() => {
         history.listen(onRouteChanged);
         onRouteChanged(history);
 
         for (const name in services) {
-          const { instance } = services[name];
-          if (isFunction(instance._connected)) {
-            instance._connected();
-          }
+          services[name].instance.connected();
         }
 
         catchLinks(outlet, (anchor) => {
@@ -183,11 +247,16 @@ export function makeApp(options = {}) {
    * @param name - Name of a service. Built-in services start with `@`.
    */
   function getService(name) {
+    if (!servicesCreated) {
+      // TODO: Specify in error that this is probably a self.getService in the main body of a service function.
+      throw new Error(`A service was requested before it was created. Got: ${name}`);
+    }
+
     if (services[name]) {
       return services[name].instance.exports;
     }
 
-    throw new Error(`Service is not registered in this app. Received: ${name}`);
+    throw new Error(`Service is not registered in this app. Got: ${name}`);
   }
 
   /**
@@ -211,21 +280,25 @@ export function makeApp(options = {}) {
       });
 
       if (routeChanged) {
-        // Mounting is deferred in case the component implements a `preload` method.
-        const mount = (newNode) => {
-          debug.log("mounting node", newNode);
+        const node = matched.props.component.create(getService, dolla, {}, [], $route);
+
+        const mount = (element) => {
+          debug.log(element);
+          const dom = makeDOM(element);
+          debug.log("mounting element", element, dom);
 
           if (mounted) {
-            mounted.$disconnect();
+            mounted.disconnect();
           }
-          mounted = newNode;
-          mounted.$connect(outlet);
+          mounted = dom;
+          mounted.connect(outlet);
 
-          mounted.$element.dataset.appRoute = $route.get("route");
+          // mounted.$element.dataset.appRoute = $route.get("route");
         };
 
-        const component = matched.props.component.create(getService, dolla, {}, [], $route);
-        component.load(mount);
+        node.component.preload(mount).then(() => {
+          mount(node.element);
+        });
       }
     } else {
       console.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);

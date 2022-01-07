@@ -1,4 +1,4 @@
-import { isState } from "@woofjs/state";
+import { makeState, isState } from "@woofjs/state";
 import { isArray, isObject, isString, isNumber } from "../../_helpers/typeChecking";
 import { $Node } from "./$Node";
 
@@ -56,6 +56,98 @@ const attrMap = {
     "onanimationstart",
   ],
 };
+
+// This is the object created by dolla.
+// Components should return the same.
+const node = {
+  element: {
+    tag: "div",
+    $attrs: makeState({}),
+    children: [],
+  },
+  // null if dolla element
+  component: {
+    name: "SomeName",
+    debug: {
+      label: "component:custom",
+    },
+    async preload(render) {}, // calls render with preload element
+    // resolves when preload calls done
+    beforeConnect() {},
+    connected() {},
+    beforeDisconnect() {},
+    disconnected() {},
+  },
+};
+
+function makeString(node) {
+  const { element } = node;
+}
+
+function makeDOM(node) {
+  const { element } = node;
+  let dom;
+
+  if (element.tag === ":text:") {
+    if (element.children.some((x) => !isString(x))) {
+      throw new Error(`All children of a :text: node must be strings.`);
+    }
+    dom = document.createTextNode(element.children.length > 0 ? element.children.join(" ") : "");
+    return dom;
+  } else if (element.tag === ":fragment:") {
+    dom = document.createDocumentFragment();
+
+    for (const child of children) {
+      dom.appendChild(makeDOM(child));
+    }
+    return;
+  }
+
+  dom = document.createElement(element.tag);
+
+  const children = [];
+
+  return {
+    connect(parent, after) {
+      const wasConnected = dom.parentNode != null;
+
+      if (!wasConnected) {
+        node.beforeConnect();
+
+        let after;
+        for (const node of element.children) {
+          const child = makeDOM(node);
+          children.push(child);
+          child.connect(dom, after);
+          after = child;
+        }
+      }
+
+      parent.insertBefore(dom, after ? after.nextSibling : null);
+
+      if (!wasConnected) {
+        node.connected();
+      }
+    },
+    disconnect() {
+      if (dom.parentNode) {
+        node.beforeDisconnect();
+        dom.parentNode.removeChild(dom);
+
+        while (children.length > 0) {
+          const child = children.pop();
+          child.disconnect();
+        }
+
+        node.disconnected();
+      }
+    },
+  };
+}
+
+function makeElement() {}
+
+makeElement("div", {});
 
 // One base type - DollaElement
 // Separate function for rendering that receives the element

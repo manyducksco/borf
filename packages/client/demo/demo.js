@@ -1,4 +1,4 @@
-import { makeApp, makeState, makeService, makeComponent, Component, Styles } from "./dist/woof.js";
+import { makeApp, makeState, makeService, makeComponent, Styles } from "./dist/woof.js";
 
 const app = makeApp({ hash: true });
 
@@ -41,56 +41,64 @@ const styles = new Styles({
   },
 });
 
+// const makeClass = () => {};
+
+// const button = makeClass({
+
+// });
+
+// // Pseudo selectors are methods on the class object
+// button.active({
+//   /* styles */
+// });
+// button.not(active.lastChild, {
+//   /* styles */
+// });
+
+// const active = makeClass({
+
+// });
+
+// button.active(active);
+
+// button.
+
 /*===========================*\
 ||        Class Toggle       ||
 \*===========================*/
 
-class ToggleExample extends Component {
-  $active = makeState(false);
-  $status = this.$active.map((current) => (current ? "ON" : "OFF"));
+const ToggleExample = makeComponent(($, self) => {
+  const $active = makeState(false);
+  const $status = $active.map((current) => (current ? "ON" : "OFF"));
 
-  createElement($) {
-    return $("div")(
-      {
-        class: {
-          [styles.active]: this.$active, // class "active" is applied while this.$active is true
-        },
-        onclick: () => {
-          this.$active.set((current) => !current);
-        },
+  return $("div")(
+    {
+      class: {
+        [styles.active]: $active, // class "active" is applied while $active is true
       },
-      $.text(this.$status),
-      "  (click to toggle)"
-    );
-  }
-}
+      onclick: () => {
+        $active.set((current) => !current);
+      },
+    },
+    $.text($status),
+    "  (click to toggle)"
+  );
+});
 
 /*===========================*\
 ||    Counter with Service   ||
 \*===========================*/
 
-// class Counter extends Service {
-//   $current = makeState(0);
-
-//   _created() {
-//     setInterval(() => {
-//       this.$current.set((current) => current + 1);
-//     }, 1000);
-//   }
-
-//   reset() {
-//     this.$current.set(0);
-//   }
-// }
-
 const CounterService = makeService((self) => {
-  self.name = "CounterService"; // TODO: Default this to the name the service is registered under
+  self.debug.name = "CounterService"; // TODO: Default this to the name the service is registered under
+
+  // Doc note: you can only access other services from lifecycle hooks or exported functions.
 
   const $current = makeState(0);
 
   self.connected(() => {
     setInterval(() => {
-      self.debug.log("tick", Date.now());
+      // self.debug.log("tick", Date.now());
       $current.set((current) => current + 1);
     }, 1000);
   });
@@ -119,14 +127,6 @@ const CounterExample = makeComponent(($, self) => {
 /**
  * Second component with a view only. Displays the same information from the same service.
  */
-// class CounterViewLabel extends Component {
-//   createElement($) {
-//     const counter = this.service("counter");
-
-//     return $("h1")($.text(counter.$current));
-//   }
-// }
-
 const CounterViewLabel = makeComponent(($, self) => {
   const { $current } = self.getService("counter");
 
@@ -137,215 +137,140 @@ const CounterViewLabel = makeComponent(($, self) => {
 ||   Conditional Rendering   ||
 \*===========================*/
 
-class ConditionalExample extends Component {
-  $show = makeState(false);
-  $label = this.$show.map((on) => (on ? "Hide Text" : "Show Text"));
+const ConditionalExample = makeComponent(($, self) => {
+  const $show = makeState(false);
+  const $label = $show.map((on) => (on ? "Hide Text" : "Show Text"));
 
-  createElement($) {
-    return $("div")(
-      $("button")(
-        {
-          onclick: () => {
-            this.$show.set((current) => !current);
-          },
+  return $("div")(
+    $("button")(
+      {
+        onclick: () => {
+          $show.set((current) => !current);
         },
-        $.text(this.$label)
-      ),
-      $.if(
-        this.$show,
-        $("span")(
-          {
-            connected() {
-              console.log("text was mounted");
-            },
-            disconnected() {
-              console.log("text was unmounted");
-            },
-          },
-          "Hello there!"
-        )
-      )
-    );
-  }
-}
+      },
+      $.text($label)
+    ),
+    $.if($show, $("span")("Hello there!"))
+  );
+});
 
 /*===========================*\
 ||      Rendering Lists      ||
 \*===========================*/
 
-class MapExample extends Component {
-  createElement($) {
-    const initialList = ["apple", "banana", "potato", "fried chicken"];
+const MapExample = makeComponent(($, self) => {
+  const initialList = ["apple", "banana", "potato", "fried chicken"];
 
-    const $shoppingList = makeState(initialList);
-    const $inputValue = makeState("");
+  const $shoppingList = makeState(initialList);
+  const $inputValue = makeState("");
 
-    return $("div")(
+  return $("div")(
+    $("button")(
+      {
+        onclick: () => {
+          const sorted = $shoppingList
+            .get()
+            .map((x) => x)
+            .sort();
+
+          $shoppingList.set(sorted);
+        },
+      },
+      "Sort A to Z"
+    ),
+    $("button")(
+      {
+        onclick: () => {
+          const sorted = $shoppingList
+            .get()
+            .map((x) => x)
+            .sort()
+            .reverse();
+
+          $shoppingList.set(sorted);
+        },
+      },
+      "Sort Z to A"
+    ),
+
+    $("div")(
+      { class: styles.flexCenter },
+      $("input")({
+        type: "text",
+        value: $inputValue,
+        oninput: (e) => {
+          $inputValue.set(e.target.value);
+        },
+      }),
+      $("button")(
+        {
+          disabled: $inputValue.map((current) => current.trim() == ""),
+          onclick: () => {
+            $shoppingList.set((current) => {
+              current.push($inputValue.get());
+            });
+            $inputValue.set("");
+          },
+        },
+        "Add Item"
+      ),
       $("button")(
         {
           onclick: () => {
-            const sorted = $shoppingList
-              .get()
-              .map((x) => x)
-              .sort();
-
-            $shoppingList.set(sorted);
+            $shoppingList.set(initialList);
           },
         },
-        "Sort A to Z"
-      ),
-      $("button")(
-        {
-          onclick: () => {
-            const sorted = $shoppingList
-              .get()
-              .map((x) => x)
-              .sort()
-              .reverse();
-
-            $shoppingList.set(sorted);
-          },
-        },
-        "Sort Z to A"
-      ),
-
-      $("div")(
-        { class: styles.flexCenter },
-        $("input")({
-          type: "text",
-          value: $inputValue,
-          oninput: (e) => {
-            $inputValue.set(e.target.value);
-          },
-        }),
-        $("button")(
-          {
-            disabled: $inputValue.map((current) => current.trim() == ""),
-            onclick: () => {
-              $shoppingList.set((current) => {
-                current.push($inputValue.get());
-              });
-              $inputValue.set("");
-            },
-          },
-          "Add Item"
-        ),
-        $("button")(
-          {
-            onclick: () => {
-              $shoppingList.set(initialList);
-            },
-          },
-          "Reset List"
-        )
-      ),
-
-      $.each(
-        $shoppingList,
-        (item) => item, // use items as keys as they are already unique strings
-        (item) =>
-          $("li")(
-            {
-              onclick() {
-                alert(item);
-              },
-            },
-            $.text(item)
-          )
+        "Reset List"
       )
-    );
-  }
-}
+    ),
+
+    $.each(
+      $shoppingList,
+      (item) => item, // use items as keys as they are already unique strings
+      (item) =>
+        $("li")(
+          {
+            onclick() {
+              alert(item);
+            },
+          },
+          $.text(item)
+        )
+    )
+  );
+});
 
 /*===========================*\
 ||      Two Way Binding      ||
 \*===========================*/
 
-class TwoWayBindExample extends Component {
-  $text = makeState("edit me");
-  $size = makeState(18);
+const TwoWayBindExample = makeComponent(($, self) => {
+  const $text = makeState("edit me");
+  const $size = makeState(18);
 
-  createElement($) {
-    return $("div")(
-      $("input")({
-        value: $.bind(this.$text),
-      }),
-      $("input")({
-        type: "number",
-        value: $.bind(this.$size), // number value gets converted back to number
-      }),
-      $("p")(
-        {
-          style: {
-            fontSize: this.$size.map((s) => `${s}px`),
-          },
+  return $("div")(
+    $("input")({
+      value: $.bind($text),
+    }),
+    $("input")({
+      type: "number",
+      value: $.bind($size), // number value gets converted back to number
+    }),
+    $("p")(
+      {
+        style: {
+          fontSize: $size.map((s) => `${s}px`),
         },
-        $.text(this.$text)
-      )
-    );
-  }
-}
+      },
+      $.text($text)
+    )
+  );
+});
 
 /*===========================*\
 ||        HTTP Request       ||
 \*===========================*/
 
-// class HTTPRequestExample extends Component {
-//   $loading = makeState(false);
-//   $image = makeState(null);
-
-//   _connected() {
-//     this.refresh();
-//   }
-
-//   refresh() {
-//     this.$loading.set(true);
-//     this.service("@http")
-//       .get("https://dog.ceo/api/breeds/image/random")
-//       .then((res) => {
-//         this.$image.set(res.body.message);
-//       })
-//       .finally(() => {
-//         this.$loading.set(false);
-//       });
-//   }
-
-//   createElement($) {
-//     const label = this.$loading.map((yes) => (yes ? "NOW LOADING..." : "Loaded!"));
-
-//     return $("div")(
-//       $("img")({
-//         src: this.$image,
-//         style: {
-//           height: "400px",
-//           border: "2px solid orange",
-//         },
-//       }),
-//       $("button")(
-//         {
-//           onclick: () => this.refresh(),
-//         },
-//         "Next Doggo"
-//       ),
-//       $.text(label)
-//     );
-//   }
-// }
-
-/**
- * Woof function components. How does this work?
- *
- * The main function body is the createElement function.
- * But it has to run to get the lifecycle methods.
- * Is that a problem?
- *
- * Function is called once just before mounting
- * gets lifecycle hooks registered, calls them
- * mounts the element returned from the function
- *
- * This approach lets us add methods on the component itself
- * that make it easy to connect
- */
 const HTTPRequestExample = makeComponent(($, self) => {
   const $loading = makeState(false);
   const $image = makeState();
@@ -396,24 +321,12 @@ const HTTPRequestExample = makeComponent(($, self) => {
   );
 });
 
-// const component = FunctionExample.create(getService, $route, attrs, ...children);
-
-// // This needs to work with multiple renderers (string, DOM, etc.)
-
-// component.connect(domNode);
-// component.disconnect();
-
 /*===========================*\
 ||       Mouse Follower      ||
 \*===========================*/
 
-// self object has:
-// getService
-// connected
-// watchState
-
 const MouseInfoService = makeService((self) => {
-  self.name = "MouseInfoService";
+  self.debug.name = "MouseInfoService";
 
   const $position = makeState({ x: 0, y: 0 });
 

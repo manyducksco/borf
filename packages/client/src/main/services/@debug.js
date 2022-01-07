@@ -20,8 +20,8 @@ const DebugService = makeService((self) => {
     matchers = parseFilter(current);
   });
 
-  self.created((options) => {
-    $filter.set(options.filter || "*,-woof:*");
+  self.beforeConnect(() => {
+    $filter.set(self.options.filter || "*,-woof:*");
   });
 
   return {

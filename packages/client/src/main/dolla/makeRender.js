@@ -6,7 +6,37 @@ import { $Text } from "./$Text";
  * Takes any element valid as a child and returns a render function that produces a $Node.
  */
 export function makeRender(element) {
-  if (isNode(element)) {
+  if (element.isComponentInstance) {
+    console.log(element);
+
+    return () => {
+      return {
+        get $isConnected() {
+          return element.element.parentNode != null;
+        },
+        get $isNode() {
+          return true;
+        },
+        $connect(parent, after) {
+          console.log({ parent, after });
+
+          element._beforeConnect();
+          element._connected();
+          element._beforeDisconnect();
+          element._disconnected();
+        },
+        $disconnect() {},
+      };
+
+      // const $classes = makeState({
+      //   active: false,
+      // });
+
+      // $classes.set((current) => (current.active = !current.active));
+
+      // <div class={$classes}></div>
+    };
+  } else if (isNode(element)) {
     return () => element;
   } else if (isDolla(element)) {
     return () => element();

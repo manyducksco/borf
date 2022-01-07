@@ -1,5 +1,6 @@
 import { makeState } from "@woofjs/state";
 import { makeService } from "../makeService.js";
+import { isString } from "../../_helpers/typeChecking.js";
 
 /**
  * Top level navigation and page metadata service.
@@ -8,11 +9,7 @@ const PageService = makeService((self) => {
   self.debug.label = "woof:@page";
 
   const $title = makeState(document?.title);
-  let history;
-
-  self.created((options) => {
-    history = options.history;
-  });
+  const history = self.options.history;
 
   self.connected(() => {
     if (document) {

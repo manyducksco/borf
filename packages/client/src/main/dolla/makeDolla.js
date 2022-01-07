@@ -24,14 +24,18 @@ export function makeDolla({ getService, $route }) {
     let defaultChildren = args;
     let elementType = null;
 
-    if (isComponent(element)) {
-      elementType = "component";
-    } else if (isString(element)) {
-      if (element === "" || element === "fragment") {
+    console.log(element);
+
+    if (isString(element)) {
+      if (element === "" || element === ":fragment:") {
         elementType = "fragment";
       } else {
         elementType = "element";
       }
+    } else if (isComponent(element)) {
+      elementType = "component";
+    } else if (element.isComponentInstance) {
+      console.log(element);
     } else {
       throw new TypeError(`Expected a tag name or a Component. Received: ${element}`);
     }
@@ -53,11 +57,7 @@ export function makeDolla({ getService, $route }) {
 
       switch (elementType) {
         case "component":
-          if (isFunction(element.create)) {
-            return element.create(getService, $, attributes, children, $route); // Function components
-          } else {
-            return new element(getService, $, attributes, children, $route); // Class components
-          }
+          return element.create(getService, $, attributes, children, $route);
         case "element":
           return new $Element(element, attributes, children);
         case "fragment":

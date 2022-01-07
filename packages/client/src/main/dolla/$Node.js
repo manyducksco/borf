@@ -1,3 +1,30 @@
+// Simulated DOM API which really makes a VDOM
+// This VDOM is rendered by various render functions for different environments
+// const element = makeElement("div");
+// const text = makeElement(":text:");
+// const fragment = makeElement(":fragment:");
+
+// element.classList;
+// element.dataset;
+// element.textContent;
+// element.value;
+// element.isConnected;
+// element.parentNode;
+// element.nextSibling;
+
+// element.insertBefore(parentElement, beforeElement);
+// element.setAttribute("name", "value");
+// element.removeAttribute("name");
+// element.addClass("name");
+// element.removeClass("name");
+// element.setData("name", "value");
+// element.removeData("name");
+
+// element.appendChild(otherElement);
+
+// renderToString(element);
+// renderToDOM(element);
+
 export class $Node {
   $element;
   #watchers = [];

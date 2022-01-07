@@ -128,6 +128,8 @@ export class $Outlet extends $Node {
     const node = $(component)();
 
     const mount = (newNode) => {
+      console.log({ component, newNode });
+
       if (this.#mounted !== newNode) {
         if (this.#mounted) {
           this.#mounted.$disconnect();
