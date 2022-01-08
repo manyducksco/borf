@@ -2,7 +2,7 @@ import { isFunction, isObject, isString } from "../../_helpers/typeChecking.js";
 import { makeService } from "../makeService.js";
 
 const HTTPService = makeService((self) => {
-  self.debug.label = "woof:@http";
+  self.debug.name = "woof:@http";
 
   const _middleware = [];
   let fetch = self.options.fetch || window.fetch.bind(window);

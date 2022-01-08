@@ -17,8 +17,24 @@ declare module "@manyducksco/woof" {
        * "*" // print everything
        * "woof:*" // display all woof internal logging
        * "-woof:http,component:*" // hide woof:http and display all channels starting with `component:`
+       * /^component\:/ // with regexp - display messages with labels beginning in "component:"
        */
-      filter?: string;
+      filter?: string | RegExp;
+
+      /**
+       * Print log messages when true. Default: true for development builds, false for production builds.
+       */
+      log?: boolean;
+
+      /**
+       * Print warn messages when true. Default: true for development builds, false for production builds.
+       */
+      warn?: boolean;
+
+      /**
+       * Print error messages when true. Default: true.
+       */
+      error?: boolean;
     };
 
     /**
@@ -28,9 +44,24 @@ declare module "@manyducksco/woof" {
   }
 
   /**
+   * Creates a new Woof app.
+   *
+   * @param options - Object with config options.
+   */
+  export function makeApp(options: AppOptions): App;
+
+  /**
    *
    */
-  export class App {
+  export type App = {
+    /**
+     * Mounts a component at a route, so when the browser URL matches that path the component will be displayed.
+     *
+     * @param path - URL path (e.g. "/users/:id/edit")
+     * @param component - A component to render for `path`
+     */
+    route(path: string, component: Component | ComponentFunction): this;
+
     /**
      * Registers a service on the app. Services can be referenced on
      * Services and Components using `this.service(name)`.
@@ -39,8 +70,50 @@ declare module "@manyducksco/woof" {
      * @param service - Service class. One instance will be created and shared.
      * @param options - Object to be passed to service.created() function when called.
      */
-    service(name: string, service: Service, options: any): this;
-  }
+    service(name: string, service: Service, options?: any): this;
+
+    /**
+     * Runs a function after services are created but before routes are connected.
+     * Use this to configure services or set initial state.
+     *
+     * @param fn - Setup function.
+     */
+    setup(fn: SetupFunction): this;
+
+    /**
+     * Connects the app and starts routing. Routes are rendered as children of the `root` element.
+     *
+     * @param root - DOM node or a selector string.
+     */
+    connect(root: string | Node): Promise<void>;
+  };
+
+  type getService = (name: string) => Object;
+
+  export type SetupFunction = (self: SetupSelf) => void | Promise<void>;
+
+  export type SetupSelf = {
+    getService: getService;
+  };
+
+  export type Component = {};
+
+  export type ComponentSelf = {
+    getService: getService;
+  };
+
+  export type ComponentFunction = ($: Dolla, self: ComponentSelf) => Element;
+
+  export type Element = {};
+
+  export type ServiceFunction = (self: ServiceSelf) => Object;
+
+  export type ServiceSelf = {
+    options: {
+      [name: string]: any;
+    };
+    getService: getService;
+  };
 
   /**
    * Creates a new app.
@@ -48,43 +121,6 @@ declare module "@manyducksco/woof" {
    * @param options - Customize your app with an options object.
    */
   export default function (options?: AppOptions): App;
-
-  /*==================================*\
-  ||              State               ||
-  \*==================================*/
-
-  export interface State<Value> {
-    /**
-     * Returns the current value.
-     */
-    (): Value;
-
-    /**
-     * Updates the value.
-     */
-    (value: Value): void;
-
-    /**
-     * Subscribes to value changes. Returns a cancel function to unsubscribe.
-     */
-    (callback: (value: Value) => void): () => void;
-  }
-
-  /**
-   * Custom methods that are added to the state object.
-   * Each one takes the current value and returns the new value.
-   */
-  export interface StateMethods<Value> {
-    [name: string]: (current: Value, ...args: any[]) => Value;
-  }
-
-  /**
-   * Creates a get/set/listen function to track a variable.
-   */
-  export function state<Value>(
-    initialValue: Value,
-    methods?: StateMethods<Value>
-  ): State<Value>;
 
   /*==================================*\
   ||              Dolla               ||
@@ -102,11 +138,7 @@ declare module "@manyducksco/woof" {
     (tag: string, attributes?: any): $Node;
     (component: Component, attributes?: any): $Node;
 
-    if(
-      condition: State<any>,
-      then: $Node | (() => $Node),
-      otherwise?: $Node | (() => $Node)
-    ): $Node;
+    if(condition: State<any>, then: $Node | (() => $Node), otherwise?: $Node | (() => $Node)): $Node;
   };
 
   /*==================================*\
@@ -122,10 +154,7 @@ declare module "@manyducksco/woof" {
   type HTTPMiddleware = (ctx: HTTPRequestContext) => Promise<void>;
 
   export class HTTP {
-    get(
-      url: string,
-      ...args: [...middleware: HTTPMiddleware[], options?: HTTPRequestOptions]
-    ): HTTPRequest;
+    get(url: string, ...args: [...middleware: HTTPMiddleware[], options?: HTTPRequestOptions]): HTTPRequest;
   }
 
   /*==================================*\

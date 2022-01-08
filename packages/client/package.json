@@ -18,6 +18,20 @@
   "keywords": [],
   "author": "Tony McCoy <tony@thatsalotofducks.com>",
   "license": "ISC",
+  "exports": {
+    ".": {
+      "require": "./dist/woof.node.js",
+      "import": "./dist/woof.js"
+    },
+    "./test": {
+      "require": "./dist/woof.test.js",
+      "import": "./dist/woof.test.js"
+    },
+    "./server": {
+      "require": "./dist/woof.server.js",
+      "import": "./dist/woof.server.js"
+    }
+  },
   "devDependencies": {
     "@testing-library/dom": "^8.11.1",
     "@types/jest": "^27.0.2",
@@ -30,7 +44,6 @@
     "es-jest": "^1.5.0",
     "esbuild": "^0.14.10",
     "history": "^5.2.0",
-    "html-tags": "^3.1.0",
     "http-server": "^14.0.0",
     "isomorphic-fetch": "^3.0.0",
     "jest": "^27.4.6",

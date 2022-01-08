@@ -6,7 +6,7 @@ import { isString } from "../../_helpers/typeChecking.js";
  * Top level navigation and page metadata service.
  */
 const PageService = makeService((self) => {
-  self.debug.label = "woof:@page";
+  self.debug.name = "woof:@page";
 
   const $title = makeState(document?.title);
   const history = self.options.history;

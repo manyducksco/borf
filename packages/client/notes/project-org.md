@@ -6,11 +6,12 @@ Packages:
 
 - @woofjs/cli
 - @woofjs/app + @woofjs/app/testing
-  - App/makeApp, Component, Service
-  - suite, wrapComponent, wrapService
+  - makeApp, makeComponent, makeService
+  - makeSuite, wrapComponent, wrapService
 - @woofjs/server + @woofjs/server/testing
-  - Server/makeServer, Resource, Service
-  - suite, wrapResource, wrapService
+  - makeServer, makeResource, makeService
+  - makeSuite, wrapResource, wrapService
+  - makeComponent for server-side templating
 - @woofjs/data
   - makeStore, Model, Adapter
 - @woofjs/state (state package standalone - used in other packages)

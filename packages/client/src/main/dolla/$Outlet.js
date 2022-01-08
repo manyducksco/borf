@@ -15,10 +15,10 @@ export class $Outlet extends $Node {
     return true;
   }
 
+  #router = makeRouter();
   #outlet;
   #mounted;
   #dolla;
-  #router = makeRouter();
   #path;
   #debug;
   #depth;
@@ -29,14 +29,14 @@ export class $Outlet extends $Node {
     params: {},
     query: {},
     wildcard: null,
-    depth: 1,
+    depth: 1, // how many levels of nesting - +1 for each $.outlet()
   });
 
   get isConnected() {
     return this.#outlet && this.#outlet.isConnected;
   }
 
-  constructor(getService, element, $route) {
+  constructor(getService, debug, element, $route) {
     super();
 
     this.createElement = makeRender(element);
@@ -48,9 +48,10 @@ export class $Outlet extends $Node {
     });
     this.#dolla = makeDolla({
       getService,
+      debug,
       $route: this.$route,
     });
-    this.#debug = getService("@debug").channel("woof:outlet");
+    this.#debug = getService("@debug").makeChannel("woof:outlet");
   }
 
   route(route, component) {
@@ -71,7 +72,7 @@ export class $Outlet extends $Node {
     const wasConnected = this.isConnected;
 
     // Run lifecycle callback only if connecting.
-    // Connecting a node that is already connected moves it without unmounting.
+    // Connecting a node that is already connected moves it without disconnecting.
     if (!wasConnected) {
       this.#outlet = this.createElement();
     }
@@ -140,20 +141,19 @@ export class $Outlet extends $Node {
     const node = $(component)();
 
     const mount = (newNode) => {
-      // if (this.#mounted !== newNode) {
-      if (this.#mounted) {
-        this.#mounted.disconnect();
+      if (this.#mounted !== newNode) {
+        if (this.#mounted) {
+          this.#mounted.disconnect();
+        }
+        this.#mounted = newNode;
+        this.#mounted.connect(this.#outlet.element);
       }
-      this.#mounted = newNode;
-      this.#mounted.connect(this.#outlet.element);
-      // }
     };
 
     let start = Date.now();
     node.preload(mount).then(() => {
       const time = Date.now() - start;
       mount(node);
-      // console.log(this.$route.get());
       this.#debug.log(`[➔${this.#depth.get()}] mounted route '${this.$route.get("route")}' - preloaded in ${time}ms`);
     });
   }

@@ -7,13 +7,11 @@ import { $Outlet } from "./$Outlet";
 import { $Text } from "./$Text";
 import { $Watch } from "./$Watch";
 import { makeRender } from "./makeRender";
-// import htmlTags from "html-tags";
-// import htmlVoidTags from "html-tags/void";
 
 /**
  * Creates a $ function with bound injectables.
  */
-export function makeDolla({ getService, $route }) {
+export function makeDolla({ getService, debug, $route }) {
   function $(element, ...args) {
     let defaultAttrs = {};
 
@@ -53,7 +51,14 @@ export function makeDolla({ getService, $route }) {
 
       switch (elementType) {
         case "component":
-          return element.create(getService, $, attrs, children, $route);
+          return element.create({
+            getService,
+            debug: debug.makeChannel("component:~"),
+            dolla: $,
+            attrs,
+            children,
+            $route,
+          });
         case "element":
           return new $Element(element, attrs, children);
         case "fragment":
@@ -94,7 +99,7 @@ export function makeDolla({ getService, $route }) {
 
     const node = $(element, attributes);
 
-    return new $Outlet(getService, node, $route);
+    return new $Outlet(getService, debug, node, $route);
   };
 
   /**
@@ -110,20 +115,6 @@ export function makeDolla({ getService, $route }) {
       state,
     };
   };
-
-  // Object.defineProperty($, "elements", {
-  //   get() {
-  //     const elements = {};
-
-  //     for (const tag of [...htmlTags, ...htmlVoidTags]) {
-  //       elements[tag] = function (...args) {
-  //         return $(tag, ...args);
-  //       };
-  //     }
-
-  //     return elements;
-  //   },
-  // });
 
   Object.freeze($);
 

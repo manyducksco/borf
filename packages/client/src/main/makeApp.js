@@ -1,79 +1,21 @@
 import { createHashHistory, createBrowserHistory } from "history";
 import { makeRouter } from "@woofjs/router";
-import { isFunction, isString, isService, isComponent } from "../_helpers/typeChecking";
-import { makeDolla } from "./dolla/makeDolla";
-import catchLinks from "../_helpers/catchLinks";
-import { joinPath } from "../_helpers/joinPath";
+import { makeDolla } from "./dolla/makeDolla.js";
+import { makeDebug } from "./debug/makeDebug.js";
 import { makeComponent } from "./makeComponent.js";
+import { makeService } from "./makeService.js";
+import { isFunction, isString, isService, isComponent } from "../_helpers/typeChecking.js";
+import { joinPath } from "../_helpers/joinPath.js";
+import catchLinks from "../_helpers/catchLinks.js";
 
 import DebugService from "./services/@debug";
 import HTTPService from "./services/@http";
 import PageService from "./services/@page";
 
-// Just a working location for this.
-function makeDOM(node) {
-  const { element } = node;
-  let dom;
-
-  if (element.tag === ":text:") {
-    if (element.children.some((x) => !isString(x))) {
-      throw new Error(`All children of a :text: node must be strings.`);
-    }
-    dom = document.createTextNode(element.children.length > 0 ? element.children.join(" ") : "");
-    return dom;
-  } else if (element.tag === ":fragment:") {
-    dom = document.createDocumentFragment();
-
-    for (const child of children) {
-      dom.appendChild(makeDOM(child));
-    }
-    return;
-  }
-
-  dom = document.createElement(element.tag);
-
-  const children = [];
-
-  return {
-    connect(parent, after) {
-      const wasConnected = dom.parentNode != null;
-
-      if (!wasConnected) {
-        node.beforeConnect();
-
-        let after;
-        for (const node of element.children) {
-          const child = makeDOM(node);
-          children.push(child);
-          child.connect(dom, after);
-          after = child;
-        }
-      }
-
-      parent.insertBefore(dom, after ? after.nextSibling : null);
-
-      if (!wasConnected) {
-        node.connected();
-      }
-    },
-    disconnect() {
-      if (dom.parentNode) {
-        node.beforeDisconnect();
-        dom.parentNode.removeChild(dom);
-
-        while (children.length > 0) {
-          const child = children.pop();
-          child.disconnect();
-        }
-
-        node.disconnected();
-      }
-    },
-  };
-}
-
 export function makeApp(options = {}) {
   const router = makeRouter();
+  const debug = makeDebug(options.debug);
+  const appDebug = debug.makeChannel("woof:app");
   const services = {};
 
   let servicesCreated = false;
@@ -81,7 +23,7 @@ export function makeApp(options = {}) {
   let history;
   let outlet;
   let mounted;
-  let debug;
+
   let dolla;
 
   if (options.history) {
@@ -97,19 +39,6 @@ export function makeApp(options = {}) {
   ////
 
   const methods = {
-    /**
-     * TODO: Plugins
-     */
-    use(fn) {
-      fn({
-        route: () => {},
-        service: () => {},
-        setup: () => {}, // Await all plugin setup functions async - don't let them depend on other plugins
-      });
-
-      return methods;
-    },
-
     /**
      * Adds a route to the list for matching when the URL changes.
      *
@@ -131,14 +60,18 @@ export function makeApp(options = {}) {
     },
 
     /**
-     * Registers a service on the app. Services can be referenced on
-     * Services and Components using `this.service(name)`.
+     * Registers a service on the app. Services can be referenced in
+     * Services and Components using `self.getService(name)`.
      *
      * @param name - Unique string to name this service.
      * @param service - A service. One instance will be created and shared.
      * @param options - Object to be passed to service.created() function when called.
      */
     service(name, service, options) {
+      if (isFunction(service)) {
+        service = makeService(service);
+      }
+
       if (!isService(service)) {
         throw new TypeError(`Expected a service. Got: ${service}`);
       }
@@ -165,8 +98,7 @@ export function makeApp(options = {}) {
      * Takes a function that configures the app before it starts.
      * This function is called after services have been created
      *
-     * If the function returns
-     * a Promise, the app will not be started until the Promise resolves.
+     * If the function returns a Promise, the app will not be started until the Promise resolves.
      *
      * @param fn - App config function.
      */
@@ -196,15 +128,19 @@ export function makeApp(options = {}) {
         const service = services[name];
 
         // First bits of app code are run; service functions called.
-        service.instance = service.template.create(getService, service.options);
+        service.instance = service.template.create({
+          getService,
+          debug: debug.makeChannel(`service:${name}`),
+          options: service.options,
+        });
       }
 
       // Unlock getService now that all services have been created.
       servicesCreated = true;
 
-      debug = getService("@debug").channel("woof:app");
       dolla = makeDolla({
         getService,
+        debug,
         $route: getService("@page").$route,
       });
 
@@ -229,7 +165,7 @@ export function makeApp(options = {}) {
             href = joinPath(history.location.pathname, href);
           }
 
-          debug.log("caught link click: " + href);
+          appDebug.log("caught link click: " + href);
 
           history.push(href);
         });
@@ -283,7 +219,14 @@ export function makeApp(options = {}) {
       });
 
       if (routeChanged) {
-        const node = matched.props.component.create(getService, dolla, {}, [], $route);
+        const node = matched.props.component.create({
+          getService,
+          dolla,
+          debug: debug.makeChannel("component:~"), // TODO: Figure out how to default name components
+          attrs: {},
+          children: [],
+          $route,
+        });
 
         const mount = (element) => {
           if (mounted) {
@@ -299,11 +242,11 @@ export function makeApp(options = {}) {
         node.preload(mount).then(() => {
           const time = Date.now() - start;
           mount(node.element);
-          debug.log(`[➔0] mounted route '${matched.route}' - preloaded in ${time}ms`);
+          appDebug.log(`[➔0] mounted route '${matched.route}' - preloaded in ${time}ms`);
         });
       }
     } else {
-      debug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
+      appDebug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
     }
   }
 
@@ -311,7 +254,7 @@ export function makeApp(options = {}) {
   // Built-in services
   ////
 
-  methods.service("@debug", DebugService, options.debug);
+  methods.service("@debug", () => debug); // expose debug as a service
   methods.service("@http", HTTPService);
   methods.service("@page", PageService, { history });
 

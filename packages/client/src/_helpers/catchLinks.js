@@ -24,14 +24,7 @@ export default function catchLinks(root, callback, _window = window) {
   }
 
   function handler(e) {
-    if (
-      (e.button && e.button !== 0) ||
-      e.ctrlKey ||
-      e.metaKey ||
-      e.altKey ||
-      e.shiftKey ||
-      e.defaultPrevented
-    ) {
+    if ((e.button && e.button !== 0) || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || e.defaultPrevented) {
       return;
     }
 
@@ -47,8 +40,7 @@ export default function catchLinks(root, callback, _window = window) {
       _window.location.port !== anchor.port ||
       anchor.hasAttribute("data-router-ignore") ||
       anchor.hasAttribute("download") ||
-      (anchor.getAttribute("target") === "_blank" &&
-        safeExternalLink.test(anchor.getAttribute("rel"))) ||
+      (anchor.getAttribute("target") === "_blank" && safeExternalLink.test(anchor.getAttribute("rel"))) ||
       protocolLink.test(anchor.getAttribute("href"))
     ) {
       return;

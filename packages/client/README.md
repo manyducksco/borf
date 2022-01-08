@@ -37,29 +37,6 @@ npm i @manyducksco/woof
 ## Interesting Trivia
 
 - Routes have to end with `*` to have sub-routes. `$.route()` will throw an error otherwise.
-- `$` is only available in route handlers and a component's `createElement` method.
-
-## TODO
-
-```js
-class Example extends Component {
-  createElement($) {
-    const { $route, $attrs } = this;
-
-    // Components get this.$route injected?
-    // Then it can be accessed outside of createElement and preload
-    this.watchState($route, (route) => {
-      console.log(`Path is now ${route.path}`);
-    });
-
-    // Dynamically map the 'title' attribute to an element
-    return $("h1")($.text($attrs.map("title")));
-
-    // Map the title attribute but don't update if it changes in the future
-    return $("h1")($attrs.get("title"));
-  }
-}
-```
 
 #### `@engine`
 

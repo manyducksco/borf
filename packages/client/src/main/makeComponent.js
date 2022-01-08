@@ -11,7 +11,7 @@ export function makeComponent(create) {
       return true;
     },
 
-    create(getService, dolla, attrs, children, $route) {
+    create({ getService, debug, dolla, attrs, children, $route }) {
       let onBeforeConnect = [];
       let onConnected = [];
       let onBeforeDisconnect = [];
@@ -19,50 +19,12 @@ export function makeComponent(create) {
       let watchers = [];
       let preload;
 
-      const $name = makeState();
-      const $label = makeState("component:~");
-
-      // Update label based on service name.
-      // Cancelled if debug.label is set explicitly.
-      const unwatchName = $name.watch((current) => {
-        $label.set(`component:${current}`);
-      });
-
       const self = {
-        getService,
         $route,
         $attrs: makeState({}),
+        getService,
         children,
-        debug: {
-          get name() {
-            return $name.get();
-          },
-          set name(value) {
-            $name.set(value);
-          },
-          get label() {
-            return $label.get();
-          },
-          set label(value) {
-            unwatchName();
-            $label.set(value);
-          },
-          log(...args) {
-            getService("@debug")
-              .channel($label.get())
-              .log(...args);
-          },
-          warn(...args) {
-            getService("@debug")
-              .channel($label.get())
-              .warn(...args);
-          },
-          error(...args) {
-            getService("@debug")
-              .channel($label.get())
-              .error(...args);
-          },
-        },
+        debug,
         preload(func) {
           preload = func;
         },
@@ -92,8 +54,8 @@ export function makeComponent(create) {
       const element = create(dolla, self);
 
       if (element !== null && !isNode(element)) {
-        console.log(String(create));
-        throw new TypeError(`Expected component to return an $(element) or null. Got: ${element}`);
+        // console.log(String(create));
+        throw new TypeError(`Component must return an $(element) or null. Got: ${element}`);
       }
 
       return {
@@ -137,7 +99,7 @@ export function makeComponent(create) {
             }
           }
 
-          // Running connect even if already connected without rerunning lifecycle hooks.
+          // Run connect even if already connected without rerunning lifecycle hooks.
           // This is used for reinserting nodes when sorting an $Each.
           if (element != null) this.element.connect(parent, after);
 

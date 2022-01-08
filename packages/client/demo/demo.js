@@ -1,16 +1,14 @@
 import { makeApp, makeState, makeService, makeComponent, Styles } from "./dist/woof.js";
 
-const app = makeApp({ hash: true });
-
-// TODO: Plugins
-
-// app.use((plugin) => {
-//   // Plugins take the form of a function. This function gets a plugin object
-//   // which is similar to an App, but only provides a handful of methods:
-//   plugin.service("someName", class extends Service {});
-//   plugin.route("*", class extends Component {});
-//   plugin.setup((getService) => {}); // Plugin setups are all called at once and awaited with Promise.all before starting the app.
-// });
+const app = makeApp({
+  hash: true,
+  debug: {
+    filter: "*",
+    log: true,
+    warn: true,
+    error: true,
+  },
+});
 
 const styles = new Styles({
   testing: {
@@ -40,28 +38,6 @@ const styles = new Styles({
     alignItems: "center",
   },
 });
-
-// const makeClass = () => {};
-
-// const button = makeClass({
-
-// });
-
-// // Pseudo selectors are methods on the class object
-// button.active({
-//   /* styles */
-// });
-// button.not(active.lastChild, {
-//   /* styles */
-// });
-
-// const active = makeClass({
-
-// });
-
-// button.active(active);
-
-// button.
 
 /*===========================*\
 ||        Class Toggle       ||
@@ -100,23 +76,6 @@ const CounterService = makeService((self) => {
       $current.set((current) => current + 1);
     }, 1000);
   });
-
-  self.watchState(
-    $current,
-    (current) => {
-      // Make debug not a service. It should be accessible before the first service loads.
-      // const channel = debug.makeChannel(); // channel is created and passed down to every component and service like this
-      // // fields on channel object which feed messages and metadata up to the app, where it can handle those feeds and store them for dev tools
-      // // references settings from top level
-      // channel.name = "ComponentName";
-      // channel.label = "custom:test";
-      // channel.log();
-      // channel.warn();
-      // channel.error();
-      // self.debug.log(current);
-    }
-    // { immediate: true }
-  );
 
   return {
     $current,
@@ -198,6 +157,11 @@ const CounterViewLabel = makeComponent(($, self) => {
 \*===========================*/
 
 const ConditionalExample = makeComponent(($, self) => {
+  self.debug.name = "ConditionalExample";
+  self.debug.log("HELLO");
+  self.debug.warn("WARNING");
+  self.debug.error("UH");
+
   const $show = makeState(false);
   const $label = $show.map((on) => (on ? "Hide Text" : "Show Text"));
 
@@ -566,9 +530,5 @@ const makeRedirect = (path) => {
     return $("span")();
   });
 };
-
-app.setup((getService) => {
-  getService("@debug").$filter.set("*");
-});
 
 app.connect("#app");
