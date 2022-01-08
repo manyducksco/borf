@@ -72,9 +72,12 @@ const CounterService = makeService((self) => {
 
   self.connected(() => {
     setInterval(() => {
-      // self.debug.log("tick", Date.now());
       $current.set((current) => current + 1);
     }, 1000);
+  });
+
+  self.watchState($current, (current) => {
+    self.debug.log("tick", current);
   });
 
   return {
