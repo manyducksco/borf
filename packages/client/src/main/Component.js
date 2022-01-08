@@ -19,7 +19,7 @@ export class Component extends $Node {
 
   $attrs = makeState({});
 
-  get $isConnected() {
+  get isConnected() {
     return this.#root && this.#root.$isConnected;
   }
 
@@ -51,8 +51,8 @@ export class Component extends $Node {
     throw new Error(`Component needs a 'createElement' method`);
   }
 
-  $connect(parent, after = null) {
-    const wasConnected = this.$isConnected;
+  connect(parent, after = null) {
+    const wasConnected = this.isConnected;
 
     // Run lifecycle callback only if connecting.
     // Connecting a node that is already connected moves it without unmounting.
@@ -67,26 +67,26 @@ export class Component extends $Node {
         throw new Error(`Component 'createElement' method must return an $(element). Received: ${this.#root}`);
       }
 
-      this._beforeConnect();
+      this.beforeConnect();
     }
 
     this.#root.$connect(parent, after);
-    this.$element = this.#root.$element;
+    this.element = this.#root.$element;
 
     if (!wasConnected) {
-      this._connected();
+      this.connected();
     }
   }
 
-  $disconnect() {
-    if (this.$isConnected) {
-      this._beforeDisconnect();
+  disconnect() {
+    if (this.isConnected) {
+      this.beforeDisconnect();
 
       this.#root.$disconnect();
 
-      this._disconnected();
+      this.disconnected();
       this.#root = null;
-      this.$element = null;
+      this.element = null;
     }
   }
 }

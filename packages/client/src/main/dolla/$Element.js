@@ -59,95 +59,107 @@ const attrMap = {
 
 // This is the object created by dolla.
 // Components should return the same.
-const node = {
-  element: {
-    tag: "div",
-    $attrs: makeState({}),
-    children: [],
-  },
-  // null if dolla element
-  component: {
-    name: "SomeName",
-    debug: {
-      label: "component:custom",
-    },
-    async preload(render) {}, // calls render with preload element
-    // resolves when preload calls done
-    beforeConnect() {},
-    connected() {},
-    beforeDisconnect() {},
-    disconnected() {},
-  },
-};
+// const node = {
+//   element: {
+//     tag: "div",
+//     attrs: {},
+//     children: [],
+//   },
+//   // null if dolla element
+//   component: {
+//     name: "SomeName",
+//     debug: {
+//       label: "component:custom",
+//     },
+//     async preload(render) {}, // calls render with an element to display during preload, resolves when preload calls `done`
+//     beforeConnect() {},
+//     connected() {},
+//     beforeDisconnect() {},
+//     disconnected() {},
+//   },
+// };
 
-function makeString(node) {
-  const { element } = node;
-}
+// function makeString(node) {
+//   const { element } = node;
+// }
 
-function makeDOM(node) {
-  const { element } = node;
-  let dom;
+// function makeDOM(node) {
+//   const { element } = node;
+//   let dom;
 
-  if (element.tag === ":text:") {
-    if (element.children.some((x) => !isString(x))) {
-      throw new Error(`All children of a :text: node must be strings.`);
-    }
-    dom = document.createTextNode(element.children.length > 0 ? element.children.join(" ") : "");
-    return dom;
-  } else if (element.tag === ":fragment:") {
-    dom = document.createDocumentFragment();
+//   if (element.tag === ":text:") {
+//     if (element.children.some((x) => !isString(x))) {
+//       throw new Error(`All children of a :text: node must be strings.`);
+//     }
+//     dom = document.createTextNode(element.children.length > 0 ? element.children.join(" ") : "");
+//     return dom;
+//   } else if (element.tag === ":fragment:") {
+//     dom = document.createDocumentFragment();
 
-    for (const child of children) {
-      dom.appendChild(makeDOM(child));
-    }
-    return;
-  }
+//     for (const child of children) {
+//       dom.appendChild(makeDOM(child));
+//     }
+//     return;
+//   }
 
-  dom = document.createElement(element.tag);
+//   dom = document.createElement(element.tag);
 
-  const children = [];
+//   const children = [];
 
-  return {
-    connect(parent, after) {
-      const wasConnected = dom.parentNode != null;
+//   return {
+//     connect(parent, after) {
+//       const wasConnected = dom.parentNode != null;
 
-      if (!wasConnected) {
-        node.beforeConnect();
+//       if (!wasConnected) {
+//         node.beforeConnect();
 
-        let after;
-        for (const node of element.children) {
-          const child = makeDOM(node);
-          children.push(child);
-          child.connect(dom, after);
-          after = child;
-        }
-      }
+//         let after;
+//         for (const node of element.children) {
+//           const child = makeDOM(node);
+//           children.push(child);
+//           child.connect(dom, after);
+//           after = child;
+//         }
+//       }
 
-      parent.insertBefore(dom, after ? after.nextSibling : null);
+//       parent.insertBefore(dom, after ? after.nextSibling : null);
 
-      if (!wasConnected) {
-        node.connected();
-      }
-    },
-    disconnect() {
-      if (dom.parentNode) {
-        node.beforeDisconnect();
-        dom.parentNode.removeChild(dom);
+//       if (!wasConnected) {
+//         node.connected();
+//       }
+//     },
+//     disconnect() {
+//       if (dom.parentNode) {
+//         node.beforeDisconnect();
+//         dom.parentNode.removeChild(dom);
 
-        while (children.length > 0) {
-          const child = children.pop();
-          child.disconnect();
-        }
+//         while (children.length > 0) {
+//           const child = children.pop();
+//           child.disconnect();
+//         }
 
-        node.disconnected();
-      }
-    },
-  };
-}
+//         node.disconnected();
+//       }
+//     },
+//   };
+// }
 
-function makeElement() {}
+// function makeElement() {}
 
-makeElement("div", {});
+// makeElement("div", {});
+
+// // if tag is string, make element
+// $("div", { class: { test: true } }, "Test");
+// const element = makeElement("div", ...stuff); // ends up with an element
+
+// // if tag is component, create component
+// $(SomeComponent, { name: "test" });
+// const component = SomeComponent.create(...stuff);
+// const element = component.element; // ends up with an element
+
+// $.text($state);
+// element = makeElement(":text:", $state);
+// element = makeElement(":")
 
 // One base type - DollaElement
 // Separate function for rendering that receives the element
@@ -182,6 +194,10 @@ export class $Element extends $Node {
   children;
   watchers = [];
 
+  get isElement() {
+    return true;
+  }
+
   constructor(tag, attributes = {}, children = []) {
     super();
 
@@ -194,11 +210,11 @@ export class $Element extends $Node {
     return document.createElement(this.tag);
   }
 
-  _beforeConnect() {
+  beforeConnect() {
     let previous = null;
 
     for (const child of this.children) {
-      child.$connect(this.$element, previous?.$element);
+      child.connect(this.element, previous?.$element);
       previous = child;
     }
 
@@ -208,15 +224,15 @@ export class $Element extends $Node {
     this.#attachEvents();
   }
 
-  _connected() {
+  connected() {
     if (this.attributes.ref) {
-      this.attributes.ref.set(this.$element);
+      this.attributes.ref.set(this.element);
     }
   }
 
-  _disconnected() {
+  disconnected() {
     for (const child of this.children) {
-      child.$disconnect();
+      child.disconnect();
     }
 
     // Cancel listens, bindings and event handlers
@@ -232,10 +248,10 @@ export class $Element extends $Node {
         const eventName = key.slice(2).toLowerCase();
         const listener = this.attributes[key];
 
-        this.$element.addEventListener(eventName, listener);
+        this.element.addEventListener(eventName, listener);
 
         this.watchers.push(() => {
-          this.$element.removeEventListener(eventName, listener);
+          this.element.removeEventListener(eventName, listener);
         });
       }
     }
@@ -251,13 +267,13 @@ export class $Element extends $Node {
         if (isState(value)) {
           this.#watch(value, (value) => {
             if (value) {
-              this.$element.classList.add(name);
+              this.element.classList.add(name);
             } else {
-              this.$element.classList.remove(name);
+              this.element.classList.remove(name);
             }
           });
         } else if (value) {
-          this.$element.classList.add(name);
+          this.element.classList.add(name);
         }
       }
     }
@@ -270,12 +286,12 @@ export class $Element extends $Node {
 
         if (isState(prop)) {
           this.#watch(prop, (value) => {
-            this.$element.style[name] = value;
+            this.element.style[name] = value;
           });
         } else if (isString(prop)) {
-          this.$element.style[name] = prop;
+          this.element.style[name] = prop;
         } else if (isNumber(prop)) {
-          this.$element.style[name] = prop + "px";
+          this.element.style[name] = prop + "px";
         } else {
           throw new TypeError(`Style value should be a string or number. Received (${name}: ${prop})`);
         }
@@ -290,20 +306,20 @@ export class $Element extends $Node {
       if (name === "value") {
         if (isState(attr)) {
           this.#watch(attr, (value) => {
-            this.$element.value = String(value);
+            this.element.value = String(value);
           });
         } else if (isObject(attr) && attr.isBinding) {
           this.#watch(attr.state, (value) => {
-            this.$element.value = String(value);
+            this.element.value = String(value);
           });
 
-          this.$element.addEventListener(attr.event, (e) => {
+          this.element.addEventListener(attr.event, (e) => {
             const value = toSameType(attr.state.get(), e.target.value);
 
             attr.state.set(value);
           });
         } else {
-          this.$element.value = String(this.attributes.value);
+          this.element.value = String(this.attributes.value);
         }
       }
 
@@ -312,25 +328,25 @@ export class $Element extends $Node {
           if (isState(attr)) {
             this.#watch(attr, (value) => {
               if (value) {
-                this.$element.setAttribute(name, "");
+                this.element.setAttribute(name, "");
               } else {
-                this.$element.removeAttribute(name);
+                this.element.removeAttribute(name);
               }
             });
           } else if (attr) {
-            this.$element.setAttribute(name, "");
+            this.element.setAttribute(name, "");
           }
         } else {
           if (isState(attr)) {
             this.#watch(attr, (value) => {
               if (value) {
-                this.$element.setAttribute(name, value.toString());
+                this.element.setAttribute(name, value.toString());
               } else {
-                this.$element.removeAttribute(name);
+                this.element.removeAttribute(name);
               }
             });
           } else if (attr) {
-            this.$element.setAttribute(name, String(attr));
+            this.element.setAttribute(name, String(attr));
           }
         }
       }

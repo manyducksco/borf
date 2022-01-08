@@ -16,19 +16,19 @@ export class $Text extends $Node {
     return document.createTextNode(this.value);
   }
 
-  _beforeConnect() {
+  beforeConnect() {
     if (this.state) {
       this.unwatch = this.state.watch((value) => {
         this.value = value;
-        this.$element.textContent = value;
+        this.element.textContent = value;
       });
 
       this.value = this.state.get();
-      this.$element.textContent = this.value;
+      this.element.textContent = this.value;
     }
   }
 
-  _disconnected() {
+  disconnected() {
     if (this.unwatch) {
       this.unwatch();
       this.unwatch = null;

@@ -24,7 +24,7 @@ export class $Each extends $Node {
   }
 
   update(list) {
-    if (!this.$isConnected) {
+    if (!this.isConnected) {
       return;
     }
 
@@ -94,10 +94,10 @@ export class $Each extends $Node {
       for (const entry of removed) {
         const item = this.list.find((x) => x.key === entry.key);
 
-        item?.node.$disconnect();
+        item?.node.disconnect();
       }
 
-      if (!this.$isConnected) {
+      if (!this.isConnected) {
         return;
       }
 
@@ -107,7 +107,7 @@ export class $Each extends $Node {
       let previous = undefined;
 
       for (const item of newItems) {
-        item.node.$connect(fragment, previous);
+        item.node.connect(fragment, previous);
 
         if (item.node.$isConnected) {
           previous = item.node.$element;
@@ -115,13 +115,13 @@ export class $Each extends $Node {
         }
       }
 
-      this.$element.parentNode.insertBefore(fragment, this.$element.nextSibling);
+      this.element.parentNode.insertBefore(fragment, this.element.nextSibling);
 
       this.list = newItems;
     });
   }
 
-  _connected() {
+  connected() {
     if (this.unwatch) {
       this.unwatch();
       this.unwatch = undefined;
@@ -132,9 +132,9 @@ export class $Each extends $Node {
     this.update(this.source.get());
   }
 
-  _disconnected() {
+  disconnected() {
     for (const item of this.list) {
-      item.node.$disconnect();
+      item.node.disconnect();
     }
 
     if (this.unwatch) {

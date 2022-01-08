@@ -2,13 +2,13 @@ import { isComponent, isFunction, isNode, isObject, isString } from "../../_help
 import { $Element } from "./$Element";
 import { $Fragment } from "./$Fragment";
 import { $If } from "./$If";
-import { $Each } from "./$Each";
+import { $Each } from "./$Each.js";
 import { $Outlet } from "./$Outlet";
 import { $Text } from "./$Text";
 import { $Watch } from "./$Watch";
 import { makeRender } from "./makeRender";
-import htmlTags from "html-tags";
-import htmlVoidTags from "html-tags/void";
+// import htmlTags from "html-tags";
+// import htmlVoidTags from "html-tags/void";
 
 /**
  * Creates a $ function with bound injectables.
@@ -24,8 +24,6 @@ export function makeDolla({ getService, $route }) {
     let defaultChildren = args;
     let elementType = null;
 
-    console.log(element);
-
     if (isString(element)) {
       if (element === "" || element === ":fragment:") {
         elementType = "fragment";
@@ -34,8 +32,6 @@ export function makeDolla({ getService, $route }) {
       }
     } else if (isComponent(element)) {
       elementType = "component";
-    } else if (element.isComponentInstance) {
-      console.log(element);
     } else {
       throw new TypeError(`Expected a tag name or a Component. Received: ${element}`);
     }
@@ -44,11 +40,11 @@ export function makeDolla({ getService, $route }) {
      * @param args - Attributes object (optional) followed by any number of children
      */
     function Dolla(...args) {
-      let attributes = { ...defaultAttrs };
+      let attrs = { ...defaultAttrs };
       let children = args.length === 0 ? defaultChildren : args;
 
       if (args[0] && !isNode(args[0]) && isObject(args[0])) {
-        attributes = children.shift();
+        attrs = children.shift();
       }
 
       children = children
@@ -57,16 +53,17 @@ export function makeDolla({ getService, $route }) {
 
       switch (elementType) {
         case "component":
-          return element.create(getService, $, attributes, children, $route);
+          return element.create(getService, $, attrs, children, $route);
         case "element":
-          return new $Element(element, attributes, children);
+          return new $Element(element, attrs, children);
         case "fragment":
           return new $Fragment(children);
       }
     }
 
     Object.defineProperty(Dolla, "isDolla", {
-      get: () => true,
+      value: true,
+      writable: false,
     });
 
     return Dolla;
@@ -114,19 +111,19 @@ export function makeDolla({ getService, $route }) {
     };
   };
 
-  Object.defineProperty($, "elements", {
-    get() {
-      const elements = {};
+  // Object.defineProperty($, "elements", {
+  //   get() {
+  //     const elements = {};
 
-      for (const tag of [...htmlTags, ...htmlVoidTags]) {
-        elements[tag] = function (...args) {
-          return $(tag, ...args);
-        };
-      }
+  //     for (const tag of [...htmlTags, ...htmlVoidTags]) {
+  //       elements[tag] = function (...args) {
+  //         return $(tag, ...args);
+  //       };
+  //     }
 
-      return elements;
-    },
-  });
+  //     return elements;
+  //   },
+  // });
 
   Object.freeze($);
 

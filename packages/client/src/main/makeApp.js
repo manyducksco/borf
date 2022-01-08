@@ -195,10 +195,11 @@ export function makeApp(options = {}) {
       for (const name in services) {
         const service = services[name];
 
+        // First bits of app code are run; service functions called.
         service.instance = service.template.create(getService, service.options);
       }
 
-      // Restrict service access until all have been created
+      // Unlock getService now that all services have been created.
       servicesCreated = true;
 
       debug = getService("@debug").channel("woof:app");
@@ -207,6 +208,8 @@ export function makeApp(options = {}) {
         $route: getService("@page").$route,
       });
 
+      // beforeConnect is the first opportunity to access other services.
+      // This is also a good place to configure things before app-level `setup` runs.
       for (const name in services) {
         services[name].instance.beforeConnect();
       }
@@ -248,7 +251,7 @@ export function makeApp(options = {}) {
    */
   function getService(name) {
     if (!servicesCreated) {
-      // TODO: Specify in error that this is probably a self.getService in the main body of a service function.
+      // TODO: Specify in error that this is probably exclusive to calling self.getService in the main body of a service function.
       throw new Error(`A service was requested before it was created. Got: ${name}`);
     }
 
@@ -283,25 +286,23 @@ export function makeApp(options = {}) {
         const node = matched.props.component.create(getService, dolla, {}, [], $route);
 
         const mount = (element) => {
-          debug.log(element);
-          const dom = makeDOM(element);
-          debug.log("mounting element", element, dom);
+          debug.log("mounting element", element);
 
           if (mounted) {
             mounted.disconnect();
           }
-          mounted = dom;
+          mounted = element;
           mounted.connect(outlet);
 
-          // mounted.$element.dataset.appRoute = $route.get("route");
+          mounted.element.dataset.appRoute = $route.get("route");
         };
 
-        node.component.preload(mount).then(() => {
+        node.preload(mount).then(() => {
           mount(node.element);
         });
       }
     } else {
-      console.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
+      debug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
     }
   }
 

@@ -19,7 +19,7 @@ export class $Watch extends $Node {
   }
 
   update(value) {
-    if (!this.$isConnected) {
+    if (!this.isConnected) {
       return;
     }
 
@@ -30,22 +30,22 @@ export class $Watch extends $Node {
     }
 
     requestAnimationFrame(() => {
-      if (!this.$isConnected) {
+      if (!this.isConnected) {
         return;
       }
 
       if (this.connectedItem) {
-        this.connectedItem.$disconnect();
+        this.connectedItem.disconnect();
       }
 
       if (newElement) {
         this.connectedItem = newElement;
-        this.connectedItem.$connect(this.$element.parentNode, this.$element);
+        this.connectedItem.connect(this.element.parentNode, this.element);
       }
     });
   }
 
-  _connected() {
+  connected() {
     if (!this.unwatch) {
       this.unwatch = this.source.watch(this.update.bind(this));
     }
@@ -53,9 +53,9 @@ export class $Watch extends $Node {
     this.update(this.source.get());
   }
 
-  _disconnected() {
+  disconnected() {
     if (this.connectedItem) {
-      this.connectedItem.$disconnect();
+      this.connectedItem.disconnect();
     }
 
     if (this.unwatch) {

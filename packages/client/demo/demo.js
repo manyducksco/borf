@@ -92,8 +92,6 @@ const ToggleExample = makeComponent(($, self) => {
 const CounterService = makeService((self) => {
   self.debug.name = "CounterService"; // TODO: Default this to the name the service is registered under
 
-  // Doc note: you can only access other services from lifecycle hooks or exported functions.
-
   const $current = makeState(0);
 
   self.connected(() => {
@@ -102,6 +100,23 @@ const CounterService = makeService((self) => {
       $current.set((current) => current + 1);
     }, 1000);
   });
+
+  self.watchState(
+    $current,
+    (current) => {
+      // Make debug not a service. It should be accessible before the first service loads.
+      // const channel = debug.makeChannel(); // channel is created and passed down to every component and service like this
+      // // fields on channel object which feed messages and metadata up to the app, where it can handle those feeds and store them for dev tools
+      // // references settings from top level
+      // channel.name = "ComponentName";
+      // channel.label = "custom:test";
+      // channel.log();
+      // channel.warn();
+      // channel.error();
+      // self.debug.log(current);
+    }
+    // { immediate: true }
+  );
 
   return {
     $current,
@@ -118,11 +133,56 @@ app.service("counter", CounterService);
  * Component with controls and a mapped label based on the state inside the service.
  */
 const CounterExample = makeComponent(($, self) => {
-  const counter = self.getService("counter");
-  const label = counter.$current.map((n) => ` the number is: ${n}`);
+  self.debug.label = "component:counterexample";
 
-  return $("div")($("button")({ onclick: () => counter.reset() }, "Reset"), $.text(label));
+  const counter = self.getService("counter");
+  const $label = counter.$current.map((n) => ` the number is: ${n}`);
+
+  return $("div")(
+    $("button")(
+      {
+        onclick: counter.reset,
+      },
+      "Reset"
+    ),
+    $.text($label)
+  );
 });
+
+// const CounterService = makeService((self) => {
+//   const $count = makeState(0);
+
+//   return {
+//     $count,
+//   };
+// });
+
+// const Counter = makeComponent(($, self) => {
+//   const { $count } = self.getService("counter");
+
+//   return $("div")(
+//     $("p")($.text($count)),
+//     $("div")(
+//       $(CounterButton)({
+//         onclick: () => $count.set((current) => current + 1),
+//         label: "+1",
+//       }),
+//       $(CounterButton)({
+//         onclick: () => $count.set((current) => current + 1),
+//         label: "-1",
+//       })
+//     )
+//   );
+// });
+
+// const CounterButton = makeComponent(($, self) => {
+//   return $("button")(
+//     {
+//       onclick: self.$attrs.get("onclick"),
+//     },
+//     $.text(self.$attrs.map("label"))
+//   );
+// });
 
 /**
  * Second component with a view only. Displays the same information from the same service.
@@ -364,6 +424,17 @@ const MouseFollowerExample = makeComponent(($, self) => {
     return "#" + hex;
   };
 
+  // Children can be one of:
+  // - Dolla template
+  // - Dolla node
+  // - string (displayed as text node)
+  // - null, undefined, false (ignored)
+  // $("div")($(OtherComponent), $(OtherComponent)(), "string", null, undefined, false);
+
+  // All children are converted to nodes
+
+  // $.text(), $.outlet(), $.map(), $.if(), $.watch() return nodes
+
   return $(ExampleSection)(
     $.if(
       $isEnabled,
@@ -405,8 +476,6 @@ const MouseFollowerExample = makeComponent(($, self) => {
 });
 
 const ExampleSection = makeComponent(($, self) => {
-  console.log(self.$attrs.get());
-
   return $("div")({ class: self.$attrs.map("class") }, ...self.children);
 });
 
@@ -479,6 +548,9 @@ app.route("*", ($, self) => {
             .route("/", ($) => $("div")("default"))
             .route("chunk1", ($) => $("h1")("This is the chunk1 page"))
             .route("chunk2", ($) => $.text("HELLO CHUNK2"))
+            .route("*", ($, self) => {
+              self.debug.log(self.$route.get());
+            })
         )
       )
       .route("*", makeRedirect("/examples"))
@@ -492,69 +564,6 @@ const makeRedirect = (path) => {
     return $("span")();
   });
 };
-
-// class extends Component {
-//   preload($, done) {
-//     console.log("TESTING PRELOAD");
-
-//     setTimeout(() => {
-//       done();
-//       console.log("DONE");
-//     }, 500);
-
-//     return $("h1")("Yo preloading...");
-//   }
-
-//   _connected() {
-//     const page = this.service("@page");
-//     const mouse = this.service("mouse");
-
-//     // Display current mouse coordinates as tab title
-//     this.watchState(mouse.$position, (current) => {
-//       page.$title.set(`x:${Math.round(current.x)} y:${Math.round(current.y)}`);
-//     });
-//   }
-
-//   createElement($) {
-//     const example = $("div", { class: styles.example });
-
-//     return $("div", { class: styles.demo })(
-//       $("div", { class: "nav" })(
-//         $("ul")(
-//           $("li")($("a", { href: "/examples" })("Examples")),
-//           $("li")($("a", { href: "/test2" })("Test Two")),
-//           $("li")($("a", { href: "/test2/chunk1" })("Test Two - Chunk One")),
-//           $("li")($("a", { href: "/test2/chunk2" })("Test Two - Chunk Two"))
-//         )
-//       ),
-//       // Nested routes are relative to the current route.
-//       $.outlet()
-//         .route("examples", ($) =>
-//           $("div")(
-//             example($(ToggleExample)),
-//             example($(CounterExample), $(CounterViewLabel)),
-//             example($(ConditionalExample)),
-//             example($(MapExample)),
-//             example($(TwoWayBindExample)),
-//             example($(HTTPRequestExample)),
-//             example($(MouseFollowerExample))
-//           )
-//         )
-//         // Routes can be nested further with wildcards.
-//         // This $ function will be pre-loaded with the fragments after 'test2' to match against with $.route().
-//         // $.route() acts like a switch statement. When it is connected, it picks the best route and renders it.
-//         .route("test2/*", ($) =>
-//           $("div")(
-//             $("h1")("ROUTER"),
-//             $.outlet()
-//               .route("/", ($) => $("div")("default"))
-//               .route("chunk1", ($) => $("h1")("This is the chunk1 page"))
-//               .route("chunk2", ($) => $.text("HELLO CHUNK2"))
-//           )
-//         )
-//     );
-//   }
-// }
 
 app.setup((getService) => {
   getService("@debug").$filter.set("*");

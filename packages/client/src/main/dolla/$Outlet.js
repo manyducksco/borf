@@ -1,7 +1,7 @@
 import { makeState } from "@woofjs/state";
 import { makeRouter } from "@woofjs/router";
 import { $Node } from "./$Node.js";
-import { isFunction, isNode, isComponent } from "../../_helpers/typeChecking.js";
+import { isFunction, isNode, isComponent, isDolla } from "../../_helpers/typeChecking.js";
 import { makeDolla } from "./makeDolla.js";
 import { makeRender } from "./makeRender.js";
 import { makeComponent } from "../makeComponent.js";
@@ -20,6 +20,7 @@ export class $Outlet extends $Node {
   #dolla;
   #router = makeRouter();
   #path;
+  #debug;
 
   $route = makeState({
     route: "",
@@ -29,8 +30,8 @@ export class $Outlet extends $Node {
     wildcard: null,
   });
 
-  get $isConnected() {
-    return this.#outlet && this.#outlet.$isConnected;
+  get isConnected() {
+    return this.#outlet && this.#outlet.isConnected;
   }
 
   constructor(getService, element, $route) {
@@ -43,6 +44,7 @@ export class $Outlet extends $Node {
       getService,
       $route: this.$route,
     });
+    this.#debug = getService("@debug").channel("woof:outlet");
   }
 
   route(route, component) {
@@ -59,8 +61,8 @@ export class $Outlet extends $Node {
     return this;
   }
 
-  $connect(parent, after = null) {
-    const wasConnected = this.$isConnected;
+  connect(parent, after = null) {
+    const wasConnected = this.isConnected;
 
     // Run lifecycle callback only if connecting.
     // Connecting a node that is already connected moves it without unmounting.
@@ -68,23 +70,23 @@ export class $Outlet extends $Node {
       this.#outlet = this.createElement();
     }
 
-    this.#outlet.$connect(parent, after);
+    this.#outlet.connect(parent, after);
 
     if (!wasConnected) {
       this.watchState(this.#path, (value) => this.#matchRoute(value));
       this.watchState(this.$route, "route", (value) => {
-        this.#outlet.$element.dataset.outletRoute = value;
+        this.#outlet.element.dataset.outletRoute = value;
       });
       this.#matchRoute(this.#path.get());
-      this.#outlet.$element.dataset.outletRoute = this.$route.get("route");
+      this.#outlet.element.dataset.outletRoute = this.$route.get("route");
 
-      this._connected();
+      this.connected();
     }
   }
 
-  $disconnect() {
-    if (this.$isConnected) {
-      this.#outlet.$disconnect();
+  disconnect() {
+    if (this.isConnected) {
+      this.#outlet.disconnect();
     }
   }
 
@@ -93,6 +95,8 @@ export class $Outlet extends $Node {
 
     if (matched) {
       const currentRoute = this.$route.get("route");
+
+      console.log(matched, this.$route.get());
 
       this.$route.set((current) => {
         current.path = matched.path;
@@ -119,45 +123,27 @@ export class $Outlet extends $Node {
   }
 
   #mountRoute(component) {
-    if (!this.$isConnected) {
+    if (!this.isConnected) {
       return;
     }
 
     const $ = this.#dolla;
-
     const node = $(component)();
 
     const mount = (newNode) => {
-      console.log({ component, newNode });
+      this.#debug.log("mounting element", newNode);
 
       if (this.#mounted !== newNode) {
         if (this.#mounted) {
-          this.#mounted.$disconnect();
+          this.#mounted.disconnect();
         }
         this.#mounted = newNode;
-        this.#mounted.$connect(this.#outlet.$element);
+        this.#mounted.connect(this.#outlet.element);
       }
     };
 
-    if (isFunction(node.preload)) {
-      // Mount preload's returned element while preloading
-      let tempNode = node.preload($, () => mount(node));
-
-      if (tempNode) {
-        if (isDolla(tempNode)) {
-          tempNode = tempNode();
-        }
-
-        if (isNode(tempNode)) {
-          mount(tempNode);
-        } else {
-          throw new Error(
-            `Expected component's preload function to return an $element or undefined. Received: ${tempNode}`
-          );
-        }
-      }
-    } else {
-      mount(node);
-    }
+    node.preload(mount).then(() => {
+      mount(node.element);
+    });
   }
 }

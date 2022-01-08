@@ -26,15 +26,15 @@
 // renderToDOM(element);
 
 export class $Node {
-  $element;
+  element;
   #watchers = [];
 
-  get $isNode() {
+  get isNode() {
     return true;
   }
 
-  get $isConnected() {
-    return this.$element?.parentNode != null;
+  get isConnected() {
+    return this.element?.parentNode != null;
   }
 
   createElement() {
@@ -45,33 +45,33 @@ export class $Node {
     this.#watchers.push(state.watch(...args));
   }
 
-  $connect(parent, after = null) {
-    const wasConnected = this.$isConnected;
+  connect(parent, after = null) {
+    const wasConnected = this.isConnected;
 
     // Run lifecycle callback only if connecting.
     // Connecting a node that is already connected moves it without unmounting.
     if (!wasConnected) {
-      this.$element = this.createElement();
-      this._beforeConnect();
+      this.element = this.createElement();
+      this.beforeConnect();
     }
 
-    parent.insertBefore(this.$element, after ? after.nextSibling : null);
+    parent.insertBefore(this.element, after ? after.nextSibling : null);
 
     if (!wasConnected) {
-      this._connected();
+      this.connected();
     }
   }
 
-  $disconnect() {
-    if (this.$isConnected) {
-      this._beforeDisconnect();
+  disconnect() {
+    if (this.isConnected) {
+      this.beforeDisconnect();
 
-      if (this.$element.parentNode) {
-        this.$element.parentNode.removeChild(this.$element);
+      if (this.element.parentNode) {
+        this.element.parentNode.removeChild(this.element);
       }
 
-      this._disconnected();
-      this.$element = null;
+      this.disconnected();
+      this.element = null;
     }
 
     for (const unwatch of this.#watchers) {
@@ -80,8 +80,8 @@ export class $Node {
     this.#watchers = [];
   }
 
-  _beforeConnect() {}
-  _connected() {}
-  _beforeDisconnect() {}
-  _disconnected() {}
+  beforeConnect() {}
+  connected() {}
+  beforeDisconnect() {}
+  disconnected() {}
 }

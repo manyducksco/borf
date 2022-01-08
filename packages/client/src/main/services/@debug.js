@@ -1,6 +1,6 @@
 import { makeState } from "@woofjs/state";
 import { makeService } from "../makeService.js";
-import ColorHash from "color-hash";
+import ColorHash from "color-hash"; // TODO: Remove this dependency - it's too big for what we need it for
 
 /**
  * Debug logging service used internally and exposed for use in apps.

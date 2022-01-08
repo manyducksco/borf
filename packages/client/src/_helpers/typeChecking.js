@@ -16,7 +16,7 @@ export const isObject = (value) => value != null && typeof value === "object" &&
 
 export const isDolla = (value) => value && value.isDolla === true;
 
-export const isNode = (value) => value && value.$isNode === true;
+export const isNode = (value) => value && value.isNode === true;
 
 export const isComponent = (value) => value && value.isComponent === true;
 

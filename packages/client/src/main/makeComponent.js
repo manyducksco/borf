@@ -2,16 +2,6 @@ import { makeState } from "@woofjs/state";
 import { isFunction, isNode } from "../_helpers/typeChecking";
 import { makeRender } from "./dolla/makeRender";
 
-export function makeElement(tag, attrs, ...children) {
-  return {
-    element: {
-      tag,
-      $attrs: makeState(attrs),
-      children,
-    },
-  };
-}
-
 /**
  * @param create - constructor function
  */
@@ -34,11 +24,15 @@ export function makeComponent(create) {
 
       // Update label based on service name.
       // Cancelled if debug.label is set explicitly.
-      const unwatch = $name.watch((current) => {
+      const unwatchName = $name.watch((current) => {
         $label.set(`component:${current}`);
       });
 
       const self = {
+        getService,
+        $route,
+        $attrs: makeState({}),
+        children,
         debug: {
           get name() {
             return $name.get();
@@ -50,7 +44,7 @@ export function makeComponent(create) {
             return $label.get();
           },
           set label(value) {
-            unwatch();
+            unwatchName();
             $label.set(value);
           },
           log(...args) {
@@ -69,6 +63,9 @@ export function makeComponent(create) {
               .error(...args);
           },
         },
+        preload(func) {
+          preload = func;
+        },
         beforeConnect(callback) {
           onBeforeConnect.push(callback);
         },
@@ -81,16 +78,9 @@ export function makeComponent(create) {
         disconnected(callback) {
           onDisconnected.push(callback);
         },
-        getService,
-        preload(func) {
-          preload = func;
-        },
         watchState($state, ...args) {
           watchers.push($state.watch(...args));
         },
-        $route,
-        $attrs: makeState({}),
-        children,
       };
 
       self.$attrs.set((current) => {
@@ -99,69 +89,83 @@ export function makeComponent(create) {
         }
       });
 
+      const element = create(dolla, self);
+
       return {
+        get isNode() {
+          return true;
+        },
+
         element: create(dolla, self),
 
-        component: {
-          get name() {
-            return $name.get();
-          },
-          debug: {
-            get label() {
-              return $label.get();
-            },
-          },
-          async preload(mount) {
-            return new Promise((resolve) => {
-              if (isFunction(preload)) {
-                const done = () => {
-                  resolve();
-                };
+        connect(parent, after = null) {
+          const wasConnected = this.element.isConnected;
 
-                const tempElement = preload(done);
+          // Run lifecycle callback only if connecting.
+          // Connecting a node that is already connected moves it without unmounting.
+          if (!wasConnected) {
+            if (!isNode(this.element)) {
+              throw new Error(`Component function must return an $(element). Received: ${this.element}`);
+            }
 
-                if (tempElement) {
-                  const render = makeRender(tempElement);
-                  const tempNode = render();
-
-                  self.debug.log(tempNode);
-
-                  if (isNode(tempNode)) {
-                    mount(tempNode);
-                  } else {
-                    throw new Error(`Expected preload function to return a node or undefined. Received: ${tempNode}`);
-                  }
-                }
-              } else {
-                resolve();
-              }
-            });
-          },
-          beforeConnect() {
             for (const callback of onBeforeConnect) {
-              callback(options);
+              callback();
             }
-          },
-          connected() {
+          }
+
+          this.element.connect(parent, after);
+
+          if (!wasConnected) {
             for (const callback of onConnected) {
-              callback(options);
+              callback();
             }
-          },
-          beforeDisconnect() {
+          }
+        },
+
+        disconnect() {
+          if (this.isConnected) {
             for (const callback of onBeforeDisconnect) {
-              callback(options);
+              callback();
             }
-          },
-          disconnected() {
+
+            this.element.disconnect();
+
             for (const callback of onDisconnected) {
-              callback(options);
+              callback();
             }
 
             for (const unwatch of watchers) {
               unwatch();
             }
             watchers = [];
-          },
+          }
+        },
+
+        async preload(mount) {
+          return new Promise((resolve) => {
+            if (isFunction(preload)) {
+              const done = () => {
+                resolve();
+              };
+
+              const tempElement = preload(done);
+
+              if (tempElement) {
+                const render = makeRender(tempElement);
+                const tempNode = render();
+
+                self.debug.log(tempNode);
+
+                if (isNode(tempNode)) {
+                  mount(tempNode);
+                } else {
+                  throw new Error(`Expected preload function to return a node or undefined. Received: ${tempNode}`);
+                }
+              }
+            } else {
+              resolve();
+            }
+          });
         },
       };
     },
