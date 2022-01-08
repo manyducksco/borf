@@ -91,55 +91,17 @@ export function makeComponent(create) {
 
       const element = create(dolla, self);
 
+      if (element !== null && !isNode(element)) {
+        console.log(String(create));
+        throw new TypeError(`Expected component to return an $(element) or null. Got: ${element}`);
+      }
+
       return {
         get isNode() {
           return true;
         },
 
-        element: create(dolla, self),
-
-        connect(parent, after = null) {
-          const wasConnected = this.element.isConnected;
-
-          // Run lifecycle callback only if connecting.
-          // Connecting a node that is already connected moves it without unmounting.
-          if (!wasConnected) {
-            if (!isNode(this.element)) {
-              throw new Error(`Component function must return an $(element). Received: ${this.element}`);
-            }
-
-            for (const callback of onBeforeConnect) {
-              callback();
-            }
-          }
-
-          this.element.connect(parent, after);
-
-          if (!wasConnected) {
-            for (const callback of onConnected) {
-              callback();
-            }
-          }
-        },
-
-        disconnect() {
-          if (this.isConnected) {
-            for (const callback of onBeforeDisconnect) {
-              callback();
-            }
-
-            this.element.disconnect();
-
-            for (const callback of onDisconnected) {
-              callback();
-            }
-
-            for (const unwatch of watchers) {
-              unwatch();
-            }
-            watchers = [];
-          }
-        },
+        element,
 
         async preload(mount) {
           return new Promise((resolve) => {
@@ -154,8 +116,6 @@ export function makeComponent(create) {
                 const render = makeRender(tempElement);
                 const tempNode = render();
 
-                self.debug.log(tempNode);
-
                 if (isNode(tempNode)) {
                   mount(tempNode);
                 } else {
@@ -166,6 +126,45 @@ export function makeComponent(create) {
               resolve();
             }
           });
+        },
+
+        connect(parent, after = null) {
+          const wasConnected = element == null ? false : element.isConnected;
+
+          if (!wasConnected) {
+            for (const callback of onBeforeConnect) {
+              callback();
+            }
+          }
+
+          // Running connect even if already connected without rerunning lifecycle hooks.
+          // This is used for reinserting nodes when sorting an $Each.
+          if (element != null) this.element.connect(parent, after);
+
+          if (!wasConnected) {
+            for (const callback of onConnected) {
+              callback();
+            }
+          }
+        },
+
+        disconnect() {
+          if (element.isConnected) {
+            for (const callback of onBeforeDisconnect) {
+              callback();
+            }
+
+            element.disconnect();
+
+            for (const callback of onDisconnected) {
+              callback();
+            }
+
+            for (const unwatch of watchers) {
+              unwatch();
+            }
+            watchers = [];
+          }
         },
       };
     },

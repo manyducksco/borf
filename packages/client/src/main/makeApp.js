@@ -286,8 +286,6 @@ export function makeApp(options = {}) {
         const node = matched.props.component.create(getService, dolla, {}, [], $route);
 
         const mount = (element) => {
-          debug.log("mounting element", element);
-
           if (mounted) {
             mounted.disconnect();
           }
@@ -297,8 +295,11 @@ export function makeApp(options = {}) {
           mounted.element.dataset.appRoute = $route.get("route");
         };
 
+        let start = Date.now();
         node.preload(mount).then(() => {
+          const time = Date.now() - start;
           mount(node.element);
+          debug.log(`[➔0] mounted route '${matched.route}' - preloaded in ${time}ms`);
         });
       }
     } else {

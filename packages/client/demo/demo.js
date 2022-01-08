@@ -550,6 +550,8 @@ app.route("*", ($, self) => {
             .route("chunk2", ($) => $.text("HELLO CHUNK2"))
             .route("*", ($, self) => {
               self.debug.log(self.$route.get());
+
+              return null;
             })
         )
       )

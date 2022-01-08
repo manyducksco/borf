@@ -66,9 +66,7 @@ export class $Node {
     if (this.isConnected) {
       this.beforeDisconnect();
 
-      if (this.element.parentNode) {
-        this.element.parentNode.removeChild(this.element);
-      }
+      this.element.parentNode.removeChild(this.element);
 
       this.disconnected();
       this.element = null;

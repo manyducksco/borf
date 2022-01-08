@@ -21,6 +21,7 @@ export class $Outlet extends $Node {
   #router = makeRouter();
   #path;
   #debug;
+  #depth;
 
   $route = makeState({
     route: "",
@@ -28,6 +29,7 @@ export class $Outlet extends $Node {
     params: {},
     query: {},
     wildcard: null,
+    depth: 1,
   });
 
   get isConnected() {
@@ -39,7 +41,11 @@ export class $Outlet extends $Node {
 
     this.createElement = makeRender(element);
 
-    this.#path = $route.map("path");
+    this.#path = $route.map("wildcard");
+    this.#depth = $route.map("depth", (current) => (current || 0) + 1);
+    this.$route.set((current) => {
+      current.$parent = $route;
+    });
     this.#dolla = makeDolla({
       getService,
       $route: this.$route,
@@ -73,12 +79,17 @@ export class $Outlet extends $Node {
     this.#outlet.connect(parent, after);
 
     if (!wasConnected) {
-      this.watchState(this.#path, (value) => this.#matchRoute(value));
-      this.watchState(this.$route, "route", (value) => {
-        this.#outlet.element.dataset.outletRoute = value;
-      });
-      this.#matchRoute(this.#path.get());
-      this.#outlet.element.dataset.outletRoute = this.$route.get("route");
+      this.watchState(this.#path, (value) => value && this.#matchRoute(value), { immediate: true });
+      this.watchState(
+        this.$route,
+        "route",
+        (value) => {
+          if (this.#outlet.element) {
+            this.#outlet.element.dataset.outletRoute = value;
+          }
+        },
+        { immediate: true }
+      );
 
       this.connected();
     }
@@ -96,8 +107,6 @@ export class $Outlet extends $Node {
     if (matched) {
       const currentRoute = this.$route.get("route");
 
-      console.log(matched, this.$route.get());
-
       this.$route.set((current) => {
         current.path = matched.path;
         current.route = matched.route;
@@ -110,12 +119,12 @@ export class $Outlet extends $Node {
         this.#mountRoute(matched.props.component);
       }
     } else {
-      this.$route.set({
-        path: null,
-        route: null,
-        query: {},
-        params: {},
-        wildcard: null,
+      this.$route.set((current) => {
+        current.path = null;
+        current.route = null;
+        current.query = Object.create(null);
+        current.params = Object.create(null);
+        current.wildcard = null;
       });
 
       console.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
@@ -131,19 +140,21 @@ export class $Outlet extends $Node {
     const node = $(component)();
 
     const mount = (newNode) => {
-      this.#debug.log("mounting element", newNode);
-
-      if (this.#mounted !== newNode) {
-        if (this.#mounted) {
-          this.#mounted.disconnect();
-        }
-        this.#mounted = newNode;
-        this.#mounted.connect(this.#outlet.element);
+      // if (this.#mounted !== newNode) {
+      if (this.#mounted) {
+        this.#mounted.disconnect();
       }
+      this.#mounted = newNode;
+      this.#mounted.connect(this.#outlet.element);
+      // }
     };
 
+    let start = Date.now();
     node.preload(mount).then(() => {
-      mount(node.element);
+      const time = Date.now() - start;
+      mount(node);
+      // console.log(this.$route.get());
+      this.#debug.log(`[➔${this.#depth.get()}] mounted route '${this.$route.get("route")}' - preloaded in ${time}ms`);
     });
   }
 }
