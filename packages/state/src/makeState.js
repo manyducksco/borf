@@ -22,7 +22,7 @@ export function makeState(initialValue) {
 
     set(value) {
       if (isFunction(value)) {
-        // set with function: .set((current) => newValue)
+        // Produce a new value from a mutated draft with immer.
         value = produce(current, (draft) => {
           return value(draft);
         });

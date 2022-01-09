@@ -1,9 +1,14 @@
 import { getProperty } from "./getProperty.js";
 import { mapState } from "./makeState.js";
+import { isString, isFunction, isObject, deepEqual } from "./utils.js";
 
 export function mergeStates(...args) {
   const merge = args.pop();
   const states = args;
+
+  if (!isFunction(merge)) {
+    throw new TypeError(`Last argument should be a function. Got: ${merge}`);
+  }
 
   return {
     get(key) {

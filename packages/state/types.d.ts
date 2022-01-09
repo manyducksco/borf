@@ -1,5 +1,8 @@
 declare module "@woofjs/state" {
   type WatchOptions = {
+    /**
+     * Run the watcher function right away with the current value.
+     */
     immediate: boolean;
   };
 
@@ -53,7 +56,12 @@ declare module "@woofjs/state" {
    */
   export function makeState<T>(initialValue?: T): State<T>;
 
-  export function mergeStates(): State<any>;
+  /**
+   * Takes multiple states followed by a function.
+   * Each time any of the states' values change, the function is passed the values in the same order to return a new value.
+   * Similar to `.map` but with several states being collapsed down to one.
+   */
+  export function mergeStates<T>(...args: any): State<any>;
 
   /**
    * Determines whether or not an object is a state.
