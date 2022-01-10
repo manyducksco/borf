@@ -3,34 +3,24 @@
 Router needs to support nested routes.
 
 ```js
-const app = new App();
+const app = makeApp();
 
+// wildcard indicates this route may have nested routes
+// using an outlet under a non-wildcard route will throw an error
 app
-  .route(
-    // wildcard indicates this route may have nested routes
-    // using an outlet under a non-wildcard route will throw an error
-    "/path/*",
-    class extends Component {
-      createElement($) {
-        return (
-          $.outlet()
-            // paths in an outlet route are relative to the parent route
-            .route(
-              "first/*",
-              class extends Component {
-                createElement($) {
-                  return $.outlet()
-                    .route(":id", ViewComponent)
-                    .route(":id/edit", EditComponent)
-                    .route(":id/delete", DeleteComponent);
-                }
-              }
-            )
-            .route("second", SecondComponent)
-        );
-      }
-    }
-  )
+  .route("/path/*", function ($, self) {
+    return (
+      // paths in an outlet route are relative to the parent route
+      $.outlet()
+        .route("first/*", function ($) {
+          return $.outlet()
+            .route(":id", ViewComponent)
+            .route(":id/edit", EditComponent)
+            .route(":id/delete", DeleteComponent);
+        })
+        .route("second", SecondComponent)
+    );
+  })
   .route("*", PageNotFoundComponent);
 ```
 
@@ -51,3 +41,36 @@ A new dolla instance is created at each route boundary. I am using route boundar
 ## Do params cascade?
 
 No. Unless we find a reason to need it I think we should keep params local. Each $.route should only contain params that matched in that route segment.
+
+## Outlet Ideas
+
+```js
+$.outlet({
+  // Grouped routes get joined like "test/edit", "test/:id/details" and matched in this outlet.
+  // If value is an object, assume a route map. If value is a function, assume a component.
+  // If value is a string, assume a redirect path.
+  "/": ($) => $("div")("default"),
+  "/test/*": {
+    "/edit": ($) => $("h1")("edit"),
+
+    "/delete": TestDelete, // or pass a standalone component
+
+    // or pass a path for redirect
+    "/:id/absolute": "/chunk1", // redirect relative to app
+    "/:id/relative": "../chunk2", // redirect relative to this's parent's "/chunk2", just like a file path
+    "/:id/outlet-relative": "chunk1", // redirect relative to this outlet
+  },
+  "/chunk1": ($) => $("h1")("This is the chunk1 page"),
+  "/chunk2": ($) => $.text("HELLO CHUNK2"),
+})
+
+$.outlet(
+  // Takes non-constructed dolla and passes route component as a child (needs reactive $children then?)
+  $(CustomOutlet, {
+    /* attrs */
+  }),
+  {
+    /* routes */
+  }
+),
+```

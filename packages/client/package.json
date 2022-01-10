@@ -1,35 +1,37 @@
 {
-  "name": "@manyducksco/woof",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@woofjs/app",
+  "version": "0.1.0",
+  "description": "Front end routing, components and state for dogs. 🐕",
   "source": "src/index.js",
-  "main": "dist/woof.js",
-  "types": "woof.d.ts",
-  "module": "dist/woof.js",
+  "main": "dist/woof.app.c.js",
+  "module": "dist/woof.app.m.js",
+  "types": "types.d.ts",
   "scripts": {
-    "demo": "http-server demo",
+    "demo": "http-server .",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
     "test:coverage": "npm run test -- --coverage",
     "build": "node scripts/build.js",
     "build:watch": "node scripts/build.js --watch",
-    "build:prod": "npm run build -- --minify"
+    "build:prod": "npm run build -- --minify",
+    "prepublishOnly": "npm run build:prod"
   },
-  "keywords": [],
-  "author": "Tony McCoy <tony@thatsalotofducks.com>",
-  "license": "ISC",
+  "keywords": [
+    "web app",
+    "front end framework",
+    "functional",
+    "reactive state"
+  ],
+  "author": "Tony McCoy <tony@manyducks.co>",
+  "license": "MIT",
   "exports": {
     ".": {
-      "require": "./dist/woof.node.js",
-      "import": "./dist/woof.js"
+      "require": "./dist/woof.app.c.js",
+      "import": "./dist/woof.app.m.js"
     },
-    "./test": {
-      "require": "./dist/woof.test.js",
-      "import": "./dist/woof.test.js"
-    },
-    "./server": {
-      "require": "./dist/woof.server.js",
-      "import": "./dist/woof.server.js"
+    "./testing": {
+      "require": "./dist/woof.app.testing.c.js",
+      "import": "./dist/woof.app.testing.m.js"
     }
   },
   "devDependencies": {
@@ -37,16 +39,13 @@
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.7",
     "@woofjs/router": "^0.1.0",
-    "@woofjs/state": "^0.1.3",
+    "@woofjs/state": "^0.1.5",
     "callsite": "^1.0.0",
     "color-hash": "^2.0.1",
-    "cross-fetch": "^3.1.4",
     "es-jest": "^1.5.0",
-    "esbuild": "^0.14.10",
+    "esbuild": "^0.14.11",
     "history": "^5.2.0",
     "http-server": "^14.0.0",
-    "isomorphic-fetch": "^3.0.0",
-    "jest": "^27.4.6",
-    "query-string": "^7.0.1"
+    "jest": "^27.4.7"
   }
 }

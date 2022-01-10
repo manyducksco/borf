@@ -22,7 +22,7 @@ if (process.argv.includes("--watch")) {
 
 esbuild
   .build({
-    entryPoints: ["src/main/index.js"],
+    entryPoints: ["src/index.js"],
     bundle: true,
     watch,
     minify,
@@ -31,34 +31,34 @@ esbuild
     sourcemap: true,
     platform: "browser",
     format: "esm",
-    outfile: "dist/woof.js",
+    outfile: "dist/woof.app.m.js",
   })
   .then(() => {
-    console.log("Created ESM bundle");
+    console.log("Created app bundle (module)");
   })
   .catch(() => process.exit(1));
 
 esbuild
   .build({
-    entryPoints: ["src/main/index.js"],
+    entryPoints: ["src/index.js"],
     bundle: true,
     watch,
     minify,
     target,
     allowOverwrite: true,
     sourcemap: true,
-    platform: "node",
+    platform: "browser",
     format: "cjs",
-    outfile: "dist/woof.node.js",
+    outfile: "dist/woof.app.c.js",
   })
   .then(() => {
-    console.log("Created node bundle");
+    console.log("Created app bundle (common JS)");
   })
   .catch(() => process.exit(1));
 
 esbuild
   .build({
-    entryPoints: ["src/test/index.js"],
+    entryPoints: ["src/testing/index.js"],
     bundle: true,
     watch,
     minify,
@@ -67,27 +67,27 @@ esbuild
     sourcemap: true,
     platform: "browser",
     format: "esm",
-    outfile: "dist/woof.test.js",
+    outfile: "dist/woof.app.testing.m.js",
   })
   .then(() => {
-    console.log("Created testing bundle");
+    console.log("Created testing bundle (module)");
   })
   .catch(() => process.exit(1));
 
 esbuild
   .build({
-    entryPoints: ["src/server/index.js"],
+    entryPoints: ["src/testing/index.js"],
     bundle: true,
     watch,
     minify,
     target,
     allowOverwrite: true,
     sourcemap: true,
-    platform: "node",
+    platform: "browser",
     format: "cjs",
-    outfile: "dist/woof.server.js",
+    outfile: "dist/woof.app.testing.c.js",
   })
   .then(() => {
-    console.log("Created server bundle");
+    console.log("Created testing bundle (common JS)");
   })
   .catch(() => process.exit(1));

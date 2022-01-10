@@ -12,8 +12,6 @@ Packages:
   - makeServer, makeResource, makeService
   - makeSuite, wrapResource, wrapService
   - makeComponent for server-side templating
-- @woofjs/data
-  - makeStore, Model, Adapter
 - @woofjs/state (state package standalone - used in other packages)
   - makeState, combineStates, isState
 - @woofjs/router (router package standalone - used in other packages)
