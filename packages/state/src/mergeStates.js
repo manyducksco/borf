@@ -58,7 +58,7 @@ export function mergeStates(...args) {
       }
 
       if (options.immediate) {
-        callback(current);
+        callback(this.get(key));
       }
 
       const watchers = [];
