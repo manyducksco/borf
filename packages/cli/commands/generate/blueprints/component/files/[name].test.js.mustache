@@ -1,7 +1,7 @@
-import { suite, wrapComponent } from "@manyducksco/woof/test";
+import { makeSuite, wrapComponent } from "@woofjs/app/testing";
 import { {{name}} } from "./{{name}}";
 
-export default suite(({ view, test }) => {
+export default makeSuite((test, view) => {
   const createComponent = wrapComponent({{name}});
 
   view("default", ($, { attr }) => {

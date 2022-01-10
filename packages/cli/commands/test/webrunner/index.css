@@ -24,3 +24,113 @@
   font-weight: bold;
   font-size: 2em;
 }
+
+.layout {
+  display: flex;
+  align-items: stretch;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/***** Content *****/
+
+.content {
+  flex: 1 1 100%;
+  overflow-y: auto;
+}
+
+.view {
+  position: relative;
+  display: flex;
+  flex-flow: row nowrap;
+  height: 100%;
+}
+
+.viewContent {
+  flex: 1 1 100%;
+  align-items: stretch;
+  height: 100%;
+}
+
+.viewFrame {
+  flex: 1 1 100%;
+  outline: none;
+  border: none;
+}
+
+.testResults {
+  padding: 0.5em;
+  overflow-y: auto;
+}
+
+.testMetaTag {
+  color: #555;
+}
+
+.testMetaText {
+  color: #777;
+  font-style: italic;
+}
+
+.viewAttrs {
+  border-left: 1px solid #999;
+  width: 300px;
+  display: flex;
+  flex-flow: column nowrap;
+  align-items: stretch;
+  overflow-y: auto;
+}
+
+.attr {
+  padding: 0.5em;
+  border-bottom: 1px dotted #999;
+}
+
+.attrLabel {
+  margin-bottom: 0.25em;
+  line-height: 1;
+}
+
+.attrInput {
+  width: 100%;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 0 0.25em;
+  height: 26px;
+}
+
+/***** Sidebar *****/
+
+.sidebar {
+  display: flex;
+  flex-flow: column nowrap;
+  border-right: 1px solid #999;
+  padding-top: 0.4em;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px dotted #999;
+  color: blue;
+  text-decoration: none;
+  padding: 0.1em 0.5em;
+  line-height: 18px;
+}
+
+.linkActive {
+  background-color: white;
+  color: white;
+}
+
+.viewLink {
+  padding-left: 1em;
+}
+
+.viewLinkActive {
+  background-color: cornflowerblue;
+  color: white;
+}

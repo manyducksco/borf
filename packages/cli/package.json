@@ -1,7 +1,7 @@
 {
-  "name": "@manyducksco/woof-cli",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@woofjs/cli",
+  "version": "0.1.0",
+  "description": "A command line interface to a framework for dogs. ⌨️🐕",
   "main": "program.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,14 +10,15 @@
     "woof": "program.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Tony McCoy <tony@manyducks.co>",
+  "license": "MIT",
   "dependencies": {
-    "@manyducksco/woof": "file:../woof",
     "@ratwizard/cli": "^0.17.0",
+    "@woofjs/app": "file:../app",
+    "@woofjs/state": "^0.1.4",
     "chokidar": "^3.5.2",
     "dedent": "^0.7.0",
-    "esbuild": "^0.14.5",
+    "esbuild": "^0.14.11",
     "express": "^4.17.2",
     "fs-extra": "^10.0.0",
     "gzip-size": "^6.0.0",

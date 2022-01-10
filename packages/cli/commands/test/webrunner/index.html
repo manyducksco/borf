@@ -1,15 +1,8 @@
 <html>
   <head>
     <title>Tests</title>
-    <link rel="stylesheet" href="/index.css"/>
-    <base href="http://localhost:7071"/>
-
-    <!-- TODO: Remove these - this is for RealWorld app. Need to inject this or use the app's index.html instead -->
-    <!-- Import Ionicon icons & Google Fonts our Bootstrap theme relies on -->
-    <link href="//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css" rel="stylesheet" type="text/css">
-    <link href="//fonts.googleapis.com/css?family=Titillium+Web:700|Source+Serif+Pro:400,700|Merriweather+Sans:400,700|Source+Sans+Pro:400,300,600,700,300italic,400italic,600italic,700italic" rel="stylesheet" type="text/css">
-    <!-- Import the custom Bootstrap 4 theme from our hosted CDN -->
-    <link rel="stylesheet" href="//demo.productionready.io/main.css">
+    <link rel="stylesheet" href="/index.css" />
+    <base href="http://localhost:7071" />
   </head>
   <body>
     <div id="tests">
@@ -22,9 +15,7 @@
       const events = new EventSource("/events");
 
       events.addEventListener("message", (message) => {
-        window
-          .location
-          .reload();
+        window.location.reload();
       });
 
       window.addEventListener("beforeunload", () => {
@@ -36,8 +27,8 @@
       {
         "imports": {
           "$bundle": "./suites.bundle.js",
-          "@manyducksco/woof": "../../node_modules/@manyducksco/woof/dist/woof.js",
-          "@manyducksco/woof/test": "../../node_modules/@manyducksco/woof/dist/woof.test.js"
+          "@woofjs/app": "../../node_modules/@woofjs/app/dist/woof.app.m.js",
+          "@woofjs/app/testing": "../../node_modules/@woofjs/app/dist/woof.app.testing.m.js"
         }
       }
     </script>

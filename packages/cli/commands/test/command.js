@@ -36,7 +36,7 @@ module.exports = new Command()
     const esbuild = require("esbuild");
     const chokidar = require("chokidar");
     const mustache = require("mustache");
-    const { makeState } = require("@manyducksco/woof/node");
+    const { makeState } = require("@woofjs/state");
     const getProjectConfig = require("../../tools/getProjectConfig");
 
     const config = getProjectConfig(process.cwd());
@@ -134,11 +134,7 @@ module.exports = new Command()
       ignoreInitial: true,
     });
 
-    const buildId = makeState(0, {
-      methods: {
-        increment: (value) => value + 1,
-      },
-    });
+    const $buildId = makeState(0);
 
     build(); // Do initial build
 
@@ -250,7 +246,7 @@ module.exports = new Command()
         }ms</green> <gray>[${getClock()}]</gray>`
       );
 
-      buildId.increment();
+      $buildId.set((current) => current + 1);
     };
 
     watcher.on("all", bundle);
@@ -288,7 +284,7 @@ module.exports = new Command()
       // Tell the client to retry every 10 seconds if connectivity is lost
       res.write("retry: 10000\n\n");
 
-      const cancel = buildId.watch((value) => {
+      const cancel = $buildId.watch((value) => {
         res.write(`data: ${value}\n\n`);
       });
 

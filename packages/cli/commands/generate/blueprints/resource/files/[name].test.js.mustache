@@ -1,0 +1,18 @@
+import { suite, wrapResource } from "@manyducksco/woof/test";
+import { {{name}} } from "./{{name}}.js";
+
+export default suite(({ test }) => {
+  const createResource = wrapResource({{name}});
+
+  test("is implemented", async (t) => {
+    t.plan(1, 500);
+
+    const resource = createResource();
+
+    const ctx = await resource.callByRoute("/");
+
+    t.not.equal(ctx.body, {
+      message: "Hello from {{name}}"
+    }, "still returns default message");
+  });
+});

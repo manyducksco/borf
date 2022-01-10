@@ -138,7 +138,7 @@ module.exports = new Command()
   //   println(`\nBundled app in <green>${Date.now() - start}</green>ms\n`);
   // })
   .action(async ({ options }) => {
-    const { makeState } = require("@manyducksco/woof/node");
+    const { makeState } = require("@woofjs/state");
     const EventEmitter = require("events");
     const path = require("path");
     const fs = require("fs-extra");

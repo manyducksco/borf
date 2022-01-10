@@ -1,53 +1,54 @@
-import { makeState } from "@manyducksco/woof";
-import { suite } from "@manyducksco/woof/test";
+import { makeState } from "@woofjs/app";
 import setup from "$bundle";
 
 (function () {
   const currentView = makeState();
   const suites = makeState([], {
     methods: {
-      add: (current, path, views) => [...current, { path, views }],
+      add: (current, suite) => [...current, suite],
     },
   });
-
-  function loadViews() {
-    const views = [];
-
-    const test = () => {};
-    const view = (name, fn) => {
-      views.push({ name, fn });
-    };
-
-    suite({ test, view });
-
-    return views;
-  }
+  let mounted;
 
   setup((path, suite) => {
-    this.suites.add(path, loadViews(suite));
-  });
-
-  suites.watch((items) => {
-    console.log(items);
+    suites.add({ path, ...suite });
   });
 
   currentView.watch((view) => {
-    console.log("current", view);
+    if (mounted) {
+      mounted.disconnect();
+    }
+
+    if (view) {
+      mounted = view.element;
+      mounted.$connect(document.getElementById("root"));
+    }
   });
 
-  window.woofTestSetView = (suite, view) => {
-    const matchingSuite = suites.get().find((s) => s.path === suite);
+  window.WoofTest = {
+    currentView,
+    setView: (viewInfo) => {
+      const suite = suites.get().find((s) => s.path === viewInfo.path);
 
-    if (matchingSuite) {
-      const matchingView = matchingSuite.views.find((v) => v.name === view);
+      if (suite) {
+        const view = suite.makeView(viewInfo.name);
 
-      if (matchingView) {
-        console.log("found matching view", matchingView);
+        if (view) {
+          currentView.set(view);
+        } else {
+          console.log("found no matching view", { suite, viewInfo });
+        }
       } else {
-        console.log("found no matching view", { suite, view });
+        console.log("found no matching suite", viewInfo);
       }
-    } else {
-      console.log("found no matching suite", { suite, view });
-    }
+    },
+    clearView() {
+      currentView.set(null);
+    },
+    runSuite: (suite) => {},
   };
+
+  if (window.WoofLoaded) {
+    window.WoofLoaded();
+  }
 })();

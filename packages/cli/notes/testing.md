@@ -16,9 +16,9 @@ Could also run all tests in CLI by using JSDOM for the browser parts.
 ## Unit Testing API
 
 ```js
-import { suite } from "@woofjs/testing";
+import { makeSuite } from "@woofjs/app/testing";
 
-export default suite((test, view) => {
+export default makeSuite((test, view) => {
   // Define a view (this param is not passed for server tests)
   view(name, ($, { attr }) => {
     return $("div")("text");
@@ -66,9 +66,20 @@ export default suite((test, view) => {
     );
 
     // Assert that the function throws an error
-    t.throws(() => throw new Error("This is an error"));
-    t.throws(() => throw new Error("This is an error"), /an error/); // Asserts that error message matches regex
-    t.throws(() => throw new Error("This is an error"), { code: 222 }); // Asserts that error object includes matching properties
+    t.throws(
+      () => throw new Error("This is an error"),
+      "should throw an error"
+    );
+    t.throws(
+      () => throw new Error("This is an error"),
+      /an error/,
+      "should throw an error with message matching regex"
+    );
+    t.throws(
+      () => throw new Error("This is an error"),
+      { code: 222 },
+      "should throw an error object with matching properties"
+    );
 
     // Assertions are available under t.not which inverts their results
     t.not.equal(1, 2, "numbers should not be equal");
@@ -87,7 +98,7 @@ export default suite((test, view) => {
     func(4);
     func(5);
 
-    func.mock.calls; // array of calls: [{ args: [3] }, { args: [4] }, { args: [5] }]
+    func.mock.calls; // array of calls: [{ args: [3], returned: 6 }, { args: [4], returned: 8 }, { args: [5], returned: 10 }]
 
     t.called(func); // Asserts that mock function was called at least once.
     t.calledWith(func, 5); // Asserts that 5 was passed as an argument in at least one call.
@@ -96,6 +107,8 @@ export default suite((test, view) => {
     t.not.called(func);
     t.not.calledWith(func, 5);
     t.not.calledTimes(func, 2);
+
+    t.end(); // End the test. Any assertions after this will fail the test.
   });
 
   // Skip a test

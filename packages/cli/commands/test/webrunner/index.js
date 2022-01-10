@@ -1,32 +1,17 @@
-import { App, Component, Styles } from "@manyducksco/woof";
-import TestBed from "./services/TestBed.js";
+import { makeApp } from "@woofjs/app";
+import TestBedService from "./services/TestBed.js";
+import ViewsService from "./services/Views.js";
 import Content from "./components/Content.js";
 import Sidebar from "./components/Sidebar.js";
 
-const app = new App();
+const app = makeApp();
 
-const styles = new Styles({
-  layout: {
-    display: "flex",
-    alignItems: "stretch",
-    position: "fixed",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-  },
+app.service("testbed", TestBedService);
+app.service("views", ViewsService);
+
+app.route("*", function ($) {
+  return $("div", { class: "layout" })($(Sidebar), $(Content));
 });
-
-app.service("testbed", TestBed);
-
-app.route(
-  "*",
-  class extends Component {
-    createElement($) {
-      return $("div", { class: styles.layout })($(Sidebar), $(Content));
-    }
-  }
-);
 
 app.setup(() => {
   document.querySelector(".static-loader").remove();
