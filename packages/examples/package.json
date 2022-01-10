@@ -1,0 +1,31 @@
+{
+  "name": "@woofjs/examples",
+  "version": "0.1.0",
+  "description": "Woof development examples",
+  "private": true,
+  "source": "src/index.js",
+  "main": "dist/woof.app.c.js",
+  "module": "dist/woof.app.m.js",
+  "types": "types.d.ts",
+  "scripts": {
+    "demo": "http-server .",
+    "test": "jest",
+    "test:watch": "npm run test -- --watch",
+    "test:coverage": "npm run test -- --coverage",
+    "build": "node scripts/build.js",
+    "build:watch": "node scripts/build.js --watch",
+    "build:prod": "npm run build -- --minify",
+    "prepublishOnly": "npm run build:prod"
+  },
+  "keywords": [
+    "web app",
+    "front end framework",
+    "functional",
+    "reactive state"
+  ],
+  "author": "Tony McCoy <tony@manyducks.co>",
+  "license": "MIT",
+  "devDependencies": {
+    "@woofjs/app": "../app"
+  }
+}

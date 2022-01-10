@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../app/styles/demo.css"],
+  "sourcesContent": ["body {\n  padding: 1em;\n  margin: 0;\n}\n\n.input-group {\n  display: flex;\n  flex-flow: column nowrap;\n  margin-bottom: 1em;\n}\n\n.input-group h3 {\n  padding: 0;\n  margin: 0;\n}\n\n.testing {\n  background-color: red;\n}\n\n.example {\n  background-color: transparent;\n  transition: background-color 200ms;\n  margin-bottom: 1em;\n  padding: 0.5em;\n  border: 1px solid #ccc;\n}\n\n.active {\n  background-color: #b6eeb6;\n}\n\n.follower {\n  width: 32px;\n  height: 32px;\n  border-radius: 50px;\n  background-color: red;\n  position: fixed;\n  top: 0;\n  left: 0;\n}\n\n.flex-center {\n  display: flex;\n  align-items: center;\n}\n"],
+  "mappings": "AAAA,0BAKA,aACE,aACA,wBACA,kBAGF,gBAXA,mBAgBA,SACE,qBAGF,SACE,6BACA,gCACA,kBAvBF,aAyBE,sBAGF,QACE,yBAGF,UACE,WACA,YAlCF,mBAoCE,qBACA,eACA,MACA,OAGF,aACE,aACA",
+  "names": []
+}

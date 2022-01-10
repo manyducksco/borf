@@ -1,0 +1,46 @@
+body {
+  padding: 1em;
+  margin: 0;
+}
+
+.input-group {
+  display: flex;
+  flex-flow: column nowrap;
+  margin-bottom: 1em;
+}
+
+.input-group h3 {
+  padding: 0;
+  margin: 0;
+}
+
+.testing {
+  background-color: red;
+}
+
+.example {
+  background-color: transparent;
+  transition: background-color 200ms;
+  margin-bottom: 1em;
+  padding: 0.5em;
+  border: 1px solid #ccc;
+}
+
+.active {
+  background-color: #b6eeb6;
+}
+
+.follower {
+  width: 32px;
+  height: 32px;
+  border-radius: 50px;
+  background-color: red;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+}
