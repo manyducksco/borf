@@ -1,12 +1,12 @@
 import { makeSuite, wrapComponent } from "@woofjs/app/testing";
-import { {{name}} } from "./{{name}}";
+import {{name}} from "./index.js";
 
 export default makeSuite((test, view) => {
-  const createComponent = wrapComponent({{name}});
+  const initComponent = wrapComponent({{name}});
 
   view("default", ($, { attr }) => {
-    return createComponent({
-      /* ... attributes ... */
+    return initComponent({
+      /* attrs */
     });
   });
 

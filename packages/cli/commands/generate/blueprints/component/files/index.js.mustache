@@ -1,3 +1,6 @@
-import { {{name}} } from "./{{name}}";
+import { makeComponent } from "@woofjs/app";
 
-export default {{name}};
+export default makeComponent(($, self) => {
+  return <div>{{name}}</div>
+})
+

@@ -70,7 +70,7 @@ module.exports = new Command()
         if (file != "node_modules" && fs.statSync(fullPath).isDirectory()) {
           scan(fullPath);
         } else {
-          if (file.toLowerCase().endsWith(".test.js")) {
+          if (/\.test\.(js|ts|jsx|tsx)$/.test(file.toLowerCase())) {
             const relDir = dir.replace(appDir, "").replace(/^\//, "");
 
             const importName =
@@ -80,7 +80,14 @@ module.exports = new Command()
                 .join("") + "Tests";
 
             imports.push(`import ${importName} from "${fullPath}";`);
-            registrations.push(`register("${relDir}", ${importName});`);
+
+            let regName = `${relDir}/${file
+              .replace(/\.test\.(js|ts|jsx|tsx)$/i, "")
+              .replace(/index$/, "")}`;
+
+            regName = regName.replace(/\/$/, "");
+
+            registrations.push(`register("${regName}", ${importName});`);
           }
         }
       });
@@ -148,7 +155,7 @@ module.exports = new Command()
       loader: { ".js": "jsx" },
       jsxFactory: "$", // compile JSX to dolla
       jsxFragment: '""', // pass empty string for fragments
-      external: ["@manyducksco/woof", "@manyducksco/woof/test"],
+      external: ["@woofjs/app", "@woofjs/app/testing"],
       outfile: BUNDLE_PATH,
     });
 
@@ -159,7 +166,7 @@ module.exports = new Command()
       target: "es2018",
       format: "esm",
       incremental: true,
-      external: ["@manyducksco/woof", "@manyducksco/woof/test", "$bundle"],
+      external: ["@woofjs/app", "@woofjs/app/testing", "$bundle"],
       outfile: path.join(bundleDir, "index.js"),
     });
 
@@ -170,7 +177,7 @@ module.exports = new Command()
       target: "es2018",
       format: "esm",
       incremental: true,
-      external: ["@manyducksco/woof", "@manyducksco/woof/test", "$bundle"],
+      external: ["@woofjs/app", "@woofjs/app/testing", "$bundle"],
       outfile: path.join(bundleDir, "views/index.js"),
     });
 
@@ -193,8 +200,8 @@ module.exports = new Command()
             {
               "imports": {
                 "$bundle": "../suites.bundle.js",
-                "@manyducksco/woof": "../../../node_modules/@manyducksco/woof/dist/woof.js",
-                "@manyducksco/woof/test": "../../../node_modules/@manyducksco/woof/dist/woof.test.js"
+                "@woofjs/app": "../../../node_modules/@woofjs/app/dist/woof.app.m.js",
+                "@woofjs/app/testing": "../../../node_modules/@woofjs/app/dist/woof.app.testing.m.js"
               }
             }
           </script>
@@ -296,8 +303,6 @@ module.exports = new Command()
 
     app.get("*", (req, res, next) => {
       const extname = path.extname(req.path);
-
-      console.log(req.path);
 
       if (extname === "" && !req.path.startsWith("/views")) {
         res.sendFile(path.join(bundleDir, "index.html"));

@@ -1,7 +1,7 @@
-import { suite, wrapService, MockHTTP } from "@manyducksco/woof/test";
-import { {{name}} } from "./{{name}}";
+import { makeSuite, wrapService, MockHTTP } from "@woofjs/app/testing";
+import {{name}} from "./index.js";
 
-export default suite(({ test }) => {
+export default makeSuite((test) => {
   const http = new MockHTTP();
 
   http.get("/mock/route", (req, res, ctx) => {
@@ -16,7 +16,7 @@ export default suite(({ test }) => {
   test("is implemented", (t) => {
     const service = createService();
   
-    t.assert(false);
+    t.equal(true, false);
   });
 })
 

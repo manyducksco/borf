@@ -1,3 +1,7 @@
-import { {{name}} } from "./{{name}}";
+import { makeService } from "@woofjs/app";
 
-export default {{name}};
+export default makeService((self) => {
+  return {
+    message: "Hello from {{name}}"
+  }
+});

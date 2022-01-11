@@ -134,19 +134,21 @@ module.exports = new Command()
 
     const serverEntry = path.join(config.path.server, "server.js");
 
-    const serverBundle = await esbuild.build({
-      entryPoints: [serverEntry],
-      bundle: true,
-      sourcemap: true,
-      minify: true,
-      write: false,
-      incremental: true,
-      target: "node12",
-      platform: "node",
-      outfile: path.join(buildDir, "server.js"),
-    });
+    if (fs.existsSync(serverEntry)) {
+      const serverBundle = await esbuild.build({
+        entryPoints: [serverEntry],
+        bundle: true,
+        sourcemap: true,
+        minify: true,
+        write: false,
+        incremental: true,
+        target: "node12",
+        platform: "node",
+        outfile: path.join(buildDir, "server.js"),
+      });
 
-    writeServerBundle(serverBundle);
+      writeServerBundle(serverBundle);
+    }
 
     /*==========================*\
     ||      Watch & Bundle      ||
@@ -165,20 +167,22 @@ module.exports = new Command()
       );
     });
 
-    const serverWatcher = chokidar.watch(`${config.path.server}/**/*`, {
-      persistent: true,
-      ignoreInitial: true,
-    });
+    if (fs.existsSync(serverEntry)) {
+      const serverWatcher = chokidar.watch(`${config.path.server}/**/*`, {
+        persistent: true,
+        ignoreInitial: true,
+      });
 
-    serverWatcher.on("all", async () => {
-      const start = Date.now();
-      writeServerBundle(await serverBundle.rebuild());
-      println(
-        `<magenta>SERVER</magenta> rebuilt in <green>${
-          Date.now() - start
-        }ms</green>`
-      );
-    });
+      serverWatcher.on("all", async () => {
+        const start = Date.now();
+        writeServerBundle(await serverBundle.rebuild());
+        println(
+          `<magenta>SERVER</magenta> rebuilt in <green>${
+            Date.now() - start
+          }ms</green>`
+        );
+      });
+    }
 
     /*==========================*\
     ||          Server          ||
