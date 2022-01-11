@@ -1,6 +1,6 @@
 import { makeRouter } from "@woofjs/router";
 import { flatMap } from "../helpers/flatMap.js";
-import HTTP from "../services/@http.js";
+import makeHTTP from "../services/@http.js";
 
 /**
  * Creates a mocked HTTP service with custom responses defined by you.
@@ -31,16 +31,7 @@ export class MockHTTP {
   }
 
   get service() {
-    const fetch = this.#fetch.bind(this);
-
-    return class extends HTTP {
-      _created(options) {
-        super._created({
-          ...options,
-          fetch,
-        });
-      }
-    };
+    return (options = {}) => makeHTTP({ ...options, fetch: this.#fetch.bind(this) });
   }
 
   /**

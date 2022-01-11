@@ -1,10 +1,8 @@
-# Woof
+# @woofjs/app
 
-This is the staging repo where development happens before packages get split out into their own repos.
+Woof front end components.
 
----
-
-## Woof Goals
+## Goals
 
 - Be easy to understand
 - The obvious way to accomplish something should be the correct way (a.k.a. "pit of success")
@@ -31,4 +29,3 @@ Add a dev tool service that collects info on service access. Eventually build a 
 
 - Watching states inside components with `$state.watch` will leave hanging watchers. You need to use `self.watchState($state, callback)` so the watchers can be cleaned up when the component disconnects. This is not an issue for services because they are only connected once.
 - It's possible to use a component's `$` to create outlets in a nested route. This will cause route matching to act weird. Is there a way to prevent this?
--

@@ -1,4 +1,3 @@
-import { makeState } from "@woofjs/state";
 import { isObject } from "./helpers/typeChecking.js";
 
 export function makeService(create) {
