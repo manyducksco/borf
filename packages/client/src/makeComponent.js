@@ -1,4 +1,4 @@
-import { makeState } from "@woofjs/state";
+import { isState, makeState } from "@woofjs/state";
 import { isDolla, isFunction, isNode } from "./helpers/typeChecking.js";
 import { makeRender } from "./dolla/makeRender.js";
 
@@ -42,11 +42,36 @@ export function makeComponent(create) {
         },
       };
 
-      self.$attrs.set((current) => {
-        for (const key in attrs) {
-          current[key] = attrs[key];
+      const parsedAttrs = {};
+
+      for (const key in attrs) {
+        // Attrs beginning in $ are expected to be states. They will be passed through as states.
+        // State attrs not beginning with $ will be unwrapped and passed as their current value.
+        // This echoes how elements handle states.
+        if (key[0] === "$") {
+          if (isState(attrs[key])) {
+            parsedAttrs[key] = attrs[key]; // Pass states through as states when named appropriately
+          } else {
+            throw new TypeError(`An attribute beginning with $ must be a state. Got: ${attrs[key]} (key: ${key})`);
+          }
+        } else {
+          if (isState(attrs[key])) {
+            // TODO: Ensure component is not disconnected and reconnected without reconstruction or these will not be reapplied.
+            // If they go in .connect() then they'll trigger watchers added in the body of `create`, which they shouldn't.
+            watchers.push(
+              attrs[key].watch((value) => {
+                self.$attrs.set((current) => {
+                  current[key] = value;
+                });
+              })
+            );
+
+            parsedAttrs[key] = attrs[key].get();
+          }
         }
-      });
+      }
+
+      self.$attrs.set(parsedAttrs);
 
       let element = create(dolla, self);
 
@@ -66,9 +91,6 @@ export function makeComponent(create) {
 
       return {
         get isNode() {
-          return true;
-        },
-        get isComponent() {
           return true;
         },
 

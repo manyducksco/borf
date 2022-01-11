@@ -6,11 +6,13 @@ import { makeTestWrapper } from "./makeTestWrapper.js";
 export function wrapComponent(component) {
   return makeTestWrapper((getService, ...args) => {
     if (isComponent(component)) {
-      let attributes = {};
+      const debug = getService("@debug").makeChannel("component:wrapped");
+
+      let attrs = {};
       let children = [];
 
       if (isObject(args[0]) && !isNode(args[0])) {
-        attributes = args.shift();
+        attrs = args.shift();
       }
 
       children = [...args];
@@ -23,9 +25,16 @@ export function wrapComponent(component) {
         wildcard: null,
       });
 
-      const $ = makeDolla({ getService, $route });
+      const dolla = makeDolla({ getService, debug, $route });
 
-      return new component(getService, $, attributes, children, $route);
+      return component.create({
+        getService,
+        debug,
+        dolla,
+        attrs,
+        children,
+        $route,
+      });
     } else {
       throw new Error(`Expected a Component. Received: ${component}`);
     }

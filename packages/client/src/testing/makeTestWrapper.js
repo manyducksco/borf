@@ -1,8 +1,8 @@
 import { createMemoryHistory } from "history";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { makeDebug } from "../debug/makeDebug.js";
-import HTTP from "../services/@http.js";
-import Page from "../services/@page.js";
+import HTTPService from "../services/@http.js";
+import PageService from "../services/@page.js";
 
 export function makeTestWrapper(init) {
   const _services = {};
@@ -10,6 +10,7 @@ export function makeTestWrapper(init) {
 
   function makeWrapped(...args) {
     const history = createMemoryHistory();
+    const debug = makeDebug({ filter: "*" });
     const services = {};
 
     const getService = (name) => {
@@ -20,17 +21,20 @@ export function makeTestWrapper(init) {
       throw new Error(`Service is not registered in this wrapper. Received: ${name}`);
     };
 
-    services["@debug"] = new Debug(getService);
-    services["@http"] = new (class extends HTTP {
-      request() {
-        throw new Error(
-          `Tried to make HTTP request in a wrapped component or service. Supply a mock @http service to define the mock responses you need for testing.`
-        );
-      }
-    })();
-    services["@page"] = new Page(getService);
-
-    services["@debug"] = () => makeDebug({ filter: "*" });
+    services["@debug"] = debug;
+    services["@http"] = HTTPService.create({
+      getService,
+      debug: debug.makeChannel("woof:@http"),
+      options: {
+        fetch: () => {
+          throw new Error(`Pass a mock HTTP service to make mocked API calls inside a wrapper.`);
+        },
+      },
+    });
+    services["@page"] = PageService.create({
+      getService,
+      debug: debug.makeChannel("woof:@page"),
+    });
 
     for (const name in _services) {
       services[name] = _services[name](getService);

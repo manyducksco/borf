@@ -4,7 +4,7 @@ import { makeDolla } from "./dolla/makeDolla.js";
 import { makeDebug } from "./debug/makeDebug.js";
 import { makeComponent } from "./makeComponent.js";
 import { makeService } from "./makeService.js";
-import { isFunction, isString, isService, isComponent } from "./helpers/typeChecking.js";
+import { isFunction, isString, isService, isComponent, isNode } from "./helpers/typeChecking.js";
 import { joinPath } from "./helpers/joinPath.js";
 import catchLinks from "./helpers/catchLinks.js";
 
@@ -235,7 +235,7 @@ export function makeApp(options = {}) {
           mounted.connect(outlet);
 
           // Components store their whole $Element under `element`. We need one extra level of unwrapping to get to the DOM node.
-          const dom = mounted.isComponent ? mounted.element.element : mounted.element;
+          const dom = isNode(mounted.element) ? mounted.element.element : mounted.element;
           if (dom) {
             dom.dataset.appRoute = $route.get("route");
           }

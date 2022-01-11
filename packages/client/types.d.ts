@@ -1,11 +1,11 @@
-declare module "@manyducksco/woof" {
+declare module "@woofjs/app" {
   /*==================================*\
   ||               App                ||
   \*==================================*/
 
   interface AppOptions {
     /**
-     * Options for @debug service.
+     * Options for debug system.
      */
     debug?: {
       /**
@@ -185,4 +185,35 @@ declare module "@manyducksco/woof" {
      */
     createElement($: Dolla): $Element;
   }
+}
+
+declare module "@woofjs/app/testing" {
+  type TestTools = {};
+
+  type Test = {
+    (t: TestTools): void;
+  };
+
+  type View = {};
+
+  type AddTestFunction = {
+    (name: string, test: Test): void;
+
+    beforeEach(fn: () => any): void;
+    afterEach(fn: () => any): void;
+    beforeAll(fn: () => any): void;
+    afterAll(fn: () => any): void;
+  };
+
+  type AddViewFunction = {
+    (name: string, view: View): void;
+  };
+
+  type SuiteFunction = (test: AddTestFunction, view: AddViewFunction) => void;
+
+  type TestSuite = {
+    run(): Promise<any>;
+  };
+
+  export function makeSuite(setup: SuiteFunction): TestSuite;
 }
