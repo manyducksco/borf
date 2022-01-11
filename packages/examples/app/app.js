@@ -5,6 +5,7 @@ import { makeApp } from "@woofjs/app";
 import CounterService from "./services/CounterService.js";
 import MouseService from "./services/MouseService.js";
 
+import ComponentAttrsExample from "./components/ComponentAttrsExample.js";
 import ToggleExample from "./components/ToggleExample.js";
 import CounterExample from "./components/CounterExample.js";
 import ConditionalExample from "./components/ConditionalExample.js";
@@ -95,6 +96,7 @@ app.route("*", ($, self) => {
             <FormExample />
             <MouseFollowerExample />
             <HTTPRequestExample />
+            <ComponentAttrsExample />
           </div>
         ))
         .route("nested/*", ($) => (
