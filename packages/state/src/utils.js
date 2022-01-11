@@ -1,4 +1,4 @@
-export const isObject = (value) => typeof value === "object" && !Array.isArray(value);
+export const isObject = (value) => value != null && typeof value === "object" && !Array.isArray(value);
 export const isFunction = (value) => value instanceof Function;
 export const isString = (value) => typeof value === "string";
 export const isArray = (value) => Array.isArray(value);
