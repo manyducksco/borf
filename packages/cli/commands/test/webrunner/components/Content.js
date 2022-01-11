@@ -18,8 +18,8 @@ export default makeComponent(($, self) => {
   });
 
   return $("div", { class: "content" })(
-    $(ViewFrame, { $currentView }),
-    $.if($currentView, null, () => $(SuiteTests, { $suite }))
+    $(ViewFrame, { currentView: $currentView }),
+    $.if($currentView, null, () => $(SuiteTests, { suite: $suite }))
   );
 });
 
@@ -28,9 +28,9 @@ const ViewFrame = makeComponent(($, self) => {
 
   self.connected(() => {
     self.watchState(
-      self.$attrs.get("$currentView"),
+      self.$attrs,
+      "currentView",
       (value) => {
-        console.log(value);
         if (value) {
           views.setView(value);
         } else {
@@ -52,9 +52,9 @@ const ViewFrame = makeComponent(($, self) => {
   return $("div", {
     class: "viewContent",
     style: {
-      display: self.$attrs
-        .get("$currentView")
-        .map((view) => (view ? "flex" : "none")),
+      display: self.$attrs.map("currentView", (view) =>
+        view ? "flex" : "none"
+      ),
     },
   })(
     $("iframe", {
@@ -92,7 +92,6 @@ const ViewAttr = makeComponent(($, self) => {
 
 const SuiteTests = makeComponent(($, self) => {
   // This is kind of weird. $attrs is a state that can contain states.
-  const $suite = self.$attrs.map("$suite");
   const $results = makeState([]);
   const $progress = makeState({ total: 0, done: 0 });
   const $hasResults = $results.map((current) => current.length > 0);
@@ -101,11 +100,11 @@ const SuiteTests = makeComponent(($, self) => {
   async function runTestSuite(suite) {
     $results.set([]);
     $progress.set((current) => {
-      current.total = $suite.tests.length;
+      current.total = suite.tests.length;
       current.done = 0;
     });
 
-    await $suite.run({
+    await suite.run({
       onTestFinish: (result) => {
         $results.set((current) => {
           current.push(result);
@@ -117,13 +116,17 @@ const SuiteTests = makeComponent(($, self) => {
     });
   }
 
-  self.watchState($suite, runTestSuite);
-
   self.connected(() => {
-    if ($suite) {
-      self.debug.log($suite.get());
-      runTestSuite($suite.get());
-    }
+    self.watchState(
+      self.$attrs,
+      "suite",
+      (current) => {
+        if (current) {
+          runTestSuite(current);
+        }
+      },
+      { immediate: true }
+    );
   });
 
   return $("div", { class: "testResults" })(

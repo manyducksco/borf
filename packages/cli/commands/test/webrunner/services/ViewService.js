@@ -18,11 +18,11 @@ export default makeService((self) => {
         frame.contentWindow.WoofLoaded = () => {
           frameControls = frame.contentWindow.WoofTest;
 
-          frameControls.currentView.watch((view) => {
+          frameControls.$currentView.watch((view) => {
             $currentView.set(view);
           });
 
-          $currentView.set(frameControls.currentView.get());
+          $currentView.set(frameControls.$currentView.get());
 
           if (view) {
             setView(view);

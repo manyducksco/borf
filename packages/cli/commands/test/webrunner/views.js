@@ -2,39 +2,37 @@ import { makeState } from "@woofjs/app";
 import setup from "$bundle";
 
 (function () {
-  const currentView = makeState();
-  const suites = makeState([], {
-    methods: {
-      add: (current, suite) => [...current, suite],
-    },
-  });
+  const $currentView = makeState();
+  const $suites = makeState([]);
   let mounted;
 
   setup((path, suite) => {
-    suites.add({ path, ...suite });
+    $suites.set((current) => {
+      current.push({ path, ...suite });
+    });
   });
 
-  currentView.watch((view) => {
+  $currentView.watch((view) => {
     if (mounted) {
       mounted.disconnect();
     }
 
     if (view) {
       mounted = view.element;
-      mounted.$connect(document.getElementById("root"));
+      mounted.connect(document.getElementById("app"));
     }
   });
 
   window.WoofTest = {
-    currentView,
+    $currentView,
     setView: (viewInfo) => {
-      const suite = suites.get().find((s) => s.path === viewInfo.path);
+      const suite = $suites.get().find((s) => s.path === viewInfo.path);
 
       if (suite) {
         const view = suite.makeView(viewInfo.name);
 
         if (view) {
-          currentView.set(view);
+          $currentView.set(view);
         } else {
           console.log("found no matching view", { suite, viewInfo });
         }
@@ -43,7 +41,7 @@ import setup from "$bundle";
       }
     },
     clearView() {
-      currentView.set(null);
+      $currentView.set(null);
     },
     runSuite: (suite) => {},
   };

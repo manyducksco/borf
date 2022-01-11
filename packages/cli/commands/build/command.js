@@ -73,9 +73,13 @@ module.exports = new Command().action(async () => {
 
     fs.writeFileSync(file.path, file.contents);
 
-    println(
-      `    <green>+</green> ${name} <dim>(${size} -- ${gsize} gzipped)</dim>`
-    );
+    if (file.path.endsWith(".map")) {
+      println(`    <green>+</green> ${name} - <dim>${size} on disk</dim>`);
+    } else {
+      println(
+        `    <green>+</green> ${name} - <green>${gsize} gzipped</green> <dim>(${size} on disk)</dim>`
+      );
+    }
   }
 
   fs.readdirSync(srcStaticDir).forEach((entry) => {
@@ -93,7 +97,7 @@ module.exports = new Command().action(async () => {
       const gsize = superbytes(gzipSize.sync(rendered));
 
       println(
-        `    <green>+</green> ${name} <dim>(${size} -- ${gsize} gzipped)</dim>`
+        `    <green>+</green> ${name} - <green>${gsize} gzipped</green> <dim>(${size} on disk)</dim>`
       );
     } else {
       const outPath = path.join(publicDir, entry);
@@ -104,7 +108,7 @@ module.exports = new Command().action(async () => {
       const gsize = superbytes(gzipSize.fileSync(outPath));
 
       println(
-        `    <green>+</green> ${entry} <dim>(${size} -- ${gsize} gzipped)</dim>`
+        `    <green>+</green> ${entry} <green>${gsize} gzipped</green> <dim>(${size} on disk)</dim>`
       );
     }
   });
@@ -122,15 +126,15 @@ module.exports = new Command().action(async () => {
       platform: "node",
       outfile: path.join(buildDir, "server.js"),
     });
+
+    println("  <green>+</green> server.js");
+    println("  <green>+</green> server.js.map");
   } else {
     // Use default app server
-    println(
-      `<red><bold>ERROR</bold></red> No server found and default server is not yet implemented.`
-    );
+    // println(
+    //   `<red><bold>ERROR</bold></red> No server found and default server is not yet implemented.`
+    // );
   }
-
-  println("  <green>+</green> server.js");
-  println("  <green>+</green> server.js.map");
 
   println(`\nBundled app in <green>${Date.now() - start}</green>ms\n`);
 });
