@@ -1,16 +1,11 @@
-import { App } from "@manyducksco/woof";
+import { makeApp } from "@woofjs/app";
 
-const app = new App({
+const app = makeApp({
   hash: true,
 });
 
-app.route(
-  "*",
-  class extends Component {
-    createElement($) {
-      return $("h1")("Hello World");
-    }
-  }
-);
+app.route("*", ($) => {
+  return $("h1")("Hello World");
+});
 
-app.connect("#root");
+app.connect("#app");

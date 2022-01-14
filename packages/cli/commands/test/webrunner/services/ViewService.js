@@ -46,7 +46,6 @@ export default makeService((self) => {
 
   function clearView() {
     if (frameControls) {
-      console.log(frameControls);
       frameControls.clearView();
     }
 

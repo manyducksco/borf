@@ -1,7 +1,7 @@
 {
   "name": "@woofjs/cli",
   "version": "0.1.0",
-  "description": "A command line interface to a framework for dogs. ⌨️🐕",
+  "description": "A command line interface for dogs. ⌨️🐕",
   "main": "program.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,11 +10,11 @@
     "woof": "program.js"
   },
   "keywords": [],
-  "author": "Tony McCoy <tony@manyducks.co>",
+  "author": "Tony McCoy <tony@thatsalotofducks.com>",
   "license": "MIT",
   "dependencies": {
     "@ratwizard/cli": "^0.17.0",
-    "@woofjs/app": "file:../app",
+    "@woofjs/app": "^0.1.0",
     "@woofjs/state": "^0.1.6",
     "chokidar": "^3.5.2",
     "dedent": "^0.7.0",
