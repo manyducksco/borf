@@ -27,7 +27,7 @@ export function makeTestWrapper(init) {
       debug: debug.makeChannel("woof:@http"),
       options: {
         fetch: () => {
-          throw new Error(`Pass a mock HTTP service to make mocked API calls inside a wrapper.`);
+          throw new Error(`Pass a mock @http service to make HTTP requests inside a wrapper.`);
         },
       },
     });
@@ -37,15 +37,7 @@ export function makeTestWrapper(init) {
     });
 
     for (const name in _services) {
-      services[name] = _services[name](getService);
-
-      if (isFunction(services[name]._created)) {
-        if (name === "@page") {
-          services[name]._created({ history });
-        } else {
-          services[name]._created();
-        }
-      }
+      services[name] = _services[name]();
     }
 
     setup(getService);
@@ -59,11 +51,18 @@ export function makeTestWrapper(init) {
    * @param name - Key by which to access the service
    * @param service- Class or function to create the service, or an object to set directly.
    */
-  makeWrapped.service = function (name, service) {
+  makeWrapped.service = function (name, service, options = {}) {
+    if (isFunction(service)) {
+      service = makeService(service);
+    }
+
     if (service.isService) {
-      _services[name] = (getService) => new service(getService);
-    } else if (isFunction(service)) {
-      _services[name] = (getService) => service(getService);
+      _services[name] = () =>
+        service.create({
+          getService,
+          debug: debug.makeChannel(`service:${name}`),
+          options: options,
+        });
     } else if (isObject(service)) {
       _services[name] = () => service;
     } else {

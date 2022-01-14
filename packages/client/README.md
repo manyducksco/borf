@@ -1,31 +1,168 @@
 # @woofjs/app
 
-Woof front end components.
+Front end routing, components and state for dogs. 🐕
 
-## Goals
+`@woofjs/app` is a client-side JavaScript framework that shamelessly steals the best ideas from other frameworks; [React](https://reactjs.org/docs/introducing-jsx.html), [Angular](https://angular.io/guide/architecture-services), [Choo](https://github.com/choojs/choo#routing), and [Vue](https://vuejs.org/v2/guide/class-and-style.html) in particular.
 
-- Be easy to understand
-- The obvious way to accomplish something should be the correct way (a.k.a. "pit of success")
-- Don't require a build system -- import from CDN should be a valid way to build an app
-- Run the minimal amount of logic to get the job done (including DOM updates)
+## Hello World
 
-## Main doc sections and order
+```js
+import { makeApp } from "@woofjs/app";
 
-- hello world example
-- state
-- routing
-- dolla
-- components
-- services
-- testing
+const app = makeApp();
 
-## TO DO
+app.route("*", ($) => {
+  return <h1>Hello World</h1>;
+});
 
-### Create dev tools
+app.connect("#app");
+```
 
-Add a dev tool service that collects info on service access. Eventually build a map to see which components and services are bringing in a given service.
+The code above will render a header with the words "Hello World" into the element with an ID of `app`, regardless of the current URL.
 
-## Design pitfalls
+## Routing
 
-- Watching states inside components with `$state.watch` will leave hanging watchers. You need to use `self.watchState($state, callback)` so the watchers can be cleaned up when the component disconnects. This is not an issue for services because they are only connected once.
-- It's possible to use a component's `$` to create outlets in a nested route. This will cause route matching to act weird. Is there a way to prevent this?
+Woof determines what content to show using routes. Routes take a string to match against the current URL and a component to display when that route matches.
+
+Route strings are a set of fragments separated by `/`. These fragments are of three types.
+
+- Static: `/this/is/static` and will match only when the route is exactly this.
+- Dynamic: `/users/:id/edit` will match anything that fits the static parts of the route and stores the parts beginning with `:` as named params. This can be anything, like `/users/123/edit` or `/users/BobJones/edit`. You can access these values inside the component.
+- Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
+
+```js
+app.route("", ($) => {});
+```
+
+```js
+app.route("users/:id", ($, self) => {
+  const id = self.$route.get("params.id");
+
+  return <p>User ID is {id}</p>;
+});
+```
+
+```js
+app.route("users/*", ($) => {
+  return (
+    <div>
+      <h1>Persistent Header</h1>
+
+      {$.outlet()
+        .route(":id", ($) => {
+          return <p>User Details</p>;
+        })
+        .route(":id/edit", ($) => {
+          return <p>User Edit</p>;
+        })
+        .route("*", ($) => {
+          return <p>Fallback</p>;
+        })}
+    </div>
+  );
+});
+```
+
+## Reactivity
+
+> TO DO
+
+## Dolla
+
+```js
+app.route("users/:id", ($, self) => {
+  const p = $("p");
+  const redP = $("p", {
+    style: { color: "red" },
+  });
+  const defaultP = $("p", {}, "This is shown by default unless you don't pass other children.");
+
+  return $("main")(
+    p("Here's some text in a paragraph."),
+    redP("This paragraph is red."),
+    defaultP(),
+    defaultP("Replaced.")
+  );
+});
+```
+
+## Components
+
+```js
+const Example = makeComponent(($, self) => {
+  const $title = self.$attrs.map("title");
+
+  return (
+    <div>
+      <h1>{$.text($title, "Default Title")}</h1>
+      <p>This is a reusable component now.</p>
+    </div>
+  );
+});
+
+app.route("example", Example);
+
+app.route("other", ($) => {
+  return (
+    <div>
+      <Example title="In Another Component" />
+    </div>
+  );
+});
+```
+
+## Services
+
+The following example shows a counter with one page to display the number and another to modify it. Both routes share data through a `counter` service.
+
+```js
+app.service("counter", () => {
+  const $count = makeState(0);
+
+  return {
+    $current: $count.map(), // Makes a read only version. Components can only change this through the methods.
+
+    increment() {
+      $count.set((current) => current + 1);
+    },
+
+    decrement() {
+      $count.set((current) => current - 1);
+    },
+  };
+});
+
+app
+  .route("/counter", ($) => {
+    return (
+      <div>
+        <h1>World's Most Inconvenient Counter Demo</h1>
+        <a href="/counter/view">See the number</a>
+        <a href="/counter/controls">Change the number</a>
+      </div>
+    );
+  })
+  .route("/counter/view", ($, self) => {
+    const { $current } = self.getService("counter");
+
+    return <h1>The Count is Now {$.text($current)}</h1>;
+  })
+  .route("/counter/controls", ($, self) => {
+    const { increment, decrement } = self.getService("counter");
+
+    return (
+      <div>
+        <button onclick={increment}>Increment</button>
+        <button onclick={decrement}>Decrement</button>
+      </div>
+    );
+  });
+```
+
+## Testing
+
+> TO DO
+
+---
+
+🦆

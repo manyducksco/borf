@@ -1,7 +1,7 @@
 import { makeState } from "@woofjs/state";
-import { deepEqual } from "../helpers/deepEqual.js";
-import { makeDolla } from "../dolla/makeDolla.js";
 import { makeTestWrapper } from "./makeTestWrapper.js";
+import { makeDolla } from "../dolla/makeDolla.js";
+import { checks } from "./checks.js";
 
 /**
  * Defines a test suite.
@@ -22,12 +22,15 @@ export function makeSuite(fn) {
   test.beforeAll = (fn) => {
     beforeAll.push(fn);
   };
+
   test.afterAll = (fn) => {
     afterAll.push(fn);
   };
+
   test.beforeEach = (fn) => {
     beforeEach.push(fn);
   };
+
   test.afterEach = (fn) => {
     afterEach.push(fn);
   };
@@ -42,6 +45,9 @@ export function makeSuite(fn) {
     tests,
     views,
 
+    /**
+     * Runs all tests in the suite and returns the results.
+     */
     async run(options = {}) {
       const results = [];
 
@@ -60,6 +66,7 @@ export function makeSuite(fn) {
         };
 
         results.push(result);
+
         if (options.onTestFinish) {
           options.onTestFinish(result);
         }
@@ -79,54 +86,55 @@ export function makeSuite(fn) {
         throw new Error(`No view found with name: ${name}`);
       }
 
-      const attrs = makeState([], {
-        methods: {
-          push(current, config) {
-            current.push(config);
-          },
-          setValue(current, name, value) {
-            const found = current.find((attr) => attr.name === name);
+      const $attrs = makeState([]);
 
-            if (found) {
-              found.state.set(value);
-            }
-          },
-        },
-      });
+      function pushAttr(attr) {
+        $attrs.set((current) => {
+          current.push(attr);
+        });
+      }
+
+      function setAttr(name, value) {
+        $attrs.set((current) => {
+          const found = current.find((attr) => attr.name === name);
+
+          if (found) {
+            found.$state.set(value);
+          }
+        });
+      }
 
       const makeWrapped = makeTestWrapper((getService) => {
         const $ = makeDolla({
           getService,
-          match: {
-            route: makeState("test"),
-            path: makeState("/test"),
-            params: makeState({}),
-            query: makeState({}),
-            wildcard: makeState(null),
-          },
+          $route: makeState({
+            route: "test",
+            path: "/test",
+            params: {},
+            query: {},
+            wildcard: null,
+          }),
         });
 
         return view.fn($, {
           attr: (name, value, options = {}) => {
-            const state = makeState(value);
+            const $state = makeState(value);
 
-            attrs.push({
+            pushAttr({
               name,
-              state,
+              $state,
               options,
             });
 
-            return state;
+            return $state;
           },
         });
       });
 
       return {
         element: makeWrapped(),
-        attrs: attrs.map((x) => x),
-        setAttr(name, value) {
-          attrs.setValue(name, value);
-        },
+        $attrs: $attrs.map(),
+        setAttr,
       };
     },
   };
@@ -180,7 +188,7 @@ async function runTest(testFn) {
         planned = count;
 
         meta.push({
-          label: `expecting ${count} ${pluralize("assertion", planned)}`,
+          label: `expecting ${count} assertion${planned == 1 ? "" : "s"}`,
         });
       },
 
@@ -196,80 +204,73 @@ async function runTest(testFn) {
       /**
        * Asserts that `actual` and `expected` are the same object (`===` strict equal).
        */
-      same(actual, expected, label) {
+      same(actual, expected, label = "both values are the same object") {
         pushAssertion({
-          pass: actual === expected,
-          label: label || `expected the same object, received expected ${expected} and actual ${actual}`,
+          pass: checks.same(actual, expected),
+          label,
+          expected,
+          actual,
         });
       },
 
       /**
        * Asserts that `actual` and `expected` have the same value (deep equal).
        */
-      equal(actual, expected, label) {
+      equal(actual, expected, label = "both values are equal") {
         pushAssertion({
-          pass: deepEqual(actual, expected),
-          label: label || `expected values to be equal, received expected ${expected} and actual ${actual}`,
+          pass: checks.equal(actual, expected),
+          label,
+          expected,
+          actual,
         });
       },
 
-      truthy(value, label) {
+      truthy(value, label = "value is truthy") {
         pushAssertion({
-          pass: !!value,
-          label: label || `expected a truthy value, received ${value}`,
+          pass: checks.truthy(value),
+          label,
+          actual: value,
         });
       },
 
-      falsy(value, label) {
+      falsy(value, label = "value is falsy") {
         pushAssertion({
-          pass: !value,
-          label: label || `expected a falsy value, received ${value}`,
+          pass: checks.falsy(value),
+          label,
+          actual: value,
         });
       },
 
-      assert(value, label) {
-        this.truthy(value, label);
+      throws(fn, label = "function throws") {
+        checks.throws(fn).then((err) => {
+          pushAssertion({
+            pass: err != null,
+            label,
+            actual: err,
+          });
+        });
       },
-
-      throws(fn, ...args) {},
 
       // Mock function assertions
-      called(mockFn, label) {
-        if (mockFn instanceof Function && mockFn.mock && Array.isArray(mockFn.mock.calls)) {
-          pushAssertion({
-            pass: mockFn.mock.calls.length > 0,
-            label: label || `function is called`,
-          });
-        } else {
-          throw new TypeError(`Expected a mock function. Received: ${mockFn}`);
-        }
+      called(mockFn, label = "function is called") {
+        pushAssertion({
+          pass: checks.called(mockFn),
+          label,
+        });
       },
+
       calledWith(mockFn, argument, label) {
-        if (mockFn instanceof Function && mockFn.mock && Array.isArray(mockFn.mock.calls)) {
-          const arg = JSON.stringify(argument);
-          let pass = false;
-
-          for (const call of mockFn.mock.calls) {
-            if (call.args.map((a) => JSON.stringify(a)).includes(arg)) {
-              pass = true;
-              break;
-            }
-          }
-
-          pushAssertion({ pass, label: label || "function is called with " + argument });
-        } else {
-          throw new TypeError(`Expected a mock function. Received: ${mockFn}`);
-        }
+        pushAssertion({
+          pass: checks.calledWith(mockFn, argument),
+          label: label || "function is called with " + argument,
+        });
       },
+
       calledTimes(mockFn, count, label) {
-        if (mockFn instanceof Function && mockFn.mock && Array.isArray(mockFn.mock.calls)) {
-          pushAssertion({
-            pass: mockFn.mock.calls.length === count,
-            label: label || `function is called ${count} time${count === 1 ? "" : "s"}`,
-          });
-        } else {
-          throw new TypeError(`Expected a mock function. Received: ${mockFn}`);
-        }
+        pushAssertion({
+          pass: checks.calledTimes(mockFn, count),
+          label: label || `function is called ${count} time${count === 1 ? "" : "s"}`,
+        });
       },
 
       end() {
@@ -277,15 +278,70 @@ async function runTest(testFn) {
       },
 
       not: {
-        same(actual, expected, label) {},
-        equal(actual, expected, label) {},
-        truthy(actual, label) {},
-        falsy(actual, label) {},
-        throws(fn, ...args) {},
+        same(actual, expected, label = "both values are the not same object") {
+          pushAssertion({
+            pass: !checks.same(actual, expected),
+            label,
+            expected,
+            actual,
+          });
+        },
 
-        called(mockFn, label) {},
-        calledWith(mockFn, ...args) {},
-        calledTimes(mockFn, count, label) {},
+        equal(actual, expected, label = "both values are not equal") {
+          pushAssertion({
+            pass: !checks.equal(actual, expected),
+            label,
+            expected,
+            actual,
+          });
+        },
+
+        truthy(value, label = "value is not truthy") {
+          pushAssertion({
+            pass: !checks.truthy(value),
+            label,
+            actual: value,
+          });
+        },
+
+        falsy(value, label = "value is not falsy") {
+          pushAssertion({
+            pass: !checks.falsy(value),
+            label,
+            actual: value,
+          });
+        },
+
+        throws(fn, label = "function does not throw") {
+          checks.throws(fn).then((err) => {
+            pushAssertion({
+              pass: err == null,
+              label,
+              actual: err,
+            });
+          });
+        },
+
+        called(mockFn, label = "function is not called") {
+          pushAssertion({
+            pass: !checks.called(mockFn),
+            label,
+          });
+        },
+
+        calledWith(mockFn, argument, label) {
+          pushAssertion({
+            pass: !checks.calledWith(mockFn, argument),
+            label: label || "function is not called with " + argument,
+          });
+        },
+
+        calledTimes(mockFn, count, label) {
+          pushAssertion({
+            pass: !checks.calledTimes(mockFn, count),
+            label: label || `function is not called ${count} time${count === 1 ? "" : "s"}`,
+          });
+        },
       },
 
       mock: {
@@ -338,9 +394,9 @@ async function runTest(testFn) {
           if (assertions.length < planned) {
             pushAssertion({
               pass: false,
-              label: `test makes ${planned} ${pluralize("assertion", planned)} within ${waitTime} ms (received ${
-                assertions.length
-              })`,
+              label: `test makes ${planned} assertion${(planned = 1 ? "" : "s")}`,
+              expected: planned,
+              actual: assertions.length,
             });
           }
           done();
@@ -348,7 +404,9 @@ async function runTest(testFn) {
       } else if (assertions.length > planned) {
         pushAssertion({
           pass: false,
-          label: `test makes ${planned} ${pluralize("assertion", planned)} (received ${assertions.length})`,
+          label: `test makes ${planned} assertion${(planned = 1 ? "" : "s")}`,
+          expected: planned,
+          actual: assertions.length,
         });
         done();
       } else {
@@ -359,11 +417,3 @@ async function runTest(testFn) {
     }
   });
 }
-
-const pluralize = (word, count) => {
-  if (count !== 1) {
-    word += "s";
-  }
-
-  return word;
-};

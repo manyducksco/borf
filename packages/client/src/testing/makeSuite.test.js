@@ -3,7 +3,7 @@ import { makeSuite } from "./makeSuite.js";
 test("runs tests", async () => {
   const tests = makeSuite((test) => {
     test("plans and waits for assertions", (t) => {
-      t.plan(2);
+      t.plan(3);
       t.timeout(200);
 
       setTimeout(() => {
@@ -11,6 +11,16 @@ test("runs tests", async () => {
       }, 100);
 
       t.equal({ one: 1 }, { one: 1 }, "two different objects with equal values");
+
+      t.throws(() => {
+        throw new Error("It works!");
+      });
+
+      t.throws(() => {
+        return new Promise((resolve, reject) => {
+          reject("This counts");
+        });
+      });
     });
   });
 
