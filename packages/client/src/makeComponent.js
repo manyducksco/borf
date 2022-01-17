@@ -8,7 +8,7 @@ export function makeComponent(create) {
       return true;
     },
 
-    create({ getService, debug, dolla, attrs, children, $route }) {
+    create({ getService, debugChannel, dolla, attrs, children, $route }) {
       let onBeforeConnect = [];
       let onConnected = [];
       let onBeforeDisconnect = [];
@@ -21,7 +21,7 @@ export function makeComponent(create) {
         $attrs: makeState({}),
         getService,
         children,
-        debug,
+        debug: debugChannel,
         preload(func) {
           preload = func;
         },
@@ -67,6 +67,8 @@ export function makeComponent(create) {
             );
 
             parsedAttrs[key] = attrs[key].get();
+          } else {
+            parsedAttrs[key] = attrs[key];
           }
         }
       }

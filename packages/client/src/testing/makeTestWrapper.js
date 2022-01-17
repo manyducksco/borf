@@ -1,30 +1,30 @@
 import { createMemoryHistory } from "history";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { makeDebug } from "../debug/makeDebug.js";
+import { makeService } from "../makeService.js";
 import HTTPService from "../services/@http.js";
 import PageService from "../services/@page.js";
 
 export function makeTestWrapper(init) {
-  const _services = {};
+  const injectedServices = {};
   let setup = () => {};
 
+  const services = {};
+  const getService = (name) => {
+    if (services[name]) {
+      return services[name];
+    }
+
+    throw new Error(`Service is not registered in this wrapper. Received: ${name}`);
+  };
+
   function makeWrapped(...args) {
-    const history = createMemoryHistory();
     const debug = makeDebug({ filter: "*" });
-    const services = {};
-
-    const getService = (name) => {
-      if (services[name]) {
-        return services[name];
-      }
-
-      throw new Error(`Service is not registered in this wrapper. Received: ${name}`);
-    };
 
     services["@debug"] = debug;
     services["@http"] = HTTPService.create({
       getService,
-      debug: debug.makeChannel("woof:@http"),
+      debugChannel: debug.makeChannel("woof:@http"),
       options: {
         fetch: () => {
           throw new Error(`Pass a mock @http service to make HTTP requests inside a wrapper.`);
@@ -33,11 +33,11 @@ export function makeTestWrapper(init) {
     });
     services["@page"] = PageService.create({
       getService,
-      debug: debug.makeChannel("woof:@page"),
+      debugChannel: debug.makeChannel("woof:@page"),
     });
 
-    for (const name in _services) {
-      services[name] = _services[name]();
+    for (const name in injectedServices) {
+      services[name] = injectedServices[name]();
     }
 
     setup(getService);
@@ -57,14 +57,12 @@ export function makeTestWrapper(init) {
     }
 
     if (service.isService) {
-      _services[name] = () =>
+      injectedServices[name] = () =>
         service.create({
           getService,
-          debug: debug.makeChannel(`service:${name}`),
+          debugChannel: debug.makeChannel(`service:${name}`),
           options: options,
         });
-    } else if (isObject(service)) {
-      _services[name] = () => service;
     } else {
       throw new TypeError(`Expected a service, function or object for service ${name}. Received: ${service}`);
     }

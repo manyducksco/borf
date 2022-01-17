@@ -129,7 +129,7 @@ export function makeApp(options = {}) {
         // First bits of app code are run; service functions called.
         service.instance = service.template.create({
           getService,
-          debug: debug.makeChannel(`service:${name}`),
+          debugChannel: debug.makeChannel(`service:${name}`),
           options: service.options,
         });
       }
@@ -149,7 +149,7 @@ export function makeApp(options = {}) {
         services[name].instance.beforeConnect();
       }
 
-      setup().then(() => {
+      return setup().then(() => {
         history.listen(onRouteChanged);
         onRouteChanged(history);
 
@@ -178,7 +178,7 @@ export function makeApp(options = {}) {
 
   /**
    * Returns the requested service or throws an error if it isn't registered.
-   * Every component and service in the app accesses services through this function.
+   * Every component and service in the app gets services through this function.
    *
    * @example getService("@page").$title.set("New Page Title")
    *
@@ -221,7 +221,7 @@ export function makeApp(options = {}) {
         const node = matched.props.component.create({
           getService,
           dolla,
-          debug: debug.makeChannel("component:~"), // TODO: Figure out how to default-name components
+          debugChannel: debug.makeChannel("component:~"), // TODO: Figure out how to default-name components
           attrs: {},
           children: [],
           $route,

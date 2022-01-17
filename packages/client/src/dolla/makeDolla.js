@@ -50,7 +50,7 @@ export function makeDolla({ getService, debug, $route }) {
         case "component":
           return element.create({
             getService,
-            debug: debug.makeChannel("component:~"),
+            debugChannel: debug.makeChannel("component:~"),
             dolla: $,
             attrs,
             children,

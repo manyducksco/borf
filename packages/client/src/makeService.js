@@ -6,13 +6,13 @@ export function makeService(create) {
       return true;
     },
 
-    create({ getService, debug, options = {} }) {
+    create({ getService, debugChannel, options = {} }) {
       let onBeforeConnect = [];
       let onConnected = [];
       let watchers = [];
 
       const self = {
-        debug,
+        debug: debugChannel,
         options,
         getService,
         beforeConnect(callback) {

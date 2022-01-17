@@ -6,7 +6,7 @@ import { makeTestWrapper } from "./makeTestWrapper.js";
 export function wrapComponent(component) {
   return makeTestWrapper((getService, ...args) => {
     if (isComponent(component)) {
-      const debug = getService("@debug").makeChannel("component:wrapped");
+      const debug = getService("@debug");
 
       let attrs = {};
       let children = [];
@@ -29,7 +29,7 @@ export function wrapComponent(component) {
 
       return component.create({
         getService,
-        debug,
+        debugChannel: debug.makeChannel("component:wrapped"),
         dolla,
         attrs,
         children,
