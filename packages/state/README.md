@@ -156,6 +156,7 @@ Here are all the functions you'll find on a state and how to call them:
 - `.get` for getting the current value
   - `.get()` to get the current value
   - `.get("some.key")` to get a nested part of the current value &ndash; works when the value is an object
+  - `.get(current => value)` to derive a new state from this state's `current` value and return it
 - `.set` for updating the current value
   - `.set(newValue)` to set a new value
   - `.set(current => newValue)` to replace the current value by returning a new one

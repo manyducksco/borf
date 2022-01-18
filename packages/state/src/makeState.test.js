@@ -4,6 +4,7 @@ test("get, set and watch", () => {
   const $state = makeState(5);
 
   expect($state.get()).toBe(5);
+  expect($state.get((current) => current + 2)).toBe(7);
 
   const unwatch = $state.watch((value) => {
     expect(value).toBe(8);

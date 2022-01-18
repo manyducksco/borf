@@ -12,12 +12,28 @@ export function makeState(initialValue) {
   let watchers = [];
 
   return {
-    get(key) {
-      if (key !== undefined) {
-        return getProperty(current, key);
+    get(...args) {
+      let value = current;
+      let key;
+      let callback;
+
+      if (isString(args[0])) {
+        key = args.shift();
       }
 
-      return current;
+      if (isFunction(args[0])) {
+        callback = args.shift();
+      }
+
+      if (key) {
+        value = getProperty(current, key);
+      }
+
+      if (callback) {
+        return callback(value);
+      }
+
+      return value;
     },
 
     set(value) {
