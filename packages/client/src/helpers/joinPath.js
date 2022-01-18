@@ -17,6 +17,12 @@ export function joinPath(...parts) {
         } else {
           joined += part;
         }
+      } else {
+        if (part[0] === "/") {
+          joined = part.slice(1);
+        } else {
+          joined += part;
+        }
       }
     }
   }

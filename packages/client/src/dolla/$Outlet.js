@@ -1,6 +1,7 @@
 import { makeState } from "@woofjs/state";
 import { makeRouter } from "@woofjs/router";
 import { isFunction, isNode, isComponent, isDolla, isString } from "../helpers/typeChecking.js";
+import { joinPath } from "../helpers/joinPath.js";
 import { $Node } from "./$Node.js";
 import { makeDolla } from "./makeDolla.js";
 import { makeRender } from "./makeRender.js";
@@ -29,7 +30,7 @@ export class $Outlet extends $Node {
     params: {},
     query: {},
     wildcard: null,
-    depth: 1, // how many levels of nesting - +1 for each $.outlet()
+    depth: 1, // levels of nesting - +1 for each $.outlet()
   });
 
   get isConnected() {
@@ -40,42 +41,34 @@ export class $Outlet extends $Node {
     super();
 
     this.createElement = makeRender(element);
+    this.$parent = $route;
 
     this.#path = $route.map("wildcard");
     this.#depth = $route.map("depth", (current) => (current || 0) + 1);
-    this.$route.set((current) => {
-      current.$parent = $route;
-    });
     this.#dolla = makeDolla({
       getService,
       debug,
       $route: this.$route,
     });
     this.#debug = getService("@debug").makeChannel("woof:outlet");
+    this.getService = getService;
   }
 
   route(route, component) {
-    // pass a string to redirect to that path
+    // Component can be a string to redirect to that path when matched.
     if (isString(component)) {
-      const redirect = component;
-      component = makeComponent(($, self) => {
-        self.beforeConnect(() => {
-          self.getService("@page").go(redirect, { replace: true });
-        });
+      this.#router.on(route, { redirect: component });
+    } else {
+      if (isFunction(component)) {
+        component = makeComponent(component);
+      }
 
-        return null;
-      });
+      if (!isComponent(component)) {
+        throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
+      }
+
+      this.#router.on(route, { component });
     }
-
-    if (isFunction(component)) {
-      component = makeComponent(component);
-    }
-
-    if (!isComponent(component)) {
-      throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
-    }
-
-    this.#router.on(route, { component });
 
     return this;
   }
@@ -92,7 +85,7 @@ export class $Outlet extends $Node {
     this.#outlet.connect(parent, after);
 
     if (!wasConnected) {
-      this.watchState(this.#path, (current) => current && this.#matchRoute(current), { immediate: true });
+      this.watchState(this.#path, (current) => current != null && this.#matchRoute(current), { immediate: true });
 
       this.watchState(
         this.$route,
@@ -129,7 +122,20 @@ export class $Outlet extends $Node {
         current.wildcard = matched.wildcard;
       });
 
-      if (this.#mounted == null || routeChanged) {
+      if (matched.props.redirect) {
+        let redirect = matched.props.redirect;
+
+        // Resolve relative routes against the current outlet.
+        if (redirect[0] !== "/") {
+          redirect = joinPath(this.$parent.get("path"), redirect);
+
+          if (redirect[0] !== "/") {
+            redirect = "/" + redirect;
+          }
+        }
+
+        this.getService("@page").go(redirect, { replace: true });
+      } else if (this.#mounted == null || routeChanged) {
         this.#mountRoute(matched.props.component);
       }
     } else {

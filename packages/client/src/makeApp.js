@@ -45,15 +45,19 @@ export function makeApp(options = {}) {
      * @param component - Component to display when route matches.
      */
     route(path, component) {
-      if (isFunction(component)) {
-        component = makeComponent(component);
-      }
+      if (isString(component)) {
+        router.on(path, { redirect: component });
+      } else {
+        if (isFunction(component)) {
+          component = makeComponent(component);
+        }
 
-      if (!isComponent(component)) {
-        throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
-      }
+        if (!isComponent(component)) {
+          throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
+        }
 
-      router.on(path, { component });
+        router.on(path, { component });
+      }
 
       return methods;
     },
@@ -112,7 +116,7 @@ export function makeApp(options = {}) {
      *
      * @param element - Selector string or DOM node to attach to.
      */
-    connect(element) {
+    async connect(element) {
       if (isString(element)) {
         element = document.querySelector(element);
       }
@@ -217,7 +221,9 @@ export function makeApp(options = {}) {
         current.wildcard = matched.wildcard;
       });
 
-      if (routeChanged) {
+      if (matched.props.redirect) {
+        getService("@page").go(matched.props.redirect, { replace: true });
+      } else if (routeChanged) {
         const node = matched.props.component.create({
           getService,
           dolla,
