@@ -45,18 +45,30 @@ export function makeApp(options = {}) {
      * @param component - Component to display when route matches.
      */
     route(path, component) {
-      if (isString(component)) {
-        router.on(path, { redirect: component });
+      if (isFunction(component)) {
+        component = makeComponent(component);
+      }
+
+      if (!isComponent(component)) {
+        throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
+      }
+
+      router.on(path, { component });
+
+      return methods;
+    },
+
+    /**
+     * Adds a route that redirects to another path.
+     *
+     * @param path - Path to match.
+     * @param to - New location for redirect.
+     */
+    redirect(path, to) {
+      if (isString(to)) {
+        router.on(path, { redirect: to });
       } else {
-        if (isFunction(component)) {
-          component = makeComponent(component);
-        }
-
-        if (!isComponent(component)) {
-          throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
-        }
-
-        router.on(path, { component });
+        throw new TypeError(`Expected a path. Got: ${to}`);
       }
 
       return methods;

@@ -1,4 +1,5 @@
 import { isComponent, isFunction, isNode, isObject, isString } from "../helpers/typeChecking.js";
+import { flatMap } from "../helpers/flatMap.js";
 import { $Element } from "./$Element.js";
 import { $Fragment } from "./$Fragment.js";
 import { $If } from "./$If.js";
@@ -42,7 +43,7 @@ export function makeDolla({ getService, debug, $route }) {
         attrs = children.shift();
       }
 
-      children = children
+      children = flatMap(children)
         .filter((x) => x != null && x !== false) // ignore null, undefined and false
         .map((child) => makeRender(child)());
 

@@ -55,19 +55,24 @@ export class $Outlet extends $Node {
   }
 
   route(route, component) {
-    // Component can be a string to redirect to that path when matched.
-    if (isString(component)) {
-      this.#router.on(route, { redirect: component });
+    if (isFunction(component)) {
+      component = makeComponent(component);
+    }
+
+    if (!isComponent(component)) {
+      throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
+    }
+
+    this.#router.on(route, { component });
+
+    return this;
+  }
+
+  redirect(route, to) {
+    if (isString(to)) {
+      this.#router.on(route, { redirect: to });
     } else {
-      if (isFunction(component)) {
-        component = makeComponent(component);
-      }
-
-      if (!isComponent(component)) {
-        throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
-      }
-
-      this.#router.on(route, { component });
+      throw new TypeError(`Expected a path. Got: ${to}`);
     }
 
     return this;
@@ -125,7 +130,6 @@ export class $Outlet extends $Node {
       if (matched.props.redirect) {
         let redirect = matched.props.redirect;
 
-        // Resolve relative routes against the current outlet.
         if (redirect[0] !== "/") {
           redirect = joinPath(this.$parent.get("path"), redirect);
 
@@ -134,6 +138,7 @@ export class $Outlet extends $Node {
           }
         }
 
+        console.log({ path: this.$parent.get(), redirect });
         this.getService("@page").go(redirect, { replace: true });
       } else if (this.#mounted == null || routeChanged) {
         this.#mountRoute(matched.props.component);
