@@ -14,7 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "@ratwizard/cli": "^0.17.0",
-    "@woofjs/app": "^0.1.0",
+    "@woofjs/app": "file:../app",
     "@woofjs/state": "^0.1.6",
     "chokidar": "^3.5.2",
     "dedent": "^0.7.0",

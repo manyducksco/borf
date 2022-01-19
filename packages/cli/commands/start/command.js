@@ -7,6 +7,11 @@ module.exports = new Command()
     description: "Do not open a web browser",
     boolean: true,
   })
+  .option("no-server", {
+    key: "noServer",
+    ddescription: "Do not bundle server.js",
+    boolean: true,
+  })
   .action(async ({ options }) => {
     const { makeState } = require("@woofjs/state");
     const EventEmitter = require("events");
@@ -134,7 +139,7 @@ module.exports = new Command()
 
     const serverEntry = path.join(config.path.server, "server.js");
 
-    if (fs.existsSync(serverEntry)) {
+    if (fs.existsSync(serverEntry) && !options.noServer) {
       const serverBundle = await esbuild.build({
         entryPoints: [serverEntry],
         bundle: true,
@@ -167,7 +172,7 @@ module.exports = new Command()
       );
     });
 
-    if (fs.existsSync(serverEntry)) {
+    if (fs.existsSync(serverEntry) && !options.noServer) {
       const serverWatcher = chokidar.watch(`${config.path.server}/**/*`, {
         persistent: true,
         ignoreInitial: true,
