@@ -155,12 +155,11 @@ module.exports = new Command()
       loader: { ".js": "jsx" },
       jsxFactory: "$", // compile JSX to dolla
       jsxFragment: '""', // pass empty string for fragments
-      external: ["@woofjs/app", "@woofjs/app/testing"],
       outfile: BUNDLE_PATH,
     });
 
     const runnerBundle = await esbuild.build({
-      entryPoints: [path.join(webRunnerDir, "index.js")],
+      entryPoints: [path.join(webRunnerDir, "index.jsx")],
       bundle: true,
       sourcemap: true,
       target: "es2018",

@@ -1,13 +1,11 @@
 import { makeSuite, wrapComponent } from "@woofjs/app/testing";
-import {{name}} from "./index.js";
+import {{name}} from "./index.jsx";
 
 export default makeSuite((test, view) => {
   const initComponent = wrapComponent({{name}});
 
-  view("default", ($, { attr }) => {
-    return initComponent({
-      /* attrs */
-    });
+  view("default", ($) => {
+    return initComponent();
   });
 
   test("is implemented", (t) => {

@@ -17,9 +17,13 @@ export default makeComponent(($, self) => {
     }
   });
 
-  return $("div", { class: "content" })(
-    $(ViewFrame, { currentView: $currentView }),
-    $.if($currentView, null, () => $(SuiteTests, { suite: $suite }))
+  return (
+    <div class="content">
+      <ViewFrame currentView={$currentView} />
+      {$.if($currentView, null, () => (
+        <SuiteTests suite={$suite} />
+      ))}
+    </div>
   );
 });
 
@@ -49,44 +53,42 @@ const ViewFrame = makeComponent(($, self) => {
     }
   });
 
-  return $("div", {
-    class: "viewContent",
-    style: {
-      display: self.$attrs.map("currentView", (view) =>
-        view ? "flex" : "none"
-      ),
-    },
-  })(
-    $("iframe", {
-      class: "viewFrame",
-      ref: views.$frameRef,
-      src: "/views/index.html",
-    }),
-    $.if(
-      $viewAttrs.map((items) => items.length > 0),
-      () => {
-        return $("div", { class: "viewAttrs" })(
-          $.each(
-            attrs,
-            (attr) => attr.name,
-            (attr) => $(ViewAttr)({ attr })
-          )
-        );
-      }
-    )
+  return (
+    <div
+      class="viewContent"
+      style={{
+        display: self.$attrs.map("currentView", (view) =>
+          view ? "flex" : "none"
+        ),
+      }}
+    >
+      <iframe class="viewFrame" ref={views.$frameRef} src="/views/index.html" />
+      {$.if(
+        $viewAttrs.map((items) => items.length > 0),
+        () => (
+          <div class="viewAttrs">
+            {$.each(
+              attrs,
+              (attr) => attr.name,
+              (attr) => (
+                <ViewAttr attr={attr} />
+              )
+            )}
+          </div>
+        )
+      )}
+    </div>
   );
 });
 
 const ViewAttr = makeComponent(($, self) => {
   const attr = self.$attrs.get("$attr").get();
 
-  return $("div", { class: "attr" })(
-    $("h4", { class: "attrLabel" })(attr.name),
-    $("input")({
-      class: "attrInput",
-      type: "text",
-      value: $.bind(attr.state),
-    })
+  return (
+    <div class="attr">
+      <h4 class="attrLabel">{attr.name}</h4>
+      <input class="attrInput" type="text" value={$.bind(attr.state)} />
+    </div>
   );
 });
 
