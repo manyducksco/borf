@@ -3,6 +3,10 @@ const path = require("path");
 const esbuild = require("esbuild");
 const mustache = require("mustache");
 
+const postCSSPlugin = require("esbuild-plugin-postcss2");
+
+console.log(postCSSPlugin);
+
 module.exports = function makeAppBundle(config) {
   const buildDir = config.path.build;
   const publicDir = path.join(buildDir, "public");
@@ -39,6 +43,14 @@ module.exports = function makeAppBundle(config) {
     target: "es2018",
     format: "iife",
     loader: { ".js": "jsx" },
+    plugins: [
+      postCSSPlugin.default({
+        plugins: [require("autoprefixer")],
+        modules: {
+          generateScopedName: "[folder]_[local]_[contenthash:8]",
+        },
+      }),
+    ],
     jsxFactory: "$", // compile JSX to dolla
     jsxFragment: '""', // pass empty string for fragments
     outbase: config.path.app,
