@@ -11,8 +11,26 @@ module.exports = function makeAppBundle(config) {
   fs.emptyDirSync(buildDir);
   fs.emptyDirSync(publicDir);
 
+  let entryPoint;
+
+  if (fs.existsSync(path.join(config.path.app, "app.js"))) {
+    entryPoint = path.join(config.path.app, "app.js");
+  } else if (fs.existsSync(path.join(config.path.app, "app.jsx"))) {
+    entryPoint = path.join(config.path.app, "app.jsx");
+  } else if (fs.existsSync(path.join(config.path.app, "app.ts"))) {
+    entryPoint = path.join(config.path.app, "app.ts");
+  } else if (fs.existsSync(path.join(config.path.app, "app.tsx"))) {
+    entryPoint = path.join(config.path.app, "app.tsx");
+  }
+
+  if (entryPoint == null) {
+    throw new Error(
+      `No app entrypoint file found. Expected 'app/app.js', 'app/app.jsx', 'app/app.ts' or 'app/app.tsx'`
+    );
+  }
+
   const esbuildConfig = {
-    entryPoints: [path.join(config.path.app, "app.js")],
+    entryPoints: [entryPoint],
     entryNames: "[dir]/[name].[hash]",
     bundle: true,
     sourcemap: true,

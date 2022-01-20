@@ -49,8 +49,8 @@ module.exports = new Command()
     }
 
     const appDir = config.path.app;
-    const bundleDir = path.join(config.path.temp, "apptest");
-    const webRunnerDir = path.join(__dirname, "webrunner");
+    const bundleDir = path.join(config.path.temp, "test");
+    const webRunnerDir = path.join(__dirname, "runner");
 
     /*==========================*\
     ||      Watch & Bundle      ||
@@ -98,6 +98,16 @@ module.exports = new Command()
 
       let index = "";
 
+      if (config?.test?.views?.includeStyles) {
+        for (let file of config.test.views.includeStyles) {
+          if (!path.isAbsolute(file)) {
+            file = path.join(config.path.root, file);
+          }
+
+          index += `import "${file}"` + "\n";
+        }
+      }
+
       imports.forEach((line) => {
         index += line + "\n";
       });
@@ -128,14 +138,6 @@ module.exports = new Command()
       );
     }
 
-    // Symlink node modules to load @manyducksco/woof from node_modules in the browser
-    try {
-      fs.symlinkSync(
-        path.join(__dirname, "../../node_modules"),
-        path.join(bundleDir, "node_modules")
-      );
-    } catch (err) {}
-
     const watcher = chokidar.watch([`${appDir}/**/*`], {
       persistent: true,
       ignoreInitial: true,
@@ -165,7 +167,9 @@ module.exports = new Command()
       target: "es2018",
       format: "esm",
       incremental: true,
-      external: ["@woofjs/app", "@woofjs/app/testing", "$bundle"],
+      external: ["$bundle"],
+      jsxFactory: "$", // compile JSX to dolla
+      jsxFragment: '""', // pass empty string for fragments
       outfile: path.join(bundleDir, "index.js"),
     });
 
@@ -176,7 +180,11 @@ module.exports = new Command()
       target: "es2018",
       format: "esm",
       incremental: true,
-      external: ["@woofjs/app", "@woofjs/app/testing", "$bundle"],
+      external: ["$bundle"],
+      inject: [],
+      loader: { ".js": "jsx" },
+      jsxFactory: "$", // compile JSX to dolla
+      jsxFragment: '""', // pass empty string for fragments
       outfile: path.join(bundleDir, "views/index.js"),
     });
 
@@ -198,16 +206,14 @@ module.exports = new Command()
           <script type="importmap">
             {
               "imports": {
-                "$bundle": "../suites.bundle.js",
-                "@woofjs/app": "../../../node_modules/@woofjs/app/dist/woof.app.m.js",
-                "@woofjs/app/testing": "../../../node_modules/@woofjs/app/dist/woof.app.testing.m.js"
+                "$bundle": "../suites.bundle.js"
               }
             }
           </script>
           <script src="../es-module-shims.js"></script>
           <script type="module" src="./index.js"></script>
         `,
-        styles: null,
+        styles: `<link rel="stylesheet" href="../suites.bundle.css" />`,
         config,
       };
 
