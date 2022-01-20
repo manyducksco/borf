@@ -47,7 +47,7 @@ module.exports = function makeAppBundle(config) {
       postCSSPlugin.default({
         plugins: [require("autoprefixer")],
         modules: {
-          generateScopedName: "[folder]_[local]_[contenthash:8]",
+          generateScopedName: "[folder]__[local]__[contenthash:8]",
         },
       }),
     ],
@@ -88,6 +88,10 @@ module.exports = function makeAppBundle(config) {
       config,
     };
 
+    if (config["static"]?.["injectScripts"]) {
+      context.scripts += config["static"]["injectScripts"].join("");
+    }
+
     for (const file of bundle.outputFiles) {
       fs.writeFileSync(file.path, file.contents);
       writtenFiles.push(file);
@@ -125,6 +129,19 @@ module.exports = function makeAppBundle(config) {
     };
   }
 
+  async function rebundle(bundle) {
+    const { writtenFiles } = writeBundle(bundle);
+
+    return {
+      ...bundle,
+      writtenFiles,
+      async rebuild() {
+        const rebundled = await bundle.rebuild();
+        return rebundle(rebundled);
+      },
+    };
+  }
+
   return {
     async build() {
       const bundle = await esbuild.build(esbuildConfig);
@@ -141,21 +158,7 @@ module.exports = function makeAppBundle(config) {
         incremental: true,
       });
 
-      const { writtenFiles } = writeBundle(bundle);
-
-      return {
-        ...bundle,
-        writtenFiles,
-        async rebuild() {
-          const rebundled = await bundle.rebuild();
-
-          const { writtenFiles } = writeBundle(bundle);
-
-          rebundled.writtenFiles = writtenFiles;
-
-          return rebundled;
-        },
-      };
+      return rebundle(bundle);
     },
   };
 };

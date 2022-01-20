@@ -41,6 +41,24 @@ module.exports = new Command()
         ...config.path,
         build: buildDir,
       },
+      static: {
+        ...config.static,
+        injectScripts: [
+          `
+          <script>
+            const events = new EventSource("/_bundle");
+          
+            events.addEventListener("message", (message) => {
+              window.location.reload();
+            });
+          
+            window.addEventListener("beforeunload", () => {
+              events.close();
+            });
+          </script>
+          `,
+        ],
+      },
     }).buildIncremental();
 
     /*==========================*\
