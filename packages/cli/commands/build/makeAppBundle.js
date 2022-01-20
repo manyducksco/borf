@@ -5,8 +5,6 @@ const mustache = require("mustache");
 
 const postCSSPlugin = require("esbuild-plugin-postcss2");
 
-console.log(postCSSPlugin);
-
 module.exports = function makeAppBundle(config) {
   const buildDir = config.path.build;
   const publicDir = path.join(buildDir, "public");
