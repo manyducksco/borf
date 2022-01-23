@@ -172,21 +172,21 @@ export function mapState(source, transform) {
       }
 
       if (key) {
-        let previous = undefined;
-
         let fn = callback;
         callback = (value) => {
-          value = getProperty(value, key);
-
-          if (!deepEqual(value, previous)) {
-            previous = value;
-            return fn(value);
-          }
+          return fn(getProperty(value, key));
         };
       }
 
+      let previous = undefined;
+
       return source.watch((value) => {
-        callback(transform(value));
+        value = transform(value);
+
+        if (!deepEqual(value, previous)) {
+          previous = value;
+          callback(value);
+        }
       }, options);
     },
 
