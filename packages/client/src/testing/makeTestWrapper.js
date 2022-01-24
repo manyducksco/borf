@@ -1,5 +1,4 @@
-import { createMemoryHistory } from "history";
-import { isFunction, isObject } from "../helpers/typeChecking.js";
+import { isFunction } from "../helpers/typeChecking.js";
 import { makeDebug } from "../debug/makeDebug.js";
 import { makeService } from "../makeService.js";
 import HTTPService from "../services/@http.js";

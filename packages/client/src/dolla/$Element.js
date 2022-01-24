@@ -1,5 +1,5 @@
-import { makeState, isState } from "@woofjs/state";
-import { isArray, isObject, isString, isNumber } from "../helpers/typeChecking.js";
+import { isState } from "@woofjs/state";
+import { isArray, isObject, isString, isNumber, isFunction } from "../helpers/typeChecking.js";
 import { $Node } from "./$Node.js";
 
 const attrMap = {
@@ -88,8 +88,8 @@ export class $Element extends $Node {
     }
 
     this.#applyAttrs();
-    this.#applyStyles();
-    this.#applyClasses();
+    this.#applyStyles(this.attrs.style);
+    this.#applyClasses(this.attrs.class);
     this.#attachEvents();
   }
 
@@ -126,58 +126,102 @@ export class $Element extends $Node {
     }
   }
 
-  #applyClasses() {
-    if (this.attrs.class) {
-      const mapped = getClassMap(this.attrs.class);
+  #applyClasses(classes) {
+    const unwatchers = [];
 
-      for (const name in mapped) {
-        const value = mapped[name];
+    if (classes) {
+      if (isState(classes)) {
+        let unapply;
 
-        if (isState(value)) {
-          this.#watch(value, (value) => {
-            if (value) {
-              this.element.classList.add(name);
-            } else {
-              this.element.classList.remove(name);
-            }
-          });
-        } else if (value) {
-          this.element.classList.add(name);
+        unwatchers.push(
+          this.#watch(classes, (value) => {
+            requestAnimationFrame(() => {
+              if (isFunction(unapply)) {
+                unapply();
+              }
+
+              this.element.removeAttribute("class");
+
+              unapply = this.#applyClasses(value);
+            });
+          })
+        );
+      } else {
+        const mapped = getClassMap(classes);
+
+        for (const name in mapped) {
+          const value = mapped[name];
+
+          if (isState(value)) {
+            unwatchers.push(
+              this.#watch(value, (current) => {
+                if (current) {
+                  this.element.classList.add(name);
+                } else {
+                  this.element.classList.remove(name);
+                }
+              })
+            );
+          } else if (value) {
+            this.element.classList.add(name);
+          }
         }
       }
     }
+
+    return function unapply() {
+      for (const unwatch of unwatchers) {
+        unwatch();
+      }
+    };
   }
 
-  #applyStyles() {
-    const { style } = this.attrs;
+  #applyStyles(style) {
+    const unwatchers = [];
 
     if (style) {
       if (isState(style)) {
-        throw new TypeError(
-          `Style attributes only supports states as properties in a style object. Got a state as the style value: ${style}`
-        );
+        let unapply;
+
+        this.#watch(style, (value) => {
+          requestAnimationFrame(() => {
+            if (isFunction(unapply)) {
+              unapply();
+            }
+            this.element.style = null;
+            unapply = this.#applyStyles(value);
+          });
+        });
       } else if (isString(style)) {
         this.element.style = style;
       } else if (isObject(style)) {
         for (const name in style) {
-          const prop = this.attrs.style[name];
+          const prop = style[name];
 
           if (isState(prop)) {
-            this.#watch(prop, (value) => {
-              this.element.style[name] = value;
-            });
+            unwatchers.push(
+              this.#watch(prop, (value) => {
+                this.element.style[name] = value;
+              })
+            );
           } else if (isString(prop)) {
             this.element.style[name] = prop;
           } else if (isNumber(prop)) {
             this.element.style[name] = prop + "px";
           } else {
-            throw new TypeError(`Style value should be a string or number. Received (${name}: ${prop})`);
+            throw new TypeError(`Style value should be a string or number. Got (${name}: ${prop})`);
           }
         }
       } else {
         throw new TypeError(`Expected style attribute to be a string or object. Got: ${style}`);
       }
     }
+
+    return function unapply() {
+      for (const unwatch of unwatchers) {
+        unwatch();
+      }
+    };
   }
 
   #applyAttrs() {
@@ -235,15 +279,22 @@ export class $Element extends $Node {
   }
 
   #watch(state, callback) {
-    this.watchers.push(
-      state.watch((value) => {
-        requestAnimationFrame(() => {
-          callback(value);
-        });
-      })
-    );
+    const { watchers } = this;
+
+    const cancel = state.watch((value) => {
+      requestAnimationFrame(() => {
+        callback(value);
+      });
+    });
+
+    watchers.push(cancel);
 
     callback(state.get());
+
+    return function unwatch() {
+      cancel();
+      watchers.splice(watchers.indexOf(cancel), 1);
+    };
   }
 }
 
@@ -262,12 +313,14 @@ function getClassMap(classes) {
       ...classes,
     };
   } else if (isArray(classes)) {
-    Array.from(classes).forEach((item) => {
-      mapped = {
-        ...mapped,
-        ...getClassMap(item),
-      };
-    });
+    Array.from(classes)
+      .filter((item) => item != null)
+      .forEach((item) => {
+        mapped = {
+          ...mapped,
+          ...getClassMap(item),
+        };
+      });
   }
 
   return mapped;

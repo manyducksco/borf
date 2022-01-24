@@ -79,7 +79,7 @@ export function makeApp(options = {}) {
      * Services and Components using `self.getService(name)`.
      *
      * @param name - Unique string to name this service.
-     * @param service - A service. One instance will be created and shared.
+     * @param service - A service to create and register under the name.
      * @param options - Object to be passed to service.created() function when called.
      */
     service(name, service, options) {
@@ -202,8 +202,10 @@ export function makeApp(options = {}) {
    */
   function getService(name) {
     if (!servicesCreated) {
-      // TODO: Specify in error that this is probably exclusive to calling self.getService in the main body of a service function.
-      throw new Error(`A service was requested before it was created. Got: ${name}`);
+      // This should only be reachable by user code in the body of a service function.
+      throw new Error(
+        `Service was requested before it was created. Services can only access other services in lifecycle hooks and exported functions. Got: ${name}`
+      );
     }
 
     if (services[name]) {
@@ -239,7 +241,7 @@ export function makeApp(options = {}) {
         const node = matched.props.component.create({
           getService,
           dolla,
-          debugChannel: debug.makeChannel("component:~"), // TODO: Figure out how to default-name components
+          debugChannel: debug.makeChannel("component:~"), // TODO: Is there a better way to get default component names?
           attrs: {},
           children: [],
           $route,

@@ -1,3 +1,7 @@
+/// <reference path="node_modules/@woofjs/state/types.d.ts" />
+
+import type { State, makeState, mergeStates } from "@woofjs/state";
+
 declare module "@woofjs/app" {
   /*==================================*\
   ||               App                ||
@@ -41,7 +45,7 @@ declare module "@woofjs/app" {
   /**
    * Creates a new Woof app.
    *
-   * @param options - Object with config options.
+   * @param options - Configuration options.
    */
   export function makeApp(options: AppOptions): App;
 
@@ -55,7 +59,9 @@ declare module "@woofjs/app" {
      * @param path - URL path (e.g. "/users/:id/edit")
      * @param component - A component to render for `path`
      */
-    route(path: string, component: Component | ComponentFunction): this;
+    route(path: string, component: Componentlike): App;
+
+    redirect(path: string, to: string): App;
 
     /**
      * Registers a service on the app. Services can be referenced on
@@ -65,7 +71,7 @@ declare module "@woofjs/app" {
      * @param service - Service class. One instance will be created and shared.
      * @param options - Object to be passed to service.created() function when called.
      */
-    service(name: string, service: Service, options?: any): this;
+    service(name: string, service: Servicelike, options?: any): App;
 
     /**
      * Runs a function after services are created but before routes are connected.
@@ -73,7 +79,7 @@ declare module "@woofjs/app" {
      *
      * @param fn - Setup function.
      */
-    setup(fn: SetupFunction): this;
+    setup(fn: SetupFunction): App;
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -83,58 +89,108 @@ declare module "@woofjs/app" {
     connect(root: string | Node): Promise<void>;
   };
 
-  type getService = (name: string) => Object;
+  type services = {
+    "@http": HTTPService;
+    "@page": {};
+    [name: string]: Service;
+  };
+
+  type getService = (name: keyof services) => services[keyof services];
+
+  type DebugChannel = {
+    name: string;
+    log(...args: any): void;
+    warn(...args: any): void;
+    error(...args: any): void;
+  };
 
   export type SetupFunction = (self: SetupSelf) => void | Promise<void>;
 
   export type SetupSelf = {
     getService: getService;
+    debug: DebugChannel;
   };
 
+  /**
+   * Defines a reusable view.
+   */
   export type Component = {};
 
   export type ComponentSelf = {
     getService: getService;
+    debug: DebugChannel;
+
+    beforeConnect: () => void;
+    connected: () => void;
+    beforeDisconnect: () => void;
+    disconnected: () => void;
+
+    preload: (done: () => void) => Element | void;
   };
 
   export type ComponentFunction = ($: Dolla, self: ComponentSelf) => Element;
 
-  export type Element = {};
+  export type Componentlike = Component | ComponentFunction;
+
+  /**
+   * Stores shared variables and functions that can be accessed by components and other services.
+   */
+  export type Service = {};
 
   export type ServiceFunction = (self: ServiceSelf) => Object;
 
   export type ServiceSelf = {
+    getService: getService;
+    debug: DebugChannel;
     options: {
       [name: string]: any;
     };
-    getService: getService;
+
+    beforeConnect: () => void;
+    connected: () => void;
   };
 
-  /**
-   * Creates a new app.
-   *
-   * @param options - Customize your app with an options object.
-   */
-  export default function (options?: AppOptions): App;
+  export type Servicelike = Service | ServiceFunction;
+
+  export type Element = {};
 
   /*==================================*\
   ||              Dolla               ||
   \*==================================*/
 
-  export interface $Node {
-    connect(): void;
-    disconnect(): void;
-  }
+  type DollaChild = string | number | DollaFunction | DollaNode;
 
-  export interface $Element extends $Node {}
+  type DollaFunction = (attrs?: {}, ...children: DollaChild[]) => DollaNode;
+
+  type DollaNode = {
+    connect(parent: Node, after?: Node): void;
+    disconnect(): void;
+  };
 
   export type Dolla = {
-    (): $Node;
-    (tag: string, attributes?: any): $Node;
-    (component: Component, attributes?: any): $Node;
+    (tag: string, attrs?: {}, ...children: DollaChild[]): DollaNode;
+    (component: Componentlike, attrs?: {}, ...children: DollaChild[]): DollaNode;
 
-    if(condition: State<any>, then: $Node | (() => $Node), otherwise?: $Node | (() => $Node)): $Node;
+    each<T>(
+      $state: State<T>,
+      makeKey: (current: T) => string | number,
+      makeElement: (current: T) => DollaChild
+    ): DollaNode;
+
+    if(
+      $state: State<any>,
+      then?: DollaChild | (() => DollaChild),
+      otherwise?: DollaChild | (() => DollaChild)
+    ): DollaNode;
+
+    text($state, defaultValue): DollaNode;
   };
+
+  /*==================================*\
+  ||              State               ||
+  \*==================================*/
+
+  // TODO: Export makeState and mergeStates
 
   /*==================================*\
   ||               HTTP               ||
@@ -148,43 +204,25 @@ declare module "@woofjs/app" {
 
   type HTTPMiddleware = (ctx: HTTPRequestContext) => Promise<void>;
 
-  export class HTTP {
-    get(url: string, ...args: [...middleware: HTTPMiddleware[], options?: HTTPRequestOptions]): HTTPRequest;
-  }
+  export type HTTPService = {
+    get(url: string): HTTPRequest;
+    post(url: string): HTTPRequest;
+    put(url: string): HTTPRequest;
+    patch(url: string): HTTPRequest;
+    delete(url: string): HTTPRequest;
+  };
 
   /*==================================*\
   ||             Service              ||
   \*==================================*/
 
-  /**
-   * Singleton to store shared state and methods between components.
-   */
-  export class Service {
-    app: AppInfo;
-    http: HTTP;
-
-    /**
-     * Called when service is first created.
-     */
-    init(): void;
-  }
+  export function makeService(fn: ServiceFunction): Service;
 
   /*==================================*\
   ||             Component            ||
   \*==================================*/
 
-  /**
-   * Testing.
-   */
-  export class Component {
-    app: AppInfo;
-    http: HTTP;
-
-    /**
-     * Creates an element.
-     */
-    createElement($: Dolla): $Element;
-  }
+  export function makeComponent(fn: ComponentFunction): Component;
 }
 
 declare module "@woofjs/app/testing" {

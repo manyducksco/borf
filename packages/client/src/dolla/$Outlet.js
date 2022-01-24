@@ -54,7 +54,7 @@ export class $Outlet extends $Node {
     this.getService = getService;
   }
 
-  route(route, component) {
+  route(route, component, attrs = {}) {
     if (isFunction(component)) {
       component = makeComponent(component);
     }
@@ -63,7 +63,7 @@ export class $Outlet extends $Node {
       throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
     }
 
-    this.#router.on(route, { component });
+    this.#router.on(route, { component, attrs });
 
     return this;
   }
@@ -138,10 +138,9 @@ export class $Outlet extends $Node {
           }
         }
 
-        console.log({ path: this.$parent.get(), redirect });
         this.getService("@page").go(redirect, { replace: true });
       } else if (this.#mounted == null || routeChanged) {
-        this.#mountRoute(matched.props.component);
+        this.#mountRoute(matched.props.component, matched.props.attrs);
       }
     } else {
       if (this.#mounted) {
@@ -161,13 +160,13 @@ export class $Outlet extends $Node {
     }
   }
 
-  #mountRoute(component) {
+  #mountRoute(component, attrs) {
     if (!this.isConnected) {
       return;
     }
 
     const $ = this.#dolla;
-    const node = $(component)();
+    const node = $(component, attrs)();
 
     const mount = (newNode) => {
       if (this.#mounted !== newNode) {

@@ -143,15 +143,14 @@ export class HTTPRequest {
 
       // Remove header
       if (value === null) {
-        this.#ctx.headers.delete(value);
+        this.#ctx.headers.delete(header);
         return this;
       }
 
       // Set header to value
-      if (isString(value)) {
-        this.#ctx.headers.set(header, value);
-        return this;
-      }
+      this.#ctx.headers.set(header, value.toString());
+
+      return this;
     } else if (isObject(header) && value == null) {
       // Set an object full of keys and values
       for (const key in header) {
@@ -180,15 +179,14 @@ export class HTTPRequest {
 
       // Remove query param
       if (value === null) {
-        this.#query.delete(value);
+        this.#query.delete(query);
         return this;
       }
 
       // Set query param to value
-      if (isString(value)) {
-        this.#query.set(header, value);
-        return this;
-      }
+      this.#query.set(query, value.toString());
+
+      return this;
     } else if (isObject(query) && value == null) {
       // Set an object full of keys and values
       for (const key in query) {

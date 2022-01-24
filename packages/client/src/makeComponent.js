@@ -45,7 +45,7 @@ export function makeComponent(create) {
       const parsedAttrs = {};
 
       for (const key in attrs) {
-        // Attrs beginning in $ are expected to be states. They will be passed through as states.
+        // Attrs beginning in $ are expected to be states. They will be passed through untouched.
         // State attrs not beginning with $ will be unwrapped and passed as their current value.
         // This echoes how elements handle states.
         if (key[0] === "$") {

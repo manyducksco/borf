@@ -35,21 +35,21 @@ export function makeDebug(options = {}) {
         },
 
         log(...args) {
-          if (options.log && match(name)) {
+          if (options.log !== false && match(name)) {
             for (const receiver of receivers) {
               receiver.receive(name, "log", ...args);
             }
           }
         },
         warn(...args) {
-          if (options.warn && match(name)) {
+          if (options.log !== false && match(name)) {
             for (const receiver of receivers) {
               receiver.receive(name, "warn", ...args);
             }
           }
         },
         error(...args) {
-          if (options.error && match(name)) {
+          if (options.log !== false && match(name)) {
             for (const receiver of receivers) {
               receiver.receive(name, "error", ...args);
             }
