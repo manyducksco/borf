@@ -138,7 +138,7 @@ export class $Outlet extends $Node {
           }
         }
 
-        this.getService("@page").go(redirect, { replace: true });
+        this.getService("@router").go(redirect, { replace: true });
       } else if (this.#mounted == null || routeChanged) {
         this.#mountRoute(matched.props.component, matched.props.attrs);
       }

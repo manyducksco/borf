@@ -31,10 +31,6 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 - Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
 
 ```js
-app.route("", ($) => {});
-```
-
-```js
 app.route("users/:id", ($, self) => {
   const id = self.$route.get("params.id");
 
@@ -112,6 +108,8 @@ app.route("other", ($) => {
 ```
 
 ## Services
+
+Services are singletons, meaning only one copy of the service exists and all `.getService(name)` calls that access it get the same instance of `name`. You can use services to store state in a central location when you need to get to it from multiple places in your app.
 
 The following example shows a counter with one page to display the number and another to modify it. Both routes share data through a `counter` service.
 

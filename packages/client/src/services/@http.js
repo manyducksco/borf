@@ -1,7 +1,7 @@
 import { makeService } from "../makeService.js";
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
 
-const HTTPService = makeService((self) => {
+export default makeService((self) => {
   self.debug.name = "woof:@http";
 
   const _middleware = [];
@@ -54,14 +54,13 @@ const HTTPService = makeService((self) => {
   };
 });
 
-export default HTTPService;
-
 export class HTTPRequest {
   #id;
   #debug;
   #url;
   #query;
   #ctx;
+  #res;
   #middleware;
   #fetch;
   #parse;
@@ -225,6 +224,10 @@ export class HTTPRequest {
     this.#isOk = fn;
   }
 
+  response() {
+    return this.#res;
+  }
+
   /**
    * Sends the request.
    */
@@ -259,6 +262,8 @@ export class HTTPRequest {
       headers: {},
       body: undefined,
     };
+
+    this.#res = res;
 
     const handler = async () => {
       this.#debug.log(`[request:${this.#id}] ${this.#ctx.method.toUpperCase()} ${this.#url}`);

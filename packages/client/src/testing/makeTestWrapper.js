@@ -1,8 +1,10 @@
+import { createMemoryHistory } from "history";
 import { isFunction } from "../helpers/typeChecking.js";
 import { makeDebug } from "../debug/makeDebug.js";
 import { makeService } from "../makeService.js";
 import HTTPService from "../services/@http.js";
 import PageService from "../services/@page.js";
+import RouterService from "../services/@router.js";
 
 export function makeTestWrapper(init) {
   const injectedServices = {};
@@ -23,7 +25,7 @@ export function makeTestWrapper(init) {
     services["@debug"] = debug;
     services["@http"] = HTTPService.create({
       getService,
-      debugChannel: debug.makeChannel("woof:@http"),
+      debugChannel: debug.makeChannel(),
       options: {
         fetch: () => {
           throw new Error(`Pass a mock @http service to make HTTP requests inside a wrapper.`);
@@ -32,7 +34,14 @@ export function makeTestWrapper(init) {
     });
     services["@page"] = PageService.create({
       getService,
-      debugChannel: debug.makeChannel("woof:@page"),
+      debugChannel: debug.makeChannel(),
+    });
+    services["@router"] = RouterService.create({
+      getService,
+      debugChannel: debug.makeChannel(),
+      options: {
+        history: createMemoryHistory(),
+      },
     });
 
     for (const name in injectedServices) {

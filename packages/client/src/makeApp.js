@@ -10,6 +10,7 @@ import catchLinks from "./helpers/catchLinks.js";
 
 import HTTPService from "./services/@http.js";
 import PageService from "./services/@page.js";
+import RouterService from "./services/@router.js";
 
 export function makeApp(options = {}) {
   const router = makeRouter();
@@ -156,7 +157,7 @@ export function makeApp(options = {}) {
       dolla = makeDolla({
         getService,
         debug,
-        $route: getService("@page").$route,
+        $route: getService("@router").$route,
       });
 
       // beforeConnect is the first opportunity to access other services.
@@ -222,10 +223,10 @@ export function makeApp(options = {}) {
     const matched = router.match(location.pathname + location.search);
 
     if (matched) {
-      const { $route } = getService("@page");
+      const { $route } = getService("@router");
       const routeChanged = matched.route !== $route.get("route");
 
-      // Top level route details are stored on @page, where they can be read by apps and services.
+      // Top level route details are stored on @router where they can be read by apps and services.
       // Nested route info is found in `this.$route` in components.
       $route.set((current) => {
         current.path = matched.path;
@@ -236,7 +237,7 @@ export function makeApp(options = {}) {
       });
 
       if (matched.props.redirect) {
-        getService("@page").go(matched.props.redirect, { replace: true });
+        getService("@router").go(matched.props.redirect, { replace: true });
       } else if (routeChanged) {
         const node = matched.props.component.create({
           getService,
@@ -280,7 +281,8 @@ export function makeApp(options = {}) {
 
   methods.service("@debug", () => debug); // expose debug as a service
   methods.service("@http", HTTPService);
-  methods.service("@page", PageService, { history });
+  methods.service("@page", PageService);
+  methods.service("@router", RouterService, { history });
 
   return methods;
 }
