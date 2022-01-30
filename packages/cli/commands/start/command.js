@@ -20,7 +20,7 @@ module.exports = new Command()
 
     if (config == null) {
       println(
-        `<red><bold>ERROR</bold></red> No woof.config.js file found. This command must be run at the root of the project.`
+        `<red><bold>ERROR</bold></red> No woof.config.js file found. Run this command at the root of your project.`
       );
       return;
     }

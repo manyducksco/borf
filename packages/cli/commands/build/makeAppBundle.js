@@ -40,10 +40,16 @@ module.exports = function makeAppBundle(config) {
     write: false,
     target: "es2018",
     format: "iife",
-    loader: { ".js": "jsx" },
+    loader: {
+      ".js": "jsx",
+      ".png": "file",
+      ".jpg": "file",
+      ".jpeg": "file",
+      ".svg": "file",
+    },
     plugins: [
       postCSSPlugin.default({
-        plugins: [require("autoprefixer")],
+        plugins: config.postcss?.plugins || [],
         modules: {
           generateScopedName: "[folder]__[local]__[contenthash:8]",
         },
