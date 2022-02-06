@@ -63,6 +63,10 @@ export class $Outlet extends $Node {
       throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
     }
 
+    if (route === "") {
+      route = "/";
+    }
+
     this.#router.on(route, { component, attrs });
 
     return this;
@@ -70,6 +74,10 @@ export class $Outlet extends $Node {
 
   redirect(route, to) {
     if (isString(to)) {
+      if (to === "") {
+        to = "/";
+      }
+
       this.#router.on(route, { redirect: to });
     } else {
       throw new TypeError(`Expected a path. Got: ${to}`);
@@ -173,6 +181,7 @@ export class $Outlet extends $Node {
         if (this.#mounted) {
           this.#mounted.disconnect();
         }
+
         this.#mounted = newNode;
         this.#mounted.connect(this.#outlet.element);
       }
