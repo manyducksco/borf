@@ -172,7 +172,6 @@ async function runTest(testFn) {
       } else {
         if (asyncTimeout && assertions.length === planned) {
           clearTimeout(asyncTimeout);
-          // done();
           done();
         }
       }

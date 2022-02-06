@@ -30,18 +30,18 @@ export default makeService((self) => {
     /**
      * Navigates to another route.
      *
-     * @param to - Path string or number of history entries
+     * @param path - Path string
      * @param options - `replace: true` to replace state
      */
-    go(to, options = {}) {
-      if (isString(to)) {
+    go(path, options = {}) {
+      if (isString(path)) {
         if (options.replace) {
-          history.replace(to);
+          history.replace(path);
         } else {
-          history.push(to);
+          history.push(path);
         }
       } else {
-        throw new TypeError(`Expected a string. Received: ${to}`);
+        throw new TypeError(`Expected a string. Got: ${path}`);
       }
     },
   };

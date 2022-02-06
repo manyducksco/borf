@@ -284,9 +284,9 @@ export class HTTPRequest {
 
       if (isFunction(this.#parse)) {
         res.body = await this.#parse(fetched);
-      } else if (contentType.includes("application/json")) {
+      } else if (contentType?.includes("application/json")) {
         res.body = await fetched.json();
-      } else if (contentType.includes("application/x-www-form-urlencoded")) {
+      } else if (contentType?.includes("application/x-www-form-urlencoded")) {
         res.body = await fetched.formData();
       } else {
         res.body = await fetched.text();

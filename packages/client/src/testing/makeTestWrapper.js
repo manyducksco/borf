@@ -25,7 +25,7 @@ export function makeTestWrapper(init) {
     services["@debug"] = debug;
     services["@http"] = HTTPService.create({
       getService,
-      debugChannel: debug.makeChannel(),
+      debugChannel: debug.makeChannel("woof:@http"),
       options: {
         fetch: () => {
           throw new Error(`Pass a mock @http service to make HTTP requests inside a wrapper.`);
@@ -34,11 +34,11 @@ export function makeTestWrapper(init) {
     });
     services["@page"] = PageService.create({
       getService,
-      debugChannel: debug.makeChannel(),
+      debugChannel: debug.makeChannel("woof:@page"),
     });
     services["@router"] = RouterService.create({
       getService,
-      debugChannel: debug.makeChannel(),
+      debugChannel: debug.makeChannel("woof:@router"),
       options: {
         history: createMemoryHistory(),
       },
