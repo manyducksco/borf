@@ -1,19 +1,15 @@
-import { isComponent, isFunction, isNode, isObject, isString } from "../helpers/typeChecking.js";
+import { isComponent, isNode, isObject, isString } from "../helpers/typeChecking.js";
 import { flatMap } from "../helpers/flatMap.js";
-import { $Element } from "./$Element.js";
-import { $Fragment } from "./$Fragment.js";
-import { $If } from "./$If.js";
-import { $Each } from "./$Each.js";
-import { $Outlet } from "./$Outlet.js";
-import { $Text } from "./$Text.js";
-import { $Watch } from "./$Watch.js";
-import { makeRenderable } from "./makeRenderable.js";
 
-import { makeWatch } from "./makeWatch.js";
+import { Outlet } from "./Outlet.js";
+
 import { makeIf } from "./makeIf.js";
-import { makeText } from "./makeText.js";
-import { makeElement } from "./makeElement.js";
 import { makeEach } from "./makeEach.js";
+import { makeText } from "./makeText.js";
+import { makeWatch } from "./makeWatch.js";
+import { makeElement } from "./makeElement.js";
+import { makeFragment } from "./makeFragment.js";
+import { makeRenderable } from "./makeRenderable.js";
 
 export function makeDolla({ getService, debug, $route }) {
   function $(element, ...args) {
@@ -66,14 +62,11 @@ export function makeDolla({ getService, debug, $route }) {
         case "element":
           return makeElement(element, attrs, children);
         case "fragment":
-          return new $Fragment(children);
+          return makeFragment(children);
       }
     }
 
-    Object.defineProperty(Dolla, "isDolla", {
-      value: true,
-      writable: false,
-    });
+    Dolla.isDolla = true;
 
     return Dolla;
   }
@@ -103,7 +96,7 @@ export function makeDolla({ getService, debug, $route }) {
 
     const node = $(element, attributes);
 
-    return new $Outlet(getService, debug, node, $route);
+    return new Outlet(getService, debug, node, $route);
   };
 
   /**

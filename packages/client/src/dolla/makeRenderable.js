@@ -1,10 +1,9 @@
 import { isState } from "@woofjs/state";
 import { isString, isNumber, isFunction, isNode, isDolla } from "../helpers/typeChecking.js";
-import { $Text } from "./$Text.js";
 import { makeText } from "./makeText.js";
 
 /**
- * Takes any valid child element and returns a render function that produces a $Node.
+ * Takes any valid child element and returns a render function that produces a node.
  */
 export function makeRenderable(element) {
   if (isNode(element)) {

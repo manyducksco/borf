@@ -1,8 +1,7 @@
 import { makeState } from "@woofjs/state";
 import { makeRouter } from "@woofjs/router";
-import { isFunction, isNode, isComponent, isDolla, isString } from "../helpers/typeChecking.js";
+import { isFunction, isComponent, isString } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
-import { $Node } from "./$Node.js";
 import { makeDolla } from "./makeDolla.js";
 import { makeRenderable } from "./makeRenderable.js";
 import { makeComponent } from "../makeComponent.js";
@@ -11,11 +10,20 @@ import { makeComponent } from "../makeComponent.js";
  * Creates a router outlet for a nested route. Multiple routes
  * are attached and the best match is displayed at this element's position.
  */
-export class $Outlet extends $Node {
+export class Outlet {
   static get isComponent() {
     return true;
   }
 
+  get isNode() {
+    return true;
+  }
+
+  get isConnected() {
+    return this.element?.parentNode != null;
+  }
+
+  element;
   #router = makeRouter();
   #outlet;
   #mounted;
@@ -40,8 +48,6 @@ export class $Outlet extends $Node {
   }
 
   constructor(getService, debug, element, $route) {
-    super();
-
     this.createElement = makeRenderable(element);
     this.$parent = $route;
 
@@ -100,7 +106,15 @@ export class $Outlet extends $Node {
     this.#outlet.connect(parent, after);
 
     if (!wasConnected) {
-      this.watchState(this.#path, (current) => current != null && this.#matchRoute(current), { immediate: true });
+      this.watchState(
+        this.#path,
+        (current) => {
+          if (current != null) {
+            this.#matchRoute(current);
+          }
+        },
+        { immediate: true }
+      );
 
       this.watchState(
         this.$route,
@@ -112,8 +126,6 @@ export class $Outlet extends $Node {
         },
         { immediate: true }
       );
-
-      this.connected();
     }
   }
 
