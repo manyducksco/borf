@@ -76,7 +76,8 @@ export class $Each extends $Node {
         if (deepEqual(item.value, value)) {
           node = item.node;
         } else {
-          node = this.createItem(value);
+          node = makeRender(this.createItem(value))();
+          removed.push({ i: item.index, key: item.key });
         }
       }
 
@@ -109,9 +110,9 @@ export class $Each extends $Node {
       for (const item of newItems) {
         item.node.connect(fragment, previous);
 
-        if (item.node.$isConnected) {
-          previous = item.node.$element;
-          item.node.$element.dataset.mapKey = item.key;
+        if (item.node.isConnected) {
+          previous = item.node.element;
+          item.node.element.dataset.mapKey = item.key;
         }
       }
 
