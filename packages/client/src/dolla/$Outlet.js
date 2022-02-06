@@ -4,7 +4,7 @@ import { isFunction, isNode, isComponent, isDolla, isString } from "../helpers/t
 import { joinPath } from "../helpers/joinPath.js";
 import { $Node } from "./$Node.js";
 import { makeDolla } from "./makeDolla.js";
-import { makeRender } from "./makeRender.js";
+import { makeRenderable } from "./makeRenderable.js";
 import { makeComponent } from "../makeComponent.js";
 
 /**
@@ -24,6 +24,8 @@ export class $Outlet extends $Node {
   #debug;
   #depth;
 
+  #watchers = [];
+
   $route = makeState({
     route: "",
     path: "",
@@ -40,7 +42,7 @@ export class $Outlet extends $Node {
   constructor(getService, debug, element, $route) {
     super();
 
-    this.createElement = makeRender(element);
+    this.createElement = makeRenderable(element);
     this.$parent = $route;
 
     this.#path = $route.map("wildcard");
@@ -119,6 +121,15 @@ export class $Outlet extends $Node {
     if (this.isConnected) {
       this.#outlet.disconnect();
     }
+
+    for (const unwatch of this.#watchers) {
+      unwatch();
+    }
+    this.#watchers = [];
+  }
+
+  watchState(state, ...args) {
+    this.#watchers.push(state.watch(...args));
   }
 
   #matchRoute(path) {
@@ -178,12 +189,19 @@ export class $Outlet extends $Node {
 
     const mount = (newNode) => {
       if (this.#mounted !== newNode) {
-        if (this.#mounted) {
-          this.#mounted.disconnect();
-        }
+        requestAnimationFrame(() => {
+          if (this.#mounted) {
+            this.#mounted.disconnect();
+          }
 
-        this.#mounted = newNode;
-        this.#mounted.connect(this.#outlet.element);
+          const element = this.#outlet.element;
+          while (element.lastChild) {
+            element.removeChild(element.lastChild);
+          }
+
+          this.#mounted = newNode;
+          this.#mounted.connect(this.#outlet.element);
+        });
       }
     };
 

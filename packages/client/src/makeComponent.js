@@ -1,6 +1,6 @@
 import { isState, makeState } from "@woofjs/state";
 import { isDolla, isFunction, isNode } from "./helpers/typeChecking.js";
-import { makeRender } from "./dolla/makeRender.js";
+import { makeRenderable } from "./dolla/makeRenderable.js";
 
 export function makeComponent(create) {
   return {
@@ -108,7 +108,7 @@ export function makeComponent(create) {
               const tempElement = preload(done);
 
               if (tempElement) {
-                const render = makeRender(tempElement);
+                const render = makeRenderable(tempElement);
                 const tempNode = render();
 
                 if (isNode(tempNode)) {

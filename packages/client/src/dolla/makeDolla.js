@@ -7,7 +7,13 @@ import { $Each } from "./$Each.js";
 import { $Outlet } from "./$Outlet.js";
 import { $Text } from "./$Text.js";
 import { $Watch } from "./$Watch.js";
-import { makeRender } from "./makeRender.js";
+import { makeRenderable } from "./makeRenderable.js";
+
+import { makeWatch } from "./makeWatch.js";
+import { makeIf } from "./makeIf.js";
+import { makeText } from "./makeText.js";
+import { makeElement } from "./makeElement.js";
+import { makeEach } from "./makeEach.js";
 
 export function makeDolla({ getService, debug, $route }) {
   function $(element, ...args) {
@@ -45,7 +51,7 @@ export function makeDolla({ getService, debug, $route }) {
 
       children = flatMap(children)
         .filter((x) => x != null && x !== false) // ignore null, undefined and false
-        .map((child) => makeRender(child)());
+        .map((child) => makeRenderable(child)());
 
       switch (elementType) {
         case "component":
@@ -58,7 +64,7 @@ export function makeDolla({ getService, debug, $route }) {
             $route,
           });
         case "element":
-          return new $Element(element, attrs, children);
+          return makeElement(element, attrs, children);
         case "fragment":
           return new $Fragment(children);
       }
@@ -72,20 +78,20 @@ export function makeDolla({ getService, debug, $route }) {
     return Dolla;
   }
 
-  $.if = function (value, then, otherwise) {
-    return new $If(value, then, otherwise);
+  $.if = function ($value, then, otherwise) {
+    return makeIf($value, then, otherwise);
   };
 
-  $.each = function (list, makeKey, makeItem) {
-    return new $Each(list, makeKey, makeItem);
+  $.each = function ($list, makeKey, makeItem) {
+    return makeEach($list, makeKey, makeItem);
   };
 
-  $.watch = function (source, create) {
-    return new $Watch(source, create);
+  $.watch = function ($value, makeItem) {
+    return makeWatch($value, makeItem);
   };
 
-  $.text = function (value) {
-    return new $Text(value);
+  $.text = function ($value, defaultValue) {
+    return makeText($value, defaultValue);
   };
 
   $.outlet = function (element = "div", attributes = {}) {

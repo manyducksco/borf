@@ -1,6 +1,6 @@
 import { makeState, isState } from "@woofjs/state";
 import { $Node } from "./$Node.js";
-import { makeRender } from "./makeRender.js";
+import { makeRenderable } from "./makeRenderable.js";
 
 /**
  * Call a render function that returns a new element to display when a value changes.
@@ -26,7 +26,7 @@ export class $Watch extends $Node {
     let newElement = this.createItem(value);
 
     if (newElement != null) {
-      newElement = makeRender(newElement)();
+      newElement = makeRenderable(newElement)();
     }
 
     requestAnimationFrame(() => {

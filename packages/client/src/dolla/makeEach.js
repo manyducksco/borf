@@ -1,41 +1,29 @@
 import { makeState, isState } from "@woofjs/state";
 import { deepEqual } from "../helpers/deepEqual.js";
-import { $Node } from "./$Node.js";
 import { makeRenderable } from "./makeRenderable.js";
+import { makeNode } from "./makeNode.js";
 
-/**
- * Transform a list of items into a list of `$(element)`s.
- *
- * Removes old and adds new items without touching existing ones.
- * Re-renders existing items if the previous item with the same key is not equal to the new one.
- */
-export class $Each extends $Node {
-  source;
-  getKey;
-  createItem;
-  unwatch;
-  list = [];
-
-  constructor(source, getKey, createItem) {
-    super();
-    this.source = isState(source) ? source : makeState(source);
-    this.getKey = getKey;
-    this.createItem = createItem;
+export const makeEach = makeNode((self, $state, makeKey, makeItem) => {
+  if (!isState($state)) {
+    $state = makeState($state);
   }
 
-  update(list) {
-    if (!this.isConnected) {
+  let items = [];
+  let unwatch;
+
+  function update(newItems) {
+    if (!self.isConnected) {
       return;
     }
 
-    const newKeys = list.map(this.getKey);
+    const newKeys = newItems.map(makeKey);
     const added = [];
     const removed = [];
     const moved = [];
 
     for (let i = 0; i < newKeys.length; i++) {
       const key = newKeys[i];
-      const current = this.list.find((item) => item.key === key);
+      const current = items.find((item) => item.key === key);
 
       if (current) {
         if (current.index !== i) {
@@ -50,7 +38,7 @@ export class $Each extends $Node {
       }
     }
 
-    for (const item of this.list) {
+    for (const item of items) {
       const stillPresent = newKeys.includes(item.key);
 
       if (!stillPresent) {
@@ -59,29 +47,29 @@ export class $Each extends $Node {
     }
 
     // Determine what the next state is going to be, reusing components when possible.
-    const newItems = [];
+    const nextItems = [];
 
-    for (let i = 0; i < list.length; i++) {
+    for (let i = 0; i < newItems.length; i++) {
       const key = newKeys[i];
-      const value = list[i];
+      const value = newItems[i];
       const isAdded = added.some((x) => x.key === key);
 
       let node;
 
       if (isAdded) {
-        node = makeRenderable(this.createItem(value))();
+        node = makeRenderable(makeItem(value))();
       } else {
-        const item = this.list.find((x) => x.key === key);
+        const item = items.find((x) => x.key === key);
 
         if (deepEqual(item.value, value)) {
           node = item.node;
         } else {
-          node = makeRenderable(this.createItem(value))();
+          node = makeRenderable(makeItem(value))();
           removed.push({ i: item.index, key: item.key });
         }
       }
 
-      newItems.push({
+      nextItems.push({
         index: i,
         key,
         value,
@@ -93,12 +81,12 @@ export class $Each extends $Node {
     requestAnimationFrame(() => {
       // Unmount removed items
       for (const entry of removed) {
-        const item = this.list.find((x) => x.key === entry.key);
+        const item = items.find((x) => x.key === entry.key);
 
         item?.node.disconnect();
       }
 
-      if (!this.isConnected) {
+      if (!self.isConnected) {
         return;
       }
 
@@ -107,7 +95,7 @@ export class $Each extends $Node {
       // Remount items in new order
       let previous = undefined;
 
-      for (const item of newItems) {
+      for (const item of nextItems) {
         item.node.connect(fragment, previous);
 
         if (item.node.isConnected) {
@@ -116,31 +104,31 @@ export class $Each extends $Node {
         }
       }
 
-      this.element.parentNode.insertBefore(fragment, this.element.nextSibling);
+      self.element.parentNode.insertBefore(fragment, self.element.nextSibling);
 
-      this.list = newItems;
+      items = nextItems;
     });
   }
 
-  connected() {
-    if (this.unwatch) {
-      this.unwatch();
-      this.unwatch = undefined;
+  self.connected(() => {
+    if (unwatch) {
+      unwatch();
+      unwatch = undefined;
     }
 
-    this.unwatch = this.source.watch(this.update.bind(this));
+    unwatch = $state.watch(update, { immediate: true });
+  });
 
-    this.update(this.source.get());
-  }
-
-  disconnected() {
-    for (const item of this.list) {
+  self.disconnected(() => {
+    for (const item of items) {
       item.node.disconnect();
     }
 
-    if (this.unwatch) {
-      this.unwatch();
-      this.unwatch = undefined;
+    if (unwatch) {
+      unwatch();
+      unwatch = undefined;
     }
-  }
-}
+  });
+
+  return document.createTextNode("");
+});

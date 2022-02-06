@@ -18,6 +18,8 @@ export const isDolla = (value) => value && value.isDolla === true;
 
 export const isNode = (value) => value && value.isNode === true;
 
+export const isBinding = (value) => value && value.isBinding === true;
+
 export const isComponent = (value) => value && value.isComponent === true;
 
 export const isService = (value) => value && value.isService === true;

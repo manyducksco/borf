@@ -142,6 +142,10 @@ declare module "@woofjs/app" {
   export type ServiceSelf = {
     getService: getService;
     debug: DebugChannel;
+
+    /**
+     * Object with options passed to this service when it was registered.
+     */
     options: {
       [name: string]: any;
     };
