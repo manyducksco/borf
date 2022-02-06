@@ -10,7 +10,9 @@ export default makeService((self) => {
   self.connected(() => {
     if (document) {
       self.watchState($title, (current) => {
-        document.title = current;
+        if (isString(current)) {
+          document.title = current;
+        }
       });
     }
   });

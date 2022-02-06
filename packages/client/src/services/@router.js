@@ -1,6 +1,7 @@
 import { makeState } from "@woofjs/state";
 import { makeService } from "../makeService.js";
 import { isString } from "../helpers/typeChecking.js";
+import { resolvePath } from "../helpers/resolvePath.js";
 
 /**
  * Top level navigation service.
@@ -35,6 +36,8 @@ export default makeService((self) => {
      */
     go(path, options = {}) {
       if (isString(path)) {
+        path = resolvePath(history.location.pathname, path);
+
         if (options.replace) {
           history.replace(path);
         } else {
