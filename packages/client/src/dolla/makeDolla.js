@@ -1,8 +1,6 @@
 import { isComponent, isNode, isObject, isString } from "../helpers/typeChecking.js";
 import { flatMap } from "../helpers/flatMap.js";
 
-import { Outlet } from "./Outlet.js";
-
 import { makeIf } from "./makeIf.js";
 import { makeEach } from "./makeEach.js";
 import { makeText } from "./makeText.js";
@@ -96,18 +94,6 @@ export function makeDolla({ getService, $route }) {
     }
 
     return makeRoutes(getService, $route, config);
-  };
-
-  $.outlet = function (tagName = "div", attrs = {}) {
-    if ($route.get("wildcard") == null) {
-      throw new Error(
-        `$.outlet() can only be used on routes that end with a wildcard. Current route: ${$route.get("route")}`
-      );
-    }
-
-    const node = $(tagName, attrs);
-
-    return new Outlet(getService, node, $route);
   };
 
   /**

@@ -53,9 +53,7 @@ export const makeRoutes = makeNode((self, getService, $route, config) => {
       $path.watch(
         (current) => {
           if (current != null) {
-            matchRoute(current).then(() => {
-              console.log(current, "preloaded");
-            });
+            matchRoute(current);
           }
         },
         { immediate: true }
