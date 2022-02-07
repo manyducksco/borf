@@ -47,7 +47,7 @@ export class Outlet {
     return this.#outlet && this.#outlet.isConnected;
   }
 
-  constructor(getService, debug, element, $route) {
+  constructor(getService, element, $route) {
     this.createElement = makeRenderable(element);
     this.$parent = $route;
 
@@ -55,7 +55,6 @@ export class Outlet {
     this.#depth = $route.map("depth", (current) => (current || 0) + 1);
     this.#dolla = makeDolla({
       getService,
-      debug,
       $route: this.$route,
     });
     this.#debug = getService("@debug").makeChannel("woof:outlet");

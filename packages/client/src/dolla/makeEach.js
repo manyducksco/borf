@@ -16,10 +16,21 @@ export const makeEach = makeNode((self, $state, makeKey, makeItem) => {
       return;
     }
 
-    const newKeys = newItems.map(makeKey);
+    if (newItems == null) {
+      for (const item of items) {
+        item.node.disconnect();
+      }
+
+      items = [];
+
+      return;
+    }
+
     const added = [];
     const removed = [];
     const moved = [];
+
+    const newKeys = newItems.map(makeKey);
 
     for (let i = 0; i < newKeys.length; i++) {
       const key = newKeys[i];

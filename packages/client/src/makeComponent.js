@@ -83,8 +83,7 @@ export function makeComponent(create) {
         }
 
         if (!isNode(element)) {
-          console.log(String(create));
-          let message = `Component must return an $(element) or null. Got: ${element}`;
+          let message = `Component must return an element or null. Got: ${element}`;
 
           self.debug.error(message);
           throw new TypeError(message);
@@ -94,6 +93,10 @@ export function makeComponent(create) {
       return {
         get isNode() {
           return true;
+        },
+
+        get isConnected() {
+          return element && element.isConnected;
         },
 
         element,
@@ -124,7 +127,7 @@ export function makeComponent(create) {
         },
 
         connect(parent, after = null) {
-          const wasConnected = element == null ? false : element.isConnected;
+          const wasConnected = this.isConnected;
 
           if (!wasConnected) {
             for (const callback of onBeforeConnect) {
@@ -133,8 +136,8 @@ export function makeComponent(create) {
           }
 
           // Run connect even if already connected without rerunning lifecycle hooks.
-          // This is used for reinserting nodes when sorting an $Each.
-          if (element != null) this.element.connect(parent, after);
+          // This is used for reinserting nodes when sorting an $.each.
+          if (element != null) element.connect(parent, after);
 
           if (!wasConnected) {
             for (const callback of onConnected) {

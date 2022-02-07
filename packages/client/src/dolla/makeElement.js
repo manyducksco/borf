@@ -100,7 +100,6 @@ function applyAttrs(element, attrs, watchers) {
         watchers.push(
           watch(value, (current) => {
             if (current) {
-              console.log(current.toString());
               element.setAttribute(key, isBoolean ? "" : current.toString());
             } else {
               element.removeAttribute(key);

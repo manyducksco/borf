@@ -7,11 +7,12 @@ import { makeIf } from "./makeIf.js";
 import { makeEach } from "./makeEach.js";
 import { makeText } from "./makeText.js";
 import { makeWatch } from "./makeWatch.js";
+import { makeRoutes } from "./makeRoutes.js";
 import { makeElement } from "./makeElement.js";
 import { makeFragment } from "./makeFragment.js";
 import { makeRenderable } from "./makeRenderable.js";
 
-export function makeDolla({ getService, debug, $route }) {
+export function makeDolla({ getService, $route }) {
   function $(element, ...args) {
     let defaultAttrs = {};
 
@@ -53,7 +54,7 @@ export function makeDolla({ getService, debug, $route }) {
         case "component":
           return element.create({
             getService,
-            debugChannel: debug.makeChannel("component:~"),
+            debugChannel: getService("@debug").makeChannel("component:~"),
             dolla: $,
             attrs,
             children,
@@ -87,16 +88,26 @@ export function makeDolla({ getService, debug, $route }) {
     return makeText($value, defaultValue);
   };
 
-  $.outlet = function (element = "div", attributes = {}) {
+  $.routes = function (config) {
+    if ($route.get("wildcard") == null) {
+      throw new Error(
+        `$.routes() can be used only on a route that ends with a wildcard. Current route: ${$route.get("route")}`
+      );
+    }
+
+    return makeRoutes(getService, $route, config);
+  };
+
+  $.outlet = function (tagName = "div", attrs = {}) {
     if ($route.get("wildcard") == null) {
       throw new Error(
         `$.outlet() can only be used on routes that end with a wildcard. Current route: ${$route.get("route")}`
       );
     }
 
-    const node = $(element, attributes);
+    const node = $(tagName, attrs);
 
-    return new Outlet(getService, debug, node, $route);
+    return new Outlet(getService, node, $route);
   };
 
   /**

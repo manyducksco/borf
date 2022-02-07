@@ -31,6 +31,7 @@ export const makeWatch = makeNode((self, $state, makeItem) => {
 
       if (item) {
         item.disconnect();
+        item = null;
       }
 
       if (newElement) {
@@ -51,6 +52,7 @@ export const makeWatch = makeNode((self, $state, makeItem) => {
   self.disconnected(() => {
     if (item) {
       item.disconnect();
+      item = null;
     }
 
     if (unwatch) {
