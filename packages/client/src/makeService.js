@@ -29,7 +29,7 @@ export function makeService(create) {
       const exports = create(self);
 
       if (!isObject(exports)) {
-        throw new TypeError(`Services must return an object. Got: ${exports}`);
+        throw new TypeError(`A service must return an object. Got: ${exports}`);
       }
 
       return {
