@@ -1,5 +1,5 @@
 import { isState } from "@woofjs/state";
-import { isString, isNumber, isFunction, isNode, isDolla } from "../helpers/typeChecking.js";
+import { isString, isNumber, isFunction, isNode } from "../helpers/typeChecking.js";
 import { makeText } from "./makeText.js";
 
 /**
@@ -8,8 +8,6 @@ import { makeText } from "./makeText.js";
 export function makeRenderable(element) {
   if (isNode(element)) {
     return () => element;
-  } else if (isDolla(element)) {
-    return () => element();
   } else if (isString(element) || isNumber(element)) {
     return () => makeText(element);
   } else if (isState(element)) {

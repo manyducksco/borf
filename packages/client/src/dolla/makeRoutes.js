@@ -2,7 +2,7 @@ import { makeRouter } from "@woofjs/router";
 import { makeState } from "@woofjs/state";
 import { makeNode } from "./makeNode.js";
 import { makeDolla } from "./makeDolla.js";
-import { isFunction, isNode, isComponent, isDolla, isString } from "../helpers/typeChecking.js";
+import { isFunction, isComponent, isString } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { makeComponent } from "../makeComponent.js";
 

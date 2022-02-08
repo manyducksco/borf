@@ -11,81 +11,76 @@ import { makeFragment } from "./makeFragment.js";
 import { makeRenderable } from "./makeRenderable.js";
 
 export function makeDolla({ getService, $route }) {
-  function $(element, ...args) {
-    let defaultAttrs = {};
+  /**
+   * Creates a renderable node.
+   */
+  function $(tagOrComponent, ...args) {
+    let attrs = {};
 
-    if (args[0] && !isNode(args[0]) && isObject(args[0])) {
-      defaultAttrs = args.shift();
+    if (args[0] && isObject(args[0]) && !isNode(args[0])) {
+      attrs = args.shift();
     }
 
-    let defaultChildren = args;
-    let elementType = null;
+    const children = flatMap(args)
+      .filter((x) => x !== null && x !== undefined && x !== false)
+      .map((child) => makeRenderable(child)());
 
-    if (isString(element)) {
-      if (element === "" || element === ":fragment:") {
-        elementType = "fragment";
+    if (isString(tagOrComponent)) {
+      if (tagOrComponent === "") {
+        return makeFragment(children);
       } else {
-        elementType = "element";
+        return makeElement(tagOrComponent, attrs, children);
       }
-    } else if (isComponent(element)) {
-      elementType = "component";
+    } else if (isComponent(tagOrComponent)) {
+      return tagOrComponent.create({
+        getService,
+        debugChannel: getService("@debug").makeChannel("component:~"),
+        dolla: $,
+        attrs,
+        children,
+        $route,
+      });
     } else {
-      throw new TypeError(`Expected a tag name or a Component. Received: ${element}`);
+      throw new TypeError(`Expected a tag name or component. Got: ${tagOrComponent}`);
     }
-
-    /**
-     * @param args - Attributes object (optional) followed by any number of children
-     */
-    function Dolla(...args) {
-      let attrs = { ...defaultAttrs };
-      let children = args.length === 0 ? defaultChildren : args;
-
-      if (args[0] && !isNode(args[0]) && isObject(args[0])) {
-        attrs = children.shift();
-      }
-
-      children = flatMap(children)
-        .filter((x) => x != null && x !== false) // ignore null, undefined and false
-        .map((child) => makeRenderable(child)());
-
-      switch (elementType) {
-        case "component":
-          return element.create({
-            getService,
-            debugChannel: getService("@debug").makeChannel("component:~"),
-            dolla: $,
-            attrs,
-            children,
-            $route,
-          });
-        case "element":
-          return makeElement(element, attrs, children);
-        case "fragment":
-          return makeFragment(children);
-      }
-    }
-
-    Dolla.isDolla = true;
-
-    return Dolla;
   }
 
+  /**
+   * If $value has a truthy value, show `then`.
+   * If $value has a falsy value, show `otherwise`.
+   *
+   * Both `then` and `otherwise` can be a node or function that returns a node. Both are optional.
+   */
   $.if = function ($value, then, otherwise) {
     return makeIf($value, then, otherwise);
   };
 
+  /**
+   * Displays one element for each item in `$list`.
+   */
   $.each = function ($list, makeKey, makeItem) {
     return makeEach($list, makeKey, makeItem);
   };
 
+  /**
+   * Runs `makeItem` on `$value` any time it changes and displays the result.
+   */
   $.watch = function ($value, makeItem) {
     return makeWatch($value, makeItem);
   };
 
+  /**
+   * Displays a state's value as text. If `$value` is falsy then `defaultValue` is displayed instead.
+   */
   $.text = function ($value, defaultValue) {
     return makeText($value, defaultValue);
   };
 
+  /**
+   * Registers sub-routes and the components to render when those routes match.
+   *
+   * @param config - Object with paths as keys and strings or components as values.
+   */
   $.routes = function (config) {
     if ($route.get("wildcard") == null) {
       throw new Error(

@@ -14,8 +14,6 @@ export const isArray = (value) => Array.isArray(value);
 
 export const isObject = (value) => value != null && typeof value === "object" && !isArray(value);
 
-export const isDolla = (value) => value && value.isDolla === true;
-
 export const isNode = (value) => value && value.isNode === true;
 
 export const isBinding = (value) => value && value.isBinding === true;

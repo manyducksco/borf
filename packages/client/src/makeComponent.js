@@ -1,5 +1,5 @@
 import { isState, makeState } from "@woofjs/state";
-import { isDolla, isFunction, isNode } from "./helpers/typeChecking.js";
+import { isFunction, isNode } from "./helpers/typeChecking.js";
 import { makeRenderable } from "./dolla/makeRenderable.js";
 
 export function makeComponent(create) {
@@ -77,17 +77,11 @@ export function makeComponent(create) {
 
       let element = create(dolla, self);
 
-      if (element !== null) {
-        if (isDolla(element)) {
-          element = element();
-        }
+      if (element !== null && !isNode(element)) {
+        let message = `Component must return an element or null. Got: ${element}`;
 
-        if (!isNode(element)) {
-          let message = `Component must return an element or null. Got: ${element}`;
-
-          self.debug.error(message);
-          throw new TypeError(message);
-        }
+        self.debug.error(message);
+        throw new TypeError(message);
       }
 
       return {
