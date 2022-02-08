@@ -136,18 +136,26 @@ function applyStyles(element, styles, watchers) {
   } else if (isObject(styles)) {
     for (const key in styles) {
       const value = styles[key];
+      const setProperty =
+        key.indexOf("-") > -1
+          ? (key, value) => element.style.setProperty(key, value)
+          : (key, value) => (element.style[key] = value);
 
       if (isState(value)) {
         const unwatch = watch(value, (current) => {
-          element.style.setProperty(key, current);
+          if (current) {
+            setProperty(key, current);
+          } else {
+            element.style.removeProperty(key);
+          }
         });
 
         watchers.push(unwatch);
         propWatchers.push(unwatch);
       } else if (isString(value)) {
-        element.style.setProperty(key, value);
+        setProperty(key, value);
       } else if (isNumber(value)) {
-        element.style.setProperty(key, value + "px");
+        setProperty(key, value + "px");
       } else {
         throw new TypeError(`Style properties should be strings, $states or numbers. Got (${key}: ${value})`);
       }
