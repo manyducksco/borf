@@ -61,24 +61,18 @@ app.route("users/*", ($) => {
 
 ## Reactivity
 
-> TO DO
+> TODO
+
+See [@woofjs/state](https://github.com/woofjs/state)
 
 ## Dolla
 
 ```js
 app.route("users/:id", ($, self) => {
-  const p = $("p");
-  const redP = $("p", {
-    style: { color: "red" },
-  });
-  const defaultP = $("p", {}, "This is shown by default unless you don't pass other children.");
-
-  return $("main")(
-    p("Here's some text in a paragraph."),
-    redP("This paragraph is red."),
-    defaultP(),
-    defaultP("Replaced.")
-  );
+  return $("main", [
+    $("p", "Here's some text in a paragraph."),
+    $("p", { style: { color: "red" } }, "This paragraph is red."),
+  ]);
 });
 ```
 

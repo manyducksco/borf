@@ -1,10 +1,9 @@
 import { makeRouter } from "@woofjs/router";
 import { makeState } from "@woofjs/state";
-import { makeNode } from "./makeNode.js";
-import { makeDolla } from "./makeDolla.js";
-import { isFunction, isComponent, isString } from "../helpers/typeChecking.js";
-import { joinPath } from "../helpers/joinPath.js";
-import { makeComponent } from "../makeComponent.js";
+import { isFunction, isComponent, isString, isComponentConstructor } from "../../helpers/typeChecking.js";
+import { joinPath } from "../../helpers/joinPath.js";
+import { makeComponent } from "../../makeComponent.js";
+import { makeDolla } from "../makeDolla.js";
 
 /**
  * Work in progress
@@ -14,7 +13,13 @@ import { makeComponent } from "../makeComponent.js";
  *
  * Takes an object with paths as keys and either a component or a redirect path as values.
  */
-export const makeRoutes = makeNode((self, getService, $route, config) => {
+export const Routes = makeComponent(($, self) => {
+  self.debug.name = "woof:$.routes";
+
+  const { $attrs, $route, getService } = self;
+  const routes = $attrs.get("routes");
+  const $depth = $route.map("depth", (current) => (current || 0) + 1);
+  const $path = $route.map("wildcard");
   const $ownRoute = makeState({
     route: "",
     path: "",
@@ -24,21 +29,22 @@ export const makeRoutes = makeNode((self, getService, $route, config) => {
     depth: 1, // levels of nesting - +1 for each $.routes()
   });
 
-  const $depth = $route.map("depth", (current) => (current || 0) + 1);
-  const $path = $route.map("wildcard");
-
   const router = makeRouter();
-  const debug = getService("@debug").makeChannel("woof:outlet");
-  const dolla = makeDolla({ getService, $route: $ownRoute });
+  const node = document.createTextNode("");
+  const dolla = makeDolla({
+    getService,
+    $route: $ownRoute,
+  });
 
   let mounted;
-  let watchers = [];
 
-  for (const path in config) {
-    const value = config[path];
+  for (const path in routes) {
+    const value = routes[path];
 
     if (isString(value)) {
       router.on(path, { redirect: value === "" ? "/" : value });
+    } else if (isComponentConstructor(value)) {
+      router.on(path, { component: value({ getService, $route: $ownRoute, dolla }) });
     } else if (isFunction(value)) {
       router.on(path, { component: makeComponent(value) });
     } else if (isComponent(value)) {
@@ -49,41 +55,29 @@ export const makeRoutes = makeNode((self, getService, $route, config) => {
   }
 
   self.connected(() => {
-    watchers.push(
-      $path.watch(
-        (current) => {
-          if (current != null) {
-            matchRoute(current);
-          }
-        },
-        { immediate: true }
-      )
+    self.watchState(
+      $path,
+      (current) => {
+        if (current != null) {
+          matchRoute(current);
+        }
+      },
+      { immediate: true }
     );
 
-    watchers.push(
-      $ownRoute.watch(
-        (current) => {
-          if (mounted) {
-            if (mounted.element.element?.dataset) {
-              mounted.element.element.dataset.route = current.route;
-              mounted.element.element.dataset.path = current.path;
-            } else if (mounted.element?.dataset) {
-              mounted.element.dataset.route = current.route;
-              mounted.element.dataset.path = current.path;
-            }
-          }
-        },
-        { immediate: true }
-      )
+    self.watchState(
+      $ownRoute,
+      (current) => {
+        if (mounted) {
+          mounted.element.dataset.route = current.route;
+          mounted.element.dataset.path = current.path;
+        }
+      },
+      { immediate: true }
     );
   });
 
   self.disconnected(() => {
-    for (const unwatch of watchers) {
-      unwatch();
-    }
-    watchers = [];
-
     if (mounted) {
       mounted.disconnect();
       mounted = null;
@@ -115,29 +109,19 @@ export const makeRoutes = makeNode((self, getService, $route, config) => {
           }
         }
 
-        getService("@router").go(redirect, { replace: true });
+        self.getService("@router").go(redirect, { replace: true });
       } else if (mounted == null || routeChanged) {
-        const { component, attrs } = matched.props;
-        const node = dolla(component, attrs)();
+        self.debug.log("route", matched);
 
-        const mount = (newNode) => {
-          if (mounted !== newNode) {
-            if (mounted) {
-              mounted.disconnect();
-            }
+        const newNode = $(matched.props.component);
 
-            mounted = newNode;
-            mounted.connect(self.element.parentNode, self.element);
-          }
-        };
+        self.debug.log("newNode", newNode);
 
         let start = Date.now();
 
-        return node.preload(mount).then(() => {
-          const time = Date.now() - start;
-          mount(node);
-          debug.log(`[depth ${$depth.get()}] mounted route '${$ownRoute.get("route")}' - preloaded in ${time}ms`);
-        });
+        await newNode.connect(node.parentNode, node);
+
+        self.debug.log(`[depth ${$depth.get()}] mounted route '${$ownRoute.get("route")}' in ${Date.now() - start}ms`);
       }
     } else {
       if (mounted) {
@@ -157,5 +141,5 @@ export const makeRoutes = makeNode((self, getService, $route, config) => {
     }
   }
 
-  return document.createTextNode("");
+  return node;
 });

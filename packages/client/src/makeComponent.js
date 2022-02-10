@@ -1,164 +1,215 @@
 import { isState, makeState } from "@woofjs/state";
-import { isFunction, isNode } from "./helpers/typeChecking.js";
-import { makeRenderable } from "./dolla/makeRenderable.js";
+import { isComponent, isDOM, isFunction } from "./helpers/typeChecking.js";
 
-export function makeComponent(create) {
-  return {
-    get isComponent() {
-      return true;
-    },
+export function makeComponent(fn) {
+  function create({ getService, $route, dolla, attrs, children, ...rest }) {
+    let onBeforeConnect = [];
+    let onConnected = [];
+    let onBeforeDisconnect = [];
+    let onDisconnected = [];
+    let watchers = [];
+    let preload;
 
-    create({ getService, debugChannel, dolla, attrs, children, $route }) {
-      let onBeforeConnect = [];
-      let onConnected = [];
-      let onBeforeDisconnect = [];
-      let onDisconnected = [];
-      let watchers = [];
-      let preload;
+    if (getService == null) {
+      console.trace({ fn, getService, $route, dolla, attrs, children, ...rest });
+    }
 
-      const self = {
-        $route,
-        $attrs: makeState({}),
-        getService,
-        children,
-        debug: debugChannel,
-        preload(func) {
-          preload = func;
-        },
-        beforeConnect(callback) {
-          onBeforeConnect.push(callback);
-        },
-        connected(callback) {
-          onConnected.push(callback);
-        },
-        beforeDisconnect(callback) {
-          onBeforeDisconnect.push(callback);
-        },
-        disconnected(callback) {
-          onDisconnected.push(callback);
-        },
-        watchState($state, ...args) {
-          watchers.push($state.watch(...args));
-        },
-      };
+    const self = {
+      $route,
+      $attrs: makeState({}),
+      getService,
+      children,
+      debug: getService("@debug").makeChannel("~"),
+      preload(func) {
+        preload = func;
+      },
+      beforeConnect(callback) {
+        onBeforeConnect.push(callback);
+      },
+      connected(callback) {
+        onConnected.push(callback);
+      },
+      beforeDisconnect(callback) {
+        onBeforeDisconnect.push(callback);
+      },
+      disconnected(callback) {
+        onDisconnected.push(callback);
+      },
+      watchState($state, ...args) {
+        watchers.push($state.watch(...args));
+      },
+    };
 
-      const parsedAttrs = {};
+    const parsedAttrs = {};
 
-      for (const key in attrs) {
-        // Attrs beginning in $ are expected to be states. They will be passed through untouched.
-        // State attrs not beginning with $ will be unwrapped and passed as their current value.
-        // This echoes how elements handle states.
-        if (key[0] === "$") {
-          if (isState(attrs[key])) {
-            parsedAttrs[key] = attrs[key]; // Pass states through as states when named appropriately
-          } else {
-            throw new TypeError(`An attribute beginning with $ must be a state. Got: ${attrs[key]} (key: ${key})`);
-          }
+    for (const key in attrs) {
+      // Attrs beginning in $ are expected to be states. They will be passed through untouched.
+      // State attrs not beginning with $ will be unwrapped and passed as their current value.
+      // This echoes how elements handle states.
+      if (key[0] === "$") {
+        if (isState(attrs[key])) {
+          parsedAttrs[key] = attrs[key]; // Pass states through as states when named appropriately
         } else {
-          if (isState(attrs[key])) {
-            // TODO: Ensure component is not disconnected and reconnected without reconstruction or these will not be reapplied.
-            // If they go in .connect() then they'll trigger watchers added in the body of `create`, which they shouldn't.
-            watchers.push(
-              attrs[key].watch((value) => {
-                self.$attrs.set((current) => {
-                  current[key] = value;
-                });
-              })
-            );
+          throw new TypeError(`An attribute beginning with $ must be a state. Got: ${attrs[key]} (key: ${key})`);
+        }
+      } else {
+        if (isState(attrs[key])) {
+          // TODO: Ensure component is not disconnected and reconnected without reconstruction or these will not be reapplied.
+          // If they go in .connect() then they'll trigger watchers added in the body of `create`, which they shouldn't.
+          watchers.push(
+            attrs[key].watch((value) => {
+              self.$attrs.set((current) => {
+                current[key] = value;
+              });
+            })
+          );
 
-            parsedAttrs[key] = attrs[key].get();
-          } else {
-            parsedAttrs[key] = attrs[key];
-          }
+          parsedAttrs[key] = attrs[key].get();
+        } else {
+          parsedAttrs[key] = attrs[key];
         }
       }
+    }
 
-      self.$attrs.set(parsedAttrs);
+    self.$attrs.set(parsedAttrs);
 
-      let element = create(dolla, self);
+    const node = fn(dolla, self);
 
-      if (element !== null && !isNode(element)) {
-        let message = `Component must return an element or null. Got: ${element}`;
+    if (node && !isComponent(node) && !isDOM(node)) {
+      let message = `Element function must return an element or null. Got: ${node}`;
 
-        self.debug.error(message);
-        throw new TypeError(message);
-      }
+      throw new TypeError(message);
+    }
 
-      return {
-        get isNode() {
-          return true;
-        },
+    return {
+      get isComponent() {
+        return true;
+      },
 
-        get isConnected() {
-          return element && element.isConnected;
-        },
+      get element() {
+        if (node) {
+          if (isComponent(node)) {
+            return node.element;
+          }
 
-        element,
+          if (isDOM(node)) {
+            return node;
+          }
+        }
 
-        async preload(mount) {
-          return new Promise((resolve) => {
-            if (isFunction(preload)) {
-              const done = () => {
-                resolve();
-              };
+        return null;
+      },
 
-              const tempElement = preload(done);
+      get isConnected() {
+        if (node) {
+          if (isComponent(node)) {
+            return node.isConnected;
+          }
 
-              if (tempElement) {
-                const render = makeRenderable(tempElement);
-                const tempNode = render();
+          if (isDOM(node)) {
+            return node.parentNode != null;
+          }
+        }
 
-                if (isNode(tempNode)) {
-                  mount(tempNode);
-                } else {
-                  throw new Error(`Expected preload function to return a node or undefined. Received: ${tempNode}`);
-                }
+        return false;
+      },
+
+      async _preload(mount) {
+        return new Promise(async (resolve) => {
+          if (isFunction(preload)) {
+            const show = (node) => {
+              if (!isComponent(node)) {
+                throw new TypeError(`Expected an element to display while preloading. Got: ${node}`);
               }
-            } else {
+
+              mount(node);
+            };
+
+            const done = () => {
               resolve();
+            };
+
+            const result = preload(show, done);
+
+            if (result && isFunction(result.then)) {
+              await result;
+              done();
             }
+          } else {
+            resolve();
+          }
+        });
+      },
+
+      async connect(parent, after = null) {
+        const wasConnected = this.isConnected;
+
+        if (!wasConnected) {
+          let temp;
+
+          // Run preload hook
+          await this._preload(async (component) => {
+            if (temp) {
+              await temp.disconnect();
+            }
+
+            temp = component;
+            await component.connect(parent, after);
           });
-        },
 
-        connect(parent, after = null) {
-          const wasConnected = this.isConnected;
-
-          if (!wasConnected) {
-            for (const callback of onBeforeConnect) {
-              callback();
-            }
+          // Run onBeforeConnect hook
+          for (const callback of onBeforeConnect) {
+            callback();
           }
 
-          // Run connect even if already connected without rerunning lifecycle hooks.
-          // This is used for reinserting nodes when sorting an $.each.
-          if (element != null) element.connect(parent, after);
-
-          if (!wasConnected) {
-            for (const callback of onConnected) {
-              callback();
-            }
+          // Remove lingering temp elements from preload
+          if (temp) {
+            await temp.disconnect();
           }
-        },
+        }
 
-        disconnect() {
-          if (element?.isConnected) {
-            for (const callback of onBeforeDisconnect) {
-              callback();
-            }
+        if (isComponent(node)) {
+          node.connect(parent, after);
+        } else if (isDOM(node)) {
+          parent.insertBefore(node, after ? after.nextSibling : null);
+        }
 
-            element.disconnect();
-
-            for (const callback of onDisconnected) {
-              callback();
-            }
-
-            for (const unwatch of watchers) {
-              unwatch();
-            }
-            watchers = [];
+        if (!wasConnected) {
+          // Run connected hook
+          for (const callback of onConnected) {
+            callback();
           }
-        },
-      };
-    },
-  };
+        }
+      },
+
+      async disconnect() {
+        if (this.isConnected) {
+          // Run beforeDisconnect hook
+          for (const callback of onBeforeDisconnect) {
+            callback();
+          }
+
+          if (isComponent(node)) {
+            node.disconnect();
+          } else if (isDOM(node)) {
+            node.parentNode.removeChild(node);
+          }
+
+          // Run disconnected hook
+          for (const callback of onDisconnected) {
+            callback();
+          }
+
+          for (const unwatch of watchers) {
+            unwatch();
+          }
+          watchers = [];
+        }
+      },
+    };
+  }
+
+  create.isComponentConstructor = true;
+
+  return create;
 }

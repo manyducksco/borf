@@ -16,8 +16,12 @@ export const isObject = (value) => value != null && typeof value === "object" &&
 
 export const isNode = (value) => value && value.isNode === true;
 
+export const isDOM = (value) => value instanceof Node;
+
 export const isBinding = (value) => value && value.isBinding === true;
 
 export const isComponent = (value) => value && value.isComponent === true;
+
+export const isComponentConstructor = (value) => value && value.isComponentConstructor === true;
 
 export const isService = (value) => value && value.isService === true;

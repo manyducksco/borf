@@ -1,27 +1,36 @@
 import { isState } from "@woofjs/state";
-import { isArray, isObject, isString, isNumber, isFunction, isBinding } from "../helpers/typeChecking.js";
-import { makeNode } from "./makeNode";
+import { makeComponent } from "../../makeComponent.js";
+import { isArray, isObject, isString, isNumber, isFunction, isBinding } from "../../helpers/typeChecking.js";
 
-export const makeElement = makeNode((self, tag, attrs = {}, children = []) => {
+export const Element = makeComponent(($, self) => {
+  const { $attrs, children } = self;
+
+  const tag = $attrs.get("tag");
+  const attrs = $attrs.get("attrs"); // attrs passed to the element itself
+
+  const node = document.createElement(tag);
+
   let watchers = [];
 
   self.beforeConnect(() => {
     let previous = null;
 
     for (const child of children) {
-      child.connect(self.element, previous?.element);
+      child.connect(node, previous?.element);
       previous = child;
     }
 
-    applyAttrs(self.element, attrs, watchers);
-    if (attrs.style) applyStyles(self.element, attrs.style, watchers);
-    if (attrs.class) applyClasses(self.element, attrs.class, watchers);
-    attachEventListeners(self.element, attrs, watchers);
+    applyAttrs(node, attrs, watchers);
+    if (attrs.style) applyStyles(node, attrs.style, watchers);
+    if (attrs.class) applyClasses(node, attrs.class, watchers);
+    attachEventListeners(node, attrs, watchers);
   });
 
   self.connected(() => {
-    if (attrs.$ref) {
-      attrs.$ref.set(self.element);
+    const $ref = $attrs.get("$ref");
+
+    if ($ref) {
+      $ref.set(node);
     }
   });
 
@@ -30,14 +39,13 @@ export const makeElement = makeNode((self, tag, attrs = {}, children = []) => {
       child.disconnect();
     }
 
-    // Cancel listens, bindings and event handlers
-    for (const unwatch of watchers) {
-      unwatch();
+    for (const callback of watchers) {
+      callback();
     }
     watchers = [];
   });
 
-  return document.createElement(tag);
+  return node;
 });
 
 function watch($state, callback) {

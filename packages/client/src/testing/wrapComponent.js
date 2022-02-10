@@ -11,7 +11,7 @@ export function wrapComponent(component) {
       let attrs = {};
       let children = [];
 
-      if (isObject(args[0]) && !isNode(args[0])) {
+      if (isObject(args[0]) && !isComponent(args[0])) {
         attrs = args.shift();
       }
 

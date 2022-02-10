@@ -1,21 +1,19 @@
-import { makeState, isState } from "@woofjs/state";
-import { deepEqual } from "../helpers/deepEqual.js";
-import { makeRenderable } from "./makeRenderable.js";
-import { makeNode } from "./makeNode.js";
+import { deepEqual } from "../../helpers/deepEqual.js";
+import { isComponent, isComponentConstructor, isFunction } from "../../helpers/typeChecking.js";
+import { makeComponent } from "../../makeComponent.js";
 
-export const makeEach = makeNode((self, $state, makeKey, makeItem) => {
-  if (!isState($state)) {
-    $state = makeState($state);
-  }
+export const Each = makeComponent(($, self) => {
+  self.debug.name = "woof:$.each";
+
+  const $value = self.$attrs.map("value");
+  const makeKey = self.$attrs.get("makeKey");
+  const makeItem = self.$attrs.get("makeItem");
+
+  const node = document.createTextNode("");
 
   let items = [];
-  let unwatch;
 
   function update(newItems) {
-    if (!self.isConnected) {
-      return;
-    }
-
     if (newItems == null) {
       for (const item of items) {
         item.node.disconnect();
@@ -65,40 +63,46 @@ export const makeEach = makeNode((self, $state, makeKey, makeItem) => {
       const value = newItems[i];
       const isAdded = added.some((x) => x.key === key);
 
-      let node;
+      let newItem;
 
       if (isAdded) {
-        node = makeRenderable(makeItem(value))();
+        newItem = makeItem(value);
       } else {
         const item = items.find((x) => x.key === key);
 
         if (deepEqual(item.value, value)) {
-          node = item.node;
+          newItem = item.node;
         } else {
-          node = makeRenderable(makeItem(value))();
+          newItem = makeItem(value);
+
           removed.push({ i: item.index, key: item.key });
         }
+      }
+
+      // Support functions that return an element.
+      if (newItem && isFunction(newItem) && !isComponentConstructor(newItem)) {
+        newItem = newItem();
+      }
+
+      if (newItem != null && !isComponent(newItem)) {
+        throw new TypeError(`Each: makeItem function should return a component or null. Got: ${newItem}`);
       }
 
       nextItems.push({
         index: i,
         key,
         value,
-        node,
+        node: newItem,
       });
     }
 
     // Batch all changes into an animation frame
-    requestAnimationFrame(() => {
+    requestAnimationFrame(async () => {
       // Unmount removed items
       for (const entry of removed) {
         const item = items.find((x) => x.key === entry.key);
 
         item?.node.disconnect();
-      }
-
-      if (!self.isConnected) {
-        return;
       }
 
       const fragment = new DocumentFragment();
@@ -107,7 +111,7 @@ export const makeEach = makeNode((self, $state, makeKey, makeItem) => {
       let previous = undefined;
 
       for (const item of nextItems) {
-        item.node.connect(fragment, previous);
+        await item.node.connect(fragment, previous);
 
         if (item.node.isConnected) {
           previous = item.node.element;
@@ -115,31 +119,21 @@ export const makeEach = makeNode((self, $state, makeKey, makeItem) => {
         }
       }
 
-      self.element.parentNode.insertBefore(fragment, self.element.nextSibling);
+      node.parentNode.insertBefore(fragment, node.nextSibling);
 
       items = nextItems;
     });
   }
 
   self.connected(() => {
-    if (unwatch) {
-      unwatch();
-      unwatch = undefined;
-    }
-
-    unwatch = $state.watch(update, { immediate: true });
+    self.watchState($value, update, { immediate: true });
   });
 
   self.disconnected(() => {
     for (const item of items) {
       item.node.disconnect();
     }
-
-    if (unwatch) {
-      unwatch();
-      unwatch = undefined;
-    }
   });
 
-  return document.createTextNode("");
+  return node;
 });

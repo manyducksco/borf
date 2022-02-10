@@ -4,7 +4,7 @@ import { makeDolla } from "./dolla/makeDolla.js";
 import { makeDebug } from "./debug/makeDebug.js";
 import { makeComponent } from "./makeComponent.js";
 import { makeService } from "./makeService.js";
-import { isFunction, isString, isService, isComponent, isNode } from "./helpers/typeChecking.js";
+import { isFunction, isString, isService, isComponentConstructor, isNode } from "./helpers/typeChecking.js";
 import { joinPath } from "./helpers/joinPath.js";
 import catchLinks from "./helpers/catchLinks.js";
 
@@ -50,7 +50,7 @@ export function makeApp(options = {}) {
         component = makeComponent(component);
       }
 
-      if (!isComponent(component)) {
+      if (!isComponentConstructor(component)) {
         throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
       }
 
@@ -166,9 +166,9 @@ export function makeApp(options = {}) {
         services[name].instance.beforeConnect();
       }
 
-      return setup().then(() => {
+      return setup().then(async () => {
         history.listen(onRouteChanged);
-        onRouteChanged(history);
+        await onRouteChanged(history);
 
         for (const name in services) {
           services[name].instance.connected();
@@ -219,7 +219,7 @@ export function makeApp(options = {}) {
   /**
    * Switches or sets everything that needs switching or setting when the URL changes.
    */
-  function onRouteChanged({ location }) {
+  async function onRouteChanged({ location }) {
     const matched = router.match(location.pathname + location.search);
 
     if (matched) {
@@ -239,36 +239,16 @@ export function makeApp(options = {}) {
       if (matched.props.redirect) {
         getService("@router").go(matched.props.redirect, { replace: true });
       } else if (routeChanged) {
-        const node = matched.props.component.create({
-          getService,
-          dolla,
-          debugChannel: debug.makeChannel("component:~"), // TODO: Is there a better way to get default component names?
-          attrs: {},
-          children: [],
-          $route,
-        });
-
-        const mount = (element) => {
-          if (mounted) {
-            mounted.disconnect();
-          }
-          mounted = element;
-          mounted.connect(outlet);
-
-          // Components store their whole $Element under `element`. We need one extra level of unwrapping to get to the DOM node.
-          const dom = isNode(mounted.element) ? mounted.element.element : mounted.element;
-          if (dom) {
-            dom.dataset.appRoute = $route.get("route");
-          }
-        };
+        mounted = matched.props.component({ getService, dolla, attrs: {}, children: [], $route });
 
         let start = Date.now();
-        node.preload(mount).then(() => {
-          const time = Date.now() - start;
 
-          mount(node);
-          appDebug.log(`[depth 0] mounted route '${matched.route}' - preloaded in ${time}ms`);
-        });
+        await mounted.connect(outlet);
+        appDebug.log(`[depth 0] mounted route '${matched.route}' - preloaded in ${Date.now() - start}ms`);
+
+        if (mounted.element) {
+          mounted.element.dataset.appRoute = $route.get("route");
+        }
       }
     } else {
       appDebug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
