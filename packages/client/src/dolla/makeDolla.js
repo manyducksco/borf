@@ -122,11 +122,11 @@ export function makeDolla({ getService, $route }) {
    * @param config - Object with paths as keys and strings or components as values.
    */
   $.routes = function (config) {
-    if ($route.get("wildcard") == null) {
-      throw new Error(
-        `$.routes() can be used only on a route that ends with a wildcard. Current route: ${$route.get("route")}`
-      );
-    }
+    // if ($route.get("wildcard") == null) {
+    //   throw new Error(
+    //     `$.routes() can be used only on a route that ends with a wildcard. Current route: ${$route.get("route")}`
+    //   );
+    // }
 
     return Routes({
       getService,

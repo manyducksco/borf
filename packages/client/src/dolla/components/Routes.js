@@ -44,7 +44,7 @@ export const Routes = makeComponent(($, self) => {
     if (isString(value)) {
       router.on(path, { redirect: value === "" ? "/" : value });
     } else if (isComponentConstructor(value)) {
-      router.on(path, { component: value({ getService, $route: $ownRoute, dolla }) });
+      router.on(path, { component: dolla(value) });
     } else if (isFunction(value)) {
       router.on(path, { component: makeComponent(value) });
     } else if (isComponent(value)) {
@@ -111,15 +111,14 @@ export const Routes = makeComponent(($, self) => {
 
         self.getService("@router").go(redirect, { replace: true });
       } else if (mounted == null || routeChanged) {
-        self.debug.log("route", matched);
-
-        const newNode = $(matched.props.component);
-
-        self.debug.log("newNode", newNode);
-
         let start = Date.now();
 
-        await newNode.connect(node.parentNode, node);
+        if (mounted) {
+          await mounted.disconnect();
+        }
+
+        mounted = $(matched.props.component);
+        await mounted.connect(node.parentNode, node);
 
         self.debug.log(`[depth ${$depth.get()}] mounted route '${$ownRoute.get("route")}' in ${Date.now() - start}ms`);
       }

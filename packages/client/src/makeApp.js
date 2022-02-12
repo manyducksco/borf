@@ -4,7 +4,7 @@ import { makeDolla } from "./dolla/makeDolla.js";
 import { makeDebug } from "./debug/makeDebug.js";
 import { makeComponent } from "./makeComponent.js";
 import { makeService } from "./makeService.js";
-import { isFunction, isString, isService, isComponentConstructor, isNode } from "./helpers/typeChecking.js";
+import { isFunction, isString, isService, isComponentConstructor } from "./helpers/typeChecking.js";
 import { joinPath } from "./helpers/joinPath.js";
 import catchLinks from "./helpers/catchLinks.js";
 
@@ -46,7 +46,7 @@ export function makeApp(options = {}) {
      * @param component - Component to display when route matches.
      */
     route(path, component) {
-      if (isFunction(component)) {
+      if (isFunction(component) && !isComponentConstructor(component)) {
         component = makeComponent(component);
       }
 
@@ -156,7 +156,6 @@ export function makeApp(options = {}) {
 
       dolla = makeDolla({
         getService,
-        debug,
         $route: getService("@router").$route,
       });
 
@@ -239,6 +238,10 @@ export function makeApp(options = {}) {
       if (matched.props.redirect) {
         getService("@router").go(matched.props.redirect, { replace: true });
       } else if (routeChanged) {
+        if (mounted) {
+          await mounted.disconnect();
+        }
+
         mounted = matched.props.component({ getService, dolla, attrs: {}, children: [], $route });
 
         let start = Date.now();

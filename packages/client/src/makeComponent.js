@@ -2,17 +2,13 @@ import { isState, makeState } from "@woofjs/state";
 import { isComponent, isDOM, isFunction } from "./helpers/typeChecking.js";
 
 export function makeComponent(fn) {
-  function create({ getService, $route, dolla, attrs, children, ...rest }) {
+  function create({ getService, $route, dolla, attrs, children }) {
     let onBeforeConnect = [];
     let onConnected = [];
     let onBeforeDisconnect = [];
     let onDisconnected = [];
     let watchers = [];
     let preload;
-
-    if (getService == null) {
-      console.trace({ fn, getService, $route, dolla, attrs, children, ...rest });
-    }
 
     const self = {
       $route,
@@ -115,28 +111,26 @@ export function makeComponent(fn) {
       },
 
       async _preload(mount) {
+        if (!isFunction(preload)) return;
+
         return new Promise(async (resolve) => {
-          if (isFunction(preload)) {
-            const show = (node) => {
-              if (!isComponent(node)) {
-                throw new TypeError(`Expected an element to display while preloading. Got: ${node}`);
-              }
-
-              mount(node);
-            };
-
-            const done = () => {
-              resolve();
-            };
-
-            const result = preload(show, done);
-
-            if (result && isFunction(result.then)) {
-              await result;
-              done();
+          const show = (node) => {
+            if (!isComponent(node)) {
+              throw new TypeError(`Expected an element to display while preloading. Got: ${node}`);
             }
-          } else {
+
+            mount(node);
+          };
+
+          const done = () => {
             resolve();
+          };
+
+          const result = preload(show, done);
+
+          if (result && isFunction(result.then)) {
+            await result;
+            done();
           }
         });
       },
@@ -169,7 +163,7 @@ export function makeComponent(fn) {
         }
 
         if (isComponent(node)) {
-          node.connect(parent, after);
+          await node.connect(parent, after);
         } else if (isDOM(node)) {
           parent.insertBefore(node, after ? after.nextSibling : null);
         }
@@ -190,7 +184,7 @@ export function makeComponent(fn) {
           }
 
           if (isComponent(node)) {
-            node.disconnect();
+            await node.disconnect();
           } else if (isDOM(node)) {
             node.parentNode.removeChild(node);
           }

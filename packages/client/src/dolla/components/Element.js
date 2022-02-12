@@ -10,13 +10,17 @@ export const Element = makeComponent(($, self) => {
 
   const node = document.createElement(tag);
 
+  if (attrs.$ref) {
+    attrs.$ref.set(node);
+  }
+
   let watchers = [];
 
-  self.beforeConnect(() => {
+  self.beforeConnect(async () => {
     let previous = null;
 
     for (const child of children) {
-      child.connect(node, previous?.element);
+      await child.connect(node, previous?.element);
       previous = child;
     }
 
@@ -26,17 +30,9 @@ export const Element = makeComponent(($, self) => {
     attachEventListeners(node, attrs, watchers);
   });
 
-  self.connected(() => {
-    const $ref = $attrs.get("$ref");
-
-    if ($ref) {
-      $ref.set(node);
-    }
-  });
-
-  self.disconnected(() => {
+  self.disconnected(async () => {
     for (const child of children) {
-      child.disconnect();
+      await child.disconnect();
     }
 
     for (const callback of watchers) {

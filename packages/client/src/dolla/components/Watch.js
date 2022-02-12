@@ -15,8 +15,6 @@ export const Watch = makeComponent(($, self) => {
   let item;
 
   function update(value) {
-    self.debug.log({ value, isConnected: self.isConnected });
-
     let newItem = makeItem(value);
 
     // Support functions that return an element.

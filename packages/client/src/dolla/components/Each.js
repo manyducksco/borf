@@ -115,11 +115,11 @@ export const Each = makeComponent(($, self) => {
 
         if (item.node.isConnected) {
           previous = item.node.element;
-          item.node.element.dataset.mapKey = item.key;
+          item.node.element.dataset.eachKey = item.key;
         }
       }
 
-      node.parentNode.insertBefore(fragment, node.nextSibling);
+      node.parentNode.insertBefore(fragment, node.nextSibling || null);
 
       items = nextItems;
     });

@@ -44,16 +44,17 @@ app.route("users/*", ($) => {
     <div>
       <h1>Persistent Header</h1>
 
-      {$.outlet()
-        .route(":id", ($) => {
+      {$.routes({
+        ":id": ($) => {
           return <p>User Details</p>;
-        })
-        .route(":id/edit", ($) => {
+        },
+        ":id/edit": ($) => {
           return <p>User Edit</p>;
-        })
-        .route("*", ($) => {
+        },
+        "*": ($) => {
           return <p>Fallback</p>;
-        })}
+        },
+      })}
     </div>
   );
 });
@@ -63,7 +64,7 @@ app.route("users/*", ($) => {
 
 > TODO
 
-See [@woofjs/state](https://github.com/woofjs/state)
+See [@woofjs/state](https://github.com/woofjs/state). Pass a state instead of a static value for any attribute and the DOM will update automatically as the state changes.
 
 ## Dolla
 
