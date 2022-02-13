@@ -42,9 +42,23 @@ A new dolla instance is created at each route boundary. I am using route boundar
 
 No. Unless we find a reason to need it I think we should keep params local. Each $.route should only contain params that matched in that route segment.
 
+Although, this does make it awkward to pass those values down from higher level routes to lower level routes.
+
 ## Outlet Ideas
 
+Information routes have:
+
+- their parent route
+- their own matched route (matched against parent's wildcard value)
+-
+
 ```js
+$.routes((when, redirect) => {
+  when("/", TestRoute);
+  when("test/:id/*", TestRoute2, { ...attrs });
+  redirect("*", "./");
+});
+
 $.outlet({
   // Grouped routes get joined like "test/edit", "test/:id/details" and matched in this outlet.
   // If value is an object, assume a route map. If value is a function, assume a component.

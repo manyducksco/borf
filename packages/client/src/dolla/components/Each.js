@@ -1,5 +1,5 @@
 import { deepEqual } from "../../helpers/deepEqual.js";
-import { isComponent, isComponentConstructor, isFunction } from "../../helpers/typeChecking.js";
+import { isComponentInstance, isComponentFactory, isFunction } from "../../helpers/typeChecking.js";
 import { makeComponent } from "../../makeComponent.js";
 
 export const Each = makeComponent(($, self) => {
@@ -80,11 +80,11 @@ export const Each = makeComponent(($, self) => {
       }
 
       // Support functions that return an element.
-      if (newItem && isFunction(newItem) && !isComponentConstructor(newItem)) {
+      if (newItem && isFunction(newItem) && !isComponentFactory(newItem)) {
         newItem = newItem();
       }
 
-      if (newItem != null && !isComponent(newItem)) {
+      if (newItem != null && !isComponentInstance(newItem)) {
         throw new TypeError(`Each: makeItem function should return a component or null. Got: ${newItem}`);
       }
 

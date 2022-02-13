@@ -1,17 +1,17 @@
 import { makeState } from "@woofjs/state";
-import { isComponent, isNode, isObject } from "../helpers/typeChecking.js";
+import { isComponentInstance, isObject } from "../helpers/typeChecking.js";
 import { makeDolla } from "../dolla/makeDolla.js";
 import { makeTestWrapper } from "./makeTestWrapper.js";
 
 export function wrapComponent(component) {
   return makeTestWrapper((getService, ...args) => {
-    if (isComponent(component)) {
+    if (isComponentInstance(component)) {
       const debug = getService("@debug");
 
       let attrs = {};
       let children = [];
 
-      if (isObject(args[0]) && !isComponent(args[0])) {
+      if (isObject(args[0]) && !isComponentInstance(args[0])) {
         attrs = args.shift();
       }
 

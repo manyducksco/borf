@@ -1,4 +1,4 @@
-import { isComponent, isComponentConstructor, isNode, isNumber, isObject, isString } from "../helpers/typeChecking.js";
+import { isComponentInstance, isComponentFactory, isNumber, isObject, isString } from "../helpers/typeChecking.js";
 import { flatMap } from "../helpers/flatMap.js";
 
 import { If } from "./components/If.js";
@@ -16,18 +16,18 @@ export function makeDolla({ getService, $route }) {
   function $(tagOrComponent, ...args) {
     let attrs = {};
 
-    if (args[0] && isObject(args[0]) && !isComponent(args[0])) {
+    if (args[0] && isObject(args[0]) && !isComponentInstance(args[0])) {
       attrs = args.shift();
     }
 
     const children = flatMap(args)
       .filter((x) => x !== null && x !== undefined && x !== false)
       .map((child) => {
-        if (isComponent(child)) {
+        if (isComponentInstance(child)) {
           return child;
         }
         if (isString(child) || isNumber(child)) {
-          return $(Text, { value: child });
+          return $.text(child);
         }
 
         throw new TypeError(`Component children must be components, strings, numbers or null. Got: ${child}`);
@@ -50,7 +50,7 @@ export function makeDolla({ getService, $route }) {
           children,
         });
       }
-    } else if (isComponentConstructor(tagOrComponent)) {
+    } else if (isComponentFactory(tagOrComponent)) {
       return tagOrComponent({
         getService,
         $route,
@@ -58,7 +58,7 @@ export function makeDolla({ getService, $route }) {
         attrs,
         children,
       });
-    } else if (isComponent(tagOrComponent)) {
+    } else if (isComponentInstance(tagOrComponent)) {
       return tagOrComponent;
     } else {
       throw new TypeError(`Expected a tagname or component. Got: ${tagOrComponent}`);
@@ -119,20 +119,20 @@ export function makeDolla({ getService, $route }) {
   /**
    * Registers sub-routes and the components to render when those routes match.
    *
-   * @param config - Object with paths as keys and strings or components as values.
+   * @param defineRoutes - Function to define routes. Takes (when, redirect) functions as arguments.
    */
-  $.routes = function (config) {
-    // if ($route.get("wildcard") == null) {
-    //   throw new Error(
-    //     `$.routes() can be used only on a route that ends with a wildcard. Current route: ${$route.get("route")}`
-    //   );
-    // }
+  $.routes = function (defineRoutes) {
+    if ($route.get("wildcard") == null) {
+      throw new Error(
+        `$.routes() can be used only on a route that ends with a wildcard. Current route: ${$route.get("route")}`
+      );
+    }
 
     return Routes({
       getService,
       $route,
       dolla: $,
-      attrs: { routes: config },
+      attrs: { defineRoutes },
     });
   };
 

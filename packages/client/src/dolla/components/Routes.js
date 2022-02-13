@@ -1,9 +1,10 @@
 import { makeRouter } from "@woofjs/router";
 import { makeState } from "@woofjs/state";
-import { isFunction, isComponent, isString, isComponentConstructor } from "../../helpers/typeChecking.js";
+import { isFunction, isComponentFactory } from "../../helpers/typeChecking.js";
 import { joinPath } from "../../helpers/joinPath.js";
 import { makeComponent } from "../../makeComponent.js";
 import { makeDolla } from "../makeDolla.js";
+import { resolvePath } from "../../helpers/resolvePath.js";
 
 /**
  * Work in progress
@@ -17,20 +18,18 @@ export const Routes = makeComponent(($, self) => {
   self.debug.name = "woof:$.routes";
 
   const { $attrs, $route, getService } = self;
-  const routes = $attrs.get("routes");
-  const $depth = $route.map("depth", (current) => (current || 0) + 1);
-  const $path = $route.map("wildcard");
+  const $wildcard = $route.map("wildcard");
   const $ownRoute = makeState({
     route: "",
     path: "",
+    href: "",
     params: {},
     query: {},
     wildcard: null,
-    depth: 1, // levels of nesting - +1 for each $.routes()
   });
 
-  const router = makeRouter();
   const node = document.createTextNode("");
+  const router = makeRouter();
   const dolla = makeDolla({
     getService,
     $route: $ownRoute,
@@ -38,25 +37,25 @@ export const Routes = makeComponent(($, self) => {
 
   let mounted;
 
-  for (const path in routes) {
-    const value = routes[path];
+  const defineRoutes = $attrs.get("defineRoutes");
 
-    if (isString(value)) {
-      router.on(path, { redirect: value === "" ? "/" : value });
-    } else if (isComponentConstructor(value)) {
-      router.on(path, { component: dolla(value) });
-    } else if (isFunction(value)) {
-      router.on(path, { component: makeComponent(value) });
-    } else if (isComponent(value)) {
-      router.on(path, { component: value });
-    } else {
-      throw new TypeError(`Expected string or component for route '${path}'. Got: ${path}`);
+  function when(path, component, attrs = {}) {
+    if (isFunction(component) && !isComponentFactory(component)) {
+      component = makeComponent(component);
     }
+
+    router.on(path, { component, attrs });
   }
+
+  function redirect(path, to) {
+    router.on(path, { redirect: to === "" ? "/" : to });
+  }
+
+  defineRoutes(when, redirect);
 
   self.connected(() => {
     self.watchState(
-      $path,
+      $wildcard,
       (current) => {
         if (current != null) {
           matchRoute(current);
@@ -85,42 +84,44 @@ export const Routes = makeComponent(($, self) => {
   });
 
   async function matchRoute(path) {
+    if (!node.parentNode) {
+      return;
+    }
+
     const matched = router.match(path);
 
     if (matched) {
-      const routeChanged = matched.route !== $ownRoute.get("route");
+      const routeChanged = matched.route !== $ownRoute.get("route") || mounted == null;
 
       $ownRoute.set((current) => {
         current.path = matched.path;
         current.route = matched.route;
+        current.href = joinPath($route.get("href"), matched.path.slice(0, matched.path.lastIndexOf(matched.wildcard)));
         current.query = matched.query;
         current.params = matched.params;
         current.wildcard = matched.wildcard;
       });
 
       if (matched.props.redirect) {
-        let redirect = matched.props.redirect;
+        let resolved = resolvePath($route.get("href"), matched.props.redirect);
 
-        if (redirect[0] !== "/") {
-          redirect = joinPath($route.get("path"), redirect);
-
-          if (redirect[0] !== "/") {
-            redirect = "/" + redirect;
-          }
+        if (resolved[0] !== "/") {
+          resolved = "/" + resolved;
         }
 
-        self.getService("@router").go(redirect, { replace: true });
-      } else if (mounted == null || routeChanged) {
-        let start = Date.now();
+        // FIXME: Causes redirect loops when the target route doesn't exist
+        self.getService("@router").go(resolved, { replace: true });
+      } else if (routeChanged) {
+        const start = Date.now();
 
         if (mounted) {
           await mounted.disconnect();
         }
 
-        mounted = $(matched.props.component);
+        mounted = dolla(matched.props.component, matched.props.attrs);
         await mounted.connect(node.parentNode, node);
 
-        self.debug.log(`[depth ${$depth.get()}] mounted route '${$ownRoute.get("route")}' in ${Date.now() - start}ms`);
+        self.debug.log(`mounted route '${$ownRoute.get("route")}' in ${Date.now() - start}ms`);
       }
     } else {
       if (mounted) {
@@ -131,12 +132,13 @@ export const Routes = makeComponent(($, self) => {
       $ownRoute.set((current) => {
         current.path = null;
         current.route = null;
-        current.query = Object.create(null);
-        current.params = Object.create(null);
+        current.href = $route.get("href");
+        current.query = {};
+        current.params = {};
         current.wildcard = null;
       });
 
-      console.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
+      self.debug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
     }
   }
 

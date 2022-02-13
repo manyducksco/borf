@@ -14,6 +14,7 @@ export default makeService((self) => {
   return {
     $route: makeState({
       path: "",
+      href: "",
       query: {},
       params: {},
       route: "",

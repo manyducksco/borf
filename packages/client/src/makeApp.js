@@ -4,7 +4,7 @@ import { makeDolla } from "./dolla/makeDolla.js";
 import { makeDebug } from "./debug/makeDebug.js";
 import { makeComponent } from "./makeComponent.js";
 import { makeService } from "./makeService.js";
-import { isFunction, isString, isService, isComponentConstructor } from "./helpers/typeChecking.js";
+import { isFunction, isString, isService, isComponentFactory } from "./helpers/typeChecking.js";
 import { joinPath } from "./helpers/joinPath.js";
 import catchLinks from "./helpers/catchLinks.js";
 
@@ -46,11 +46,11 @@ export function makeApp(options = {}) {
      * @param component - Component to display when route matches.
      */
     route(path, component) {
-      if (isFunction(component) && !isComponentConstructor(component)) {
+      if (isFunction(component) && !isComponentFactory(component)) {
         component = makeComponent(component);
       }
 
-      if (!isComponentConstructor(component)) {
+      if (!isComponentFactory(component)) {
         throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
       }
 
@@ -230,6 +230,7 @@ export function makeApp(options = {}) {
       $route.set((current) => {
         current.path = matched.path;
         current.route = matched.route;
+        current.href = matched.path.slice(0, matched.path.lastIndexOf(matched.wildcard));
         current.params = matched.params;
         current.query = matched.query;
         current.wildcard = matched.wildcard;

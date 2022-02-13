@@ -14,14 +14,12 @@ export const isArray = (value) => Array.isArray(value);
 
 export const isObject = (value) => value != null && typeof value === "object" && !isArray(value);
 
-export const isNode = (value) => value && value.isNode === true;
-
 export const isDOM = (value) => value instanceof Node;
 
 export const isBinding = (value) => value && value.isBinding === true;
 
-export const isComponent = (value) => value && value.isComponent === true;
+export const isComponentInstance = (value) => value && value.isComponentInstance === true;
 
-export const isComponentConstructor = (value) => value && value.isComponentConstructor === true;
+export const isComponentFactory = (value) => value && value.isComponentFactory === true;
 
 export const isService = (value) => value && value.isService === true;

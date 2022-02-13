@@ -1,5 +1,5 @@
 import { isState, makeState } from "@woofjs/state";
-import { isComponent, isDOM, isFunction } from "./helpers/typeChecking.js";
+import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.js";
 
 export function makeComponent(fn) {
   function create({ getService, $route, dolla, attrs, children }) {
@@ -71,20 +71,20 @@ export function makeComponent(fn) {
 
     const node = fn(dolla, self);
 
-    if (node && !isComponent(node) && !isDOM(node)) {
+    if (node && !isComponentInstance(node) && !isDOM(node)) {
       let message = `Element function must return an element or null. Got: ${node}`;
 
       throw new TypeError(message);
     }
 
     return {
-      get isComponent() {
+      get isComponentInstance() {
         return true;
       },
 
       get element() {
         if (node) {
-          if (isComponent(node)) {
+          if (isComponentInstance(node)) {
             return node.element;
           }
 
@@ -98,7 +98,7 @@ export function makeComponent(fn) {
 
       get isConnected() {
         if (node) {
-          if (isComponent(node)) {
+          if (isComponentInstance(node)) {
             return node.isConnected;
           }
 
@@ -115,7 +115,7 @@ export function makeComponent(fn) {
 
         return new Promise(async (resolve) => {
           const show = (node) => {
-            if (!isComponent(node)) {
+            if (!isComponentInstance(node)) {
               throw new TypeError(`Expected an element to display while preloading. Got: ${node}`);
             }
 
@@ -162,7 +162,7 @@ export function makeComponent(fn) {
           }
         }
 
-        if (isComponent(node)) {
+        if (isComponentInstance(node)) {
           await node.connect(parent, after);
         } else if (isDOM(node)) {
           parent.insertBefore(node, after ? after.nextSibling : null);
@@ -183,7 +183,7 @@ export function makeComponent(fn) {
             callback();
           }
 
-          if (isComponent(node)) {
+          if (isComponentInstance(node)) {
             await node.disconnect();
           } else if (isDOM(node)) {
             node.parentNode.removeChild(node);
@@ -203,7 +203,7 @@ export function makeComponent(fn) {
     };
   }
 
-  create.isComponentConstructor = true;
+  create.isComponentFactory = true;
 
   return create;
 }
