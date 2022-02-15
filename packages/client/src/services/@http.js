@@ -2,7 +2,7 @@ import { makeService } from "../makeService.js";
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
 
 export default makeService((self) => {
-  self.debug.name = "woof:@http";
+  self.debug.name = "woof:service:@http";
 
   const _middleware = [];
   let fetch = self.options.fetch || window.fetch.bind(window);
@@ -64,7 +64,6 @@ export class HTTPRequest {
   #middleware;
   #fetch;
   #parse;
-  #serialize;
   #promise;
   #isOk;
 
@@ -266,7 +265,7 @@ export class HTTPRequest {
     this.#res = res;
 
     const handler = async () => {
-      this.#debug.log(`[request:${this.#id}] ${this.#ctx.method.toUpperCase()} ${this.#url}`);
+      this.#debug.log(`[#${this.#id}] sent ${this.#ctx.method.toUpperCase()} request to '${this.#url}'`);
       const start = Date.now();
 
       const query = this.#query.toString();
@@ -293,8 +292,8 @@ export class HTTPRequest {
       }
 
       this.#debug.log(
-        `[response:${this.#id}] ${this.#ctx.method.toUpperCase()} ${this.#url}`,
-        `(+${Math.round(Date.now() - start)}ms)`,
+        `[#${this.#id}] got response from ${this.#ctx.method.toUpperCase()} '${this.#url}'`,
+        `(took ${Math.round(Date.now() - start)}ms)`,
         res
       );
     };

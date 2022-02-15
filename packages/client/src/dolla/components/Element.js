@@ -2,7 +2,7 @@ import { isState } from "@woofjs/state";
 import { makeComponent } from "../../makeComponent.js";
 import { isArray, isObject, isString, isNumber, isFunction, isBinding } from "../../helpers/typeChecking.js";
 
-export const Element = makeComponent(($, self) => {
+export const Element = makeComponent((_, self) => {
   const { $attrs, children } = self;
 
   const tag = $attrs.get("tag");
@@ -70,14 +70,14 @@ function applyAttrs(element, attrs, watchers) {
         );
       } else if (isBinding(value)) {
         watchers.push(
-          watch(value.state, (current) => {
+          watch(value.$state, (current) => {
             element.value = String(current);
           })
         );
 
         const listener = (e) => {
-          const updated = toSameType(value.state.get(), e.target.value);
-          value.state.set(updated);
+          const updated = toSameType(value.$state.get(), e.target.value);
+          value.$state.set(updated);
         };
 
         element.addEventListener(value.event, listener);
@@ -237,18 +237,12 @@ function getClassMap(classes) {
       mapped[name] = true;
     }
   } else if (isObject(classes)) {
-    mapped = {
-      ...mapped,
-      ...classes,
-    };
+    Object.assign(mapped, classes);
   } else if (isArray(classes)) {
     Array.from(classes)
       .filter((item) => item != null)
       .forEach((item) => {
-        mapped = {
-          ...mapped,
-          ...getClassMap(item),
-        };
+        Object.assign(mapped, getClassMap(item));
       });
   }
 
@@ -256,7 +250,8 @@ function getClassMap(classes) {
 }
 
 /**
- * Attempts to convert a `source` value to the same type as a `target` value.
+ * Attempts to convert `source` to the same type as `target`.
+ * Returns `source` as-is if conversion is not possible.
  */
 function toSameType(target, source) {
   const type = typeof target;

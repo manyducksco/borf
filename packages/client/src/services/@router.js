@@ -7,19 +7,55 @@ import { resolvePath } from "../helpers/resolvePath.js";
  * Top level navigation service.
  */
 export default makeService((self) => {
-  self.debug.name = "woof:@router";
+  self.debug.name = "woof:service:@router";
 
   const history = self.options.history;
 
+  const $route = makeState({
+    path: "",
+    href: "",
+    query: {},
+    params: {},
+    route: "",
+    wildcard: null,
+  });
+
+  // Magic state that syncs with with the browser's query params
+  const $query = makeState({});
+
+  self.connected(() => {
+    // Track and skip updating the URL when the change came from URL navigation
+    let isRouteChange = false;
+
+    // Update $query when route changes
+    self.watchState($route, (current) => {
+      isRouteChange = true;
+      $query.set(current.query);
+    });
+
+    // Update route when $query changes
+    self.watchState($query, (current) => {
+      if (isRouteChange) {
+        isRouteChange = false;
+        return;
+      }
+
+      const params = new URLSearchParams();
+
+      for (const key in current) {
+        params.set(key, current[key]);
+      }
+
+      history.replace({
+        pathname: history.location.pathname,
+        search: "?" + params.toString(),
+      });
+    });
+  });
+
   return {
-    $route: makeState({
-      path: "",
-      href: "",
-      query: {},
-      params: {},
-      route: "",
-      wildcard: null,
-    }),
+    $route,
+    $query,
 
     back(steps = 1) {
       history.go(-steps);

@@ -8,7 +8,7 @@ export function makeComponent(fn) {
     let onBeforeDisconnect = [];
     let onDisconnected = [];
     let watchers = [];
-    let preload;
+    let routePreload;
 
     const self = {
       $route,
@@ -16,8 +16,8 @@ export function makeComponent(fn) {
       getService,
       children,
       debug: getService("@debug").makeChannel("~"),
-      preload(func) {
-        preload = func;
+      loadRoute(func) {
+        routePreload = func;
       },
       beforeConnect(callback) {
         onBeforeConnect.push(callback);
@@ -39,9 +39,8 @@ export function makeComponent(fn) {
     const parsedAttrs = {};
 
     for (const key in attrs) {
-      // Attrs beginning in $ are expected to be states. They will be passed through untouched.
-      // State attrs not beginning with $ will be unwrapped and passed as their current value.
-      // This echoes how elements handle states.
+      // Attributes starting with $ should be states and will be passed through as-is.
+      // States passed to attributes not starting with $ will be unwrapped and passed as their current value.
       if (key[0] === "$") {
         if (isState(attrs[key])) {
           parsedAttrs[key] = attrs[key]; // Pass states through as states when named appropriately
@@ -51,7 +50,7 @@ export function makeComponent(fn) {
       } else {
         if (isState(attrs[key])) {
           // TODO: Ensure component is not disconnected and reconnected without reconstruction or these will not be reapplied.
-          // If they go in .connect() then they'll trigger watchers added in the body of `create`, which they shouldn't.
+          // If they go in .connect() then they'll trigger watchers added in the body of `fn`, which they shouldn't.
           watchers.push(
             attrs[key].watch((value) => {
               self.$attrs.set((current) => {
@@ -78,9 +77,7 @@ export function makeComponent(fn) {
     }
 
     return {
-      get isComponentInstance() {
-        return true;
-      },
+      isComponentInstance: true,
 
       get element() {
         if (node) {
@@ -110,8 +107,12 @@ export function makeComponent(fn) {
         return false;
       },
 
-      async _preload(mount) {
-        if (!isFunction(preload)) return;
+      get hasRoutePreload() {
+        return isFunction(routePreload);
+      },
+
+      async routePreload(mount) {
+        if (!isFunction(routePreload)) return;
 
         return new Promise(async (resolve) => {
           const show = (node) => {
@@ -126,7 +127,7 @@ export function makeComponent(fn) {
             resolve();
           };
 
-          const result = preload(show, done);
+          const result = routePreload(show, done);
 
           if (result && isFunction(result.then)) {
             await result;
@@ -135,35 +136,18 @@ export function makeComponent(fn) {
         });
       },
 
-      async connect(parent, after = null) {
+      connect(parent, after = null) {
         const wasConnected = this.isConnected;
 
         if (!wasConnected) {
-          let temp;
-
-          // Run preload hook
-          await this._preload(async (component) => {
-            if (temp) {
-              await temp.disconnect();
-            }
-
-            temp = component;
-            await component.connect(parent, after);
-          });
-
           // Run onBeforeConnect hook
           for (const callback of onBeforeConnect) {
             callback();
           }
-
-          // Remove lingering temp elements from preload
-          if (temp) {
-            await temp.disconnect();
-          }
         }
 
         if (isComponentInstance(node)) {
-          await node.connect(parent, after);
+          node.connect(parent, after);
         } else if (isDOM(node)) {
           parent.insertBefore(node, after ? after.nextSibling : null);
         }
@@ -176,7 +160,7 @@ export function makeComponent(fn) {
         }
       },
 
-      async disconnect() {
+      disconnect() {
         if (this.isConnected) {
           // Run beforeDisconnect hook
           for (const callback of onBeforeDisconnect) {
@@ -184,7 +168,7 @@ export function makeComponent(fn) {
           }
 
           if (isComponentInstance(node)) {
-            await node.disconnect();
+            node.disconnect();
           } else if (isDOM(node)) {
             node.parentNode.removeChild(node);
           }

@@ -11,14 +11,16 @@ import { makeApp } from "@woofjs/app";
 
 const app = makeApp();
 
-app.route("*", ($) => {
-  return <h1>Hello World</h1>;
+app.routes((when) => {
+  when("*", ($) => {
+    return $("h1", "Hello World");
+  });
 });
 
 app.connect("#app");
 ```
 
-The code above will render a header with the words "Hello World" into the element with an ID of `app`, regardless of the current URL.
+The code above renders an `<h1>` with the words "Hello World" into an element with an ID of `#app`, regardless of the current URL.
 
 ## Routing
 
@@ -31,7 +33,7 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 - Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
 
 ```js
-app.route("users/:id", ($, self) => {
+when("users/:id", ($, self) => {
   const id = self.$route.get("params.id");
 
   return <p>User ID is {id}</p>;
@@ -39,22 +41,22 @@ app.route("users/:id", ($, self) => {
 ```
 
 ```js
-app.route("users/*", ($) => {
+when("users/*", ($) => {
   return (
     <div>
       <h1>Persistent Header</h1>
 
-      {$.routes({
-        ":id": ($) => {
+      {$.routes((when) => {
+        when(":id", ($) => {
           return <p>User Details</p>;
-        },
-        ":id/edit": ($) => {
+        });
+        when(":id/edit", ($) => {
           return <p>User Edit</p>;
-        },
-        "*": ($) => {
+        });
+        when("*", ($) => {
           return <p>Fallback</p>;
-        },
-      })}
+        });
+      }}
     </div>
   );
 });
@@ -69,7 +71,7 @@ See [@woofjs/state](https://github.com/woofjs/state). Pass a state instead of a 
 ## Dolla
 
 ```js
-app.route("users/:id", ($, self) => {
+when("users/:id", ($, self) => {
   return $("main", [
     $("p", "Here's some text in a paragraph."),
     $("p", { style: { color: "red" } }, "This paragraph is red."),
@@ -91,14 +93,18 @@ const Example = makeComponent(($, self) => {
   );
 });
 
-app.route("example", Example);
+app.routes((when) => {
+  // Mount directly on a route
+  when("example", Example);
 
-app.route("other", ($) => {
-  return (
-    <div>
-      <Example title="In Another Component" />
-    </div>
-  );
+  // Use in the body of another component
+  when("other", ($) => {
+    return (
+      <div>
+        <Example title="In Another Component" />
+      </div>
+    );
+  });
 });
 ```
 
@@ -125,8 +131,8 @@ app.service("counter", () => {
   };
 });
 
-app
-  .route("/counter", ($) => {
+app.routes((when) => {
+  when("/counter", ($) => {
     return (
       <div>
         <h1>World's Most Inconvenient Counter Demo</h1>
@@ -134,13 +140,15 @@ app
         <a href="/counter/controls">Change the number</a>
       </div>
     );
-  })
-  .route("/counter/view", ($, self) => {
+  });
+
+  when("/counter/view", ($, self) => {
     const { $current } = self.getService("counter");
 
     return <h1>The Count is Now {$.text($current)}</h1>;
-  })
-  .route("/counter/controls", ($, self) => {
+  });
+
+  when("/counter/controls", ($, self) => {
     const { increment, decrement } = self.getService("counter");
 
     return (
@@ -150,6 +158,7 @@ app
       </div>
     );
   });
+});
 ```
 
 ## Testing

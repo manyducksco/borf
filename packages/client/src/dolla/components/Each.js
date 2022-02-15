@@ -2,8 +2,16 @@ import { deepEqual } from "../../helpers/deepEqual.js";
 import { isComponentInstance, isComponentFactory, isFunction } from "../../helpers/typeChecking.js";
 import { makeComponent } from "../../makeComponent.js";
 
-export const Each = makeComponent(($, self) => {
-  self.debug.name = "woof:$.each";
+/**
+ * Displays a dynamic list based on an array stored in a `$value` attribute.
+ *
+ * Takes a `makeKey` function to derive unique keys for each list item.
+ * Takes a `makeItem` function that returns the item to render for each list item.
+ *
+ * Both functions take a list item as the first parameter.
+ */
+export const Each = makeComponent((_, self) => {
+  self.debug.name = "woof:$:each";
 
   const $value = self.$attrs.map("value");
   const makeKey = self.$attrs.get("makeKey");

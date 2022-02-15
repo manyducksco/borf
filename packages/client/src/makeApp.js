@@ -40,37 +40,43 @@ export function makeApp(options = {}) {
 
   const methods = {
     /**
-     * Adds a route to the list for matching when the URL changes.
-     *
-     * @param path - Path to match before calling handlers.
-     * @param component - Component to display when route matches.
+     * Maps the current URL to components.
+     * When the current URL path matches a registered route, that route's component is connected.
      */
-    route(path, component) {
-      if (isFunction(component) && !isComponentFactory(component)) {
-        component = makeComponent(component);
+    routes(defineRoutes) {
+      /**
+       * Adds a route to the list for matching when the URL changes.
+       *
+       * @param path - Path to match before calling handlers.
+       * @param component - Component to display when route matches.
+       */
+      function when(path, component) {
+        if (isFunction(component) && !isComponentFactory(component)) {
+          component = makeComponent(component);
+        }
+
+        if (!isComponentFactory(component)) {
+          throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
+        }
+
+        router.on(path, { component });
       }
 
-      if (!isComponentFactory(component)) {
-        throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
+      /**
+       * Adds a route that redirects to another path.
+       *
+       * @param path - Path to match.
+       * @param to - New location for redirect.
+       */
+      function redirect(path, to) {
+        if (isString(to)) {
+          router.on(path, { redirect: to });
+        } else {
+          throw new TypeError(`Expected a path. Got: ${to}`);
+        }
       }
 
-      router.on(path, { component });
-
-      return methods;
-    },
-
-    /**
-     * Adds a route that redirects to another path.
-     *
-     * @param path - Path to match.
-     * @param to - New location for redirect.
-     */
-    redirect(path, to) {
-      if (isString(to)) {
-        router.on(path, { redirect: to });
-      } else {
-        throw new TypeError(`Expected a path. Got: ${to}`);
-      }
+      defineRoutes(when, redirect);
 
       return methods;
     },
@@ -135,7 +141,7 @@ export function makeApp(options = {}) {
       }
 
       if (element instanceof Node == false) {
-        throw new TypeError(`Expected a DOM node. Received: ${element}`);
+        throw new TypeError(`Expected a DOM node. Got: ${element}`);
       }
 
       outlet = element;
@@ -180,7 +186,7 @@ export function makeApp(options = {}) {
             href = joinPath(history.location.pathname, href);
           }
 
-          appDebug.log("caught link click: " + href);
+          appDebug.log(`Intercepted link to '${href}'`);
 
           history.push(href);
         });
@@ -239,20 +245,29 @@ export function makeApp(options = {}) {
       if (matched.props.redirect) {
         getService("@router").go(matched.props.redirect, { replace: true });
       } else if (routeChanged) {
-        if (mounted) {
-          await mounted.disconnect();
+        const start = Date.now();
+        const created = matched.props.component({ getService, dolla, attrs: {}, children: [], $route });
+
+        const mount = (component) => {
+          if (mounted) {
+            mounted.disconnect();
+          }
+
+          mounted = component;
+          mounted.connect(outlet);
+        };
+
+        if (created.hasRoutePreload) {
+          await created.routePreload(mount);
         }
 
-        mounted = matched.props.component({ getService, dolla, attrs: {}, children: [], $route });
+        mount(created);
 
-        let start = Date.now();
-
-        await mounted.connect(outlet);
-        appDebug.log(`[depth 0] mounted route '${matched.route}' - preloaded in ${Date.now() - start}ms`);
-
-        if (mounted.element) {
-          mounted.element.dataset.appRoute = $route.get("route");
-        }
+        appDebug.log(
+          `Mounted top level route '${matched.route}'${
+            created.hasRoutePreload ? ` (loaded in ${Date.now() - start}ms)` : ""
+          }`
+        );
       }
     } else {
       appDebug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);

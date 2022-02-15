@@ -9,9 +9,23 @@ import { Routes } from "./components/Routes.js";
 import { Element } from "./components/Element.js";
 import { Fragment } from "./components/Fragment.js";
 
+/**
+ * $ is the backbone of woof's component structure.
+ *
+ * It gets passed as the first parameter to all components, where it can render elements,
+ * other components, and a variety of helper components for working with dynamic states.
+ */
 export function makeDolla({ getService, $route }) {
+  const componentDefaults = {
+    getService,
+    $route,
+    dolla: $,
+    children: [],
+    attrs: {},
+  };
+
   /**
-   * Creates a renderable node.
+   * Renders an HTML tag or component as an element.
    */
   function $(tagOrComponent, ...args) {
     let attrs = {};
@@ -21,47 +35,48 @@ export function makeDolla({ getService, $route }) {
     }
 
     const children = flatMap(args)
+      // Filter out falsy children (except 0, which is rendered as text)
       .filter((x) => x !== null && x !== undefined && x !== false)
+      // Turn children into renderable components
       .map((child) => {
         if (isComponentInstance(child)) {
           return child;
         }
+
         if (isString(child) || isNumber(child)) {
           return $.text(child);
         }
 
-        throw new TypeError(`Component children must be components, strings, numbers or null. Got: ${child}`);
+        throw new TypeError(`Children must be components, strings, numbers or null. Got: ${child}`);
       });
 
     if (isString(tagOrComponent)) {
       if (tagOrComponent === "") {
-        return Fragment({
-          getService,
-          $route,
-          dolla: $,
-          children,
-        });
+        // Treat an empty string as a fragment, similar to JSX's empty element: <></>
+        return Fragment({ ...componentDefaults, children });
       } else {
+        // Any string besides an empty one is assumed to be a valid HTML tag.
         return Element({
-          getService,
-          $route,
-          dolla: $,
-          attrs: { tag: tagOrComponent, attrs },
+          ...componentDefaults,
+          attrs: {
+            tag: tagOrComponent,
+            attrs: attrs,
+          },
           children,
         });
       }
     } else if (isComponentFactory(tagOrComponent)) {
+      // When a component is passed instead of a string it takes the attributes and children, ready to render.
       return tagOrComponent({
-        getService,
-        $route,
-        dolla: $,
+        ...componentDefaults,
         attrs,
         children,
       });
     } else if (isComponentInstance(tagOrComponent)) {
+      // Component instances are passed as-is because they already have their attributes and children.
       return tagOrComponent;
     } else {
-      throw new TypeError(`Expected a tagname or component. Got: ${tagOrComponent}`);
+      throw new TypeError(`Expected an HTML tag or a component. Got: ${tagOrComponent}`);
     }
   }
 
@@ -69,14 +84,16 @@ export function makeDolla({ getService, $route }) {
    * If $value has a truthy value, show `then`.
    * If $value has a falsy value, show `otherwise`.
    *
-   * Both `then` and `otherwise` can be a node or function that returns a node. Both are optional.
+   * Both `then` and `otherwise` can be a function that returns an element, or just an element. Both fields are optional.
    */
   $.if = function ($value, then, otherwise) {
     return If({
-      getService,
-      $route,
-      dolla: $,
-      attrs: { value: $value, then, otherwise },
+      ...componentDefaults,
+      attrs: {
+        value: $value,
+        then,
+        otherwise,
+      },
     });
   };
 
@@ -85,34 +102,38 @@ export function makeDolla({ getService, $route }) {
    */
   $.each = function ($list, makeKey, makeItem) {
     return Each({
-      getService,
-      $route,
-      dolla: $,
-      attrs: { value: $list, makeKey, makeItem },
+      ...componentDefaults,
+      attrs: {
+        value: $list,
+        makeKey,
+        makeItem,
+      },
     });
   };
 
   /**
-   * Runs `makeItem` on `$value` any time it changes and displays the result.
+   * Displays the element returned by `makeItem` every time `$value` changes.
    */
   $.watch = function ($value, makeItem) {
     return Watch({
-      getService,
-      $route,
-      dolla: $,
-      attrs: { value: $value, makeItem },
+      ...componentDefaults,
+      attrs: {
+        value: $value,
+        makeItem,
+      },
     });
   };
 
   /**
-   * Displays a state's value as text. If `$value` is falsy then `defaultValue` is displayed instead.
+   * Displays a state's value as text. If `$value` is falsy, then `defaultValue` is displayed instead.
    */
   $.text = function ($value, defaultValue) {
     return Text({
-      getService,
-      $route,
-      dolla: $,
-      attrs: { value: $value, defaultValue },
+      ...componentDefaults,
+      attrs: {
+        value: $value,
+        defaultValue,
+      },
     });
   };
 
@@ -129,24 +150,24 @@ export function makeDolla({ getService, $route }) {
     }
 
     return Routes({
-      getService,
-      $route,
-      dolla: $,
-      attrs: { defineRoutes },
+      ...componentDefaults,
+      attrs: {
+        defineRoutes,
+      },
     });
   };
 
   /**
    * Creates a two way binding for input elements. Pass this as an $element's `value` attribute.
    *
-   * @param state
+   * @param $state
    * @param event
    */
-  $.bind = function (state, event = "input") {
+  $.bind = function ($state, event = "input") {
     return {
       isBinding: true,
       event,
-      state,
+      $state,
     };
   };
 

@@ -7,18 +7,20 @@ import { makeDolla } from "../makeDolla.js";
 import { resolvePath } from "../../helpers/resolvePath.js";
 
 /**
- * Work in progress
- *
- * Picks the closest matching nested route off of the parent's wildcard value
- * and displays that component.
- *
- * Takes an object with paths as keys and either a component or a redirect path as values.
+ * Renders one component out of a set depending on the current URL.
+ * Routes are relative to the route under which this component is mounted.
  */
 export const Routes = makeComponent(($, self) => {
-  self.debug.name = "woof:$.routes";
+  self.debug.name = "woof:$:routes";
 
-  const { $attrs, $route, getService } = self;
+  const node = document.createTextNode("");
+
+  const { $route } = self;
+
+  // This component's routes are matched on the parent route's current `wildcard` value.
   const $wildcard = $route.map("wildcard");
+
+  // Routes tracks the route object for its own segment.
   const $ownRoute = makeState({
     route: "",
     path: "",
@@ -28,16 +30,24 @@ export const Routes = makeComponent(($, self) => {
     wildcard: null,
   });
 
-  const node = document.createTextNode("");
+  // Route matching logic is imported from @woofjs/router
   const router = makeRouter();
+
+  // Dolla instance for child components. All routes nested under this will match on `$ownRoute.wildcard`
   const dolla = makeDolla({
-    getService,
+    getService: self.getService,
     $route: $ownRoute,
   });
 
+  // Stores the currently mounted component
   let mounted;
 
-  const defineRoutes = $attrs.get("defineRoutes");
+  /*=========================*\
+  ||     Register Routes     ||
+  /*=========================*/
+
+  // This should be a function of the same format `app.routes` uses
+  const defineRoutes = self.$attrs.get("defineRoutes");
 
   function when(path, component, attrs = {}) {
     if (isFunction(component) && !isComponentFactory(component)) {
@@ -53,23 +63,17 @@ export const Routes = makeComponent(($, self) => {
 
   defineRoutes(when, redirect);
 
+  /*=========================*\
+  ||     Lifecycle Hooks     ||
+  /*=========================*/
+
   self.connected(() => {
+    // This is where the magic happens
     self.watchState(
       $wildcard,
       (current) => {
         if (current != null) {
           matchRoute(current);
-        }
-      },
-      { immediate: true }
-    );
-
-    self.watchState(
-      $ownRoute,
-      (current) => {
-        if (mounted) {
-          mounted.element.dataset.route = current.route;
-          mounted.element.dataset.path = current.path;
         }
       },
       { immediate: true }
@@ -83,10 +87,12 @@ export const Routes = makeComponent(($, self) => {
     }
   });
 
+  /*=========================*\
+  ||   Route Match & Mount   ||
+  /*=========================*/
+
   async function matchRoute(path) {
-    if (!node.parentNode) {
-      return;
-    }
+    if (!node.parentNode) return;
 
     const matched = router.match(path);
 
@@ -113,15 +119,28 @@ export const Routes = makeComponent(($, self) => {
         self.getService("@router").go(resolved, { replace: true });
       } else if (routeChanged) {
         const start = Date.now();
+        const created = dolla(matched.props.component, matched.props.attrs);
 
-        if (mounted) {
-          await mounted.disconnect();
+        const mount = (component) => {
+          if (mounted) {
+            mounted.disconnect();
+          }
+
+          mounted = component;
+          mounted.connect(node.parentNode, node);
+        };
+
+        if (created.hasRoutePreload) {
+          await created.routePreload(mount);
         }
 
-        mounted = dolla(matched.props.component, matched.props.attrs);
-        await mounted.connect(node.parentNode, node);
+        mount(created);
 
-        self.debug.log(`mounted route '${$ownRoute.get("route")}' in ${Date.now() - start}ms`);
+        self.debug.log(
+          `Mounted nested route '${$ownRoute.get("href")}'${
+            created.hasRoutePreload ? ` (loaded in ${Date.now() - start}ms)` : ""
+          }`
+        );
       }
     } else {
       if (mounted) {
