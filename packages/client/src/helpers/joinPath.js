@@ -25,11 +25,11 @@ export function joinPath(...parts) {
         }
       }
     }
-  }
 
-  // Remove trailing slash
-  if (joined.endsWith("/")) {
-    joined = joined.slice(0, joined.length - 1);
+    // Remove trailing slash
+    if (joined.endsWith("/")) {
+      joined = joined.slice(0, joined.length - 1);
+    }
   }
 
   return joined ?? "";

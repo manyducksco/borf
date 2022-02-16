@@ -34,6 +34,7 @@ export function makeDebug(options = {}) {
           name = value;
         },
 
+        // TODO: Preserve original line numbers by binding console.log, console.warn, etc.
         log(...args) {
           if (options.log !== false && match(name)) {
             for (const receiver of receivers) {

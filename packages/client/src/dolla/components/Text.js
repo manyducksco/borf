@@ -5,6 +5,7 @@ export const Text = makeComponent((_, self) => {
 
   self.beforeConnect(() => {
     function setText(attrs) {
+      // TODO: Batch DOM writes
       node.textContent = attrs.value || attrs.defaultValue || "";
     }
 

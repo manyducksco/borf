@@ -65,12 +65,13 @@ export function makeTestWrapper(init) {
     }
 
     if (service.isService) {
-      injectedServices[name] = () =>
-        service.create({
+      injectedServices[name] = () => {
+        return service.create({
           getService,
           debugChannel: debug.makeChannel(`service:${name}`),
           options: options,
         });
+      };
     } else {
       throw new TypeError(`Expected a service, function or object for service ${name}. Received: ${service}`);
     }

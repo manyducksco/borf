@@ -43,35 +43,32 @@ declare module "@woofjs/app" {
   }
 
   /**
-   * Creates a new Woof app.
+   * Creates a new woof app.
    *
    * @param options - Configuration options.
    */
   export function makeApp(options: AppOptions): App;
+
+  type WhenFn = (path: string, component: ComponentLike, attributes = {}) => void;
+  type RedirectFn = (path: string, to: string) => void;
+
+  type DefineRoutesFn = (when: WhenFn, redirect: RedirectFn) => void;
 
   /**
    *
    */
   export type App = {
     /**
-     * Mounts a component at a route, so when the browser URL matches that path the component will be displayed.
-     *
-     * @param path - URL path (e.g. "/users/:id/edit")
-     * @param component - A component to render for `path`
-     */
-    route(path: string, component: Componentlike): App;
-
-    redirect(path: string, to: string): App;
-
-    /**
-     * Registers a service on the app. Services can be referenced on
-     * Services and Components using `this.service(name)`.
+     * Registers a service on the app. Services can be referenced from
+     * other Services and Components using `self.getService(name)`.
      *
      * @param name - Unique string to name this service.
      * @param service - Service class. One instance will be created and shared.
      * @param options - Object to be passed to service.created() function when called.
      */
-    service(name: string, service: Servicelike, options?: any): App;
+    service(name: string, service: ServiceLike, options?: any): App;
+
+    routes(defineRoutes: DefineRoutesFn): App;
 
     /**
      * Runs a function after services are created but before routes are connected.
@@ -90,6 +87,7 @@ declare module "@woofjs/app" {
   };
 
   type services = {
+    "@debug": {};
     "@http": HTTPService;
     "@page": {};
     [name: string]: Service;
@@ -116,6 +114,18 @@ declare module "@woofjs/app" {
    */
   export type Component = {};
 
+  export type ComponentConstructor = {
+    readonly isComponentConstructor: true;
+    (args: any): ComponentInstance;
+  };
+
+  export type ComponentInstance = {
+    readonly isComponentInstance: true;
+    routePreload(mount: (component: ComponentLike) => void): Promise<void>;
+    connect(parent: Node, after?: Node): void;
+    disconnect(): void;
+  };
+
   export type ComponentSelf = {
     getService: getService;
     debug: DebugChannel;
@@ -125,12 +135,15 @@ declare module "@woofjs/app" {
     beforeDisconnect: () => void;
     disconnected: () => void;
 
-    preload: (done: () => void) => Element | void;
+    /**
+     *
+     */
+    loadRoute: (show: (component: ComponentLike) => void, done: () => void) => Promise<any> | void;
   };
 
   export type ComponentFunction = ($: Dolla, self: ComponentSelf) => Element;
 
-  export type Componentlike = Component | ComponentFunction;
+  export type ComponentLike = ComponentConstructor | ComponentFunction;
 
   /**
    * Stores shared variables and functions that can be accessed by components and other services.
@@ -154,7 +167,7 @@ declare module "@woofjs/app" {
     connected: () => void;
   };
 
-  export type Servicelike = Service | ServiceFunction;
+  export type ServiceLike = Service | ServiceFunction;
 
   export type Element = {};
 
@@ -173,7 +186,7 @@ declare module "@woofjs/app" {
 
   export type Dolla = {
     (tag: string, attrs?: {}, ...children: DollaChild[]): DollaNode;
-    (component: Componentlike, attrs?: {}, ...children: DollaChild[]): DollaNode;
+    (component: ComponentLike, attrs?: {}, ...children: DollaChild[]): DollaNode;
 
     each<T>(
       $state: State<T>,

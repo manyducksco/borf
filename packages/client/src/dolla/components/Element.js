@@ -16,23 +16,22 @@ export const Element = makeComponent((_, self) => {
 
   let watchers = [];
 
-  self.beforeConnect(async () => {
+  self.beforeConnect(() => {
     let previous = null;
 
     for (const child of children) {
-      await child.connect(node, previous?.element);
+      child.connect(node, previous?.element);
       previous = child;
     }
 
     applyAttrs(node, attrs, watchers);
     if (attrs.style) applyStyles(node, attrs.style, watchers);
     if (attrs.class) applyClasses(node, attrs.class, watchers);
-    attachEventListeners(node, attrs, watchers);
   });
 
   self.disconnected(async () => {
     for (const child of children) {
-      await child.disconnect();
+      child.disconnect();
     }
 
     for (const callback of watchers) {
@@ -46,9 +45,8 @@ export const Element = makeComponent((_, self) => {
 
 function watch($state, callback) {
   const unwatch = $state.watch((value) => {
-    requestAnimationFrame(() => {
-      callback(value);
-    });
+    // TODO: Batch DOM writes
+    callback(value);
   });
 
   callback($state.get());
@@ -124,13 +122,11 @@ function applyStyles(element, styles, watchers) {
     let unapply;
 
     const unwatch = watch(styles, (current) => {
-      requestAnimationFrame(() => {
-        if (isFunction(unapply)) {
-          unapply();
-        }
-        element.style = null;
-        unapply = applyStyles(element, current, watchers);
-      });
+      if (isFunction(unapply)) {
+        unapply();
+      }
+      element.style = null;
+      unapply = applyStyles(element, current, watchers);
     });
 
     watchers.push(unwatch);
@@ -224,8 +220,6 @@ function applyClasses(element, classes, watchers) {
     }
   };
 }
-
-function attachEventListeners(element, attrs, watchers) {}
 
 function getClassMap(classes) {
   let mapped = {};

@@ -26,6 +26,7 @@ export const Watch = makeComponent(($, self) => {
       throw new TypeError(`Watch: makeItem function should return a component or null. Got: ${newItem}`);
     }
 
+    // TODO: Batch DOM writes (at top level)
     requestAnimationFrame(() => {
       if (item) {
         item.disconnect();

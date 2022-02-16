@@ -2,6 +2,7 @@ import { makeState } from "@woofjs/state";
 import { makeService } from "../makeService.js";
 import { isString } from "../helpers/typeChecking.js";
 import { resolvePath } from "../helpers/resolvePath.js";
+import { makeDolla } from "../dolla/makeDolla.js";
 
 /**
  * Top level navigation service.
@@ -9,7 +10,7 @@ import { resolvePath } from "../helpers/resolvePath.js";
 export default makeService((self) => {
   self.debug.name = "woof:service:@router";
 
-  const history = self.options.history;
+  const { history } = self.options;
 
   const $route = makeState({
     path: "",
@@ -27,13 +28,13 @@ export default makeService((self) => {
     // Track and skip updating the URL when the change came from URL navigation
     let isRouteChange = false;
 
-    // Update $query when route changes
+    // Update $query when URL changes
     self.watchState($route, (current) => {
       isRouteChange = true;
       $query.set(current.query);
     });
 
-    // Update route when $query changes
+    // Update URL when $query changes
     self.watchState($query, (current) => {
       if (isRouteChange) {
         isRouteChange = false;

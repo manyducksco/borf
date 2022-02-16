@@ -71,7 +71,7 @@ export function makeComponent(fn) {
     const node = fn(dolla, self);
 
     if (node && !isComponentInstance(node) && !isDOM(node)) {
-      let message = `Element function must return an element or null. Got: ${node}`;
+      let message = `Component must return an element or null. Got: ${node}`;
 
       throw new TypeError(message);
     }
@@ -149,6 +149,7 @@ export function makeComponent(fn) {
         if (isComponentInstance(node)) {
           node.connect(parent, after);
         } else if (isDOM(node)) {
+          // TODO: Batch DOM writes
           parent.insertBefore(node, after ? after.nextSibling : null);
         }
 
@@ -170,6 +171,7 @@ export function makeComponent(fn) {
           if (isComponentInstance(node)) {
             node.disconnect();
           } else if (isDOM(node)) {
+            // TODO: Batch DOM writes
             node.parentNode.removeChild(node);
           }
 

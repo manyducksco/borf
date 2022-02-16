@@ -13,17 +13,17 @@ import PageService from "./services/@page.js";
 import RouterService from "./services/@router.js";
 
 export function makeApp(options = {}) {
-  const router = makeRouter();
   const debug = makeDebug(options.debug);
   const appDebug = debug.makeChannel("woof:app");
   const services = {};
 
   let servicesCreated = false;
   let setup = async () => true;
+
+  const router = makeRouter();
   let history;
   let outlet;
   let mounted;
-
   let dolla;
 
   if (options.history) {
@@ -49,8 +49,9 @@ export function makeApp(options = {}) {
        *
        * @param path - Path to match before calling handlers.
        * @param component - Component to display when route matches.
+       * @param attributes - Attributes to set on this component when route is connected
        */
-      function when(path, component) {
+      function when(path, component, attributes = {}) {
         if (isFunction(component) && !isComponentFactory(component)) {
           component = makeComponent(component);
         }
@@ -59,7 +60,7 @@ export function makeApp(options = {}) {
           throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
         }
 
-        router.on(path, { component });
+        router.on(path, { component, attributes });
       }
 
       /**
@@ -199,7 +200,7 @@ export function makeApp(options = {}) {
   ////
 
   /**
-   * Returns the requested service or throws an error if it isn't registered.
+   * Returns the named service or throws an error if it isn't registered.
    * Every component and service in the app gets services through this function.
    *
    * @example getService("@page").$title.set("New Page Title")
@@ -208,7 +209,7 @@ export function makeApp(options = {}) {
    */
   function getService(name) {
     if (!servicesCreated) {
-      // This should only be reachable by user code in the body of a service function.
+      // This should only be reachable (by app code) in the body of a service function.
       throw new Error(
         `Service was requested before it was created. Services can only access other services in lifecycle hooks and exported functions. Got: ${name}`
       );
@@ -246,7 +247,13 @@ export function makeApp(options = {}) {
         getService("@router").go(matched.props.redirect, { replace: true });
       } else if (routeChanged) {
         const start = Date.now();
-        const created = matched.props.component({ getService, dolla, attrs: {}, children: [], $route });
+        const created = matched.props.component({
+          getService,
+          dolla,
+          attrs: matched.props.attributes || {},
+          children: [],
+          $route,
+        });
 
         const mount = (component) => {
           if (mounted) {
@@ -278,10 +285,10 @@ export function makeApp(options = {}) {
   // Built-in services
   ////
 
-  methods.service("@debug", () => debug); // expose debug as a service
-  methods.service("@http", HTTPService);
-  methods.service("@page", PageService);
+  methods.service("@debug", () => debug);
   methods.service("@router", RouterService, { history });
+  methods.service("@page", PageService);
+  methods.service("@http", HTTPService);
 
   return methods;
 }

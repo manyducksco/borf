@@ -22,7 +22,7 @@ export default makeService((self) => {
   return {
     request,
 
-    use(...middleware) {
+    addMiddleware(...middleware) {
       _middleware.push(...middleware);
 
       return this;
