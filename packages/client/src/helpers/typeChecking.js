@@ -20,6 +20,6 @@ export const isBinding = (value) => value && value.isBinding === true;
 
 export const isComponentInstance = (value) => value && value.isComponentInstance === true;
 
-export const isComponentFactory = (value) => value && value.isComponentFactory === true;
+export const isComponent = (value) => value && value.isComponent === true;
 
 export const isService = (value) => value && value.isService === true;

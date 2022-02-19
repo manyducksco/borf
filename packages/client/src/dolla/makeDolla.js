@@ -1,4 +1,4 @@
-import { isComponentInstance, isComponentFactory, isNumber, isObject, isString } from "../helpers/typeChecking.js";
+import { isComponentInstance, isComponent, isNumber, isObject, isString } from "../helpers/typeChecking.js";
 import { flatMap } from "../helpers/flatMap.js";
 
 import { If } from "./components/If.js";
@@ -65,7 +65,7 @@ export function makeDolla({ getService, $route }) {
           children,
         });
       }
-    } else if (isComponentFactory(tagOrComponent)) {
+    } else if (isComponent(tagOrComponent)) {
       // When a component is passed instead of a string it takes the attributes and children, ready to render.
       return tagOrComponent({
         ...componentDefaults,

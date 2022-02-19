@@ -1,4 +1,4 @@
-import { isComponentInstance, isComponentFactory, isFunction } from "../../helpers/typeChecking.js";
+import { isComponentInstance, isComponent, isFunction } from "../../helpers/typeChecking.js";
 import { makeComponent } from "../../makeComponent.js";
 
 /**
@@ -17,8 +17,8 @@ export const Watch = makeComponent(($, self) => {
   function update(value) {
     let newItem = makeItem(value);
 
-    // Support functions that return an element.
-    if (newItem && isFunction(newItem) && !isComponentFactory(newItem)) {
+    // Allow functions that return an element
+    if (newItem && isFunction(newItem) && !isComponent(newItem)) {
       newItem = newItem();
     }
 
@@ -26,18 +26,16 @@ export const Watch = makeComponent(($, self) => {
       throw new TypeError(`Watch: makeItem function should return a component or null. Got: ${newItem}`);
     }
 
-    // TODO: Batch DOM writes (at top level)
-    requestAnimationFrame(() => {
-      if (item) {
-        item.disconnect();
-        item = null;
-      }
+    // TODO: Batch DOM writes
+    if (item) {
+      item.disconnect();
+      item = null;
+    }
 
-      if (newItem) {
-        item = newItem;
-        item.connect(node.parentNode, node);
-      }
-    });
+    if (newItem) {
+      item = newItem;
+      item.connect(node.parentNode, node);
+    }
   }
 
   self.connected(() => {

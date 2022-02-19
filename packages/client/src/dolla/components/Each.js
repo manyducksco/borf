@@ -1,5 +1,5 @@
 import { deepEqual } from "../../helpers/deepEqual.js";
-import { isComponentInstance, isComponentFactory, isFunction } from "../../helpers/typeChecking.js";
+import { isComponentInstance, isComponent, isFunction } from "../../helpers/typeChecking.js";
 import { makeComponent } from "../../makeComponent.js";
 
 /**
@@ -88,7 +88,7 @@ export const Each = makeComponent((_, self) => {
       }
 
       // Support functions that return an element.
-      if (newItem && isFunction(newItem) && !isComponentFactory(newItem)) {
+      if (newItem && isFunction(newItem) && !isComponent(newItem)) {
         newItem = newItem();
       }
 

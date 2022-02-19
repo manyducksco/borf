@@ -49,11 +49,6 @@ declare module "@woofjs/app" {
    */
   export function makeApp(options: AppOptions): App;
 
-  type WhenFn = (path: string, component: ComponentLike, attributes = {}) => void;
-  type RedirectFn = (path: string, to: string) => void;
-
-  type DefineRoutesFn = (when: WhenFn, redirect: RedirectFn) => void;
-
   /**
    *
    */
@@ -64,10 +59,23 @@ declare module "@woofjs/app" {
      *
      * @param name - Unique string to name this service.
      * @param service - Service class. One instance will be created and shared.
-     * @param options - Object to be passed to service.created() function when called.
+     * @param options - Object to be passed to service as `self.options`.
      */
     service(name: string, service: ServiceLike, options?: any): App;
 
+    /**
+     * Binds the URL to a set of components so the route determines which component you see.
+     * Chooses the component with a matching path and displays it.
+     *
+     * @example
+     * app.routes((when, redirect) => {
+     *   when("/login", LoginComponent); // When the path is '/login', show LoginComponent
+     *   when("/home", HomeComponent); // When the path is '/home', show HomeComponent
+     *   redirect("*", "/home"); // When the path is anything else, go to '/home'
+     * });
+     *
+     * @param defineRoutes - Function that defines the top level routes of your app.
+     */
     routes(defineRoutes: DefineRoutesFn): App;
 
     /**
@@ -86,14 +94,14 @@ declare module "@woofjs/app" {
     connect(root: string | Node): Promise<void>;
   };
 
-  type services = {
+  type Services = {
     "@debug": {};
     "@http": HTTPService;
     "@page": {};
     [name: string]: Service;
   };
 
-  type getService = (name: keyof services) => services[keyof services];
+  type getService = (name: keyof Services) => Services[keyof Services];
 
   type DebugChannel = {
     name: string;
@@ -109,98 +117,47 @@ declare module "@woofjs/app" {
     debug: DebugChannel;
   };
 
-  /**
-   * Defines a reusable view.
-   */
-  export type Component = {};
+  /*==================================*\
+  ||             Routing              ||
+  \*==================================*/
 
-  export type ComponentConstructor = {
-    readonly isComponentConstructor: true;
-    (args: any): ComponentInstance;
-  };
+  type WhenFn = (path: string, component: ComponentLike, attributes = {}) => void;
+  type RedirectFn = (path: string, to: string) => void;
 
-  export type ComponentInstance = {
-    readonly isComponentInstance: true;
-    routePreload(mount: (component: ComponentLike) => void): Promise<void>;
-    connect(parent: Node, after?: Node): void;
-    disconnect(): void;
-  };
-
-  export type ComponentSelf = {
-    getService: getService;
-    debug: DebugChannel;
-
-    beforeConnect: () => void;
-    connected: () => void;
-    beforeDisconnect: () => void;
-    disconnected: () => void;
-
-    /**
-     *
-     */
-    loadRoute: (show: (component: ComponentLike) => void, done: () => void) => Promise<any> | void;
-  };
-
-  export type ComponentFunction = ($: Dolla, self: ComponentSelf) => Element;
-
-  export type ComponentLike = ComponentConstructor | ComponentFunction;
-
-  /**
-   * Stores shared variables and functions that can be accessed by components and other services.
-   */
-  export type Service = {};
-
-  export type ServiceFunction = (self: ServiceSelf) => Object;
-
-  export type ServiceSelf = {
-    getService: getService;
-    debug: DebugChannel;
-
-    /**
-     * Object with options passed to this service when it was registered.
-     */
-    options: {
-      [name: string]: any;
-    };
-
-    beforeConnect: () => void;
-    connected: () => void;
-  };
-
-  export type ServiceLike = Service | ServiceFunction;
-
-  export type Element = {};
+  type DefineRoutesFn = (when: WhenFn, redirect: RedirectFn) => void;
 
   /*==================================*\
   ||              Dolla               ||
   \*==================================*/
 
-  type DollaChild = string | number | DollaFunction | DollaNode;
-
-  type DollaFunction = (attrs?: {}, ...children: DollaChild[]) => DollaNode;
-
-  type DollaNode = {
-    connect(parent: Node, after?: Node): void;
-    disconnect(): void;
-  };
+  type DollaChild = string | number | ComponentInstance | null | false | undefined;
 
   export type Dolla = {
-    (tag: string, attrs?: {}, ...children: DollaChild[]): DollaNode;
-    (component: ComponentLike, attrs?: {}, ...children: DollaChild[]): DollaNode;
-
-    each<T>(
-      $state: State<T>,
-      makeKey: (current: T) => string | number,
-      makeElement: (current: T) => DollaChild
-    ): DollaNode;
+    (tag: string, attrs?: {}, ...children: DollaChild[]): ComponentInstance;
+    (component: ComponentLike, attrs?: {}, ...children: DollaChild[]): ComponentInstance;
 
     if(
-      $state: State<any>,
+      $value: State<any>,
       then?: DollaChild | (() => DollaChild),
       otherwise?: DollaChild | (() => DollaChild)
-    ): DollaNode;
+    ): ComponentInstance;
 
-    text($state, defaultValue): DollaNode;
+    each<T>(
+      $list: State<T>,
+      makeKey: (current: T) => string | number,
+      makeItem: (current: T) => ComponentInstance
+    ): ComponentInstance;
+
+    watch<T>($value: State<T>, makeItem: (current: T) => ComponentInstance | null): ComponentInstance;
+
+    text($value, defaultValue): ComponentInstance;
+
+    /**
+     * Registers nested routes. Paths are relative to the current component's $route.href
+     */
+    routes(defineRoutes: DefineRoutesFn): ComponentInstance;
+
+    bind<T>($state: State<T>, eventName = "input"): { isBinding: true; event: string; $state: State<T> };
   };
 
   /*==================================*\
@@ -235,11 +192,66 @@ declare module "@woofjs/app" {
 
   export function makeService(fn: ServiceFunction): Service;
 
+  /**
+   * Stores shared variables and functions that can be accessed by components and other services.
+   */
+  export type Service = {};
+
+  export type ServiceFunction = (self: ServiceSelf) => Object;
+
+  export type ServiceSelf = {
+    getService: getService;
+    debug: DebugChannel;
+
+    /**
+     * Object with options passed to this service when it was registered.
+     */
+    options: {
+      [name: string]: any;
+    };
+
+    beforeConnect: () => void;
+    connected: () => void;
+  };
+
+  export type ServiceLike = Service | ServiceFunction;
+
   /*==================================*\
   ||             Component            ||
   \*==================================*/
 
   export function makeComponent(fn: ComponentFunction): Component;
+
+  export type Component = {
+    readonly isComponent: true;
+    (args: any): ComponentInstance;
+  };
+
+  export type ComponentInstance = {
+    readonly isComponentInstance: true;
+    routePreload(mount: (component: ComponentLike) => void): Promise<void>;
+    connect(parent: Node, after?: Node): void;
+    disconnect(): void;
+  };
+
+  export type ComponentSelf = {
+    getService: getService;
+    debug: DebugChannel;
+
+    beforeConnect: () => void;
+    connected: () => void;
+    beforeDisconnect: () => void;
+    disconnected: () => void;
+
+    /**
+     *
+     */
+    loadRoute: (show: (component: ComponentLike) => void, done: () => void) => Promise<any> | void;
+  };
+
+  export type ComponentFunction = ($: Dolla, self: ComponentSelf) => ComponentInstance | Node | null;
+
+  export type ComponentLike = Component | ComponentFunction;
 }
 
 declare module "@woofjs/app/testing" {

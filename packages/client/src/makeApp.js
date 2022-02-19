@@ -4,7 +4,7 @@ import { makeDolla } from "./dolla/makeDolla.js";
 import { makeDebug } from "./debug/makeDebug.js";
 import { makeComponent } from "./makeComponent.js";
 import { makeService } from "./makeService.js";
-import { isFunction, isString, isService, isComponentFactory } from "./helpers/typeChecking.js";
+import { isFunction, isString, isService, isComponent } from "./helpers/typeChecking.js";
 import { joinPath } from "./helpers/joinPath.js";
 import catchLinks from "./helpers/catchLinks.js";
 
@@ -52,11 +52,11 @@ export function makeApp(options = {}) {
        * @param attributes - Attributes to set on this component when route is connected
        */
       function when(path, component, attributes = {}) {
-        if (isFunction(component) && !isComponentFactory(component)) {
+        if (isFunction(component) && !isComponent(component)) {
           component = makeComponent(component);
         }
 
-        if (!isComponentFactory(component)) {
+        if (!isComponent(component)) {
           throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
         }
 

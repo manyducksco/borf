@@ -1,14 +1,14 @@
 import { makeRouter } from "@woofjs/router";
 import { makeState } from "@woofjs/state";
-import { isFunction, isComponentFactory } from "../../helpers/typeChecking.js";
+import { isFunction, isComponent } from "../../helpers/typeChecking.js";
 import { joinPath } from "../../helpers/joinPath.js";
+import { resolvePath } from "../../helpers/resolvePath.js";
 import { makeComponent } from "../../makeComponent.js";
 import { makeDolla } from "../makeDolla.js";
-import { resolvePath } from "../../helpers/resolvePath.js";
 
 /**
- * Renders one component out of a set depending on the current URL.
- * Routes are relative to the route under which this component is mounted.
+ * Displays the component that matches the current URL.
+ * Routes are relative to the route this component is mounted under.
  */
 export const Routes = makeComponent(($, self) => {
   self.debug.name = "woof:$:routes";
@@ -44,13 +44,13 @@ export const Routes = makeComponent(($, self) => {
 
   /*=========================*\
   ||     Register Routes     ||
-  /*=========================*/
+  \*=========================*/
 
-  // This should be a function of the same format `app.routes` uses
+  // This should be a function of the same format `app.routes` takes
   const defineRoutes = self.$attrs.get("defineRoutes");
 
   function when(path, component, attrs = {}) {
-    if (isFunction(component) && !isComponentFactory(component)) {
+    if (isFunction(component) && !isComponent(component)) {
       component = makeComponent(component);
     }
 
@@ -65,7 +65,7 @@ export const Routes = makeComponent(($, self) => {
 
   /*=========================*\
   ||     Lifecycle Hooks     ||
-  /*=========================*/
+  \*=========================*/
 
   self.connected(() => {
     // This is where the magic happens
@@ -89,7 +89,7 @@ export const Routes = makeComponent(($, self) => {
 
   /*=========================*\
   ||   Route Match & Mount   ||
-  /*=========================*/
+  \*=========================*/
 
   async function matchRoute(path) {
     if (!node.parentNode) return;

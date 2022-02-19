@@ -10,9 +10,11 @@ export function makeComponent(fn) {
     let watchers = [];
     let routePreload;
 
+    const $attrs = makeState({});
+
     const self = {
       $route,
-      $attrs: makeState({}),
+      $attrs,
       getService,
       children,
       debug: getService("@debug").makeChannel("~"),
@@ -50,10 +52,10 @@ export function makeComponent(fn) {
       } else {
         if (isState(attrs[key])) {
           // TODO: Ensure component is not disconnected and reconnected without reconstruction or these will not be reapplied.
-          // If they go in .connect() then they'll trigger watchers added in the body of `fn`, which they shouldn't.
+          //       If they go in .connect() then they'll trigger watchers added in the body of `fn`, which they shouldn't.
           watchers.push(
             attrs[key].watch((value) => {
-              self.$attrs.set((current) => {
+              $attrs.set((current) => {
                 current[key] = value;
               });
             })
@@ -66,7 +68,7 @@ export function makeComponent(fn) {
       }
     }
 
-    self.$attrs.set(parsedAttrs);
+    $attrs.set(parsedAttrs);
 
     const node = fn(dolla, self);
 
@@ -189,7 +191,7 @@ export function makeComponent(fn) {
     };
   }
 
-  create.isComponentFactory = true;
+  create.isComponent = true;
 
   return create;
 }
