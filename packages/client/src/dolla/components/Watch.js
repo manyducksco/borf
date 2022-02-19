@@ -26,7 +26,6 @@ export const Watch = makeComponent(($, self) => {
       throw new TypeError(`Watch: makeItem function should return a component or null. Got: ${newItem}`);
     }
 
-    // TODO: Batch DOM writes
     if (item) {
       item.disconnect();
       item = null;

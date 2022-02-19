@@ -1,5 +1,6 @@
-import { isComponentInstance, isComponent, isNumber, isObject, isString } from "../helpers/typeChecking.js";
+import { isComponentInstance, isComponent, isNumber, isObject, isString, isFunction } from "../helpers/typeChecking.js";
 import { flatMap } from "../helpers/flatMap.js";
+import { makeComponent } from "../makeComponent.js";
 
 import { If } from "./components/If.js";
 import { Each } from "./components/Each.js";
@@ -100,13 +101,17 @@ export function makeDolla({ getService, $route }) {
   /**
    * Displays one element for each item in `$list`.
    */
-  $.each = function ($list, makeKey, makeItem) {
+  $.each = function ($list, component) {
+    // Allow function components
+    if (isFunction(component) && !isComponent(component)) {
+      component = makeComponent(component);
+    }
+
     return Each({
       ...componentDefaults,
       attrs: {
         value: $list,
-        makeKey,
-        makeItem,
+        component,
       },
     });
   };

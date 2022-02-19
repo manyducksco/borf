@@ -9,6 +9,7 @@ export function makeComponent(fn) {
     let onDisconnected = [];
     let watchers = [];
     let routePreload;
+    let key;
 
     const $attrs = makeState({});
 
@@ -18,6 +19,23 @@ export function makeComponent(fn) {
       getService,
       children,
       debug: getService("@debug").makeChannel("~"),
+      get key() {
+        return key;
+      },
+      set key(value) {
+        if (isState(value)) {
+          watchers.push(
+            value.watch(
+              (current) => {
+                key = current;
+              },
+              { immediate: true }
+            )
+          );
+        } else {
+          key = value;
+        }
+      },
       loadRoute(func) {
         routePreload = func;
       },
@@ -81,6 +99,13 @@ export function makeComponent(fn) {
     return {
       isComponentInstance: true,
 
+      $attrs,
+      $route,
+
+      get key() {
+        return key;
+      },
+
       get element() {
         if (node) {
           if (isComponentInstance(node)) {
@@ -141,6 +166,8 @@ export function makeComponent(fn) {
       connect(parent, after = null) {
         const wasConnected = this.isConnected;
 
+        // console.log({ parent, after });
+
         if (!wasConnected) {
           // Run onBeforeConnect hook
           for (const callback of onBeforeConnect) {
@@ -151,7 +178,6 @@ export function makeComponent(fn) {
         if (isComponentInstance(node)) {
           node.connect(parent, after);
         } else if (isDOM(node)) {
-          // TODO: Batch DOM writes
           parent.insertBefore(node, after ? after.nextSibling : null);
         }
 
@@ -173,7 +199,6 @@ export function makeComponent(fn) {
           if (isComponentInstance(node)) {
             node.disconnect();
           } else if (isDOM(node)) {
-            // TODO: Batch DOM writes
             node.parentNode.removeChild(node);
           }
 

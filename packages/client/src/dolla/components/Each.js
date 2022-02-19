@@ -1,21 +1,13 @@
-import { deepEqual } from "../../helpers/deepEqual.js";
-import { isComponentInstance, isComponent, isFunction } from "../../helpers/typeChecking.js";
 import { makeComponent } from "../../makeComponent.js";
 
 /**
  * Displays a dynamic list based on an array stored in a `$value` attribute.
- *
- * Takes a `makeKey` function to derive unique keys for each list item.
- * Takes a `makeItem` function that returns the item to render for each list item.
- *
- * Both functions take a list item as the first parameter.
  */
-export const Each = makeComponent((_, self) => {
+export const Each = makeComponent(($, self) => {
   self.debug.name = "woof:$:each";
 
   const $value = self.$attrs.map("value");
-  const makeKey = self.$attrs.get("makeKey");
-  const makeItem = self.$attrs.get("makeItem");
+  const initComponent = self.$attrs.get("component");
 
   const node = document.createTextNode("");
 
@@ -32,105 +24,68 @@ export const Each = makeComponent((_, self) => {
       return;
     }
 
-    const added = [];
+    const newInstances = newItems.map((item, index) =>
+      initComponent({
+        getService: self.getService,
+        dolla: $,
+        $route: self.$route,
+        debug: self.getService("@debug").makeChannel(`each item ${index}`),
+        attrs: {
+          item,
+          index,
+        },
+      })
+    );
+
     const removed = [];
-    const moved = [];
+    const added = [];
+    const unchanged = [];
 
-    const newKeys = newItems.map(makeKey);
-
-    for (let i = 0; i < newKeys.length; i++) {
-      const key = newKeys[i];
-      const current = items.find((item) => item.key === key);
-
-      if (current) {
-        if (current.index !== i) {
-          moved.push({
-            from: current.index,
-            to: i,
-            key,
-          });
-        }
-      } else {
-        added.push({ i, key });
-      }
-    }
+    const newKeys = newInstances.map((item) => item.key);
 
     for (const item of items) {
       const stillPresent = newKeys.includes(item.key);
 
       if (!stillPresent) {
-        removed.push({ i: item.index, key: item.key });
+        removed.push(item);
       }
     }
 
-    // Determine what the next state is going to be, reusing components when possible.
-    const nextItems = [];
+    for (const instance of newInstances) {
+      const exists = items.find((item) => item.key === instance.key);
 
-    for (let i = 0; i < newItems.length; i++) {
-      const key = newKeys[i];
-      const value = newItems[i];
-      const isAdded = added.some((x) => x.key === key);
-
-      let newItem;
-
-      if (isAdded) {
-        newItem = makeItem(value);
+      if (!exists) {
+        added.push(instance);
       } else {
-        const item = items.find((x) => x.key === key);
-
-        if (deepEqual(item.value, value)) {
-          newItem = item.node;
-        } else {
-          newItem = makeItem(value);
-
-          removed.push({ i: item.index, key: item.key });
-        }
+        unchanged.push(instance);
       }
-
-      // Support functions that return an element.
-      if (newItem && isFunction(newItem) && !isComponent(newItem)) {
-        newItem = newItem();
-      }
-
-      if (newItem != null && !isComponentInstance(newItem)) {
-        throw new TypeError(`Each: makeItem function should return a component or null. Got: ${newItem}`);
-      }
-
-      nextItems.push({
-        index: i,
-        key,
-        value,
-        node: newItem,
-      });
     }
 
-    // Batch all changes into an animation frame
-    requestAnimationFrame(async () => {
-      // Unmount removed items
-      for (const entry of removed) {
-        const item = items.find((x) => x.key === entry.key);
+    for (const instance of removed) {
+      instance.disconnect();
+      items.splice(items.indexOf(instance), 1);
+    }
 
-        item?.node.disconnect();
-      }
+    for (const instance of unchanged) {
+      const newIndex = newInstances.indexOf(instance);
+      const previous = newInstances[newIndex - 1];
+      const newInstance = newInstances[newIndex];
 
-      const fragment = new DocumentFragment();
+      const spliced = items.splice(
+        items.findIndex((i) => i.key === instance.key),
+        1
+      );
+      items.splice(items.indexOf(previous), 0, ...spliced);
+      spliced[0].$attrs.set(newInstance.$attrs.get());
+    }
 
-      // Remount items in new order
-      let previous = undefined;
+    for (const instance of added) {
+      const newIndex = newInstances.indexOf(instance);
+      const previous = newInstances[newIndex - 1];
 
-      for (const item of nextItems) {
-        await item.node.connect(fragment, previous);
-
-        if (item.node.isConnected) {
-          previous = item.node.element;
-          item.node.element.dataset.eachKey = item.key;
-        }
-      }
-
-      node.parentNode.insertBefore(fragment, node.nextSibling || null);
-
-      items = nextItems;
-    });
+      instance.connect(node.parentNode, previous?.element);
+      items.splice(items.indexOf(previous), 0, instance);
+    }
   }
 
   self.connected(() => {
@@ -139,8 +94,9 @@ export const Each = makeComponent((_, self) => {
 
   self.disconnected(() => {
     for (const item of items) {
-      item.node.disconnect();
+      item.disconnect();
     }
+    items = [];
   });
 
   return node;

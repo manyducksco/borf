@@ -45,7 +45,6 @@ export const Element = makeComponent((_, self) => {
 
 function watch($state, callback) {
   const unwatch = $state.watch((value) => {
-    // TODO: Batch DOM writes
     callback(value);
   });
 

@@ -1,6 +1,6 @@
 import { createMemoryHistory } from "history";
 import { isFunction } from "../helpers/typeChecking.js";
-import { makeDebug } from "../debug/makeDebug.js";
+import { makeDebug } from "../makeDebug.js";
 import { makeService } from "../makeService.js";
 import HTTPService from "../services/@http.js";
 import PageService from "../services/@page.js";

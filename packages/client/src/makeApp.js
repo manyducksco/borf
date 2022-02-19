@@ -1,7 +1,7 @@
 import { createHashHistory, createBrowserHistory } from "history";
 import { makeRouter } from "@woofjs/router";
 import { makeDolla } from "./dolla/makeDolla.js";
-import { makeDebug } from "./debug/makeDebug.js";
+import { makeDebug } from "./makeDebug.js";
 import { makeComponent } from "./makeComponent.js";
 import { makeService } from "./makeService.js";
 import { isFunction, isString, isService, isComponent } from "./helpers/typeChecking.js";
@@ -15,6 +15,7 @@ import RouterService from "./services/@router.js";
 export function makeApp(options = {}) {
   const debug = makeDebug(options.debug);
   const appDebug = debug.makeChannel("woof:app");
+
   const services = {};
 
   let servicesCreated = false;

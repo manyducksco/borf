@@ -1,16 +1,20 @@
+import ColorHash from "color-hash"; // TODO: Remove this dependency - it's too big for what we need it for
 import { makeState } from "@woofjs/state";
-import { makeConsoleReceiver } from "./debug.console.js";
 
 export function makeDebug(options = {}) {
   const $filter = makeState(options.filter || "*,-woof:*");
 
-  let match = () => true;
-  let receivers = [makeConsoleReceiver()];
+  const hash = new ColorHash({
+    lightness: [0.6, 0.7],
+    saturation: [0.6, 0.7],
+  });
 
-  // Update match function based on how the filter is set.
+  let matchFn = () => true;
+
+  // Update match function based on how the filter is set
   $filter.watch(
     (current) => {
-      match = parseFilter(current);
+      matchFn = parseFilter(current);
     },
     { immediate: true }
   );
@@ -23,10 +27,11 @@ export function makeDebug(options = {}) {
         throw new Error(`Channel names cannot contain commas. Got: ${name}`);
       }
 
-      return Object.freeze({
+      return {
         get name() {
           return name;
         },
+
         set name(value) {
           if (value.includes(",")) {
             throw new Error(`Channel names cannot contain commas. Got: ${value}`);
@@ -34,33 +39,30 @@ export function makeDebug(options = {}) {
           name = value;
         },
 
-        // TODO: Preserve original line numbers by binding console.log, console.warn, etc.
-        log(...args) {
-          if (options.log !== false && match(name)) {
-            for (const receiver of receivers) {
-              receiver.receive(name, "log", ...args);
-            }
+        get log() {
+          if (options.log === false || !matchFn(name)) {
+            return () => {};
           }
-        },
-        warn(...args) {
-          if (options.log !== false && match(name)) {
-            for (const receiver of receivers) {
-              receiver.receive(name, "warn", ...args);
-            }
-          }
-        },
-        error(...args) {
-          if (options.log !== false && match(name)) {
-            for (const receiver of receivers) {
-              receiver.receive(name, "error", ...args);
-            }
-          }
-        },
-      });
-    },
 
-    addReceiver(receiver) {
-      receivers.push(receiver);
+          return console.log.bind(window.console, `%c[${name}]`, `color:${hash.hex(name)};font-weight:bold`);
+        },
+
+        get warn() {
+          if (options.warn === false || !matchFn(name)) {
+            return () => {};
+          }
+
+          return console.warn.bind(window.console, `%c[${name}]`, `color:${hash.hex(name)};font-weight:bold`);
+        },
+
+        get error() {
+          if (options.error === false || !matchFn(name)) {
+            return () => {};
+          }
+
+          return console.error.bind(window.console, `%c[${name}]`, `color:${hash.hex(name)};font-weight:bold`);
+        },
+      };
     },
   };
 }
