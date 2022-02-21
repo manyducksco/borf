@@ -20,21 +20,14 @@ export function makeComponent(fn) {
       children,
       debug: getService("@debug").makeChannel("~"),
       get key() {
-        return key;
+        if (isState(key)) {
+          return key.get();
+        } else {
+          return key;
+        }
       },
       set key(value) {
-        if (isState(value)) {
-          watchers.push(
-            value.watch(
-              (current) => {
-                key = current;
-              },
-              { immediate: true }
-            )
-          );
-        } else {
-          key = value;
-        }
+        key = value;
       },
       loadRoute(func) {
         routePreload = func;
