@@ -1,7 +1,7 @@
 import { deepEqual } from "../helpers/deepEqual.js";
 
 function isMockFn(value) {
-  return mockFn instanceof Function && mockFn.mock && Array.isArray(mockFn.mock.calls);
+  return value instanceof Function && value.mock && Array.isArray(value.mock.calls);
 }
 
 export const checks = {

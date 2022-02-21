@@ -1,13 +1,11 @@
 import { makeState } from "@woofjs/state";
-import { isComponentInstance, isObject } from "../helpers/typeChecking.js";
+import { isComponent, isComponentInstance, isObject } from "../helpers/typeChecking.js";
 import { makeDolla } from "../dolla/makeDolla.js";
 import { makeTestWrapper } from "./makeTestWrapper.js";
 
-export function wrapComponent(component) {
-  return makeTestWrapper((getService, ...args) => {
-    if (isComponentInstance(component)) {
-      const debug = getService("@debug");
-
+export function wrapComponent(component, configure) {
+  return makeTestWrapper(configure, (getService, ...args) => {
+    if (isComponent(component)) {
       let attrs = {};
       let children = [];
 
@@ -20,16 +18,16 @@ export function wrapComponent(component) {
       const $route = makeState({
         route: "test",
         path: "/test",
+        href: "/test",
         params: {},
         query: {},
         wildcard: null,
       });
 
-      const dolla = makeDolla({ getService, debug, $route });
+      const dolla = makeDolla({ getService, $route });
 
-      return component.create({
+      return component({
         getService,
-        debugChannel: debug.makeChannel("component:wrapped"),
         dolla,
         attrs,
         children,

@@ -1,15 +1,12 @@
 import { createMemoryHistory } from "history";
-import { isFunction } from "../helpers/typeChecking.js";
+import { isFunction, isService } from "../helpers/typeChecking.js";
 import { makeDebug } from "../makeDebug.js";
 import { makeService } from "../makeService.js";
 import HTTPService from "../services/@http.js";
 import PageService from "../services/@page.js";
 import RouterService from "../services/@router.js";
 
-export function makeTestWrapper(init) {
-  const injectedServices = {};
-  let setup = () => {};
-
+export function makeTestWrapper(configure, init) {
   const services = {};
   const getService = (name) => {
     if (services[name]) {
@@ -19,7 +16,7 @@ export function makeTestWrapper(init) {
     throw new Error(`Service is not registered in this wrapper. Received: ${name}`);
   };
 
-  function makeWrapped(...args) {
+  return function makeWrapped(...args) {
     const debug = makeDebug({ filter: "*" });
 
     services["@debug"] = debug;
@@ -44,59 +41,34 @@ export function makeTestWrapper(init) {
       },
     });
 
-    for (const name in injectedServices) {
-      services[name] = injectedServices[name]();
-    }
+    const self = {
+      /**
+       * Registers a new service for this container.
+       *
+       * @param name - Key by which to access the service
+       * @param service- Class or function to create the service, or an object to set directly.
+       */
+      service(name, service, options = {}) {
+        if (isFunction(service)) {
+          service = makeService(service);
+        }
 
-    setup(getService);
+        if (isService(service)) {
+          services[name] = service.create({
+            getService,
+            debugChannel: debug.makeChannel(`service:${name}`),
+            options: options,
+          });
+        } else {
+          throw new TypeError(`Expected a service, function or object for service ${name}. Received: ${service}`);
+        }
+
+        return self;
+      },
+    };
+
+    configure(self);
 
     return init(getService, ...args);
-  }
-
-  /**
-   * Registers a new service for this container.
-   *
-   * @param name - Key by which to access the service
-   * @param service- Class or function to create the service, or an object to set directly.
-   */
-  makeWrapped.service = function (name, service, options = {}) {
-    if (isFunction(service)) {
-      service = makeService(service);
-    }
-
-    if (service.isService) {
-      injectedServices[name] = () => {
-        return service.create({
-          getService,
-          debugChannel: debug.makeChannel(`service:${name}`),
-          options: options,
-        });
-      };
-    } else {
-      throw new TypeError(`Expected a service, function or object for service ${name}. Received: ${service}`);
-    }
-
-    return makeWrapped;
   };
-
-  /**
-   * Receives the app object for configuration.
-   * Runs after all services are created but before the object is instantiated.
-   */
-  makeWrapped.setup = function (fn) {
-    setup = fn;
-
-    return makeWrapped;
-  };
-
-  /**
-   * Alias for calling the function directly. This looks more readable at the end of a chain of functions.
-   *
-   * @param args - Attributes and/or children for the wrapped component.
-   */
-  makeWrapped.create = function (...args) {
-    return makeWrapped(...args);
-  };
-
-  return makeWrapped;
 }

@@ -52,7 +52,6 @@ export function makeSuite(fn) {
       const results = [];
 
       await Promise.all(beforeAll.map((fn) => fn()));
-
       for (const test of tests) {
         await Promise.all(beforeEach.map((fn) => fn()));
 
@@ -73,7 +72,6 @@ export function makeSuite(fn) {
 
         await Promise.all(afterEach.map((fn) => fn()));
       }
-
       await Promise.all(afterAll.map((fn) => fn()));
 
       return results;
