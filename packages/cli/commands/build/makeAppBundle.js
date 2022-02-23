@@ -116,10 +116,18 @@ module.exports = function makeAppBundle(config) {
             path: outPath,
             contents: rendered,
           });
+        } else if (fs.statSync(fullPath).isDirectory()) {
+          const outPath = path.join(publicDir, entry);
+
+          fs.copySync(fullPath, outPath, { recursive: true });
+          writtenFiles.push({
+            path: outPath,
+            contents: null,
+          });
         } else {
           const outPath = path.join(publicDir, entry);
 
-          fs.copySync(fullPath, outPath);
+          fs.copySync(fullPath, outPath, { recursive: true });
           writtenFiles.push({
             path: outPath,
             contents: fs.readFileSync(outPath),

@@ -25,16 +25,21 @@ module.exports = new Command().action(async () => {
   println("  <green>+</green> public/");
 
   for (const file of appBundle.writtenFiles) {
-    const size = superbytes(file.contents.length);
-    const gsize = superbytes(gzipSize.sync(file.contents));
-    const name = path.basename(file.path);
+    if (file.contents) {
+      const size = superbytes(file.contents.length);
+      const gsize = superbytes(gzipSize.sync(file.contents));
+      const name = path.basename(file.path);
 
-    if (file.path.endsWith(".map")) {
-      println(`    <green>+</green> ${name} - <dim>${size} on disk</dim>`);
+      if (file.path.endsWith(".map")) {
+        println(`    <green>+</green> ${name} - <dim>${size} on disk</dim>`);
+      } else {
+        println(
+          `    <green>+</green> ${name} - <green>${gsize} gzipped</green> <dim>(${size} on disk)</dim>`
+        );
+      }
     } else {
-      println(
-        `    <green>+</green> ${name} - <green>${gsize} gzipped</green> <dim>(${size} on disk)</dim>`
-      );
+      const name = path.basename(file.path);
+      println(`    <green>+</green> ${name}/* <dim>(directory)</dim>`);
     }
   }
 

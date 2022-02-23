@@ -1,4 +1,5 @@
 const { Command, print, println } = require("@ratwizard/cli");
+const postCSSPlugin = require("esbuild-plugin-postcss2");
 
 module.exports = new Command()
   .option("cli", {
@@ -154,7 +155,21 @@ module.exports = new Command()
       target: "es2018",
       format: "esm",
       incremental: true,
-      loader: { ".js": "jsx" },
+      loader: {
+        ".js": "jsx",
+        ".png": "file",
+        ".jpg": "file",
+        ".jpeg": "file",
+        ".svg": "file",
+      },
+      plugins: [
+        postCSSPlugin.default({
+          plugins: config.postcss?.plugins || [],
+          modules: {
+            generateScopedName: "[folder]__[local]__[contenthash:8]",
+          },
+        }),
+      ],
       jsxFactory: "$", // compile JSX to dolla
       jsxFragment: '""', // pass empty string for fragments
       outfile: BUNDLE_PATH,
@@ -168,6 +183,21 @@ module.exports = new Command()
       format: "esm",
       incremental: true,
       external: ["$bundle"],
+      loader: {
+        ".js": "jsx",
+        ".png": "file",
+        ".jpg": "file",
+        ".jpeg": "file",
+        ".svg": "file",
+      },
+      plugins: [
+        postCSSPlugin.default({
+          plugins: config.postcss?.plugins || [],
+          modules: {
+            generateScopedName: "[folder]__[local]__[contenthash:8]",
+          },
+        }),
+      ],
       jsxFactory: "$", // compile JSX to dolla
       jsxFragment: '""', // pass empty string for fragments
       outfile: path.join(bundleDir, "index.js"),
@@ -182,7 +212,21 @@ module.exports = new Command()
       incremental: true,
       external: ["$bundle"],
       inject: [],
-      loader: { ".js": "jsx" },
+      loader: {
+        ".js": "jsx",
+        ".png": "file",
+        ".jpg": "file",
+        ".jpeg": "file",
+        ".svg": "file",
+      },
+      plugins: [
+        postCSSPlugin.default({
+          plugins: config.postcss?.plugins || [],
+          modules: {
+            generateScopedName: "[folder]__[local]__[contenthash:8]",
+          },
+        }),
+      ],
       jsxFactory: "$", // compile JSX to dolla
       jsxFragment: '""', // pass empty string for fragments
       outfile: path.join(bundleDir, "views/index.js"),
