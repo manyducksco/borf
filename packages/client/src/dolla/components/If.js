@@ -5,7 +5,7 @@ export const If = makeComponent(($, self) => {
   const { $attrs } = self;
 
   return $(Watch, {
-    value: $attrs.get("value"),
+    value: $attrs.map("value"),
     makeItem: (value) => {
       if (value) {
         return $attrs.get("then");
