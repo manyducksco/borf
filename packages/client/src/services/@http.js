@@ -197,16 +197,16 @@ export class HTTPRequest {
   }
 
   body(value) {
-    if (isObject(value)) {
-      if (this.#contentTypeAuto) {
-        this.header("content-type", "application/json");
-      }
-      this.#ctx.body = JSON.stringify(value);
-    } else if (value instanceof FormData) {
+    if (value instanceof FormData) {
       if (this.#contentTypeAuto) {
         this.header("content-type", "application/x-www-form-urlencoded");
       }
       this.#ctx.body = value;
+    } else if (isObject(value)) {
+      if (this.#contentTypeAuto) {
+        this.header("content-type", "application/json");
+      }
+      this.#ctx.body = JSON.stringify(value);
     } else {
       this.#ctx.body = value;
     }
