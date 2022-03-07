@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/state",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Reactive state for dogs. 🐕",
   "main": "dist/state.node.js",
   "module": "dist/state.js",
