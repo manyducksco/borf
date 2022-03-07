@@ -8,45 +8,48 @@ declare module "@woofjs/state" {
 
   type State<Type> = {
     /**
-     * Gets the current value.
+     * Returns the current value.
      */
     get(): Type;
 
     /**
-     * Gets a nested property from the current value. Works with objects and arrays.
+     * Returns a nested property from the current value. Works with objects and arrays.
      *
-     * @param key - Property name (e.g. 'some.value', 'names[3].first', 'length')
+     * @param selector - Property name (e.g. `some.value`, `names[3].first`, `length`)
      */
-    get<V = unknown>(key: string): V;
+    get<V = unknown>(selector: string): V;
 
     /**
-     * Sets a new value.
+     * Returns a new value.
      *
      * @param newValue - Replacement value
      */
     set(newValue: Type): void;
 
     /**
-     * Updates the value with a function. If the function returns a value, that value replaces the current one.
-     * If null, then any mutations to `current` will be applied to create a new value.
+     * Produces a new value using a function that can either mutate `current` or return a new value.
+     * Mutations are applied on a cloned version of `current` that replaces the old one, immutably.
      */
     set(fn: (current: Type) => Type | void): void;
 
     watch(callback: (current: Type) => void): () => void;
     watch(callback: (current: Type) => void, options: WatchOptions): () => void;
-    watch<V = unknown>(key: string, callback: (selected: V) => void): () => void;
-    watch<V = unknown>(key: string, callback: (selected: V) => void, options: WatchOptions): () => void;
+    watch<V = unknown>(selector: string, callback: (selected: V) => void): () => void;
+    watch<V = unknown>(selector: string, callback: (selected: V) => void, options: WatchOptions): () => void;
 
     map(): MapState<Type>;
-    map<V = unknown>(key: string): MapState<V>;
+    map<V = unknown>(selector: string): MapState<V>;
     map<V>(transform: (current: Type) => V): MapState<V>;
-    map<V>(key: string, transform: (selected: unknown) => V): MapState<V>;
+    map<V>(selector: string, transform: (selected: unknown) => V): MapState<V>;
 
     toString(): string;
   };
 
+  /**
+   * A read-only state derived from another state. Supports everything a regular State supports besides `.set()`.
+   */
   type MapState<Type> = {
-    [Property in keyof State<Type> as Exclude<Property, "get">]: State<Type>[Property];
+    [Property in keyof State<Type> as Exclude<Property, "set">]: State<Type>[Property];
   };
 
   /**

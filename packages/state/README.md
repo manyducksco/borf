@@ -11,30 +11,45 @@ $ npm i --dev @woofjs/state
 ```js
 import { makeState } from "@woofjs/state";
 
-// Create a new state with a value of 5
 const $count = makeState(5);
+```
 
+We now have a state with a value of 5. The `$name` convention helps to clearly mark this as a state. That's not required, but it is recommended.
+
+You can get and set the value of `$count` through the `get` and `set` methods.
+
+```js
 $count.get(); // returns 5
 $count.set(10); // value of $count is now 10
+$count.get(); // returns 10
+```
 
+The `watch` method takes a function and calls it each time the value changes, passing the new value. It returns a function that cancels the watcher.
+
+```js
 const unwatch = $count.watch((value) => {
   console.log(value); // Prints the value each time $count is set
 });
 
 unwatch(); // Stop watching
+```
 
-// Create a new state that updates whenever $count does
+The `map` function creates a second state based on the first by running it through a function. Original value goes in, modified value comes out. Modified value stored in a second state. When the original state changes, the mapped state follows.
+
+```js
 const $doubled = $count.map((n) => n * 2);
 
-$doubled.get(); // returns 20
-// There is no $doubled.set() because $doubled gets its value from $count
+$doubled.get(); // $count is 10, so $doubled returns 20
 
-// Setting the original state updates mapped states
+// There is no $doubled.set() since $doubled gets its value from $count.
+// Setting the original state updates mapped states:
 $count.set(7);
 
-$count.get(); // returns 7
-$doubled.get(); // returns 14
+$count.get(); // now returns 7
+$doubled.get(); // now returns 14
 ```
+
+_Mapped states can themselves be mapped._ Mapped states support everything a normal state does except for `set`.
 
 ## Click Counter Example
 
@@ -68,11 +83,14 @@ A basic example with `makeState` and typical browser stuff.
   increment.addEventListener("click", () => {
     $count.set((current) => current + 1);
   });
+
   decrement.addEventListener("click", () => {
     $count.set((current) => current - 1);
   });
 </script>
 ```
+
+> NOTE: If you paste the above snippet into an HTML file and open it in your browser, it should just work. Here it is on CodePen: https://codepen.io/schwingbat/pen/NWwpvLy
 
 ### Woof + JSX
 
@@ -80,25 +98,31 @@ A state is useful on its own, but its day job is to be the backbone of reactivit
 
 We have basically copied that `<main>` block into a chunk of JavaScript and removed most of the code for binding data and events.
 
-`$.text()` takes `$count` and renders its current value into the DOM as text. Event handler functions are passed directly to the buttons.
+`$.text()` renders the current value of `$count` into the DOM as text. Event handler functions are passed directly to the buttons.
 
 ```js
-import { Component, makeState } from "@woofjs/app";
+import { makeComponent, makeState } from "@woofjs/app";
 
-class Counter extends Component {
-  createElement($) {
-    const $count = makeState(0);
+const Counter = makeComponent(($) => {
+  const $count = makeState(0);
 
-    return (
-      <main>
-        <p>Clicked {$.text($count)} time(s).</p>
-        <br />
-        <button onclick={() => $count.set((current) => current + 1)}>+1</button>
-        <button onclick={() => $count.set((current) => current - 1)}>-1</button>
-      </main>
-    );
-  }
-}
+  return (
+    <main>
+      <p>Clicked {$.text($count)} time(s).</p>
+      <br />
+      <button onclick={() => $count.set((current) => current + 1)}>+1</button>
+      <button onclick={() => $count.set((current) => current - 1)}>-1</button>
+    </main>
+  );
+
+  // Or without JSX:
+  return $("main", [
+    $("p", ["Clicked ", $.text($count), " time(s)."]),
+    $("br"),
+    $("button", { onclick: () => $count.set((current) => current + 1) }, "+1"),
+    $("button", { onclick: () => $count.set((current) => current - 1) }, "-1"),
+  ]);
+});
 ```
 
 That `time(s)` label is kind of basic. To overcomplicate things, let's add a dynamic label based on the value of `$count`.
@@ -111,32 +135,30 @@ Now our label reads:
 - ...
 
 ```js
-import { Component, makeState } from "@woofjs/app";
+import { makeComponent, makeState } from "@woofjs/app";
 
-class Counter extends Component {
-  createElement($) {
-    const $count = makeState(0);
+const Counter = makeComponent(($) => {
+  const $count = makeState(0);
 
-    const $times = $count.map((current) => {
-      if (current === 1) {
-        return "time";
-      } else {
-        return "times";
-      }
-    });
+  const $times = $count.map((current) => {
+    if (current === 1) {
+      return "time";
+    } else {
+      return "times";
+    }
+  });
 
-    return (
-      <main>
-        <p>
-          Clicked {$.text($count)} {$.text($times)}.
-        </p>
-        <br />
-        <button onclick={() => $count.set((current) => current + 1)}>+1</button>
-        <button onclick={() => $count.set((current) => current - 1)}>-1</button>
-      </main>
-    );
-  }
-}
+  return (
+    <main>
+      <p>
+        Clicked {$.text($count)} {$.text($times)}.
+      </p>
+      <br />
+      <button onclick={() => $count.set((current) => current + 1)}>+1</button>
+      <button onclick={() => $count.set((current) => current - 1)}>-1</button>
+    </main>
+  );
+});
 ```
 
 [Read more about Woof...]()
@@ -181,7 +203,21 @@ A state produced by `.map()` supports everything aside from `.set()` (because ma
 [See test suite for code examples](./makeState.test.js)<br>
 [See implementation](./makeState.js)
 
+#### Selectors
+
+Selectors are keys for accessing nested properties on objects and arrays stored in a State. Nested keys are separated by `.` and `[]`s are used to access array items by index. An `[*]` index turns the result into an array by running the rest of the selector on each item.
+
+```js
+$state.get("width"); // Get the `width` property
+$state.get("users[7].name.last"); // Get the last name of the 8th (from 0) user in an array called `users`
+$state.get("[*].id"); // Get an array of all `id` values for each object in an array
+```
+
 ### `mergeStates`
+
+Takes two or more states followed by a merge function. This function receives the values of each state in the order they were passed and returns a value for a new state. This function is run each time any of the states changes.
+
+It's a lot like `.map`, but for transforming multiple states into one.
 
 ```js
 import { mergeStates } from "@woofjs/state";

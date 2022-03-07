@@ -1,3 +1,3 @@
 export function isState(value) {
-  return typeof value === "object" && value.isState;
+  return value != null && typeof value === "object" && value.isState;
 }
