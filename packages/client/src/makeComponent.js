@@ -159,8 +159,6 @@ export function makeComponent(fn) {
       connect(parent, after = null) {
         const wasConnected = this.isConnected;
 
-        // console.log({ parent, after });
-
         if (!wasConnected) {
           // Run onBeforeConnect hook
           for (const callback of onBeforeConnect) {

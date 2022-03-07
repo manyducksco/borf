@@ -17,11 +17,8 @@ export const Element = makeComponent((_, self) => {
   let watchers = [];
 
   self.beforeConnect(() => {
-    let previous = null;
-
     for (const child of children) {
-      child.connect(node, previous?.element);
-      previous = child;
+      child.connect(node);
     }
 
     applyAttrs(node, attrs, watchers);
