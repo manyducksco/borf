@@ -99,6 +99,22 @@ export function makeDolla({ getService, $route }) {
   };
 
   /**
+   * If $value has a falsy value, show `then`.
+   *
+   * `then` can be a function that returns an element, or just an element.
+   */
+  $.unless = function ($value, then) {
+    return If({
+      ...componentDefaults,
+      attrs: {
+        value: $value,
+        then: null,
+        otherwise: then,
+      },
+    });
+  };
+
+  /**
    * Displays one element for each item in `$list`.
    */
   $.each = function ($list, component) {
