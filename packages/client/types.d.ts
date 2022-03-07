@@ -1,8 +1,10 @@
 /// <reference path="node_modules/@woofjs/state/types.d.ts" />
 
-import type { State, makeState, mergeStates } from "@woofjs/state";
+import type { State } from "@woofjs/state";
 
 declare module "@woofjs/app" {
+  export type { makeState, mergeStates, State } from "@woofjs/state";
+
   /*==================================*\
   ||               App                ||
   \*==================================*/
@@ -94,14 +96,7 @@ declare module "@woofjs/app" {
     connect(root: string | Node): Promise<void>;
   };
 
-  type Services = {
-    "@debug": {};
-    "@http": HTTPService;
-    "@page": {};
-    [name: string]: Service;
-  };
-
-  type getService = (name: keyof Services) => Services[keyof Services];
+  type getService<T = Object> = (name: string) => T;
 
   type DebugChannel = {
     name: string;
@@ -132,6 +127,10 @@ declare module "@woofjs/app" {
 
   type DollaChild = string | number | ComponentInstance | null | false | undefined;
 
+  type ToStringable = {
+    toString(): string;
+  };
+
   export type Dolla = {
     (tag: string, attrs?: {}, ...children: DollaChild[]): ComponentInstance;
     (component: ComponentLike, attrs?: {}, ...children: DollaChild[]): ComponentInstance;
@@ -150,14 +149,14 @@ declare module "@woofjs/app" {
 
     watch<T>($value: State<T>, makeItem: (current: T) => ComponentInstance | null): ComponentInstance;
 
-    text($value, defaultValue): ComponentInstance;
+    text($value: State<ToStringable>, defaultValue: ToStringable): ComponentInstance;
 
     /**
      * Registers nested routes. Paths are relative to the current component's $route.href
      */
     routes(defineRoutes: DefineRoutesFn): ComponentInstance;
 
-    bind<T>($state: State<T>, eventName = "input"): { isBinding: true; event: string; $state: State<T> };
+    bind<T>($state: State<T>, eventName?: string): { isBinding: true; event: string; $state: State<T> };
   };
 
   /*==================================*\
