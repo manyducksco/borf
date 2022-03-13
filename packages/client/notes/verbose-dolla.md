@@ -40,23 +40,42 @@ $.watchState($state, ($, self) => {
   return <h1>{$.asText($value)}</h1>;
 });
 
+// That would be almost the same as just passing a value to a component though:
+const Component = makeComponent(($, self) => {
+  const $value = self.$attrs.map("value");
+
+  return <h1>{$.asText($value)}</h1>;
+});
+
+<Component value={$state} />;
+
 // Routes stays the same
 $.routes((when, redirect) => {
   when("/example", Example);
-  redirect("*", "/example");
+  redirect("*", "./example");
 });
 
 // Or maybe take the opportunity to change it to this:
 $.router((self) => {
   self.when("/example", Example);
-  self.redirect("*", "/example");
+  self.redirect("*", "./example");
 });
 
 // That also allows the following syntax and makes additions easier in the future:
 $.router(({ when, redirect }) => {
   when("/example", Example);
-  redirect("*", "/example");
+  redirect("*", "./example");
 });
+
+// Probably want to change top-level router to this as well:
+const app = makeApp();
+
+app.router((self) => {
+  self.when("/example", Example);
+  self.redirect("*", "./example");
+});
+
+app.connect("#app");
 ```
 
 ## Alternate component attribute getters (more compact):
