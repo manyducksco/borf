@@ -1,6 +1,6 @@
-# Idea: Verbose Dolla
+# Component and dolla API tweaks
 
-I'm thinking of making $ helpers more verbose so they're easier to pick apart from JSX:
+Thinking of making $ helpers more verbose so they're easier to pick apart from JSX:
 
 ```js
 // Match Array.forEach from standard JS
@@ -35,11 +35,31 @@ $.asText($state);
 
 // Like self.watchState but with a component
 $.watchState($state, ($, self) => {
-  return <h1>{$.asText(self.map("value"))}</h1>;
+  const $value = self.$attrs.map("value");
+
+  return <h1>{$.asText($value)}</h1>;
+});
+
+// Routes stays the same
+$.routes((when, redirect) => {
+  when("/example", Example);
+  redirect("*", "/example");
+});
+
+// Or maybe take the opportunity to change it to this:
+$.router((self) => {
+  self.when("/example", Example);
+  self.redirect("*", "/example");
+});
+
+// That also allows the following syntax and makes additions easier in the future:
+$.router(({ when, redirect }) => {
+  when("/example", Example);
+  redirect("*", "/example");
 });
 ```
 
-Alternate component attribute getters (more compact)
+## Alternate component attribute getters (more compact):
 
 ```js
 // Usage:
@@ -59,5 +79,30 @@ const Example = makeComponent(($, self) => {
 
   // What if there were no self.$attrs or self.$route?
   // self would be just .get() and .map(), .getService(), and the lifecycle hooks
+});
+```
+
+## Idea for TypeScript support
+
+```ts
+import { makeComponent, RouteAttr, HTTPService } from "@woofjs/client";
+
+type Attrs = {
+  /**
+   * This comment should be seen in TS autocomplete when using the component.
+   */
+  value: string;
+};
+
+const TypedExample = makeComponent<Attrs>(($, self) => {
+  // Gets and maps take type arguments:
+  const href = self.get<RouteAttr>("@route").href;
+  const $value = self.map<string>("value");
+
+  const attrs = self.get<Attrs>();
+  const attrs = self.get(); // Overload in types to automatically return components attrs type?
+
+  // Typing a service
+  const http = self.getService<HTTPService>("@http");
 });
 ```
