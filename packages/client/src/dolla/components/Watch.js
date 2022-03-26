@@ -9,8 +9,8 @@ export const Watch = makeComponent(($, self) => {
 
   const node = document.createTextNode("");
 
-  const $value = self.$attrs.map("value");
-  const makeItem = self.$attrs.get("makeItem");
+  const $value = self.map("value");
+  const makeItem = self.get("makeItem");
 
   let item;
 

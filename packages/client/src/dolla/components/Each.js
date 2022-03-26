@@ -6,8 +6,8 @@ import { makeComponent } from "../../makeComponent.js";
 export const Each = makeComponent(($, self) => {
   self.debug.name = "woof:$:each";
 
-  const $value = self.$attrs.map("value");
-  const initComponent = self.$attrs.get("component");
+  const $value = self.map("value");
+  const initComponent = self.get("component");
 
   const node = document.createTextNode("");
 

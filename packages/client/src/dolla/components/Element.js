@@ -3,10 +3,10 @@ import { makeComponent } from "../../makeComponent.js";
 import { isArray, isObject, isString, isNumber, isFunction, isBinding } from "../../helpers/typeChecking.js";
 
 export const Element = makeComponent((_, self) => {
-  const { $attrs, children } = self;
+  const { children } = self;
 
-  const tag = $attrs.get("tag");
-  const attrs = $attrs.get("attrs"); // attrs passed to the element itself
+  const tag = self.get("tag");
+  const attrs = self.get("attrs"); // attrs passed to the element itself
 
   const node = document.createElement(tag);
 

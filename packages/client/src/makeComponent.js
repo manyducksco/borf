@@ -1,4 +1,4 @@
-import { isState, makeState } from "@woofjs/state";
+import { isState, mergeStates } from "@woofjs/state";
 import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.js";
 
 export function makeComponent(fn) {
@@ -11,7 +11,54 @@ export function makeComponent(fn) {
     let routePreload;
     let key;
 
-    const $attrs = makeState({});
+    const staticAttrs = [];
+    const stateAttrs = [];
+
+    for (const name in attrs) {
+      if (isState(attrs[name])) {
+        if (name.startsWith("$")) {
+          // Pass states through as-is when named with $
+          staticAttrs.push({
+            name,
+            value: attrs[name],
+          });
+        } else {
+          stateAttrs.push(
+            attrs[name].map((value) => {
+              return {
+                name,
+                value,
+              };
+            })
+          );
+        }
+      } else {
+        if (name.startsWith("$")) {
+          throw new TypeError(`Attributes beginning with $ must be states. Got: ${typeof attrs[name]}`);
+        } else {
+          staticAttrs.push({
+            name,
+            value: attrs[name],
+          });
+        }
+      }
+    }
+
+    const $attrs = mergeStates($route, ...stateAttrs, (route, ...attrs) => {
+      const merged = {
+        "@route": route,
+      };
+
+      for (const attr of attrs) {
+        merged[attr.name] = attr.value;
+      }
+
+      for (const attr of staticAttrs) {
+        merged[attr.name] = attr.value;
+      }
+
+      return merged;
+    });
 
     const self = {
       $route,
@@ -29,6 +76,12 @@ export function makeComponent(fn) {
       set key(value) {
         key = value;
       },
+      get(...selectors) {
+        return $attrs.get(...selectors);
+      },
+      map(...selectors) {
+        return $attrs.map(...selectors);
+      },
       loadRoute(func) {
         routePreload = func;
       },
@@ -44,42 +97,14 @@ export function makeComponent(fn) {
       disconnected(callback) {
         onDisconnected.push(callback);
       },
-      watchState($state, ...args) {
-        watchers.push($state.watch(...args));
+      watchState($state, callback, options = {}) {
+        // onBeforeConnect.push(() => {
+        //   watchers.push($state.watch(callback, { immediate: true }));
+        // });
+
+        watchers.push($state.watch(callback, options));
       },
     };
-
-    const parsedAttrs = {};
-
-    for (const key in attrs) {
-      // Attributes starting with $ should be states and will be passed through as-is.
-      // States passed to attributes not starting with $ will be unwrapped and passed as their current value.
-      if (key[0] === "$") {
-        if (isState(attrs[key])) {
-          parsedAttrs[key] = attrs[key]; // Pass states through as states when named appropriately
-        } else {
-          throw new TypeError(`An attribute beginning with $ must be a state. Got: ${attrs[key]} (key: ${key})`);
-        }
-      } else {
-        if (isState(attrs[key])) {
-          // TODO: Ensure component is not disconnected and reconnected without reconstruction or these will not be reapplied.
-          //       If they go in .connect() then they'll trigger watchers added in the body of `fn`, which they shouldn't.
-          watchers.push(
-            attrs[key].watch((value) => {
-              $attrs.set((current) => {
-                current[key] = value;
-              });
-            })
-          );
-
-          parsedAttrs[key] = attrs[key].get();
-        } else {
-          parsedAttrs[key] = attrs[key];
-        }
-      }
-    }
-
-    $attrs.set(parsedAttrs);
 
     const node = fn(dolla, self);
 
@@ -93,7 +118,6 @@ export function makeComponent(fn) {
       isComponentInstance: true,
 
       $attrs,
-      $route,
 
       get key() {
         return key;

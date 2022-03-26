@@ -15,7 +15,7 @@ export const Routes = makeComponent(($, self) => {
 
   const node = document.createTextNode("");
 
-  const { $route } = self;
+  const $route = self.map("@route");
 
   // This component's routes are matched on the parent route's current `wildcard` value.
   const $wildcard = $route.map("wildcard");
@@ -47,7 +47,7 @@ export const Routes = makeComponent(($, self) => {
   \*=========================*/
 
   // This should be a function of the same format `app.routes` takes
-  const defineRoutes = self.$attrs.get("defineRoutes");
+  const defineRoutes = self.get("defineRoutes");
 
   function when(path, component, attrs = {}) {
     if (isFunction(component) && !isComponent(component)) {

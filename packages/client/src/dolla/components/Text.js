@@ -8,7 +8,7 @@ export const Text = makeComponent((_, self) => {
       node.textContent = attrs.value || attrs.defaultValue || "";
     }
 
-    self.watchState(self.$attrs, setText, { immediate: true });
+    self.watchState(self.map(), setText, { immediate: true });
   });
 
   return node;
