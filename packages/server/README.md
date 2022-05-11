@@ -25,7 +25,7 @@ server.use((ctx) => {
   // ctx object has:
   ctx = {
     // middleware can mutate this object as it gets passed through
-    req: {
+    request: {
       verb: "post",
       protocol: "http",
       domain: "localhost",
@@ -36,13 +36,13 @@ server.use((ctx) => {
         authorization: "Bearer 12345",
       },
       body: {
-        // JSON is auto parsed
+        // JSON and form data are auto parsed
         data: {
           number: 12,
         },
       },
     },
-    res: {
+    response: {
       status: 200,
       headers: {
         "content-type": "application/json",
@@ -68,7 +68,7 @@ server.route("/:id", ($, self) => {
   // Gets services registered on this server.
   self.getService("something");
 
-  self.preload((done) => {
+  self.loadRoute((show, done) => {
     setTimeout(done, 100); // wait 100ms for no reason
   });
 
@@ -84,14 +84,14 @@ server.get(
       return redirect("/other/path");
     }
   }
-  ({ req, getService, next }) => {
+  ({ request, getService, next }) => {
     // Analytics.
-    getService("analytics").pageView(req.location.pathname);
+    getService("analytics").pageView(request.location.pathname);
     return next();
   },
-  ({ req, getService, next }) => {
+  ({ request, getService, next }) => {
     // Response time recorder.
-    const timer = getService("timing").createTimer(req.location.pathname);
+    const timer = getService("timing").createTimer(request.location.pathname);
 
     timer.start();
     await next();
@@ -99,10 +99,10 @@ server.get(
 
     timer.save();
   },
-  ({ req, res }) => {
-    // Response.
-    res.status = 200;
-    res.body = {
+  ({ request, response }) => {
+    response.status = 200;
+
+    return {
       message: "response"
     };
   }
@@ -125,7 +125,7 @@ router.get("/", () => {
 });
 
 router.get("manual/json", (ctx) => {
-  ctx.res.headers["content-type"] = "application/json";
+  ctx.response.headers["content-type"] = "application/json";
 
   return JSON.stringify({
     message: "This is returned as string, but content-type is set to application/json",

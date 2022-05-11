@@ -1,5 +1,6 @@
 import { makeState } from "@woofjs/state";
-import { isFunction, isNode } from "../_helpers/typeChecking";
+import { isComponentInstance } from "../../app/src/helpers/typeChecking";
+import { isFunction } from "../_helpers/typeChecking";
 import { makeRender } from "./dolla/makeRender";
 
 /**
@@ -53,13 +54,13 @@ export function makeComponent(create) {
 
       const element = create(dolla, self);
 
-      if (element !== null && !isNode(element)) {
+      if (element !== null && !isComponentInstance(element)) {
         // console.log(String(create));
-        throw new TypeError(`Component must return an $(element) or null. Got: ${element}`);
+        throw new TypeError(`Component must return a component or null. Got: ${element}`);
       }
 
       return {
-        get isNode() {
+        get isComponentInstance() {
           return true;
         },
 
@@ -78,7 +79,7 @@ export function makeComponent(create) {
                 const render = makeRender(tempElement);
                 const tempNode = render();
 
-                if (isNode(tempNode)) {
+                if (isComponentInstance(tempNode)) {
                   mount(tempNode);
                 } else {
                   throw new Error(`Expected preload function to return a node or undefined. Received: ${tempNode}`);
