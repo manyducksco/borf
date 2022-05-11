@@ -1,5 +1,5 @@
 {
-  "name": "@woofjs/app",
+  "name": "@woofjs/client",
   "version": "0.9.1",
   "description": "Front end routing, components and state for dogs. 🐕",
   "source": "src/index.js",
