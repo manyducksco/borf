@@ -15,20 +15,30 @@ module.exports = function makeAppBundle(config) {
 
   let entryPoint;
 
-  if (fs.existsSync(path.join(config.path.app, "app.js"))) {
-    entryPoint = path.join(config.path.app, "app.js");
-  } else if (fs.existsSync(path.join(config.path.app, "app.jsx"))) {
-    entryPoint = path.join(config.path.app, "app.jsx");
-  } else if (fs.existsSync(path.join(config.path.app, "app.ts"))) {
-    entryPoint = path.join(config.path.app, "app.ts");
-  } else if (fs.existsSync(path.join(config.path.app, "app.tsx"))) {
-    entryPoint = path.join(config.path.app, "app.tsx");
+  if (config.client?.entryPoint) {
+    if (path.isAbsolute(config.client.entryPoint)) {
+      entryPoint = config.client.entryPoint;
+    } else {
+      entryPoint = path.join(config.path.root, config.client.entryPoint);
+    }
+  } else if (fs.existsSync(path.join(config.path.client, "client.js"))) {
+    entryPoint = path.join(config.path.client, "client.js");
+  } else if (fs.existsSync(path.join(config.path.client, "client.jsx"))) {
+    entryPoint = path.join(config.path.client, "client.jsx");
+  } else if (fs.existsSync(path.join(config.path.client, "client.ts"))) {
+    entryPoint = path.join(config.path.client, "client.ts");
+  } else if (fs.existsSync(path.join(config.path.client, "client.tsx"))) {
+    entryPoint = path.join(config.path.client, "client.tsx");
   }
 
   if (entryPoint == null) {
-    throw new Error(
-      `No app entrypoint file found. Expected 'app/app.js', 'app/app.jsx', 'app/app.ts' or 'app/app.tsx'`
-    );
+    let expected = "'app/app.js', 'app/app.jsx', 'app/app.ts' or 'app/app.tsx'";
+
+    if (config.client?.entryPoint) {
+      expected = config.client.entryPoint;
+    }
+
+    throw new Error(`No app entrypoint file found. Expected ${expected}`);
   }
 
   const esbuildConfig = {
@@ -46,18 +56,19 @@ module.exports = function makeAppBundle(config) {
       ".jpg": "file",
       ".jpeg": "file",
       ".svg": "file",
+      ".webp": "file",
     },
     plugins: [
       postCSSPlugin.default({
         plugins: config.postcss?.plugins || [],
         modules: {
-          generateScopedName: "[folder]__[local]__[contenthash:8]",
+          generateScopedName: "[folder]_[local]_[contenthash:8]",
         },
       }),
     ],
     jsxFactory: "$", // compile JSX to dolla
     jsxFragment: '""', // pass empty string for fragments
-    outbase: config.path.app,
+    outbase: config.path.client,
     outdir: publicDir,
   };
 
@@ -80,7 +91,7 @@ module.exports = function makeAppBundle(config) {
       (f) => path.extname(f.path) === ".css"
     );
 
-    const staticDir = path.join(config.path.app, "static");
+    const staticDir = path.join(config.path.client, "static");
     const bundlePath = bundleOut.path.replace(publicDir, "");
     const stylesPath = stylesOut ? stylesOut.path.replace(publicDir, "") : null;
 
@@ -155,6 +166,9 @@ module.exports = function makeAppBundle(config) {
   }
 
   return {
+    /**
+     * Build and write files to disk.
+     */
     async build() {
       const bundle = await esbuild.build(esbuildConfig);
 
@@ -164,6 +178,10 @@ module.exports = function makeAppBundle(config) {
 
       return bundle;
     },
+
+    /**
+     * Build and write files, then return an object with a `.rebuild()` method to rebuild files changed since last build.
+     */
     async buildIncremental() {
       const bundle = await esbuild.build({
         ...esbuildConfig,

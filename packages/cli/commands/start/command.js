@@ -47,11 +47,11 @@ module.exports = new Command()
           `
           <script>
             const events = new EventSource("/_bundle");
-          
+
             events.addEventListener("message", (message) => {
               window.location.reload();
             });
-          
+
             window.addEventListener("beforeunload", () => {
               events.close();
             });
@@ -65,12 +65,12 @@ module.exports = new Command()
     ||      Watch & Bundle      ||
     \*==========================*/
 
-    const appWatcher = chokidar.watch([`${config.path.app}/**/*`], {
+    const clientWatcher = chokidar.watch([`${config.path.client}/**/*`], {
       persistent: true,
       ignoreInitial: true,
     });
 
-    appWatcher.on("all", async () => {
+    clientWatcher.on("all", async () => {
       const start = Date.now();
       await appBundle.rebuild();
       $appBundleId.set((current) => current + 1);

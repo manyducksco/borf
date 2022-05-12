@@ -1,4 +1,4 @@
-import { makeComponent, makeState } from "@woofjs/app";
+import { makeComponent, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const DynamicListExample = makeComponent(($, self) => {

@@ -1,4 +1,4 @@
-import { makeService, makeState } from "@woofjs/app";
+import { makeService, makeState } from "@woofjs/client";
 
 /**
  * Exposes a $current value and increments it by one each second.

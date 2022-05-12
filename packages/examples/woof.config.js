@@ -1,1 +1,5 @@
-module.exports = {};
+module.exports = {
+  client: {
+    entryPoint: "client/client.js",
+  },
+};

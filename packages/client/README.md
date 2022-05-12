@@ -36,29 +36,45 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 when("users/:id", ($, self) => {
   const id = self.$route.get("params.id");
 
-  return <p>User ID is {id}</p>;
+  return $("p", ["User ID is ", id]);
 });
 ```
 
 ```js
 when("users/*", ($) => {
-  return (
-    <div>
-      <h1>Persistent Header</h1>
+  return $("div", [
+    $("h1", "Persistent Header"),
 
-      {$.routes((when) => {
-        when(":id", ($) => {
-          return <p>User Details</p>;
-        });
-        when(":id/edit", ($) => {
-          return <p>User Edit</p>;
-        });
-        when("*", ($) => {
-          return <p>Fallback</p>;
-        });
-      }}
-    </div>
-  );
+    $.routes((when) => {
+      when(":id", ($) => {
+        return <p>User Details</p>;
+      });
+      when(":id/edit", ($) => {
+        return <p>User Edit</p>;
+      });
+      when("*", ($) => {
+        return <p>Fallback</p>;
+      });
+    }
+  ]);
+
+//   return (
+//     <div>
+//       <h1>Persistent Header</h1>
+//
+//       {$.routes((when) => {
+//         when(":id", ($) => {
+//           return <p>User Details</p>;
+//         });
+//         when(":id/edit", ($) => {
+//           return <p>User Edit</p>;
+//         });
+//         when("*", ($) => {
+//           return <p>Fallback</p>;
+//         });
+//       }}
+//     </div>
+//   );
 });
 ```
 
@@ -85,12 +101,10 @@ when("users/:id", ($, self) => {
 const Example = makeComponent(($, self) => {
   const $title = self.$attrs.map("title");
 
-  return (
-    <div>
-      <h1>{$.text($title, "Default Title")}</h1>
-      <p>This is a reusable component now.</p>
-    </div>
-  );
+  return $("div", [
+    $("h1", $.text($title, "Default Title"),
+    $("p", "This is a reusable component now.")
+  ]);
 });
 
 app.routes((when) => {
@@ -99,11 +113,15 @@ app.routes((when) => {
 
   // Use in the body of another component
   when("other", ($) => {
-    return (
-      <div>
-        <Example title="In Another Component" />
-      </div>
-    );
+    return $("div", [
+      $(Example, { title: "In Another Component" })
+    ]);
+
+    // return (
+    //   <div>
+    //     <Example title="In Another Component" />
+    //   </div>
+    // );
   });
 });
 ```
@@ -133,6 +151,12 @@ app.service("counter", () => {
 
 app.routes((when) => {
   when("/counter", ($) => {
+    // return $("div", [
+    //   $("h1", "World's Most Inconvenient Counter Demo"),
+    //   $("a", { href: "/counter/view" }, "See the number"),
+    //   $("a", { href: "/counter/controls" }, "Change the number"),
+    // ]);
+
     return (
       <div>
         <h1>World's Most Inconvenient Counter Demo</h1>
@@ -145,11 +169,18 @@ app.routes((when) => {
   when("/counter/view", ($, self) => {
     const { $current } = self.getService("counter");
 
+    // return $("h1", ["The Count is Now ", $.text($current, "0")]);
+
     return <h1>The Count is Now {$.text($current)}</h1>;
   });
 
   when("/counter/controls", ($, self) => {
     const { increment, decrement } = self.getService("counter");
+
+    // return $("div", [
+    //   $("button", { onclick: increment }, "Increment"),
+    //   $("button", { onclick: decrement }, "Decrement"),
+    // ]);
 
     return (
       <div>

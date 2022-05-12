@@ -1,4 +1,4 @@
-import { makeSuite, wrapService } from "@woofjs/app/testing";
+import { makeSuite, wrapService } from "@woofjs/client/testing";
 import CounterService from "./CounterService.js";
 
 export default makeSuite((test) => {

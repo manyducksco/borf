@@ -2,7 +2,7 @@
 
 import type { State } from "@woofjs/state";
 
-declare module "@woofjs/app" {
+declare module "@woofjs/client" {
   export type { makeState, mergeStates, State } from "@woofjs/state";
 
   /*==================================*\

@@ -1,4 +1,4 @@
-import { makeComponent, makeState, mergeStates } from "@woofjs/app";
+import { makeComponent, makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const FormExample = makeComponent(($, self) => {

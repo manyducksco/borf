@@ -1,4 +1,4 @@
-import { makeService, makeState } from "@woofjs/app";
+import { makeService, makeState } from "@woofjs/client";
 
 const MouseService = makeService((self) => {
   const $position = makeState({ x: 0, y: 0 });

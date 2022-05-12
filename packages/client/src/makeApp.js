@@ -234,7 +234,7 @@ export function makeApp(options = {}) {
       const routeChanged = matched.route !== $route.get("route");
 
       // Top level route details are stored on @router where they can be read by apps and services.
-      // Nested route info is found in `this.$route` in components.
+      // Nested route info is found in `self.$route` in components.
       $route.set((current) => {
         current.path = matched.path;
         current.route = matched.route;

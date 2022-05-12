@@ -9,7 +9,7 @@ module.exports = function (args, project) {
   }
 
   return {
-    output: `${project.path.app}/services/${name}`,
+    output: `${project.path.client}/services/${name}`,
     variables: {
       name,
     },

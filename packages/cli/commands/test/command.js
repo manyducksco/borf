@@ -49,7 +49,7 @@ module.exports = new Command()
       return;
     }
 
-    const appDir = config.path.app;
+    const appDir = config.path.client;
     const bundleDir = path.join(config.path.temp, "test");
     const webRunnerDir = path.join(__dirname, "runner");
 
@@ -279,7 +279,7 @@ module.exports = new Command()
       });
     }
 
-    const srcStaticDir = path.join(config.path.app, "static");
+    const srcStaticDir = path.join(config.path.client, "static");
     const viewStaticDir = path.join(bundleDir, "views");
 
     const bundle = () => {

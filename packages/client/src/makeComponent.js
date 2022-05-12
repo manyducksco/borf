@@ -1,6 +1,11 @@
 import { isState, mergeStates } from "@woofjs/state";
 import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.js";
 
+/**
+ * Defines a reusable component.
+ *
+ * @param fn - Function that defines the component.
+ */
 export function makeComponent(fn) {
   function create({ getService, $route, dolla, attrs, children }) {
     let onBeforeConnect = [];

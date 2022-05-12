@@ -1,4 +1,4 @@
-import { makeComponent } from "@woofjs/app";
+import { makeComponent } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 /**

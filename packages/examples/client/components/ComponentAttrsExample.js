@@ -1,4 +1,4 @@
-import { makeComponent, makeState } from "@woofjs/app";
+import { makeComponent, makeState } from "@woofjs/client";
 
 export default makeComponent(($, self) => {
   const $message = makeState("test");

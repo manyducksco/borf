@@ -1,4 +1,4 @@
-import { makeSuite, wrapComponent } from "@woofjs/app/testing";
+import { makeSuite, wrapComponent } from "@woofjs/client/testing";
 import ToggleExample from "./ToggleExample.js";
 
 export default makeSuite((test, view) => {

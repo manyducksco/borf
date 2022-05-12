@@ -3,6 +3,7 @@
 const path = require("path");
 const { program } = require("@ratwizard/cli");
 
+// Print the version from package.json when called with --version flag
 program.version(require("./package.json").version);
 
 program

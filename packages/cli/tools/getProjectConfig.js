@@ -7,8 +7,8 @@ function getDefaultConfig(dir) {
   return {
     path: {
       root,
-      get app() {
-        return path.join(this.root, "app");
+      get client() {
+        return path.join(this.root, "client");
       },
       get server() {
         return path.join(this.root, "server");
@@ -23,14 +23,14 @@ function getDefaultConfig(dir) {
         return path.join(this.root, "blueprints");
       },
       get components() {
-        return path.join(this.app, "components");
+        return path.join(this.client, "components");
       },
       get resources() {
         return path.join(this.server, "resources");
       },
       get services() {
         // TODO: Figure out conflict here with services being in both app and server.
-        return path.join(this.app, "services");
+        return path.join(this.client, "services");
       },
     },
   };
