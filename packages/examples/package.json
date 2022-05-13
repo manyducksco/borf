@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/examples",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Woof development examples",
   "private": true,
   "source": "src/index.js",
