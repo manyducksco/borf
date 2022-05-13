@@ -1,13 +1,13 @@
-# @woofjs/app
+# @woofjs/client
 
 Front end routing, components and state for dogs. 🐕
 
-`@woofjs/app` is a client-side JavaScript framework that shamelessly steals the best ideas from other frameworks; [React](https://reactjs.org/docs/introducing-jsx.html), [Angular](https://angular.io/guide/architecture-services), [Choo](https://github.com/choojs/choo#routing), and [Vue](https://vuejs.org/v2/guide/class-and-style.html) in particular.
+`@woofjs/client` is a client-side JavaScript framework that shamelessly steals the best ideas from other frameworks; [React](https://reactjs.org/docs/introducing-jsx.html), [Angular](https://angular.io/guide/architecture-services), [Choo](https://github.com/choojs/choo#routing), and [Vue](https://vuejs.org/v2/guide/class-and-style.html) in particular.
 
 ## Hello World
 
 ```js
-import { makeApp } from "@woofjs/app";
+import { makeApp } from "@woofjs/client";
 
 const app = makeApp();
 
