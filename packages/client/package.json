@@ -3,8 +3,8 @@
   "version": "0.9.2",
   "description": "Front end routing, components and state for dogs. 🐕",
   "source": "src/index.js",
-  "main": "dist/woof.app.c.js",
-  "module": "dist/woof.app.m.js",
+  "main": "dist/woof.client.c.js",
+  "module": "dist/woof.client.m.js",
   "types": "types.d.ts",
   "scripts": {
     "test": "jest",
@@ -25,12 +25,12 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "require": "./dist/woof.app.c.js",
-      "import": "./dist/woof.app.m.js"
+      "require": "./dist/woof.client.c.js",
+      "import": "./dist/woof.client.m.js"
     },
     "./testing": {
-      "require": "./dist/woof.app.testing.c.js",
-      "import": "./dist/woof.app.testing.m.js"
+      "require": "./dist/woof.client.testing.c.js",
+      "import": "./dist/woof.client.testing.m.js"
     }
   },
   "devDependencies": {

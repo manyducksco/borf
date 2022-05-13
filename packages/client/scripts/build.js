@@ -31,10 +31,10 @@ esbuild
     sourcemap: true,
     platform: "browser",
     format: "esm",
-    outfile: "dist/woof.app.m.js",
+    outfile: "dist/woof.client.m.js",
   })
   .then(() => {
-    console.log("Created app bundle (module)");
+    console.log("Created client bundle (module)");
   })
   .catch(() => process.exit(1));
 
@@ -49,10 +49,10 @@ esbuild
     sourcemap: true,
     platform: "browser",
     format: "cjs",
-    outfile: "dist/woof.app.c.js",
+    outfile: "dist/woof.client.c.js",
   })
   .then(() => {
-    console.log("Created app bundle (common JS)");
+    console.log("Created client bundle (common JS)");
   })
   .catch(() => process.exit(1));
 
@@ -67,7 +67,7 @@ esbuild
     sourcemap: true,
     platform: "browser",
     format: "esm",
-    outfile: "dist/woof.app.testing.m.js",
+    outfile: "dist/woof.client.testing.m.js",
   })
   .then(() => {
     console.log("Created testing bundle (module)");
@@ -85,7 +85,7 @@ esbuild
     sourcemap: true,
     platform: "browser",
     format: "cjs",
-    outfile: "dist/woof.app.testing.c.js",
+    outfile: "dist/woof.client.testing.c.js",
   })
   .then(() => {
     console.log("Created testing bundle (common JS)");
