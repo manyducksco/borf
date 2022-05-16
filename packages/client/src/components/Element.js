@@ -1,6 +1,6 @@
 import { isState } from "@woofjs/state";
-import { makeComponent } from "../../makeComponent.js";
-import { isArray, isObject, isString, isNumber, isFunction, isBinding } from "../../helpers/typeChecking.js";
+import { makeComponent } from "../makeComponent.js";
+import { isArray, isObject, isString, isNumber, isFunction, isBinding } from "../helpers/typeChecking.js";
 
 export const Element = makeComponent((_, self) => {
   const { children } = self;

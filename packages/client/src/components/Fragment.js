@@ -1,4 +1,4 @@
-import { makeComponent } from "../../makeComponent.js";
+import { makeComponent } from "../makeComponent.js";
 
 /**
  * Displays one or more children without a parent element.

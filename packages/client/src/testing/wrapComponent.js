@@ -1,6 +1,6 @@
 import { makeState } from "@woofjs/state";
 import { isComponent, isComponentInstance, isObject } from "../helpers/typeChecking.js";
-import { makeDolla } from "../dolla/makeDolla.js";
+import { makeDolla } from "../makeDolla.js";
 import { makeTestWrapper } from "./makeTestWrapper.js";
 
 export function wrapComponent(component, configure) {

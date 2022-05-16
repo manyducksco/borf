@@ -1,4 +1,4 @@
-import { makeComponent } from "../../makeComponent.js";
+import { makeComponent } from "../makeComponent.js";
 
 export const Text = makeComponent((_, self) => {
   const node = document.createTextNode("");

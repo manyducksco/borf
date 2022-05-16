@@ -2,6 +2,11 @@
 
 This is a monorepo for the Woof JS framework. It is managed using [lerna](https://lerna.js.org/).
 
+## Framework Goals
+
+- Be possible for an average programmer to read and understand
+- Support common use cases without relying on third party libraries (routing, state management, unit testing)
+
 ## Core Packages
 
 - [`@woofjs/client`](./packages/client/README.md): Create single page apps that run in the browser

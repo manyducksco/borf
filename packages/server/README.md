@@ -2,18 +2,58 @@
 
 JSON API companion server for dogs. 🐕
 
-Support your Woof app with a backend.
+Support your client-side app with an API or create a dynamic server-rendered app.
+
+## Basics and Routing
 
 ```js
-import { makeServer } from "@woofjs/server";
+import { makeApp } from "@woofjs/server";
+import ExampleService from "./services/example";
 
-const server = makeServer();
+const app = makeApp();
 
-// Options for serving a woof app.
-server.app("./app"); // String for a relative path to the app folder
-server.app(false); // Non-string falsy value disables static app server, while truthy value enables it with a default path of "./app"
+// By default, a server app will try to serve static files from `/public`. You can change this:
+app.static(false); // Don't serve static files at all.
+app.static("/static/path"); // Specify a custom path for static files.
 
-server.use((ctx) => {
+// Share logic and state between handlers with services.
+// Each service is created once per request.
+// Two API calls will use two different instances, but all middleware in the same API call will use one instance.
+app.service("example", ExampleService);
+
+// Create API routes with functions named after HTTP methods (`get`, `post`, `delete`, etc.)
+app.get("/some-route", (ctx) => {
+  // An object returned from a route becomes a JSON body automatically.
+  return {
+    message: "This is a JSON response.",
+  };
+});
+
+// Create server-rendered HTML pages with `.route` and a component to render.
+app.route("/other-route", ($, self) => {
+  // Services can be accessed just like in client-side components.
+  const { $message } = self.getService("example");
+
+  return (
+    <div>
+      <h1>Server Rendered Page</h1>
+      <p>This is an HTML page you visit in your browser.</p>
+      <p>Message: {$message}</p>
+    </div>
+  );
+});
+
+// Listen for HTTP requests on localhost at specified port number.
+app.listen(4000).then((info) => {
+  console.log(`connected on port ${info.port}`);
+});
+```
+
+## Middleware
+
+```js
+// Mount middleware to run for every request.
+app.use((ctx) => {
   const timer = ctx.getService("timing").createTimer(ctx.req.path);
 
   timer.start();
@@ -63,20 +103,8 @@ server.use((ctx) => {
   // If an error is thrown the server responds with 500 and a serialized error object. Server can be configured with options to exclude the stack trace or use a custom message for production builds.
 });
 
-// Mount components on routes to return HTML. Preload works for loading data before responding.
-server.route("/:id", ($, self) => {
-  // Gets services registered on this server.
-  self.getService("something");
-
-  self.loadRoute((show, done) => {
-    setTimeout(done, 100); // wait 100ms for no reason
-  });
-
-  return <div class="page">Content</div>;
-});
-
-// Express-style verb methods to handle routes.
-server.get(
+// Express-style verb methods to handle routes. Pictured with multiple middleware functions.
+app.get(
   "/some/url",
   ({ auth, redirect }) => {
     // Admin check. Presume `auth` is added by an auth middleware that runs before this.
@@ -107,11 +135,9 @@ server.get(
     };
   }
 );
-
-server.listen(4000).then((info) => {
-  console.log(`connected on port ${info.port}`);
-});
 ```
+
+## Router
 
 If you have many routes and you want to separate them into different files, use a Router. This has the same routing and component mounting options as the server.
 

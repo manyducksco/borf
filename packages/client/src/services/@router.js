@@ -2,7 +2,7 @@ import { makeState } from "@woofjs/state";
 import { makeService } from "../makeService.js";
 import { isString } from "../helpers/typeChecking.js";
 import { resolvePath } from "../helpers/resolvePath.js";
-import { makeDolla } from "../dolla/makeDolla.js";
+import { makeDolla } from "../makeDolla.js";
 
 /**
  * Top level navigation service.

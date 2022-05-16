@@ -1,9 +1,9 @@
 import { makeRouter } from "@woofjs/router";
 import { makeState } from "@woofjs/state";
-import { isFunction, isComponent } from "../../helpers/typeChecking.js";
-import { joinPath } from "../../helpers/joinPath.js";
-import { resolvePath } from "../../helpers/resolvePath.js";
-import { makeComponent } from "../../makeComponent.js";
+import { isFunction, isComponent } from "../helpers/typeChecking.js";
+import { joinPath } from "../helpers/joinPath.js";
+import { resolvePath } from "../helpers/resolvePath.js";
+import { makeComponent } from "../makeComponent.js";
 import { makeDolla } from "../makeDolla.js";
 
 /**
@@ -15,7 +15,7 @@ export const Routes = makeComponent(($, self) => {
 
   const node = document.createTextNode("");
 
-  const $route = self.map("@route");
+  const { $route } = self;
 
   // This component's routes are matched on the parent route's current `wildcard` value.
   const $wildcard = $route.map("wildcard");
@@ -49,7 +49,7 @@ export const Routes = makeComponent(($, self) => {
   // This should be a function of the same format `app.routes` takes
   const defineRoutes = self.get("defineRoutes");
 
-  function when(path, component, attrs = {}) {
+  function route(path, component, attrs = {}) {
     if (isFunction(component) && !isComponent(component)) {
       component = makeComponent(component);
     }
@@ -61,7 +61,10 @@ export const Routes = makeComponent(($, self) => {
     router.on(path, { redirect: to === "" ? "/" : to });
   }
 
-  defineRoutes(when, redirect);
+  defineRoutes({
+    route,
+    redirect,
+  });
 
   /*=========================*\
   ||     Lifecycle Hooks     ||
@@ -96,13 +99,20 @@ export const Routes = makeComponent(($, self) => {
 
     const matched = router.match(path);
 
+    self.debug.log("matching route", { path, matched });
+
     if (matched) {
       const routeChanged = matched.route !== $ownRoute.get("route") || mounted == null;
+      let href = $route.get("href");
+
+      if (matched.path.lastIndexOf(matched.wildcard) > -1) {
+        href = joinPath(href, matched.path.slice(0, matched.path.lastIndexOf(matched.wildcard)));
+      }
 
       $ownRoute.set((current) => {
         current.path = matched.path;
         current.route = matched.route;
-        current.href = joinPath($route.get("href"), matched.path.slice(0, matched.path.lastIndexOf(matched.wildcard)));
+        current.href = href;
         current.query = matched.query;
         current.params = matched.params;
         current.wildcard = matched.wildcard;

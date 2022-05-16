@@ -1,4 +1,4 @@
-import { makeComponent } from "../../makeComponent.js";
+import { makeComponent } from "../makeComponent.js";
 import { Watch } from "./Watch.js";
 
 export const If = makeComponent(($, self) => {

@@ -75,6 +75,9 @@ app.routes((when) => {
               <a href="/examples">Examples</a>
             </li>
             <li>
+              <a href="/router-test">Router Test</a>
+            </li>
+            <li>
               <a href="/nested/one">Nested: #1</a>
             </li>
             <li>
@@ -101,6 +104,23 @@ app.routes((when) => {
                 // <ComponentAttrsExample />
               </div>
             );
+          });
+
+          when("router-test/*", ($) => {
+            // Nested routers to test redirect issue
+            // Does not automatically match nested routes when coming in from a different page
+            // This happens when the redirect should kick in, but it doesn't.
+            return $.routes((when, redirect) => {
+              when("one", ($) => {
+                return <h1>One</h1>;
+              });
+
+              when("two", ($) => {
+                return <h1>Two</h1>;
+              });
+
+              redirect("*", "./one");
+            });
           });
 
           when("nested/*", ($) => {

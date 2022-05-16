@@ -7,7 +7,7 @@ import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.j
  * @param fn - Function that defines the component.
  */
 export function makeComponent(fn) {
-  function create({ getService, $route, dolla, attrs, children }) {
+  function Component({ getService, $route, dolla, attrs, children }) {
     let onBeforeConnect = [];
     let onConnected = [];
     let onBeforeDisconnect = [];
@@ -65,6 +65,7 @@ export function makeComponent(fn) {
       return merged;
     });
 
+    // Create self object to pass to component function.
     const self = {
       $route,
       $attrs,
@@ -111,17 +112,16 @@ export function makeComponent(fn) {
       },
     };
 
+    // Call component function which should return a renderable node or null.
     const node = fn(dolla, self);
 
-    if (node && !isComponentInstance(node) && !isDOM(node)) {
+    if (node !== null && !isComponentInstance(node) && !isDOM(node)) {
       let message = `Component must return an element or null. Got: ${node}`;
 
       throw new TypeError(message);
     }
 
-    return {
-      isComponentInstance: true,
-
+    const instance = {
       $attrs,
 
       get key() {
@@ -234,9 +234,19 @@ export function makeComponent(fn) {
         }
       },
     };
+
+    Object.defineProperty(instance, "isComponentInstance", {
+      value: true,
+      writable: false,
+    });
+
+    return instance;
   }
 
-  create.isComponent = true;
+  Object.defineProperty(Component, "isComponent", {
+    value: true,
+    writable: false,
+  });
 
-  return create;
+  return Component;
 }

@@ -1,6 +1,6 @@
 import { makeState } from "@woofjs/state";
 import { makeTestWrapper } from "./makeTestWrapper.js";
-import { makeDolla } from "../dolla/makeDolla.js";
+import { makeDolla } from "../makeDolla.js";
 import { checks } from "./checks.js";
 
 /**

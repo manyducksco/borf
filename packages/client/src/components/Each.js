@@ -1,4 +1,4 @@
-import { makeComponent } from "../../makeComponent.js";
+import { makeComponent } from "../makeComponent.js";
 
 /**
  * Displays a dynamic list based on an array stored in a `$value` attribute.

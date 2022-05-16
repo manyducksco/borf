@@ -1,6 +1,6 @@
 # @woofjs/state
 
-> These functions are also exported from `@woofjs/app`. This package is a standalone version.
+> These functions are also exported from `@woofjs/client` and `@woofjs/server`. Only use this package if you need a standalone version. Consider one of those two packages if you're making an app.
 
 ```
 $ npm i --dev @woofjs/state

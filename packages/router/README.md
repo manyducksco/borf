@@ -1,6 +1,6 @@
 # @woofjs/router
 
-Basic route matching for router-based libraries and apps.
+Basic route matching logic for libraries. Routing is baked into the core of `@woofjs/client` and `@woofjs/server`, so you don't need to install this if you're creating an app.
 
 ```js
 import { makeRouter } from "@woofjs/router";

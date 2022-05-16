@@ -1,6 +1,6 @@
-import { isComponentInstance, isComponent, isNumber, isObject, isString, isFunction } from "../helpers/typeChecking.js";
-import { flatMap } from "../helpers/flatMap.js";
-import { makeComponent } from "../makeComponent.js";
+import { isComponentInstance, isComponent, isNumber, isObject, isString, isFunction } from "./helpers/typeChecking.js";
+import { flatMap } from "./helpers/flatMap.js";
+import { makeComponent } from "./makeComponent.js";
 
 import { If } from "./components/If.js";
 import { Each } from "./components/Each.js";
@@ -161,9 +161,9 @@ export function makeDolla({ getService, $route }) {
   /**
    * Registers sub-routes and the components to render when those routes match.
    *
-   * @param defineRoutes - Function to define routes. Takes (when, redirect) functions as arguments.
+   * @param defineRoutes - Function to define routes. Takes a router object with methods to define `route`s and `redirect`s similar to the top level app.
    */
-  $.routes = function (defineRoutes) {
+  $.router = function (defineRoutes) {
     if ($route.get("wildcard") == null) {
       throw new Error(
         `$.routes() can be used only on a route that ends with a wildcard. Current route: ${$route.get("route")}`

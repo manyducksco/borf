@@ -1,5 +1,5 @@
-import { isComponentInstance, isComponent, isFunction } from "../../helpers/typeChecking.js";
-import { makeComponent } from "../../makeComponent.js";
+import { isComponentInstance, isComponent, isFunction } from "../helpers/typeChecking.js";
+import { makeComponent } from "../makeComponent.js";
 
 /**
  * Recreates its contents each time its value changes.

@@ -1,6 +1,6 @@
 import { createHashHistory, createBrowserHistory } from "history";
 import { makeRouter } from "@woofjs/router";
-import { makeDolla } from "./dolla/makeDolla.js";
+import { makeDolla } from "./makeDolla.js";
 import { makeDebug } from "./makeDebug.js";
 import { makeComponent } from "./makeComponent.js";
 import { makeService } from "./makeService.js";
@@ -41,44 +41,38 @@ export function makeApp(options = {}) {
 
   const methods = {
     /**
-     * Maps the current URL to components.
-     * When the current URL path matches a registered route, that route's component is connected.
+     * Adds a route to the list for matching when the URL changes.
+     *
+     * @param path - Path to match before calling handlers.
+     * @param component - Component to display when route matches.
+     * @param attributes - Attributes to forward to component when route is connected.
      */
-    routes(defineRoutes) {
-      /**
-       * Adds a route to the list for matching when the URL changes.
-       *
-       * @param path - Path to match before calling handlers.
-       * @param component - Component to display when route matches.
-       * @param attributes - Attributes to set on this component when route is connected
-       */
-      function when(path, component, attributes = {}) {
-        if (isFunction(component) && !isComponent(component)) {
-          component = makeComponent(component);
-        }
-
-        if (!isComponent(component)) {
-          throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
-        }
-
-        router.on(path, { component, attributes });
+    route(path, component, attributes = {}) {
+      if (isFunction(component) && !isComponent(component)) {
+        component = makeComponent(component);
       }
 
-      /**
-       * Adds a route that redirects to another path.
-       *
-       * @param path - Path to match.
-       * @param to - New location for redirect.
-       */
-      function redirect(path, to) {
-        if (isString(to)) {
-          router.on(path, { redirect: to });
-        } else {
-          throw new TypeError(`Expected a path. Got: ${to}`);
-        }
+      if (!isComponent(component)) {
+        throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
       }
 
-      defineRoutes(when, redirect);
+      router.on(path, { component, attributes });
+
+      return methods;
+    },
+
+    /**
+     * Adds a route that redirects to another path.
+     *
+     * @param path - Path to match.
+     * @param to - New location for redirect.
+     */
+    redirect(path, to) {
+      if (isString(to)) {
+        router.on(path, { redirect: to });
+      } else {
+        throw new TypeError(`Expected a path. Got: ${to}`);
+      }
 
       return methods;
     },
@@ -148,6 +142,7 @@ export function makeApp(options = {}) {
 
       outlet = element;
 
+      // Create registered services.
       for (const name in services) {
         const service = services[name];
 
