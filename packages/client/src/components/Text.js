@@ -5,7 +5,13 @@ export const Text = makeComponent((_, self) => {
 
   self.beforeConnect(() => {
     function setText(attrs) {
-      node.textContent = attrs.value || attrs.defaultValue || "";
+      if (attrs.value != null) {
+        node.textContent = String(attrs.value);
+      } else if (attrs.defaultValue != null) {
+        node.textContent = String(attrs.defaultValue);
+      } else {
+        node.textContent = "";
+      }
     }
 
     self.watchState(self.map(), setText, { immediate: true });
