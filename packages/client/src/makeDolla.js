@@ -1,3 +1,4 @@
+import { isState } from "@woofjs/state";
 import { isComponentInstance, isComponent, isNumber, isObject, isString, isFunction } from "./helpers/typeChecking.js";
 import { flatMap } from "./helpers/flatMap.js";
 import { makeComponent } from "./makeComponent.js";
@@ -44,7 +45,7 @@ export function makeDolla({ getService, $route }) {
           return child;
         }
 
-        if (isString(child) || isNumber(child)) {
+        if (isString(child) || isNumber(child) || isState(child)) {
           return $.text(child);
         }
 
@@ -94,22 +95,6 @@ export function makeDolla({ getService, $route }) {
         value: $value,
         then,
         otherwise,
-      },
-    });
-  };
-
-  /**
-   * If $value has a falsy value, show `then`.
-   *
-   * `then` can be a function that returns an element, or just an element.
-   */
-  $.unless = function ($value, then) {
-    return If({
-      ...componentDefaults,
-      attrs: {
-        value: $value,
-        then: null,
-        otherwise: then,
       },
     });
   };
