@@ -23,7 +23,7 @@ const ToggleExample = makeComponent(($, self) => {
           $active.set((current) => !current);
         }}
       >
-        {$.text($status)}
+        {$status}
         &nbsp;(click to toggle)
       </div>
     </div>

@@ -20,7 +20,7 @@ const ConditionalExample = makeComponent(($, self) => {
             $show.set((current) => !current);
           }}
         >
-          {$.text($label)}
+          {$label}
         </button>
         {$.if($show, <span>Hello there!</span>)}
       </div>

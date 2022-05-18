@@ -24,15 +24,15 @@ export const Each = makeComponent(($, self) => {
       return;
     }
 
-    const newInstances = newItems.map((item, index) =>
+    const newInstances = newItems.map((value, index) =>
       initComponent({
         getService: self.getService,
         dolla: $,
         $route: self.$route,
         debug: self.getService("@debug").makeChannel(`each item ${index}`),
         attrs: {
-          item,
-          index,
+          "@value": value,
+          "@index": index,
         },
       })
     );

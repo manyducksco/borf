@@ -43,11 +43,13 @@ const FormExample = makeComponent(($, self) => {
         <input type="number" value={$.bind($age)} placeholder="Age" />
         <button disabled={$hasErrors}>Submit</button>
         {$.if($hasErrors, () =>
-          $.each(
-            $errors,
-            (message) => message,
-            (message) => <div style="color:red">{message}</div>
-          )
+          $.each($errors, ($, self) => {
+            const $message = self.map("@value");
+
+            self.key = $message;
+
+            return <div style="color:red">{$message}</div>;
+          })
         )}
       </form>
     </div>

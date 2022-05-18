@@ -68,19 +68,21 @@ const DynamicListExample = makeComponent(($, self) => {
           <button onclick={reset}>Reset List</button>
         </div>
 
-        {$.each(
-          $shoppingList,
-          (item) => item, // use items as keys as they are already unique strings
-          (item) => (
+        {$.each($shoppingList, ($, self) => {
+          const $item = self.map("@value");
+
+          self.key = $item;
+
+          return (
             <li
               onclick={() => {
-                alert(item);
+                alert($item.get());
               }}
             >
-              {item}
+              {$item}
             </li>
-          )
-        )}
+          );
+        })}
       </div>
     </div>
   );

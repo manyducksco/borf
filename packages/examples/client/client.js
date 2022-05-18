@@ -30,118 +30,115 @@ const app = makeApp({
 app.service("counter", CounterService);
 app.service("mouse", MouseService);
 
-// TODO: Fix error evaluating .isConnected on element when null is returned from a component.
-app.routes((when) => {
-  when("*", ($, self) => {
-    self.debug.name = "🐕";
-    self.debug.log("hi");
+app.route("*", ($, self) => {
+  self.debug.name = "🐕";
+  self.debug.log("hi");
 
-    logLifecycle(self);
+  logLifecycle(self);
 
-    self.loadRoute((show, done) => {
-      // When the done() function is called, this content is removed and the real component is connected.
+  self.loadRoute((show, done) => {
+    // When the done() function is called, this content is removed and the real component is connected.
 
-      return show(
-        <div>
-          <h1>WELCOME</h1>
-          <p>This page has examples of things woof can do.</p>
-          <p>
-            Click the button below to demonstrate calling <code>done()</code> in a component's preload hook. When it's
-            triggered by an event, you can create disclaimer pages like this. Generally you would use this to show temp
-            content while making API calls.
-          </p>
-          <button onclick={() => done()} title="demonstrate calling done() in a component's preload hook">
-            Continue
-          </button>
-        </div>
-      );
-    });
-
-    self.connected(() => {
-      const page = self.getService("@page");
-      const mouse = self.getService("mouse");
-
-      // Display current mouse coordinates as tab title
-      self.watchState(mouse.$position, (pos) => {
-        page.$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
-      });
-    });
-
-    return (
-      <div class="demo">
-        <nav class="nav">
-          <ul>
-            <li>
-              <a href="/examples">Examples</a>
-            </li>
-            <li>
-              <a href="/router-test">Router Test</a>
-            </li>
-            <li>
-              <a href="/nested/one">Nested: #1</a>
-            </li>
-            <li>
-              <a href="/nested/two">Nested: #2</a>
-            </li>
-            <li>
-              <a href="/nested/invalid">Nested: Redirect *</a>
-            </li>
-          </ul>
-        </nav>
-
-        {$.routes((when, redirect) => {
-          when("examples", ($) => {
-            return (
-              <div>
-                <ToggleExample />
-                // <CounterExample />
-                // <ConditionalExample />
-                // <DynamicListExample />
-                // <TwoWayBindExample />
-                // <FormExample />
-                // <MouseFollowerExample />
-                // <HTTPRequestExample />
-                // <ComponentAttrsExample />
-              </div>
-            );
-          });
-
-          when("router-test/*", ($) => {
-            // Nested routers to test redirect issue
-            // Does not automatically match nested routes when coming in from a different page
-            // This happens when the redirect should kick in, but it doesn't.
-            return $.routes((when, redirect) => {
-              when("one", ($) => {
-                return <h1>One</h1>;
-              });
-
-              when("two", ($) => {
-                return <h1>Two</h1>;
-              });
-
-              redirect("*", "./one");
-            });
-          });
-
-          when("nested/*", ($) => {
-            return (
-              <div>
-                <h1>Nested Routes!</h1>
-
-                {$.routes((when, redirect) => {
-                  when("one", ($) => <h1>NESTED #1</h1>);
-                  when("two", ($) => <h1>NESTED #2</h1>);
-                  redirect("*", "/nested/one");
-                })}
-              </div>
-            );
-          });
-
-          redirect("*", "./examples");
-        })}
+    return show(
+      <div>
+        <h1>WELCOME</h1>
+        <p>This page has examples of things woof can do.</p>
+        <p>
+          Click the button below to demonstrate calling <code>done()</code> in a component's preload hook. When it's
+          triggered by an event, you can create disclaimer pages like this. Generally you would use this to show temp
+          content while making API calls.
+        </p>
+        <button onclick={() => done()} title="demonstrate calling done() in a component's preload hook">
+          Continue
+        </button>
       </div>
     );
   });
+
+  self.connected(() => {
+    const page = self.getService("@page");
+    const mouse = self.getService("mouse");
+
+    // Display current mouse coordinates as tab title
+    self.watchState(mouse.$position, (pos) => {
+      page.$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
+    });
+  });
+
+  return (
+    <div class="demo">
+      <nav class="nav">
+        <ul>
+          <li>
+            <a href="/examples">Examples</a>
+          </li>
+          <li>
+            <a href="/router-test">Router Test</a>
+          </li>
+          <li>
+            <a href="/nested/one">Nested: #1</a>
+          </li>
+          <li>
+            <a href="/nested/two">Nested: #2</a>
+          </li>
+          <li>
+            <a href="/nested/invalid">Nested: Redirect *</a>
+          </li>
+        </ul>
+      </nav>
+
+      {$.router((self) => {
+        self.route("examples", ($) => {
+          return (
+            <div>
+              <ToggleExample />
+              <CounterExample />
+              <ConditionalExample />
+              <DynamicListExample />
+              <TwoWayBindExample />
+              <FormExample />
+              <MouseFollowerExample />
+              <HTTPRequestExample />
+              <ComponentAttrsExample />
+            </div>
+          );
+        });
+
+        self.route("router-test/*", ($) => {
+          // Nested routers to test redirect issue
+          // Does not automatically match nested routes when coming in from a different page
+          // This happens when the redirect should kick in, but it doesn't.
+          return $.router(({ route, redirect }) => {
+            route("one", ($) => {
+              return <h1>One</h1>;
+            });
+
+            route("two", ($) => {
+              return <h1>Two</h1>;
+            });
+
+            redirect("*", "./one");
+          });
+        });
+
+        self.route("nested/*", ($) => {
+          return (
+            <div>
+              <h1>Nested Routes!</h1>
+
+              {$.router((self) => {
+                self.route("one", ($) => <h1>NESTED #1</h1>);
+                self.route("two", ($) => <h1>NESTED #2</h1>);
+                self.redirect("*", "/nested/one");
+              })}
+            </div>
+          );
+        });
+
+        self.redirect("*", "./examples");
+      })}
+    </div>
+  );
 });
 
 app.connect("#app");

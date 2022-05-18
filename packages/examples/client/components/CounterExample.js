@@ -16,7 +16,7 @@ const CounterExample = makeComponent(($, self) => {
     <div class="example">
       <h3>Shared state with services</h3>
       <div>
-        <p>{$.text($label)}</p>
+        <p>{$label}</p>
         <button onclick={counter.reset}>Reset</button>
         <CounterViewLabel />
       </div>

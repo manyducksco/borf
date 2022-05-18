@@ -25,9 +25,9 @@ const SubComponent = makeComponent(($, self) => {
 
   return (
     <div>
-      <p>Passed as a state: {$.text($state)}</p>
-      <p>Got from an unwrapped state: {$.text(unwrapped)} (doesn't update)</p>
-      <p>Mapped from an unwrapped state: {$.text($unwrapped)}</p>
+      <p>Passed as a state: {$state}</p>
+      <p>Got from an unwrapped state: {unwrapped} (doesn't update)</p>
+      <p>Mapped from an unwrapped state: {$unwrapped}</p>
       <button
         onclick={() => {
           $state.set("test"); // sets the value on the state that still lives in the parent component, referenced here through $attrs.

@@ -10,6 +10,7 @@ const MouseFollowerExample = makeComponent(($, self) => {
   const bestColor = "#ff0088";
 
   const $isEnabled = makeState(false);
+  const $isDisabled = $isEnabled.map((yes) => !yes);
   const $backgroundColor = makeState(bestColor);
   const $transform = $position.map((pos) => `translate(${pos.x}px, ${pos.y}px)`);
   const $isNotBestColor = $backgroundColor.map((hex) => hex.toLowerCase() !== bestColor);
@@ -42,19 +43,19 @@ const MouseFollowerExample = makeComponent(($, self) => {
           />
         )}
 
-        <button onclick={randomizeColor} disabled={$isEnabled.map((yes) => !yes)}>
+        <button onclick={randomizeColor} disabled={$isDisabled}>
           Change Follower Color
         </button>
 
         {$.if(
           $isNotBestColor,
-          <button onclick={resetColor} disabled={$isEnabled.map((yes) => !yes)}>
+          <button onclick={resetColor} disabled={$isDisabled}>
             Reset to Best Color
           </button>
         )}
 
         <button onclick={() => $isEnabled.set((yes) => !yes)}>
-          {$.text($isEnabled.map((yes) => (yes ? "Turn Off Follower" : "Turn On Follower")))}
+          {$isEnabled.map((yes) => (yes ? "Turn Off Follower" : "Turn On Follower"))}
         </button>
       </div>
     </div>
