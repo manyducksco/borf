@@ -4,7 +4,7 @@ import { makeMockFetch } from "./makeMockFetch.js";
 
 /**
  * @example
- * import { makeMockHTTP, wrapComponent } from "@woofjs/app/testing";
+ * import { makeMockHTTP, wrapComponent } from "@woofjs/client/testing";
  *
  * // Create a mock HTTP instance
  * const http = makeMockHTTP((self) => {
