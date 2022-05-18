@@ -2,7 +2,7 @@
 
 Front end routing, components and state for dogs. 🐕
 
-`@woofjs/client` is a client-side JavaScript framework that shamelessly steals the best ideas from other frameworks; [React](https://reactjs.org/docs/introducing-jsx.html), [Angular](https://angular.io/guide/architecture-services), [Choo](https://github.com/choojs/choo#routing), and [Vue](https://vuejs.org/v2/guide/class-and-style.html) in particular.
+`@woofjs/client` is a client-side JavaScript framework that borrows the best ideas from other frameworks; [React](https://reactjs.org/docs/introducing-jsx.html), [Angular](https://angular.io/guide/architecture-services) and [Choo](https://github.com/choojs/choo#routing) in particular. As we go through Woof's concepts in this readme, I'll point out some places you may have seen these ideas before.
 
 ## Hello World
 
@@ -11,18 +11,24 @@ import { makeApp } from "@woofjs/client";
 
 const app = makeApp();
 
+// Render <h1>Hello World</h1> regardless of the URL
 app.route("*", ($) => {
-  return $("h1", "Welcome to the app!");
+  return $("h1", "Hello World");
 });
 
+// Render the matched route in an element with an id of `#app`
 app.connect("#app");
 ```
 
-The code above renders an `<h1>` with the words "Hello World" into an element with an ID of `#app`, regardless of the current URL.
-
 ## Routing
 
-Woof determines what content to show using routes. Routes take a string to match against the current URL and a component to display when that route matches.
+At the top level, woof determines what component to display using routes. Routes "match" when the pathname of the current URL fits its pattern. When a route matches, that route's component is displayed.
+
+You'll notice that even a simple Hello World requires us to set up a route. Routing is central to what the web is. By following this convention several things users expect from a web app will just work out of the box; back and forward buttons, sharable URLs, bookmarks, etc.
+
+Routing in Woof is heavily inspired by [choo.js](https://www.choo.io/docs/routing) and [@reach/router](https://reach.tech/router/).
+
+### Route Matching
 
 Route strings are a set of fragments separated by `/`. These fragments are of three types.
 
@@ -65,71 +71,15 @@ app.route("users/*", ($) => {
 });
 ```
 
-## Reactivity
+## Reactivity with states
 
 > TODO
 
 See [@woofjs/state](https://github.com/woofjs/state). Pass a state instead of a static value for any attribute and the DOM will update automatically as the state changes.
 
-## Dolla
+Woof's biggest difference from most modern frameworks is that it doesn't use a virtual DOM. Instead, Woof apps are data-driven using objects called States, which can be thought of as containers that hold data that needs to change. These States are woven into your app's components, triggering pinpoint changes to the attributes to which they are bound when their values change. This means
 
-```js
-app.route("users/:id", ($, self) => {
-  return $("main", [
-    $("p", "Here's some text in a paragraph."),
-    $("p", { style: { color: "red" } }, "This paragraph is red."),
-  ]);
-});
-```
-
-## Components
-
-```js
-const Example = makeComponent(($, self) => {
-  const $title = self.$attrs.map("title");
-
-  return $("div", [
-    $("h1", $.text($title, "Default Title"),
-    $("p", "This is a reusable component now.")
-  ]);
-});
-
-// Mount directly on a route
-app.route("example", Example);
-
-// Use in the body of another component
-app.route("other", ($) => {
-  return $("div", [
-    // Pass attributes in an object just like regular HTML elements
-    $(Example, { title: "In Another Component" })
-  ]);
-});
-```
-
-### Component's `self` Object
-
-```js
-const Example = makeComponent(($, self) => {
-  self.beforeConnect(() => {
-    // Runs when the component is about to be (but is not yet) added to the page.
-  });
-
-  self.connected(() => {
-    // Runs after the component is added to the page.
-  });
-
-  self.beforeDisconnect(() => {
-    // Runs when the component is about to be (but is not yet) removed from the page.
-  });
-
-  self.disconnected(() => {
-    // Runs after the component is removed from the page.
-  });
-
-  // Access services defined at the app level.
-  const service = self.getService("name");
-});
-```
+States are very similar concept to [signals in Solid.js](https://www.solidjs.com/).
 
 ## Services
 
@@ -182,9 +132,54 @@ app.route("/counter/controls", ($, self) => {
 });
 ```
 
-## Testing
+## Components
 
-> TO DO
+```js
+const Example = makeComponent(($, self) => {
+  const $title = self.$attrs.map("title");
+
+  return $("div", [
+    $("h1", $.text($title, "Default Title"),
+    $("p", "This is a reusable component now.")
+  ]);
+});
+
+// Mount directly on a route
+app.route("example", Example);
+
+// Use in the body of another component
+app.route("other", ($) => {
+  return $("div", [
+    // Pass attributes in an object just like regular HTML elements
+    $(Example, { title: "In Another Component" })
+  ]);
+});
+```
+
+### Component's `self` Object
+
+```js
+const Example = makeComponent(($, self) => {
+  self.beforeConnect(() => {
+    // Runs when the component is about to be (but is not yet) added to the page.
+  });
+
+  self.connected(() => {
+    // Runs after the component is added to the page.
+  });
+
+  self.beforeDisconnect(() => {
+    // Runs when the component is about to be (but is not yet) removed from the page.
+  });
+
+  self.disconnected(() => {
+    // Runs after the component is removed from the page.
+  });
+
+  // Access services defined at the app level.
+  const service = self.getService("name");
+});
+```
 
 ## Templating
 
@@ -281,7 +276,9 @@ const Example = makeComponent(($, self) => {
 
 ### Helpers
 
-#### `$.if($state[, thenFn][, elseFn])`
+#### $.if
+
+> `$.if($state[, thenFn][, elseFn])`
 
 Renders the result of `thenFn` when the state holds a truthy value, and the result of `elseFn` otherwise. Pass null or undefined for either if you don't want to display anything for that condition.
 
@@ -301,7 +298,9 @@ const Example = makeComponent(($, self) => {
 });
 ```
 
-#### `$.each($state, component)`
+#### $.each
+
+> `$.each($state, component)`
 
 Renders a component once for each item in an array. If the array is stored inside a $state the list will update whenever that $state is updated.
 
@@ -312,7 +311,7 @@ const Example = makeComponent(($, self) => {
   return $(
     "ul",
 
-    // Render one <li> for each item in $list. Updates when $list changes.
+    // Render once for each item in $list. Updates when $list changes.
     $.each($list, ($, self) => {
       // Components in an each have unique keys. In this case we're just using the position in the list.
       self.key = self.map("@index");
@@ -324,15 +323,60 @@ const Example = makeComponent(($, self) => {
 });
 ```
 
-#### `$.watch($state, renderFn)`
+#### $.watch
+
+> `$.watch($state, renderFn)`
 
 > TODO
 
-#### `$.text($state[, defaultText])`
+#### $.text
 
-> TODO
+> `$.text($state[, defaultText])`
 
-#### `$.router(fn)`
+Displays the value of a state as text. Takes an optional default value to show if the state's value is `null` or `undefined`.
+
+```js
+const Example = makeComponent(($, self) => {
+  const $count = makeState(null);
+
+  function increment() {
+    $count.set((current) => (current == null ? 1 : current + 1));
+  }
+
+  return $("div", [
+    $("h1", $.text($count, "No Count")),
+    $(
+      "button",
+      {
+        onclick: increment,
+      },
+      "Increment"
+    ),
+  ]);
+});
+```
+
+The above component initially renders:
+
+```html
+<div>
+  <h1>No Count</h1>
+  <button>Increment</button>
+</div>
+```
+
+When the Increment button is clicked once the content is updated:
+
+```html
+<div>
+  <h1>1</h1>
+  <button>Increment</button>
+</div>
+```
+
+#### $.router
+
+> `$.router(routesFn)`
 
 Defines a set of nested routes within a component. Nested routes' paths are appended to the path of the parent component.
 
@@ -340,6 +384,7 @@ Defines a set of nested routes within a component. Nested routes' paths are appe
 const Example = makeComponent(($, self) => {
   return $(
     "div",
+
     $.router((self) => {
       self.route("main", ($, self) => {
         return $("h1", "This is the main route.");
@@ -368,16 +413,24 @@ app.route("parent/*", Example);
 In the example above, `/parent/main` will display:
 
 ```html
-<h1>This is the main route.</h1>
+<div>
+  <h1>This is the main route.</h1>
+</div>
 ```
 
 and `/parent/secondary` will display:
 
 ```html
-<h1>This is the secondary route.</h1>
+<div>
+  <h1>This is the secondary route.</h1>
+</div>
 ```
 
 If the user visits `/parent` or any other path under `/parent`, the redirect will kick in and redirect to `/parent/main`.
+
+## Testing
+
+> TO DO
 
 ---
 
