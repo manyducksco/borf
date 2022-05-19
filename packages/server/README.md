@@ -172,8 +172,8 @@ Then import this into the main server file and `.mount` it.
 ```js
 import routes from "./router.js";
 
-server.mount(routes);
-server.mount("/sub", routes); // To mount routes under a sub path.
+app.mount(routes);
+app.mount("/sub", routes); // To mount routes under a sub path.
 ```
 
 ---

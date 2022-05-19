@@ -7,6 +7,7 @@ export function makeRouter() {
     },
 
     route(path, component) {},
+
     mount(...args) {}, // mount(path, router) or mount(router)
 
     get(path, ...handlers) {},
@@ -14,6 +15,8 @@ export function makeRouter() {
     put(path, ...handlers) {},
     patch(path, ...handlers) {},
     delete(path, ...handlers) {},
+
+    _match(path) {},
   };
 
   return router;
