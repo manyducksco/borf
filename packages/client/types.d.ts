@@ -65,20 +65,9 @@ declare module "@woofjs/client" {
      */
     service(name: string, service: ServiceLike, options?: any): App;
 
-    /**
-     * Binds the URL to a set of components so the route determines which component you see.
-     * Chooses the component with a matching path and displays it.
-     *
-     * @example
-     * app.routes((when, redirect) => {
-     *   when("/login", LoginComponent); // When the path is '/login', show LoginComponent
-     *   when("/home", HomeComponent); // When the path is '/home', show HomeComponent
-     *   redirect("*", "/home"); // When the path is anything else, go to '/home'
-     * });
-     *
-     * @param defineRoutes - Function that defines the top level routes of your app.
-     */
-    routes(defineRoutes: DefineRoutesFn): App;
+    route(path: string, component: Component): App;
+
+    redirect(path: string, to: string): App;
 
     /**
      * Runs a function after services are created but before routes are connected.
