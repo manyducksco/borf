@@ -19,9 +19,9 @@ export default makeComponent(($, self) => {
 const SubComponent = makeComponent(($, self) => {
   self.debug.name = "SubComponent";
 
-  const $state = self.$attrs.get("$state"); // get state passed as state
-  const unwrapped = self.$attrs.get("unwrapped"); // get unwrapped value once
-  const $unwrapped = self.$attrs.map("unwrapped"); // map unwrapped value to new state
+  const $state = self.get("$state"); // get state passed as state
+  const unwrapped = self.get("unwrapped"); // get unwrapped value once
+  const $unwrapped = self.map("unwrapped"); // map unwrapped value to new state
 
   return (
     <div>
@@ -30,7 +30,7 @@ const SubComponent = makeComponent(($, self) => {
       <p>Mapped from an unwrapped state: {$unwrapped}</p>
       <button
         onclick={() => {
-          $state.set("test"); // sets the value on the state that still lives in the parent component, referenced here through $attrs.
+          $state.set("test"); // sets the value on the state that still lives in the parent component, referenced here through attrs.
         }}
       >
         Reset State

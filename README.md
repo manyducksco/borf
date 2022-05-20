@@ -5,7 +5,7 @@ This is a monorepo for the Woof JS framework. It is managed using [lerna](https:
 ## Framework Goals
 
 - Be possible for an average programmer to read and understand
-- Support common needs without relying on third party libraries (routing, state management, unit testing)
+- Support common needs without relying on third party libraries (routing, state management, unit testing, logging)
 
 ## Core Packages
 

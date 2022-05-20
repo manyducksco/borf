@@ -28,7 +28,7 @@ export const Each = makeComponent(($, self) => {
       initComponent({
         getService: self.getService,
         dolla: $,
-        $route: self.$route,
+        $route: self.map("@route"),
         debug: self.getService("@debug").makeChannel(`each item ${index}`),
         attrs: {
           "@value": value,

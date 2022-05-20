@@ -68,8 +68,12 @@ export function makeComponent(fn) {
 
     // Create self object to pass to component function.
     const self = {
-      $route,
-      $attrs,
+      get(...selectors) {
+        return $attrs.get(...selectors);
+      },
+      map(...selectors) {
+        return $attrs.map(...selectors);
+      },
       getService,
       children,
       debug: getService("@debug").makeChannel("~"),
@@ -82,12 +86,6 @@ export function makeComponent(fn) {
       },
       set key(value) {
         key = value;
-      },
-      get(...selectors) {
-        return $attrs.get(...selectors);
-      },
-      map(...selectors) {
-        return $attrs.map(...selectors);
       },
       loadRoute(func) {
         routePreload = func;

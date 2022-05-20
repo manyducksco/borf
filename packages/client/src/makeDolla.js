@@ -7,7 +7,7 @@ import { If } from "./components/If.js";
 import { Each } from "./components/Each.js";
 import { Text } from "./components/Text.js";
 import { Watch } from "./components/Watch.js";
-import { Routes } from "./components/Routes.js";
+import { Router } from "./components/Router.js";
 import { Element } from "./components/Element.js";
 import { Fragment } from "./components/Fragment.js";
 
@@ -151,11 +151,11 @@ export function makeDolla({ getService, $route }) {
   $.router = function (defineRoutes) {
     if ($route.get("wildcard") == null) {
       throw new Error(
-        `$.routes() can be used only on a route that ends with a wildcard. Current route: ${$route.get("route")}`
+        `$.router() can be used only on a route that ends with a wildcard. Current route: ${$route.get("route")}`
       );
     }
 
-    return Routes({
+    return Router({
       ...componentDefaults,
       attrs: {
         defineRoutes,

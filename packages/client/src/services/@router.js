@@ -13,12 +13,11 @@ export default makeService((self) => {
   const { history } = self.options;
 
   const $route = makeState({
-    path: "",
-    href: "",
-    query: {},
-    params: {},
-    route: "",
-    wildcard: null,
+    route: "", // The string representation of the route that was matched (including ':params' and '*')
+    path: "", // The actual path that was matched against the route. What appears in the URL bar.
+    params: {}, // Matched :params extracted from the matched path.
+    query: {}, // Query params extracted from the matched path.
+    wildcard: null, // The matched value for the wildcard portion of the route.
   });
 
   // Magic state that syncs with with the browser's query params

@@ -38,7 +38,7 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 
 ```js
 app.route("users/:id", ($, self) => {
-  const id = self.$route.get("params.id");
+  const id = self.get("@route.params.id");
 
   return $("p", ["User ID is ", id]);
 });
@@ -141,7 +141,7 @@ app.route("/counter/controls", ($, self) => {
 
 ```js
 const Example = makeComponent(($, self) => {
-  const $title = self.$attrs.map("title");
+  const $title = self.map("title");
 
   return $("div", [
     $("h1", $.text($title, "Default Title"),

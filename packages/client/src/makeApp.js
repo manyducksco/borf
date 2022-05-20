@@ -231,9 +231,8 @@ export function makeApp(options = {}) {
       // Top level route details are stored on @router where they can be read by apps and services.
       // Nested route info is found in `self.$route` in components.
       $route.set((current) => {
-        current.path = matched.path;
         current.route = matched.route;
-        current.href = matched.path.slice(0, matched.path.lastIndexOf(matched.wildcard));
+        current.path = matched.path;
         current.params = matched.params;
         current.query = matched.query;
         current.wildcard = matched.wildcard;

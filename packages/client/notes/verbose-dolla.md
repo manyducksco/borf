@@ -5,8 +5,8 @@ Thinking of making $ helpers more verbose so they're easier to pick apart from J
 ```js
 // Match Array.forEach from standard JS
 $.forEach($state, ($, self) => {
-  const $index = self.$attrs.map("index");
-  const $value = self.$attrs.map("value"); // changing from 'item' to 'value' (all helpers use 'value')
+  const $index = self.map("index");
+  const $value = self.map("value"); // changing from 'item' to 'value' (all helpers use 'value')
 
   return <div>Component</div>;
 });
@@ -35,14 +35,14 @@ $.asText($state);
 
 // Like self.watchState but with a component
 $.watchState($state, ($, self) => {
-  const $value = self.$attrs.map("value");
+  const $value = self.map("value");
 
   return <h1>{$.asText($value)}</h1>;
 });
 
 // That would be almost the same as just passing a value to a component though:
 const Component = makeComponent(($, self) => {
-  const $value = self.$attrs.map("value");
+  const $value = self.map("value");
 
   return <h1>{$.asText($value)}</h1>;
 });

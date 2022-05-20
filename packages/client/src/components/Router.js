@@ -10,24 +10,19 @@ import { makeDolla } from "../makeDolla.js";
  * Displays the component that matches the current URL.
  * Routes are relative to the route this component is mounted under.
  */
-export const Routes = makeComponent(($, self) => {
-  self.debug.name = "woof:$:routes";
+export const Router = makeComponent((_, self) => {
+  self.debug.name = "woof:$:router";
 
   const node = document.createTextNode("");
 
-  const { $route } = self;
-
-  // This component's routes are matched on the parent route's current `wildcard` value.
-  const $wildcard = $route.map("wildcard");
-
   // Routes tracks the route object for its own segment.
   const $ownRoute = makeState({
-    route: "",
-    path: "",
-    href: "",
-    params: {},
-    query: {},
-    wildcard: null,
+    route: null, // The string representation of the route that was matched (including ':params' and '*')
+    path: null, // The actual path that was matched against the route. What appears in the URL bar.
+    params: {}, // Matched :params extracted from the matched path.
+    query: {}, // Query params extracted from the matched path.
+    wildcard: null, // The matched value for the wildcard portion of the route.
+    fullPath: null, // Full path joined with parent
   });
 
   // Route matching logic is imported from @woofjs/router
@@ -70,9 +65,10 @@ export const Routes = makeComponent(($, self) => {
   ||     Lifecycle Hooks     ||
   \*=========================*/
 
-  // This is where the magic happens
+  // This is where the magic happens.
+  // Routes are matched on the 'wildcard' of the route this component is mounted under.
   self.watchState(
-    $wildcard,
+    self.map("@route.wildcard"),
     (current) => {
       if (current != null) {
         matchRoute(current);
@@ -93,7 +89,6 @@ export const Routes = makeComponent(($, self) => {
   \*=========================*/
 
   async function matchRoute(path) {
-    console.log(node.parentNode);
     if (!node.parentNode) return;
 
     const matched = router.match(path);
@@ -102,23 +97,30 @@ export const Routes = makeComponent(($, self) => {
 
     if (matched) {
       const routeChanged = matched.route !== $ownRoute.get("route") || mounted == null;
-      let href = $route.get("href");
+      const wildcard = self.get("@route.wildcard");
+      const path = self.get("@route.path");
 
-      if (matched.path.lastIndexOf(matched.wildcard) > -1) {
-        href = joinPath(href, matched.path.slice(0, matched.path.lastIndexOf(matched.wildcard)));
+      let fullPath;
+
+      if (wildcard != null) {
+        fullPath = joinPath(path.slice(0, path.lastIndexOf(wildcard)), matched.path);
+      } else {
+        fullPath = joinPath(path, matched.path);
       }
+
+      console.log({ fullPath });
 
       $ownRoute.set((current) => {
         current.path = matched.path;
         current.route = matched.route;
-        current.href = href;
         current.query = matched.query;
         current.params = matched.params;
         current.wildcard = matched.wildcard;
+        current.fullPath = fullPath;
       });
 
       if (matched.props.redirect) {
-        let resolved = resolvePath($route.get("href"), matched.props.redirect);
+        let resolved = resolvePath(self.get("@route.fullPath"), matched.props.redirect);
 
         if (resolved[0] !== "/") {
           resolved = "/" + resolved;
@@ -146,10 +148,11 @@ export const Routes = makeComponent(($, self) => {
         mount(created);
 
         self.debug.log(
-          `Mounted nested route '${$ownRoute.get("href")}'${
+          `Mounted nested route '${$ownRoute.get("fullPath")}'${
             created.hasRoutePreload ? ` (loaded in ${Date.now() - start}ms)` : ""
           }`
         );
+        self.debug.log($ownRoute.get());
       }
     } else {
       if (mounted) {
@@ -160,10 +163,10 @@ export const Routes = makeComponent(($, self) => {
       $ownRoute.set((current) => {
         current.path = null;
         current.route = null;
-        current.href = $route.get("href");
         current.query = {};
         current.params = {};
         current.wildcard = null;
+        current.fullPath = self.get("@route.fullPath") || null;
       });
 
       self.debug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);

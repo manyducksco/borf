@@ -7,22 +7,17 @@ import { makeRouter } from "@woofjs/router";
 
 const router = makeRouter();
 
-router.on("api/users/:id/*", { data: "anything" });
+// Register routes
+const off = router.on("api/users/:id/*", { data: "anything" });
 
-const nested = makeRouter();
-nested.on("route", { id: 2 });
-
-// Mount routers on routers to automatically match wildcards against that router.
-router.on("api/users/:id/*", nested);
+// Unregister a route
+off():
 
 // Routes are ordered by specificity, so this route will be matched before the one above.
-const off = router.on("api/users/new/*", { number: 2 });
+// 'new' is more specific than a generic `:id` field. Order the routes were registered doesn't matter.
+router.on("api/users/new/*", { number: 2 });
 
-off(); // router.on returns a function you can call to unregister the route.
-
-const route = router.match("/api/users/362/edit?admin=true");
-
-const route = router.match("/api/users/362/edit?admin=true", {
+const matched = router.match("/api/users/362/edit?admin=true", {
   // When a route matches, willMatch decides to return it or to keep looking.
   willMatch(route) {
     return route.props.method === "get"

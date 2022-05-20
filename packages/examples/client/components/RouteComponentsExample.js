@@ -1,12 +1,12 @@
 const Outlet = makeComponent(($, self) => {
-  const { $attrs, debug, children } = self;
+  const { debug, children } = self;
 
   debug.name = "woof:component:Outlet";
   // TODO: Accept states for attrs not starting with $ - will be watched by the component and values passed on change
   //       States on attrs that do start with $ will be passed as a state.
   //       This way any attribute on components automatically supports states without the component needing to know about it.
 
-  let outlet = $.outlet($attrs.get("component"));
+  let outlet = $.outlet(self.get("component"));
 
   for (const child of children) {
     debug.log("child", child);
@@ -16,13 +16,13 @@ const Outlet = makeComponent(($, self) => {
 });
 
 const Route = makeComponent(($, self) => {
-  const { $attrs, debug } = self;
+  const { debug } = self;
 
   debug.name = "woof:component:Route";
 
-  const $path = $attrs.map("path");
-  const $redirect = $attrs.map("redirect");
-  const $component = $attrs.map("component");
+  const $path = self.map("path");
+  const $redirect = self.map("redirect");
+  const $component = self.map("component");
 
   self.beforeConnect(() => {
     if ($redirect.get()) {
