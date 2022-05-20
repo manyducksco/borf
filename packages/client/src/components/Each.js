@@ -88,9 +88,7 @@ export const Each = makeComponent(($, self) => {
     }
   }
 
-  self.connected(() => {
-    self.watchState($value, update, { immediate: true });
-  });
+  self.watchState($value, update, { immediate: true });
 
   self.disconnected(() => {
     for (const item of items) {

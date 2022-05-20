@@ -55,14 +55,12 @@ app.route("*", ($, self) => {
   //   );
   // });
 
-  self.connected(() => {
-    const page = self.getService("@page");
-    const mouse = self.getService("mouse");
+  const page = self.getService("@page");
+  const mouse = self.getService("mouse");
 
-    // Display current mouse coordinates as tab title
-    self.watchState(mouse.$position, (pos) => {
-      page.$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
-    });
+  // Display current mouse coordinates as tab title
+  self.watchState(mouse.$position, (pos) => {
+    page.$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
   });
 
   return (

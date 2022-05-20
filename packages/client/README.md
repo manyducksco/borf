@@ -85,9 +85,12 @@ States are very similar concept to [signals in Solid.js](https://www.solidjs.com
 
 Services are singletons, meaning only one copy of the service exists and all `.getService(name)` calls that access it get the same instance of `name`. You can use services to store state in a central location when you need to get to it from multiple places in your app.
 
+Services are also a central feature of [Angular](https://angular.io/guide/architecture-services).
+
 The following example shows a counter with one page to display the number and another to modify it. Both routes share data through a `counter` service.
 
 ```js
+// The `counter` service holds the current count and provides methods for incrementing and decrementing.
 app.service("counter", () => {
   const $count = makeState(0);
 
@@ -114,12 +117,14 @@ app.route("/counter", ($) => {
   );
 });
 
+// The view route displays the count but doesn't let the user change it.
 app.route("/counter/view", ($, self) => {
   const { $current } = self.getService("counter");
 
   return <h1>The Count is Now {$current}</h1>;
 });
 
+// The controls route lets the user change the count but doesn't display it.
 app.route("/counter/controls", ($, self) => {
   const { increment, decrement } = self.getService("counter");
 
@@ -160,6 +165,19 @@ app.route("other", ($) => {
 
 ```js
 const Example = makeComponent(($, self) => {
+  // Get an attribute's value.
+  const title = self.get("title");
+
+  // Get an attribute's value as a state that updates when the attribute changes.
+  const $title = self.map("title");
+
+  // Access services.
+  const service = self.getService("name");
+
+  /*=================================*\
+  ||   Component Lifecycle Methods   ||
+  \*=================================*/
+
   self.beforeConnect(() => {
     // Runs when the component is about to be (but is not yet) added to the page.
   });
@@ -176,8 +194,17 @@ const Example = makeComponent(($, self) => {
     // Runs after the component is removed from the page.
   });
 
-  // Access services defined at the app level.
-  const service = self.getService("name");
+  // Runs a callback function each time a state changes while this component is connected.
+  self.watchState($title, (title) => {
+    console.log("title attribute changed to " + title);
+  });
+
+  /*=================================*\
+  ||            Children             ||
+  \*=================================*/
+
+  // Access the component's children with `self.children`.
+  return <div>{self.children}</div>;
 });
 ```
 

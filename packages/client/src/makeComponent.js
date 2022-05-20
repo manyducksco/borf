@@ -15,6 +15,7 @@ export function makeComponent(fn) {
     let watchers = [];
     let routePreload;
     let key;
+    let isConnected = false;
 
     const staticAttrs = [];
     const stateAttrs = [];
@@ -104,11 +105,14 @@ export function makeComponent(fn) {
         onDisconnected.push(callback);
       },
       watchState($state, callback, options = {}) {
-        // onBeforeConnect.push(() => {
-        //   watchers.push($state.watch(callback, { immediate: true }));
-        // });
+        onConnected.push(() => {
+          watchers.push($state.watch(callback, options));
+        });
 
-        watchers.push($state.watch(callback, options));
+        // Add to watchers immediately if already connected.
+        if (isConnected) {
+          watchers.push($state.watch(callback, options));
+        }
       },
     };
 
@@ -186,7 +190,7 @@ export function makeComponent(fn) {
       },
 
       connect(parent, after = null) {
-        const wasConnected = this.isConnected;
+        const wasConnected = instance.isConnected;
 
         if (!wasConnected) {
           // Run onBeforeConnect hook
@@ -207,10 +211,12 @@ export function makeComponent(fn) {
             callback();
           }
         }
+
+        isConnected = true;
       },
 
       disconnect() {
-        if (this.isConnected) {
+        if (instance.isConnected) {
           // Run beforeDisconnect hook
           for (const callback of onBeforeDisconnect) {
             callback();
@@ -232,6 +238,8 @@ export function makeComponent(fn) {
           }
           watchers = [];
         }
+
+        isConnected = false;
       },
     };
 

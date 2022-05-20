@@ -37,9 +37,7 @@ export const Watch = makeComponent(($, self) => {
     }
   }
 
-  self.connected(() => {
-    self.watchState($value, update, { immediate: true });
-  });
+  self.watchState($value, update, { immediate: true });
 
   self.disconnected(() => {
     if (item) {

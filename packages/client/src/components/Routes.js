@@ -70,18 +70,16 @@ export const Routes = makeComponent(($, self) => {
   ||     Lifecycle Hooks     ||
   \*=========================*/
 
-  self.connected(() => {
-    // This is where the magic happens
-    self.watchState(
-      $wildcard,
-      (current) => {
-        if (current != null) {
-          matchRoute(current);
-        }
-      },
-      { immediate: true }
-    );
-  });
+  // This is where the magic happens
+  self.watchState(
+    $wildcard,
+    (current) => {
+      if (current != null) {
+        matchRoute(current);
+      }
+    },
+    { immediate: true }
+  );
 
   self.disconnected(() => {
     if (mounted) {
@@ -95,6 +93,7 @@ export const Routes = makeComponent(($, self) => {
   \*=========================*/
 
   async function matchRoute(path) {
+    console.log(node.parentNode);
     if (!node.parentNode) return;
 
     const matched = router.match(path);

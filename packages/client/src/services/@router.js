@@ -24,33 +24,31 @@ export default makeService((self) => {
   // Magic state that syncs with with the browser's query params
   const $query = makeState({});
 
-  self.connected(() => {
-    // Track and skip updating the URL when the change came from URL navigation
-    let isRouteChange = false;
+  // Track and skip updating the URL when the change came from URL navigation
+  let isRouteChange = false;
 
-    // Update $query when URL changes
-    self.watchState($route, (current) => {
-      isRouteChange = true;
-      $query.set(current.query);
-    });
+  // Update $query when URL changes
+  self.watchState($route, (current) => {
+    isRouteChange = true;
+    $query.set(current.query);
+  });
 
-    // Update URL when $query changes
-    self.watchState($query, (current) => {
-      if (isRouteChange) {
-        isRouteChange = false;
-        return;
-      }
+  // Update URL when $query changes
+  self.watchState($query, (current) => {
+    if (isRouteChange) {
+      isRouteChange = false;
+      return;
+    }
 
-      const params = new URLSearchParams();
+    const params = new URLSearchParams();
 
-      for (const key in current) {
-        params.set(key, current[key]);
-      }
+    for (const key in current) {
+      params.set(key, current[key]);
+    }
 
-      history.replace({
-        pathname: history.location.pathname,
-        search: "?" + params.toString(),
-      });
+    history.replace({
+      pathname: history.location.pathname,
+      search: "?" + params.toString(),
     });
   });
 
