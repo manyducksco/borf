@@ -12,11 +12,11 @@ program
     description: "Runs app for local development",
     path: path.join(__dirname, "./commands/start/command.js"),
   })
-  .command("test", {
-    alias: "t",
-    description: "Runs unit tests",
-    path: path.join(__dirname, "./commands/test/command.js"),
-  })
+  // .command("test", {
+  //   alias: "t",
+  //   description: "Runs unit tests",
+  //   path: path.join(__dirname, "./commands/test/command.js"),
+  // })
   .command("build", {
     alias: "b",
     description: "Builds a production-ready app bundle",
@@ -30,10 +30,10 @@ program
   .command("blueprints", {
     description: "Prints a list of available blueprints",
     path: path.join(__dirname, "./commands/blueprints/command.js"),
-  })
-  .command("routes", {
-    description: "Prints a list of routes mounted on the server",
-    path: path.join(__dirname, "./commands/routes/command.js"),
   });
+// .command("routes", {
+//   description: "Prints a list of routes mounted on the server",
+//   path: path.join(__dirname, "./commands/routes/command.js"),
+// });
 
 program.run(process.argv);
