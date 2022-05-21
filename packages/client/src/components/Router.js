@@ -15,8 +15,7 @@ export const Router = makeComponent((_, self) => {
 
   const node = document.createTextNode("");
 
-  // Routes tracks the route object for its own segment.
-  const $ownRoute = makeState({
+  const $route = makeState({
     route: null, // The string representation of the route that was matched (including ':params' and '*')
     path: null, // The actual path that was matched against the route. What appears in the URL bar.
     params: {}, // Matched :params extracted from the matched path.
@@ -28,10 +27,10 @@ export const Router = makeComponent((_, self) => {
   // Route matching logic is imported from @woofjs/router
   const router = makeRouter();
 
-  // Dolla instance for child components. All routes nested under this will match on `$ownRoute.wildcard`
+  // Dolla instance for child components. All routes nested under this will match on `$route.wildcard`
   const dolla = makeDolla({
     getService: self.getService,
-    $route: $ownRoute,
+    $route,
   });
 
   // Stores the currently mounted component
@@ -93,10 +92,8 @@ export const Router = makeComponent((_, self) => {
 
     const matched = router.match(path);
 
-    self.debug.log("matching route", { path, matched });
-
     if (matched) {
-      const routeChanged = matched.route !== $ownRoute.get("route") || mounted == null;
+      const routeChanged = matched.route !== $route.get("route") || mounted == null;
       const wildcard = self.get("@route.wildcard");
       const path = self.get("@route.path");
 
@@ -108,9 +105,7 @@ export const Router = makeComponent((_, self) => {
         fullPath = joinPath(path, matched.path);
       }
 
-      console.log({ fullPath });
-
-      $ownRoute.set((current) => {
+      $route.set((current) => {
         current.path = matched.path;
         current.route = matched.route;
         current.query = matched.query;
@@ -148,11 +143,10 @@ export const Router = makeComponent((_, self) => {
         mount(created);
 
         self.debug.log(
-          `Mounted nested route '${$ownRoute.get("fullPath")}'${
+          `Mounted nested route '${$route.get("fullPath")}'${
             created.hasRoutePreload ? ` (loaded in ${Date.now() - start}ms)` : ""
           }`
         );
-        self.debug.log($ownRoute.get());
       }
     } else {
       if (mounted) {
@@ -160,7 +154,7 @@ export const Router = makeComponent((_, self) => {
         mounted = null;
       }
 
-      $ownRoute.set((current) => {
+      $route.set((current) => {
         current.path = null;
         current.route = null;
         current.query = {};

@@ -1,5 +1,5 @@
-import ColorHash from "color-hash"; // TODO: Remove this dependency - it's too big for what we need it for
 import { makeState } from "@woofjs/state";
+import ColorHash from "color-hash";
 
 export function makeDebug(options = {}) {
   const $filter = makeState(options.filter || "*,-woof:*");

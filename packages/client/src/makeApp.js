@@ -22,6 +22,7 @@ export function makeApp(options = {}) {
   let setup = async () => true;
 
   const router = makeRouter();
+
   let history;
   let outlet;
   let mounted;
@@ -86,7 +87,7 @@ export function makeApp(options = {}) {
      * @param options - Object to be passed to service.created() function when called.
      */
     service(name, service, options) {
-      if (isFunction(service)) {
+      if (isFunction(service) && !isService(service)) {
         service = makeService(service);
       }
 
@@ -145,11 +146,12 @@ export function makeApp(options = {}) {
       // Create registered services.
       for (const name in services) {
         const service = services[name];
+        const debugChannel = debug.makeChannel(`service:${name}`);
 
         // First bits of app code are run; service functions called.
-        service.instance = service.template.create({
+        service.instance = service.template({
           getService,
-          debugChannel: debug.makeChannel(`service:${name}`),
+          debugChannel,
           options: service.options,
         });
       }
@@ -169,13 +171,16 @@ export function makeApp(options = {}) {
       }
 
       return setup().then(async () => {
+        // Listen for route changes and do initial route match.
         history.listen(onRouteChanged);
         await onRouteChanged(history);
 
+        // Send connected signal to all services.
         for (const name in services) {
           services[name].instance.connected();
         }
 
+        // Intercept internal <a href> clicks.
         catchLinks(outlet, (anchor) => {
           let href = anchor.getAttribute("href");
 
@@ -183,9 +188,9 @@ export function makeApp(options = {}) {
             href = joinPath(history.location.pathname, href);
           }
 
-          appDebug.log(`Intercepted link to '${href}'`);
-
           history.push(href);
+
+          appDebug.log(`Intercepted link to '${href}'`);
         });
       });
     },

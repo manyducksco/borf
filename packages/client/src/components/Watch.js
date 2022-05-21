@@ -4,7 +4,7 @@ import { makeComponent } from "../makeComponent.js";
 /**
  * Recreates its contents each time its value changes.
  */
-export const Watch = makeComponent(($, self) => {
+export const Watch = makeComponent((_, self) => {
   self.debug.name = "woof:$:watch";
 
   const node = document.createTextNode("");
