@@ -10,19 +10,36 @@ const button = css`
   border: 2px solid orange;
 `;
 
-button.active`
+const active = css`
   color: red;
-`
+`;
 
-button.not(".active").before`
+// Multiple classes
+button.and(".active")`
+  color: red;
+`;
 
-`
+// Class references
+button.and(active)`
+  border: 1px solid orange;
+`;
 
-const active = makeClass({
+// Chainable
+button.not(".active").and(".cool")`
+
+`;
+
+// Pseudo selectors
+button.pseudo("before")`
+
+`;
+
+
+const active = css({
   color: red;
 });
 
-const button = makeClass({
+const button = css({
   color: blue;
   border: "2px solid orange";
 });
