@@ -18,7 +18,6 @@ export function wrapComponent(component, configure) {
       const $route = makeState({
         route: "test",
         path: "/test",
-        href: "/test",
         params: {},
         query: {},
         wildcard: null,

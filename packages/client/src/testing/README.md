@@ -96,7 +96,7 @@ test("demonstrates testing tools", (t) => {
   t.called(mock);
 
   // Assert that this function was called exactly once.
-  t.calledTimes(1);
+  t.calledTimes(mock, 1);
 
   // Mock functions can also be given an implementation. Calls to this function will act like
   // the implementation, with the benefit of still being testable using mock function assertions.

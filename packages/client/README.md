@@ -457,7 +457,7 @@ If the user visits `/parent` or any other path under `/parent`, the redirect wil
 
 ## Testing
 
-> TO DO
+See [the testing README](./src/testing/README.md).
 
 ---
 
