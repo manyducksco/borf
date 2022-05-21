@@ -15,6 +15,8 @@ import FormExample from "./components/FormExample.js";
 import MouseFollowerExample from "./components/MouseFollowerExample.js";
 import HTTPRequestExample from "./components/HTTPRequestExample.js";
 
+import SevenGUIs from "./7guis";
+
 import logLifecycle from "./utils/logLifecycle";
 
 const app = makeApp({
@@ -71,6 +73,9 @@ app.route("*", ($, self) => {
             <a href="/examples">Examples</a>
           </li>
           <li>
+            <a href="/7guis">7 GUIs</a>
+          </li>
+          <li>
             <a href="/router-test">Router Test</a>
           </li>
           <li>
@@ -101,6 +106,8 @@ app.route("*", ($, self) => {
             </div>
           );
         });
+
+        self.route("7guis/*", SevenGUIs);
 
         self.route("router-test/*", ($) => {
           // Nested routers to test redirect issue
