@@ -30,6 +30,7 @@ app.get("/some-route", (ctx) => {
 });
 
 // Create server-rendered HTML pages with `.route` and a component to render.
+// This mirrors the routing from `@woofjs/client`, but rendered server side.
 app.route("/other-route", ($, self) => {
   // Services can be accessed just like in client-side components.
   const { $message } = self.getService("example");

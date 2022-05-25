@@ -4,6 +4,13 @@ Front end routing, components and state for dogs. 🐕
 
 `@woofjs/client` is a client-side JavaScript framework that borrows the best ideas from other frameworks; [React](https://reactjs.org/docs/introducing-jsx.html), [Angular](https://angular.io/guide/architecture-services) and [Choo](https://github.com/choojs/choo#routing) in particular. As we go through Woof's concepts in this readme, I'll point out some places you may have seen these ideas before.
 
+## Table of Concepts
+
+1. [Routing](#routing)
+2. [States](#reactivity-with-states)
+3. [Components](#components)
+4. [Services](#services)
+
 ## Hello World
 
 ```js
@@ -71,67 +78,36 @@ app.route("users/*", ($) => {
 });
 ```
 
-## Reactivity with states
+## Reactivity with States
 
-> TODO
-
-See [@woofjs/state](https://github.com/woofjs/state). Pass a state instead of a static value for any attribute and the DOM will update automatically as the state changes.
-
-Woof's biggest difference from most modern frameworks is that it doesn't use a virtual DOM. Instead, Woof apps are data-driven using objects called States, which can be thought of as containers that hold data that needs to change. These States are woven into your app's components, triggering pinpoint changes to the attributes to which they are bound when their values change. This means
-
-States are very similar concept to [signals in Solid.js](https://www.solidjs.com/).
-
-## Services
-
-Services are singletons, meaning only one copy of the service exists and all `.getService(name)` calls that access it get the same instance of `name`. You can use services to store state in a central location when you need to get to it from multiple places in your app.
-
-Services are also a central feature of [Angular](https://angular.io/guide/architecture-services).
-
-The following example shows a counter with one page to display the number and another to modify it. Both routes share data through a `counter` service.
+Unlike many other frameworks Woof does _not_ use a virtual DOM. Instead, Woof uses objects called States to hold data which needs to change. States are sprinkled into your components, binding their data to the elements where that data is needed. When the value of a State gets updated, any DOM nodes bound to that state are immediately updated to match. No other processing is needed.
 
 ```js
-// The `counter` service holds the current count and provides methods for incrementing and decrementing.
-app.service("counter", () => {
-  const $count = makeState(0);
+import { makeState, makeComponent } from "@woofjs/client";
 
-  return {
-    $current: $count.map(), // Makes a read only version. Components can only change this through the methods.
+const Timer = makeComponent(($, self) => {
+  // Naming states with a $ is a convention to help point out that they are dynamic. Anywhere you see $seconds used, you know that value will change.
+  const $seconds = makeState(0);
 
-    increment() {
-      $count.set((current) => current + 1);
-    },
+  // Adds 1 to the current value of $seconds.
+  function increment() {
+    $seconds.set(value => value + 1);
+  }
 
-    decrement() {
-      $count.set((current) => current - 1);
-    },
-  };
-});
+  // Resets $seconds to 0.
+  function reset() {
+    $seconds.set(0);
+  }
 
-app.route("/counter", ($) => {
-  return (
-    <div>
-      <h1>World's Most Inconvenient Counter Demo</h1>
-      <a href="/counter/view">See the number</a>
-      <a href="/counter/controls">Change the number</a>
-    </div>
-  );
-});
-
-// The view route displays the count but doesn't let the user change it.
-app.route("/counter/view", ($, self) => {
-  const { $current } = self.getService("counter");
-
-  return <h1>The Count is Now {$current}</h1>;
-});
-
-// The controls route lets the user change the count but doesn't display it.
-app.route("/counter/controls", ($, self) => {
-  const { increment, decrement } = self.getService("counter");
+  // Increment each second once the component is connected to the DOM.
+  self.connected(() => {
+    setInterval(increment, 1000);
+  });
 
   return (
     <div>
-      <button onclick={increment}>Increment</button>
-      <button onclick={decrement}>Decrement</button>
+      <input type="text" value={$seconds} disabled>
+      <button onclick={reset}>Reset Counter</button>
     </div>
   );
 });
@@ -139,8 +115,14 @@ app.route("/counter/controls", ($, self) => {
 
 ## Components
 
+Components are reusable modules with their own markup and logic. You can define a component once and reuse it as many times as you need. Components can take inputs called `attributes` that can be accessed inside the component to change how they behave or what they display.
+
+Components are ubiquitous in front-end frameworks, but Woof's take on them is very inspired by how [React](https://reactjs.org/docs/components-and-props.html) does things.
+
 ```js
 const Example = makeComponent(($, self) => {
+  // Use self.map and self.get functions to access attributes.
+  // Mapping attributes allows them to change over time, while a get only gives you the value once.
   const $title = self.map("title");
 
   return $("div", [
@@ -149,14 +131,17 @@ const Example = makeComponent(($, self) => {
   ]);
 });
 
-// Mount directly on a route
+// Components can be mounted directly on a route.
 app.route("example", Example);
 
-// Use in the body of another component
+// They can also be used in the body of another component.
 app.route("other", ($) => {
   return $("div", [
     // Pass attributes in an object just like regular HTML elements
     $(Example, { title: "In Another Component" })
+
+    // You can also use components with JSX like so:
+    <Example title="In Another Component">
   ]);
 });
 ```
@@ -203,16 +188,15 @@ const Example = makeComponent(($, self) => {
   ||            Children             ||
   \*=================================*/
 
-  // Access the component's children with `self.children`.
-  return <div>{self.children}</div>;
+  // Access the component's children with `self.children`,
+  // in this case to render them inside a <div>
+  return $("div", self.children);
 });
 ```
 
-## Templating
+### Templating
 
-The first parameter passed to components is a function called `$` (read 'dolla'). The `$` function creates elements that can be rendered.
-
-### Creating HTML elements
+Every component function gets two parameters; `$` and `self`. `$` is the function you call to create renderable elements. It is heavily based on [hyperscript](https://github.com/hyperhype/hyperscript). It also has helpful utility functions on the object such as `$.if`, `$.each` and others.
 
 ```js
 const Example = makeComponent(($, self) => {
@@ -231,7 +215,7 @@ const Example = makeComponent(($, self) => {
 });
 ```
 
-That component is equivalent to the following HTML.
+That component renders the following HTML.
 
 ```html
 <section>
@@ -250,7 +234,7 @@ That component is equivalent to the following HTML.
 
 #### Using JSX
 
-Woof supports JSX, so if you want to just write it that way to begin with you totally can. It's important to understand how `$` works because that's ultimately what the JSX compiles to when your app builds.
+Woof supports JSX, so if you want to write your components as HTML to begin with you totally can. However, it's important to understand how `$` works because that's ultimately what the JSX compiles down to. JSX is simply an alternate syntax for `$`.
 
 > Note that Woof uses a `class` attribute like HTML rather than `className` like React.
 
@@ -454,6 +438,111 @@ and `/parent/secondary` will display:
 ```
 
 If the user visits `/parent` or any other path under `/parent`, the redirect will kick in and redirect to `/parent/main`.
+
+## Dynamic Classes
+
+Components also support dynamic classes. Pass an object where the keys are the class names, and the classes are added to the element while the values are truthy. The values can be $states if you want to toggle classes dynamically.
+
+```jsx
+const Example = makeComponent(($, self) => {
+  return (
+    <div
+      class={{
+        // Always include "container" class
+        container: true,
+
+        // Include "active" class when 'isActive' attribute is true
+        active: self.map("isActive"),
+      }}
+    >
+      {self.children}
+    </div>
+  );
+});
+```
+
+Multiple classes:
+
+```jsx
+const Example = makeComponent(($, self) => {
+  return <div class={["one", "two"]}>{self.children}</div>;
+});
+```
+
+A combination:
+
+```jsx
+const Example = makeComponent(($, self) => {
+  // The 'container' class is always included while the ones inside the object are shown if their value is true.
+  return (
+    <div
+      class={["container", {
+        active: self.map("isActive"),
+      }}
+    >
+      {self.children}
+    </div>
+  );
+});
+```
+
+## Services
+
+Services are also a central feature of [Angular](https://angular.io/guide/architecture-services).
+
+Services are a great way to share state and logic between multiple components. Usually, parent components can pass state down to children in the form of attributes. Sometimes you have components in different heirarchies that don't easily support this, such as when you need to access the same data from different pages.
+
+Services are singletons, meaning only one copy of the service exists per app, and all `.getService(name)` calls get the same instance of `name`.
+
+The following example shows a counter with one page to display the number and another to modify it. Both routes share data through a `counter` service.
+
+```js
+// The `counter` service holds the current count and provides methods for incrementing and decrementing.
+app.service("counter", () => {
+  const $count = makeState(0);
+
+  return {
+    $current: $count.map(), // Makes a read only version. Components can only change this through the methods.
+
+    increment() {
+      $count.set((current) => current + 1);
+    },
+
+    decrement() {
+      $count.set((current) => current - 1);
+    },
+  };
+});
+
+app.route("/counter", ($) => {
+  return (
+    <div>
+      <h1>World's Most Inconvenient Counter Demo</h1>
+      <a href="/counter/view">See the number</a>
+      <a href="/counter/controls">Change the number</a>
+    </div>
+  );
+});
+
+// The view route displays the count but doesn't let the user change it.
+app.route("/counter/view", ($, self) => {
+  const { $current } = self.getService("counter");
+
+  return <h1>The Count is Now {$current}</h1>;
+});
+
+// The controls route lets the user change the count but doesn't display it.
+app.route("/counter/controls", ($, self) => {
+  const { increment, decrement } = self.getService("counter");
+
+  return (
+    <div>
+      <button onclick={increment}>Increment</button>
+      <button onclick={decrement}>Decrement</button>
+    </div>
+  );
+});
+```
 
 ## Testing
 
