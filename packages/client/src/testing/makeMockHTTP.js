@@ -1,4 +1,4 @@
-import HTTPService from "../services/@http.js";
+import http from "../services/@http.js";
 import { makeDebug } from "../makeDebug.js";
 import { makeMockFetch } from "./makeMockFetch.js";
 
@@ -29,7 +29,7 @@ export function makeMockHTTP(fn) {
   const debug = makeDebug();
   const fetch = makeMockFetch(fn);
 
-  const service = HTTPService.create({
+  const service = http({
     getService: () => {},
     debugChannel: debug.makeChannel("woof:service:@http:mock"),
     options: { fetch },

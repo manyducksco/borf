@@ -6,7 +6,7 @@ import { makeService, makeState } from "@woofjs/client";
 const CounterService = makeService((self) => {
   const $current = makeState(0);
 
-  self.connected(() => {
+  self.afterConnect(() => {
     setInterval(() => {
       $current.set((current) => current + 1);
     }, 1000);

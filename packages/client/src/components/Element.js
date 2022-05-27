@@ -26,7 +26,7 @@ export const Element = makeComponent((_, self) => {
     if (attrs.class) applyClasses(node, attrs.class, watchers);
   });
 
-  self.disconnected(async () => {
+  self.afterDisconnect(async () => {
     for (const child of children) {
       child.disconnect();
     }

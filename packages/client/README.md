@@ -163,11 +163,13 @@ const Example = makeComponent(($, self) => {
   ||   Component Lifecycle Methods   ||
   \*=================================*/
 
+  self.isConnected; // true if component is connected
+
   self.beforeConnect(() => {
     // Runs when the component is about to be (but is not yet) added to the page.
   });
 
-  self.connected(() => {
+  self.afterConnect(() => {
     // Runs after the component is added to the page.
   });
 
@@ -175,7 +177,7 @@ const Example = makeComponent(($, self) => {
     // Runs when the component is about to be (but is not yet) removed from the page.
   });
 
-  self.disconnected(() => {
+  self.afterDisconnect(() => {
     // Runs after the component is removed from the page.
   });
 
@@ -287,11 +289,15 @@ const Example = makeComponent(($, self) => {
 
 ### Helpers
 
+The `$` function supports creating elements and binding data to them. Helpers supply the control flow you would expect like conditionals and loops, plus some things you might not expect like nested routing.
+
 #### $.if
 
-> `$.if($state[, thenFn][, elseFn])`
+> `$.if($condition[, thenFn][, elseFn])`
 
-Renders the result of `thenFn` when the state holds a truthy value, and the result of `elseFn` otherwise. Pass null or undefined for either if you don't want to display anything for that condition.
+Renders the result of `thenFn` when the condition is truthy, and the result of `elseFn` otherwise. Pass null or undefined for either if you don't want to display anything for that condition.
+
+The condition can be a plain value or a $state.
 
 ```js
 const Example = makeComponent(($, self) => {
@@ -311,7 +317,7 @@ const Example = makeComponent(($, self) => {
 
 #### $.each
 
-> `$.each($state, component)`
+> `$.each($list, component)`
 
 Renders a component once for each item in an array. If the array is stored inside a $state the list will update whenever that $state is updated.
 

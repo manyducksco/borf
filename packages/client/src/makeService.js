@@ -3,7 +3,7 @@ import { isObject } from "./helpers/typeChecking.js";
 export function makeService(fn) {
   function Service({ getService, debugChannel, options = {} }) {
     let onBeforeConnect = [];
-    let onConnected = [];
+    let onAfterConnect = [];
     let watchers = [];
 
     const self = {
@@ -13,8 +13,8 @@ export function makeService(fn) {
       beforeConnect(callback) {
         onBeforeConnect.push(callback);
       },
-      connected(callback) {
-        onConnected.push(callback);
+      afterConnect(callback) {
+        onAfterConnect.push(callback);
       },
       watchState($state, ...args) {
         watchers.push($state.watch(...args));
@@ -34,8 +34,8 @@ export function makeService(fn) {
           callback();
         }
       },
-      connected() {
-        for (const callback of onConnected) {
+      afterConnect() {
+        for (const callback of onAfterConnect) {
           callback();
         }
       },

@@ -24,8 +24,8 @@ export const Each = makeComponent(($, self) => {
       return;
     }
 
-    const newInstances = newItems.map((value, index) =>
-      initComponent({
+    const newInstances = newItems.map((value, index) => {
+      const component = initComponent({
         getService: self.getService,
         dolla: $,
         $route: self.map("@route"),
@@ -34,8 +34,14 @@ export const Each = makeComponent(($, self) => {
           "@value": value,
           "@index": index,
         },
-      })
-    );
+      });
+
+      if (component.key == null) {
+        self.debug.warn(`Components in $.each need a unique self.key. Got: ${component.key}`);
+      }
+
+      return component;
+    });
 
     const removed = [];
     const added = [];
@@ -90,7 +96,7 @@ export const Each = makeComponent(($, self) => {
 
   self.watchState($value, update, { immediate: true });
 
-  self.disconnected(() => {
+  self.afterDisconnect(() => {
     for (const item of items) {
       item.disconnect();
     }

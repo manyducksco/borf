@@ -76,7 +76,7 @@ export const Router = makeComponent((_, self) => {
     { immediate: true }
   );
 
-  self.disconnected(() => {
+  self.afterDisconnect(() => {
     if (mounted) {
       mounted.disconnect();
       mounted = null;

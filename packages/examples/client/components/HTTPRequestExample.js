@@ -25,7 +25,7 @@ const HTTPRequestExample = makeComponent(($, self) => {
       });
   };
 
-  self.connected(() => {
+  self.afterConnect(() => {
     refresh();
   });
 

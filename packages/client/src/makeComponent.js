@@ -1,4 +1,4 @@
-import { isState, mergeStates } from "@woofjs/state";
+import { isState, makeState } from "@woofjs/state";
 import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.js";
 
 /**
@@ -9,9 +9,9 @@ import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.j
 export function makeComponent(fn) {
   function Component({ getService, $route, dolla, attrs, children }) {
     let onBeforeConnect = [];
-    let onConnected = [];
+    let onAfterConnect = [];
     let onBeforeDisconnect = [];
-    let onDisconnected = [];
+    let onAfterDisconnect = [];
     let watchers = [];
     let routePreload;
     let key;
@@ -29,14 +29,10 @@ export function makeComponent(fn) {
             value: attrs[name],
           });
         } else {
-          stateAttrs.push(
-            attrs[name].map((value) => {
-              return {
-                name,
-                value,
-              };
-            })
-          );
+          stateAttrs.push({
+            name,
+            value: attrs[name],
+          });
         }
       } else {
         if (name.startsWith("$")) {
@@ -50,21 +46,19 @@ export function makeComponent(fn) {
       }
     }
 
-    const $attrs = mergeStates($route, ...stateAttrs, (route, ...attrs) => {
-      const merged = {
-        "@route": route,
-      };
+    const initialAttrs = {};
 
-      for (const attr of attrs) {
-        merged[attr.name] = attr.value;
-      }
+    initialAttrs["@route"] = $route.get();
 
-      for (const attr of staticAttrs) {
-        merged[attr.name] = attr.value;
-      }
-
-      return merged;
+    stateAttrs.forEach(({ name, value }) => {
+      initialAttrs[name] = value.get();
     });
+
+    staticAttrs.forEach(({ name, value }) => {
+      initialAttrs[name] = value;
+    });
+
+    const $attrs = makeState(initialAttrs);
 
     // Create self object to pass to component function.
     const self = {
@@ -87,23 +81,26 @@ export function makeComponent(fn) {
       set key(value) {
         key = value;
       },
+      get isConnected() {
+        return isConnected;
+      },
       loadRoute(func) {
         routePreload = func;
       },
       beforeConnect(callback) {
         onBeforeConnect.push(callback);
       },
-      connected(callback) {
-        onConnected.push(callback);
+      afterConnect(callback) {
+        onAfterConnect.push(callback);
       },
       beforeDisconnect(callback) {
         onBeforeDisconnect.push(callback);
       },
-      disconnected(callback) {
-        onDisconnected.push(callback);
+      afterDisconnect(callback) {
+        onAfterDisconnect.push(callback);
       },
       watchState($state, callback, options = {}) {
-        onConnected.push(() => {
+        onAfterConnect.push(() => {
           watchers.push($state.watch(callback, options));
         });
 
@@ -113,6 +110,22 @@ export function makeComponent(fn) {
         }
       },
     };
+
+    // Update $attrs when route changes.
+    self.watchState($route, (value) => {
+      $attrs.set((current) => {
+        current["@route"] = value;
+      });
+    });
+
+    // Update $attrs when state attrs change.
+    stateAttrs.map(({ name, value }) => {
+      self.watchState(value, (unwrapped) => {
+        $attrs.set((attrs) => {
+          attrs[name] = unwrapped;
+        });
+      });
+    });
 
     // Call component function which should return a renderable node or null.
     const node = fn(dolla, self);
@@ -127,7 +140,11 @@ export function makeComponent(fn) {
       $attrs,
 
       get key() {
-        return key;
+        return self.key;
+      },
+
+      set key(value) {
+        self.key = value;
       },
 
       get element() {
@@ -191,7 +208,7 @@ export function makeComponent(fn) {
         const wasConnected = instance.isConnected;
 
         if (!wasConnected) {
-          // Run onBeforeConnect hook
+          // Run beforeConnect hook
           for (const callback of onBeforeConnect) {
             callback();
           }
@@ -203,14 +220,14 @@ export function makeComponent(fn) {
           parent.insertBefore(node, after ? after.nextSibling : null);
         }
 
+        isConnected = true;
+
         if (!wasConnected) {
-          // Run connected hook
-          for (const callback of onConnected) {
+          // Run afterConnect hook
+          for (const callback of onAfterConnect) {
             callback();
           }
         }
-
-        isConnected = true;
       },
 
       disconnect() {
@@ -226,8 +243,10 @@ export function makeComponent(fn) {
             node.parentNode.removeChild(node);
           }
 
-          // Run disconnected hook
-          for (const callback of onDisconnected) {
+          isConnected = false;
+
+          // Run afterDisconnect hook
+          for (const callback of onAfterDisconnect) {
             callback();
           }
 

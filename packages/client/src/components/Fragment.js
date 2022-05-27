@@ -6,7 +6,7 @@ import { makeComponent } from "../makeComponent.js";
 export const Fragment = makeComponent((_, self) => {
   const node = document.createTextNode("");
 
-  self.connected(() => {
+  self.afterConnect(() => {
     let after = node;
 
     for (const child of self.children) {
@@ -15,7 +15,7 @@ export const Fragment = makeComponent((_, self) => {
     }
   });
 
-  self.disconnected(() => {
+  self.afterDisconnect(() => {
     for (const child of self.children) {
       child.disconnect();
     }

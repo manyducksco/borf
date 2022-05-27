@@ -1,6 +1,8 @@
 import { makeComponent, makeState } from "@woofjs/client";
 
 export default makeComponent(($, self) => {
+  self.debug.name = "7GUIs:Counter";
+
   const $count = makeState(0);
 
   return (

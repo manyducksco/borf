@@ -6,15 +6,15 @@ export default function logLifecycle(self) {
     self.debug.log("lifecycle: beforeConnect");
   });
 
-  self.connected(() => {
-    self.debug.log("lifecycle: connected");
+  self.afterConnect(() => {
+    self.debug.log("lifecycle: afterConnect");
   });
 
   self.beforeDisconnect(() => {
     self.debug.log("lifecycle: beforeDisconnect");
   });
 
-  self.disconnected(() => {
-    self.debug.log("lifecycle: disconnected");
+  self.afterDisconnect(() => {
+    self.debug.log("lifecycle: afterDisconnect");
   });
 }

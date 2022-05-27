@@ -177,7 +177,7 @@ export function makeApp(options = {}) {
 
         // Send connected signal to all services.
         for (const name in services) {
-          services[name].instance.connected();
+          services[name].instance.afterConnect();
         }
 
         // Intercept internal <a href> clicks.

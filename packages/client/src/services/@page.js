@@ -7,7 +7,7 @@ export default makeService((self) => {
 
   const $title = makeState(document?.title);
 
-  self.connected(() => {
+  self.afterConnect(() => {
     if (document) {
       self.watchState($title, (current) => {
         if (isString(current)) {

@@ -3,6 +3,8 @@ import { makeComponent, makeState, mergeStates } from "@woofjs/client";
 const flightTypes = ["one-way flight", "return flight"];
 
 export default makeComponent(($, self) => {
+  self.debug.name = "7GUIs:FlightBooker";
+
   const $flightType = makeState(flightTypes[0]);
   const $startDate = makeState(formatDate(new Date()));
   const $returnDate = makeState(formatDate(new Date()));
