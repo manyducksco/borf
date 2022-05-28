@@ -11,13 +11,13 @@ To connect:
 - Component function is called
 - `beforeConnect` hook runs
 - DOM node created and attached to parent
-- `connected` hook runs
+- `afterConnect` hook runs
 
 To disconnect:
 
 - `beforeDisconnect` hook runs
 - DOM node removed from its parent
-- `disconnected` hook runs
+- `afterDisconnect` hook runs
 - `watchState` watchers are cancelled
 - DOM node released for garbage collection
 
@@ -31,7 +31,7 @@ To connect:
 - `beforeConnect` hook runs
 - App setup function is run, resolves promise
 - Initial route is matched, components connected
-- `connected` hook runs
+- `afterConnect` hook runs
 
 ## App
 

@@ -39,9 +39,7 @@ export function makeState(initialValue) {
     set(value) {
       if (isFunction(value)) {
         // Produce a new value from a mutated draft with immer.
-        value = produce(current, (draft) => {
-          return value(draft);
-        });
+        value = produce(current, (draft) => value(draft));
       }
 
       if (!deepEqual(current, value)) {

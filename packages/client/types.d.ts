@@ -105,10 +105,12 @@ declare module "@woofjs/client" {
   ||             Routing              ||
   \*==================================*/
 
-  type WhenFn = (path: string, component: ComponentLike, attributes = {}) => void;
-  type RedirectFn = (path: string, to: string) => void;
+  interface RouteSelf {
+    route: (path: string, component: ComponentLike, attributes = {}) => void;
+    redirect: (path: string, to: string) => void;
+  }
 
-  type DefineRoutesFn = (when: WhenFn, redirect: RedirectFn) => void;
+  type DefineRoutesFn = (self: RouteSelf) => void;
 
   /*==================================*\
   ||              Dolla               ||
@@ -125,7 +127,7 @@ declare module "@woofjs/client" {
     (component: ComponentLike, attrs?: {}, ...children: DollaChild[]): ComponentInstance;
 
     if(
-      $value: State<any>,
+      $condition: State<any>,
       then?: DollaChild | (() => DollaChild),
       otherwise?: DollaChild | (() => DollaChild)
     ): ComponentInstance;
@@ -143,7 +145,7 @@ declare module "@woofjs/client" {
     /**
      * Registers nested routes. Paths are relative to the current component's $route.href
      */
-    routes(defineRoutes: DefineRoutesFn): ComponentInstance;
+    router(defineRoutes: DefineRoutesFn): ComponentInstance;
 
     bind<T>($state: State<T>, eventName?: string): { isBinding: true; event: string; $state: State<T> };
   };
@@ -199,7 +201,7 @@ declare module "@woofjs/client" {
     };
 
     beforeConnect: () => void;
-    connected: () => void;
+    afterConnect: () => void;
   };
 
   export type ServiceLike = Service | ServiceFunction;
@@ -227,9 +229,9 @@ declare module "@woofjs/client" {
     debug: DebugChannel;
 
     beforeConnect: () => void;
-    connected: () => void;
+    afterConnect: () => void;
     beforeDisconnect: () => void;
-    disconnected: () => void;
+    afterDisconnect: () => void;
 
     /**
      *
@@ -242,7 +244,7 @@ declare module "@woofjs/client" {
   export type ComponentLike = Component | ComponentFunction;
 }
 
-declare module "@woofjs/app/testing" {
+declare module "@woofjs/client/testing" {
   type TestTools = {};
 
   type Test = {
