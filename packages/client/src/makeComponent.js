@@ -8,15 +8,25 @@ import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.j
  */
 export function makeComponent(fn) {
   function Component({ getService, $route, dolla, attrs, children }) {
+    // Lifecycle hook callbacks
     let onBeforeConnect = [];
     let onAfterConnect = [];
     let onBeforeDisconnect = [];
     let onAfterDisconnect = [];
-    let watchers = [];
+
+    // Cancel functions for state watchers that are currently active.
+    // All active watchers are cancelled when the component is disconnected.
+    let activeWatchers = [];
+
     let routePreload;
     let key;
     let isConnected = false;
 
+    /*=============================*\
+    ||         Parse attrs         ||
+    \*=============================*/
+
+    // Attributes are separated into those that don't change and those that do change through states.
     const staticAttrs = [];
     const stateAttrs = [];
 
@@ -46,6 +56,10 @@ export function makeComponent(fn) {
       }
     }
 
+    /*=============================*\
+    ||    Set up initial $attrs    ||
+    \*=============================*/
+
     const initialAttrs = {};
 
     initialAttrs["@route"] = $route.get();
@@ -60,17 +74,29 @@ export function makeComponent(fn) {
 
     const $attrs = makeState(initialAttrs);
 
-    // Create self object to pass to component function.
+    /*=============================*\
+    ||     Define self object      ||
+    \*=============================*/
+
+    // This is the object the setup function uses to interface with the component.
     const self = {
+      /**
+       * Selects a current attribute value.
+       */
       get(...selectors) {
         return $attrs.get(...selectors);
       },
+
+      /**
+       * Returns a state that reflects the current value of the selected attribute.
+       */
       map(...selectors) {
         return $attrs.map(...selectors);
       },
       getService,
       children,
       debug: getService("@debug").makeChannel("~"),
+
       get key() {
         if (isState(key)) {
           return key.get();
@@ -81,6 +107,7 @@ export function makeComponent(fn) {
       set key(value) {
         key = value;
       },
+
       get isConnected() {
         return isConnected;
       },
@@ -101,17 +128,21 @@ export function makeComponent(fn) {
       },
       watchState($state, callback, options = {}) {
         onAfterConnect.push(() => {
-          watchers.push($state.watch(callback, options));
+          activeWatchers.push($state.watch(callback, options));
         });
 
         // Add to watchers immediately if already connected.
         if (isConnected) {
-          watchers.push($state.watch(callback, options));
+          activeWatchers.push($state.watch(callback, options));
         }
       },
     };
 
-    // Update $attrs when route changes.
+    /*=============================*\
+    ||     Watch dynamic attrs     ||
+    \*=============================*/
+
+    // Update "@route" attr when route changes.
     self.watchState($route, (value) => {
       $attrs.set((current) => {
         current["@route"] = value;
@@ -127,7 +158,10 @@ export function makeComponent(fn) {
       });
     });
 
-    // Call component function which should return a renderable node or null.
+    /*=============================*\
+    ||      Run setup function     ||
+    \*=============================*/
+
     const node = fn(dolla, self);
 
     if (node !== null && !isComponentInstance(node) && !isDOM(node)) {
@@ -136,17 +170,33 @@ export function makeComponent(fn) {
       throw new TypeError(message);
     }
 
+    /*=============================*\
+    ||   Define component object   ||
+    \*=============================*/
+
+    // This is the object the framework will use to control the component.
     const instance = {
       $attrs,
 
+      /**
+       * Returns this component's unique identifier. Used to ID the component when used in `$.each`.
+       */
       get key() {
         return self.key;
       },
 
+      /**
+       * Sets this component's unique identifier. Used to ID the component when used in `$.each`.
+       *
+       * @param value - A state or a plain value of any type
+       */
       set key(value) {
         self.key = value;
       },
 
+      /**
+       * Returns the component's root DOM node, or null if there is none.
+       */
       get element() {
         if (node) {
           if (isComponentInstance(node)) {
@@ -161,6 +211,9 @@ export function makeComponent(fn) {
         return null;
       },
 
+      /**
+       * True if the root DOM node is currently in the document.
+       */
       get isConnected() {
         if (node) {
           if (isComponentInstance(node)) {
@@ -175,10 +228,18 @@ export function makeComponent(fn) {
         return false;
       },
 
+      /**
+       * True if the component defines a preload function with `self.preloadRoute(fn)`.
+       */
       get hasRoutePreload() {
         return isFunction(routePreload);
       },
 
+      /**
+       * Perform preload with route's preload function. Called only when this component is mounted on a route.
+       *
+       * @param mount - Function that takes a component instance and connects it to the DOM.
+       */
       async routePreload(mount) {
         if (!isFunction(routePreload)) return;
 
@@ -195,7 +256,7 @@ export function makeComponent(fn) {
             resolve();
           };
 
-          const result = routePreload(show, done);
+          const result = routePreload({ show, done });
 
           if (result && isFunction(result.then)) {
             await result;
@@ -204,6 +265,14 @@ export function makeComponent(fn) {
         });
       },
 
+      /**
+       * Connects this component to the DOM, running lifecycle hooks if it wasn't already connected.
+       * Calling this on a component that is already connected can reorder it or move it to a different
+       * place in the DOM without triggering lifecycle hooks again.
+       *
+       * @param parent - DOM node under which this component should be connected as a child.
+       * @param after - A child node under `parent` after which this component should be connected.
+       */
       connect(parent, after = null) {
         const wasConnected = instance.isConnected;
 
@@ -230,6 +299,9 @@ export function makeComponent(fn) {
         }
       },
 
+      /**
+       * Disconnects this component from the DOM and runs lifecycle hooks.
+       */
       disconnect() {
         if (instance.isConnected) {
           // Run beforeDisconnect hook
@@ -250,10 +322,10 @@ export function makeComponent(fn) {
             callback();
           }
 
-          for (const unwatch of watchers) {
+          for (const unwatch of activeWatchers) {
             unwatch();
           }
-          watchers = [];
+          activeWatchers = [];
         }
 
         isConnected = false;

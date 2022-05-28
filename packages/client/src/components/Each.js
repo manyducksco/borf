@@ -1,7 +1,7 @@
 import { makeComponent } from "../makeComponent.js";
 
 /**
- * Displays a dynamic list based on an array stored in a `$value` attribute.
+ * Displays a dynamic list based on an array stored in a `value` attribute.
  */
 export const Each = makeComponent(($, self) => {
   self.debug.name = "woof:$:each";

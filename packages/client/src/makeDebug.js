@@ -1,6 +1,16 @@
 import { makeState } from "@woofjs/state";
 import ColorHash from "color-hash";
 
+/**
+ * Creates a factory for channels; prefixed console objects that only
+ * print when the debug filter matches that channel's name.
+ *
+ * Useful for logging info that you want to hide in production without
+ * deleting all your `console.log`s. Just change the filter to specify
+ * only what you want to see.
+ *
+ * @param options - Options for the debug instance. Specify an initial `filter` and enable or disable `log`, `warn` or `error` with booleans.
+ */
 export function makeDebug(options = {}) {
   const $filter = makeState(options.filter || "*,-woof:*");
 
@@ -67,6 +77,11 @@ export function makeDebug(options = {}) {
   };
 }
 
+/**
+ * Parses a filter string into a match function.
+ *
+ * @param filter - A string or regular expression that specifies a pattern for names of debug channels you want to display.
+ */
 function parseFilter(filter) {
   if (filter instanceof RegExp) {
     return (value) => filter.test(value);
@@ -76,6 +91,7 @@ function parseFilter(filter) {
     positive: [],
     negative: [],
   };
+
   const parts = filter
     .split(",")
     .map((p) => p.trim())
@@ -99,21 +115,19 @@ function parseFilter(filter) {
     }
   }
 
-  return (value) => matchFilter(matchers, value);
-}
+  return function (name) {
+    const { positive, negative } = matchers;
 
-function matchFilter(matchers, name) {
-  const { positive, negative } = matchers;
+    // Matching any negative matcher disqualifies.
+    if (negative.some((fn) => fn(name))) {
+      return false;
+    }
 
-  // Matching any negative matcher disqualifies.
-  if (negative.some((fn) => fn(name))) {
-    return false;
-  }
+    // Matching at least one positive matcher is required if any are specified.
+    if (positive.length > 0 && !positive.some((fn) => fn(name))) {
+      return false;
+    }
 
-  // Matching at least one positive matcher is required if any are specified.
-  if (positive.length > 0 && !positive.some((fn) => fn(name))) {
-    return false;
-  }
-
-  return true;
+    return true;
+  };
 }

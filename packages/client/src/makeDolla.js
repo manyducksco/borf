@@ -12,10 +12,10 @@ import { Element } from "./components/Element.js";
 import { Fragment } from "./components/Fragment.js";
 
 /**
- * $ is the backbone of woof's component structure.
+ * The backbone of Woof's component structure.
  *
- * It gets passed as the first parameter to all components, where it can render elements,
- * other components, and a variety of helper components for working with dynamic states.
+ * Passed as the first parameter to all components where it can render elements and other components.
+ * Also includes a variety of helper components for working with dynamic states.
  */
 export function makeDolla({ getService, $route }) {
   const componentDefaults = {

@@ -2,9 +2,12 @@ import { isObject } from "./helpers/typeChecking.js";
 
 export function makeService(fn) {
   function Service({ getService, debugChannel, options = {} }) {
+    // Lifecycle hook callbacks
     let onBeforeConnect = [];
     let onAfterConnect = [];
-    let watchers = [];
+
+    // Cancel functions for state watchers that are currently active.
+    let activeWatchers = [];
 
     const self = {
       debug: debugChannel,
@@ -17,7 +20,7 @@ export function makeService(fn) {
         onAfterConnect.push(callback);
       },
       watchState($state, ...args) {
-        watchers.push($state.watch(...args));
+        activeWatchers.push($state.watch(...args));
       },
     };
 
