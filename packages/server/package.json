@@ -6,6 +6,7 @@
   "main": "dist/woof.server.c.js",
   "types": "types.d.ts",
   "module": "dist/woof.server.m.js",
+  "private": true,
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",

@@ -146,6 +146,12 @@ export function makeDolla({ getService, $route }) {
   /**
    * Registers sub-routes and the components to render when those routes match.
    *
+   * @example
+   * $.router((self) => {
+   *   self.route("/example", Component);
+   *   self.redirect("*", "./example");
+   * });
+   *
    * @param defineRoutes - Function to define routes. Takes a router object with methods to define `route`s and `redirect`s similar to the top level app.
    */
   $.router = function (defineRoutes) {

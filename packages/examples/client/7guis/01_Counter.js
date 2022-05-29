@@ -12,7 +12,7 @@ export default makeComponent(($, self) => {
       </header>
 
       <div>
-        <input type="text" disabled value={$.bind($count)} />
+        <input type="text" value={$count} disabled />
         <button
           onclick={() => {
             $count.set((n) => n + 1);

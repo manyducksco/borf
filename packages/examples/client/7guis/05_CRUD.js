@@ -44,9 +44,11 @@ export default makeComponent(($, self) => {
   // Creates a new person from the current input values.
   function create() {
     $people.set((current) => {
+      // Get next ID and increment by 1.
       const id = $nextId.get();
       $nextId.set((current) => current + 1);
 
+      // Add the new person.
       current.push({
         id,
         name: $nameInput.get(),
