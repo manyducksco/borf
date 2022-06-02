@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/router",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "",
   "main": "dist/router.node.js",
   "module": "dist/router.js",

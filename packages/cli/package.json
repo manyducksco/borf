@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/cli",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A command line interface for dogs. ⌨️🐕",
   "main": "program.js",
   "scripts": {
@@ -15,7 +15,7 @@
   "dependencies": {
     "@ratwizard/cli": "^0.17.0",
     "@woofjs/app": "^0.2.0",
-    "@woofjs/state": "^0.2.0",
+    "@woofjs/state": "^0.3.0",
     "autoprefixer": "^10.4.2",
     "chokidar": "^3.5.3",
     "dedent": "^0.7.0",

@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/client",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Front end routing, components and state for dogs. 🐕",
   "source": "src/index.js",
   "main": "dist/woof.client.c.js",
@@ -37,8 +37,8 @@
     "@testing-library/dom": "^8.11.3",
     "@types/jest": "^27.4.1",
     "@types/node": "^17.0.21",
-    "@woofjs/router": "^0.2.0",
-    "@woofjs/state": "^0.2.0",
+    "@woofjs/router": "^0.3.0",
+    "@woofjs/state": "^0.3.0",
     "color-hash": "^2.0.1",
     "es-jest": "^1.5.0",
     "esbuild": "^0.14.25",
