@@ -75,7 +75,8 @@ declare module "@woofjs/client" {
      *
      * @param fn - Setup function.
      */
-    setup(fn: SetupFunction): App;
+    beforeConnect(fn: SetupFunction): App;
+    afterConnect(fn: SetupFunction): App;
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -94,9 +95,9 @@ declare module "@woofjs/client" {
     error(...args: any): void;
   };
 
-  export type SetupFunction = (self: SetupSelf) => void | Promise<void>;
+  export type SetupFunction = (self: AppSelf) => void | Promise<void>;
 
-  export type SetupSelf = {
+  export type AppSelf = {
     getService: getService;
     debug: DebugChannel;
   };

@@ -99,8 +99,8 @@ const Timer = makeComponent(($, self) => {
     $seconds.set(0);
   }
 
-  // Increment each second once the component is connected to the DOM.
-  self.connected(() => {
+  // Increment once per second after the component is connected to the DOM.
+  self.afterConnect(() => {
     setInterval(increment, 1000);
   });
 

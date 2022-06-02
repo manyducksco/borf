@@ -32,7 +32,8 @@ module.exports = function makeAppBundle(config) {
   }
 
   if (entryPoint == null) {
-    let expected = "'app/app.js', 'app/app.jsx', 'app/app.ts' or 'app/app.tsx'";
+    let expected =
+      "'client/client.js', 'client/client.jsx', 'client/client.ts' or 'client/client.tsx'";
 
     if (config.client?.entryPoint) {
       expected = config.client.entryPoint;

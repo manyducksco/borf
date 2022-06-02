@@ -19,7 +19,8 @@ export function makeApp(options = {}) {
   const services = {};
 
   let servicesCreated = false;
-  let setup = async () => true;
+  let beforeConnect = async () => true;
+  let afterConnect = async () => true;
 
   const router = makeRouter();
 
@@ -114,15 +115,23 @@ export function makeApp(options = {}) {
     },
 
     /**
-     * Takes a function that configures the app before it starts.
-     * This function is called after services have been created
+     * Takes a function that configures the app before it is connected.
+     * This function is called after services have been created, before the first route match.
      *
-     * If the function returns a Promise, the app will not be started until the Promise resolves.
-     *
-     * @param fn - App config function.
+     * If the function returns a Promise, the app will not be connected until the Promise resolves.
      */
-    setup(fn) {
-      setup = async () => fn(getService);
+    beforeConnect(fn) {
+      beforeConnect = async () => fn({ getService, debug: appDebug });
+
+      return methods;
+    },
+
+    /**
+     * Takes a function that configures the app after it is connected.
+     * This function is called after the first route match.
+     */
+    afterConnect(fn) {
+      afterConnect = async () => fn({ getService, debug: appDebug });
 
       return methods;
     },
@@ -170,7 +179,7 @@ export function makeApp(options = {}) {
         services[name].instance.beforeConnect();
       }
 
-      return setup().then(async () => {
+      return beforeConnect().then(async () => {
         // Listen for route changes and do initial route match.
         history.listen(onRouteChanged);
         await onRouteChanged(history);
@@ -192,6 +201,8 @@ export function makeApp(options = {}) {
 
           appDebug.log(`Intercepted link to '${href}'`);
         });
+
+        return afterConnect();
       });
     },
   };
