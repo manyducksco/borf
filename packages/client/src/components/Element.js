@@ -5,8 +5,8 @@ import { isArray, isObject, isString, isNumber, isFunction, isBinding } from "..
 export const Element = makeComponent((_, self) => {
   const { children } = self;
 
-  const tag = self.get("tag");
-  const attrs = self.get("attrs"); // attrs passed to the element itself
+  const tag = self.$attrs.get("tag");
+  const attrs = self.$attrs.get("attrs"); // attrs passed to the element itself
 
   const node = document.createElement(tag);
 

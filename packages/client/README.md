@@ -45,7 +45,7 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 
 ```js
 app.route("users/:id", ($, self) => {
-  const id = self.get("@route.params.id");
+  const id = self.$route.get("params.id");
 
   return $("p", ["User ID is ", id]);
 });
@@ -121,9 +121,7 @@ Components are ubiquitous in front-end frameworks, but Woof's take on them is ve
 
 ```js
 const Example = makeComponent(($, self) => {
-  // Use self.map and self.get functions to access attributes.
-  // Mapping attributes allows them to change over time, while a get only gives you the value once.
-  const $title = self.map("title");
+  const $title = self.$attrs.map("title");
 
   return $("div", [
     $("h1", $.text($title, "Default Title"),
@@ -151,10 +149,13 @@ app.route("other", ($) => {
 ```js
 const Example = makeComponent(($, self) => {
   // Get an attribute's value.
-  const title = self.get("title");
+  const title = self.$attrs.get("title");
 
   // Get an attribute's value as a state that updates when the attribute changes.
-  const $title = self.map("title");
+  const $title = self.$attrs.map("title");
+
+  // Get info about the route the component is mounted under.
+  const userId = self.$route.get("params.userId");
 
   // Access services.
   const service = self.getService("name");
@@ -277,7 +278,7 @@ When using subcomponents, you can pass them attributes just like you can with HT
 
 ```js
 const Subcomponent = makeComponent(($, self) => {
-  const name = self.get("name");
+  const name = self.$attrs.get("name");
 
   return $("h1", "Hello ", name, "!");
 });
@@ -331,10 +332,10 @@ const Example = makeComponent(($, self) => {
     // Render once for each item in $list. Updates when $list changes.
     $.each($list, ($, self) => {
       // Components in an each have unique keys. In this case we're just using the position in the list.
-      self.key = self.map("@index");
+      self.key = self.$attrs.map("@index");
 
       // Return an <li> that contains the current value of this $list item.
-      return $("li", self.map("@value"));
+      return $("li", self.$attrs.map("@value"));
     })
   );
 });
@@ -458,7 +459,7 @@ const Example = makeComponent(($, self) => {
         container: true,
 
         // Include "active" class when 'isActive' attribute is true
-        active: self.map("isActive"),
+        active: self.$attrs.map("isActive"),
       }}
     >
       {self.children}
@@ -483,7 +484,7 @@ const Example = makeComponent(($, self) => {
   return (
     <div
       class={["container", {
-        active: self.map("isActive"),
+        active: self.$attrs.map("isActive"),
       }}
     >
       {self.children}

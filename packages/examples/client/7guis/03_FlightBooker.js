@@ -12,9 +12,13 @@ export default makeComponent(($, self) => {
   const $startDateIsValid = makeState(true);
   const $returnDateIsValid = makeState(true);
 
-  const $formIsValid = mergeStates($startDateIsValid, $returnDateIsValid, (d1, d2) => {
-    return d1 && d2;
-  });
+  const $formIsValid = mergeStates(
+    $startDateIsValid,
+    $returnDateIsValid,
+    (d1, d2) => {
+      return d1 && d2;
+    }
+  );
 
   function formatDate(date) {
     date = new Date();
@@ -59,10 +63,14 @@ export default makeComponent(($, self) => {
             }}
           >
             {$.each(flightTypes, ($, self) => {
-              const $value = self.map("@value");
-              const $selected = mergeStates($value, $flightType, (value, current) => {
-                return value === current;
-              });
+              const $value = self.$attrs.map("@value");
+              const $selected = mergeStates(
+                $value,
+                $flightType,
+                (value, current) => {
+                  return value === current;
+                }
+              );
 
               self.key = $value;
 

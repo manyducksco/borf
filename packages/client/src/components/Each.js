@@ -6,29 +6,30 @@ import { makeComponent } from "../makeComponent.js";
 export const Each = makeComponent(($, self) => {
   self.debug.name = "woof:$:each";
 
-  const $value = self.map("value");
-  const initComponent = self.get("component");
+  const $value = self.$attrs.map("value");
+  const initComponent = self.$attrs.get("component");
 
   const node = document.createTextNode("");
 
   let items = [];
 
-  function update(newItems) {
-    if (newItems == null) {
+  function update(newValues) {
+    // Disconnect all if updated with empty values.
+    if (newValues == null) {
       for (const item of items) {
         item.node.disconnect();
       }
-
       items = [];
 
       return;
     }
 
-    const newInstances = newItems.map((value, index) => {
+    // Create new components for each item.
+    const newComponents = newValues.map((value, index) => {
       const component = initComponent({
         getService: self.getService,
         dolla: $,
-        $route: self.map("@route"),
+        $route: self.$route,
         debug: self.getService("@debug").makeChannel(`each item ${index}`),
         attrs: {
           "@value": value,
@@ -43,55 +44,37 @@ export const Each = makeComponent(($, self) => {
       return component;
     });
 
-    const removed = [];
-    const added = [];
-    const unchanged = [];
+    const newKeys = newComponents.map((component) => component.key);
+    const newItems = [];
 
-    const newKeys = newInstances.map((item) => item.key);
-
+    // Disconnect components for items that no longer exist.
     for (const item of items) {
       const stillPresent = newKeys.includes(item.key);
 
       if (!stillPresent) {
-        removed.push(item);
+        component.disconnect();
       }
     }
 
-    for (const instance of newInstances) {
-      const exists = items.find((item) => item.key === instance.key);
+    // Add new components and update props for existing ones.
+    for (let newIndex = 0; newIndex < newComponents.length; newIndex++) {
+      const component = newComponents[newIndex];
+      const existing = items.find((item) => item.key === component.key);
 
-      if (!exists) {
-        added.push(instance);
+      if (!existing) {
+        newItems[newIndex] = component;
       } else {
-        unchanged.push(instance);
+        existing.$attrs.set(component.$attrs.get());
+        newItems[newIndex] = existing;
       }
     }
 
-    for (const instance of removed) {
-      instance.disconnect();
-      items.splice(items.indexOf(instance), 1);
+    // Reconnect to ensure order. Lifecycle hooks won't be run again if the component is already connected.
+    for (const component of newItems) {
+      component.connect(node.parentNode);
     }
 
-    for (const instance of unchanged) {
-      const newIndex = newInstances.indexOf(instance);
-      const previous = newInstances[newIndex - 1];
-      const newInstance = newInstances[newIndex];
-
-      const spliced = items.splice(
-        items.findIndex((i) => i.key === instance.key),
-        1
-      );
-      items.splice(items.indexOf(previous), 0, ...spliced);
-      spliced[0].$attrs.set(newInstance.$attrs.get());
-    }
-
-    for (const instance of added) {
-      const newIndex = newInstances.indexOf(instance);
-      const previous = newInstances[newIndex - 1];
-
-      instance.connect(node.parentNode, previous?.element);
-      items.splice(items.indexOf(previous), 0, instance);
-    }
+    items = newItems;
   }
 
   self.watchState($value, update, { immediate: true });

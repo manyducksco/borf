@@ -69,7 +69,7 @@ const DynamicListExample = makeComponent(($, self) => {
         </div>
 
         {$.each($shoppingList, ($, self) => {
-          const $item = self.map("@value");
+          const $item = self.$attrs.map("@value");
 
           self.key = $item;
 

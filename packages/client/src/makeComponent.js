@@ -62,8 +62,6 @@ export function makeComponent(fn) {
 
     const initialAttrs = {};
 
-    initialAttrs["@route"] = $route.get();
-
     stateAttrs.forEach(({ name, value }) => {
       initialAttrs[name] = value.get();
     });
@@ -81,18 +79,15 @@ export function makeComponent(fn) {
     // This is the object the setup function uses to interface with the component.
     const self = {
       /**
-       * Selects a current attribute value.
+       * A read-only state containing the attributes passed to the component.
        */
-      get(...selectors) {
-        return $attrs.get(...selectors);
-      },
+      $attrs: $attrs.map(),
 
       /**
-       * Returns a state that reflects the current value of the selected attribute.
+       * A read-only state containing details about the route the component is mounted under.
        */
-      map(...selectors) {
-        return $attrs.map(...selectors);
-      },
+      $route: $route.map(),
+
       getService,
       children,
       debug: getService("@debug").makeChannel("~"),
@@ -141,13 +136,6 @@ export function makeComponent(fn) {
     /*=============================*\
     ||     Watch dynamic attrs     ||
     \*=============================*/
-
-    // Update "@route" attr when route changes.
-    self.watchState($route, (value) => {
-      $attrs.set((current) => {
-        current["@route"] = value;
-      });
-    });
 
     // Update $attrs when state attrs change.
     stateAttrs.map(({ name, value }) => {

@@ -13,7 +13,7 @@ export const Text = makeComponent((_, self) => {
     }
   }
 
-  self.watchState(self.map(), setText, { immediate: true });
+  self.watchState(self.$attrs, setText, { immediate: true });
 
   return node;
 });

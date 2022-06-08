@@ -103,7 +103,7 @@ export default makeComponent(($, self) => {
             }}
           >
             {$.each($filteredPeople, ($, self) => {
-              const $person = self.map("@value");
+              const $person = self.$attrs.map("@value");
 
               self.key = $person.map("id");
 

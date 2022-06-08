@@ -41,7 +41,7 @@ export const Router = makeComponent((_, self) => {
   \*=========================*/
 
   // This should be a function of the same format `app.routes` takes
-  const defineRoutes = self.get("defineRoutes");
+  const defineRoutes = self.$attrs.get("defineRoutes");
 
   function route(path, component, attrs = {}) {
     if (isFunction(component) && !isComponent(component)) {
@@ -67,7 +67,7 @@ export const Router = makeComponent((_, self) => {
   // This is where the magic happens.
   // Routes are matched on the 'wildcard' of the route this component is mounted under.
   self.watchState(
-    self.map("@route.wildcard"),
+    self.$route.map("wildcard"),
     (current) => {
       if (current != null) {
         matchRoute(current);
@@ -94,8 +94,8 @@ export const Router = makeComponent((_, self) => {
 
     if (matched) {
       const routeChanged = matched.route !== $route.get("route") || mounted == null;
-      const wildcard = self.get("@route.wildcard");
-      const path = self.get("@route.path");
+      const wildcard = self.$route.get("wildcard");
+      const path = self.$route.get("path");
 
       let fullPath;
 
@@ -115,7 +115,7 @@ export const Router = makeComponent((_, self) => {
       });
 
       if (matched.props.redirect) {
-        let resolved = resolvePath(self.get("@route.fullPath"), matched.props.redirect);
+        let resolved = resolvePath(self.$route.get("fullPath"), matched.props.redirect);
 
         if (resolved[0] !== "/") {
           resolved = "/" + resolved;
@@ -160,7 +160,7 @@ export const Router = makeComponent((_, self) => {
         current.query = {};
         current.params = {};
         current.wildcard = null;
-        current.fullPath = self.get("@route.fullPath") || null;
+        current.fullPath = self.$route.get("fullPath") || null;
       });
 
       self.debug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
