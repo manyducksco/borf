@@ -1,13 +1,5 @@
 import { makeComponent } from "@woofjs/client";
 
-import Counter from "./01_Counter";
-import TempConverter from "./02_TempConverter";
-import FlightBooker from "./03_FlightBooker";
-import Timer from "./04_Timer";
-import CRUD from "./05_CRUD";
-import CircleDrawer from "./06_CircleDrawer";
-import Cells from "./07_Cells";
-
 export default makeComponent(($, self) => {
   return (
     <div>
@@ -41,19 +33,7 @@ export default makeComponent(($, self) => {
         </li>
       </ul>
 
-      <div>
-        {$.router((self) => {
-          self.route("counter", Counter);
-          self.route("temp-converter", TempConverter);
-          self.route("flight-booker", FlightBooker);
-          self.route("timer", Timer);
-          self.route("crud", CRUD);
-          self.route("circle-drawer", CircleDrawer);
-          self.route("cells", Cells);
-
-          self.redirect("*", "./counter");
-        })}
-      </div>
+      <div>{self.children}</div>
     </div>
   );
 });

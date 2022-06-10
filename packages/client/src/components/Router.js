@@ -96,33 +96,36 @@ export const Router = makeComponent((_, self) => {
       const routeChanged = matched.route !== $route.get("route") || mounted == null;
       const wildcard = self.$route.get("wildcard");
       const path = self.$route.get("path");
+      const route = self.$route.get("route");
 
       let fullPath;
+      let fullRoute;
 
       if (wildcard != null) {
         fullPath = joinPath(path.slice(0, path.lastIndexOf(wildcard)), matched.path);
+        fullRoute = joinPath(route.slice(0, route.lastIndexOf(wildcard)), matched.route);
       } else {
         fullPath = joinPath(path, matched.path);
+        fullRoute = joinPath(route, matched.route);
       }
 
       $route.set((current) => {
-        current.path = matched.path;
-        current.route = matched.route;
+        current.path = fullPath;
+        current.route = fullRoute;
         current.query = matched.query;
         current.params = matched.params;
         current.wildcard = matched.wildcard;
-        current.fullPath = fullPath;
       });
 
       if (matched.props.redirect) {
-        let resolved = resolvePath(self.$route.get("fullPath"), matched.props.redirect);
+        let resolved = resolvePath(self.$route.get("path"), matched.props.redirect);
 
         if (resolved[0] !== "/") {
           resolved = "/" + resolved;
         }
 
         // FIXME: Causes redirect loops when the target route doesn't exist
-        self.getService("@router").go(resolved, { replace: true });
+        self.getService("@router").navigate(resolved, { replace: true });
       } else if (routeChanged) {
         const start = Date.now();
         const created = dolla(matched.props.component, matched.props.attrs);
@@ -143,7 +146,7 @@ export const Router = makeComponent((_, self) => {
         mount(created);
 
         self.debug.log(
-          `Mounted nested route '${$route.get("fullPath")}'${
+          `Mounted nested route '${$route.get("path")}'${
             created.hasRoutePreload ? ` (loaded in ${Date.now() - start}ms)` : ""
           }`
         );
@@ -160,7 +163,6 @@ export const Router = makeComponent((_, self) => {
         current.query = {};
         current.params = {};
         current.wildcard = null;
-        current.fullPath = self.$route.get("fullPath") || null;
       });
 
       self.debug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);

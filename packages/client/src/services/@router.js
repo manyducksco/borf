@@ -1,23 +1,27 @@
 import { makeState } from "@woofjs/state";
 import { makeService } from "../makeService.js";
-import { isString } from "../helpers/typeChecking.js";
+import { isObject } from "../helpers/typeChecking.js";
 import { resolvePath } from "../helpers/resolvePath.js";
+import { joinPath } from "../helpers/joinPath.js";
+import { makeRouter } from "@woofjs/router";
 
 /**
  * Top level navigation service.
  */
-export default makeService((self) => {
-  self.debug.name = "woof:service:@router";
+export default makeService(({ options, debug, afterConnect, watchState }) => {
+  debug.name = "woof:@router";
 
-  const { history } = self.options;
+  const { history, routes } = options;
 
-  const $route = makeState({
-    route: "", // The string representation of the route that was matched (including ':params' and '*')
-    path: "", // The actual path that was matched against the route. What appears in the URL bar.
-    params: {}, // Matched :params extracted from the matched path.
-    query: {}, // Query params extracted from the matched path.
-    wildcard: null, // The matched value for the wildcard portion of the route.
-  });
+  const router = makeRouter();
+
+  for (const route of routes) {
+    debug.log(route);
+  }
+
+  const $route = makeState();
+  const $path = makeState();
+  const $params = makeState({});
 
   // Magic state that syncs with with the browser's query params
   const $query = makeState({});
@@ -25,14 +29,22 @@ export default makeService((self) => {
   // Track and skip updating the URL when the change came from URL navigation
   let isRouteChange = false;
 
+  function onHistoryChange(h) {
+    debug.log(h);
+  }
+
+  afterConnect(() => {
+    history.listen(onHistoryChange);
+  });
+
   // Update $query when URL changes
-  self.watchState($route, (current) => {
+  watchState($route, (current) => {
     isRouteChange = true;
     $query.set(current.query);
   });
 
   // Update URL when $query changes
-  self.watchState($query, (current) => {
+  watchState($query, (current) => {
     if (isRouteChange) {
       isRouteChange = false;
       return;
@@ -52,6 +64,8 @@ export default makeService((self) => {
 
   return {
     $route,
+    $path,
+    $params,
     $query,
 
     back(steps = 1) {
@@ -65,20 +79,26 @@ export default makeService((self) => {
     /**
      * Navigates to another route.
      *
-     * @param path - Path string
-     * @param options - `replace: true` to replace state
+     * @example
+     * navigate("/users", 215, { replace: true }); // replace current history entry with `/users/215`
+     *
+     * @param args - One or more path segments optionally followed by an options object.
      */
-    go(path, options = {}) {
-      if (isString(path)) {
-        path = resolvePath(history.location.pathname, path);
+    navigate(...args) {
+      let path = "";
+      let options = {};
 
-        if (options.replace) {
-          history.replace(path);
-        } else {
-          history.push(path);
-        }
+      if (isObject(args[args.length - 1])) {
+        options = args.pop();
+      }
+
+      path = joinPath(...args);
+      path = resolvePath(history.location.pathname, path);
+
+      if (options.replace) {
+        history.replace(path);
       } else {
-        throw new TypeError(`Expected a string. Got: ${path}`);
+        history.push(path);
       }
     },
   };

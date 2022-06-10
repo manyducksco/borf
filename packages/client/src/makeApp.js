@@ -47,9 +47,9 @@ export function makeApp(options = {}) {
      *
      * @param path - Path to match before calling handlers.
      * @param component - Component to display when route matches.
-     * @param attributes - Attributes to forward to component when route is connected.
+     * @param defineRoutes - Function that defines routes to be displayed as children of `component`.
      */
-    route(path, component, attributes = {}) {
+    route(path, component, defineRoutes = null) {
       if (isFunction(component) && !isComponent(component)) {
         component = makeComponent(component);
       }
@@ -58,7 +58,7 @@ export function makeApp(options = {}) {
         throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
       }
 
-      router.on(path, { component, attributes });
+      router.on(path, { component, defineRoutes });
 
       return methods;
     },
@@ -255,7 +255,7 @@ export function makeApp(options = {}) {
       });
 
       if (matched.props.redirect) {
-        getService("@router").go(matched.props.redirect, { replace: true });
+        getService("@router").navigate(matched.props.redirect, { replace: true });
       } else if (routeChanged) {
         const start = Date.now();
         const created = matched.props.component({
