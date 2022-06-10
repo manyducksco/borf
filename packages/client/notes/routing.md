@@ -5,74 +5,47 @@ Router needs to support nested routes.
 ```js
 const app = makeApp();
 
-// wildcard indicates this route may have nested routes
-// using an outlet under a non-wildcard route will throw an error
-app.route("/path/*", function ($, self) {
-  // paths in an outlet route are relative to the parent route
-  return $.router((self) => {
-    self.route("first/*", function ($) {
-      return $.router((self) => {
-        self.route(":id", ViewComponent);
-        self.route(":id/edit", EditComponent);
-        self.route(":id/delete", DeleteComponent);
-      });
-    });
-
-    self.route("second", SecondComponent);
+app.route("/example", ExampleLayout, function () {
+  // Every route defined in this function is mounted at '/example/*' and rendered as children of an ExampleLayout.
+  this.route("/users", UsersLayout, function () {
+    // Every route defined in this function is mounted at '/example/users/*' and rendered as children of a UsersLayout.
+    this.route("/", UsersList);
+    this.route("/:id", UserDetails);
+    this.route("/:id/edit", UserEdit);
   });
+
+  this.route("/projects", Projects);
+
+  this.redirect("*", PageNotFound);
 });
 
-app.route("*", PageNotFoundComponent);
+app.redirect("*", "/example/users");
 ```
 
 The code above defines these routes:
 
-- `/path/first/:id` -> ViewComponent
-- `/path/first/:id/edit` -> EditComponent
-- `/path/first/:id/delete` -> DeleteComponent
-- `/path/second` -> SecondComponent
-- `/*` -> PageNotFoundComponent
+- `/example/users` -> ExampleLayout > UsersLayout > UsersList
+- `/example/users/:id` -> ExampleLayout > UsersLayout > UserDetails
+- `/example/users/:id/edit` -> ExampleLayout > UsersLayout > UserEdit
+- `/example/projects` -> ExampleLayout > Projects
+- `/example/*` -> ExampleLayout > PageNotFound
+- `/*` -> (redirect to `/example/users`)
 
-## How does matching work?
-
-We don't want to unmount and remount everything each time the route changes. Nested outlets should do a cascading match each time the route changes, swapping their route only if their segment has changed. A change in param values is considered the same route, but the params object on $.route will be updated. Params is a state, so any interested elements should already be listening for those changes.
-
-A new dolla instance is created at each route boundary. I am using route boundary to refer to the top level router and all outlets. That route needs to be updated in the same dolla instance each time a match is done. Maybe the dolla constructor should export a function to run a match. The routing contexts create it, so they could store the function and call it when they update. And it just cascades down through each outlet.
-
-## Do params cascade?
-
-A component's $route contains the full path (nested paths joined), all params down that route tree.
-
-```js
-function ($, self) {
-  const { navigate } = self.getService("@router");
-
-  navigate(self.$route.get("path"), "../create");
-
-  return $.router((self) => {
-    self.route("/:userId/*", ($, self) => {
-      return <div></div>
-    })
-
-    self.route("/:userId/edit", ($, self) => {
-      return <div></div>
-    })
-  });
-}
-
-```
-
-Maybe it would be better and easier to require all routes to be defined at the top level of the app. This way one global $route state could be provided by the @router service. Only one route can match at a time, and routes are always defined in only one place.
+All routes are defined at the top level of the app. This way one global $route state could be provided by the @router service. Only one route can match at a time, and routes are always defined in only one place.
 
 ```js
 // The whole app is rendered as children of an AppLayout
-app.route("*", AppLayout, ({ route, redirect }) => {
-  route("/users", UsersList); // Display UsersList at '/users'
-  route("/users/:id", UserDetails); // Display UserDetails at '/users/:id/
-  route("/users/:id/edit", UserEdit); // Display UserEdit at '/users/:id/edit'
+app.route("*", AppLayout, function () {
+  this.route("/users", UsersList); // Display UsersList at '/users'
+  this.route("/users/:id", UserDetails); // Display UserDetails at '/users/:id/
+  this.route("/users/:id/edit", UserEdit); // Display UserEdit at '/users/:id/edit'
+
+  this.route("/nested", NestedLayout, function () {
+    this.route("/route", NestedRoute);
+  });
 
   // Redirect to '/users' if no other sibling routes match
-  redirect("*", "/users");
+  this.redirect("*", "/users");
 });
 
 // This would generate the following routes object:
@@ -82,6 +55,9 @@ const routes = [
     path: "*",
     component: AppLayout,
     // These routes are handled by an Outlet that is the child of AppLayout
+    // <AppLayout>
+    //   <Outlet routes={these...} />
+    // </AppLayout>
     routes: [
       {
         path: "/users",
@@ -94,6 +70,16 @@ const routes = [
       {
         path: "/users/:id/edit",
         component: UserEdit,
+      },
+      {
+        path: "/nested",
+        component: NestedLayout,
+        routes: [
+          {
+            path: "/route",
+            component: NestedRoute,
+          },
+        ],
       },
       {
         path: "*",
