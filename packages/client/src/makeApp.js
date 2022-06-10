@@ -1,12 +1,7 @@
 import { createHashHistory, createBrowserHistory } from "history";
-import { makeRouter } from "@woofjs/router";
-import { makeDolla } from "./makeDolla.js";
 import { makeDebug } from "./makeDebug.js";
-import { makeComponent } from "./makeComponent.js";
 import { makeService } from "./makeService.js";
-import { isFunction, isString, isService, isComponent } from "./helpers/typeChecking.js";
-import { joinPath } from "./helpers/joinPath.js";
-import catchLinks from "./helpers/catchLinks.js";
+import { isFunction, isString, isService } from "./helpers/typeChecking.js";
 
 import HTTPService from "./services/@http.js";
 import PageService from "./services/@page.js";
@@ -16,18 +11,15 @@ export function makeApp(options = {}) {
   const debug = makeDebug(options.debug);
   const appDebug = debug.makeChannel("woof:app");
 
+  const routes = [];
   const services = {};
 
   let servicesCreated = false;
   let beforeConnect = async () => true;
   let afterConnect = async () => true;
 
-  const router = makeRouter();
-
   let history;
-  let outlet;
-  let mounted;
-  let dolla;
+  let root;
 
   if (options.history) {
     history = options.history;
@@ -35,6 +27,46 @@ export function makeApp(options = {}) {
     history = createHashHistory();
   } else {
     history = createBrowserHistory();
+  }
+
+  /**
+   * Recursively parses nested routes into an object structure suitable for the @router service.
+   *
+   * @param path - Path to match before calling handlers.
+   * @param component - Component to display when route matches.
+   * @param defineRoutes - Function that defines routes to be displayed as children of `component`.
+   */
+  function parseRoute(path, component, defineRoutes) {
+    if (!isFunction(component)) {
+      throw new TypeError(`Route needs a path and a component function. Got: ${path} and ${component}`);
+    }
+
+    const parsed = {
+      path,
+      component,
+    };
+
+    if (defineRoutes != null) {
+      const routes = [];
+
+      const helpers = {
+        route(path, component, defineRoutes) {
+          routes.push(parseRoute(path, component, defineRoutes));
+        },
+        redirect(from, to) {
+          routes.push({
+            path: from,
+            redirect: to,
+          });
+        },
+      };
+
+      defineRoutes.call(helpers, helpers);
+
+      parsed.routes = routes;
+    }
+
+    return parsed;
   }
 
   ////
@@ -50,15 +82,7 @@ export function makeApp(options = {}) {
      * @param defineRoutes - Function that defines routes to be displayed as children of `component`.
      */
     route(path, component, defineRoutes = null) {
-      if (isFunction(component) && !isComponent(component)) {
-        component = makeComponent(component);
-      }
-
-      if (!isComponent(component)) {
-        throw new TypeError(`Route needs a path and a component. Got: ${path} and ${component}`);
-      }
-
-      router.on(path, { component, defineRoutes });
+      routes.push(parseRoute(path, component, defineRoutes));
 
       return methods;
     },
@@ -71,7 +95,10 @@ export function makeApp(options = {}) {
      */
     redirect(path, to) {
       if (isString(to)) {
-        router.on(path, { redirect: to });
+        routes.push({
+          path: path,
+          redirect: to,
+        });
       } else {
         throw new TypeError(`Expected a path. Got: ${to}`);
       }
@@ -150,7 +177,7 @@ export function makeApp(options = {}) {
         throw new TypeError(`Expected a DOM node. Got: ${element}`);
       }
 
-      outlet = element;
+      root = element;
 
       // Create registered services.
       for (const name in services) {
@@ -168,11 +195,6 @@ export function makeApp(options = {}) {
       // Unlock getService now that all services have been created.
       servicesCreated = true;
 
-      dolla = makeDolla({
-        getService,
-        $route: getService("@router").$route,
-      });
-
       // beforeConnect is the first opportunity to access other services.
       // This is also a good place to configure things before app-level `setup` runs.
       for (const name in services) {
@@ -180,27 +202,10 @@ export function makeApp(options = {}) {
       }
 
       return beforeConnect().then(async () => {
-        // Listen for route changes and do initial route match.
-        history.listen(onRouteChanged);
-        await onRouteChanged(history);
-
         // Send connected signal to all services.
         for (const name in services) {
           services[name].instance.afterConnect();
         }
-
-        // Intercept internal <a href> clicks.
-        catchLinks(outlet, (anchor) => {
-          let href = anchor.getAttribute("href");
-
-          if (!/^https?:\/\/|^\//.test(href)) {
-            href = joinPath(history.location.pathname, href);
-          }
-
-          history.push(href);
-
-          appDebug.log(`Intercepted link to '${href}'`);
-        });
 
         return afterConnect();
       });
@@ -234,70 +239,18 @@ export function makeApp(options = {}) {
     throw new Error(`Service is not registered in this app. Got: ${name}`);
   }
 
-  /**
-   * Switches or sets everything that needs switching or setting when the URL changes.
-   */
-  async function onRouteChanged({ location }) {
-    const matched = router.match(location.pathname + location.search);
-
-    if (matched) {
-      const { $route } = getService("@router");
-      const routeChanged = matched.route !== $route.get("route");
-
-      // Top level route details are stored on @router where they can be read by apps and services.
-      // Nested route info is found in `self.$route` in components.
-      $route.set((current) => {
-        current.route = matched.route;
-        current.path = matched.path;
-        current.params = matched.params;
-        current.query = matched.query;
-        current.wildcard = matched.wildcard;
-      });
-
-      if (matched.props.redirect) {
-        getService("@router").navigate(matched.props.redirect, { replace: true });
-      } else if (routeChanged) {
-        const start = Date.now();
-        const created = matched.props.component({
-          getService,
-          dolla,
-          attrs: matched.props.attributes || {},
-          children: [],
-          $route,
-        });
-
-        const mount = (component) => {
-          if (mounted) {
-            mounted.disconnect();
-          }
-
-          mounted = component;
-          mounted.connect(outlet);
-        };
-
-        if (created.hasRoutePreload) {
-          await created.routePreload(mount);
-        }
-
-        mount(created);
-
-        appDebug.log(
-          `Mounted top level route '${matched.route}'${
-            created.hasRoutePreload ? ` (loaded in ${Date.now() - start}ms)` : ""
-          }`
-        );
-      }
-    } else {
-      appDebug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
-    }
-  }
-
   ////
   // Built-in services
   ////
 
   methods.service("@debug", () => debug);
-  methods.service("@router", RouterService, { history });
+  methods.service("@router", RouterService, {
+    getRoot() {
+      return root;
+    },
+    history,
+    routes,
+  });
   methods.service("@page", PageService);
   methods.service("@http", HTTPService);
 

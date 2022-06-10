@@ -34,6 +34,35 @@ The code above defines these routes:
 All routes are defined at the top level of the app. This way one global $route state could be provided by the @router service. Only one route can match at a time, and routes are always defined in only one place.
 
 ```js
+import { makeApp } from "@woofjs/client"; // client-specific
+import { makeApp } from "@woofjs/server"; // server-specific
+
+import { v, each, when, unless, watch, bind } from "@woofjs/view"; // client or server
+import { makeState, mergeStates, isState } from "@woofjs/state"; // client or server
+
+// Component is called with `self` as this, so you can do this?
+function Component($attrs) {
+  const someValue = $attrs.get("someValue");
+
+  this.beforeConnect(() => {
+    // Do callback.
+  });
+
+  return when($condition, h("h1", "Yo!"));
+
+  return (
+    <div>
+      {each($items, function ($attrs) {
+        this.key = $attrs.map("@index");
+
+        // return v("h1", $attrs.map("@value"));
+
+        return <h1>{$attrs.map("@value")}</h1>;
+      })}
+    </div>
+  );
+}
+
 // The whole app is rendered as children of an AppLayout
 app.route("*", AppLayout, function () {
   this.route("/users", UsersList); // Display UsersList at '/users'
@@ -58,6 +87,7 @@ const routes = [
     // <AppLayout>
     //   <Outlet routes={these...} />
     // </AppLayout>
+    // The question is how to get the outlets to respond to changes at the top level.
     routes: [
       {
         path: "/users",
@@ -143,49 +173,4 @@ function ExampleComponent($, self) {
   navigate("/some/path");
   navigate($path.get(), "../edit"); // Supports multiple fragments with relative paths
 }
-```
-
-## Outlet Ideas
-
-Information routes have:
-
-- their parent route
-- their own matched route (matched against parent's wildcard value)
--
-
-```js
-$.routes((when, redirect) => {
-  when("/", TestRoute);
-  when("test/:id/*", TestRoute2, { ...attrs });
-  redirect("*", "./");
-});
-
-$.outlet({
-  // Grouped routes get joined like "test/edit", "test/:id/details" and matched in this outlet.
-  // If value is an object, assume a route map. If value is a function, assume a component.
-  // If value is a string, assume a redirect path.
-  "/": ($) => $("div")("default"),
-  "/test/*": {
-    "/edit": ($) => $("h1")("edit"),
-
-    "/delete": TestDelete, // or pass a standalone component
-
-    // or pass a path for redirect
-    "/:id/absolute": "/chunk1", // redirect relative to app
-    "/:id/relative": "../chunk2", // redirect relative to this's parent's "/chunk2", just like a file path
-    "/:id/outlet-relative": "chunk1", // redirect relative to this outlet
-  },
-  "/chunk1": ($) => $("h1")("This is the chunk1 page"),
-  "/chunk2": ($) => $.text("HELLO CHUNK2"),
-})
-
-$.outlet(
-  // Takes non-constructed dolla and passes route component as a child (needs reactive $children then?)
-  $(CustomOutlet, {
-    /* attrs */
-  }),
-  {
-    /* routes */
-  }
-),
 ```

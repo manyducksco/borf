@@ -10,7 +10,7 @@ const protocolLink = /^[\w-_]+:/;
  * @param callback - Function to call when a click event is intercepted
  * @param _window - (optional) Override for global window object
  */
-export default function catchLinks(root, callback, _window = window) {
+export function catchLinks(root, callback, _window = window) {
   function traverse(node) {
     if (!node || node === root) {
       return;

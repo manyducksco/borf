@@ -1,11 +1,11 @@
-import { makeService } from "../makeService.js";
-import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
+import { makeService } from "../makeService";
+import { isFunction, isObject, isString } from "../helpers/typeChecking";
 
-export default makeService((self) => {
-  self.debug.name = "woof:service:@http";
+export default makeService(({ debug, options }) => {
+  debug.name = "woof:@http";
 
   const _middleware = [];
-  let fetch = self.options.fetch || window.fetch.bind(window);
+  let fetch = options.fetch || window.fetch.bind(window);
   let requestId = 0;
 
   function request(method, url) {
@@ -14,8 +14,8 @@ export default makeService((self) => {
       method,
       url,
       fetch,
+      debug,
       middleware: _middleware,
-      debug: self.debug,
     });
   }
 

@@ -1,5 +1,15 @@
-import { makeRouter } from "@woofjs/router";
 import { isFunction } from "../helpers/typeChecking.js";
+
+function makeRouter() {
+  return {
+    on() {
+      console.warn(`Unimplemented mock`);
+    },
+    match() {
+      console.warn(`Unimplemented mock`);
+    },
+  };
+}
 
 /**
  * Creates a `fetch`-compatible function that responds with its own mock handlers.

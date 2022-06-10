@@ -1,15 +1,15 @@
 import { makeState } from "@woofjs/state";
-import { makeService } from "../makeService.js";
-import { isString } from "../helpers/typeChecking.js";
+import { makeService } from "../makeService";
+import { isString } from "../helpers/typeChecking";
 
-export default makeService((self) => {
-  self.debug.name = "woof:service:@page";
+export default makeService(({ debug, afterConnect, watchState }) => {
+  debug.name = "woof:@page";
 
   const $title = makeState(document?.title);
 
-  self.afterConnect(() => {
+  afterConnect(() => {
     if (document) {
-      self.watchState($title, (current) => {
+      watchState($title, (current) => {
         if (isString(current)) {
           document.title = current;
         }

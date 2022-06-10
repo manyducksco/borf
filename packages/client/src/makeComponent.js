@@ -7,7 +7,7 @@ import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.j
  * @param fn - Function that defines the component.
  */
 export function makeComponent(fn) {
-  function Component({ getService, $route, dolla, attrs, children }) {
+  function Component({ getService, attrs, dolla, children }) {
     // Lifecycle hook callbacks
     let onBeforeConnect = [];
     let onAfterConnect = [];
@@ -78,20 +78,13 @@ export function makeComponent(fn) {
 
     // This is the object the setup function uses to interface with the component.
     const self = {
-      /**
-       * A read-only state containing the attributes passed to the component.
-       */
-      $attrs: $attrs.map(),
-
-      /**
-       * A read-only state containing details about the route the component is mounted under.
-       */
-      $route: $route.map(),
+      $attrs,
 
       getService,
       children,
       debug: getService("@debug").makeChannel("~"),
 
+      // TODO: Can we figure out how to diff lists without using keys?
       get key() {
         if (isState(key)) {
           return key.get();
@@ -150,7 +143,10 @@ export function makeComponent(fn) {
     ||      Run setup function     ||
     \*=============================*/
 
-    const node = fn(dolla, self);
+    const node = fn.call(self, dolla, self);
+
+    // TODO: Components will be raw functions now, so the result of calling `$` will need to be hooked up
+    // to getService and the other plumbing.
 
     if (node !== null && !isComponentInstance(node) && !isDOM(node)) {
       let message = `Component must return an element or null. Got: ${node}`;
