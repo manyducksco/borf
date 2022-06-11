@@ -2,6 +2,9 @@ import { createHashHistory, createBrowserHistory } from "history";
 import { makeDebug } from "./makeDebug.js";
 import { makeService } from "./makeService.js";
 import { isFunction, isString, isService } from "./helpers/typeChecking.js";
+import { splitRoute } from "./helpers/routing.js";
+import { joinPath } from "./helpers/joinPath.js";
+import { resolvePath } from "./helpers/resolvePath.js";
 
 import HTTPService from "./services/@http.js";
 import PageService from "./services/@page.js";
@@ -20,6 +23,7 @@ export function makeApp(options = {}) {
 
   let history;
   let root;
+  let routeId = 0;
 
   if (options.history) {
     history = options.history;
@@ -30,30 +34,49 @@ export function makeApp(options = {}) {
   }
 
   /**
-   * Recursively parses nested routes into an object structure suitable for the @router service.
+   * Parses routes into a flat data structure appropriate for handling by the @router service.
    *
    * @param path - Path to match before calling handlers.
    * @param component - Component to display when route matches.
    * @param defineRoutes - Function that defines routes to be displayed as children of `component`.
    */
-  function parseRoute(path, component, defineRoutes) {
+  function prepareRoutes(path, component, defineRoutes = null, layers = []) {
     if (!isFunction(component)) {
       throw new TypeError(`Route needs a path and a component function. Got: ${path} and ${component}`);
     }
 
-    const parsed = {
-      path,
-      component,
-    };
+    const routes = [];
 
+    // Parse nested routes if they exist.
     if (defineRoutes != null) {
-      const routes = [];
+      const parts = splitRoute(path);
+      const layer = { id: routeId++, component };
+
+      // Remove trailing wildcard for joining with nested routes.
+      if (parts[parts.length - 1] === "*") {
+        parts.pop();
+      }
 
       const helpers = {
+        /**
+         * Registers a new nested route with a path relative to the current route.
+         */
         route(path, component, defineRoutes) {
-          routes.push(parseRoute(path, component, defineRoutes));
+          const fullPath = joinPath(...parts, path);
+
+          routes.push(...prepareRoutes(fullPath, component, defineRoutes, [...layers, layer]));
         },
+        /**
+         * Registers a new nested redirect with a path relative to the current route.
+         */
         redirect(from, to) {
+          from = joinPath(...parts, from);
+          to = resolvePath(joinPath(...parts), to);
+
+          if (!to.startsWith("/")) {
+            to = "/" + to;
+          }
+
           routes.push({
             path: from,
             redirect: to,
@@ -62,11 +85,14 @@ export function makeApp(options = {}) {
       };
 
       defineRoutes.call(helpers, helpers);
-
-      parsed.routes = routes;
+    } else {
+      routes.push({
+        path,
+        layers: [...layers, { id: routeId++, component }],
+      });
     }
 
-    return parsed;
+    return routes;
   }
 
   ////
@@ -82,7 +108,7 @@ export function makeApp(options = {}) {
      * @param defineRoutes - Function that defines routes to be displayed as children of `component`.
      */
     route(path, component, defineRoutes = null) {
-      routes.push(parseRoute(path, component, defineRoutes));
+      routes.push(...prepareRoutes(path, component, defineRoutes));
 
       return methods;
     },

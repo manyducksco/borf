@@ -34,3 +34,13 @@ export function v(element, ...args) {
 
   return {};
 }
+
+export function when($condition, element) {}
+
+export function unless($condition, element) {}
+
+export function each($values, component) {}
+
+export function watch($value, render) {}
+
+export function bind($value) {}

@@ -1,6 +1,6 @@
-import { makeComponent, makeState } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
-export default function () {
+export default function Counter() {
   this.debug.name = "7GUIs:Counter";
 
   const $count = makeState(0);

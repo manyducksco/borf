@@ -115,10 +115,10 @@ export function matchRoute(routes, path) {
     }
 
     return {
-      path: matched.map((f) => f.value).join("/"),
-      route: fragments.map((f) => (f.type === FragTypes.Param ? ":" + f.name : f.name)).join("/"),
+      path: "/" + matched.map((f) => f.value).join("/"),
+      route: "/" + fragments.map((f) => (f.type === FragTypes.Param ? ":" + f.name : f.name)).join("/"),
       params,
-      props: route.props,
+      data: route,
     };
   }
 }

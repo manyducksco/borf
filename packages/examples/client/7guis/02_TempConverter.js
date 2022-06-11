@@ -1,6 +1,6 @@
 import { makeComponent, makeState } from "@woofjs/client";
 
-export default makeComponent(($, self) => {
+export default function TempConverter($attrs, self) {
   self.debug.name = "7GUIs:TempConverter";
 
   const $celsius = makeState(10);
@@ -39,4 +39,4 @@ export default makeComponent(($, self) => {
       Fahrenheit
     </div>
   );
-});
+}

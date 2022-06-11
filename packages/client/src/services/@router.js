@@ -1,10 +1,11 @@
+import queryString from "query-string";
 import { makeState } from "@woofjs/state";
-import { makeService } from "../makeService";
-import { parseRoute, matchRoute, sortRoutes } from "../helpers/routing";
-import { isObject } from "../helpers/typeChecking";
-import { resolvePath } from "../helpers/resolvePath";
-import { joinPath } from "../helpers/joinPath";
-import { catchLinks } from "../helpers/catchLinks";
+import { makeService } from "../makeService.js";
+import { matchRoute, parseRoute } from "../helpers/routing.js";
+import { isObject } from "../helpers/typeChecking.js";
+import { joinPath } from "../helpers/joinPath.js";
+import { resolvePath } from "../helpers/resolvePath.js";
+import { catchLinks } from "../helpers/catchLinks.js";
 
 /**
  * Top level navigation service.
@@ -14,49 +15,36 @@ export default makeService((self) => {
 
   const { getRoot, history, routes } = self.options;
 
+  // Parse route paths into a matchable format.
   for (const route of routes) {
-    self.debug.log(route);
+    route.fragments = parseRoute(route.path).fragments;
   }
 
-  const $route = makeState(); // The route path with placeholder parameters
-  const $path = makeState(); // The literal path as it shows up in the URL bar
-  const $params = makeState({}); // Values matched for named route params
+  // Test redirects to make sure all possible redirect targets actually exist.
+  for (const route of routes) {
+    if (route.redirect) {
+      const match = matchRoute(
+        routes.filter((r) => r !== route),
+        route.redirect
+      );
+
+      if (!match) {
+        throw new Error(`Found a redirect to an undefined URL. From '${route.path}' to '${route.redirect}'`);
+      }
+    }
+  }
+
+  const $route = makeState(); // Route path with placeholder parameters
+  const $path = makeState(); // Real path as it shows up in the URL bar
+  const $params = makeState({}); // Matched values for named route params
   const $query = makeState({}); // Magic state that syncs with with the browser's query params
 
   // Track and skip updating the URL when the change came from URL navigation
   let isRouteChange = false;
 
-  function onHistoryChange({ location }) {
-    self.debug.log("location", location);
-
-    $path.set(location.pathname);
-  }
-
-  self.afterConnect(() => {
-    history.listen(onHistoryChange);
-    onHistoryChange(history);
-
-    catchLinks(getRoot(), (anchor) => {
-      let href = anchor.getAttribute("href");
-
-      if (!/^https?:\/\/|^\//.test(href)) {
-        href = joinPath(history.location.pathname, href);
-      }
-
-      history.push(href);
-
-      appDebug.log(`Intercepted link to '${href}'`);
-    });
-  });
-
-  // Update $query when URL changes
-  self.watchState($route, (current) => {
-    isRouteChange = true;
-    $query.set(current.query);
-  });
-
   // Update URL when $query changes
   self.watchState($query, (current) => {
+    // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
       return;
@@ -74,10 +62,65 @@ export default makeService((self) => {
     });
   });
 
+  self.afterConnect(() => {
+    history.listen(onRouteChange);
+    onRouteChange(history);
+
+    catchLinks(getRoot(), (anchor) => {
+      let href = anchor.getAttribute("href");
+
+      if (!/^https?:\/\/|^\//.test(href)) {
+        href = joinPath(history.location.pathname, href);
+      }
+
+      history.push(href);
+
+      self.debug.log(`Intercepted link to '${href}'`);
+    });
+  });
+
+  function onRouteChange({ location }) {
+    const matched = matchRoute(routes, location.pathname);
+
+    if (matched) {
+      if (matched.data.redirect != null) {
+        history.replace(matched.data.redirect);
+      } else {
+        $params.set(matched.params);
+
+        if (matched.route !== $route.get()) {
+          $path.set(matched.path);
+          $route.set(matched.route);
+
+          self.debug.log({ layers: matched.data.layers });
+
+          // TODO: Mount components
+        }
+      }
+    } else {
+      self.debug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
+    }
+
+    isRouteChange = true;
+    $query.set(
+      queryString.parse(location.search, {
+        parseBooleans: true,
+        parseNumbers: true,
+      })
+    );
+
+    console.log({
+      path: $path.get(),
+      route: $route.get(),
+      params: $params.get(),
+      query: $query.get(),
+    });
+  }
+
   return {
-    $route,
-    $path,
-    $params,
+    $route: $route.map(),
+    $path: $path.map(),
+    $params: $params.map(),
     $query,
 
     back(steps = 1) {
@@ -104,8 +147,7 @@ export default makeService((self) => {
         options = args.pop();
       }
 
-      path = joinPath(...args);
-      path = resolvePath(history.location.pathname, path);
+      path = resolvePath(history.location.pathname, joinPath(...args));
 
       if (options.replace) {
         history.replace(path);
