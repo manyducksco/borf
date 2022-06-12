@@ -1,7 +1,7 @@
-import { makeComponent, makeState } from "@woofjs/client";
+import { v, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-const HTTPRequestExample = makeComponent(($, self) => {
+const HTTPRequestExample = ($attrs, self) => {
   self.debug.name = "HTTPRequestExample";
 
   logLifecycle(self);
@@ -43,10 +43,10 @@ const HTTPRequestExample = makeComponent(($, self) => {
           }}
         />
         <button onclick={refresh}>Next Doggo</button>
-        {$.text($label)}
+        {$label}
       </div>
     </div>
   );
-});
+};
 
 export default HTTPRequestExample;

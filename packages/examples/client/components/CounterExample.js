@@ -1,10 +1,10 @@
-import { makeComponent } from "@woofjs/client";
+import { v } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 /**
  * Component with controls and a mapped label based on the state inside the service.
  */
-const CounterExample = makeComponent(($, self) => {
+function CounterExample($attrs, self) {
   self.debug.name = "CounterExample";
 
   logLifecycle(self);
@@ -22,15 +22,15 @@ const CounterExample = makeComponent(($, self) => {
       </div>
     </div>
   );
-});
+}
 
 export default CounterExample;
 
 /**
  * Second component with a view only. Displays the same information from the same service.
  */
-const CounterViewLabel = makeComponent(($, self) => {
+function CounterViewLabel($attrs, self) {
   const { $current } = self.getService("counter");
 
-  return <h1>{$.text($current)}</h1>;
-});
+  return <h1>{$current}</h1>;
+}

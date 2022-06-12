@@ -1,7 +1,7 @@
-import { makeComponent, makeState } from "@woofjs/client";
+import { v, when, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-const ConditionalExample = makeComponent(($, self) => {
+export default function ConditionalExample($attrs, self) {
   self.debug.name = "ConditionalExample";
 
   logLifecycle(self);
@@ -12,7 +12,7 @@ const ConditionalExample = makeComponent(($, self) => {
   return (
     <div class="example">
       <h3>
-        Conditional rendering with <code>$.if()</code>
+        Conditional rendering with <code>when()</code>
       </h3>
       <div>
         <button
@@ -22,10 +22,8 @@ const ConditionalExample = makeComponent(($, self) => {
         >
           {$label}
         </button>
-        {$.if($show, <span>Hello there!</span>)}
+        {when($show, <span>Hello there!</span>)}
       </div>
     </div>
   );
-});
-
-export default ConditionalExample;
+}

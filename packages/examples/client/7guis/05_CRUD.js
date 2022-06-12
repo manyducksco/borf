@@ -1,6 +1,6 @@
-import { makeComponent, makeState, mergeStates } from "@woofjs/client";
+import { v, each, bind, makeState, mergeStates } from "@woofjs/client";
 
-export default makeComponent(($, self) => {
+export default function CRUD($attrs, self) {
   self.debug.name = "7GUIs:CRUD";
 
   const $people = makeState([
@@ -92,7 +92,7 @@ export default makeComponent(($, self) => {
 
       <div>
         <div>
-          Filter prefix: <input value={$.bind($filterPrefix)} />
+          Filter prefix: <input value={bind($filterPrefix)} />
         </div>
         <div>
           <select
@@ -102,8 +102,8 @@ export default makeComponent(($, self) => {
               $selectedId.set(Number(e.target.value));
             }}
           >
-            {$.each($filteredPeople, ($, self) => {
-              const $person = self.$attrs.map("@value");
+            {each($filteredPeople, ($attrs, self) => {
+              const $person = $attrs.map("@value");
 
               self.key = $person.map("id");
 
@@ -116,8 +116,8 @@ export default makeComponent(($, self) => {
           </select>
         </div>
         <div>
-          <input type="text" value={$.bind($nameInput)} />
-          <input type="text" value={$.bind($surnameInput)} />
+          <input type="text" value={bind($nameInput)} />
+          <input type="text" value={bind($surnameInput)} />
         </div>
         <div>
           <button onclick={create}>Create</button>
@@ -127,4 +127,4 @@ export default makeComponent(($, self) => {
       </div>
     </div>
   );
-});
+}

@@ -1,7 +1,7 @@
-import { makeComponent, makeState } from "@woofjs/client";
+import { v, bind, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-const TwoWayBindExample = makeComponent(($, self) => {
+function TwoWayBindExample($attrs, self) {
   self.debug.name = "TwoWayBindExample";
 
   logLifecycle(self);
@@ -15,18 +15,19 @@ const TwoWayBindExample = makeComponent(($, self) => {
         Two way data binding with <code>$.bind()</code>
       </h3>
       <div>
-        <input value={$.bind($text)} />
-        <input value={$.bind($size)} type="number" /> {/* number value gets converted back to number */}
+        <input value={bind($text)} />
+        <input value={bind($size)} type="number" />{" "}
+        {/* number value gets converted back to number */}
         <p
           style={{
             fontSize: $size.map((s) => s + "px"),
           }}
         >
-          {$.text($text)}
+          {$text}
         </p>
       </div>
     </div>
   );
-});
+}
 
 export default TwoWayBindExample;

@@ -1,8 +1,8 @@
-import { makeComponent, makeState, mergeStates } from "@woofjs/client";
+import { v, each, bind, makeState, mergeStates } from "@woofjs/client";
 
 const flightTypes = ["one-way flight", "return flight"];
 
-export default makeComponent(($, self) => {
+export default function FlightBooker($attrs, self) {
   self.debug.name = "7GUIs:FlightBooker";
 
   const $flightType = makeState(flightTypes[0]);
@@ -62,8 +62,8 @@ export default makeComponent(($, self) => {
               $flightType.set(e.target.value);
             }}
           >
-            {$.each(flightTypes, ($, self) => {
-              const $value = self.$attrs.map("@value");
+            {each(flightTypes, ($attrs, self) => {
+              const $value = $attrs.map("@value");
               const $selected = mergeStates(
                 $value,
                 $flightType,
@@ -86,7 +86,7 @@ export default makeComponent(($, self) => {
         <div>
           <input
             type="text"
-            value={$.bind($startDate)}
+            value={bind($startDate)}
             pattern={"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$"}
             oninput={(e) => {
               $startDateIsValid.set(!e.target.validity.patternMismatch);
@@ -97,7 +97,7 @@ export default makeComponent(($, self) => {
         <div>
           <input
             type="text"
-            value={$.bind($returnDate)}
+            value={bind($returnDate)}
             disabled={$flightType.map((t) => t === "one-way flight")}
             pattern={/^\d{2}\.\d{2}\.\d{4}$/}
             oninput={(e) => {
@@ -112,4 +112,4 @@ export default makeComponent(($, self) => {
       </form>
     </div>
   );
-});
+}

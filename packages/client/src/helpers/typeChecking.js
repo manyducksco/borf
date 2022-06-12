@@ -22,4 +22,6 @@ export const isComponentInstance = (value) => value && value.isComponentInstance
 
 export const isComponent = (value) => value && value.isComponent === true;
 
+export const isView = (value) => value && value.isView === true;
+
 export const isService = (value) => value && value.isService === true;

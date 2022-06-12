@@ -1,50 +1,50 @@
-import { isComponentInstance, isComponent, isFunction } from "../helpers/typeChecking.js";
-import { makeComponent } from "../makeComponent.js";
+import { isComponent, isFunction, isView } from "../helpers/typeChecking.js";
 
 /**
  * Recreates its contents each time its value changes.
  */
-export const Watch = makeComponent((_, self) => {
-  self.debug.name = "woof:$:watch";
+export function Watch($attrs, self) {
+  self.debug.name = "woof:v:watch";
 
   const node = document.createTextNode("");
 
-  const $value = self.$attrs.map("value");
-  const makeItem = self.$attrs.get("makeItem");
+  const $value = $attrs.map("value");
+  const render = $attrs.get("render");
 
-  let item;
+  let current;
 
   function update(value) {
-    let newItem = makeItem(value);
+    let newItem = render(value);
 
     // Allow functions that return an element
     if (newItem && isFunction(newItem) && !isComponent(newItem)) {
       newItem = newItem();
     }
 
-    if (newItem != null && !isComponentInstance(newItem)) {
-      throw new TypeError(`Watch: makeItem function should return a component or null. Got: ${newItem}`);
+    if (newItem != null && !isView(newItem)) {
+      throw new TypeError(`Watch: render function should return a view or null. Got: ${newItem}`);
     }
 
-    if (item) {
-      item.disconnect();
-      item = null;
+    if (current) {
+      current.disconnect();
+      current = null;
     }
 
     if (newItem) {
-      item = newItem;
-      item.connect(node.parentNode, node);
+      newItem.init({ getService: self.getService });
+      current = newItem;
+      current.connect(node.parentNode, node);
     }
   }
 
   self.watchState($value, update, { immediate: true });
 
   self.afterDisconnect(() => {
-    if (item) {
-      item.disconnect();
-      item = null;
+    if (current) {
+      current.disconnect();
+      current = null;
     }
   });
 
   return node;
-});
+}

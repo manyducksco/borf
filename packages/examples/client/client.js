@@ -1,6 +1,6 @@
 import "./styles/demo.css";
 
-import { makeApp } from "@woofjs/client";
+import { makeApp, v } from "@woofjs/client";
 
 import CounterService from "./services/CounterService.js";
 import MouseService from "./services/MouseService.js";
@@ -25,8 +25,6 @@ import CircleDrawer from "./7guis/06_CircleDrawer";
 import Cells from "./7guis/07_Cells";
 
 import SevenGUIs from "./7guis";
-
-import logLifecycle from "./utils/logLifecycle";
 
 const app = makeApp({
   hash: true,

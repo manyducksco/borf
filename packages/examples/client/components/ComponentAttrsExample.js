@@ -1,4 +1,4 @@
-import { makeState } from "@woofjs/client";
+import { makeState, v, bind } from "@woofjs/client";
 
 export default function ComponentAttrsExample($attrs) {
   const $message = makeState("test");
@@ -7,7 +7,7 @@ export default function ComponentAttrsExample($attrs) {
     <div class="example">
       <h3>Component Attributes</h3>
       <div>
-        <input type="text" value={$.bind($message)} />
+        <input type="text" value={bind($message)} />
         <hr />
         {/* states passed to attrs without a $ are unwrapped by the component */}
         <SubComponent $state={$message} unwrapped={$message} />

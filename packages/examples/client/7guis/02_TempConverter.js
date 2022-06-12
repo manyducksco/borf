@@ -1,4 +1,4 @@
-import { makeComponent, makeState } from "@woofjs/client";
+import { v, makeState } from "@woofjs/client";
 
 export default function TempConverter($attrs, self) {
   self.debug.name = "7GUIs:TempConverter";

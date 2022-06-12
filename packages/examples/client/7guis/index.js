@@ -1,6 +1,6 @@
-import { makeComponent } from "@woofjs/client";
+import { v } from "@woofjs/client";
 
-export default function SevenGUIs() {
+export default function SevenGUIs($attrs, self) {
   return (
     <div>
       <p>
@@ -33,7 +33,7 @@ export default function SevenGUIs() {
         </li>
       </ul>
 
-      <div>{this.children}</div>
+      <div>{self.children}</div>
     </div>
   );
 }

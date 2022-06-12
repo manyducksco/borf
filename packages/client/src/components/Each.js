@@ -3,11 +3,11 @@ import { makeComponent } from "../makeComponent.js";
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
  */
-export const Each = makeComponent(($, self) => {
-  self.debug.name = "woof:$:each";
+export function Each($attrs, self) {
+  self.debug.name = "woof:v:each";
 
-  const $value = self.$attrs.map("value");
-  const initComponent = self.$attrs.get("component");
+  const $value = $attrs.map("value");
+  const initComponent = makeComponent($attrs.get("component"));
 
   const node = document.createTextNode("");
 
@@ -28,17 +28,15 @@ export const Each = makeComponent(($, self) => {
     const newComponents = newValues.map((value, index) => {
       const component = initComponent({
         getService: self.getService,
-        dolla: $,
-        $route: self.$route,
-        debug: self.getService("@debug").makeChannel(`each item ${index}`),
         attrs: {
           "@value": value,
           "@index": index,
         },
       });
 
+      // Default to using index as key unless another is provided.
       if (component.key == null) {
-        self.debug.warn(`Components in $.each need a unique self.key. Got: ${component.key}`);
+        component.key = component.$attrs.map("@index");
       }
 
       return component;
@@ -87,4 +85,4 @@ export const Each = makeComponent(($, self) => {
   });
 
   return node;
-});
+}

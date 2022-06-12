@@ -1,9 +1,7 @@
-import { makeComponent } from "../makeComponent.js";
-
 /**
  * Displays one or more children without a parent element.
  */
-export const Fragment = makeComponent((_, self) => {
+export function Fragment(_, self) {
   const node = document.createTextNode("");
 
   self.afterConnect(() => {
@@ -11,7 +9,7 @@ export const Fragment = makeComponent((_, self) => {
 
     for (const child of self.children) {
       child.connect(node.parentNode, after);
-      after = child.element;
+      after = child.node;
     }
   });
 
@@ -22,4 +20,4 @@ export const Fragment = makeComponent((_, self) => {
   });
 
   return node;
-});
+}

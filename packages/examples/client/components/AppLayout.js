@@ -1,3 +1,6 @@
+import { v } from "@woofjs/client";
+import logLifecycle from "../utils/logLifecycle";
+
 export default function AppLayout() {
   this.debug.name = "🐕";
   this.debug.log("hi");

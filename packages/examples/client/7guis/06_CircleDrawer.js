@@ -1,6 +1,6 @@
-import { makeComponent } from "@woofjs/client";
+import { v } from "@woofjs/client";
 
-export default makeComponent(($, self) => {
+export default function CircleDrawer($attrs, self) {
   self.debug.name = "7GUIs:CircleDrawer";
 
   return (
@@ -12,4 +12,4 @@ export default makeComponent(($, self) => {
       <div></div>
     </div>
   );
-});
+}

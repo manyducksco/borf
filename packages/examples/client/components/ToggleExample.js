@@ -1,10 +1,10 @@
-import { makeComponent, makeState } from "@woofjs/client";
+import { v, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 /**
  * Displays a div that toggles a class when clicked and a label based on the current status.
  */
-const ToggleExample = makeComponent(($, self) => {
+function ToggleExample($attrs, self) {
   self.debug.name = "ToggleExample";
 
   logLifecycle(self);
@@ -28,6 +28,6 @@ const ToggleExample = makeComponent(($, self) => {
       </div>
     </div>
   );
-});
+}
 
 export default ToggleExample;

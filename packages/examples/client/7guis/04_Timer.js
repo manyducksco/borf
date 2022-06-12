@@ -1,6 +1,6 @@
-import { makeComponent, makeState } from "@woofjs/client";
+import { v, bind, makeState } from "@woofjs/client";
 
-export default makeComponent(($, self) => {
+export default function Timer($attrs, self) {
   self.debug.name = "7GUIs:Timer";
 
   const $duration = makeState(10); // duration in seconds
@@ -16,7 +16,9 @@ export default makeComponent(($, self) => {
       if ($elapsed.get() < $duration.get()) {
         const difference = (now - lastTick) / 1000;
 
-        $elapsed.set((current) => Math.min(current + difference, $duration.get()));
+        $elapsed.set((current) =>
+          Math.min(current + difference, $duration.get())
+        );
       }
 
       lastTick = now;
@@ -42,7 +44,14 @@ export default makeComponent(($, self) => {
         </div>
         <div>{$elapsed.map((seconds) => seconds.toFixed(1))}</div>
         <div>
-          Duration: <input type="range" min={0} max={30} step={0.1} value={$.bind($duration)} />
+          Duration:{" "}
+          <input
+            type="range"
+            min={0}
+            max={30}
+            step={0.1}
+            value={bind($duration)}
+          />
         </div>
         <div>
           <button
@@ -56,4 +65,4 @@ export default makeComponent(($, self) => {
       </div>
     </div>
   );
-});
+}

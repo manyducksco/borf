@@ -21,6 +21,16 @@ app.route("/example", ExampleLayout, function () {
 
 app.redirect("*", "/example/users");
 
+const activeLayers = [{
+  id: 1,
+  component: ExampleLayout,
+  outlet: {},
+}, {
+  id: 2,
+  component: UsersLayout,
+  outlet: {}
+}];
+
 // Creates the following flat structure. Nested components are defined as layers.
 [
   {
@@ -93,11 +103,7 @@ The code above defines these routes:
 All routes are defined at the top level of the app. This way one global $route state could be provided by the @router service. Only one route can match at a time, and routes are always defined in only one place.
 
 ```js
-import { makeApp } from "@woofjs/client"; // client-specific
-import { makeApp } from "@woofjs/server"; // server-specific
-
-import { v, each, when, unless, watch, bind } from "@woofjs/view"; // client or server
-import { makeState, mergeStates, isState } from "@woofjs/state"; // client or server
+import { makeState, v, when, each, bind } from "@woofjs/client";
 
 // Component is called with `self` as this, so you can do this?
 function Component($attrs) {
@@ -114,19 +120,13 @@ function Component($attrs) {
 
   <input type="text" value={bind($inputValue)} />;
 
-  return when($condition, h("h1", "Yo!"));
+  return when($condition, v("h1", "Yo!"));
 
-  return (
-    <div>
-      {each($items, function Item($attrs) {
-        this.key = $attrs.map("@index");
-
-        // return v("h1", $attrs.map("@value"));
-
-        return <h1>{$attrs.map("@value")}</h1>;
-      })}
-    </div>
-  );
+  return v("div", [
+    each($items, function Item($attrs) {
+      return v("h1", $attrs.map("@value"));
+    }),
+  ]);
 }
 
 // The whole app is rendered as children of an AppLayout
@@ -240,3 +240,24 @@ function ExampleComponent($attrs, self) {
   navigate($path.get(), "../edit"); // Supports multiple fragments with relative paths
 }
 ```
+
+## Connecting views
+
+The `v` function is used in components to render DOM elements and other components. Once the component function has been called to set up the component, the views need to be given the getService() function so their components can access it. How does this happen?
+
+```js
+function Component() {
+  return v("div", [
+    each($items, function Item($attrs) {
+      return v("h1", $attrs.map("@value"));
+    }),
+  ]);
+}
+
+const view = Component();
+
+// Init the returned view, which will in turn init each child view.
+view.init({ getService });
+```
+
+A component is a function that returns `null`, a DOM node, or a view. If it's a view, the view is initialized immediately after the component function is called. Views, when initialized, initialize their children.

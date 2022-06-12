@@ -67,8 +67,8 @@ module.exports = function makeAppBundle(config) {
         },
       }),
     ],
-    jsxFactory: "$", // compile JSX to dolla
-    jsxFragment: '""', // pass empty string for fragments
+    jsxFactory: "v", // compile JSX to v()
+    jsxFragment: '"<>"',
     outbase: config.path.client,
     outdir: publicDir,
   };

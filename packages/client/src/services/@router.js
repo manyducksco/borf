@@ -6,6 +6,9 @@ import { isObject } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
+import { makeComponent } from "../makeComponent.js";
+
+import { Outlet } from "../components/Outlet.js";
 
 /**
  * Top level navigation service.
@@ -33,6 +36,10 @@ export default makeService((self) => {
       }
     }
   }
+
+  let appOutlet;
+  let activeLayers = [];
+  let lastQuery;
 
   const $route = makeState(); // Route path with placeholder parameters
   const $path = makeState(); // Real path as it shows up in the URL bar
@@ -63,6 +70,11 @@ export default makeService((self) => {
   });
 
   self.afterConnect(() => {
+    appOutlet = makeComponent(Outlet)({
+      getService: self.getService,
+    });
+    appOutlet.connect(getRoot());
+
     history.listen(onRouteChange);
     onRouteChange(history);
 
@@ -92,29 +104,67 @@ export default makeService((self) => {
           $path.set(matched.path);
           $route.set(matched.route);
 
-          self.debug.log({ layers: matched.data.layers });
+          const { layers } = matched.data;
 
-          // TODO: Mount components
+          // Diff and update route layers.
+          for (let i = 0; i < layers.length; i++) {
+            const matchedLayer = layers[i];
+            const activeLayer = activeLayers[i];
+
+            if (activeLayer?.id !== matchedLayer.id) {
+              if (activeLayer) {
+                // Disconnect first mismatched active and remove remaining layers.
+                activeLayer.component.disconnect();
+              }
+
+              activeLayers = activeLayers.slice(0, i);
+
+              const outlet = makeComponent(Outlet)({
+                getService: self.getService,
+              });
+              const component = makeComponent(matchedLayer.component)({
+                getService: self.getService,
+                children: [outlet],
+              });
+
+              const parentLayer = activeLayers[activeLayers.length - 1];
+              if (parentLayer) {
+                // Create parent outlet if it doesn't exist and load component.
+                parentLayer.outlet.$attrs.set({
+                  element: component,
+                });
+              } else {
+                appOutlet.$attrs.set({
+                  element: component,
+                });
+              }
+
+              // Push and connect new active layer.
+              activeLayers.push({
+                id: matchedLayer.id,
+                component,
+                outlet,
+              });
+            }
+          }
         }
       }
     } else {
       self.debug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
     }
 
-    isRouteChange = true;
-    $query.set(
-      queryString.parse(location.search, {
-        parseBooleans: true,
-        parseNumbers: true,
-      })
-    );
+    // Update query params if they've changed.
+    if (location.search !== lastQuery) {
+      lastQuery = location.search;
 
-    console.log({
-      path: $path.get(),
-      route: $route.get(),
-      params: $params.get(),
-      query: $query.get(),
-    });
+      isRouteChange = true;
+      $query.set(
+        queryString.parse(location.search, {
+          parseBooleans: true,
+          parseNumbers: true,
+        })
+      );
+    }
   }
 
   return {
@@ -157,58 +207,3 @@ export default makeService((self) => {
     },
   };
 });
-
-// async function onRouteChanged({ location }) {
-//   const matched = router.match(location.pathname + location.search);
-
-//   if (matched) {
-//     const { $route } = getService("@router");
-//     const routeChanged = matched.route !== $route.get("route");
-
-//     // Top level route details are stored on @router where they can be read by apps and services.
-//     // Nested route info is found in `self.$route` in components.
-//     $route.set((current) => {
-//       current.route = matched.route;
-//       current.path = matched.path;
-//       current.params = matched.params;
-//       current.query = matched.query;
-//       current.wildcard = matched.wildcard;
-//     });
-
-//     if (matched.props.redirect) {
-//       getService("@router").navigate(matched.props.redirect, { replace: true });
-//     } else if (routeChanged) {
-//       const start = Date.now();
-//       const created = matched.props.component({
-//         getService,
-//         dolla,
-//         attrs: matched.props.attributes || {},
-//         children: [],
-//         $route,
-//       });
-
-//       const mount = (component) => {
-//         if (mounted) {
-//           mounted.disconnect();
-//         }
-
-//         mounted = component;
-//         mounted.connect(outlet);
-//       };
-
-//       if (created.hasRoutePreload) {
-//         await created.routePreload(mount);
-//       }
-
-//       mount(created);
-
-//       appDebug.log(
-//         `Mounted top level route '${matched.route}'${
-//           created.hasRoutePreload ? ` (loaded in ${Date.now() - start}ms)` : ""
-//         }`
-//       );
-//     }
-//   } else {
-//     appDebug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
-//   }
-// }

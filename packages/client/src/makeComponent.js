@@ -1,5 +1,5 @@
 import { isState, makeState } from "@woofjs/state";
-import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.js";
+import { isView, isDOM, isFunction } from "./helpers/typeChecking.js";
 
 /**
  * Defines a reusable component.
@@ -7,7 +7,7 @@ import { isComponentInstance, isDOM, isFunction } from "./helpers/typeChecking.j
  * @param fn - Function that defines the component.
  */
 export function makeComponent(fn) {
-  function Component({ getService, attrs, dolla, children }) {
+  function Component({ getService, attrs, children }) {
     // Lifecycle hook callbacks
     let onBeforeConnect = [];
     let onAfterConnect = [];
@@ -78,9 +78,8 @@ export function makeComponent(fn) {
 
     // This is the object the setup function uses to interface with the component.
     const self = {
-      $attrs,
-
       getService,
+
       children,
       debug: getService("@debug").makeChannel("~"),
 
@@ -143,15 +142,16 @@ export function makeComponent(fn) {
     ||      Run setup function     ||
     \*=============================*/
 
-    const node = fn.call(self, dolla, self);
+    const element = fn.call(self, $attrs, self);
 
-    // TODO: Components will be raw functions now, so the result of calling `$` will need to be hooked up
-    // to getService and the other plumbing.
+    if (isView(element)) {
+      element.init({ getService });
+    } else {
+      if (element !== null && !isDOM(element)) {
+        let message = `Components must return a view, a DOM node or null. Got: ${element}`;
 
-    if (node !== null && !isComponentInstance(node) && !isDOM(node)) {
-      let message = `Component must return an element or null. Got: ${node}`;
-
-      throw new TypeError(message);
+        throw new TypeError(message);
+      }
     }
 
     /*=============================*\
@@ -181,14 +181,14 @@ export function makeComponent(fn) {
       /**
        * Returns the component's root DOM node, or null if there is none.
        */
-      get element() {
-        if (node) {
-          if (isComponentInstance(node)) {
-            return node.element;
+      get node() {
+        if (element) {
+          if (isView(element)) {
+            return element.node;
           }
 
-          if (isDOM(node)) {
-            return node;
+          if (isDOM(element)) {
+            return element;
           }
         }
 
@@ -199,24 +199,15 @@ export function makeComponent(fn) {
        * True if the root DOM node is currently in the document.
        */
       get isConnected() {
-        if (node) {
-          if (isComponentInstance(node)) {
-            return node.isConnected;
-          }
-
-          if (isDOM(node)) {
-            return node.parentNode != null;
-          }
-        }
-
-        return false;
+        return isConnected;
       },
 
       /**
        * True if the component defines a preload function with `self.preloadRoute(fn)`.
        */
       get hasRoutePreload() {
-        return isFunction(routePreload);
+        // return isFunction(routePreload);
+        return false; // Temporarily disabled for refactoring
       },
 
       /**
@@ -224,30 +215,30 @@ export function makeComponent(fn) {
        *
        * @param mount - Function that takes a component instance and connects it to the DOM.
        */
-      async routePreload(mount) {
-        if (!isFunction(routePreload)) return;
+      // async routePreload(mount) {
+      //   if (!isFunction(routePreload)) return;
 
-        return new Promise(async (resolve) => {
-          const show = (node) => {
-            if (!isComponentInstance(node)) {
-              throw new TypeError(`Expected an element to display while preloading. Got: ${node}`);
-            }
+      //   return new Promise(async (resolve) => {
+      //     const show = (node) => {
+      //       if (!isComponentInstance(node)) {
+      //         throw new TypeError(`Expected an element to display while preloading. Got: ${node}`);
+      //       }
 
-            mount(node);
-          };
+      //       mount(node);
+      //     };
 
-          const done = () => {
-            resolve();
-          };
+      //     const done = () => {
+      //       resolve();
+      //     };
 
-          const result = routePreload({ show, done });
+      //     const result = routePreload({ show, done });
 
-          if (result && isFunction(result.then)) {
-            await result;
-            done();
-          }
-        });
-      },
+      //     if (result && isFunction(result.then)) {
+      //       await result;
+      //       done();
+      //     }
+      //   });
+      // },
 
       /**
        * Connects this component to the DOM, running lifecycle hooks if it wasn't already connected.
@@ -267,10 +258,10 @@ export function makeComponent(fn) {
           }
         }
 
-        if (isComponentInstance(node)) {
-          node.connect(parent, after);
-        } else if (isDOM(node)) {
-          parent.insertBefore(node, after ? after.nextSibling : null);
+        if (isView(element)) {
+          element.connect(parent, after);
+        } else if (isDOM(element)) {
+          parent.insertBefore(element, after ? after.nextSibling : null);
         }
 
         isConnected = true;
@@ -293,10 +284,10 @@ export function makeComponent(fn) {
             callback();
           }
 
-          if (isComponentInstance(node)) {
-            node.disconnect();
-          } else if (isDOM(node)) {
-            node.parentNode.removeChild(node);
+          if (isView(element)) {
+            element.disconnect();
+          } else if (isDOM(element)) {
+            element.parentNode.removeChild(element);
           }
 
           isConnected = false;

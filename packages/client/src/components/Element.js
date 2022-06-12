@@ -1,14 +1,16 @@
 import { isState } from "@woofjs/state";
-import { makeComponent } from "../makeComponent.js";
 import { isArray, isObject, isString, isNumber, isFunction, isBinding } from "../helpers/typeChecking.js";
 
-export const Element = makeComponent((_, self) => {
+/**
+ * Implements logic for HTML elements created with `v()`.
+ */
+export function Element($attrs, self) {
   const { children } = self;
 
-  const tag = self.$attrs.get("tag");
-  const attrs = self.$attrs.get("attrs"); // attrs passed to the element itself
+  const tagname = $attrs.get("tagname");
+  const attrs = $attrs.get("attrs") || {}; // attrs passed to the element itself
 
-  const node = document.createElement(tag);
+  const node = document.createElement(tagname);
 
   if (attrs.$ref) {
     attrs.$ref.set(node);
@@ -38,7 +40,7 @@ export const Element = makeComponent((_, self) => {
   });
 
   return node;
-});
+}
 
 function watch($state, callback) {
   const unwatch = $state.watch((value) => {

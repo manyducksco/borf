@@ -1,7 +1,7 @@
-import { makeComponent, makeState, mergeStates } from "@woofjs/client";
+import { v, when, each, bind, makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-const FormExample = makeComponent(($, self) => {
+function FormExample($attrs, self) {
   self.debug.name = "FormExample";
 
   logLifecycle(self);
@@ -43,17 +43,13 @@ const FormExample = makeComponent(($, self) => {
     <div class="example">
       <h3>Form with validation</h3>
       <form onsubmit={onsubmit}>
-        <input
-          type="text"
-          value={$.bind($firstName)}
-          placeholder="First Name"
-        />
-        <input type="text" value={$.bind($lastName)} placeholder="Last Name" />
-        <input type="number" value={$.bind($age)} placeholder="Age" />
+        <input type="text" value={bind($firstName)} placeholder="First Name" />
+        <input type="text" value={bind($lastName)} placeholder="Last Name" />
+        <input type="number" value={bind($age)} placeholder="Age" />
         <button disabled={$hasErrors}>Submit</button>
-        {$.if($hasErrors, () =>
-          $.each($errors, ($, self) => {
-            const $message = self.$attrs.map("@value");
+        {when($hasErrors, () =>
+          each($errors, ($attrs, self) => {
+            const $message = $attrs.map("@value");
 
             self.key = $message;
 
@@ -63,6 +59,6 @@ const FormExample = makeComponent(($, self) => {
       </form>
     </div>
   );
-});
+}
 
 export default FormExample;

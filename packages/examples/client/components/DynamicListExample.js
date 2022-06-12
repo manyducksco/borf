@@ -1,7 +1,7 @@
-import { makeComponent, makeState } from "@woofjs/client";
+import { v, each, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-const DynamicListExample = makeComponent(($, self) => {
+function DynamicListExample($attrs, self) {
   self.debug.name = "DynamicListExample";
 
   logLifecycle(self);
@@ -25,7 +25,7 @@ const DynamicListExample = makeComponent(($, self) => {
   return (
     <div class="example">
       <h3>
-        Dynamic Lists with <code>$.each()</code>
+        Dynamic Lists with <code>each()</code>
       </h3>
 
       <div>
@@ -68,8 +68,8 @@ const DynamicListExample = makeComponent(($, self) => {
           <button onclick={reset}>Reset List</button>
         </div>
 
-        {$.each($shoppingList, ($, self) => {
-          const $item = self.$attrs.map("@value");
+        {each($shoppingList, ($attrs, self) => {
+          const $item = $attrs.map("@value");
 
           self.key = $item;
 
@@ -86,6 +86,6 @@ const DynamicListExample = makeComponent(($, self) => {
       </div>
     </div>
   );
-});
+}
 
 export default DynamicListExample;
