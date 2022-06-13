@@ -1,5 +1,3 @@
-import { v } from "@woofjs/client";
-
 export default function Cells($attrs, self) {
   self.debug.name = "7GUIs:Cells";
 

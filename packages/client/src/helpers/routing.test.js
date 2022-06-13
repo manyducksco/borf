@@ -89,46 +89,46 @@ describe("matchRoute", () => {
     ]);
 
     expect(matchRoute(routes, "")).toMatchObject({
-      path: "",
-      route: "",
+      path: "/",
+      route: "/",
       params: {},
     });
 
     expect(matchRoute(routes, "items")).toMatchObject({
-      path: "items",
-      route: "items",
+      path: "/items",
+      route: "/items",
       params: {},
     });
 
     expect(matchRoute(routes, "items/what")).toMatchObject({
-      path: "items/what",
-      route: "items/what",
+      path: "/items/what",
+      route: "/items/what",
       params: {},
     });
 
     expect(matchRoute(routes, "items/what/edit")).toMatchObject({
-      path: "items/what/edit",
-      route: "items/:id/edit",
+      path: "/items/what/edit",
+      route: "/items/:id/edit",
       params: {
         id: "what",
       },
     });
 
     expect(matchRoute(routes, "items/555/toast/oh/nice/5/...")).toMatchObject({
-      path: "items/555/toast/oh/nice/5/...",
-      route: "items/:id/:fish/*",
+      path: "/items/555/toast/oh/nice/5/...",
+      route: "/items/:id/:fish/*",
       params: {
         id: "555",
         fish: "toast",
-        wildcard: "oh/nice/5/...",
+        wildcard: "/oh/nice/5/...",
       },
     });
 
     expect(matchRoute(routes, "aaa/bbb/ccc")).toMatchObject({
-      path: "aaa/bbb/ccc",
-      route: "*",
+      path: "/aaa/bbb/ccc",
+      route: "/*",
       params: {
-        wildcard: "aaa/bbb/ccc",
+        wildcard: "/aaa/bbb/ccc",
       },
     });
   });

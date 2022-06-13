@@ -110,7 +110,7 @@ export function matchRoute(routes, path) {
       }
 
       if (frag.type === FragTypes.Wildcard) {
-        params.wildcard = frag.value;
+        params.wildcard = "/" + frag.value;
       }
     }
 

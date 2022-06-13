@@ -24,7 +24,7 @@ export function makeService(fn) {
       },
     };
 
-    const exports = fn(self);
+    const exports = fn.call(self, self);
 
     if (!isObject(exports)) {
       throw new TypeError(`A service must return an object. Got: ${exports}`);

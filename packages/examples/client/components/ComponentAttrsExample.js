@@ -1,4 +1,4 @@
-import { makeState, v, bind } from "@woofjs/client";
+import { makeState, bind } from "@woofjs/client";
 
 export default function ComponentAttrsExample($attrs) {
   const $message = makeState("test");

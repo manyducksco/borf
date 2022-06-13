@@ -1,4 +1,4 @@
-import { v, each, bind, makeState, mergeStates } from "@woofjs/client";
+import { each, bind, makeState, mergeStates } from "@woofjs/client";
 
 const flightTypes = ["one-way flight", "return flight"];
 

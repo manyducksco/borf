@@ -4,6 +4,7 @@ module.exports = {
   },
 
   esbuild: {
-    minify: false,
+    minify: true,
+    inject: ["./jsxShim.js"], // TODO: Have this be an automatic part of the build system.
   },
 };

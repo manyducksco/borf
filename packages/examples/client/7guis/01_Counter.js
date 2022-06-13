@@ -1,4 +1,4 @@
-import { v, makeState } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
 export default function Counter() {
   this.debug.name = "7GUIs:Counter";

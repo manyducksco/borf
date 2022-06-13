@@ -1,6 +1,6 @@
 import { makeState } from "@woofjs/state";
 import { makeTestWrapper } from "./makeTestWrapper.js";
-import { makeDolla } from "../makeDolla.js";
+// import { makeDolla } from "../makeDolla.js";
 import { checks } from "./checks.js";
 
 /**
@@ -103,16 +103,17 @@ export function makeSuite(fn) {
       }
 
       const makeWrapped = makeTestWrapper((getService) => {
-        const $ = makeDolla({
-          getService,
-          $route: makeState({
-            route: "test",
-            path: "/test",
-            params: {},
-            query: {},
-            wildcard: null,
-          }),
-        });
+        const $ = {};
+        // const $ = makeDolla({
+        //   getService,
+        //   $route: makeState({
+        //     route: "test",
+        //     path: "/test",
+        //     params: {},
+        //     query: {},
+        //     wildcard: null,
+        //   }),
+        // });
 
         return view.fn($, {
           attr: (name, value, options = {}) => {

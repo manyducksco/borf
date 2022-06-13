@@ -1,4 +1,4 @@
-import { v, each, makeState } from "@woofjs/client";
+import { each, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 function DynamicListExample($attrs, self) {
@@ -19,6 +19,7 @@ function DynamicListExample($attrs, self) {
   };
 
   const reset = () => {
+    self.debug.log(initialList);
     $shoppingList.set(initialList);
   };
 

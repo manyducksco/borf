@@ -1,4 +1,4 @@
-import { v, makeState } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const HTTPRequestExample = ($attrs, self) => {

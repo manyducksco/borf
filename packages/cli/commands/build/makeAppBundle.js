@@ -67,7 +67,7 @@ module.exports = function makeAppBundle(config) {
         },
       }),
     ],
-    jsxFactory: "v", // compile JSX to v()
+    jsxFactory: "_jsx",
     jsxFragment: '"<>"',
     outbase: config.path.client,
     outdir: publicDir,

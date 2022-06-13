@@ -1,6 +1,6 @@
 import { makeSuite } from "./makeSuite.js";
 
-test("runs tests", async () => {
+test.skip("runs tests", async () => {
   const tests = makeSuite((test) => {
     test("plans and waits for assertions", (t) => {
       t.plan(3);

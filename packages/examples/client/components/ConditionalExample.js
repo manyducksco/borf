@@ -1,4 +1,4 @@
-import { v, when, makeState } from "@woofjs/client";
+import { when, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export default function ConditionalExample($attrs, self) {

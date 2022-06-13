@@ -1,4 +1,4 @@
-import { v, bind, makeState } from "@woofjs/client";
+import { bind, makeState } from "@woofjs/client";
 
 export default function Timer($attrs, self) {
   self.debug.name = "7GUIs:Timer";

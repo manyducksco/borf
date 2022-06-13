@@ -101,28 +101,20 @@ We have basically copied that `<main>` block into a chunk of JavaScript and remo
 `$.text()` renders the current value of `$count` into the DOM as text. Event handler functions are passed directly to the buttons.
 
 ```js
-import { makeComponent, makeState } from "@woofjs/app";
+import { makeState } from "@woofjs/client";
 
-const Counter = makeComponent(($) => {
+function Counter() {
   const $count = makeState(0);
 
   return (
     <main>
-      <p>Clicked {$.text($count)} time(s).</p>
+      <p>Clicked {$count} time(s).</p>
       <br />
       <button onclick={() => $count.set((current) => current + 1)}>+1</button>
       <button onclick={() => $count.set((current) => current - 1)}>-1</button>
     </main>
   );
-
-  // Or without JSX:
-  return $("main", [
-    $("p", ["Clicked ", $.text($count), " time(s)."]),
-    $("br"),
-    $("button", { onclick: () => $count.set((current) => current + 1) }, "+1"),
-    $("button", { onclick: () => $count.set((current) => current - 1) }, "-1"),
-  ]);
-});
+}
 ```
 
 That `time(s)` label is kind of basic. To overcomplicate things, let's add a dynamic label based on the value of `$count`.

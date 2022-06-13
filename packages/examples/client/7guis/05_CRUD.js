@@ -1,4 +1,4 @@
-import { v, each, bind, makeState, mergeStates } from "@woofjs/client";
+import { each, bind, makeState, mergeStates } from "@woofjs/client";
 
 export default function CRUD($attrs, self) {
   self.debug.name = "7GUIs:CRUD";

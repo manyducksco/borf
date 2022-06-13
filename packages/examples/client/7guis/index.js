@@ -1,5 +1,3 @@
-import { v } from "@woofjs/client";
-
 export default function SevenGUIs($attrs, self) {
   return (
     <div>

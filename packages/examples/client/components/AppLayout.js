@@ -1,4 +1,3 @@
-import { v } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle";
 
 export default function AppLayout() {

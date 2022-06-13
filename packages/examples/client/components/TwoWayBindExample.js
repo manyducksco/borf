@@ -1,4 +1,4 @@
-import { v, bind, makeState } from "@woofjs/client";
+import { bind, makeState as $ } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 function TwoWayBindExample($attrs, self) {
@@ -6,13 +6,13 @@ function TwoWayBindExample($attrs, self) {
 
   logLifecycle(self);
 
-  const $text = makeState("edit me");
-  const $size = makeState(18);
+  const $text = $("edit me");
+  const $size = $(18);
 
   return (
     <div class="example">
       <h3>
-        Two way data binding with <code>$.bind()</code>
+        Two way data binding with <code>bind()</code>
       </h3>
       <div>
         <input value={bind($text)} />

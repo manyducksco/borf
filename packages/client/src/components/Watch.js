@@ -31,8 +31,8 @@ export function Watch($attrs, self) {
     }
 
     if (newItem) {
-      newItem.init({ getService: self.getService });
       current = newItem;
+      current.init({ getService: self.getService });
       current.connect(node.parentNode, node);
     }
   }

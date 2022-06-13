@@ -1,4 +1,4 @@
-import { v, when, each, bind, makeState, mergeStates } from "@woofjs/client";
+import { when, each, bind, makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 function FormExample($attrs, self) {
