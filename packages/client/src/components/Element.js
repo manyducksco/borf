@@ -66,14 +66,14 @@ function applyAttrs(element, attrs, watchers) {
         );
       } else if (isBinding(value)) {
         watchers.push(
-          watch(value.$state, (current) => {
+          watch(value.$value, (current) => {
             element.value = String(current);
           })
         );
 
         const listener = (e) => {
-          const updated = toSameType(value.$state.get(), e.target.value);
-          value.$state.set(updated);
+          const updated = toSameType(value.$value.get(), e.target.value);
+          value.$value.set(updated);
         };
 
         element.addEventListener(value.event, listener);

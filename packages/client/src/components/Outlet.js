@@ -1,3 +1,5 @@
+import { isTemplate } from "../helpers/typeChecking.js";
+
 export function Outlet($attrs, self) {
   const $element = $attrs.map("element");
   const node = document.createTextNode("");
@@ -11,6 +13,10 @@ export function Outlet($attrs, self) {
     }
 
     if (element) {
+      if (isTemplate(element)) {
+        element = element.init(self.getService("@app"));
+      }
+
       element.connect(node.parentNode, node);
       connected = element;
     }

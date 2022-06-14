@@ -1,7 +1,6 @@
-import { makeService } from "../makeService";
 import { isFunction, isObject, isString } from "../helpers/typeChecking";
 
-export default makeService(({ debug, options }) => {
+export default function HTTPService({ debug, options }) {
   debug.name = "woof:@http";
 
   const _middleware = [];
@@ -52,7 +51,7 @@ export default makeService(({ debug, options }) => {
       return request("head", url);
     },
   };
-});
+}
 
 export class HTTPRequest {
   #id;

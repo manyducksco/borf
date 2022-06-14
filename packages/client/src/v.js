@@ -1,7 +1,7 @@
 import { isState } from "@woofjs/state";
-import { isFunction, isObject, isString, isNumber, isView, isComponentInstance } from "./helpers/typeChecking.js";
+import { isFunction, isObject, isString, isNumber, isTemplate, isComponent } from "./helpers/typeChecking.js";
 import { flatMap } from "./helpers/flatMap.js";
-import { makeComponent } from "./makeComponent.js";
+import { initComponent } from "./helpers/initComponent.js";
 
 import { Each } from "./components/Each.js";
 import { Text } from "./components/Text.js";
@@ -22,84 +22,49 @@ import { Fragment } from "./components/Fragment.js";
  * @param args - Optional attributes object and zero or more children.
  */
 export function v(element, ...args) {
-  let component;
-  let instance;
   let attrs;
-  let children;
 
   if (isObject(args[0])) {
     attrs = args.shift();
   }
 
-  // Filter out falsy children and ensure the rest are views.
-  children = flatMap(args)
-    .filter((x) => x !== null && x !== undefined && x !== false)
-    .map((child) => {
-      if (isView(child) || isComponentInstance(child)) {
-        return child;
-      }
-
-      if (isString(child) || isNumber(child) || isState(child)) {
-        return v(Text, { value: child });
-      }
-
-      throw new TypeError(`Children must be views, strings, numbers or states. Got: ${child}`);
-    });
-
-  if (isString(element)) {
-    // Treat strings as an HTML tagname (or "" / "<>" for a fragment).
-    if (element === "" || element === "<>") {
-      return v(Fragment, children);
-    } else {
-      return v(Element, { tagname: element, attrs }, children);
-    }
-  } else if (isFunction(element)) {
-    // Treat functions as component functions.
-    component = makeComponent(element);
-  } else {
-    throw new TypeError(`Expected a tagname or component function. Got: ${typeof element} ${element}`);
-  }
-
   const view = {
     /**
-     * Returns the wrapped component's DOM node.
+     * Initialize the view to produce a component instance.
      */
-    get node() {
-      return instance.node;
-    },
+    init(app) {
+      // Filter falsy children and convert to component instances.
+      const children = flatMap(args)
+        .filter((x) => x !== null && x !== undefined && x !== false)
+        .map((child) => {
+          if (isTemplate(child)) {
+            child = child.init(app);
+          } else if (isString(child) || isNumber(child) || isState(child)) {
+            child = initComponent(app, Text, { value: child });
+          }
 
-    /**
-     * Initialize the wrapped component. Required before connect and disconnect will work.
-     */
-    init({ getService }) {
-      instance = component({ getService, attrs, children });
+          if (!isComponent(child)) {
+            throw new TypeError(`Children must be components, strings, numbers or states. Got: ${child}`);
+          }
 
-      for (const child of children) {
-        if (isView(child)) {
-          child.init({ getService });
+          return child;
+        });
+
+      if (isString(element)) {
+        if (element === "" || element === "<>") {
+          return initComponent(app, Fragment, null, children);
+        } else {
+          return initComponent(app, Element, { tagname: element, attrs }, children);
         }
+      } else if (isFunction(element)) {
+        return initComponent(app, element, attrs, children);
+      } else {
+        throw new TypeError(`Expected a tagname or component function. Got: ${element} (${typeof element})`);
       }
-    },
-
-    /**
-     * Connect the wrapped component to the DOM.
-     *
-     * @param parent - DOM node to connect component to as a child.
-     * @param after - Optional sibling DOM node which should immediately precede the component's DOM node.
-     */
-    connect(parent, after = null) {
-      instance.connect(parent, after);
-    },
-
-    /**
-     * Disconnect the wrapped component from the DOM.
-     */
-    disconnect() {
-      instance.disconnect();
     },
   };
 
-  Object.defineProperty(view, "isView", {
+  Object.defineProperty(view, "isTemplate", {
     writable: false,
     value: true,
   });
@@ -151,6 +116,8 @@ export function unless($condition, element) {
   });
 }
 
+let id = 0;
+
 /**
  * Displays a component once for each item in `$values`.
  *
@@ -182,10 +149,7 @@ export function watch($value, render) {
  * @param event - The event that triggers an update to `$value`. Defaults to "input".
  */
 export function bind($value, event = "input") {
-  const binding = {
-    event,
-    $state: $value,
-  };
+  const binding = { $value, event };
 
   Object.defineProperty(binding, "isBinding", {
     writable: false,

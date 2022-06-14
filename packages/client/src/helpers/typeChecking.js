@@ -18,10 +18,8 @@ export const isDOM = (value) => value != null && value instanceof Node;
 
 export const isBinding = (value) => value && value.isBinding === true;
 
-export const isComponentInstance = (value) => value && value.isComponentInstance === true;
-
 export const isComponent = (value) => value && value.isComponent === true;
 
-export const isView = (value) => value && value.isView === true;
+export const isTemplate = (value) => value && value.isTemplate === true;
 
 export const isService = (value) => value && value.isService === true;

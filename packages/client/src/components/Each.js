@@ -1,4 +1,4 @@
-import { makeComponent } from "../makeComponent.js";
+import { initComponent } from "../helpers/initComponent.js";
 
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
@@ -6,8 +6,9 @@ import { makeComponent } from "../makeComponent.js";
 export function Each($attrs, self) {
   self.debug.name = "woof:v:each";
 
+  const app = self.getService("@app");
   const $value = $attrs.map("value");
-  const initComponent = makeComponent($attrs.get("component"));
+  const componentFn = $attrs.get("component");
 
   const node = document.createTextNode("");
 
@@ -26,12 +27,9 @@ export function Each($attrs, self) {
 
     // Create new components for each item.
     const newComponents = newValues.map((value, index) => {
-      const component = initComponent({
-        getService: self.getService,
-        attrs: {
-          "@value": value,
-          "@index": index,
-        },
+      const component = initComponent(app, componentFn, {
+        "@value": value,
+        "@index": index,
       });
 
       // Default to using index as key unless another is provided.
@@ -50,7 +48,7 @@ export function Each($attrs, self) {
       const stillPresent = newKeys.includes(item.key);
 
       if (!stillPresent) {
-        component.disconnect();
+        item.disconnect();
       }
     }
 

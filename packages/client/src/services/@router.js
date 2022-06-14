@@ -1,19 +1,18 @@
 import queryString from "query-string";
 import { makeState } from "@woofjs/state";
-import { makeService } from "../makeService.js";
 import { matchRoute, parseRoute } from "../helpers/routing.js";
 import { isObject } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { makeComponent } from "../makeComponent.js";
+import { initComponent } from "../helpers/initComponent.js";
 
 import { Outlet } from "../components/Outlet.js";
 
 /**
  * Top level navigation service.
  */
-export default makeService((self) => {
+export default function RouterService(self) {
   self.debug.name = "woof:@router";
 
   const { getRoot, history, routes } = self.options;
@@ -70,9 +69,7 @@ export default makeService((self) => {
   });
 
   self.afterConnect(() => {
-    appOutlet = makeComponent(Outlet)({
-      getService: self.getService,
-    });
+    appOutlet = initComponent(self.getService("@app"), Outlet);
     appOutlet.connect(getRoot());
 
     history.listen(onRouteChange);
@@ -91,12 +88,18 @@ export default makeService((self) => {
     });
   });
 
-  function onRouteChange({ location }) {
+  async function onRouteChange({ location }) {
     const matched = matchRoute(routes, location.pathname);
 
     if (matched) {
       if (matched.data.redirect != null) {
-        history.replace(matched.data.redirect);
+        let path = matched.data.redirect;
+
+        for (const key in matched.params) {
+          path = path.replace(":" + key, matched.params[key]);
+        }
+
+        history.replace(path);
       } else {
         $params.set(matched.params);
 
@@ -119,25 +122,29 @@ export default makeService((self) => {
 
               activeLayers = activeLayers.slice(0, i);
 
-              const outlet = makeComponent(Outlet)({
-                getService: self.getService,
-              });
-              const component = makeComponent(matchedLayer.component)({
-                getService: self.getService,
-                children: [outlet],
-              });
+              const app = self.getService("@app");
+              const outlet = initComponent(app, Outlet);
+              const component = initComponent(app, matchedLayer.component, null, [outlet]);
 
               const parentLayer = activeLayers[activeLayers.length - 1];
-              if (parentLayer) {
-                // Create parent outlet if it doesn't exist and load component.
-                parentLayer.outlet.$attrs.set({
-                  element: component,
-                });
-              } else {
-                appOutlet.$attrs.set({
-                  element: component,
-                });
+
+              const mount = (component) => {
+                if (parentLayer) {
+                  parentLayer.outlet.$attrs.set({
+                    element: component,
+                  });
+                } else {
+                  appOutlet.$attrs.set({
+                    element: component,
+                  });
+                }
+              };
+
+              if (component.hasRoutePreload) {
+                await component.routePreload(mount);
               }
+
+              mount(component);
 
               // Push and connect new active layer.
               activeLayers.push({
@@ -206,4 +213,4 @@ export default makeService((self) => {
       }
     },
   };
-});
+}

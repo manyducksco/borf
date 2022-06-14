@@ -1,7 +1,7 @@
 import { createHashHistory, createBrowserHistory } from "history";
 import { makeDebug } from "./makeDebug.js";
-import { makeService } from "./makeService.js";
-import { isFunction, isString, isService } from "./helpers/typeChecking.js";
+import { initService } from "./helpers/initService.js";
+import { isFunction, isString } from "./helpers/typeChecking.js";
 import { splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
@@ -23,7 +23,7 @@ export function makeApp(options = {}) {
 
   let history;
   let root;
-  let routeId = 0;
+  let layerId = 0;
 
   if (options.history) {
     history = options.history;
@@ -50,7 +50,7 @@ export function makeApp(options = {}) {
     // Parse nested routes if they exist.
     if (defineRoutes != null) {
       const parts = splitRoute(path);
-      const layer = { id: routeId++, component };
+      const layer = { id: layerId++, component };
 
       // Remove trailing wildcard for joining with nested routes.
       if (parts[parts.length - 1] === "*") {
@@ -88,7 +88,7 @@ export function makeApp(options = {}) {
     } else {
       routes.push({
         path,
-        layers: [...layers, { id: routeId++, component }],
+        layers: [...layers, { id: layerId++, component }],
       });
     }
 
@@ -141,24 +141,20 @@ export function makeApp(options = {}) {
      * @param options - Object to be passed to service.created() function when called.
      */
     service(name, service, options) {
-      if (isFunction(service) && !isService(service)) {
-        service = makeService(service);
-      }
-
-      if (!isService(service)) {
-        throw new TypeError(`Expected a service. Got: ${service}`);
+      if (!isFunction(service)) {
+        throw new TypeError(`Expected a service function. Got: ${service} (${typeof service})`);
       }
 
       if (!services[name]) {
         services[name] = {
-          template: service,
+          fn: service,
           instance: null,
           options,
         };
       }
 
       // Merge with existing fields if overwriting.
-      services[name].template = service;
+      services[name].fn = service;
 
       if (options !== undefined) {
         services[name].options = options;
@@ -211,11 +207,7 @@ export function makeApp(options = {}) {
         const debugChannel = debug.makeChannel(`service:${name}`);
 
         // First bits of app code are run; service functions called.
-        service.instance = service.template({
-          getService,
-          debugChannel,
-          options: service.options,
-        });
+        service.instance = initService({ getService }, service.fn, debugChannel, service.options);
       }
 
       // Unlock getService now that all services have been created.
@@ -269,7 +261,17 @@ export function makeApp(options = {}) {
   // Built-in services
   ////
 
+  // App context for components.
+  methods.service("@app", () => {
+    return {
+      getService,
+    };
+  });
+
+  // Prefixed console logging.
   methods.service("@debug", () => debug);
+
+  // Access to matched route and query params.
   methods.service("@router", RouterService, {
     getRoot() {
       return root;
@@ -277,7 +279,11 @@ export function makeApp(options = {}) {
     history,
     routes,
   });
+
+  // Access to document settings like title and favicon.
   methods.service("@page", PageService);
+
+  // HTTP client with middleware support.
   methods.service("@http", HTTPService);
 
   return methods;

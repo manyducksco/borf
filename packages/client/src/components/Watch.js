@@ -1,4 +1,4 @@
-import { isComponent, isFunction, isView } from "../helpers/typeChecking.js";
+import { isFunction, isTemplate } from "../helpers/typeChecking.js";
 
 /**
  * Recreates its contents each time its value changes.
@@ -17,11 +17,11 @@ export function Watch($attrs, self) {
     let newItem = render(value);
 
     // Allow functions that return an element
-    if (newItem && isFunction(newItem) && !isComponent(newItem)) {
+    if (newItem && isFunction(newItem)) {
       newItem = newItem();
     }
 
-    if (newItem != null && !isView(newItem)) {
+    if (newItem != null && !isTemplate(newItem)) {
       throw new TypeError(`Watch: render function should return a view or null. Got: ${newItem}`);
     }
 
@@ -31,8 +31,7 @@ export function Watch($attrs, self) {
     }
 
     if (newItem) {
-      current = newItem;
-      current.init({ getService: self.getService });
+      current = newItem.init(self.getService("@app"));
       current.connect(node.parentNode, node);
     }
   }
