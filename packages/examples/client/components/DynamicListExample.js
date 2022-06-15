@@ -69,21 +69,23 @@ function DynamicListExample($attrs, self) {
           <button onclick={reset}>Reset List</button>
         </div>
 
-        {each($shoppingList, ($attrs, self) => {
-          const $item = $attrs.map("@value");
+        {each(
+          $shoppingList,
+          ($attrs, self) => {
+            const $item = $attrs.map("@value");
 
-          self.key = $item;
-
-          return (
-            <li
-              onclick={() => {
-                alert($item.get());
-              }}
-            >
-              {$item}
-            </li>
-          );
-        })}
+            return (
+              <li
+                onclick={() => {
+                  alert($item.get());
+                }}
+              >
+                {$item}
+              </li>
+            );
+          },
+          (item) => item
+        )}
       </div>
     </div>
   );

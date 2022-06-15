@@ -101,10 +101,10 @@ export default function RouterService(self) {
 
         history.replace(path);
       } else {
+        $path.set(matched.path);
         $params.set(matched.params);
 
         if (matched.route !== $route.get()) {
-          $path.set(matched.path);
           $route.set(matched.route);
 
           const { layers } = matched.data;

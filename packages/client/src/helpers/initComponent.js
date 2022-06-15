@@ -90,18 +90,6 @@ export function initComponent(app, fn, attrs, children) {
     children,
     debug: getService("@debug").makeChannel("~"),
 
-    // TODO: Can we figure out how to diff lists without using keys?
-    get key() {
-      if (isState(key)) {
-        return key.get();
-      } else {
-        return key;
-      }
-    },
-    set key(value) {
-      key = value;
-    },
-
     get isConnected() {
       return isConnected;
     },
@@ -138,11 +126,15 @@ export function initComponent(app, fn, attrs, children) {
 
   // Update $attrs when state attrs change.
   stateAttrs.forEach(({ name, value }) => {
-    self.watchState(value, (unwrapped) => {
-      $attrs.set((attrs) => {
-        attrs[name] = unwrapped;
-      });
-    });
+    self.watchState(
+      value,
+      (unwrapped) => {
+        $attrs.set((attrs) => {
+          attrs[name] = unwrapped;
+        });
+      },
+      { immediate: true }
+    );
   });
 
   /*=============================*\
@@ -168,22 +160,6 @@ export function initComponent(app, fn, attrs, children) {
   // This is the object the framework will use to control the component.
   const component = {
     $attrs,
-
-    /**
-     * Returns this component's unique identifier. Used to ID the component when used in `$.each`.
-     */
-    get key() {
-      return self.key;
-    },
-
-    /**
-     * Sets this component's unique identifier. Used to ID the component when used in `$.each`.
-     *
-     * @param value - A state or a plain value of any type
-     */
-    set key(value) {
-      self.key = value;
-    },
 
     /**
      * Returns the component's root DOM node, or null if there is none.

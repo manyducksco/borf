@@ -39,6 +39,7 @@ export function makeApp(options = {}) {
    * @param path - Path to match before calling handlers.
    * @param component - Component to display when route matches.
    * @param defineRoutes - Function that defines routes to be displayed as children of `component`.
+   * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
    */
   function prepareRoutes(path, component, defineRoutes = null, layers = []) {
     if (!isFunction(component)) {

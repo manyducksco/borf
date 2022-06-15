@@ -102,17 +102,19 @@ export default function CRUD($attrs, self) {
               $selectedId.set(Number(e.target.value));
             }}
           >
-            {each($filteredPeople, ($attrs, self) => {
-              const $person = $attrs.map("@value");
+            {each(
+              $filteredPeople,
+              ($attrs, self) => {
+                const $person = $attrs.map("@value");
 
-              self.key = $person.map("id");
-
-              return (
-                <option value={$person.map("id")}>
-                  {$person.map("surname")}, {$person.map("name")}
-                </option>
-              );
-            })}
+                return (
+                  <option value={$person.map("id")}>
+                    {$person.map("surname")}, {$person.map("name")}
+                  </option>
+                );
+              },
+              (person) => person.id
+            )}
           </select>
         </div>
         <div>

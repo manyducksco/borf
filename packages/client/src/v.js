@@ -116,16 +116,15 @@ export function unless($condition, element) {
   });
 }
 
-let id = 0;
-
 /**
  * Displays a component once for each item in `$values`.
  *
  * @param $values - An array or state containing an array.
  * @param component - Component to display for each item.
+ * @param getKey - Takes an array item and returns a unique key. If not provided then the array index will be used.
  */
-export function each($values, component) {
-  return v(Each, { value: $values, component });
+export function each($values, component, getKey = null) {
+  return v(Each, { value: $values, component, getKey });
 }
 
 /**

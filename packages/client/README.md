@@ -331,9 +331,6 @@ const Example = makeComponent(($, self) => {
 
     // Render once for each item in $list. Updates when $list changes.
     $.each($list, ($, self) => {
-      // Components in an each have unique keys. In this case we're just using the position in the list.
-      self.key = self.$attrs.map("@index");
-
       // Return an <li> that contains the current value of this $list item.
       return $("li", self.$attrs.map("@value"));
     })

@@ -48,13 +48,15 @@ function FormExample($attrs, self) {
         <input type="number" value={bind($age)} placeholder="Age" />
         <button disabled={$hasErrors}>Submit</button>
         {when($hasErrors, () =>
-          each($errors, ($attrs, self) => {
-            const $message = $attrs.map("@value");
+          each(
+            $errors,
+            ($attrs, self) => {
+              const $message = $attrs.map("@value");
 
-            self.key = $message;
-
-            return <div style="color:red">{$message}</div>;
-          })
+              return <div style="color:red">{$message}</div>;
+            },
+            (error) => error
+          )
         )}
       </form>
     </div>
