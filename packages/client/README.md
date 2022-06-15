@@ -14,13 +14,13 @@ Front end routing, components and state for dogs. 🐕
 ## Hello World
 
 ```js
-import { makeApp } from "@woofjs/client";
+import { makeApp, h } from "@woofjs/client";
 
 const app = makeApp();
 
 // Render <h1>Hello World</h1> regardless of the URL
-app.route("*", ($) => {
-  return $("h1", "Hello World");
+app.route("*", () => {
+  return h("h1", "Hello World");
 });
 
 // Render the matched route in an element with an id of `#app`
@@ -29,7 +29,7 @@ app.connect("#app");
 
 ## Routing
 
-At the top level, woof determines what component to display using routes. Routes "match" when the pathname of the current URL fits its pattern. When a route matches, that route's component is displayed.
+At the top level, woof determines what component to display using routes. Routes "match" when the pathname of the current URL fits a pattern. When a route matches, that route's component is displayed.
 
 You'll notice that even a simple Hello World requires us to set up a route. Routing is central to what the web is. By following this convention several things users expect from a web app will just work out of the box; back and forward buttons, sharable URLs, bookmarks, etc.
 
@@ -39,54 +39,35 @@ Routing in Woof is heavily inspired by [choo.js](https://www.choo.io/docs/routin
 
 Route strings are a set of fragments separated by `/`. These fragments are of three types.
 
-- Static: `/this/is/static` and will match only when the route is exactly this.
+- Static: `/this/is/static` and will match only when the route is exactly `/this/is/static`.
 - Dynamic: `/users/:id/edit` will match anything that fits the static parts of the route and stores the parts beginning with `:` as named params. This can be anything, like `/users/123/edit` or `/users/BobJones/edit`. You can access these values inside the component.
 - Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
 
 ```js
-app.route("users/:id", ($, self) => {
-  const id = self.$route.get("params.id");
+app.route("users/:id", ($attrs, self) => {
+  // Get route params from router.
+  const { $params } = self.getService("@router");
 
-  return $("p", ["User ID is ", id]);
+  // Get the live value of :id with '.map()'.
+  const $id = $params.map("id");
+
+  // Render it into a <p> tag. The ID portion will update if the URL changes.
+  return h("p", "User's ID is ", $id);
 });
 ```
 
-Nested routes inside a component:
-
-```js
-app.route("users/*", ($) => {
-  return $("div", [
-    $("h1", "Persistent Header"),
-
-    $.router((self) => {
-      self.route(":id", ($) => {
-        // Displays at '/users/:id'
-        return <p>User Details</p>;
-      });
-
-      self.route(":id/edit", ($) => {
-        // Displays at '/users/:id/edit'
-        return <p>User Edit</p>;
-      });
-
-      self.route("*", ($) => {
-        // Displays at '/users/*' when no other routes match
-        return <p>Fallback</p>;
-      });
-    }
-  ]);
-});
-```
+> TODO: Describe nested routing
 
 ## Reactivity with States
 
 Unlike many other frameworks Woof does _not_ use a virtual DOM. Instead, Woof uses objects called States to hold data which needs to change. States are sprinkled into your components, binding their data to the elements where that data is needed. When the value of a State gets updated, any DOM nodes bound to that state are immediately updated to match. No other processing is needed.
 
 ```js
-import { makeState, makeComponent } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
-const Timer = makeComponent(($, self) => {
-  // Naming states with a $ is a convention to help point out that they are dynamic. Anywhere you see $seconds used, you know that value will change.
+function Timer($attrs, self) {
+  // Naming states with a $ is a convention to help point out that they are dynamic.
+  // Anywhere you see $seconds used you know that value can change.
   const $seconds = makeState(0);
 
   // Adds 1 to the current value of $seconds.
@@ -110,7 +91,7 @@ const Timer = makeComponent(($, self) => {
       <button onclick={reset}>Reset Counter</button>
     </div>
   );
-});
+};
 ```
 
 ## Components
@@ -120,23 +101,23 @@ Components are reusable modules with their own markup and logic. You can define 
 Components are ubiquitous in front-end frameworks, but Woof's take on them is very inspired by how [React](https://reactjs.org/docs/components-and-props.html) does things.
 
 ```js
-const Example = makeComponent(($, self) => {
-  const $title = self.$attrs.map("title");
+function Example($attrs, self) {
+  const $title = $attrs.map("title");
 
-  return $("div", [
-    $("h1", $.text($title, "Default Title"),
-    $("p", "This is a reusable component now.")
+  return h("div", [
+    h("h1", $title),
+    h("p", "This is a reusable component.")
   ]);
-});
+};
 
 // Components can be mounted directly on a route.
 app.route("example", Example);
 
 // They can also be used in the body of another component.
-app.route("other", ($) => {
-  return $("div", [
+app.route("other", () => {
+  return h("div", [
     // Pass attributes in an object just like regular HTML elements
-    $(Example, { title: "In Another Component" })
+    h(Example, { title: "In Another Component" })
 
     // You can also use components with JSX like so:
     <Example title="In Another Component">
@@ -147,16 +128,7 @@ app.route("other", ($) => {
 ### Component's `self` Object
 
 ```js
-const Example = makeComponent(($, self) => {
-  // Get an attribute's value.
-  const title = self.$attrs.get("title");
-
-  // Get an attribute's value as a state that updates when the attribute changes.
-  const $title = self.$attrs.map("title");
-
-  // Get info about the route the component is mounted under.
-  const userId = self.$route.get("params.userId");
-
+function Example($attrs, self) {
   // Access services.
   const service = self.getService("name");
 
@@ -193,7 +165,7 @@ const Example = makeComponent(($, self) => {
 
   // Access the component's children with `self.children`,
   // in this case to render them inside a <div>
-  return $("div", self.children);
+  return h("div", self.children);
 });
 ```
 
@@ -202,20 +174,20 @@ const Example = makeComponent(($, self) => {
 Every component function gets two parameters; `$` and `self`. `$` is the function you call to create renderable elements. It is heavily based on [hyperscript](https://github.com/hyperhype/hyperscript). It also has helpful utility functions on the object such as `$.if`, `$.each` and others.
 
 ```js
-const Example = makeComponent(($, self) => {
-  return $("section", [
-    $("h1", "Item List"),
-    $("p", { style: "color: red" }, "Below is a list of items."),
-    $("ul", [
-      $("li", "Item 1"),
-      $("li", { class: "active" }, "Item 2"),
-      $("li", "Item 3"),
-      $("li", "Item 4"),
-      $("li", "Item 5"),
-      $("li", "Item 6"),
+function Example($attrs, self) {
+  return h("section", [
+    h("h1", "Item List"),
+    h("p", { style: "color: red" }, "Below is a list of items."),
+    h("ul", [
+      h("li", "Item 1"),
+      h("li", { class: "active" }, "Item 2"),
+      h("li", "Item 3"),
+      h("li", "Item 4"),
+      h("li", "Item 5"),
+      h("li", "Item 6"),
     ]);
   ])
-});
+};
 ```
 
 That component renders the following HTML.
@@ -242,7 +214,7 @@ Woof supports JSX, so if you want to write your components as HTML to begin with
 > Note that Woof uses a `class` attribute like HTML rather than `className` like React.
 
 ```jsx
-const Example = makeComponent(($, self) => {
+function Example($attrs, self) {
   return (
     <section>
       <h1>Item List</h1>
@@ -257,7 +229,7 @@ const Example = makeComponent(($, self) => {
       </ul>
     </section>
   );
-});
+}
 ```
 
 ### Using components
@@ -265,229 +237,172 @@ const Example = makeComponent(($, self) => {
 Using a component is the same as creating an HTML element, but you call `$` with the component instead of a tag name.
 
 ```js
-const Subcomponent = makeComponent(($, self) => {
-  return $("h1", "Hello from inside another component!");
+function Example($attrs, self) {
+  return h(Subcomponent);
 });
 
-const Example = makeComponent(($, self) => {
-  return $(Subcomponent);
-});
+function Subcomponent($attrs, self) {
+  return h("h1", "Hello from inside another component!");
+};
 ```
 
 When using subcomponents, you can pass them attributes just like you can with HTML elements. The Example component in the following code will display `<h1>Hello world!</h1>`.
 
 ```js
-const Subcomponent = makeComponent(($, self) => {
-  const name = self.$attrs.get("name");
-
-  return $("h1", "Hello ", name, "!");
+function Example($attrs, self) {
+  return h(Subcomponent, { name: "world" });
 });
 
-const Example = makeComponent(($, self) => {
-  return $(Subcomponent, { name: "world" });
+function Subcomponent($attrs, self) {
+  const name = $attrs.get("name");
+
+  return h("h1", "Hello ", name, "!");
+};
+```
+
+The same thing with JSX:
+
+```js
+function Example($attrs, self) {
+  return <Subcomponent name="world" />
 });
+
+function Subcomponent($attrs, self) {
+  const name = $attrs.get("name");
+
+  return <h1>Hello {name}!</h1>
+};
 ```
 
 ### Helpers
 
 The `$` function supports creating elements and binding data to them. Helpers supply the control flow you would expect like conditionals and loops, plus some things you might not expect like nested routing.
 
-#### $.if
+#### Conditionals (`when` and `unless`)
 
-> `$.if($condition[, thenFn][, elseFn])`
+> `when($condition, element)`
+>
+> `unless($condition, element)`
 
-Renders the result of `thenFn` when the condition is truthy, and the result of `elseFn` otherwise. Pass null or undefined for either if you don't want to display anything for that condition.
-
-The condition can be a plain value or a $state.
+The `when` helper displays the element only when the condition is truthy while `unless` displays the element only when the condition is falsy. The condition can be a plain value or a $state.
 
 ```js
-const Example = makeComponent(($, self) => {
+function Example($attrs, self) {
   const $isOn = useState(false);
 
-  return $.if(
-    $isOn,
-    () => {
-      return <h1>Is On</h1>;
-    },
-    () => {
-      return <h1>Is Off</h1>;
-    }
-  );
-});
-```
-
-#### $.each
-
-> `$.each($list, component)`
-
-Renders a component once for each item in an array. If the array is stored inside a $state the list will update whenever that $state is updated.
-
-```js
-const Example = makeComponent(($, self) => {
-  const $list = makeState(["one", "two", "three"]);
-
-  return $(
-    "ul",
-
-    // Render once for each item in $list. Updates when $list changes.
-    $.each($list, ($, self) => {
-      // Return an <li> that contains the current value of this $list item.
-      return $("li", self.$attrs.map("@value"));
-    })
-  );
-});
-```
-
-#### $.watch
-
-> `$.watch($state, renderFn)`
-
-> TODO
-
-#### $.text
-
-> `$.text($state[, defaultText])`
-
-Displays the value of a state as text. Takes an optional default value to show if the state's value is `null` or `undefined`.
-
-```js
-const Example = makeComponent(($, self) => {
-  const $count = makeState(null);
-
-  function increment() {
-    $count.set((current) => (current == null ? 1 : current + 1));
-  }
-
-  return $("div", [
-    $("h1", $.text($count, "No Count")),
-    $(
-      "button",
-      {
-        onclick: increment,
-      },
-      "Increment"
-    ),
+  return h("div", [
+    when($isOn, <h1>Is On</h1>),
+    unless($isOn, <h1>Is Off</h1>)
   ]);
 });
 ```
 
-The above component initially renders:
+#### Looping (`each`)
 
-```html
-<div>
-  <h1>No Count</h1>
-  <button>Increment</button>
-</div>
-```
+> `each($list, component)`
 
-When the Increment button is clicked once the content is updated:
-
-```html
-<div>
-  <h1>1</h1>
-  <button>Increment</button>
-</div>
-```
-
-#### $.router
-
-> `$.router(routesFn)`
-
-Defines a set of nested routes within a component. Nested routes' paths are appended to the path of the parent component.
+Renders a component once for each item in an array. If the array is stored inside a $state the list will update whenever that $state is updated.
 
 ```js
-const Example = makeComponent(($, self) => {
-  return $(
-    "div",
+function Example($attrs, self) {
+  const $list = makeState(["one", "two", "three"]);
 
-    $.router((self) => {
-      self.route("main", ($, self) => {
-        return $("h1", "This is the main route.");
-      });
+  return h(
+    "ul",
 
-      self.route("secondary", ($, self) => {
-        return $("h1", "This is the secondary route.");
-      });
-
-      // If no other routes match, redirect to the first in this router.
-      self.redirect("*", "./main");
-
-      // Redirect supports relative path syntax just like a file system:
-      // - '/top-level'
-      // - './current'
-      // - '../parent'
-      // - '../../super'
+    // Render once for each item in $list. Updates when $list changes.
+    each($list, ($attrs, self) => {
+      // Return an <li> that contains the current value of this $list item.
+      return h("li", $attrs.map("@value"));
     })
   );
-});
-
-// Mount this component under a route that ends with a wildcard to allow nested routes.
-app.route("parent/*", Example);
+}
 ```
 
-In the example above, `/parent/main` will display:
+The `each` function uses keys to identify which items have been changed, added or removed. By default, `each` keys components by list index. When rendering a list of complex objects you can save on DOM operations by using a unique value from the object, especially if you're doing a lot of re-ordering.
 
-```html
-<div>
-  <h1>This is the main route.</h1>
-</div>
+If you'd like to specify the key you can pass a function as the third argument:
+
+```js
+// Use the list item's `id` field as the key.
+each($list, Component, (item) => item.id);
 ```
 
-and `/parent/secondary` will display:
+#### watch
 
-```html
-<div>
-  <h1>This is the secondary route.</h1>
-</div>
+> `watch($state, renderFn)`
+
+> TODO
+
+#### Two Way Binding (`bind`)
+
+> bind($state, event)
+
+Creates a two-way binding to a state. When this bound state is passed to the `value` attribute on an input element, the state will be updated whenever the input's value changes.
+
+```js
+import { makeState, bind } from "@woofjs/client";
+
+function Example($attrs, self) {
+  const $value = makeState("");
+
+  // Displays what the user typed above the text input.
+  return (
+    <div>
+      <p>You typed: {$value}</p>
+
+      <input type="text" value={bind($value)} />
+    </div>
+  );
+}
 ```
-
-If the user visits `/parent` or any other path under `/parent`, the redirect will kick in and redirect to `/parent/main`.
 
 ## Dynamic Classes
 
 Components also support dynamic classes. Pass an object where the keys are the class names, and the classes are added to the element while the values are truthy. The values can be $states if you want to toggle classes dynamically.
 
 ```jsx
-const Example = makeComponent(($, self) => {
+function Example($attrs, self) {
   return (
     <div
       class={{
-        // Always include "container" class
+        // Always includes "container" class
         container: true,
 
-        // Include "active" class when 'isActive' attribute is true
-        active: self.$attrs.map("isActive"),
+        // Includes "active" class when 'isActive' attribute is truthy
+        active: $attrs.map("isActive"),
       }}
     >
       {self.children}
     </div>
   );
-});
+}
 ```
 
 Multiple classes:
 
 ```jsx
-const Example = makeComponent(($, self) => {
+function Example($attrs, self) {
   return <div class={["one", "two"]}>{self.children}</div>;
-});
+}
 ```
 
 A combination:
 
 ```jsx
-const Example = makeComponent(($, self) => {
-  // The 'container' class is always included while the ones inside the object are shown if their value is true.
+function Example($attrs, self) {
+  // The 'container' class is always included while the ones
+  // inside the object are shown if their value is truthy.
   return (
     <div
       class={["container", {
-        active: self.$attrs.map("isActive"),
+        active: $attrs.map("isActive"),
       }}
     >
       {self.children}
     </div>
   );
-});
+};
 ```
 
 ## Services
@@ -529,14 +444,14 @@ app.route("/counter", ($) => {
 });
 
 // The view route displays the count but doesn't let the user change it.
-app.route("/counter/view", ($, self) => {
+app.route("/counter/view", ($attrs, self) => {
   const { $current } = self.getService("counter");
 
   return <h1>The Count is Now {$current}</h1>;
 });
 
 // The controls route lets the user change the count but doesn't display it.
-app.route("/counter/controls", ($, self) => {
+app.route("/counter/controls", ($attrs, self) => {
   const { increment, decrement } = self.getService("counter");
 
   return (

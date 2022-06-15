@@ -13,15 +13,15 @@ import { Fragment } from "./components/Fragment.js";
  * Template function. Used in components to render content.
  *
  * @example
- * v("div", { class: "active" }, "Text Content");
- * v("h1", "Text Content");
- * v(Component, { attribute: "value" }, "Child one", "Child two");
- * v(Component, v("h1", "H1 as child of component"));
+ * h("div", { class: "active" }, "Text Content");
+ * h("h1", "Text Content");
+ * h(Component, { attribute: "value" }, "Child one", "Child two");
+ * h(Component, v("h1", "H1 as child of component"));
  *
  * @param element - A tagname or component function.
  * @param args - Optional attributes object and zero or more children.
  */
-export function v(element, ...args) {
+export function h(element, ...args) {
   let attrs;
 
   if (isObject(args[0])) {
@@ -76,13 +76,13 @@ export function v(element, ...args) {
  * Displays an element when `$condition` is truthy.
  *
  * @example
- * when($value, v("h1", "If you can read this the value is truthy."))
+ * when($value, h("h1", "If you can read this the value is truthy."))
  *
  * @param $condition - State or variable with a truthy or falsy value.
  * @param element - Element to display when $condition is truthy.
  */
 export function when($condition, element) {
-  return v(Watch, {
+  return h(Watch, {
     value: $condition,
     render: (value) => {
       if (value) {
@@ -98,13 +98,13 @@ export function when($condition, element) {
  * Displays an element when `$condition` is falsy.
  *
  * @example
- * unless($value, v("h1", "If you can read this the value is falsy."))
+ * unless($value, h("h1", "If you can read this the value is falsy."))
  *
  * @param $condition - State or variable with a truthy or falsy value.
  * @param element - Element to display when $condition is falsy.
  */
 export function unless($condition, element) {
-  return v(Watch, {
+  return h(Watch, {
     value: $condition,
     render: (value) => {
       if (value) {
@@ -124,7 +124,7 @@ export function unless($condition, element) {
  * @param getKey - Takes an array item and returns a unique key. If not provided then the array index will be used.
  */
 export function each($values, component, getKey = null) {
-  return v(Each, { value: $values, component, getKey });
+  return h(Each, { value: $values, component, getKey });
 }
 
 /**
@@ -134,7 +134,7 @@ export function each($values, component, getKey = null) {
  * @param render - Function that takes the latest value and returns an element to display.
  */
 export function watch($value, render) {
-  return v(Watch, { value: $value, render });
+  return h(Watch, { value: $value, render });
 }
 
 /**
