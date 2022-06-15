@@ -68,15 +68,13 @@ export function Each($attrs, self) {
     }
 
     connectedItems = newItems;
-
-    self.debug.log({ newKeys, connectedItems });
   }
 
   self.watchState($value, update, { immediate: true });
 
   self.afterDisconnect(() => {
     for (const item of connectedItems) {
-      item.disconnect();
+      item.component.disconnect();
     }
     connectedItems = [];
   });
