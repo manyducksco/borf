@@ -24,7 +24,7 @@ export function makeDebug(options = {}) {
   // Update match function based on how the filter is set
   $filter.watch(
     (current) => {
-      matchFn = parseFilter(current);
+      matchFn = makeMatchFn(current);
     },
     { immediate: true }
   );
@@ -82,7 +82,7 @@ export function makeDebug(options = {}) {
  *
  * @param filter - A string or regular expression that specifies a pattern for names of debug channels you want to display.
  */
-function parseFilter(filter) {
+function makeMatchFn(filter) {
   if (filter instanceof RegExp) {
     return (value) => filter.test(value);
   }

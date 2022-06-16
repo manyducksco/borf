@@ -28,9 +28,9 @@ export function h(element, ...args) {
     attrs = args.shift();
   }
 
-  const view = {
+  const template = {
     /**
-     * Initialize the view to produce a component instance.
+     * Initialize the template to produce a component instance.
      */
     init(app) {
       // Filter falsy children and convert to component instances.
@@ -64,12 +64,12 @@ export function h(element, ...args) {
     },
   };
 
-  Object.defineProperty(view, "isTemplate", {
+  Object.defineProperty(template, "isTemplate", {
     writable: false,
     value: true,
   });
 
-  return view;
+  return template;
 }
 
 /**

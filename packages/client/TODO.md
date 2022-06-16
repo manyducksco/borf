@@ -1,0 +1,4 @@
+- Write tests for all files in `helpers` and `src` root
+-
+- Unit testing utils for services and components
+  - Use those utils to unit test built in services and components

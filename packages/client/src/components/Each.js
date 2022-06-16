@@ -9,7 +9,7 @@ export function Each($attrs, self) {
   const app = self.getService("@app");
   const $value = $attrs.map("value");
   const componentFn = $attrs.get("component");
-  const getKey = $attrs.get("getKey") || ((value, index) => index);
+  const getKey = $attrs.get("getKey") || ((value) => value);
 
   const node = document.createTextNode("");
 

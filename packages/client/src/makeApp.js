@@ -25,6 +25,8 @@ export function makeApp(options = {}) {
   let root;
   let layerId = 0;
 
+  // TODO: Move `options.history` and `options.hash` into `options.router` and pass those to the @router service.
+  // Let the @router service sort out its history instance and other options.
   if (options.history) {
     history = options.history;
   } else if (options.hash) {

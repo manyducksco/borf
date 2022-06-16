@@ -319,13 +319,13 @@ function Example($attrs, self) {
 }
 ```
 
-The `each` function uses keys to identify which items have been changed, added or removed. By default, `each` keys components by list index. When rendering a list of complex objects you can save on DOM operations by using a unique value from the object, especially if you're doing a lot of re-ordering.
+The `each` function uses keys to identify which items have been changed, added or removed. By default, `each` uses the value itself as a key. You must specify a key yourself if your array might have two or more identical values, or if you have an array of objects with unique IDs.
 
 If you'd like to specify the key you can pass a function as the third argument:
 
 ```js
 // Use the list item's `id` field as the key.
-each($list, Component, (item) => item.id);
+each($list, Component, (item, index) => item.id);
 ```
 
 #### watch

@@ -26,7 +26,6 @@ export function initComponent(app, fn, attrs, children) {
   let activeWatchers = [];
 
   let routePreload;
-  let key;
   let isConnected = false;
 
   /*=============================*\
@@ -40,7 +39,8 @@ export function initComponent(app, fn, attrs, children) {
   for (const name in attrs) {
     if (isState(attrs[name])) {
       if (name.startsWith("$")) {
-        // Pass states through as-is when named with $
+        // Pass states through as-is when named with $.
+        // Allows subcomponents to directly modify states through an explicit naming convention.
         staticAttrs.push({
           name,
           value: attrs[name],
@@ -86,10 +86,8 @@ export function initComponent(app, fn, attrs, children) {
   // This is the object the setup function uses to interface with the component.
   const self = {
     getService,
-
     children,
     debug: getService("@debug").makeChannel("~"),
-
     get isConnected() {
       return isConnected;
     },
@@ -141,13 +139,13 @@ export function initComponent(app, fn, attrs, children) {
   ||      Run setup function     ||
   \*=============================*/
 
-  let element = fn.call(self, $attrs, self);
+  let element = fn.call(self, $attrs.map(), self);
 
   if (isTemplate(element)) {
     element = element.init(getService("@app"));
   } else {
     if (element !== null && !isDOM(element)) {
-      let message = `Components must return a view, a DOM node or null. Got: ${element}`;
+      let message = `Components must return an h() element, a DOM node or null. Got: ${element}`;
 
       throw new TypeError(message);
     }
@@ -238,7 +236,6 @@ export function initComponent(app, fn, attrs, children) {
       const wasConnected = component.isConnected;
 
       if (!wasConnected) {
-        // Run beforeConnect hook
         for (const callback of onBeforeConnect) {
           callback();
         }
@@ -253,7 +250,6 @@ export function initComponent(app, fn, attrs, children) {
       isConnected = true;
 
       if (!wasConnected) {
-        // Run afterConnect hook
         for (const callback of onAfterConnect) {
           callback();
         }
@@ -265,7 +261,6 @@ export function initComponent(app, fn, attrs, children) {
      */
     disconnect() {
       if (component.isConnected) {
-        // Run beforeDisconnect hook
         for (const callback of onBeforeDisconnect) {
           callback();
         }
@@ -278,7 +273,6 @@ export function initComponent(app, fn, attrs, children) {
 
         isConnected = false;
 
-        // Run afterDisconnect hook
         for (const callback of onAfterDisconnect) {
           callback();
         }
