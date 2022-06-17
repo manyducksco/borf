@@ -114,11 +114,11 @@ test("demonstrates testing tools", (t) => {
 ## Testing components
 
 ```js
-import { makeComponent } from "@woofjs/client";
+import { h } from "@woofjs/client";
 import { wrapComponent } from "@woofjs/client/testing";
 
 // A component that requires a service:
-const Example = makeComponent(($, self) => {
+function Example($attrs, self) {
   const { $messageOfTheDay } = self.getService("messages");
 
   return (
@@ -126,7 +126,7 @@ const Example = makeComponent(($, self) => {
       <h1>{$messageOfTheDay}</h1>
     </div>
   );
-});
+}
 
 // And a wrapped version of that component that has a mock version of that service provided:
 const WrappedExample = wrapComponent(Example, (self) => {
@@ -146,7 +146,7 @@ TODO: How do you actually test the component?
 test("component prints message", (t) => {
   t.plan(1);
 
-  const rendered = t.render(WrappedExample, {
+  const rendered = t.component(WrappedExample, {
     /* attrs */
   });
 
@@ -166,17 +166,16 @@ If you haven't used Storybook, views are like component examples you can view in
 Views and tests can coexist within the same suite without issues.
 
 ```js
-export default makeSuite((test, view) => {
-  view("With Header Text", ($) => {
-    return $(Header, { headerText: "Example Header" });
+export default makeSuite(({ view }) => {
+  view("With Header Text", () => {
+    return h(Header, { headerText: "Example Header" });
   });
 
-  // Dynamic attributes allow the user to tweak attribute values themselves in the test environment
-  view("With Dynamic Attrs", ($, attr) => {
-    return $(Header, {
-      // attr(name, defaultValue)
-      headerText: attr("Header Text", "Example Header"),
-      collapsed: attr("Collapsed", false),
+  // Exposed attributes allow the user to tweak attribute values themselves in the test environment
+  view("With Exposed Attrs", (self) => {
+    return h(Header, {
+      headerText: self.expose("Example Header", { label: "Header Text" }),
+      collapsed: self.expose(false, { label: "Collapsed" }),
     });
   });
 });
@@ -185,7 +184,6 @@ export default makeSuite((test, view) => {
 ## Testing services (and HTTP calls)
 
 ```js
-import { makeService } from "@woofjs/client";
 import { wrapService, makeMockHTTP } from "@woofjs/client/testing";
 
 const mockHTTP = makeMockHTTP((self) => {
@@ -208,7 +206,7 @@ const mockHTTP = makeMockHTTP((self) => {
 });
 
 // A service that makes HTTP calls:
-const UserService = makeService((self) => {
+function UserService(self) {
   function createUser(name) {
     return self.getService("@http").post("/users/create").body({ name });
   }
@@ -221,7 +219,7 @@ const UserService = makeService((self) => {
     createUser,
     deleteUser,
   };
-});
+}
 
 // And a wrapped version of that service that uses a mock version of @http:
 const WrappedUserService = wrapService(UserService, (self) => {
@@ -236,8 +234,7 @@ test("API calls return expected response", (t) => {
   t.plan(3);
   t.timeout(500);
 
-  // TODO: Decide what the service version of the `.render` function is called
-  const service = t.whatDoICallThis(WrappedUserService, {
+  const service = t.service(WrappedUserService, {
     /* options */
   });
 
