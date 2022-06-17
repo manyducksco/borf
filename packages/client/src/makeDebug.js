@@ -11,7 +11,7 @@ import ColorHash from "color-hash";
  *
  * @param options - Options for the debug instance. Specify an initial `filter` and enable or disable `log`, `warn` or `error` with booleans.
  */
-export function makeDebug(options = {}) {
+export function makeDebug(options = {}, console = window.console) {
   const $filter = makeState(options.filter || "*,-woof:*");
 
   const hash = new ColorHash({
@@ -19,9 +19,9 @@ export function makeDebug(options = {}) {
     saturation: [0.6, 0.7],
   });
 
-  let matchFn = () => true;
+  let matchFn;
 
-  // Update match function based on how the filter is set
+  // Update match function based on how the filter is set.
   $filter.watch(
     (current) => {
       matchFn = makeMatchFn(current);
@@ -82,7 +82,7 @@ export function makeDebug(options = {}) {
  *
  * @param filter - A string or regular expression that specifies a pattern for names of debug channels you want to display.
  */
-function makeMatchFn(filter) {
+export function makeMatchFn(filter) {
   if (filter instanceof RegExp) {
     return (value) => filter.test(value);
   }
@@ -97,8 +97,13 @@ function makeMatchFn(filter) {
     .map((p) => p.trim())
     .filter((p) => p !== "");
 
-  for (const part of parts) {
-    const section = part.startsWith("-") ? "negative" : "positive";
+  for (let part of parts) {
+    let section = "positive";
+
+    if (part.startsWith("-")) {
+      section = "negative";
+      part = part.slice(1);
+    }
 
     if (part === "*") {
       matchers[section].push(function (value) {
@@ -106,11 +111,11 @@ function makeMatchFn(filter) {
       });
     } else if (part.endsWith("*")) {
       matchers[section].push(function (value) {
-        return value.startsWith(part.slice(1, part.length - 1));
+        return value.startsWith(part.slice(0, part.length - 1));
       });
     } else {
       matchers[section].push(function (value) {
-        return value === part.slice(1, part.length - 1);
+        return value === part;
       });
     }
   }
