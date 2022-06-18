@@ -1,8 +1,9 @@
 import { makeState } from "@woofjs/state";
-import { makeTestWrapper } from "./makeTestWrapper.js";
 import { checks } from "./checks.js";
 import { isTemplate } from "../helpers/typeChecking.js";
 import { initComponent } from "../helpers/initComponent.js";
+import { initService } from "../helpers/initService.js";
+import { makeDebug } from "../makeDebug.js";
 
 /**
  * Defines a test suite.
@@ -16,31 +17,26 @@ export function makeSuite(fn) {
   const beforeEach = [];
   const afterEach = [];
 
-  const test = (name, fn) => {
-    tests.push({ name, fn });
+  const helpers = {
+    beforeAll: (fn) => {
+      beforeAll.push(fn);
+    },
+    afterAll: (fn) => {
+      afterAll.push(fn);
+    },
+    beforeEach: (fn) => {
+      beforeEach.push(fn);
+    },
+    afterEach: (fn) => {
+      afterEach.push(fn);
+    },
+    test: (name, fn) => {
+      tests.push({ name, fn });
+    },
+    view: (name, fn) => {
+      views.push({ name, fn });
+    },
   };
-
-  test.beforeAll = (fn) => {
-    beforeAll.push(fn);
-  };
-
-  test.afterAll = (fn) => {
-    afterAll.push(fn);
-  };
-
-  test.beforeEach = (fn) => {
-    beforeEach.push(fn);
-  };
-
-  test.afterEach = (fn) => {
-    afterEach.push(fn);
-  };
-
-  const view = (name, fn) => {
-    views.push({ name, fn });
-  };
-
-  const helpers = { test, view };
 
   fn.call(helpers, helpers);
 
@@ -99,49 +95,46 @@ export function makeSuite(fn) {
         });
       }
 
-      const makeWrapped = makeTestWrapper((getService) => {
-        let element = view.fn({
-          expose: (value, options = {}) => {
-            const $value = makeState(value);
+      let element = view.fn({
+        expose: (value, options = {}) => {
+          const $value = makeState(value);
 
-            return {
-              isExposed: true,
-              label: options.label,
-              $value,
-            };
-          },
-        });
-
-        const exposed = [];
-
-        if (isTemplate(element)) {
-          // Process exposed attributes.
-          for (const name in element.attrs) {
-            const attribute = element.attrs[name];
-
-            if (attribute.isExposed) {
-              exposed.push({
-                label: attribute.label || name,
-                $value: attribute.$value,
-              });
-
-              element.attrs[name] = attribute.$value;
-            }
-          }
-
-          $attrs.set(exposed);
-
-          return element.init(getService("@app"));
-        } else {
-          throw new Error(`View must return an element. Got: ${typeof element}`);
-        }
+          return {
+            isExposed: true,
+            label: options.label,
+            $value,
+          };
+        },
       });
 
-      return {
-        element: makeWrapped(),
-        $attrs: $attrs.map(),
-        updateAttr: setAttr,
-      };
+      const exposedAttrs = [];
+
+      if (isTemplate(element)) {
+        // Process exposed attributes.
+        for (const name in element.attrs) {
+          const attribute = element.attrs[name];
+
+          if (attribute.isExposed) {
+            exposedAttrs.push({
+              name,
+              label: attribute.label || name,
+              $value: attribute.$value,
+            });
+
+            element.attrs[name] = attribute.$value;
+          }
+        }
+
+        $attrs.set(exposedAttrs);
+
+        return {
+          element: element.init(getService("@app")),
+          $attrs: $attrs.map(),
+          updateAttr: setAttr,
+        };
+      } else {
+        throw new Error(`View must return an element. Got: ${typeof element}`);
+      }
     },
   };
 }
@@ -162,10 +155,9 @@ async function runTest(testFn) {
       resolve({ meta, assertions });
     };
 
-    const pushAssertion = ({ pass, label }) => {
+    const pushAssertion = (assertion) => {
       assertions.push({
-        pass,
-        label,
+        ...assertion,
         timestamp: new Date(),
       });
 
@@ -376,6 +368,82 @@ async function runTest(testFn) {
 
           return mockFn;
         },
+      },
+
+      /**
+       * Creates a test container for a component.
+       */
+      component: (fn, attrs, children) => {
+        const debug = makeDebug();
+
+        const getService = fn.isWrapped
+          ? fn.getService
+          : (name) => {
+              if (name === "@app") {
+                return { getService };
+              } else if (name === "@debug") {
+                return debug;
+              } else {
+                throw new Error(
+                  `Wrap this component with the required services using wrapComponent. Requested service: ${name}`
+                );
+              }
+            };
+
+        const result = initComponent({ getService }, fn, attrs, children);
+        const parent = document.createElement("div");
+
+        return {
+          $attrs: result.$attrs,
+
+          connect() {
+            result.connect(parent);
+          },
+          disconnect() {
+            result.disconnect();
+          },
+          querySelector(...args) {
+            return parent.querySelector(...args);
+          },
+          querySelectorAll(...args) {
+            return parent.querySelectorAll(...args);
+          },
+        };
+      },
+
+      /**
+       * Creates a test container for a service.
+       */
+      service: (fn, options = {}) => {
+        const debug = makeDebug();
+
+        const getService = fn.isWrapped
+          ? fn.getService
+          : (name) => {
+              if (name === "@app") {
+                return { getService };
+              } else if (name === "@debug") {
+                return debug;
+              } else {
+                throw new Error(
+                  `Wrap this service with the required services using wrapService. Requested service: ${name}`
+                );
+              }
+            };
+
+        const result = initService({ getService }, fn, debug.makeChannel("test"), options);
+
+        return {
+          exports: result.exports,
+
+          connect() {
+            result.beforeConnect();
+            result.afterConnect();
+          },
+          disconnect() {
+            console.warn(`Disconnect is not implemented for services.`);
+          },
+        };
       },
     };
 

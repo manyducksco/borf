@@ -9,25 +9,25 @@ Test suites are objects that can be imported and run by a test runner. Here's ho
 ```js
 import { makeSuite } from "@woofjs/client/testing";
 
-export default makeSuite((test) => {
-  test.beforeAll(() => {
+export default makeSuite((suite) => {
+  suite.beforeAll(() => {
     // Runs once before the first test begins
   });
 
-  test.beforeEach(() => {
+  suite.beforeEach(() => {
     // Runs before each test is run
   });
 
-  test.afterEach(() => {
+  suite.afterEach(() => {
     // Runs after each test finishes
   });
 
-  test.afterAll(() => {
+  suite.afterAll(() => {
     // Runs once after all tests have finished
   });
 
   // The `test` function defines a test to run as part of this suite.
-  test("fails", (t) => {
+  suite.test("fails", (t) => {
     t.equals(1, 2);
   });
 });

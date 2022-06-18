@@ -106,6 +106,10 @@ export default function RouterService(self) {
     });
   });
 
+  /**
+   * Run when the location changes. Diffs and mounts new routes and updates
+   * the $path, $route, $params and $query states accordingly.
+   */
   async function onRouteChange({ location }) {
     const matched = matchRoute(routes, location.pathname);
 
