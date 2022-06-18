@@ -1,4 +1,4 @@
-import { joinPath } from "./joinPath";
+import { joinPath } from "./joinPath.js";
 
 /**
  * Resolves relative route paths against a base, handling './' and '../' style navigation.

@@ -1,4 +1,3 @@
-import { createHashHistory, createBrowserHistory } from "history";
 import { makeDebug } from "./makeDebug.js";
 import { initService } from "./helpers/initService.js";
 import { isFunction, isString } from "./helpers/typeChecking.js";
@@ -21,19 +20,8 @@ export function makeApp(options = {}) {
   let beforeConnect = async () => true;
   let afterConnect = async () => true;
 
-  let history;
   let root;
   let layerId = 0;
-
-  // TODO: Move `options.history` and `options.hash` into `options.router` and pass those to the @router service.
-  // Let the @router service sort out its history instance and other options.
-  if (options.history) {
-    history = options.history;
-  } else if (options.hash) {
-    history = createHashHistory();
-  } else {
-    history = createBrowserHistory();
-  }
 
   /**
    * Parses routes into a flat data structure appropriate for handling by the @router service.
@@ -276,11 +264,11 @@ export function makeApp(options = {}) {
 
   // Access to matched route and query params.
   methods.service("@router", RouterService, {
+    ...(options.router || {}),
+    routes,
     getRoot() {
       return root;
     },
-    history,
-    routes,
   });
 
   // Access to document settings like title and favicon.

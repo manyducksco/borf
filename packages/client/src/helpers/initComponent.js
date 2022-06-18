@@ -111,9 +111,10 @@ export function initComponent(app, fn, attrs, children) {
         activeWatchers.push($state.watch(callback, options));
       });
 
-      // Add to watchers immediately if already connected.
       if (isConnected) {
-        activeWatchers.push($state.watch(callback, options));
+        throw new Error(
+          "Called self.watchState after component was already connected. This will cause memory leaks. This function should only be called in the body of the component."
+        );
       }
     },
   };
@@ -131,6 +132,7 @@ export function initComponent(app, fn, attrs, children) {
           attrs[name] = unwrapped;
         });
       },
+      // Set to immediate so any changes while component was disconnected get picked up as soon as it is connected.
       { immediate: true }
     );
   });
@@ -198,14 +200,12 @@ export function initComponent(app, fn, attrs, children) {
     async routePreload(mount) {
       if (!isFunction(routePreload)) return;
 
-      return new Promise(async (resolve) => {
+      return new Promise(async (resolve, reject) => {
         const show = (element) => {
           if (isTemplate(element)) {
             element = element.init(getService("@app"));
-          }
-
-          if (!isComponent(element)) {
-            throw new TypeError(`Expected an element to display while preloading. Got: ${node}`);
+          } else {
+            return reject(new TypeError(`Expected an element to display. Got: ${element} (${typeof element})`));
           }
 
           mount(element);

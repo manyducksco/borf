@@ -1,4 +1,5 @@
 import queryString from "query-string";
+import { createHashHistory, createBrowserHistory } from "history";
 import { makeState } from "@woofjs/state";
 import { matchRoute, parseRoute } from "../helpers/routing.js";
 import { isObject } from "../helpers/typeChecking.js";
@@ -15,11 +16,26 @@ import { Outlet } from "../components/Outlet.js";
 export default function RouterService(self) {
   self.debug.name = "woof:@router";
 
-  const { getRoot, history, routes } = self.options;
+  const { options } = self;
+
+  let history;
+
+  if (self.options.history) {
+    history = options.history;
+  } else if (options.hash) {
+    history = createHashHistory();
+  } else {
+    history = createBrowserHistory();
+  }
+
+  let routes = [];
 
   // Parse route paths into a matchable format.
-  for (const route of routes) {
-    route.fragments = parseRoute(route.path).fragments;
+  for (const route of options.routes) {
+    routes.push({
+      ...route,
+      fragments: parseRoute(route.path).fragments,
+    });
   }
 
   // Test redirects to make sure all possible redirect targets actually exist.
@@ -69,13 +85,15 @@ export default function RouterService(self) {
   });
 
   self.afterConnect(() => {
+    const root = options.getRoot();
+
     appOutlet = initComponent(self.getService("@app"), Outlet);
-    appOutlet.connect(getRoot());
+    appOutlet.connect(root);
 
     history.listen(onRouteChange);
     onRouteChange(history);
 
-    catchLinks(getRoot(), (anchor) => {
+    catchLinks(root, (anchor) => {
       let href = anchor.getAttribute("href");
 
       if (!/^https?:\/\/|^\//.test(href)) {

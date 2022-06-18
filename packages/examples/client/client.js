@@ -26,12 +26,14 @@ import CircleDrawer from "./7guis/06_CircleDrawer";
 import Cells from "./7guis/07_Cells";
 
 const app = makeApp({
-  hash: true,
   debug: {
     filter: "*",
     log: true,
     warn: true,
     error: true,
+  },
+  router: {
+    hash: true,
   },
 });
 

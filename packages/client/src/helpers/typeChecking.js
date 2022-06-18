@@ -14,7 +14,7 @@ export const isArray = (value) => Array.isArray(value);
 
 export const isObject = (value) => value != null && typeof value === "object" && !isArray(value);
 
-export const isDOM = (value) => value != null && value instanceof Node;
+export const isDOM = (value) => value != null && (value instanceof Node || value.isDOM === true);
 
 export const isBinding = (value) => value && value.isBinding === true;
 

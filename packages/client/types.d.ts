@@ -1,6 +1,7 @@
 /// <reference path="node_modules/@woofjs/state/types.d.ts" />
 
 import type { State } from "@woofjs/state";
+import type { History } from "history";
 
 declare module "@woofjs/client" {
   export type { makeState, mergeStates, State } from "@woofjs/state";
@@ -38,10 +39,19 @@ declare module "@woofjs/client" {
       error?: boolean;
     };
 
-    /**
-     * Use hash-based routing if true.
-     */
-    hash?: boolean;
+    router?: {
+      /**
+       * Use hash-based routing if true.
+       */
+      hash?: boolean;
+
+      /**
+       * A history object from the `history` package.
+       *
+       * @see https://www.npmjs.com/package/history
+       */
+      history?: History;
+    };
   }
 
   /**
