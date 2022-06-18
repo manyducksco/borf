@@ -1,35 +1,29 @@
-import { isFunction } from "../helpers/typeChecking.js";
+import { matchRoute, parseRoute, sortRoutes } from "../helpers/routing.js";
+import { isFunction, isObject } from "../helpers/typeChecking.js";
 
-function makeRouter() {
-  return {
-    on() {
-      console.warn(`Unimplemented mock`);
-    },
-    match() {
-      console.warn(`Unimplemented mock`);
-    },
-  };
-}
+const { Response } = require("fetch-ponyfill")();
 
 /**
  * Creates a `fetch`-compatible function that responds with its own mock handlers.
- * Returns a 404 response for any unmatched routes.
  *
  * @example
  * import { makeMockFetch } from "@woofjs/app/testing";
  *
  * // Create a mock HTTP instance
  * const fetch = makeMockFetch((self) => {
- *   self.get("/example/route", (req, res) => {
- *     res.json({
+ *   self.get("/example/route", (ctx) => {
+ *     // Respond with JSON
+ *     return {
  *       message: "success"
- *     });
+ *     }
  *   });
  *
- *   self.post("/users/:id", (req, res) => {
- *     res.status(200).json({
- *       message: "user created"
- *     });
+ *   self.put("/users/:id", (ctx) => {
+ *     ctx.response.status = 200;
+ *
+ *     return {
+ *       message: `user ${ctx.request.params.id} updated`
+ *     }
  *   });
  * });
  *
@@ -40,13 +34,15 @@ function makeRouter() {
  *   });
  */
 export function makeMockFetch(fn) {
-  const router = makeRouter();
+  let routes = [];
   const calls = [];
 
   const self = {
     handle(method, url, handler) {
-      router.on(url, {
-        method: method.toLowerCase(),
+      routes.push({
+        method,
+        url,
+        fragments: parseRoute(url).fragments,
         handler,
       });
 
@@ -76,21 +72,27 @@ export function makeMockFetch(fn) {
 
   fn(self);
 
+  routes = sortRoutes(routes);
+
   function fetch(url, options = {}) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const method = (options.method || "get").toLowerCase();
-      const matched = router.match(url, {
-        willMatch: (route) => route.props.method === method,
+      const matched = matchRoute(routes, url, {
+        willMatch: (route) => route.method === method,
       });
 
       if (matched == null) {
-        throw new Error(`Requested URL has no handlers. Received: ${method} ${url}`);
+        return reject(new Error(`Requested URL has no handlers. Received: ${method} ${url}`));
       }
 
       const headers = {};
       let body;
 
       if (options.headers) {
+        if (!isFunction(options.headers.entries)) {
+          options.headers = new Headers(options.headers);
+        }
+
         for (const entry of options.headers.entries()) {
           headers[entry[0]] = entry[1];
         }
@@ -104,7 +106,7 @@ export function makeMockFetch(fn) {
         }
       }
 
-      const req = {
+      const request = {
         method,
         url,
         headers,
@@ -113,50 +115,41 @@ export function makeMockFetch(fn) {
         query: matched.query,
       };
 
-      calls.push(req);
+      calls.push(request);
 
-      if (matched) {
-        const ctx = {
+      const ctx = {
+        request,
+        response: {
           status: 200,
           body: undefined,
           headers: {},
-        };
+        },
+      };
 
-        const res = {
-          status(code) {
-            ctx.status = code;
-          },
-          json(data) {
-            ctx.body = data;
-          },
-          headers(headers) {
-            Object.assign(ctx.headers, headers);
-          },
-        };
+      const result = matched.data.handler(ctx);
 
-        const result = matched.props.handler(req, res);
+      if (result && isFunction(result.then)) {
+        result.then((body) => {
+          if (body) {
+            ctx.response.body = JSON.stringify(body);
+          }
 
-        if (result && isFunction(result.then)) {
-          result.then(() => {
-            resolve(
-              new Response(ctx.body, {
-                headers: ctx.headers,
-                status: ctx.status,
-              })
-            );
-          });
-        } else {
           resolve(
-            new Response(ctx.body, {
-              headers: ctx.headers,
-              status: ctx.status,
+            new Response(ctx.response.body, {
+              headers: ctx.response.headers,
+              status: ctx.response.status,
             })
           );
-        }
+        });
       } else {
+        if (result) {
+          ctx.response.body = JSON.stringify(result);
+        }
+
         resolve(
-          new Response(null, {
-            status: 404,
+          new Response(ctx.response.body, {
+            headers: ctx.response.headers,
+            status: ctx.response.status,
           })
         );
       }

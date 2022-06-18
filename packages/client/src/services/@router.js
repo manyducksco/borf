@@ -20,7 +20,7 @@ export default function RouterService(self) {
 
   let history;
 
-  if (self.options.history) {
+  if (options.history) {
     history = options.history;
   } else if (options.hash) {
     history = createHashHistory();
@@ -175,7 +175,7 @@ export default function RouterService(self) {
         }
       }
     } else {
-      self.debug.warn(`No route was matched. Consider adding a wildcard ("*") route to catch this.`);
+      self.debug.warn(`No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.`);
     }
 
     // Update query params if they've changed.

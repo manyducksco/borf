@@ -1,5 +1,4 @@
 import http from "../services/@http.js";
-import { makeDebug } from "../makeDebug.js";
 import { makeMockFetch } from "./makeMockFetch.js";
 
 /**
@@ -8,16 +7,18 @@ import { makeMockFetch } from "./makeMockFetch.js";
  *
  * // Create a mock HTTP instance
  * const http = makeMockHTTP((self) => {
- *   self.get("/example/route", (req, res) => {
- *     res.json({
+ *   self.get("/example/route", (ctx) => {
+ *     return {
  *       message: "success"
- *     });
+ *     };
  *   });
  *
- *   self.post("/users/:id", (req, res) => {
- *     res.status(200).json({
+ *   self.post("/users/:id", (ctx) => {
+ *     ctx.response.status = 200;
+ *
+ *     return {
  *       message: "user created"
- *     });
+ *     };
  *   });
  * });
  *
@@ -26,14 +27,15 @@ import { makeMockFetch } from "./makeMockFetch.js";
  * });
  */
 export function makeMockHTTP(fn) {
-  const debug = makeDebug();
   const fetch = makeMockFetch(fn);
 
-  const service = http({
-    getService: () => {},
-    debugChannel: debug.makeChannel("woof:service:@http:mock"),
-    options: { fetch },
-  });
-
-  return service;
+  return function (self) {
+    return http({
+      ...self,
+      options: {
+        ...options,
+        fetch,
+      },
+    });
+  };
 }

@@ -1,7 +1,7 @@
 import { makeSuite } from "./makeSuite.js";
 
-test.skip("runs tests", async () => {
-  const tests = makeSuite((test) => {
+test("runs tests", async () => {
+  const tests = makeSuite(({ test }) => {
     test("plans and waits for assertions", (t) => {
       t.plan(3);
       t.timeout(200);
@@ -28,10 +28,8 @@ test.skip("runs tests", async () => {
 
   const result = results.shift();
 
-  // console.log(result);
-
   expect(result.name).toBe("plans and waits for assertions");
   expect(result.pass).toBe(true);
   expect(result.meta.length).toBe(2);
-  expect(result.assertions.length).toBe(2);
+  expect(result.assertions.length).toBe(3);
 });

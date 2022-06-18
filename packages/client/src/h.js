@@ -22,13 +22,15 @@ import { Fragment } from "./components/Fragment.js";
  * @param args - Optional attributes object and zero or more children.
  */
 export function h(element, ...args) {
-  let attrs;
+  let attrs = {};
 
   if (isObject(args[0])) {
     attrs = args.shift();
   }
 
   const template = {
+    attrs,
+
     /**
      * Initialize the template to produce a component instance.
      */

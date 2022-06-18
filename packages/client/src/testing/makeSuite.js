@@ -1,7 +1,8 @@
 import { makeState } from "@woofjs/state";
 import { makeTestWrapper } from "./makeTestWrapper.js";
-// import { makeDolla } from "../makeDolla.js";
 import { checks } from "./checks.js";
+import { isTemplate } from "../helpers/typeChecking.js";
+import { initComponent } from "../helpers/initComponent.js";
 
 /**
  * Defines a test suite.
@@ -39,7 +40,9 @@ export function makeSuite(fn) {
     views.push({ name, fn });
   };
 
-  fn(test, view);
+  const helpers = { test, view };
+
+  fn.call(helpers, helpers);
 
   return {
     tests,
@@ -86,54 +89,58 @@ export function makeSuite(fn) {
 
       const $attrs = makeState([]);
 
-      function pushAttr(attr) {
-        $attrs.set((current) => {
-          current.push(attr);
-        });
-      }
-
       function setAttr(name, value) {
         $attrs.set((current) => {
           const found = current.find((attr) => attr.name === name);
 
           if (found) {
-            found.$state.set(value);
+            found.$value.set(value);
           }
         });
       }
 
       const makeWrapped = makeTestWrapper((getService) => {
-        const $ = {};
-        // const $ = makeDolla({
-        //   getService,
-        //   $route: makeState({
-        //     route: "test",
-        //     path: "/test",
-        //     params: {},
-        //     query: {},
-        //     wildcard: null,
-        //   }),
-        // });
+        let element = view.fn({
+          expose: (value, options = {}) => {
+            const $value = makeState(value);
 
-        return view.fn($, {
-          attr: (name, value, options = {}) => {
-            const $state = makeState(value);
-
-            pushAttr({
-              name,
-              $state,
-              options,
-            });
-
-            return $state;
+            return {
+              isExposed: true,
+              label: options.label,
+              $value,
+            };
           },
         });
+
+        const exposed = [];
+
+        if (isTemplate(element)) {
+          // Process exposed attributes.
+          for (const name in element.attrs) {
+            const attribute = element.attrs[name];
+
+            if (attribute.isExposed) {
+              exposed.push({
+                label: attribute.label || name,
+                $value: attribute.$value,
+              });
+
+              element.attrs[name] = attribute.$value;
+            }
+          }
+
+          $attrs.set(exposed);
+
+          return element.init(getService("@app"));
+        } else {
+          throw new Error(`View must return an element. Got: ${typeof element}`);
+        }
       });
 
       return {
         element: makeWrapped(),
         $attrs: $attrs.map(),
-        setAttr,
+        updateAttr: setAttr,
       };
     },
   };

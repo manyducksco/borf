@@ -62,7 +62,7 @@ export function parseRoute(route) {
  * @param routes - Array of parsed routes.
  * @param path - String to match against routes.
  */
-export function matchRoute(routes, path) {
+export function matchRoute(routes, path, options = {}) {
   const parts = splitRoute(path);
 
   routes: for (const route of routes) {
@@ -70,6 +70,10 @@ export function matchRoute(routes, path) {
     const hasWildcard = fragments[fragments.length - 1]?.type === FragTypes.Wildcard;
 
     if (!hasWildcard && fragments.length !== parts.length) {
+      continue routes;
+    }
+
+    if (options.willMatch && !options.willMatch(route)) {
       continue routes;
     }
 
