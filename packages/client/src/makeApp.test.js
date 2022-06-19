@@ -87,7 +87,22 @@ test("nested routes are parsed correctly", async () => {
   await app.connect(root);
 });
 
-test.skip("lifecycle", () => {
-  // beforeConnect and afterConnect are run
-  // app waits for beforeConnect promise to resolve before connecting
+test("lifecycle methods", async () => {
+  const app = makeApp();
+  const root = document.createElement("div");
+
+  app.service("@http", () => {
+    return {}; // Override @http, otherwise window.fetch isn't defined in the test so this fails.
+  });
+
+  const beforeConnect = jest.fn();
+  const afterConnect = jest.fn();
+
+  app.beforeConnect(beforeConnect);
+  app.afterConnect(afterConnect);
+
+  await app.connect(root);
+
+  expect(beforeConnect).toHaveBeenCalledTimes(1);
+  expect(afterConnect).toHaveBeenCalledTimes(1);
 });

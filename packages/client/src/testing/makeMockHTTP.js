@@ -33,7 +33,7 @@ export function makeMockHTTP(fn) {
     return http({
       ...self,
       options: {
-        ...options,
+        ...self.options,
         fetch,
       },
     });

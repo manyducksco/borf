@@ -131,6 +131,10 @@ export function makeMockFetch(fn) {
       if (result && isFunction(result.then)) {
         result.then((body) => {
           if (body) {
+            if (!ctx.response.headers["content-type"]) {
+              ctx.response.headers["content-type"] = "application/json";
+            }
+
             ctx.response.body = JSON.stringify(body);
           }
 
@@ -143,6 +147,10 @@ export function makeMockFetch(fn) {
         });
       } else {
         if (result) {
+          if (!ctx.response.headers["content-type"]) {
+            ctx.response.headers["content-type"] = "application/json";
+          }
+
           ctx.response.body = JSON.stringify(result);
         }
 
