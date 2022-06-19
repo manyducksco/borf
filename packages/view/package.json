@@ -1,0 +1,20 @@
+{
+  "name": "@woofjs/view",
+  "version": "0.1.0",
+  "description": "Rapid component development environment for dogs. 🐕",
+  "main": "program.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "woof-view": "program.js"
+  },
+  "keywords": [],
+  "author": "Tony McCoy <tony@manyducks.co>",
+  "license": "MIT",
+  "dependencies": {
+    "@ratwizard/cli": "^0.17.0",
+    "chokidar": "^3.5.3",
+    "express": "^4.18.1"
+  }
+}

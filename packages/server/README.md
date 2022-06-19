@@ -19,29 +19,20 @@ app.static("/static/path"); // Specify a custom path for static files.
 // Share logic and state between handlers with services.
 // Each service is created once per request.
 // Two API calls will use two different instances, but all middleware in the same API call will use one instance.
-app.service("example", ExampleService);
+app.service("example", ExampleService, {
+  // If lifecycle is 'app' only one copy of the service exists
+  // If lifecycle is 'request', a new copy is created for each request
+  lifecycle: "app" | "request",
+});
 
 // Create API routes with functions named after HTTP methods (`get`, `post`, `delete`, etc.)
 app.get("/some-route", (ctx) => {
+  const service = ctx.getService("example");
+
   // An object returned from a route becomes a JSON body automatically.
   return {
     message: "This is a JSON response.",
   };
-});
-
-// Create server-rendered HTML pages with `.route` and a component to render.
-// This mirrors the routing from `@woofjs/client`, but rendered server side.
-app.route("/other-route", ($, self) => {
-  // Services can be accessed just like in client-side components.
-  const { $message } = self.getService("example");
-
-  return (
-    <div>
-      <h1>Server Rendered Page</h1>
-      <p>This is an HTML page you visit in your browser.</p>
-      <p>Message: {$message}</p>
-    </div>
-  );
 });
 
 // Listen for HTTP requests on localhost at specified port number.

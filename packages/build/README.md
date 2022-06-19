@@ -14,7 +14,7 @@ Installing this package makes the `woof-build` command available in scripts.
   "dependencies": {
     "@woofjs/client": "~0.11.0",
     "@woofjs/build": "~0.1.0"
-  }
+  },
   "scripts": {
     "build": "woof-build -c path/to/entry.js -o build --minify",
     "start": "woof-build -c path/to/entry.js -o build --watch"
