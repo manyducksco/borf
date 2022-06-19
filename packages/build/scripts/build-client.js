@@ -5,45 +5,17 @@ const mustache = require("mustache");
 
 const postCSSPlugin = require("esbuild-plugin-postcss2");
 
-module.exports = function makeAppBundle(config) {
-  const buildDir = config.path.build;
+module.exports = function buildClient(config) {
+  const buildDir = config.outputPath;
   const publicDir = path.join(buildDir, "public");
+  const entryDir = path.dirname(config.entryPath);
 
   // Empty build directories if they contain files.
   fs.emptyDirSync(buildDir);
   fs.emptyDirSync(publicDir);
 
-  let entryPoint;
-
-  if (config.client?.entryPoint) {
-    if (path.isAbsolute(config.client.entryPoint)) {
-      entryPoint = config.client.entryPoint;
-    } else {
-      entryPoint = path.join(config.path.root, config.client.entryPoint);
-    }
-  } else if (fs.existsSync(path.join(config.path.client, "client.js"))) {
-    entryPoint = path.join(config.path.client, "client.js");
-  } else if (fs.existsSync(path.join(config.path.client, "client.jsx"))) {
-    entryPoint = path.join(config.path.client, "client.jsx");
-  } else if (fs.existsSync(path.join(config.path.client, "client.ts"))) {
-    entryPoint = path.join(config.path.client, "client.ts");
-  } else if (fs.existsSync(path.join(config.path.client, "client.tsx"))) {
-    entryPoint = path.join(config.path.client, "client.tsx");
-  }
-
-  if (entryPoint == null) {
-    let expected =
-      "'client/client.js', 'client/client.jsx', 'client/client.ts' or 'client/client.tsx'";
-
-    if (config.client?.entryPoint) {
-      expected = config.client.entryPoint;
-    }
-
-    throw new Error(`No app entrypoint file found. Expected ${expected}`);
-  }
-
   const esbuildConfig = {
-    entryPoints: [entryPoint],
+    entryPoints: [config.entryPath],
     entryNames: "[dir]/[name].[hash]",
     bundle: true,
     sourcemap: true,
@@ -69,7 +41,7 @@ module.exports = function makeAppBundle(config) {
     ],
     jsxFactory: "_jsx",
     jsxFragment: '"<>"',
-    outbase: config.path.client,
+    outbase: entryDir,
     outdir: publicDir,
   };
 
@@ -92,7 +64,7 @@ module.exports = function makeAppBundle(config) {
       (f) => path.extname(f.path) === ".css"
     );
 
-    const staticDir = path.join(config.path.client, "static");
+    const staticDir = path.join(entryDir, "static");
     const bundlePath = bundleOut.path.replace(publicDir, "");
     const stylesPath = stylesOut ? stylesOut.path.replace(publicDir, "") : null;
 

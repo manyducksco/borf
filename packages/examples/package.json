@@ -8,13 +8,12 @@
   "module": "dist/woof.app.m.js",
   "types": "types.d.ts",
   "scripts": {
+    "start": "woof-build -c client/client.js -o build --watch",
+    "build": "woof-build -c client/client.js -o build --minify",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
     "test:coverage": "npm run test -- --coverage",
-    "build": "node scripts/build.js",
-    "build:watch": "node scripts/build.js --watch",
-    "build:prod": "npm run build -- --minify",
-    "prepublishOnly": "npm run build:prod"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "web app",
@@ -25,6 +24,7 @@
   "author": "Tony McCoy <tony@manyducks.co>",
   "license": "MIT",
   "devDependencies": {
+    "@woofjs/build": "file:../build",
     "@woofjs/client": "../client"
   }
 }
