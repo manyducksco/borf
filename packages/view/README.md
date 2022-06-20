@@ -87,8 +87,8 @@ export function ViewOne(view) {
   view.description = `
     # Personalized Header
 
-    This header displays a custom greeting and the user's name. You can select a few example greetings from a list
-    in this view.
+    This header displays a custom greeting and the user's name.
+    You can select a few example greetings from a list in this view.
   `;
 
   // Provide mock versions of any services used by your component.
@@ -104,7 +104,7 @@ export function ViewOne(view) {
       description: "A phrase to greet the user with.",
 
       // The type of input the user sees is chosen based on the data type by default.
-      // A string attribute would normally show a text input. Here we use a dropdown menu instead with four preset options.
+      // A string attribute would normally show a text input. Here we use a dropdown menu with preset options.
       input: {
         type: "select",
         options: ["Bonjour", "Howdy", "Konnichiwa"],
@@ -136,7 +136,7 @@ woof-view export -o ./view-static
 
 ## Attribute Inputs
 
-Attributes let the user interact with them using a variety of input widgets. A default input type will be chosen based on the attribute's default value if you don't specify one. You can always override this with an `input` object in the attribute options.
+Attributes let the user interact with their values using a variety of input widgets. A default input type will be chosen based on the attribute's default value if you don't specify one. You can always override this with an `input` object in the attribute options.
 
 ### Default Types
 
@@ -148,7 +148,7 @@ Attributes let the user interact with them using a variety of input widgets. A d
 
 ### Text Input
 
-Your basic text input. Takes any string.
+Your basic text input. Takes a string.
 
 ```js
 view.attribute("value", {
@@ -253,7 +253,7 @@ view.attribute("#ff0088", {
 
 Expose the attribute in the UI but don't provide any input for editing. Use this when you want to document an attribute but keep it read-only.
 
-This is the default value for arrays and objects because structured data doesn't map well to simple input widgets. Consider using a `select` with predefined options for array and object attributes.
+This is the default value for objects and arrays because structured data doesn't map well to simple input widgets. Consider using a `select` with predefined options for object/array attributes.
 
 ```js
 view.attribute("value", {

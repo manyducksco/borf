@@ -168,7 +168,7 @@ $state.get((value) => value.width);
 
 // Get the last name of the 8th (from 0) user in an array called `users`
 $state.get("users[7].name.last");
-$state.get((value) => value.users[7]?.name?.last);
+$state.get((value) => value.users[7].name.last);
 
 // Get an array of all `id` values for each object in an array
 $state.get("[*].id");
