@@ -4,17 +4,16 @@ Build system in a box for Woof projects.
 
 ## How to Use
 
-Install this package in your Woof project, then use it in your `package.json` scripts.
+First, install this package in your Woof project as a dev dependency.
 
-Installing this package makes the `woof-build` command available in scripts.
+```
+npm i --save-dev @woofjs/build
+```
+
+Installing this package makes the `woof-build` command available in `package.json` scripts:
 
 ```json
-// package.json
 {
-  "dependencies": {
-    "@woofjs/client": "~0.11.0",
-    "@woofjs/build": "~0.1.0"
-  },
   "scripts": {
     "build": "woof-build -c path/to/entry.js -o build --minify",
     "start": "woof-build -c path/to/entry.js -o build --watch"

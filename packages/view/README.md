@@ -1,36 +1,31 @@
 # `@woofjs/view`
 
-Rapid component development environment for Woof projects. Basically [Storybook](https://storybook.js.org/), but way faster, way lighter and it only works with Woof.
+Rapid component development environment for Woof projects. Basically a minimalistic [Storybook](https://storybook.js.org/) for Woof.
 
 ## How to Use
 
-Install this package in your Woof project, then use it in your `package.json` scripts.
-
-Installing this package makes the `woof-view` command available in scripts.
-
-1. Install:
+First, install this package in your Woof project as a dev dependency.
 
 ```
 npm i --save-dev @woofjs/view
 ```
 
-2. Add scripts:
+Installing this package makes the `woof-view` command available in `package.json` scripts.
 
 ```json
 {
-  "devDependencies": {
-    "@woofjs/view": "~0.1.0"
-  },
   "scripts": {
     "view": "woof-view start"
   }
 }
 ```
 
-Inside your project, you can create `<Name>.view.jsx` files for each of your components. Here is an example component and a hypothetical view file to test it.
+Inside your project, you can create `<Name>.view.jsx` files for each of your components. Here is an example component:
 
 ```js
 // MyHeader.jsx
+
+import { makeState } from "@woofjs/client";
 
 /**
  * A really contrived header that makes an HTTP call to get the user's name.
@@ -58,12 +53,15 @@ export function MyHeader($attrs, self) {
 }
 ```
 
+And here is a hypothetical view file to test it:
+
 ```js
 // MyHeader.view.jsx
 
+import { MyHeader } from "./MyHeader.jsx";
+
 import { h } from "@woofjs/client";
 import { makeMockHTTP } from "@woofjs/client/testing";
-import { MyHeader } from "./MyHeader.jsx";
 
 /**
  * We are using makeMockHTTP from the testing tools to create an `@http` service
