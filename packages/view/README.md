@@ -69,7 +69,7 @@ import { makeMockHTTP } from "@woofjs/client/testing";
  **/
 const mockHTTP = makeMockHTTP((self) => {
   self.get("/users/me", () => {
-    return [{ id: 1, name: "Jimbo Jones" }];
+    return { id: 1, name: "Jimbo Jones" };
   });
 });
 
