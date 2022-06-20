@@ -1,3 +1,5 @@
+import { isFunction } from "./utils";
+
 /**
  * Gets a (nested) property of an object.
  *
@@ -10,12 +12,21 @@
  * };
  *
  * const firstName = getProperty(user, "name.first");
+ * const lastName = getProperty(user, (u) => u.name.last);
  *
  * console.log(firstName); // "Bob"
  */
-export function getProperty(object, key) {
+export function getProperty(object, selector) {
+  if (selector == null) {
+    return object;
+  }
+
+  if (isFunction(selector)) {
+    return selector(object);
+  }
+
   if (object != null) {
-    const parsed = parseKey(key);
+    const parsed = parseKey(selector);
     let value = object;
 
     while (parsed.length > 0) {

@@ -14,23 +14,9 @@ export function makeState(initialValue) {
   return {
     get(...args) {
       let value = current;
-      let key;
-      let callback;
 
-      if (isString(args[0])) {
-        key = args.shift();
-      }
-
-      if (isFunction(args[0])) {
-        callback = args.shift();
-      }
-
-      if (key) {
-        value = getProperty(current, key);
-      }
-
-      if (callback) {
-        return callback(value);
+      for (const selector of args) {
+        value = getProperty(value, selector);
       }
 
       return value;
@@ -138,11 +124,11 @@ export function makeState(initialValue) {
  */
 export function mapState(source, transform) {
   return {
-    get(key) {
+    get(...args) {
       let value = transform(source.get());
 
-      if (key !== undefined) {
-        value = getProperty(value, key);
+      for (const selector of args) {
+        value = getProperty(value, selector);
       }
 
       return value;

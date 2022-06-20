@@ -9,13 +9,15 @@ This is a monorepo for the Woof JS framework. It is managed using [lerna](https:
 
 ## Core Packages
 
-- [`@woofjs/client`](./packages/client/README.md): Create single page apps that run in the browser
-- [`@woofjs/server`](./packages/server/README.md): Create APIs or apps with server-rendered pages
-- [`@woofjs/cli`](./packages/cli/README.md): Build-system-in-a-box for the command line
+- [`@woofjs/client`](./packages/client/README.md): Frontend framework. Create single page apps that run in the browser.
+- [`@woofjs/server`](./packages/server/README.md): Backend framework. Create APIs or server-rendered pages.
 
 ## Utility Packages
 
-- [`@woofjs/state`](./packages/state/README.md): Observable state containers, standalone library
+- [`@woofjs/build`](./packages/build/README.md): Build-system-in-a-box for Woof projects.
+- [`@woofjs/view`](./packages/view/README.md): Visual testing and development environment for components.
+- [`@woofjs/state`](./packages/state/README.md): Observable state containers in a standalone library.
+- [`@woofjs/cli`](./packages/cli/README.md): Command line utilities.
 
 ## Resources
 

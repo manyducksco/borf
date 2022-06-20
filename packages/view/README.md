@@ -82,6 +82,15 @@ export function ViewOne(view) {
   // If you don't like this conversion, you can override it to any string you want:
   view.name = "Custom name here";
 
+  // The description will be shown alongside the view. Use this space to explain what the purpose of the view is
+  // and what unfamiliar users need to know. Supports Markdown formatting.
+  view.description = `
+    # Personalized Header
+
+    This header displays a custom greeting and the user's name. You can select a few example greetings from a list
+    in this view.
+  `;
+
   // Provide mock versions of any services used by your component.
   view.service("@http", mockHTTP);
 
@@ -90,6 +99,9 @@ export function ViewOne(view) {
     greeting: view.attribute("Bonjour", {
       // The attribute key is used as the name by default (`greeting` in this case), but you can provide your own:
       name: "The Greeting",
+
+      // Provide a description that will be displayed next to the input.
+      description: "A phrase to greet the user with.",
 
       // The type of input the user sees is chosen based on the data type by default.
       // A string attribute would normally show a text input. Here we use a dropdown menu instead with four preset options.
@@ -110,7 +122,146 @@ export function ViewOne(view) {
 
 ### `start`
 
-Specifies the path to the client bundle entry point. This is where your app is created with `makeApp`.
+Starts an HTTP server you can visit in your browser.
+
+### `export`
+
+Bundles the project's views into a standalone static file dump that you can host on just about any web server.
+
+Use the `-o` or `--output` option to specify where this folder will go. For example,
+
+```
+woof-view export -o ./view-static
+```
+
+## Attribute Inputs
+
+Attributes let the user interact with them using a variety of input widgets. A default input type will be chosen based on the attribute's default value if you don't specify one. You can always override this with an `input` object in the attribute options.
+
+### Default Types
+
+- string: `text`
+- number: `number`
+- boolean: `toggle`
+- Date: `date`
+- array or object: `none`
+
+### Text Input
+
+Your basic text input. Takes any string.
+
+```js
+view.attribute("value", {
+  input: {
+    type: "text",
+  },
+});
+```
+
+### Number Input
+
+Takes a number.
+
+```js
+view.attribute(10, {
+  input: {
+    type: "number",
+  },
+});
+```
+
+### Range Slider
+
+Choose a numeric value within a range.
+
+```js
+view.attribute(10, {
+  input: {
+    type: "range",
+    min: 5,
+    max: 50,
+
+    // optional (defaults to 1)
+    step: 5,
+  },
+});
+```
+
+### Toggle
+
+Toggle between `true` and `false`.
+
+```js
+view.attribute(true, {
+  input: {
+    type: "toggle",
+  },
+});
+```
+
+### Select (Dropdown Menu)
+
+Choose one from a list of predefined options. Works best when there are many options.
+
+```js
+view.attribute(10, {
+  input: {
+    type: "select",
+    options: [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+  },
+});
+```
+
+### Radio
+
+Choose one from a list of predefined options using radio buttons. Works best when there are fewer options.
+
+```js
+view.attribute("primary", {
+  input: {
+    type: "radio",
+    options: ["primary", "secondary", "tertiary"],
+  },
+});
+```
+
+### Date
+
+Pick a date and time.
+
+```js
+view.attribute(new Date(2022, 10, 10), {
+  input: {
+    type: "date",
+  },
+});
+```
+
+### Color
+
+Pick a color. The attribute value will be a CSS-compatible color string.
+
+```js
+view.attribute("#ff0088", {
+  input: {
+    type: "color",
+  },
+});
+```
+
+### None
+
+Expose the attribute in the UI but don't provide any input for editing. Use this when you want to document an attribute but keep it read-only.
+
+This is the default value for arrays and objects because structured data doesn't map well to simple input widgets. Consider using a `select` with predefined options for array and object attributes.
+
+```js
+view.attribute("value", {
+  input: {
+    type: "none",
+  },
+});
+```
 
 ---
 

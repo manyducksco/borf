@@ -64,28 +64,22 @@ A basic example with `makeState` and typical browser stuff.
   <p>Clicked <span id="label">0</span> time(s).</p>
   <br />
   <button id="increment">+1</button>
-  <button id="decrement">-1</button>
 </main>
 
 <script type="module">
   import { makeState } from "https://cdn.skypack.dev/@woofjs/state";
 
-  const label = document.getElementById("label");
-  const increment = document.getElementById("increment");
-  const decrement = document.getElementById("decrement");
+  const span = document.getElementById("label");
+  const button = document.getElementById("increment");
 
   const $count = makeState(0);
 
   $count.watch((value) => {
-    label.textContent = value.toString();
+    span.textContent = value.toString();
   });
 
-  increment.addEventListener("click", () => {
+  button.addEventListener("click", () => {
     $count.set((current) => current + 1);
-  });
-
-  decrement.addEventListener("click", () => {
-    $count.set((current) => current - 1);
   });
 </script>
 ```
@@ -96,64 +90,90 @@ A basic example with `makeState` and typical browser stuff.
 
 A state is useful on its own, but its day job is to be the backbone of reactivity in a framework called Woof. This is what the same example looks like in Woof.
 
-We have basically copied that `<main>` block into a chunk of JavaScript and removed most of the code for binding data and events.
-
-`$.text()` renders the current value of `$count` into the DOM as text. Event handler functions are passed directly to the buttons.
-
 ```js
 import { makeState } from "@woofjs/client";
 
 function Counter() {
   const $count = makeState(0);
 
+  function increment() {
+    $count.set((current) => current + 1);
+  }
+
   return (
     <main>
       <p>Clicked {$count} time(s).</p>
       <br />
-      <button onclick={() => $count.set((current) => current + 1)}>+1</button>
-      <button onclick={() => $count.set((current) => current - 1)}>-1</button>
+      <button onclick={increment}>+1</button>
     </main>
   );
 }
 ```
 
-That `time(s)` label is kind of basic. To overcomplicate things, let's add a dynamic label based on the value of `$count`.
-
-Now our label reads:
-
-- Clicked 0 times.
-- Clicked 1 time.
-- Clicked 2 times.
-- ...
+Our click count label is kind of basic. To overcomplicate things and to show off how you might use `.map()`, let's add a dynamic label based on the value of `$count`.
 
 ```js
-import { makeComponent, makeState } from "@woofjs/app";
+import { makeState } from "@woofjs/app";
 
-const Counter = makeComponent(($) => {
+function Counter() {
   const $count = makeState(0);
 
-  const $times = $count.map((current) => {
-    if (current === 1) {
-      return "time";
+  function increment() {
+    $count.set((current) => current + 1);
+  }
+
+  const $label = $count.map((current) => {
+    if (current === 0) {
+      return "Not clicked.";
+    } else if (current === 1) {
+      return "Clicked once.";
+    } else if (current === 2) {
+      return "Clicked twice.";
     } else {
-      return "times";
+      return `Clicked ${current} times.`;
     }
   });
 
   return (
     <main>
-      <p>
-        Clicked {$.text($count)} {$.text($times)}.
-      </p>
+      <p>{$label}</p>
       <br />
-      <button onclick={() => $count.set((current) => current + 1)}>+1</button>
-      <button onclick={() => $count.set((current) => current - 1)}>-1</button>
+      <button onclick={increment}>+1</button>
     </main>
   );
-});
+}
 ```
 
-[Read more about Woof...]()
+Now our label reads:
+
+- Not clicked.
+- Clicked once.
+- Clicked twice.
+- Clicked 3 times.
+- Clicked 4 times.
+- ...
+
+[Read more about Woof...](../../README.md)
+
+## Selectors
+
+Selectors are shorthand for accessing nested properties on objects and arrays stored in a State. Nested keys are separated by `.` and `[]`s are used to access array items by index. An `[*]` index turns the result into an array by running the rest of the selector on each item.
+
+Below are some examples of selectors and their equivalent functions:
+
+```js
+// Get the `width` property
+$state.get("width");
+$state.get((value) => value.width);
+
+// Get the last name of the 8th (from 0) user in an array called `users`
+$state.get("users[7].name.last");
+$state.get((value) => value.users[7]?.name?.last);
+
+// Get an array of all `id` values for each object in an array
+$state.get("[*].id");
+$state.get((value) => value.map((item) => item.id));
+```
 
 ## API
 
@@ -192,18 +212,8 @@ Here are all the functions you'll find on a state and how to call them:
 
 A state produced by `.map()` supports everything aside from `.set()` (because mapped states derive their values from the original state).
 
-[See test suite for code examples](./makeState.test.js)<br>
-[See implementation](./makeState.js)
-
-#### Selectors
-
-Selectors are keys for accessing nested properties on objects and arrays stored in a State. Nested keys are separated by `.` and `[]`s are used to access array items by index. An `[*]` index turns the result into an array by running the rest of the selector on each item.
-
-```js
-$state.get("width"); // Get the `width` property
-$state.get("users[7].name.last"); // Get the last name of the 8th (from 0) user in an array called `users`
-$state.get("[*].id"); // Get an array of all `id` values for each object in an array
-```
+[See test suite for code examples](./src/makeState.test.js)<br>
+[See implementation](./src/makeState.js)
 
 ### `mergeStates`
 
@@ -222,8 +232,8 @@ const $isReady = mergeStates($isLoading, $hasData, (isLoading, hasData) => {
 });
 ```
 
-[See test suite for code examples](./mergeStates.test.js)<br>
-[See implementation](./mergeStates.js)
+[See test suite for code examples](./src/mergeStates.test.js)<br>
+[See implementation](./src/mergeStates.js)
 
 ---
 
