@@ -4,7 +4,8 @@
   "description": "Rapid component development environment for dogs. 🐕",
   "main": "program.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "woof-build -c client/client.js -o build --minify",
+    "start": "woof-build -c client/client.js -o build --watch"
   },
   "bin": {
     "woof-view": "program.js"
@@ -16,5 +17,9 @@
     "@ratwizard/cli": "^0.17.0",
     "chokidar": "^3.5.3",
     "express": "^4.18.1"
+  },
+  "devDependencies": {
+    "@woofjs/build": "^0.1.0",
+    "@woofjs/client": "^0.11.0"
   }
 }
