@@ -27,52 +27,82 @@ npm i --save-dev @woofjs/view
 }
 ```
 
-Inside your project, you can create `<Name>.view.jsx` files for each of your components.
+Inside your project, you can create `<Name>.view.jsx` files for each of your components. Here is an example component and a hypothetical view file to test it.
 
 ```js
+// MyHeader.jsx
+
+/**
+ * A really contrived header that makes an HTTP call to get the user's name.
+ */
+export function MyHeader($attrs, self) {
+  const onclick = $attrs.get("onclick");
+
+  const $greeting = $attrs.map("greeting");
+  const $name = makeState("...");
+
+  self.beforeConnect(() => {
+    self
+      .getService("@http")
+      .get("/users/me")
+      .then((res) => {
+        $name.set(res.body.name);
+      });
+  });
+
+  return (
+    <h1 onclick={onclick}>
+      {$greeting}, {$name}
+    </h1>
+  );
+}
+```
+
+```js
+// MyHeader.view.jsx
+
 import { h } from "@woofjs/client";
 import { makeMockHTTP } from "@woofjs/client/testing";
 import { MyHeader } from "./MyHeader.jsx";
 
 /**
- * We are using makeMockHTTP from the testing tools to create an `@http` service that returns
- * mock data when used to make requests. This prevents the view from touching a real API.
+ * We are using makeMockHTTP from the testing tools to create an `@http` service
+ * that returns mock data. This prevents the view from touching a real API.
  **/
 const mockHTTP = makeMockHTTP((self) => {
-  self.get("/users", () => {
+  self.get("/users/me", () => {
     return [{ id: 1, name: "Jimbo Jones" }];
   });
 });
 
 /**
- * Views are defined similar to components. The function receives an object with variables
- * and methods to configure the view, and at the end it should return some renderable elements.
+ * Views are defined by an exported function. This function receives a `view` object with variables
+ * and methods to configure the view.
  **/
 export function ViewOne(view) {
-  // Views are named by converting the function name from PascalCase to Sentence Case.
-  // If you don't like this you can override it to any string you want:
+  // Views are named by converting the function name from "PascalCaseLikeThis" to "Sentence Case Like This".
+  // If you don't like this conversion, you can override it to any string you want:
   view.name = "Custom name here";
 
-  // Provide mock services for use by the elements you return.
+  // Provide mock versions of any services used by your component.
   view.service("@http", mockHTTP);
 
   return h(MyHeader, {
-    // Expose attributes to make them editable in the browser with a dedicated UI.
+    // You can expose attributes to make them editable in the browser with a dedicated UI.
+    greeting: view.attribute("Bonjour", {
+      // The attribute key is used as the name by default (`greeting` in this case), but you can provide your own:
+      name: "The Greeting",
 
-    title: view.attribute("The Value", {
-      // Provide your own name or leave it out to use the attribute key (in this case "title").
-      name: "The Title",
-
-      // The type of control is chosen automatically by the browser. A string attribute would normally show a text input.
-      // In this case we have overridden that to show a dropdown menu with four preset options.
+      // The type of input the user sees is chosen based on the data type by default.
+      // A string attribute would normally show a text input. Here we use a dropdown menu instead with four preset options.
       input: {
         type: "select",
-        options: ["The Value", "Bonjour", "Howdy", "Konnichiwa"],
+        options: ["Bonjour", "Howdy", "Konnichiwa"],
       },
     }),
 
-    // Actions are no-op functions that log that they have been called. Useful as dummy functions to test that
-    // callbacks are running as you expect as you interact with components.
+    // Actions are no-op functions that log when they are called.
+    // Useful as dummy functions to test that callbacks are working as you interact with components.
     onclick: view.action("header clicked"),
   });
 }
