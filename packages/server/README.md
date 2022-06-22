@@ -20,9 +20,12 @@ app.static("/static/path"); // Specify a custom path for static files.
 // Each service is created once per request.
 // Two API calls will use two different instances, but all middleware in the same API call will use one instance.
 app.service("example", ExampleService, {
-  // If lifecycle is 'app' only one copy of the service exists
-  // If lifecycle is 'request', a new copy is created for each request
+  // If lifecycle is 'app', one instance is created when the app starts.
+  // If lifecycle is 'request', a new instance is created for each request.
   lifecycle: "app" | "request",
+  options: {
+    /* service options object */
+  },
 });
 
 // Create API routes with functions named after HTTP methods (`get`, `post`, `delete`, etc.)

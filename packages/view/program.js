@@ -11,10 +11,10 @@ program
   .command("start", {
     description: "starts the server",
     action: async ({ options }) => {
-      await buildViews(
-        process.cwd(),
-        path.join(process.cwd(), "temp", "views")
-      );
+      await buildViews({
+        clientRoot: process.cwd(),
+        buildRoot: path.join(process.cwd(), "temp", "views"),
+      });
 
       await serve();
     },

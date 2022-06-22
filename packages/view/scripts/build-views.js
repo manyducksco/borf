@@ -9,7 +9,7 @@ const { build } = require("@woofjs/build");
 const isIgnored = /node_modules|^\./;
 const isView = /\.view\.[jt]sx?$/;
 
-module.exports = async function buildViews(clientRoot, buildRoot) {
+module.exports = async function buildViews({ clientRoot, buildRoot }) {
   const views = findViews(clientRoot);
 
   let index = "";
@@ -29,7 +29,7 @@ module.exports = async function buildViews(clientRoot, buildRoot) {
 
   index += "];\n";
 
-  const filesRoot = path.join(__dirname, "../files");
+  const filesRoot = path.join(__dirname, "../frame");
   const srcRoot = path.join(buildRoot, "src");
 
   // Make sure build directory is empty

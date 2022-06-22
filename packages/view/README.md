@@ -145,7 +145,7 @@ Bundles the project's views into a standalone static file dump that you can host
 Use the `-o` or `--output` option to specify where this folder will go. For example,
 
 ```
-woof-view export -o ./view-static
+woof-view build -o ./view-static
 ```
 
 ## Attribute Inputs
