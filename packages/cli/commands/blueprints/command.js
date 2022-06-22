@@ -26,7 +26,7 @@ module.exports = new Command().action(() => {
     .map((f) => {
       const blueprint = loadBlueprint(
         path.join(blueprintsDir, f, "blueprint.js"),
-        { name: "[name]" },
+        { name: "{{name}}" },
         config
       );
 

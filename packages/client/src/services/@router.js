@@ -65,24 +65,28 @@ export default function RouterService(self) {
   let isRouteChange = false;
 
   // Update URL when $query changes
-  self.watchState($query, (current) => {
-    // No-op if this is triggered by a route change.
-    if (isRouteChange) {
-      isRouteChange = false;
-      return;
-    }
+  self.watchState(
+    $query,
+    (current) => {
+      // No-op if this is triggered by a route change.
+      if (isRouteChange) {
+        isRouteChange = false;
+        return;
+      }
 
-    const params = new URLSearchParams();
+      const params = new URLSearchParams();
 
-    for (const key in current) {
-      params.set(key, current[key]);
-    }
+      for (const key in current) {
+        params.set(key, current[key]);
+      }
 
-    history.replace({
-      pathname: history.location.pathname,
-      search: "?" + params.toString(),
-    });
-  });
+      history.replace({
+        pathname: history.location.pathname,
+        search: "?" + params.toString(),
+      });
+    },
+    { immediate: false }
+  );
 
   self.afterConnect(() => {
     const root = options.getRoot();

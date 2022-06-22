@@ -38,7 +38,31 @@ program
       if (options.watch) {
         promises.push(watchClient(options));
       } else {
-        promises.push(buildClientOnce(options));
+        const { writtenFiles, time } = await buildClientOnce(options);
+
+        println();
+        println("build/");
+        println("  <green>+</green> public/");
+
+        for (const file of writtenFiles) {
+          if (file.type === "directory") {
+            println(
+              `    <green>+</green> ${file.name}/* <dim>(directory)</dim>`
+            );
+          } else {
+            if (file.gzipSize != null) {
+              println(
+                `    <green>+</green> ${file.name} - <green>${file.gzipSize} gzipped</green> <dim>(${file.size} on disk)</dim>`
+              );
+            } else {
+              println(
+                `    <green>+</green> ${file.name} - <dim>${file.size} on disk</dim>`
+              );
+            }
+          }
+        }
+
+        println(`\nBundled app in <green>${time}</green>ms\n`);
       }
     }
 
@@ -49,45 +73,51 @@ program
     await Promise.all(promises);
   });
 
-program.run(process.argv);
+if (!module.parent) {
+  // Called from CLI
+  program.run(process.argv);
+} else {
+  // Imported from another file
+  module.exports = { build: buildClientOnce, watch: watchClient };
+}
 
 async function buildClientOnce(options) {
   const config = {
-    entryPath: path.join(process.cwd(), options.client),
-    outputPath: path.join(process.cwd(), options.output),
+    entryPath: path.resolve(options.client),
+    outputPath: path.resolve(options.output),
     esbuild: {
       minify: options.minify,
-      inject: [path.join(__dirname, "utils/jsx-shim.js")],
+      inject: [path.join(__dirname, "utils/jsx-shim-client.js")],
     },
   };
 
   const start = Date.now();
   const clientBundle = await buildClient(config).build();
 
-  println();
-  println("build/");
-  println("  <green>+</green> public/");
+  const writtenFiles = [];
 
   for (const file of clientBundle.writtenFiles) {
     if (file.contents) {
-      const size = superbytes(file.contents.length);
-      const gsize = superbytes(gzipSize.sync(file.contents));
-      const name = path.basename(file.path);
-
-      if (file.path.endsWith(".map")) {
-        println(`    <green>+</green> ${name} - <dim>${size} on disk</dim>`);
-      } else {
-        println(
-          `    <green>+</green> ${name} - <green>${gsize} gzipped</green> <dim>(${size} on disk)</dim>`
-        );
-      }
+      writtenFiles.push({
+        type: "file",
+        size: superbytes(file.contents.length),
+        gzipSize: file.path.endsWith(".js")
+          ? superbytes(gzipSize.sync(file.contents))
+          : null,
+        name: path.basename(file.path),
+      });
     } else {
-      const name = path.basename(file.path);
-      println(`    <green>+</green> ${name}/* <dim>(directory)</dim>`);
+      writtenFiles.push({
+        type: "folder",
+        name: path.basename(file.path),
+      });
     }
   }
 
-  println(`\nBundled app in <green>${Date.now() - start}</green>ms\n`);
+  return {
+    writtenFiles,
+    time: Date.now() - start,
+  };
 }
 
 async function watchClient(options) {
@@ -103,11 +133,11 @@ async function watchClient(options) {
         `
           <script>
             const events = new EventSource("/_bundle");
-  
+
             events.addEventListener("message", (message) => {
               window.location.reload();
             });
-  
+
             window.addEventListener("beforeunload", () => {
               events.close();
             });

@@ -73,11 +73,25 @@ const mockHTTP = makeMockHTTP((self) => {
   });
 });
 
+// You can export default a single function or an object of functions.
+
+export default (view) => {};
+
+export default {
+  firstView(view) {
+
+  },
+
+  secondView(view) {
+
+  }
+}
+
 /**
  * Views are defined by an exported function. This function receives a `view` object with variables
  * and methods to configure the view.
  **/
-export function ViewOne(view) {
+export default (view) => {
   // Views are named by converting the function name from "PascalCaseLikeThis" to "Sentence Case Like This".
   // If you don't like this conversion, you can override it to any string you want:
   view.name = "Custom name here";
@@ -115,7 +129,7 @@ export function ViewOne(view) {
     // Useful as dummy functions to test that callbacks are working as you interact with components.
     onclick: view.action("header clicked"),
   });
-}
+};
 ```
 
 ## Commands
@@ -124,7 +138,7 @@ export function ViewOne(view) {
 
 Starts an HTTP server you can visit in your browser.
 
-### `export`
+### `build`
 
 Bundles the project's views into a standalone static file dump that you can host on just about any web server.
 

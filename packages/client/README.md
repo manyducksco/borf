@@ -288,11 +288,17 @@ The `when` helper displays the element only when the condition is truthy while `
 
 ```js
 function Example($attrs, self) {
-  const $isOn = useState(false);
+  const $on = useState(false);
+
+  function toggle() {
+    $on.set(on => !on);
+  }
 
   return h("div", [
-    when($isOn, <h1>Is On</h1>),
-    unless($isOn, <h1>Is Off</h1>)
+    when($on, h("h1", "Is On")),
+    unless($on, h("h1", "Is Off")),
+
+    h("button", { onclick: toggle }, "Toggle")
   ]);
 });
 ```
@@ -312,8 +318,10 @@ function Example($attrs, self) {
 
     // Render once for each item in $list. Updates when $list changes.
     each($list, ($attrs, self) => {
+      const $value = $attrs.map((attrs) => attrs.value);
+
       // Return an <li> that contains the current value of this $list item.
-      return h("li", $attrs.map("@value"));
+      return h("li", $value);
     })
   );
 }

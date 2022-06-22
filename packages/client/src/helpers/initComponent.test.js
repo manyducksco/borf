@@ -282,7 +282,7 @@ test("state attributes mapped in the component update when the state changes whi
     self.watchState($twoWay, twoWayChanged);
     self.watchState($oneWay, oneWayChanged);
 
-    self.watchState($oneWay, immediateChanged, { immediate: true });
+    self.watchState($oneWay, immediateChanged);
 
     return null;
   }

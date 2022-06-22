@@ -31,8 +31,8 @@ export function Each($attrs, self) {
         value: getKey(value, index),
         index,
         attrs: {
-          "@value": value,
-          "@index": index,
+          value,
+          index,
         },
       };
     });
@@ -70,7 +70,7 @@ export function Each($attrs, self) {
     connectedItems = newItems;
   }
 
-  self.watchState($value, update, { immediate: true });
+  self.watchState($value, update);
 
   self.afterDisconnect(() => {
     for (const item of connectedItems) {

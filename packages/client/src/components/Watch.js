@@ -36,7 +36,7 @@ export function Watch($attrs, self) {
     }
   }
 
-  self.watchState($value, update, { immediate: true });
+  self.watchState($value, update);
 
   self.afterDisconnect(() => {
     if (current) {

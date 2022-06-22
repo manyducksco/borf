@@ -5,12 +5,18 @@ const path = require("path");
 const fs = require("fs-extra");
 const chokidar = require("chokidar");
 const express = require("express");
+const buildViews = require("./scripts/build-views");
 
 program
   .command("start", {
     description: "starts the server",
-    action: () => {
-      console.log("started");
+    action: async ({ options }) => {
+      await buildViews(
+        process.cwd(),
+        path.join(process.cwd(), "temp", "views")
+      );
+
+      await serve();
     },
   })
   .command("build", {
@@ -21,7 +27,7 @@ program
         required: true,
       },
     },
-    action: ({ options }) => {
+    action: async ({ options }) => {
       console.log("built", options);
     },
   });
@@ -67,117 +73,59 @@ program.run(process.argv);
 //   println(`\nBundled app in <green>${Date.now() - start}</green>ms\n`);
 // }
 
-// async function watchClient(options) {
-//   const config = {
-//     entryPath: path.join(process.cwd(), options.client),
-//     outputPath: path.join(process.cwd(), options.output),
-//     esbuild: {
-//       minify: options.minify,
-//       inject: [path.join(__dirname, "utils/jsx-shim.js")],
-//     },
-//     static: {
-//       injectScripts: [
-//         `
-//           <script>
-//             const events = new EventSource("/_bundle");
+async function serve() {
+  const app = express();
 
-//             events.addEventListener("message", (message) => {
-//               window.location.reload();
-//             });
+  const frameDir = path.resolve("temp/views/bundle/public");
+  const runnerDir = path.join(__dirname, "build/public");
 
-//             window.addEventListener("beforeunload", () => {
-//               events.close();
-//             });
-//           </script>
-//         `,
-//       ],
-//     },
-//   };
+  ////
+  // This server exists to serve the app and proxy requests to the API server.
+  // Why proxy? This server can inject things and handle Server Sent Events for auto-reload.
+  ////
 
-//   const buildDir = config.outputPath;
-//   const publicDir = path.join(buildDir, "public");
-//   const entryDir = path.dirname(config.entryPath);
+  // TODO: Proxy requests with relative URLs to the server if it's running.
+  app.use(express.static(runnerDir));
+  app.use(express.static(frameDir));
 
-//   // Empties directory if it contains files.
-//   fs.emptyDirSync(buildDir);
-//   fs.emptyDirSync(publicDir);
+  app.listen(4200, () => {
+    println(
+      `\nVisit <green>http://localhost:4200</green> in a browser to see views.`
+    );
+  });
 
-//   const $bundleId = makeState(0);
+  app.get("/_bundle", (req, res) => {
+    res.set({
+      "Cache-Control": "no-cache",
+      "Content-Type": "text/event-stream",
+      Connection: "keep-alive",
+    });
+    res.flushHeaders();
 
-//   // Create app bundle
-//   const clientBundle = await buildClient(config).buildIncremental();
+    // Tell the client to retry every 10 seconds if connectivity is lost
+    res.write("retry: 10000\n\n");
 
-//   /*==========================*\
-//   ||      Watch & Bundle      ||
-//   \*==========================*/
+    const unwatch = $bundleId.watch((value) => {
+      res.write(`data: ${value}\n\n`);
+    });
 
-//   const clientWatcher = chokidar.watch([`${entryDir}/**/*`], {
-//     persistent: true,
-//     ignoreInitial: true,
-//   });
+    res.on("close", () => {
+      unwatch();
+      res.end();
+    });
+  });
 
-//   clientWatcher.on("all", async () => {
-//     const start = Date.now();
-//     await clientBundle.rebuild();
-//     $bundleId.set((current) => current + 1);
-//     println(
-//       `<cyan>CLIENT</cyan> rebuilt in <green>${Date.now() - start}ms</green>`
-//     );
-//   });
+  app.get("/frame.html", (req, res) => {
+    res.sendFile(path.join(frameDir, "index.html"));
+  });
 
-//   /*==========================*\
-//   ||          Server          ||
-//   \*==========================*/
+  app.get("*", (req, res, next) => {
+    const extname = path.extname(req.path);
 
-//   const app = express();
-
-//   ////
-//   // This server exists to serve the app and proxy requests to the API server.
-//   // Why proxy? This server can inject things and handle Server Sent Events for auto-reload.
-//   ////
-
-//   // TODO: Proxy requests with relative URLs to the server if it's running.
-
-//   app.use(express.static(publicDir));
-
-//   app.listen(7072, () => {
-//     println(
-//       `\nVisit <green>http://localhost:7072</green> in a browser to see app.`
-//     );
-
-//     println(
-//       `\n<magenta>CLIENT</magenta> app will auto reload when files are saved`
-//     );
-//   });
-
-//   app.get("/_bundle", (req, res) => {
-//     res.set({
-//       "Cache-Control": "no-cache",
-//       "Content-Type": "text/event-stream",
-//       Connection: "keep-alive",
-//     });
-//     res.flushHeaders();
-
-//     // Tell the client to retry every 10 seconds if connectivity is lost
-//     res.write("retry: 10000\n\n");
-
-//     const unwatch = $bundleId.watch((value) => {
-//       res.write(`data: ${value}\n\n`);
-//     });
-
-//     res.on("close", () => {
-//       unwatch();
-//       res.end();
-//     });
-//   });
-
-//   app.get("*", (req, res, next) => {
-//     const extname = path.extname(req.path);
-
-//     if (extname === "") {
-//       res.sendFile(path.join(buildDir, "index.html"));
-//     } else {
-//       next();
-//     }
-//   });
-// }
+    if (extname === "") {
+      res.sendFile(path.join(runnerDir, "index.html"));
+    } else {
+      next();
+    }
+  });
+}

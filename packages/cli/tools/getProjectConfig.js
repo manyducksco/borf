@@ -1,3 +1,4 @@
+const fs = require("fs");
 const path = require("path");
 const deepMerge = require("./deepMerge");
 
@@ -25,9 +26,6 @@ function getDefaultConfig(dir) {
       get components() {
         return path.join(this.client, "components");
       },
-      get resources() {
-        return path.join(this.server, "resources");
-      },
       get services() {
         // TODO: Figure out conflict here with services being in both app and server.
         return path.join(this.client, "services");
@@ -38,26 +36,30 @@ function getDefaultConfig(dir) {
 
 module.exports = function getProjectConfig(dir) {
   const configPath = path.join(dir, "woof.config.js");
-  try {
-    let config = require(configPath);
 
-    if (typeof config !== "object" || Array.isArray(config)) {
-      throw new TypeError(
-        `Expected woof.config.js to export an object. Received: ${config}`
-      );
-    }
+  let config = getDefaultConfig(dir);
 
-    config = deepMerge(getDefaultConfig(dir), config);
+  if (fs.existsSync(configPath)) {
+    try {
+      let loaded = require(configPath);
 
-    for (const key in config.path) {
-      if (!path.isAbsolute(config.path[key])) {
-        config.path[key] = path.resolve(config.path[key]);
+      if (typeof loaded !== "object" || Array.isArray(loaded)) {
+        throw new TypeError(
+          `Expected woof.config.js to export an object. Received: ${loaded}`
+        );
       }
-    }
 
-    return config;
-  } catch (err) {
-    console.log(err);
-    return null;
+      config = deepMerge(config, loaded);
+    } catch (err) {
+      return null;
+    }
   }
+
+  for (const key in config.path) {
+    if (!path.isAbsolute(config.path[key])) {
+      config.path[key] = path.resolve(config.path[key]);
+    }
+  }
+
+  return config;
 };

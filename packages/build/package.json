@@ -2,7 +2,7 @@
   "name": "@woofjs/build",
   "version": "0.1.0",
   "description": "Web framework build scripts for dogs. 🐕",
-  "main": "index.js",
+  "main": "program.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

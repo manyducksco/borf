@@ -108,7 +108,12 @@ export function initComponent(app, fn, attrs, children) {
     },
     watchState($state, callback, options = {}) {
       onAfterConnect.push(() => {
-        activeWatchers.push($state.watch(callback, options));
+        activeWatchers.push(
+          $state.watch(callback, {
+            immediate: true, // Run callback when component is connected by default. Set to false if you only want to catch changes while the component is connected.
+            ...options,
+          })
+        );
       });
 
       if (isConnected) {
@@ -125,16 +130,11 @@ export function initComponent(app, fn, attrs, children) {
 
   // Update $attrs when state attrs change.
   stateAttrs.forEach(({ name, value }) => {
-    self.watchState(
-      value,
-      (unwrapped) => {
-        $attrs.set((attrs) => {
-          attrs[name] = unwrapped;
-        });
-      },
-      // Set to immediate so any changes while component was disconnected get picked up as soon as it is connected.
-      { immediate: true }
-    );
+    self.watchState(value, (unwrapped) => {
+      $attrs.set((attrs) => {
+        attrs[name] = unwrapped;
+      });
+    });
   });
 
   /*=============================*\

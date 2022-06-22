@@ -65,7 +65,7 @@ export default function FlightBooker($attrs, self) {
             {each(
               flightTypes,
               ($attrs, self) => {
-                const $value = $attrs.map("@value");
+                const $value = $attrs.map("value");
                 const $selected = mergeStates(
                   $value,
                   $flightType,

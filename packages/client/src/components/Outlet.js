@@ -22,7 +22,7 @@ export function Outlet($attrs, self) {
     }
   }
 
-  self.watchState($element, swapElement, { immediate: true });
+  self.watchState($element, swapElement);
 
   return node;
 }

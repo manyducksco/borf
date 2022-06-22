@@ -105,7 +105,7 @@ export default function CRUD($attrs, self) {
             {each(
               $filteredPeople,
               ($attrs, self) => {
-                const $person = $attrs.map("@value");
+                const $person = $attrs.map("value");
 
                 return (
                   <option value={$person.map("id")}>

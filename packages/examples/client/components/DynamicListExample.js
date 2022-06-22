@@ -72,7 +72,7 @@ function DynamicListExample($attrs, self) {
         {each(
           $shoppingList,
           ($attrs, self) => {
-            const $item = $attrs.map("@value");
+            const $item = $attrs.map("value");
 
             return (
               <li

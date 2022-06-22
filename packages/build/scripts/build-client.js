@@ -85,7 +85,7 @@ module.exports = function buildClient(config) {
       writtenFiles.push(file);
     }
 
-    if (fs.statSync(staticDir).isDirectory()) {
+    if (fs.existsSync(staticDir) && fs.statSync(staticDir).isDirectory()) {
       fs.readdirSync(staticDir).forEach((entry) => {
         const fullPath = path.join(staticDir, entry);
 

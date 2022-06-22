@@ -124,7 +124,7 @@ function Component($attrs) {
 
   return v("div", [
     each($items, function Item($attrs) {
-      return v("h1", $attrs.map("@value"));
+      return v("h1", $attrs.map("value"));
     }),
   ]);
 }
@@ -249,7 +249,7 @@ The `v` function is used in components to render DOM elements and other componen
 function Component() {
   return v("div", [
     each($items, function Item($attrs) {
-      return v("h1", $attrs.map("@value"));
+      return v("h1", $attrs.map("value"));
     }),
   ]);
 }

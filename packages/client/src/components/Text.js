@@ -11,7 +11,7 @@ export function Text($attrs, self) {
     }
   }
 
-  self.watchState($attrs, setText, { immediate: true });
+  self.watchState($attrs, setText);
 
   return node;
 }

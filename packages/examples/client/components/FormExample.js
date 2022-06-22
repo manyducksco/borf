@@ -51,7 +51,7 @@ function FormExample($attrs, self) {
           each(
             $errors,
             ($attrs, self) => {
-              const $message = $attrs.map("@value");
+              const $message = $attrs.map((attrs) => attrs.value);
 
               return <div style="color:red">{$message}</div>;
             },
