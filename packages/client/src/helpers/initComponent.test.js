@@ -8,7 +8,9 @@ import { isComponent } from "./typeChecking.js";
 \*========================*/
 
 const appContext = {
-  getService,
+  makeGetService() {
+    return getService;
+  },
 };
 
 const mockServices = {
@@ -272,8 +274,7 @@ test("two-way state attributes can be changed from inside the component", () => 
 test("state attributes mapped in the component update when the state changes while connected", () => {
   const twoWayChanged = jest.fn();
   const oneWayChanged = jest.fn();
-  const immediateChanged = jest.fn();
-  const addedLateChanged = jest.fn();
+  const nonImmediateChanged = jest.fn();
 
   function Component($attrs, self) {
     const $twoWay = $attrs.get("$twoWay");
@@ -282,7 +283,7 @@ test("state attributes mapped in the component update when the state changes whi
     self.watchState($twoWay, twoWayChanged);
     self.watchState($oneWay, oneWayChanged);
 
-    self.watchState($oneWay, immediateChanged);
+    self.watchState($oneWay, nonImmediateChanged, { immediate: false });
 
     return null;
   }
@@ -303,23 +304,26 @@ test("state attributes mapped in the component update when the state changes whi
 
   expect(twoWayChanged).toHaveBeenCalledTimes(0);
   expect(oneWayChanged).toHaveBeenCalledTimes(0);
-  expect(immediateChanged).toHaveBeenCalledTimes(0);
 
   result.connect(parent);
 
-  // Now connected. State watchers should be receiving changes. Immediate watcher should have also received the current value when connected.
+  // Now connected. State watchers should have received initial values.
+
+  expect(twoWayChanged).toHaveBeenCalledTimes(1);
+  expect(oneWayChanged).toHaveBeenCalledTimes(1);
+  expect(nonImmediateChanged).toHaveBeenCalledTimes(0);
+
+  // Non-immediate watchers should have only received changes that occurred while the component was connected.
 
   $twoWay.set(3);
   $oneWay.set("world");
 
-  expect(twoWayChanged).toHaveBeenCalledTimes(1);
-  expect(oneWayChanged).toHaveBeenCalledTimes(1);
-  expect(immediateChanged).toHaveBeenCalledTimes(2);
+  expect(twoWayChanged).toHaveBeenCalledTimes(2);
+  expect(oneWayChanged).toHaveBeenCalledTimes(2);
+  expect(nonImmediateChanged).toHaveBeenCalledTimes(1);
 
   expect(twoWayChanged).toHaveBeenCalledWith(3);
   expect(oneWayChanged).toHaveBeenCalledWith("world");
-  expect(immediateChanged).toHaveBeenCalledWith("there");
-  expect(immediateChanged).toHaveBeenCalledWith("world");
 
   result.disconnect();
 
@@ -328,9 +332,9 @@ test("state attributes mapped in the component update when the state changes whi
   $twoWay.set(4);
   $oneWay.set("!");
 
-  expect(twoWayChanged).toHaveBeenCalledTimes(1);
-  expect(oneWayChanged).toHaveBeenCalledTimes(1);
-  expect(immediateChanged).toHaveBeenCalledTimes(2);
+  expect(twoWayChanged).toHaveBeenCalledTimes(2);
+  expect(oneWayChanged).toHaveBeenCalledTimes(2);
+  expect(nonImmediateChanged).toHaveBeenCalledTimes(1);
 });
 
 test("throws when setting a two way attr that isn't a state", () => {

@@ -10,7 +10,7 @@ import { isTemplate, isDOM, isFunction, isComponent } from "./typeChecking.js";
  * @param children - Children passed to the function.
  */
 export function initComponent(app, fn, attrs, children) {
-  const { getService } = app;
+  const getService = app.makeGetService({ identifier: "~", type: "component" });
 
   attrs = attrs || {};
   children = children || [];

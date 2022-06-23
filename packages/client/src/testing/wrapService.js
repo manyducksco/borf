@@ -22,7 +22,11 @@ export function wrapService(service, configure) {
     throw new Error(`Service is not registered in this wrapper. Received: ${name}`);
   };
 
-  const appContext = { getService };
+  const appContext = {
+    makeGetService() {
+      return getService;
+    },
+  };
 
   const helpers = {
     /**
@@ -33,7 +37,7 @@ export function wrapService(service, configure) {
      */
     service(name, service, options = {}) {
       if (isFunction(service)) {
-        services[name] = initService(appContext, service, debug.makeChannel(name), options);
+        services[name] = initService(appContext, service, debug.makeChannel(`service:${name}`), { name, options });
       } else if (isObject(service)) {
         services[name] = {
           exports: service,
@@ -61,6 +65,6 @@ export function wrapService(service, configure) {
   }
 
   return function makeWrapped(options = {}) {
-    return initService(appContext, service, debug, options);
+    return initService(appContext, service, debug.makeChannel(`service:wrapped`), { name: "injected", options });
   };
 }

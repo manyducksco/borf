@@ -106,3 +106,31 @@ test("lifecycle methods", async () => {
   expect(beforeConnect).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(1);
 });
+
+test("throws helpful error when accessing services that haven't been created yet from other services", async () => {
+  const app = makeApp();
+  const root = document.createElement("div");
+
+  app.service("@http", () => {
+    return {}; // Override @http, otherwise window.fetch isn't defined in the test so this fails.
+  });
+
+  app.service("one", (self) => {
+    const two = self.getService("two");
+
+    return {
+      value: 1,
+      total: two.value + 1,
+    };
+  });
+
+  app.service("two", () => {
+    return {
+      value: 2,
+    };
+  });
+
+  expect(async () => app.connect(root)).rejects.toThrow(
+    "Service 'two' was requested before it was initialized from service 'one'. Make sure 'two' is registered before 'one' on your app."
+  );
+});

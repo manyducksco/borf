@@ -1,7 +1,7 @@
 import { isObject } from "./typeChecking.js";
 
-export function initService(app, fn, debug, options = {}) {
-  const { getService } = app;
+export function initService(app, fn, debug, config) {
+  const getService = app.makeGetService({ identifier: config.name, type: "service" });
 
   // Lifecycle hook callbacks
   let onBeforeConnect = [];
@@ -12,7 +12,7 @@ export function initService(app, fn, debug, options = {}) {
 
   const self = {
     debug,
-    options,
+    options: config.options || {},
     getService,
     beforeConnect(callback) {
       onBeforeConnect.push(callback);

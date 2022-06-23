@@ -16,7 +16,6 @@ export function makeApp(options = {}) {
   const routes = [];
   const services = {};
 
-  let servicesCreated = false;
   let beforeConnect = async () => true;
   let afterConnect = async () => true;
 
@@ -129,9 +128,9 @@ export function makeApp(options = {}) {
      *
      * @param name - Unique string to name this service.
      * @param service - A service to create and register under the name.
-     * @param options - Object to be passed to service.created() function when called.
+     * @param config - Configuration options for the service. Can contain an `options` object that is passed to the service.
      */
-    service(name, service, options) {
+    service(name, service, config = {}) {
       if (!isFunction(service)) {
         throw new TypeError(`Expected a service function. Got: ${service} (${typeof service})`);
       }
@@ -147,8 +146,8 @@ export function makeApp(options = {}) {
       // Merge with existing fields if overwriting.
       services[name].fn = service;
 
-      if (options !== undefined) {
-        services[name].options = options;
+      if (config.options !== undefined) {
+        services[name].options = config.options;
       }
 
       return methods;
@@ -161,7 +160,11 @@ export function makeApp(options = {}) {
      * If the function returns a Promise, the app will not be connected until the Promise resolves.
      */
     beforeConnect(fn) {
-      beforeConnect = async () => fn({ getService, debug: appDebug });
+      beforeConnect = async () =>
+        fn({
+          getService: makeGetService({ identifier: "app", type: "app" }),
+          debug: appDebug,
+        });
 
       return methods;
     },
@@ -171,7 +174,11 @@ export function makeApp(options = {}) {
      * This function is called after the first route match.
      */
     afterConnect(fn) {
-      afterConnect = async () => fn({ getService, debug: appDebug });
+      afterConnect = async () =>
+        fn({
+          getService: makeGetService({ identifier: "app", type: "app" }),
+          debug: appDebug,
+        });
 
       return methods;
     },
@@ -195,14 +202,13 @@ export function makeApp(options = {}) {
       // Create registered services.
       for (const name in services) {
         const service = services[name];
-        const debugChannel = debug.makeChannel(`service:${name}`);
 
         // First bits of app code are run; service functions called.
-        service.instance = initService({ getService }, service.fn, debugChannel, service.options);
+        service.instance = initService({ makeGetService }, service.fn, debug.makeChannel(`service:${name}`), {
+          name,
+          options: service.options,
+        });
       }
-
-      // Unlock getService now that all services have been created.
-      servicesCreated = true;
 
       // beforeConnect is the first opportunity to access other services.
       // This is also a good place to configure things before app-level `setup` runs.
@@ -225,27 +231,28 @@ export function makeApp(options = {}) {
   // Private
   ////
 
-  /**
-   * Returns the named service or throws an error if it isn't registered.
-   * Every component and service in the app gets services through this function.
-   *
-   * @example getService("@page").$title.set("New Page Title")
-   *
-   * @param name - Name of a service. Built-in services start with `@`.
-   */
-  function getService(name) {
-    if (!servicesCreated) {
-      // This should only be reachable (by app code) in the body of a service function.
-      throw new Error(
-        `Service was requested before it was created. Services can only access other services in lifecycle hooks and exported functions. Got: ${name}`
-      );
-    }
+  function makeGetService({ identifier, type }) {
+    /**
+     * Returns the named service or throws an error if it isn't registered.
+     * Every component and service in the app gets services through this function.
+     *
+     * @example getService("@page").$title.set("New Page Title")
+     *
+     * @param name - Name of a service. Built-in services start with `@`.
+     */
+    return function getService(name) {
+      if (services[name]) {
+        if (services[name].instance == null) {
+          throw new Error(
+            `Service '${name}' was requested before it was initialized from ${type} '${identifier}'. Make sure '${name}' is registered before '${identifier}' on your app.`
+          );
+        }
 
-    if (services[name]) {
-      return services[name].instance.exports;
-    }
+        return services[name].instance.exports;
+      }
 
-    throw new Error(`Service is not registered in this app. Got: ${name}`);
+      throw new Error(`Service is not registered in this app. Got: ${name}`);
+    };
   }
 
   ////
@@ -255,7 +262,7 @@ export function makeApp(options = {}) {
   // App context for components.
   methods.service("@app", () => {
     return {
-      getService,
+      makeGetService,
     };
   });
 
@@ -264,10 +271,12 @@ export function makeApp(options = {}) {
 
   // Access to matched route and query params.
   methods.service("@router", RouterService, {
-    ...(options.router || {}),
-    routes,
-    getRoot() {
-      return root;
+    options: {
+      ...(options.router || {}),
+      routes,
+      getRoot() {
+        return root;
+      },
     },
   });
 

@@ -5,7 +5,9 @@ import { initService } from "./initService.js";
 \*========================*/
 
 const appContext = {
-  getService,
+  makeGetService() {
+    return getService;
+  },
 };
 
 const mockServices = {
@@ -44,7 +46,7 @@ test("lifecycle hooks", () => {
     return { works: true };
   }
 
-  const result = initService(appContext, Service, debug);
+  const result = initService(appContext, Service, debug, { name: "test" });
 
   expect(result.exports).toStrictEqual({ works: true });
 
@@ -87,9 +89,9 @@ test("throws if fn doesn't return an object", () => {
     return { thisIsNormal: true };
   }
 
-  expect(() => initService(appContext, NullService, debug)).toThrow();
-  expect(() => initService(appContext, StringService, debug)).toThrow();
-  expect(() => initService(appContext, FunctionService, debug)).toThrow();
+  expect(() => initService(appContext, NullService, debug, { name: "test" })).toThrow();
+  expect(() => initService(appContext, StringService, debug, { name: "test" })).toThrow();
+  expect(() => initService(appContext, FunctionService, debug, { name: "test" })).toThrow();
 
-  expect(() => initService(appContext, RegularService, debug)).not.toThrow();
+  expect(() => initService(appContext, RegularService, debug, { name: "test" })).not.toThrow();
 });
