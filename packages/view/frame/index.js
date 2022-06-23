@@ -4,7 +4,29 @@
 
 // views-index.js is generated from the views in the project
 import views from "./views-index.js";
-import { h } from "@woofjs/client";
+import { h, makeState, mergeStates } from "@woofjs/client";
+import { makeDebug } from "@woofjs/client/helpers";
+
+const root = document.querySelector("#app");
+
+function makeMockRouter() {
+  return {
+    $path: makeState("/test").map(),
+    $route: makeState("/test").map(),
+    $params: makeState({}).map(),
+    $query: makeState({}),
+
+    back() {},
+    forward() {},
+    navigate() {},
+  };
+}
+
+function makeMockPage() {
+  return {
+    $title: makeState("Page Title"),
+  };
+}
 
 const collections = [];
 
@@ -79,11 +101,58 @@ for (const view of views) {
   collections.push(formatCollection(view));
 }
 
+let mounted;
+
 const api = {
   getCollections() {
     return collections;
   },
-  setActiveView(id) {},
+  setActiveView(id) {
+    if (mounted) {
+      mounted.disconnect();
+      mounted = null;
+    }
+
+    if (id != null) {
+      let found;
+
+      outer: for (const collection of collections) {
+        for (const view of collection.views) {
+          if (view.id === id) {
+            found = view;
+            break outer;
+          }
+        }
+      }
+
+      if (!found) {
+        throw new Error(`View not found.`);
+      }
+
+      const services = {
+        "@app": { makeGetService },
+        "@debug": makeDebug(),
+        "@router": makeMockRouter(),
+        "@page": makeMockPage(),
+        ...found.services,
+      };
+
+      function makeGetService() {
+        return (name) => {
+          if (services[name]) {
+            return services[name];
+          }
+
+          throw new Error(
+            `Service '${name}' was requested but hasn't been defined in this view.`
+          );
+        };
+      }
+
+      mounted = found.template.init({ makeGetService });
+      mounted.connect(root);
+    }
+  },
 };
 
 console.log(collections);

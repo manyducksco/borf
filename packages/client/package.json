@@ -31,6 +31,10 @@
     "./testing": {
       "require": "./dist/woof.client.testing.c.js",
       "import": "./dist/woof.client.testing.m.js"
+    },
+    "./helpers": {
+      "require": "./dist/woof.client.helpers.c.js",
+      "import": "./dist/woof.client.helpers.m.js"
     }
   },
   "devDependencies": {

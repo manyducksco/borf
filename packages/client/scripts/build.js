@@ -20,16 +20,20 @@ if (process.argv.includes("--watch")) {
   };
 }
 
+const defaultOptions = {
+  bundle: true,
+  watch,
+  minify,
+  target,
+  allowOverwrite: true,
+  sourcemap: true,
+  platform: "browser",
+};
+
 esbuild
   .build({
+    ...defaultOptions,
     entryPoints: ["src/index.js"],
-    bundle: true,
-    watch,
-    minify,
-    target,
-    allowOverwrite: true,
-    sourcemap: true,
-    platform: "browser",
     format: "esm",
     outfile: "dist/woof.client.m.js",
   })
@@ -40,14 +44,8 @@ esbuild
 
 esbuild
   .build({
+    ...defaultOptions,
     entryPoints: ["src/index.js"],
-    bundle: true,
-    watch,
-    minify,
-    target,
-    allowOverwrite: true,
-    sourcemap: true,
-    platform: "browser",
     format: "cjs",
     outfile: "dist/woof.client.c.js",
   })
@@ -58,14 +56,8 @@ esbuild
 
 esbuild
   .build({
+    ...defaultOptions,
     entryPoints: ["src/testing/index.js"],
-    bundle: true,
-    watch,
-    minify,
-    target,
-    allowOverwrite: true,
-    sourcemap: true,
-    platform: "browser",
     format: "esm",
     outfile: "dist/woof.client.testing.m.js",
   })
@@ -76,18 +68,36 @@ esbuild
 
 esbuild
   .build({
+    ...defaultOptions,
     entryPoints: ["src/testing/index.js"],
-    bundle: true,
-    watch,
-    minify,
-    target,
-    allowOverwrite: true,
-    sourcemap: true,
-    platform: "browser",
     format: "cjs",
     outfile: "dist/woof.client.testing.c.js",
   })
   .then(() => {
     console.log("Created testing bundle (common JS)");
+  })
+  .catch(() => process.exit(1));
+
+esbuild
+  .build({
+    ...defaultOptions,
+    entryPoints: ["src/helpers/index.js"],
+    format: "esm",
+    outfile: "dist/woof.client.helpers.m.js",
+  })
+  .then(() => {
+    console.log("Created helpers bundle (module)");
+  })
+  .catch(() => process.exit(1));
+
+esbuild
+  .build({
+    ...defaultOptions,
+    entryPoints: ["src/helpers/index.js"],
+    format: "cjs",
+    outfile: "dist/woof.client.helpers.c.js",
+  })
+  .then(() => {
+    console.log("Created helpers bundle (common JS)");
   })
   .catch(() => process.exit(1));
