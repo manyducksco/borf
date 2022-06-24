@@ -65,7 +65,7 @@ module.exports = async function buildViews({
   await fs.writeFile(outputPath, index);
 
   const writtenFiles = await build({
-    client: path.join(bundleSrcRoot, "index.js"),
+    client: path.join(bundleSrcRoot, "views.js"),
     output: bundleRoot,
   });
 

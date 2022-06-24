@@ -1,4 +1,4 @@
-import "./app.css";
+import "./runner.css";
 
 import { makeApp } from "@woofjs/client";
 
