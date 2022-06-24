@@ -15,7 +15,6 @@
   "license": "MIT",
   "dependencies": {
     "@ratwizard/cli": "^0.17.0",
-    "@woofjs/state": "^0.3.0",
     "chokidar": "^3.5.3",
     "esbuild": "^0.14.47",
     "express": "^4.18.1",

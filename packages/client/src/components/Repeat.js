@@ -4,8 +4,8 @@ import { isArray } from "../helpers/typeChecking.js";
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
  */
-export function Each($attrs, self) {
-  self.debug.name = "woof:v:each";
+export function Repeat($attrs, self) {
+  self.debug.name = "woof:repeat";
 
   const app = self.getService("@app");
   const $value = $attrs.map("value");
@@ -19,7 +19,7 @@ export function Each($attrs, self) {
   function update(newValues) {
     if (!isArray(newValues)) {
       throw new TypeError(
-        `Each expects an array or a state containing an array. Got: ${newValues} (${typeof newValues})`
+        `Repeat expects an array or a state containing an array. Got: ${newValues} (${typeof newValues})`
       );
     }
 

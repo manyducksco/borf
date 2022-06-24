@@ -1,5 +1,5 @@
-import { makeState } from "@woofjs/state";
-import { isString } from "../helpers/typeChecking";
+import { makeState } from "../state/makeState.js";
+import { isString } from "../helpers/typeChecking.js";
 
 export default function PageService(self) {
   self.debug.name = "woof:@page";

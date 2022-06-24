@@ -52,9 +52,9 @@ function formatCollection(data) {
   }
 
   for (const { fn, name } of fns) {
-    const attributes = [];
     const services = {};
-    const actions = [];
+    const attributes = [];
+    const actions = { $log: makeState([]), fns: [] };
     let template;
 
     const helpers = {
@@ -77,13 +77,20 @@ function formatCollection(data) {
           );
         }
       },
-      attribute(name, options) {
-        // attributes.push([{
-        //   name,
-        //   options
-        // }])
+      attribute(value, options = {}) {
+        return {
+          isViewAttribute: true,
+          value,
+          options,
+        };
       },
-      action(name) {},
+      action(name, callback) {
+        return {
+          isViewAction: true,
+          name,
+          callback,
+        };
+      },
       render(component, attrs, children) {
         template = h(component, attrs, children);
       },
@@ -93,6 +100,39 @@ function formatCollection(data) {
 
     if (result && result.isTemplate) {
       template = result;
+    }
+
+    // Process attributes and actions.
+    for (const name in template.attrs) {
+      const attr = template.attrs[name];
+
+      if (attr.isViewAttribute) {
+        const $value = attr.value.isState ? attr.value : makeState(attr.value);
+
+        attributes.push({
+          name: attr.options?.name || name,
+          description: attr.options?.description,
+          key: name,
+          $value,
+        });
+
+        // Replace attribute with the state.
+        template.attrs[name] = $value;
+      }
+
+      if (attr.isViewAction) {
+        actions.fns.push((...args) => {
+          // Push to action log.
+          actions.$log.set((log) => {
+            log.push({ timestamp: new Date(), name: attr.name });
+          });
+
+          // Fire callback and return its return value to the caller.
+          if (attr.callback) {
+            return attr.callback(...args);
+          }
+        });
+      }
     }
 
     if (!template) {
@@ -172,8 +212,6 @@ const api = {
 
       function makeGetService() {
         return (name) => {
-          console.log("requesting service", name);
-
           if (services[name]) {
             return services[name].exports;
           }

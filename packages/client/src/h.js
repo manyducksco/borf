@@ -1,11 +1,10 @@
-import { isState } from "@woofjs/state";
-import { isFunction, isObject, isString, isNumber, isTemplate, isComponent } from "./helpers/typeChecking.js";
+import { isFunction, isObject, isString, isNumber, isTemplate, isComponent, isState } from "./helpers/typeChecking.js";
 import { flatMap } from "./helpers/flatMap.js";
 import { initComponent } from "./helpers/initComponent.js";
 
-import { Each } from "./components/Each.js";
 import { Text } from "./components/Text.js";
 import { Watch } from "./components/Watch.js";
+import { Repeat } from "./components/Repeat.js";
 import { Element } from "./components/Element.js";
 import { Fragment } from "./components/Fragment.js";
 
@@ -119,14 +118,14 @@ export function unless($condition, element) {
 }
 
 /**
- * Displays a component once for each item in `$values`.
+ * Repeats a component once for each item in `$values`.
  *
  * @param $values - An array or state containing an array.
- * @param component - Component to display for each item.
+ * @param component - Component to repeat for each item.
  * @param getKey - Takes an array item and returns a unique key. If not provided then the array index will be used.
  */
-export function each($values, component, getKey = null) {
-  return h(Each, { value: $values, component, getKey });
+export function repeat($values, component, getKey = null) {
+  return h(Repeat, { value: $values, component, getKey });
 }
 
 /**

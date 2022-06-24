@@ -1,4 +1,4 @@
-import { isFunction } from "./utils";
+import { isFunction } from "../helpers/typeChecking.js";
 
 /**
  * Gets a (nested) property of an object.

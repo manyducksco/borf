@@ -1,15 +1,9 @@
-# @woofjs/state
-
-> These functions are also exported from `@woofjs/client` and `@woofjs/server`. Only use this package if you need a standalone version. Consider one of those two packages if you're making an app.
-
-```
-$ npm i --dev @woofjs/state
-```
+# States
 
 ## The Basics
 
 ```js
-import { makeState } from "@woofjs/state";
+import { makeState } from "@woofjs/client";
 
 const $count = makeState(5);
 ```
@@ -53,42 +47,7 @@ _Mapped states can themselves be mapped._ Mapped states support everything a nor
 
 ## Click Counter Example
 
-Everyone loves a good click counter. Useless in real life but great for showing how a state library works.
-
-### makeState + HTML
-
-A basic example with `makeState` and typical browser stuff.
-
-```html
-<main>
-  <p>Clicked <span id="label">0</span> time(s).</p>
-  <br />
-  <button id="increment">+1</button>
-</main>
-
-<script type="module">
-  import { makeState } from "https://cdn.skypack.dev/@woofjs/state";
-
-  const span = document.getElementById("label");
-  const button = document.getElementById("increment");
-
-  const $count = makeState(0);
-
-  $count.watch((value) => {
-    span.textContent = value.toString();
-  });
-
-  button.addEventListener("click", () => {
-    $count.set((current) => current + 1);
-  });
-</script>
-```
-
-> NOTE: If you paste the above snippet into an HTML file and open it in your browser, it should just work. Here it is on CodePen: https://codepen.io/schwingbat/pen/NWwpvLy
-
-### Woof + JSX
-
-A state is useful on its own, but its day job is to be the backbone of reactivity in a framework called Woof. This is what the same example looks like in Woof.
+Everyone loves a good click counter. Useless in real life but great for showing how state handling works.
 
 ```js
 import { makeState } from "@woofjs/client";
@@ -152,8 +111,6 @@ Now our label reads:
 - Clicked 3 times.
 - Clicked 4 times.
 - ...
-
-[Read more about Woof...](../../README.md)
 
 ## Selectors
 

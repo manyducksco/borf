@@ -1,4 +1,4 @@
-import { each, bind, makeState, mergeStates } from "@woofjs/client";
+import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
 export default function CRUD($attrs, self) {
   self.debug.name = "7GUIs:CRUD";
@@ -102,7 +102,7 @@ export default function CRUD($attrs, self) {
               $selectedId.set(Number(e.target.value));
             }}
           >
-            {each(
+            {repeat(
               $filteredPeople,
               ($attrs, self) => {
                 const $person = $attrs.map("value");

@@ -1,6 +1,7 @@
 import produce from "immer";
 import { getProperty } from "./getProperty.js";
-import { isFunction, isObject, isString, deepEqual } from "./utils.js";
+import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
+import { deepEqual } from "../helpers/deepEqual.js";
 
 /**
  * Creates a state container in the form of a function.

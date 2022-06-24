@@ -1,5 +1,5 @@
-import { isState, makeState } from "@woofjs/state";
-import { isTemplate, isDOM, isFunction, isComponent } from "./typeChecking.js";
+import { makeState } from "../state/makeState.js";
+import { isTemplate, isDOM, isFunction, isComponent, isState } from "./typeChecking.js";
 
 /**
  * Initializes a component function into a component instance that the framework can work with.

@@ -45,13 +45,9 @@ user.set((current) => {
   }}
 >
   <ul>
-    {$.each(
-      user.$errors,
-      (err) => err.id,
-      (err) => (
-        <li>{err.message}</li>
-      )
-    )}
+    {repeat(user.$errors, (err) => (
+      <li>{err.message}</li>
+    ))}
   </ul>
   <input type="text" value={user.bind("name.first")} invalid={user.map(() => !user.isValid("name.first"))} />
   <input type="text" value={user.bind("name.last")} invalid={user.map(() => !user.isValid("name.last"))} />

@@ -1,6 +1,7 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
-import { makeState } from "@woofjs/state";
+
+import { makeState } from "../state/makeState.js";
 import { matchRoute, parseRoute } from "../helpers/routing.js";
 import { isObject } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";

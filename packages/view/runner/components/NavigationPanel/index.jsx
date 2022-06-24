@@ -1,5 +1,5 @@
 import styles from "./index.module.css";
-import { each, unless, when } from "@woofjs/client";
+import { repeat, unless, when } from "@woofjs/client";
 
 /**
  * Displays a tree of all views and links to navigate to each.
@@ -14,7 +14,7 @@ export default ($attrs, self) => {
   return (
     <div class={styles.panel}>
       <ul>
-        {each($collections, ($attrs, self) => {
+        {repeat($collections, ($attrs, self) => {
           const $collection = $attrs.map("value");
           const $views = $collection.map("views");
           const $hasManyViews = $views.map(
@@ -30,17 +30,19 @@ export default ($attrs, self) => {
               {when($hasManyViews, () => {
                 return (
                   <div>
-                    <button className={styles.expander}>
+                    <button className={[styles.item, styles.expander]}>
                       {$collection.map("path")}
                     </button>
                     <div class={styles.expandable}>
                       <ul>
-                        {each($views, ($attrs, self) => {
+                        {repeat($views, ($attrs, self) => {
                           const $view = $attrs.map("value");
 
                           return (
-                            <li style={{ marginLeft: "0.5rem" }}>
-                              <a href={$view.map("path")}>
+                            <li
+                              style={{ marginLeft: "1rem", listStyle: "none" }}
+                            >
+                              <a class={styles.item} href={$view.map("path")}>
                                 {$view.map("name")}
                               </a>
                             </li>
@@ -54,7 +56,7 @@ export default ($attrs, self) => {
 
               {unless($hasManyViews, () => {
                 return (
-                  <a href={$collection.map("path")}>
+                  <a class={styles.item} href={$collection.map("path")}>
                     {$collection.map("path")}
                   </a>
                 );

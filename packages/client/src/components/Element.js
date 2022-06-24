@@ -1,5 +1,4 @@
-import { isState } from "@woofjs/state";
-import { isArray, isObject, isString, isNumber, isFunction, isBinding } from "../helpers/typeChecking.js";
+import { isArray, isObject, isString, isNumber, isFunction, isBinding, isState } from "../helpers/typeChecking.js";
 
 /**
  * Implements logic for HTML elements created with `v()`.
@@ -14,6 +13,12 @@ export function Element($attrs, self) {
 
   if (attrs.$ref) {
     attrs.$ref.set(node);
+  }
+
+  // Alias React-style 'className' attributes to 'class'.
+  if (attrs.className) {
+    attrs.class = attrs.className;
+    delete attrs.className;
   }
 
   let watchers = [];

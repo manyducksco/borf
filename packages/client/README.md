@@ -94,6 +94,8 @@ function Timer($attrs, self) {
 };
 ```
 
+[Read more about states](./src/state/README.md)
+
 ## Components
 
 Components are reusable modules with their own markup and logic. You can define a component once and reuse it as many times as you need. Components can take inputs called `attributes` that can be accessed inside the component to change how they behave or what they display.
@@ -303,9 +305,9 @@ function Example($attrs, self) {
 });
 ```
 
-#### Looping (`each`)
+#### Looping (`repeat`)
 
-> `each($list, component)`
+> `repeat($list, component)`
 
 Renders a component once for each item in an array. If the array is stored inside a $state the list will update whenever that $state is updated.
 
@@ -317,7 +319,7 @@ function Example($attrs, self) {
     "ul",
 
     // Render once for each item in $list. Updates when $list changes.
-    each($list, ($attrs, self) => {
+    repeat($list, ($attrs, self) => {
       const $value = $attrs.map((attrs) => attrs.value);
 
       // Return an <li> that contains the current value of this $list item.
@@ -327,13 +329,13 @@ function Example($attrs, self) {
 }
 ```
 
-The `each` function uses keys to identify which items have been changed, added or removed. By default, `each` uses the value itself as a key. You must specify a key yourself if your array might have two or more identical values, or if you have an array of objects with unique IDs.
+The `repeat` function uses keys to identify which items have been changed, added or removed. By default, `repeat` uses the value itself as a key. You must specify a key yourself if your array might have two or more identical values. If you're looping through an array of objects with unique IDs, you will usually want to use the object's ID as the key.
 
 If you'd like to specify the key you can pass a function as the third argument:
 
 ```js
 // Use the list item's `id` field as the key.
-each($list, Component, (item, index) => item.id);
+repeat($list, Component, (item, index) => item.id);
 ```
 
 #### watch

@@ -1,5 +1,6 @@
-import { makeState } from "@woofjs/state";
 import ColorHash from "color-hash";
+
+import { makeState } from "./state/makeState.js";
 
 /**
  * Creates a factory for channels; prefixed console objects that only

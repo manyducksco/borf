@@ -103,7 +103,7 @@ The code above defines these routes:
 All routes are defined at the top level of the app. This way one global $route state could be provided by the @router service. Only one route can match at a time, and routes are always defined in only one place.
 
 ```js
-import { makeState, v, when, each, bind } from "@woofjs/client";
+import { makeState, v, when, repeat, bind } from "@woofjs/client";
 
 // Component is called with `self` as this, so you can do this?
 function Component($attrs) {
@@ -123,7 +123,7 @@ function Component($attrs) {
   return when($condition, v("h1", "Yo!"));
 
   return v("div", [
-    each($items, function Item($attrs) {
+    repeat($items, function Item($attrs) {
       return v("h1", $attrs.map("value"));
     }),
   ]);
@@ -248,7 +248,7 @@ The `v` function is used in components to render DOM elements and other componen
 ```js
 function Component() {
   return v("div", [
-    each($items, function Item($attrs) {
+    repeat($items, function Item($attrs) {
       return v("h1", $attrs.map("value"));
     }),
   ]);

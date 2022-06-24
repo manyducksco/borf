@@ -1,2 +1,11 @@
 .panel {
+  padding: 0.5rem;
+}
+
+.attrsList {
+  list-style: none;
+}
+
+.attrsList > li {
+  margin-bottom: 0.5rem;
 }

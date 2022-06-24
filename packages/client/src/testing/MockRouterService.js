@@ -1,4 +1,4 @@
-import { makeState } from "@woofjs/state";
+import { makeState } from "../state/makeState.js";
 
 export default function MockRouterService() {
   const $path = makeState("/test");

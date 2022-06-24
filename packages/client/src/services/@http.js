@@ -1,4 +1,4 @@
-import { isFunction, isObject, isString } from "../helpers/typeChecking";
+import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
 
 export default function HTTPService({ debug, options }) {
   debug.name = "woof:@http";

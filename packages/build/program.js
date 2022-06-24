@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { program, println } = require("@ratwizard/cli");
-const { makeState } = require("@woofjs/state");
+const EventEmitter = require("events");
 const path = require("path");
 const fs = require("fs-extra");
 const chokidar = require("chokidar");
@@ -155,7 +155,8 @@ async function watchClient(options) {
   fs.emptyDirSync(buildDir);
   fs.emptyDirSync(publicDir);
 
-  const $bundleId = makeState(0);
+  let bundleId = 0;
+  const bundleEmitter = new EventEmitter();
 
   // Create app bundle
   const clientBundle = await buildClient(config).buildIncremental();
@@ -172,7 +173,9 @@ async function watchClient(options) {
   clientWatcher.on("all", async () => {
     const start = Date.now();
     await clientBundle.rebuild();
-    $bundleId.set((current) => current + 1);
+
+    bundleEmitter.emit("bundle", bundleId++);
+
     println(
       `<cyan>CLIENT</cyan> rebuilt in <green>${Date.now() - start}ms</green>`
     );
@@ -214,12 +217,14 @@ async function watchClient(options) {
     // Tell the client to retry every 10 seconds if connectivity is lost
     res.write("retry: 10000\n\n");
 
-    const unwatch = $bundleId.watch((value) => {
-      res.write(`data: ${value}\n\n`);
-    });
+    const update = (id) => {
+      res.write(`data: ${id}\n\n`);
+    };
+
+    bundleEmitter.on("bundle", update);
 
     res.on("close", () => {
-      unwatch();
+      bundleEmitter.off("bundle", update);
       res.end();
     });
   });

@@ -1,4 +1,4 @@
-import { makeApp, makeState, mergeStates, h, when, unless, each, watch, bind } from "./index.js";
+import { makeApp, makeState, mergeStates, h, when, unless, repeat, watch, bind } from "./index.js";
 
 test("exports expected things", () => {
   expect(typeof makeApp).toBe("function");
@@ -7,7 +7,7 @@ test("exports expected things", () => {
   expect(typeof h).toBe("function");
   expect(typeof when).toBe("function");
   expect(typeof unless).toBe("function");
-  expect(typeof each).toBe("function");
+  expect(typeof repeat).toBe("function");
   expect(typeof watch).toBe("function");
   expect(typeof bind).toBe("function");
 });

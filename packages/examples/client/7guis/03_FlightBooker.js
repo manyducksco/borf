@@ -1,4 +1,4 @@
-import { each, bind, makeState, mergeStates } from "@woofjs/client";
+import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
 const flightTypes = ["one-way flight", "return flight"];
 
@@ -62,7 +62,7 @@ export default function FlightBooker($attrs, self) {
               $flightType.set(e.target.value);
             }}
           >
-            {each(
+            {repeat(
               flightTypes,
               ($attrs, self) => {
                 const $value = $attrs.map("value");

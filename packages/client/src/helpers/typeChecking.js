@@ -17,3 +17,5 @@ export const isComponent = (value) => value && value.isComponent === true;
 export const isTemplate = (value) => value && value.isTemplate === true;
 
 export const isService = (value) => value && value.isService === true;
+
+export const isState = (value) => value && value.isState === true;

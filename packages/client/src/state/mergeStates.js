@@ -1,6 +1,7 @@
 import { getProperty } from "./getProperty.js";
 import { mapState } from "./makeState.js";
-import { isString, isFunction, isObject, deepEqual } from "./utils.js";
+import { isString, isFunction, isObject } from "../helpers/typeChecking.js";
+import { deepEqual } from "../helpers/deepEqual.js";
 
 export function mergeStates(...args) {
   const merge = args.pop();

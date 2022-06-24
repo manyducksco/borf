@@ -1,7 +1,7 @@
-import { isState, makeState } from "@woofjs/state";
 import { h } from "../h.js";
+import { makeState } from "../state/makeState.js";
 import { initComponent } from "./initComponent.js";
-import { isComponent } from "./typeChecking.js";
+import { isComponent, isState } from "./typeChecking.js";
 
 /*========================*\
 ||         Utils          ||
