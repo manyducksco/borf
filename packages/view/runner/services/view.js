@@ -14,13 +14,9 @@ export default (self) => {
     (collections, params) => {
       let matched;
 
-      const wildcard = params.wildcard.startsWith("/")
-        ? params.wildcard.slice(1)
-        : params.wildcard;
-
       outer: for (const collection of collections) {
         for (const view of collection.views) {
-          if (view.path === wildcard) {
+          if (view.path === params.wildcard) {
             matched = view;
             break outer;
           }

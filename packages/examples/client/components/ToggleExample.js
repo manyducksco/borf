@@ -4,7 +4,7 @@ import logLifecycle from "../utils/logLifecycle.js";
 /**
  * Displays a div that toggles a class when clicked and a label based on the current status.
  */
-function ToggleExample($attrs, self) {
+export default ($attrs, self) => {
   self.debug.name = "ToggleExample";
 
   logLifecycle(self);
@@ -28,6 +28,4 @@ function ToggleExample($attrs, self) {
       </div>
     </div>
   );
-}
-
-export default ToggleExample;
+};

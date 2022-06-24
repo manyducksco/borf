@@ -2,8 +2,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const esbuild = require("esbuild");
 const mustache = require("mustache");
-
-const postCSSPlugin = require("esbuild-plugin-postcss2");
+const stylePlugin = require("esbuild-style-plugin");
 
 module.exports = function buildClient(config) {
   const buildDir = config.outputPath;
@@ -32,10 +31,9 @@ module.exports = function buildClient(config) {
       ".webp": "file",
     },
     plugins: [
-      postCSSPlugin.default({
-        plugins: config.postcss?.plugins || [],
-        modules: {
-          generateScopedName: "[folder]_[local]_[contenthash:8]",
+      stylePlugin({
+        postcss: {
+          plugins: config.postcss?.plugins || [],
         },
       }),
     ],

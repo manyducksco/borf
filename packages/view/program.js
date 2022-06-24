@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { program, println } = require("@ratwizard/cli");
+const { program, println, Command } = require("@ratwizard/cli");
 const path = require("path");
 const fs = require("fs-extra");
 const chokidar = require("chokidar");
@@ -9,24 +9,51 @@ const buildViews = require("./scripts/build-views");
 
 program
   .command("start", {
-    description: "starts the server",
-    action: async ({ options }) => {
+    description: "starts an HTTP server for views",
+    examples: [
+      "{*} ./client",
+      "{*} ./client --include-css client/styles/global.css,client/styles/ui.css",
+    ],
+    options: {
+      "--include-css <paths>": {
+        description: "path to CSS files to include, comma separated",
+        key: "includeCSS",
+      },
+    },
+    args: [
+      {
+        name: "path",
+        description: "root directory of your app",
+      },
+    ],
+    action: async ({ args, options }) => {
       await buildViews({
-        clientRoot: process.cwd(),
+        clientRoot: path.resolve(args.path),
         buildRoot: path.join(process.cwd(), "temp", "views"),
+        includeCSS: options.includeCSS
+          ? options.includeCSS.split(",").filter((x) => x.trim() !== "")
+          : [],
       });
 
       await serve();
     },
   })
   .command("build", {
-    description: "",
+    description:
+      "builds views into a folder full of static files you can host anywhere",
+    examples: ["{*} build ./client"],
     options: {
-      "-o, --output <value>": {
+      "-o, --output <path>": {
         description: "path to output folder",
         required: true,
       },
     },
+    args: [
+      {
+        name: "path",
+        description: "root directory of your app",
+      },
+    ],
     action: async ({ options }) => {
       console.log("built", options);
     },

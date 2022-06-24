@@ -9,11 +9,39 @@ const { build } = require("@woofjs/build");
 const isIgnored = /node_modules|^\./;
 const isView = /\.view\.[jt]sx?$/;
 
-module.exports = async function buildViews({ clientRoot, buildRoot }) {
+module.exports = async function buildViews({
+  clientRoot,
+  buildRoot,
+  includeCSS,
+}) {
+  const frameRoot = path.join(__dirname, "../frame");
+  const bundleSrcRoot = path.join(buildRoot, "src");
+  const bundleRoot = path.join(buildRoot, "bundle");
+
+  // Make sure build directory is empty and subdirectories exist.
+  await fs.emptyDir(buildRoot);
+  await fs.ensureDir(bundleSrcRoot);
+  await fs.ensureDir(bundleRoot);
+
   const views = findViews(clientRoot);
 
   let index = "";
   let nextId = 0;
+
+  // Hack CSS imports into frame index so they get included in the build.
+  if (includeCSS && includeCSS.length > 0) {
+    for (const file of includeCSS) {
+      const fileName = path.basename(file);
+      const absolutePath = path.resolve(file);
+      const newPath = path.join(bundleSrcRoot, fileName);
+
+      await fs.copyFile(absolutePath, newPath);
+
+      index += `import "./${fileName}";\n`;
+    }
+  }
+
+  console.log(index);
 
   // Add imports
   for (const view of views) {
@@ -29,24 +57,19 @@ module.exports = async function buildViews({ clientRoot, buildRoot }) {
 
   index += "];\n";
 
-  const filesRoot = path.join(__dirname, "../frame");
-  const srcRoot = path.join(buildRoot, "src");
-
-  // Make sure build directory is empty
-  await fs.emptyDir(buildRoot);
-
   // Copy /files to /src
-  await fs.copy(filesRoot, srcRoot);
+  await fs.copy(frameRoot, bundleSrcRoot);
 
   // Write views index file
-  const outputPath = path.join(srcRoot, "views-index.js");
+  const outputPath = path.join(bundleSrcRoot, "views-index.js");
   await fs.writeFile(outputPath, index);
 
-  const bundleRoot = path.join(buildRoot, "bundle");
+  const writtenFiles = await build({
+    client: path.join(bundleSrcRoot, "index.js"),
+    output: bundleRoot,
+  });
 
-  await build({ client: path.join(srcRoot, "index.js"), output: bundleRoot });
-
-  console.log(views, index);
+  console.log(writtenFiles);
 };
 
 function findViews(folder, root = null) {

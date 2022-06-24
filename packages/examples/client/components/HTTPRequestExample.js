@@ -1,7 +1,7 @@
 import { makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-const HTTPRequestExample = ($attrs, self) => {
+export default ($attrs, self) => {
   self.debug.name = "HTTPRequestExample";
 
   logLifecycle(self);
@@ -48,5 +48,3 @@ const HTTPRequestExample = ($attrs, self) => {
     </div>
   );
 };
-
-export default HTTPRequestExample;

@@ -110,11 +110,11 @@ export function matchRoute(routes, path, options = {}) {
 
     for (const frag of matched) {
       if (frag.type === FragTypes.Param) {
-        params[frag.name] = frag.value;
+        params[frag.name] = decodeURIComponent(frag.value);
       }
 
       if (frag.type === FragTypes.Wildcard) {
-        params.wildcard = "/" + frag.value;
+        params.wildcard = "/" + decodeURIComponent(frag.value);
       }
     }
 

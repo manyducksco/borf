@@ -1,4 +1,5 @@
 import { initComponent } from "../helpers/initComponent.js";
+import { isArray } from "../helpers/typeChecking.js";
 
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
@@ -16,6 +17,12 @@ export function Each($attrs, self) {
   let connectedItems = [];
 
   function update(newValues) {
+    if (!isArray(newValues)) {
+      throw new TypeError(
+        `Each expects an array or a state containing an array. Got: ${newValues} (${typeof newValues})`
+      );
+    }
+
     // Disconnect all if updated with empty values.
     if (newValues == null) {
       for (const item of connectedItems) {

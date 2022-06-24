@@ -1,11 +1,10 @@
 /**
  * This file runs inside the view iframe. It exposes methods on the window so the main runner app can control it.
  */
-
 // views-index.js is generated from the views in the project
 import views from "./views-index.js";
 import { h, makeState, mergeStates } from "@woofjs/client";
-import { makeDebug } from "@woofjs/client/helpers";
+import { makeDebug, initService } from "@woofjs/client/helpers";
 
 const root = document.querySelector("#app");
 
@@ -34,7 +33,7 @@ let nextId = 0;
 
 function formatCollection(data) {
   const collection = {
-    path: data.relativePath.replace(/\.view\.[jt]sx?$/, ""),
+    path: "/" + data.relativePath.replace(/\.view\.[jt]sx?$/, ""),
     views: [],
   };
 
@@ -61,8 +60,29 @@ function formatCollection(data) {
     const helpers = {
       name: sentenceCase(name),
       description: null,
-      service(name, service, options) {},
-      attribute(name, options) {},
+      service(name, service, config = {}) {
+        if (typeof service === "function") {
+          services[name] = {
+            fn: service,
+            options: config.options || {},
+          };
+        } else if (typeof service === "object" && !Array.isArray(service)) {
+          services[name] = {
+            fn: () => service,
+            options: {},
+          };
+        } else {
+          throw new TypeError(
+            `Expected service '${name}' to be a function or object. Got: ${typeof service}`
+          );
+        }
+      },
+      attribute(name, options) {
+        // attributes.push([{
+        //   name,
+        //   options
+        // }])
+      },
       action(name) {},
       render(component, attrs, children) {
         template = h(component, attrs, children);
@@ -129,18 +149,33 @@ const api = {
         throw new Error(`View not found.`);
       }
 
+      const debug = makeDebug();
+      const appContext = { makeGetService };
+
       const services = {
-        "@app": { makeGetService },
-        "@debug": makeDebug(),
-        "@router": makeMockRouter(),
-        "@page": makeMockPage(),
-        ...found.services,
+        "@app": { exports: appContext },
+        "@debug": { exports: debug },
+        "@router": { exports: makeMockRouter() },
+        "@page": { exports: makeMockPage() },
       };
+
+      for (const name in found.services) {
+        const service = found.services[name];
+
+        services[name] = initService(
+          { makeGetService },
+          service.fn,
+          debug.makeChannel(`service:${name}`),
+          { options: service.options }
+        );
+      }
 
       function makeGetService() {
         return (name) => {
+          console.log("requesting service", name);
+
           if (services[name]) {
-            return services[name];
+            return services[name].exports;
           }
 
           throw new Error(
@@ -150,7 +185,20 @@ const api = {
       }
 
       mounted = found.template.init({ makeGetService });
+
+      for (const name in services) {
+        if (services[name].beforeConnect) {
+          services[name].beforeConnect();
+        }
+      }
+
       mounted.connect(root);
+
+      for (const name in services) {
+        if (services[name].afterConnect) {
+          services[name].afterConnect();
+        }
+      }
     }
   },
 };

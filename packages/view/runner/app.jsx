@@ -1,3 +1,5 @@
+import "./app.css";
+
 import { makeApp } from "@woofjs/client";
 
 import AppLayout from "./components/AppLayout";

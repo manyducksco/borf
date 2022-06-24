@@ -14,7 +14,16 @@ export default ($attrs, self) => {
 
   return (
     <div class={styles.app}>
-      <iframe $ref={$frameRef} src="/frame.html"></iframe>
+      <header class={styles.header}>HEADER</header>
+      <main class={styles.main}>
+        <Sidebar id="nav">
+          <NavigationPanel />
+        </Sidebar>
+        <iframe class={styles.iframe} $ref={$frameRef} src="/frame.html" />
+        <Sidebar id="attrs">
+          <AttributesPanel />
+        </Sidebar>
+      </main>
     </div>
   );
 };

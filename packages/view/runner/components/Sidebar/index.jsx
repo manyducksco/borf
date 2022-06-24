@@ -6,5 +6,5 @@ import styles from "./index.module.css";
 export default ($attrs, self) => {
   self.debug.name = "Sidebar";
 
-  return <div class={styles.sidebar}>SIDEBAR</div>;
+  return <div class={styles.sidebar}>{self.children}</div>;
 };
