@@ -84,10 +84,10 @@ function formatCollection(data) {
           options,
         };
       },
-      action(name, callback) {
+      action(message, callback) {
         return {
           isViewAction: true,
-          name,
+          message,
           callback,
         };
       },
@@ -113,6 +113,7 @@ function formatCollection(data) {
           name: attr.options?.name || name,
           description: attr.options?.description,
           key: name,
+          input: attr.options?.input || autoInput($value.get()),
           $value,
         });
 
@@ -121,17 +122,24 @@ function formatCollection(data) {
       }
 
       if (attr.isViewAction) {
-        actions.fns.push((...args) => {
+        const handler = (...args) => {
           // Push to action log.
           actions.$log.set((log) => {
-            log.push({ timestamp: new Date(), name: attr.name });
+            log.push({
+              timestamp: new Date(),
+              message: attr.message,
+              name,
+            });
           });
 
           // Fire callback and return its return value to the caller.
           if (attr.callback) {
             return attr.callback(...args);
           }
-        });
+        };
+
+        actions.fns.push(handler);
+        template.attrs[name] = handler;
       }
     }
 
@@ -321,4 +329,25 @@ function joinPath(...parts) {
   }
 
   return url;
+}
+
+function autoInput(value) {
+  if (typeof value === "string") {
+    return { type: "text" };
+  }
+
+  if (typeof value === "number") {
+    return { type: "number" };
+  }
+
+  if (typeof value === "boolean") {
+    return { type: "toggle" };
+  }
+
+  if (typeof value === "object" && typeof value.getDate === "function") {
+    return { type: "date" };
+  }
+
+  // Objects, arrays, functions and other types have no default input.
+  return { type: "none" };
 }

@@ -60,7 +60,6 @@ And here is a hypothetical view file to test it:
 
 import { MyHeader } from "./MyHeader.jsx";
 
-import { h } from "@woofjs/client";
 import { makeMockHTTP } from "@woofjs/client/testing";
 
 /**
@@ -108,7 +107,7 @@ export default (view) => {
   // Provide mock versions of any services used by your component.
   view.service("@http", mockHTTP);
 
-  return h(MyHeader, {
+  view.render(MyHeader, {
     // You can expose attributes to make them editable in the browser with a dedicated UI.
     greeting: view.attribute("Bonjour", {
       // The attribute key is used as the name by default (`greeting` in this case), but you can provide your own:
@@ -174,6 +173,8 @@ view.attribute("value", {
 
 ### Number Input
 
+> TODO: Implement
+
 Takes a number.
 
 ```js
@@ -185,6 +186,8 @@ view.attribute(10, {
 ```
 
 ### Range Slider
+
+> TODO: Implement
 
 Choose a numeric value within a range.
 
@@ -228,6 +231,8 @@ view.attribute(10, {
 
 ### Radio
 
+> TODO: Implement
+
 Choose one from a list of predefined options using radio buttons. Works best when there are fewer options.
 
 ```js
@@ -240,6 +245,8 @@ view.attribute("primary", {
 ```
 
 ### Date
+
+> TODO: Implement
 
 Pick a date and time.
 

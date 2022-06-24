@@ -1,5 +1,7 @@
+import { repeat, proxyState } from "@woofjs/client";
+import dayjs from "dayjs";
+
 import styles from "./index.module.css";
-import { makeState, proxyState } from "@woofjs/client";
 
 /**
  * Displays action log.
@@ -19,7 +21,34 @@ export default ($attrs, self) => {
     }
   });
 
-  self.watchState($actionLog, self.debug.log);
+  return (
+    <div>
+      <header style={{ display: "flex", justifyContent: "space-between" }}>
+        <h2>Actions</h2>
+        <button
+          onclick={() => {
+            $actionLog.set([]);
+          }}
+        >
+          clear
+        </button>
+      </header>
 
-  return null;
+      <ul style={{ fontSize: "0.8rem" }}>
+        {repeat($actionLog, ($attrs, self) => {
+          const $name = $attrs.map("value.name");
+          const $message = $attrs.map("value.message");
+          const $timestamp = $attrs.map("value.timestamp", (ts) =>
+            dayjs(ts).format("HH:mm:ss")
+          );
+
+          return (
+            <li>
+              [{$name}] {$message} @{$timestamp}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 };

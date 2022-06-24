@@ -1,6 +1,10 @@
-import { bind, repeat, unless, when, proxyState } from "@woofjs/client";
+import { bind, repeat, unless, when, watch, proxyState } from "@woofjs/client";
 
 import styles from "./index.module.css";
+import InputText from "./InputText";
+import InputSelect from "./InputSelect";
+import InputToggle from "./InputToggle";
+import InputColor from "./InputColor";
 
 /**
  * Displays the current view's attributes and provides inputs for editing them.
@@ -35,6 +39,8 @@ export default ($attrs, self) => {
 
             // Update which state the proxy points to when the attribute changes.
             self.watchState($attribute, (attr) => {
+              self.debug.log(attr);
+
               $value.proxy(attr.$value);
             });
 
@@ -42,7 +48,23 @@ export default ($attrs, self) => {
               <li>
                 <h2>{$name}</h2>
                 {when($description, <p>{$description}</p>)}
-                <input type="text" value={bind($value)} />
+
+                {watch($attribute, ({ input }) => {
+                  switch (input.type) {
+                    case "text":
+                      return <InputText $value={$value} />;
+                    case "select":
+                      return (
+                        <InputSelect $value={$value} options={input.options} />
+                      );
+                    case "toggle":
+                      return <InputToggle $value={$value} />;
+                    case "color":
+                      return <InputColor $value={$value} />;
+                    default:
+                      throw new Error(`Unknown input type: ${input.type}`);
+                  }
+                })}
               </li>
             );
           })}

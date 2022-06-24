@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@woofjs/build": "^0.1.0",
-    "@woofjs/client": "^0.11.0"
+    "@woofjs/client": "^0.11.0",
+    "dayjs": "^1.11.3"
   }
 }
