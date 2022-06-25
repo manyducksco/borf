@@ -1,6 +1,8 @@
 import { repeat, mergeStates } from "@woofjs/client";
 
 export default ($attrs, self) => {
+  self.debug.name = "input:select";
+
   const $options = $attrs.map("options");
   const $value = $attrs.get("$value");
 
@@ -35,8 +37,17 @@ export default ($attrs, self) => {
       {repeat($keyed, ($attrs, self) => {
         const $key = $attrs.map("value.key");
         const $value = $attrs.map("value.value");
+        const $active = mergeStates(
+          $selected,
+          $key,
+          (selected, key) => selected === key
+        );
 
-        return <option value={$key}>{$value}</option>;
+        return (
+          <option value={$key} selected={$active}>
+            {$value}
+          </option>
+        );
       })}
     </select>
   );

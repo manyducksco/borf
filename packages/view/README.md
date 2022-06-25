@@ -173,8 +173,6 @@ view.attribute("value", {
 
 ### Number Input
 
-> TODO: Implement
-
 Takes a number.
 
 ```js
@@ -186,8 +184,6 @@ view.attribute(10, {
 ```
 
 ### Range Slider
-
-> TODO: Implement
 
 Choose a numeric value within a range.
 
@@ -230,8 +226,6 @@ view.attribute(10, {
 ```
 
 ### Radio
-
-> TODO: Implement
 
 Choose one from a list of predefined options using radio buttons. Works best when there are fewer options.
 

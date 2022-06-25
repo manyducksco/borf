@@ -29,7 +29,6 @@ export default (self) => {
 
   self.watchState($currentView, (view) => {
     if (API) {
-      console.log(view, API);
       API.setActiveView(view?.id);
     }
   });
