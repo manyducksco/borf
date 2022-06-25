@@ -1,5 +1,7 @@
 import { bind } from "@woofjs/client";
 
+import styles from "./index.module.css";
+
 export default ($attrs, self) => {
   self.debug.name = "input:range";
 
@@ -10,6 +12,7 @@ export default ($attrs, self) => {
 
   return (
     <input
+      class={styles.input}
       type="range"
       value={bind($value)}
       min={$min}

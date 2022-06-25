@@ -1,5 +1,7 @@
 import { repeat, mergeStates } from "@woofjs/client";
 
+import styles from "./index.module.css";
+
 export default ($attrs, self) => {
   self.debug.name = "input:select";
 
@@ -25,6 +27,7 @@ export default ($attrs, self) => {
 
   return (
     <select
+      class={styles.input}
       onchange={(e) => {
         e.preventDefault();
 

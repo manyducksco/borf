@@ -56,7 +56,7 @@ export default ($attrs, self) => {
               checked={$checked}
               onchange={makeOnChange($key)}
             />
-            {$label}
+            <span class={styles.label}>{$label}</span>
           </div>
         );
       })}

@@ -1,9 +1,9 @@
 import styles from "./index.module.css";
 
+import ActionsPanel from "../ActionsPanel";
 import AttributesPanel from "../AttributesPanel";
 import NavigationPanel from "../NavigationPanel";
 import Sidebar from "../Sidebar";
-import ActionsPanel from "../ActionsPanel";
 
 export default ($attrs, self) => {
   self.debug.name = "AppLayout";
@@ -15,13 +15,13 @@ export default ($attrs, self) => {
       <header class={styles.header}>HEADER</header>
 
       <main class={styles.main}>
-        <Sidebar id="nav">
+        <Sidebar id="nav" resizeHandle="right">
           <NavigationPanel />
         </Sidebar>
 
         <iframe class={styles.iframe} $ref={$frameRef} src="/frame.html" />
 
-        <Sidebar id="attrs">
+        <Sidebar id="attrs" resizeHandle="left">
           <AttributesPanel />
           <ActionsPanel />
         </Sidebar>

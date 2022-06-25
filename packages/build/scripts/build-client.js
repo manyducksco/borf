@@ -29,6 +29,10 @@ module.exports = function buildClient(config) {
       ".jpeg": "file",
       ".svg": "file",
       ".webp": "file",
+      ".ttf": "file",
+      ".otf": "file",
+      ".woff": "file",
+      ".woff2": "file",
     },
     plugins: [
       stylePlugin({

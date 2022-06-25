@@ -9,7 +9,19 @@ export default ($attrs, self) => {
 
   const { $collections } = self.getService("view");
 
-  self.watchState($collections, self.debug.log);
+  // Organize collections into a tree based on path segments.
+  const $tree = $collections.map((collections) => {
+    const splitPaths = collections.map((collection) => {
+      return {
+        path: collection.path.split("/").filter((part) => part.trim() === ""),
+        collection,
+      };
+    });
+
+    self.debug.log(splitPaths);
+  });
+
+  self.watchState($tree, (tree) => self.debug.log(tree));
 
   return (
     <div class={styles.panel}>

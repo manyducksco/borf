@@ -1,0 +1,31 @@
+.panel {
+  border-top: 1px solid black;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #3191ff;
+  border-bottom: 1px solid #1060ba;
+  color: #fff;
+  padding: 0.5rem;
+}
+
+.panelHeader > h1 {
+  line-height: 1;
+}
+
+.panelContent {
+  padding: 0.5rem;
+}
+
+.actionList {
+  /* list-style: none; */
+  margin-left: 1rem;
+}
+
+.action {
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}

@@ -1,3 +1,28 @@
 .sidebar {
   width: 300px;
+  overflow-y: auto;
+  overflow-x: visible;
+  position: relative;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.resizeHandle {
+  width: 9px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background-color: transparent;
+}
+
+.resizeHandle:hover {
+  background-color: blue;
+}
+
+.resizeHandle.left {
+  left: -5px;
+}
+
+.resizeHandle.right {
+  right: -5px;
 }

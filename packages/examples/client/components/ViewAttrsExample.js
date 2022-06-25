@@ -1,5 +1,8 @@
 import { when } from "@woofjs/client";
 
+/**
+ * A component to test woof-view attribute handling.
+ */
 export default ($attrs, self) => {
   const $name = $attrs.map("name");
   const $quality = $attrs.map("quality");
