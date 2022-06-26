@@ -1,23 +1,21 @@
-.panel {
-  border-top: 1px solid black;
-}
-
 .panelHeader {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  background-color: #3191ff;
-  border-bottom: 1px solid #1060ba;
+  width: 100%;
+}
+
+.clearButton {
+  background-color: transparent;
+  border: none;
   color: #fff;
-  padding: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: bold;
+  padding: 0 0.5rem;
+  cursor: pointer;
 }
 
-.panelHeader > h1 {
-  line-height: 1;
-}
-
-.panelContent {
-  padding: 0.5rem;
+.clearButton:hover {
+  background-color: rgba(255, 255, 255, 0.25);
 }
 
 .actionList {

@@ -17,6 +17,7 @@
 
 .resizeHandle:hover {
   background-color: blue;
+  cursor: ew-resize;
 }
 
 .resizeHandle.left {

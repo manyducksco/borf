@@ -18,6 +18,7 @@ export default (self) => {
         for (const view of collection.views) {
           if (view.path === params.wildcard) {
             matched = view;
+            self.getService("@page").$title.set(`${collection.name} | View`);
             break outer;
           }
         }

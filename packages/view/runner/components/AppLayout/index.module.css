@@ -2,12 +2,8 @@
   display: flex;
   flex-flow: column nowrap;
   height: 100%;
-}
-
-.header {
-  border-bottom: 1px solid #000;
-  height: 30px;
-  flex: 0 0 30px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
 }
 
 .main {
@@ -17,11 +13,26 @@
   overflow-y: auto;
 }
 
+.canvas {
+  border-left: 1px solid black;
+  border-right: 1px solid black;
+  display: flex;
+  flex-flow: column nowrap;
+  flex: 1 1 100%;
+}
+
+.canvasHeader {
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 0.5rem;
+  border-bottom: 1px solid black;
+}
+
 .iframe {
   width: 100%;
   flex: 1 1 100%;
   outline: none;
   border: none;
-  border-left: 1px solid black;
-  border-right: 1px solid black;
+  background-color: #fff;
 }

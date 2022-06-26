@@ -22,4 +22,22 @@ body {
   bottom: 0;
   left: 0;
   overflow-y: auto;
+
+  --border-radius: 4px;
+
+  --bg-color: #fff;
+  --text-color: #000;
+  --border-color: #000;
+  --accent-color: #ff0088;
+  --sidebar-hover-color: #efefef;
+}
+
+@media (prefers-color-scheme: dark) {
+  #app {
+    --bg-color: #222;
+    --text-color: #fff;
+    --border-color: #fff;
+    --accent-color: #ffb700;
+    --sidebar-hover-color: #444;
+  }
 }

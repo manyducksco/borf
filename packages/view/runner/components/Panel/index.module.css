@@ -1,0 +1,20 @@
+.panel {
+}
+
+.panelHeader {
+  user-select: none;
+  display: flex;
+  align-items: center;
+  line-height: 31px;
+  padding: 0 0.5rem;
+  background-color: #3191ff;
+  border-bottom: 1px solid #1060ba;
+  color: #fff;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+}
+
+.panelContent.padded {
+  padding: 0.5rem;
+}

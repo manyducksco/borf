@@ -1,0 +1,38 @@
+.treeList {
+  list-style: none;
+  /* padding: 0.5rem; */
+}
+
+.treeList details > summary:before {
+  content: "📁 ";
+}
+
+.treeList details[open] > summary:before {
+  content: "📂 ";
+}
+
+.treeItem {
+  display: block;
+  white-space: nowrap;
+  line-height: 26px;
+  padding-left: 0.5rem;
+  color: var(--text-color);
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.nodeChildren .treeItem {
+  border-top-left-radius: var(--border-radius);
+  border-bottom-left-radius: var(--border-radius);
+}
+
+.treeItem:hover {
+  background-color: var(--sidebar-hover-color);
+}
+
+.nodeChildren {
+  margin-left: 0.75rem;
+  padding-left: 0.5rem;
+  border-left: 1px dotted var(--border-color);
+}

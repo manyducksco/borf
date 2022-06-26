@@ -1,16 +1,2 @@
 .panel {
 }
-
-.item {
-  display: block;
-  height: 24px;
-  line-height: 24px;
-  white-space: nowrap;
-  background-color: transparent;
-  outline: none;
-  border: none;
-  border-bottom: 1px solid black;
-}
-
-.expander {
-}

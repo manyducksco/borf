@@ -4,7 +4,7 @@
   "description": "Rapid component development environment for dogs. 🐕",
   "main": "program.js",
   "scripts": {
-    "build": "woof-build -c runner/runner.jsx -o build --minify",
+    "build": "woof-build -c runner/runner.jsx -o build",
     "start": "woof-build -c runner/runner.jsx -o build --watch"
   },
   "bin": {

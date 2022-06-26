@@ -12,14 +12,15 @@ export default ($attrs, self) => {
 
   return (
     <div class={styles.app}>
-      <header class={styles.header}>HEADER</header>
-
       <main class={styles.main}>
         <Sidebar id="nav" resizeHandle="right">
           <NavigationPanel />
         </Sidebar>
 
-        <iframe class={styles.iframe} $ref={$frameRef} src="/frame.html" />
+        <div class={styles.canvas}>
+          <header class={styles.canvasHeader}>HEADER</header>
+          <iframe class={styles.iframe} $ref={$frameRef} src="/frame.html" />
+        </div>
 
         <Sidebar id="attrs" resizeHandle="left">
           <AttributesPanel />

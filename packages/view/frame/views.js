@@ -32,8 +32,11 @@ const collections = [];
 let nextId = 0;
 
 function formatCollection(data) {
+  const path = getCollectionPath(data);
+
   const collection = {
-    path: "/" + data.relativePath.replace(/\.view\.[jt]sx?$/, ""),
+    path: path,
+    name: path.split("/").pop(),
     views: [],
   };
 
@@ -350,4 +353,25 @@ function autoInput(value) {
 
   // Objects, arrays, functions and other types have no default input.
   return { type: "none" };
+}
+
+/**
+ * Calculate the final path the collection will be accessed at.
+ */
+function getCollectionPath(collection) {
+  const segments = collection.relativePath
+    .split("/")
+    .filter((segment) => segment.trim() !== "");
+
+  const filename = segments.pop();
+  const filebase = filename.replace(/\.view\.[jt]sx?$/, "");
+
+  console.log({ segments, filebase });
+
+  // If file's name is "index" or the same as the folder, chop it.
+  if (filebase === "index" || filebase === segments[segments.length - 1]) {
+    return "/" + segments.join("/");
+  } else {
+    return "/" + [...segments, filebase].join("/");
+  }
 }
