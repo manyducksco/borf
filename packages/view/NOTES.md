@@ -1,37 +1,17 @@
 # Notes
 
-How does it work?
+## TODO
 
-- Finds all files in the project ending in `.view.js` (or `.jsx`, `.ts`, `.tsx`)
-- Generate ate an index file that imports all of these, exports some kind of data structure
-- Runner app is prebuilt, loads the data structure from window? Runner doesn't have to change -- just the view index
-- Views rendered inside an iframe
+- Highlight selected entry in navigation sidebar
 
-```js
-const index = {
-  tree: [
-    {
-      name: "components",
+## View Features
 
-      // If the object has 'children', it's a folder
-      children: [
-        {
-          name: "MyComponent",
+What goes on the toolbar at the top of the view?
 
-          // If the object has 'views', it's a collection
-          views: [
-            {
-              name: "name",
-              description: "description",
-              attributes: [],
-              services: {},
-              actions: [],
-              template: fn,
-            },
-          ],
-        },
-      ],
-    },
-  ],
-};
-```
+- Light/dark/checkered background toggle
+- Viewport size presets (mobile/tablet/full)
+- Toggle attributes overlay (display attributes as a syntax-highlighted JSON object in a panel that floats above the view)
+
+### Viewport features
+
+- Horizontal/Vertical draggable bars to adjust viewport, with draggable icon at the bottom right edge to adjust both at the same time

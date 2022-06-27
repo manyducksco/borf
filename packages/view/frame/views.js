@@ -94,6 +94,15 @@ function formatCollection(data) {
           callback,
         };
       },
+      fireAction(message) {
+        actions.$log.set((log) => {
+          log.push({
+            timestamp: new Date(),
+            message: message,
+            name: "fired",
+          });
+        });
+      },
       render(component, attrs, children) {
         template = h(component, attrs, children);
       },
