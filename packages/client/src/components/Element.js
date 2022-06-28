@@ -91,7 +91,7 @@ function applyAttrs(element, attrs, watchers) {
       }
     } else if (attrMap.events.includes(key)) {
       const eventName = key.slice(2).toLowerCase();
-      const listener = attrs[key];
+      const listener = isState(attrs[key]) ? (e) => attrs[key].get()(e) : attrs[key];
 
       element.addEventListener(eventName, listener);
 

@@ -1,0 +1,22 @@
+.button {
+  border: 1px dotted var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+  padding: 0 0.25rem;
+  background-color: transparent;
+}
+
+.button:hover {
+  border-style: solid;
+}
+
+.button.active {
+  border-style: solid;
+  border-color: var(--accent-color);
+}
+
+.button.active:hover {
+  border-style: dotted;
+}

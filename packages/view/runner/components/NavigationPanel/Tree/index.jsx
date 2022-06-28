@@ -41,10 +41,6 @@ function CollectionNode($attrs, self) {
     (views) => views.length > 1 || views[0].name !== "@default"
   );
 
-  self.watchState($collection, (value) => {
-    self.debug.log("collection", value);
-  });
-
   return (
     <li>
       {when($hasManyViews, () => {

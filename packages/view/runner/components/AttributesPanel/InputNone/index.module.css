@@ -1,3 +1,8 @@
 .container {
   cursor: not-allowed;
+  white-space: pre-wrap;
+  font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
+    monospace;
+  font-size: 0.85rem;
+  opacity: 0.55;
 }

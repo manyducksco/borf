@@ -50,6 +50,8 @@ export default (view) => {
       console.log("callback is called when action is fired");
     }),
 
-    callback: view.attribute(function () {}),
+    callback: view.attribute(function () {
+      console.log("called!");
+    }),
   });
 };

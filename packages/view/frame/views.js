@@ -171,6 +171,7 @@ function formatCollection(data) {
       services,
       actions,
       template,
+      component: null,
     });
   }
 
@@ -181,9 +182,26 @@ for (const view of views) {
   collections.push(formatCollection(view));
 }
 
+let handlers = {};
 let mounted;
 
+function emitEvent(name, ...args) {
+  if (handlers[name]) {
+    for (const callback of handlers[name]) {
+      callback(...args);
+    }
+  }
+}
+
 const api = {
+  onEvent(name, callback) {
+    handlers[name] = handlers[name] || [];
+    handlers[name].push(callback);
+
+    return function cancel() {
+      handlers[name].splice(handlers[name].indexOf(callback), 1);
+    };
+  },
   getCollections() {
     return collections;
   },
@@ -191,6 +209,7 @@ const api = {
     if (mounted) {
       mounted.disconnect();
       mounted = null;
+      emitEvent("unmount");
     }
 
     if (id != null) {
@@ -257,6 +276,8 @@ const api = {
           services[name].afterConnect();
         }
       }
+
+      emitEvent("mount", mounted);
     }
   },
 };

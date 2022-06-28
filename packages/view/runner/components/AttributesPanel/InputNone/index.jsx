@@ -1,3 +1,5 @@
+import dedent from "dedent";
+
 import styles from "./index.module.css";
 
 /**
@@ -8,10 +10,10 @@ export default ($attrs, self) => {
 
   const $value = $attrs.map("value", (value) => {
     if (typeof value === "object") {
-      return JSON.stringify(value);
+      return JSON.stringify(value, null, 2);
     }
 
-    return String(value);
+    return dedent(String(value));
   });
 
   return <div class={styles.container}>{$value}</div>;

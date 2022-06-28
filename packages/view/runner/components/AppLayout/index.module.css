@@ -6,33 +6,24 @@
   color: var(--text-color);
 }
 
+.header {
+  padding: 0.5rem;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logoText {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.logoAccent {
+  color: var(--accent-color);
+}
+
 .main {
   display: flex;
   flex-flow: row nowrap;
   flex: 1 1 100%;
   overflow-y: auto;
-}
-
-.canvas {
-  border-left: 1px solid black;
-  border-right: 1px solid black;
-  display: flex;
-  flex-flow: column nowrap;
-  flex: 1 1 100%;
-}
-
-.canvasHeader {
-  flex: 0 0 32px;
-  display: flex;
-  align-items: center;
-  padding: 0 0.5rem;
-  border-bottom: 1px solid black;
-}
-
-.iframe {
-  width: 100%;
-  flex: 1 1 100%;
-  outline: none;
-  border: none;
-  background-color: #fff;
 }

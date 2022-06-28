@@ -3,24 +3,25 @@ import styles from "./index.module.css";
 import ActionsPanel from "../ActionsPanel";
 import AttributesPanel from "../AttributesPanel";
 import NavigationPanel from "../NavigationPanel";
+import ViewPanel from "../ViewPanel";
 import Sidebar from "../Sidebar";
 
 export default ($attrs, self) => {
   self.debug.name = "AppLayout";
 
-  const { $frameRef } = self.getService("view");
-
   return (
     <div class={styles.app}>
+      {/* <div class={styles.header}>
+        <h1 class={styles.logoText}>
+          @woofjs/<span class={styles.logoAccent}>view</span>
+        </h1>
+      </div> */}
       <main class={styles.main}>
         <Sidebar id="nav" resizeHandle="right">
           <NavigationPanel />
         </Sidebar>
 
-        <div class={styles.canvas}>
-          <header class={styles.canvasHeader}>HEADER</header>
-          <iframe class={styles.iframe} $ref={$frameRef} src="/frame.html" />
-        </div>
+        <ViewPanel />
 
         <Sidebar id="attrs" resizeHandle="left">
           <AttributesPanel />
