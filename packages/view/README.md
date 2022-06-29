@@ -59,36 +59,12 @@ And here is a hypothetical view file to test it:
 // MyHeader.view.jsx
 
 import { MyHeader } from "./MyHeader.jsx";
-
 import { makeMockHTTP } from "@woofjs/client/testing";
 
 /**
- * We are using makeMockHTTP from the testing tools to create an `@http` service
- * that returns mock data. This prevents the view from touching a real API.
- **/
-const mockHTTP = makeMockHTTP((self) => {
-  self.get("/users/me", () => {
-    return { id: 1, name: "Jimbo Jones" };
-  });
-});
-
-// You can export default a single function or an object of functions.
-
-export default (view) => {};
-
-export default {
-  firstView(view) {
-
-  },
-
-  secondView(view) {
-
-  }
-}
-
-/**
  * Views are defined by an exported function. This function receives a `view` object with variables
- * and methods to configure the view.
+ * and methods to configure the view. You can also export an object with view names as keys and
+ * functions as values if you want to create multiple views for a single component.
  **/
 export default (view) => {
   // Views are named by converting the function name from "PascalCaseLikeThis" to "Sentence Case Like This".
@@ -105,7 +81,22 @@ export default (view) => {
   `;
 
   // Provide mock versions of any services used by your component.
-  view.service("@http", mockHTTP);
+  view.service(
+    "@http",
+    /**
+     * We are using makeMockHTTP from the testing tools to create an `@http` service
+     * that returns mock data. This prevents the view from touching a real API.
+     **/
+    makeMockHTTP((self) => {
+      self.get("/users/me", () => {
+        // Log this event to the action log whenever the component makes a call to this mock API route.
+        // This validates that the expected API calls are actually being made within the view.
+        view.fireAction("requested user from API");
+
+        return { id: 1, name: "Jimbo Jones" };
+      });
+    })
+  );
 
   view.render(MyHeader, {
     // You can expose attributes to make them editable in the browser with a dedicated UI.
