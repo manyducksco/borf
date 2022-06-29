@@ -8,59 +8,71 @@ const express = require("express");
 const buildViews = require("./scripts/build-views");
 const EventEmitter = require("events");
 
-program
-  .command("start", {
-    description: "starts an HTTP server for views",
-    examples: [
-      "{*} ./client",
-      "{*} ./client --include-css client/styles/global.css,client/styles/ui.css",
-    ],
-    options: {
-      "--include-css <paths>": {
-        description: "path to CSS files to include, comma separated",
-        key: "includeCSS",
-      },
+program.command("start", {
+  description: "starts an HTTP server for views",
+  examples: [
+    "{*} ./client",
+    "{*} ./client --include-css client/styles/global.css,client/styles/ui.css",
+  ],
+  options: {
+    "--include-css <paths>": {
+      description: "path to CSS files to include, comma separated",
+      key: "includeCSS",
     },
-    args: [
-      {
-        name: "path",
-        description: "root directory of your app",
-      },
-    ],
-    action: async ({ args, options }) => {
-      await serve({
-        clientRoot: path.resolve(args.path),
-        buildRoot: path.join(process.cwd(), "temp", "views"),
-        includeCSS: options.includeCSS
-          ? options.includeCSS.split(",").filter((x) => x.trim() !== "")
-          : [],
-      });
+  },
+  args: [
+    {
+      name: "path",
+      description: "root directory of your app",
     },
-  })
-  .command("build", {
-    description:
-      "builds views into a folder full of static files you can host anywhere",
-    examples: ["{*} build ./client"],
-    options: {
-      "-o, --output <path>": {
-        description: "path to output folder",
-        required: true,
-      },
-    },
-    args: [
-      {
-        name: "path",
-        description: "root directory of your app",
-      },
-    ],
-    action: async ({ options }) => {
-      console.log("built", options);
-    },
-  });
+  ],
+  action: async ({ args, options }) => {
+    await serve({
+      clientRoot: path.resolve(args.path),
+      buildRoot: path.join(process.cwd(), "temp", "views"),
+      includeCSS: options.includeCSS
+        ? options.includeCSS.split(",").filter((x) => x.trim() !== "")
+        : [],
+    });
+  },
+});
+// .command("build", {
+//   description:
+//     "builds views into a folder full of static files you can host anywhere",
+//   examples: [
+//     "{*} build ./client",
+//     "{*} build ./client --include-css client/styles/global.css,client/styles/ui.css",
+//   ],
+//   options: {
+//     "--include-css <paths>": {
+//       description: "path to CSS files to include, comma separated",
+//       key: "includeCSS",
+//     },
+//     "-o, --output <path>": {
+//       description: "path to output folder",
+//       required: true,
+//     },
+//   },
+//   args: [
+//     {
+//       name: "path",
+//       description: "root directory of your app",
+//     },
+//   ],
+//   action: async ({ args, options }) => {
+//     await build({
+//       clientRoot: path.resolve(args.path),
+//       buildRoot: path.join(process.cwd(), "temp", "views"),
+//       includeCSS: options.includeCSS
+//         ? options.includeCSS.split(",").filter((x) => x.trim() !== "")
+//         : [],
+//     });
+//   },
+// });
 
 program.run(process.argv);
 
-// async function buildClientOnce(options) {
+// async function build(options) {
 //   const config = {
 //     entryPath: path.join(process.cwd(), options.client),
 //     outputPath: path.join(process.cwd(), options.output),
@@ -150,7 +162,6 @@ async function serve(options) {
   // Why proxy? This server can inject things and handle Server Sent Events for auto-reload.
   ////
 
-  // TODO: Proxy requests with relative URLs to the server if it's running.
   app.use(express.static(runnerDir));
   app.use(express.static(frameDir));
 

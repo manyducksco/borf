@@ -1,11 +1,12 @@
 {
   "name": "@woofjs/view",
   "version": "0.1.0",
-  "description": "Rapid component development environment for dogs. 🐕",
+  "description": "Isolated component development for dogs. 🐕",
   "main": "program.js",
   "scripts": {
-    "build": "woof-build -c runner/runner.jsx -o build",
-    "start": "woof-build -c runner/runner.jsx -o build --watch"
+    "build": "woof-build -c runner/runner.jsx -o build --minify",
+    "start": "woof-build -c runner/runner.jsx -o build --watch",
+    "prepublishOnly": "npm run build"
   },
   "bin": {
     "woof-view": "program.js"
@@ -13,6 +14,10 @@
   "keywords": [],
   "author": "Tony McCoy <tony@manyducks.co>",
   "license": "MIT",
+  "peerDependencies": {
+    "@woofjs/build": ">=0.1.0",
+    "@woofjs/client": ">=0.11.0"
+  },
   "dependencies": {
     "@ratwizard/cli": "^0.17.0",
     "chokidar": "^3.5.3",

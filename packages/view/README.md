@@ -139,6 +139,8 @@ Starts an HTTP server you can visit in your browser.
 
 ### `build`
 
+> TODO: Implement
+
 Bundles the project's views into a standalone static file dump that you can host on just about any web server.
 
 Use the `-o` or `--output` option to specify where this folder will go. For example,
