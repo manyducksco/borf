@@ -31,6 +31,12 @@
   background-color: var(--sidebar-hover-color);
 }
 
+.treeItem.highlight,
+.treeItem.highlight:hover {
+  background-color: var(--sidebar-active-color);
+  color: var(--sidebar-active-text-color);
+}
+
 .nodeChildren {
   margin-left: 0.75rem;
   padding-left: 0.5rem;

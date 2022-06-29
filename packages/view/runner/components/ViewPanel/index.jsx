@@ -10,6 +10,7 @@ export default ($attrs, self) => {
 
   debug.name = "ViewPanel";
 
+  const screen = self.getService("screen");
   const { $frameRef, $currentAttrs, $currentView } = self.getService("view");
   const { $title } = self.getService("@page");
 
@@ -83,6 +84,7 @@ export default ($attrs, self) => {
 
     $dragAxis.set(axis);
     $dragging.set(true);
+    screen.$dragging.set(true);
   }
 
   function endDrag() {
@@ -90,6 +92,7 @@ export default ($attrs, self) => {
     window.removeEventListener("mousemove", onMouseMove);
 
     $dragging.set(false);
+    screen.$dragging.set(false);
   }
 
   self.beforeConnect(() => {
@@ -145,7 +148,9 @@ export default ($attrs, self) => {
             class={styles.iframe}
             $ref={$frameRef}
             style={{
-              pointerEvents: $dragging.map((on) => (on ? "none" : "all")),
+              pointerEvents: screen.$dragging.map((on) =>
+                on ? "none" : "all"
+              ),
             }}
             src="/frame.html"
           />

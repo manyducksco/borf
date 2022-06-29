@@ -8,7 +8,7 @@ export default ($attrs, self) => {
       class={{ [styles.button]: true, [styles.active]: $active }}
       onclick={() => $active.set((active) => !active)}
     >
-      {self.children}
+      <div class={styles.indicator} /> {self.children}
     </button>
   );
 };

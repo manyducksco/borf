@@ -1,4 +1,11 @@
-import { repeat, unless, when, watch, makeState } from "@woofjs/client";
+import {
+  repeat,
+  unless,
+  when,
+  watch,
+  makeState,
+  mergeStates,
+} from "@woofjs/client";
 
 import styles from "./index.module.css";
 
@@ -35,6 +42,7 @@ export default function Tree($attrs, self) {
 function CollectionNode($attrs, self) {
   self.debug.name = "Tree/CollectionNode";
 
+  const { $params } = self.getService("@router");
   const $collection = $attrs.map("node");
   const $views = $collection.map("views");
   const $hasManyViews = $views.map(
@@ -53,10 +61,23 @@ function CollectionNode($attrs, self) {
               <ul class={styles.treeList}>
                 {repeat($views, ($attrs, self) => {
                   const $view = $attrs.map("value");
+                  const $active = mergeStates(
+                    $view,
+                    $params,
+                    (view, params) => {
+                      return view.path === params.wildcard;
+                    }
+                  );
 
                   return (
                     <li>
-                      <a class={styles.treeItem} href={$view.map("path")}>
+                      <a
+                        class={{
+                          [styles.treeItem]: true,
+                          [styles.highlight]: $active,
+                        }}
+                        href={$view.map("path")}
+                      >
                         {viewIcon} {$view.map("name")}
                       </a>
                     </li>
@@ -69,8 +90,22 @@ function CollectionNode($attrs, self) {
       })}
 
       {unless($hasManyViews, () => {
+        const $active = mergeStates(
+          $collection,
+          $params,
+          (collection, params) => {
+            return collection.path === params.wildcard;
+          }
+        );
+
         return (
-          <a class={styles.treeItem} href={$collection.map("path")}>
+          <a
+            class={{
+              [styles.treeItem]: true,
+              [styles.highlight]: $active,
+            }}
+            href={$collection.map("path")}
+          >
             {viewIcon} {$collection.map("name")}
           </a>
         );

@@ -1,21 +1,49 @@
 .button {
-  border: 1px dotted var(--border-color);
+  border: 1px solid #ffffff55;
   border-radius: var(--border-radius);
-  color: var(--text-color);
-  font-size: 13px;
+  color: #fff;
+  font-size: 0.9em;
+  font-weight: bold;
   line-height: 20px;
   white-space: nowrap;
   padding: 0 0.25rem;
   background-color: transparent;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 .button:hover {
-  border-style: solid;
+  border-color: #ffffff;
 }
 
 .button.active {
-  border-style: solid;
-  border-color: var(--accent-color);
+  border-color: #ffffff;
+  /* background-color: #00000033; */
+}
+
+.indicator {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border: 1px solid #ffffff55;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+
+.button.active .indicator {
+  border-color: #fff;
+}
+
+.button.active .indicator::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  left: 2px;
+  background-color: #fff;
+  border-radius: 1px;
 }
 
 .button.active:hover {

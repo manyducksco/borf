@@ -12,6 +12,7 @@ export default ($attrs, self) => {
   const minWidth = 220;
   const defaultWidth = 300;
 
+  const screen = self.getService("screen");
   const $id = $attrs.map("id");
   const $settingsKey = $id.map((id) => `woof-view-sidebar-${id}-size`);
   const $resizeHandle = $attrs.map("resizeHandle");
@@ -26,6 +27,7 @@ export default ($attrs, self) => {
 
   const onWindowMouseUp = () => {
     $dragging.set(false);
+    screen.$dragging.set(false);
   };
 
   const onWindowMouseMove = (e) => {
@@ -96,6 +98,7 @@ export default ($attrs, self) => {
           onmousedown={(e) => {
             e.preventDefault();
             $dragging.set(true);
+            screen.$dragging.set(true);
           }}
         />
       )}

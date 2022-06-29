@@ -6,21 +6,6 @@
   color: var(--text-color);
 }
 
-.header {
-  padding: 0.5rem;
-  color: var(--text-color);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.logoText {
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
-.logoAccent {
-  color: var(--accent-color);
-}
-
 .main {
   display: flex;
   flex-flow: row nowrap;

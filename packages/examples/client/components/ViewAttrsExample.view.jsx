@@ -1,7 +1,8 @@
 import ViewAttrsExample from "./ViewAttrsExample";
 
 export default (view) => {
-  view.description = "Illustrates how view attributes and actions are used.";
+  view.description =
+    "Illustrates how view attributes and actions are used. Has at least one instance of each type of attribute control.";
 
   view.render(ViewAttrsExample, {
     name: view.attribute("Jimbo", {

@@ -9,7 +9,7 @@
 }
 
 body {
-  font-size: 15px;
+  font-size: 14px;
   font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui,
     helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial,
     sans-serif;
@@ -30,18 +30,40 @@ body {
   --border-color: #000;
   --accent-color: #ff0088;
   --sidebar-hover-color: #efefef;
+  --sidebar-active-color: var(--accent-color);
+  --sidebar-active-text-color: #fff;
+  --sidebar-border-color: #000;
   --canvas-bg-color: #ccc;
   --canvas-sizer-hover-color: #ff008855;
+  --panel-header-color: #3191ff;
+  --panel-header-border-color: #1060ba;
 }
 
 @media (prefers-color-scheme: dark) {
   #app {
+    /* --bg-color: #222;
+    --text-color: #fff;
+    --border-color: #fff;
+    --accent-color: #d2d2d2;
+    --sidebar-hover-color: #444;
+    --sidebar-active-color: var(--accent-color);
+    --sidebar-active-text-color: #000;
+    --canvas-bg-color: #444;
+    --canvas-sizer-hover-color: #d4d4d455;
+    --panel-header-color: #5a5a5a;
+    --panel-header-border-color: #434343; */
+
     --bg-color: #222;
     --text-color: #fff;
     --border-color: #fff;
     --accent-color: #ffb700;
     --sidebar-hover-color: #444;
+    --sidebar-active-color: var(--accent-color);
+    --sidebar-active-text-color: #000;
+    --sidebar-border-color: #222;
     --canvas-bg-color: #444;
     --canvas-sizer-hover-color: #ffb70055;
+    --panel-header-color: #3191ff;
+    --panel-header-border-color: #1060ba;
   }
 }

@@ -1,5 +1,6 @@
 import styles from "./index.module.css";
 
+import AboutPanel from "../AboutPanel";
 import ActionsPanel from "../ActionsPanel";
 import AttributesPanel from "../AttributesPanel";
 import NavigationPanel from "../NavigationPanel";
@@ -11,11 +12,6 @@ export default ($attrs, self) => {
 
   return (
     <div class={styles.app}>
-      {/* <div class={styles.header}>
-        <h1 class={styles.logoText}>
-          @woofjs/<span class={styles.logoAccent}>view</span>
-        </h1>
-      </div> */}
       <main class={styles.main}>
         <Sidebar id="nav" resizeHandle="right">
           <NavigationPanel />
@@ -24,6 +20,7 @@ export default ($attrs, self) => {
         <ViewPanel />
 
         <Sidebar id="attrs" resizeHandle="left">
+          <AboutPanel />
           <AttributesPanel />
           <ActionsPanel />
         </Sidebar>
