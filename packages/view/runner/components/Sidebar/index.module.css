@@ -1,7 +1,7 @@
 .sidebar {
   width: 300px;
   overflow-y: auto;
-  overflow-x: visible;
+  overflow-x: visible !important;
   position: relative;
   flex-shrink: 0;
   flex-grow: 0;
@@ -13,17 +13,29 @@
   top: 0;
   bottom: 0;
   background-color: transparent;
+  z-index: 100;
 }
 
-.resizeHandle:hover {
-  background-color: blue;
+.resizeHandle:hover,
+.resizeHandle.dragging {
+  background-color: var(--canvas-sizer-hover-color);
   cursor: ew-resize;
 }
 
 .resizeHandle.left {
-  left: -5px;
+  left: 0;
+}
+
+.resizeHandle.left:hover,
+.resizeHandle.left.dragging {
+  border-left: 1px solid var(--accent-color);
 }
 
 .resizeHandle.right {
-  right: -5px;
+  right: 0;
+}
+
+.resizeHandle.right:hover,
+.resizeHandle.right.dragging {
+  border-right: 1px solid var(--accent-color);
 }

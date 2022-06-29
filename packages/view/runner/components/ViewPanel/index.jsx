@@ -43,8 +43,8 @@ export default ($attrs, self) => {
       }
 
       return {
-        x: Math.min(viewport.x, canvas.x),
-        y: Math.min(viewport.y, canvas.y),
+        x: Math.max(0, Math.min(viewport.x, canvas.x)),
+        y: Math.max(0, Math.min(viewport.y, canvas.y)),
       };
     }
   );
@@ -162,6 +162,7 @@ export default ($attrs, self) => {
             <div class={styles.responsiveControls}>
               <button
                 class={styles.rotateButton}
+                title="Toggle between horizontal and vertical viewport orientation."
                 onclick={() => {
                   $viewportSize.set((size) => {
                     const x = size.x;
@@ -212,6 +213,7 @@ export default ($attrs, self) => {
             </div>
             <div
               class={[styles.viewportSizer, styles.vertical]}
+              title="Resize viewport along the X axis."
               style={{
                 transform: $viewportBoundsSize.map(
                   (size) => `translateX(${size.x - 4}px)`
@@ -227,6 +229,7 @@ export default ($attrs, self) => {
             </div>
             <div
               class={[styles.viewportSizer, styles.horizontal]}
+              title="Resize viewport along the Y axis."
               style={{
                 transform: $viewportBoundsSize.map(
                   (size) => `translateY(${size.y - 4}px)`
@@ -242,6 +245,7 @@ export default ($attrs, self) => {
             </div>
             <div
               class={[styles.viewportSizerHub]}
+              title="Resize viewport along both X and Y axes."
               style={{
                 transform: $viewportBoundsSize.map(
                   (size) => `translate(${size.x - 13}px, ${size.y - 13}px)`

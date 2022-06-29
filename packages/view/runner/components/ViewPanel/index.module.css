@@ -17,6 +17,7 @@
   border-bottom: 1px solid var(--panel-header-border-color);
   background-color: var(--panel-header-color);
   color: #fff;
+  z-index: 10;
 }
 
 .viewTitle {
@@ -62,9 +63,21 @@
 .rotateButton {
   width: 22px;
   height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: transparent;
   border: 1px dotted #fff;
   border-radius: var(--border-radius);
+  cursor: pointer;
+}
+
+.rotateButton:hover {
+  border-style: solid;
+}
+
+.rotateButton:active {
+  background-color: #ffffff55;
 }
 
 .canvas {

@@ -94,6 +94,7 @@ export default ($attrs, self) => {
             [styles.resizeHandle]: true,
             [styles.left]: $resizeHandle.map((value) => value === "left"),
             [styles.right]: $resizeHandle.map((value) => value === "right"),
+            [styles.dragging]: $dragging,
           }}
           onmousedown={(e) => {
             e.preventDefault();
@@ -103,7 +104,7 @@ export default ($attrs, self) => {
         />
       )}
 
-      {self.children}
+      <div class={styles.content}>{self.children}</div>
     </div>
   );
 };

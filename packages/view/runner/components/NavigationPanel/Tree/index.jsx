@@ -76,6 +76,7 @@ function CollectionNode($attrs, self) {
                           [styles.treeItem]: true,
                           [styles.highlight]: $active,
                         }}
+                        title={$view.map("description")}
                         href={$view.map("path")}
                       >
                         {viewIcon} {$view.map("name")}
@@ -104,6 +105,7 @@ function CollectionNode($attrs, self) {
               [styles.treeItem]: true,
               [styles.highlight]: $active,
             }}
+            title={$collection.map("views[0].description")}
             href={$collection.map("path")}
           >
             {viewIcon} {$collection.map("name")}
