@@ -4,7 +4,7 @@ const esbuild = require("esbuild");
 const mustache = require("mustache");
 const stylePlugin = require("esbuild-style-plugin");
 
-module.exports = function buildClient(config) {
+module.exports = async function buildClient(config) {
   const buildDir = config.outputPath;
   const publicDir = path.join(buildDir, "public");
   const entryDir = path.dirname(config.entryPath);
@@ -133,37 +133,28 @@ module.exports = function buildClient(config) {
     return {
       ...bundle,
       writtenFiles,
+
+      /**
+       * Incrementally rebuilds the bundle with changes that have happened since last build.
+       */
       async rebuild() {
         const rebundled = await bundle.rebuild();
         return rebundle(rebundled);
       },
+
+      /**
+       * Call when no more incremental builds will be created.
+       */
+      done() {
+        bundle.rebuild.dispose();
+      },
     };
   }
 
-  return {
-    /**
-     * Build and write files to disk.
-     */
-    async build() {
-      const bundle = await esbuild.build(esbuildConfig);
+  const bundle = await esbuild.build({
+    ...esbuildConfig,
+    incremental: true,
+  });
 
-      const { writtenFiles } = writeBundle(bundle);
-
-      bundle.writtenFiles = writtenFiles;
-
-      return bundle;
-    },
-
-    /**
-     * Build and write files, then return an object with a `.rebuild()` method to rebuild files changed since last build.
-     */
-    async buildIncremental() {
-      const bundle = await esbuild.build({
-        ...esbuildConfig,
-        incremental: true,
-      });
-
-      return rebundle(bundle);
-    },
-  };
+  return rebundle(bundle);
 };

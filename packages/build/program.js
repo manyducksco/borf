@@ -81,18 +81,25 @@ if (!module.parent) {
   module.exports = { build: buildClientOnce, watch: watchClient };
 }
 
-async function buildClientOnce(options) {
+async function buildClientOnce(options, { incremental = false } = {}) {
   const config = {
+    ...options,
     entryPath: path.resolve(options.client),
     outputPath: path.resolve(options.output),
     esbuild: {
+      ...(options.esbuild || {}),
       minify: options.minify,
       inject: [path.join(__dirname, "utils/jsx-shim-client.js")],
     },
   };
 
   const start = Date.now();
-  const clientBundle = await buildClient(config).build();
+
+  const clientBundle = await buildClient(config);
+
+  if (!incremental) {
+    clientBundle.done();
+  }
 
   const writtenFiles = [];
 
@@ -115,6 +122,7 @@ async function buildClientOnce(options) {
   }
 
   return {
+    ...clientBundle,
     writtenFiles,
     time: Date.now() - start,
   };
@@ -126,7 +134,7 @@ async function watchClient(options) {
     outputPath: path.join(process.cwd(), options.output),
     esbuild: {
       minify: options.minify,
-      inject: [path.join(__dirname, "utils/jsx-shim.js")],
+      inject: [path.join(__dirname, "utils/jsx-shim-client.js")],
     },
     static: {
       injectScripts: [

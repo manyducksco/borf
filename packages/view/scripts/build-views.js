@@ -9,28 +9,24 @@ const { build } = require("@woofjs/build");
 const isIgnored = /node_modules|^\./;
 const isView = /\.view\.[jt]sx?$/;
 
-module.exports = async function buildViews({
-  clientRoot,
-  buildRoot,
-  includeCSS,
-}) {
+module.exports = async function buildViews(options, bundleConfig) {
   const frameRoot = path.join(__dirname, "../frame");
-  const bundleSrcRoot = path.join(buildRoot, "src");
-  const bundleRoot = path.join(buildRoot, "bundle");
+  const bundleSrcRoot = path.join(options.buildRoot, "src");
+  const bundleRoot = path.join(options.buildRoot, "bundle");
 
   // Make sure build directory is empty and subdirectories exist.
-  await fs.emptyDir(buildRoot);
+  await fs.emptyDir(options.buildRoot);
   await fs.ensureDir(bundleSrcRoot);
   await fs.ensureDir(bundleRoot);
 
-  const views = findViews(clientRoot);
+  const views = findViews(options.clientRoot);
 
   let index = "";
   let nextId = 0;
 
   // Hack CSS imports into frame index so they get included in the build.
-  if (includeCSS && includeCSS.length > 0) {
-    for (const file of includeCSS) {
+  if (options.includeCSS && options.includeCSS.length > 0) {
+    for (const file of options.includeCSS) {
       const fileName = path.basename(file);
       const absolutePath = path.resolve(file);
       const newPath = path.join(bundleSrcRoot, fileName);
@@ -40,8 +36,6 @@ module.exports = async function buildViews({
       index += `import "./${fileName}";\n`;
     }
   }
-
-  console.log(index);
 
   // Add imports
   for (const view of views) {
@@ -64,12 +58,16 @@ module.exports = async function buildViews({
   const outputPath = path.join(bundleSrcRoot, "views-index.js");
   await fs.writeFile(outputPath, index);
 
-  const writtenFiles = await build({
-    client: path.join(bundleSrcRoot, "views.js"),
-    output: bundleRoot,
-  });
+  const bundle = await build(
+    {
+      ...options,
+      client: path.join(bundleSrcRoot, "views.js"),
+      output: bundleRoot,
+    },
+    bundleConfig
+  );
 
-  console.log(writtenFiles);
+  return bundle;
 };
 
 function findViews(folder, root = null) {

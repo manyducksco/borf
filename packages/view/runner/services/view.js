@@ -46,7 +46,40 @@ export default (self) => {
         $currentAttrs.set({});
       });
 
-      $collections.set(API.getCollections());
+      const oldCollections = $collections.get();
+      const newCollections = API.getCollections();
+
+      // Transfer existing attributes onto reloaded views.
+      if (oldCollections) {
+        for (const oldCollection of oldCollections) {
+          const newCollection = newCollections.find(
+            (n) => n.path === oldCollection.path
+          );
+
+          if (newCollection) {
+            for (const oldView of oldCollection.views) {
+              const newView = newCollection.views.find(
+                (v) => v.path === oldView.path
+              );
+
+              if (newView) {
+                for (const oldAttr of oldView.attributes) {
+                  const newAttr = newView.attributes.find(
+                    (a) => a.name === oldAttr.name
+                  );
+
+                  if (newAttr) {
+                    newAttr.$value.set(oldAttr.$value.get());
+                  }
+                }
+              }
+            }
+          }
+        }
+        console.log({ oldCollections, newCollections });
+      }
+
+      $collections.set(newCollections);
       API.setActiveView($currentView.get("id"));
     });
   });

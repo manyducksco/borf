@@ -6,6 +6,7 @@ const fs = require("fs-extra");
 const chokidar = require("chokidar");
 const express = require("express");
 const buildViews = require("./scripts/build-views");
+const EventEmitter = require("events");
 
 program
   .command("start", {
@@ -27,15 +28,13 @@ program
       },
     ],
     action: async ({ args, options }) => {
-      await buildViews({
+      await serve({
         clientRoot: path.resolve(args.path),
         buildRoot: path.join(process.cwd(), "temp", "views"),
         includeCSS: options.includeCSS
           ? options.includeCSS.split(",").filter((x) => x.trim() !== "")
           : [],
       });
-
-      await serve();
     },
   })
   .command("build", {
@@ -100,11 +99,51 @@ program.run(process.argv);
 //   println(`\nBundled app in <green>${Date.now() - start}</green>ms\n`);
 // }
 
-async function serve() {
+async function serve(options) {
   const app = express();
 
   const frameDir = path.resolve("temp/views/bundle/public");
   const runnerDir = path.join(__dirname, "build/public");
+
+  const events = new EventEmitter();
+
+  options = {
+    ...options,
+    static: {
+      injectScripts: [
+        `
+          <script>
+            const events = new EventSource("/_bundle");
+
+            events.addEventListener("message", (message) => {
+              window.location.reload();
+            });
+
+            window.addEventListener("beforeunload", () => {
+              events.close();
+            });
+          </script>
+        `,
+      ],
+    },
+  };
+
+  let bundleId = 0;
+  const bundle = await buildViews(options, { incremental: true });
+
+  const clientWatcher = chokidar.watch([`${options.clientRoot}/**/*`], {
+    persistent: true,
+    ignoreInitial: true,
+  });
+
+  clientWatcher.on("all", async () => {
+    const start = Date.now();
+    await bundle.rebuild();
+
+    events.emit("bundle", bundleId++);
+
+    println(`rebuilt in <green>${Date.now() - start}ms</green>`);
+  });
 
   ////
   // This server exists to serve the app and proxy requests to the API server.
@@ -132,12 +171,14 @@ async function serve() {
     // Tell the client to retry every 10 seconds if connectivity is lost
     res.write("retry: 10000\n\n");
 
-    const unwatch = $bundleId.watch((value) => {
-      res.write(`data: ${value}\n\n`);
-    });
+    function update(bundleId) {
+      res.write(`data: ${bundleId}\n\n`);
+    }
+
+    events.on("bundle", update);
 
     res.on("close", () => {
-      unwatch();
+      events.off("bundle", update);
       res.end();
     });
   });
