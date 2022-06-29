@@ -50,7 +50,7 @@ export default (self) => {
       const newCollections = API.getCollections();
 
       // Transfer existing attributes onto reloaded views.
-      if (oldCollections) {
+      if (oldCollections.length > 0) {
         for (const oldCollection of oldCollections) {
           const newCollection = newCollections.find(
             (n) => n.path === oldCollection.path
@@ -76,7 +76,8 @@ export default (self) => {
             }
           }
         }
-        console.log({ oldCollections, newCollections });
+
+        self.debug.log("reloaded views");
       }
 
       $collections.set(newCollections);

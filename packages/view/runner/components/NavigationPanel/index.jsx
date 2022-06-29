@@ -73,8 +73,6 @@ export default ($attrs, self) => {
     return tree;
   });
 
-  self.watchState($tree, (tree) => self.debug.log("tree", tree));
-
   return (
     <Panel header={<h1>🔭 Views</h1>} padded={false}>
       <Tree nodes={$tree} />

@@ -282,8 +282,6 @@ const api = {
   },
 };
 
-console.log(collections);
-
 window.WOOF_VIEW = api;
 
 // Support camel case ("camelCase" -> "camel Case" and "CAMELCase" -> "CAMEL Case").
@@ -395,8 +393,6 @@ function getCollectionPath(collection) {
 
   const filename = segments.pop();
   const filebase = filename.replace(/\.view\.[jt]sx?$/, "");
-
-  console.log({ segments, filebase });
 
   // If file's name is "index" or the same as the folder, chop it.
   if (filebase === "index" || filebase === segments[segments.length - 1]) {
