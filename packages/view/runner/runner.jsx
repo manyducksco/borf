@@ -2,8 +2,8 @@ import "./runner.css";
 
 import { makeApp } from "@woofjs/client";
 
-import AppLayout from "./components/AppLayout";
 import view from "./services/view.js";
+import AppLayout from "./components/AppLayout";
 
 const app = makeApp();
 

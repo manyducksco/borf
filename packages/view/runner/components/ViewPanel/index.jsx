@@ -118,10 +118,12 @@ export default ($attrs, self) => {
   return (
     <div class={styles.container}>
       <header class={styles.toolbar}>
-        <span>
-          {$viewTitle} [
-          {$viewportBoundsSize.map((size) => `${size.x}x${size.y}`)}]
-        </span>
+        <div class={styles.viewTitle}>
+          <h1>{$viewTitle}</h1>
+          <span class={styles.viewportSize}>
+            {$viewportBoundsSize.map((size) => `${size.x}x${size.y}`)}
+          </span>
+        </div>
 
         <div class={styles.buttons}>
           <ToggleButton $active={$responsiveMode}>Responsive</ToggleButton>
@@ -211,7 +213,8 @@ export default ($attrs, self) => {
                 ),
               }}
               draggable={false}
-              onmousedown={() => {
+              onmousedown={(e) => {
+                e.preventDefault();
                 startDrag("x");
               }}
             >
@@ -225,7 +228,8 @@ export default ($attrs, self) => {
                 ),
               }}
               draggable={false}
-              onmousedown={() => {
+              onmousedown={(e) => {
+                e.preventDefault();
                 startDrag("y");
               }}
             >
@@ -239,7 +243,8 @@ export default ($attrs, self) => {
                 ),
               }}
               draggable={false}
-              onmousedown={() => {
+              onmousedown={(e) => {
+                e.preventDefault();
                 startDrag("xy");
               }}
             />

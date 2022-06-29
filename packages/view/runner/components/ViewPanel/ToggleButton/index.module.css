@@ -1,6 +1,7 @@
 .button {
   border: 1px dotted var(--border-color);
   border-radius: var(--border-radius);
+  color: var(--text-color);
   font-size: 13px;
   line-height: 20px;
   white-space: nowrap;

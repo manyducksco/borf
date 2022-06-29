@@ -18,6 +18,21 @@
   background-color: var(--bg-color);
 }
 
+.viewTitle {
+  display: flex;
+  align-items: center;
+}
+
+.viewportSize {
+  margin-left: 0.25rem;
+  font-size: 0.85rem;
+  background-color: var(--sidebar-hover-color);
+  border-radius: var(--border-radius);
+  padding: 0.15rem 0.25rem;
+  font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
+    monospace;
+}
+
 .buttons {
   display: flex;
   align-items: center;
@@ -54,7 +69,7 @@
 .canvas {
   position: relative;
   flex: 1 1 100%;
-  background-color: #ccc;
+  background-color: var(--canvas-bg-color);
 }
 
 .viewport {
@@ -79,7 +94,7 @@
 }
 
 .viewportSizer:hover {
-  background-color: #0000ff22;
+  background-color: var(--canvas-sizer-hover-color);
 }
 
 .viewportSizer.horizontal {
@@ -117,6 +132,17 @@
   background-color: var(--accent-color);
   border-radius: 50%;
   cursor: move;
+}
+
+.viewportSizerHub:hover::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  bottom: -5px;
+  left: -5px;
+  border-radius: 50%;
+  background-color: var(--canvas-sizer-hover-color);
 }
 
 .iframe {

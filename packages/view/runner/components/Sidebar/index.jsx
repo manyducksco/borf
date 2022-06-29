@@ -94,6 +94,7 @@ export default ($attrs, self) => {
             [styles.right]: $resizeHandle.map((value) => value === "right"),
           }}
           onmousedown={(e) => {
+            e.preventDefault();
             $dragging.set(true);
           }}
         />
