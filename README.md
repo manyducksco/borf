@@ -4,7 +4,7 @@ This is a monorepo for the Woof JS framework. It is managed using [lerna](https:
 
 ## Framework Goals
 
-- Be possible for an average programmer to read and understand
+- Be relatively lightweight (<30kb gzipped)
 - Support common needs without relying on third party libraries (routing, state management, unit testing, logging)
 
 ## Core Packages
@@ -15,9 +15,7 @@ This is a monorepo for the Woof JS framework. It is managed using [lerna](https:
 ## Utility Packages
 
 - [`@woofjs/build`](./packages/build/README.md): Build-system-in-a-box for Woof projects.
-- [`@woofjs/view`](./packages/view/README.md): Visual testing and development environment for components.
-- [`@woofjs/state`](./packages/state/README.md): Observable state containers in a standalone library.
-- [`@woofjs/cli`](./packages/cli/README.md): Command line utilities.
+- [`@woofjs/view`](./packages/view/README.md): Visual testing and development environment for `@woofjs/client` components.
 
 ## Resources
 
