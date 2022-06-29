@@ -1,6 +1,6 @@
 # `@woofjs/view`
 
-Rapid component development environment for Woof projects. Basically a minimalistic [Storybook](https://storybook.js.org/) for Woof.
+Isolated component development environment for Woof projects. Basically a minimalistic [Storybook](https://storybook.js.org/) for Woof.
 
 ## How to Use
 

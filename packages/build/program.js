@@ -167,7 +167,7 @@ async function watchClient(options) {
   const bundleEmitter = new EventEmitter();
 
   // Create app bundle
-  const clientBundle = await buildClient(config).buildIncremental();
+  const clientBundle = await buildClient(config);
 
   /*==========================*\
   ||      Watch & Bundle      ||
