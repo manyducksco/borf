@@ -1,3 +1,5 @@
+import { makeState } from "@woofjs/client";
+
 import ViewAttrsExample from "./ViewAttrsExample";
 
 export default (view) => {
@@ -46,6 +48,10 @@ export default (view) => {
     }),
 
     showQuality: view.attribute(true),
+
+    $randomState: view.attribute(makeState(5), {
+      description: "A state just to show what state attributes look like.",
+    }),
 
     onclick: view.action("button clicked", () => {
       console.log("callback is called when action is fired");

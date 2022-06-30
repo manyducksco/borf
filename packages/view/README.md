@@ -15,7 +15,7 @@ Installing this package makes the `woof-view` command available in `package.json
 ```json
 {
   "scripts": {
-    "view": "woof-view start"
+    "view": "woof-view start ./path/to/client.js"
   }
 }
 ```
@@ -150,7 +150,7 @@ Attributes let the user interact with their values using a variety of input widg
 - number: `number`
 - boolean: `toggle`
 - Date: `date`
-- array or object: `none`
+- $state, array or object: `none`
 
 ### Text Input
 

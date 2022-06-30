@@ -15,6 +15,10 @@ export default ($attrs, self) => {
           return "[[FUNCTION]]";
         }
 
+        if (typeof value === "object" && value.isState) {
+          return "[[STATE]]";
+        }
+
         return value;
       },
       2
@@ -51,6 +55,8 @@ function highlight(json) {
 
       if (match === '"[[FUNCTION]]"') {
         return `<span class="${styles.function}">function</span>`;
+      } else if (match === '"[[STATE]]"') {
+        return `<span class="${styles.state}">$state</span>`;
       } else if (/^"/.test(match)) {
         if (/:$/.test(match)) {
           cls = styles.key;
