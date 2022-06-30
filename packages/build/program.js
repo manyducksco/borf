@@ -8,6 +8,7 @@ const chokidar = require("chokidar");
 const express = require("express");
 const gzipSize = require("gzip-size");
 const superbytes = require("superbytes");
+const findWoofConfig = require("./utils/findWoofConfig");
 
 const buildClient = require("./scripts/build-client");
 
@@ -33,6 +34,18 @@ program
   })
   .action(async ({ options }) => {
     const promises = [];
+
+    // TODO: Find nearest woof.config.js and extract .build settings from it.
+    const woofConfig = findWoofConfig();
+
+    if (woofConfig && woofConfig.build) {
+      options = {
+        ...woofConfig.build,
+        ...options,
+      };
+    }
+
+    console.log(options);
 
     if (options.client) {
       if (options.watch) {
