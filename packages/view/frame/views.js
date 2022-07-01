@@ -198,8 +198,6 @@ catchLinks(root, (anchor) => {
         name: "navigate",
       });
     });
-
-    console.log({ activeView, url });
   }
 });
 
