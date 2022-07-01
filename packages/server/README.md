@@ -244,6 +244,45 @@ app.get("/users/:userId", (ctx) => {
 });
 ```
 
+### Implementation Notes
+
+- h() function will render HTML when called with a tagname
+- h() function will render a component to get HTML when called with a function
+
+The h() calls look like this:
+
+```js
+h("main", null, [
+  h(Header, { title: "User" }),
+  h("div", null, [
+    h("h3", null, user.name),
+    h("p", null, user.bio),
+    h("a", { href: `/users/${attrs.userId}/more` }, "More Info"),
+  ]),
+]);
+```
+
+The resulting HTML string looks like this:
+
+```html
+<main>
+  <header>
+    <h1>User</h1>
+  </header>
+  <div>
+    <h3>Jimbo Jones</h3>
+    <p>Just some guy.</p>
+    <a href="/users/2/more">More Info</a>
+  </div>
+</main>
+```
+
+When rendering an element:
+
+- Process children first, so components are resolved down to HTML
+- Return HTML string
+- All children are strings before returning the element
+
 ---
 
 🦆
