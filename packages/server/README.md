@@ -171,6 +171,79 @@ app.mount(routes);
 app.mount("/sub", routes); // To mount routes under a sub path.
 ```
 
+## Server Rendered Pages
+
+Instead of JSON, you can return elements to render using `h()` or JSX. This returns an HTML response.
+
+```js
+
+```
+
+### Server Components
+
+The server supports function components similar to `@woofjs/client`. The biggest difference is that the attributes here are passed as a plain object rather than a state, and there are no lifecycle methods. Server components are run once to generate a chunk of HTML.
+
+```js
+export function Header(attrs, self) {
+  return (
+    <header>
+      <h1>{attrs.title}</h1>
+    </header>
+  );
+}
+```
+
+And then use it in a page:
+
+```js
+import { Header } from "./components/Header";
+
+app.get("/home", (ctx) => {
+  return (
+    <main>
+      <Header title="Welcome!" />
+      <p>This is the home page.</p>
+    </main>
+  );
+});
+```
+
+It's also possible to create an async component if you need to load data before rendering.
+
+```js
+export async function UserCard(attrs, self) {
+  const db = self.getService("db");
+  const user = await db("users").where("id", attrs.userId);
+
+  return (
+    <div>
+      <h3>{user.name}</h3>
+      <p>{user.bio}</p>
+
+      <a href={`/users/${attrs.userId}/more`}>More Info</a>
+    </div>
+  );
+}
+```
+
+These can be used in exactly the same way as non-async components, but the server will wait to respond until all async components have resolved. Async components can keep data fetching closer to where the data is needed, though too many async components can slow down response time. Data can also be fetched at the top level of a route and passed down to components as attributes.
+
+```js
+import { Header } from "./components/Header";
+import { UserCard } from "./components/UserCard";
+
+app.get("/users/:userId", (ctx) => {
+  const { userId } = ctx.request.params;
+
+  return (
+    <main>
+      <Header title="User" />
+      <UserCard userId={userId} />
+    </main>
+  );
+});
+```
+
 ---
 
 🦆

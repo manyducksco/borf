@@ -13,7 +13,7 @@ program.command("start", {
   description: "starts an HTTP server for views",
   examples: [
     "{*} ./client",
-    "{*} ./client --include-css client/styles/global.css,client/styles/ui.css",
+    "{*} ./client --include-styles client/styles/global.css,client/styles/ui.css",
   ],
   options: {
     "--include-styles <paths>": {
@@ -62,7 +62,7 @@ program.command("start", {
 //     "builds views into a folder full of static files you can host anywhere",
 //   examples: [
 //     "{*} build ./client",
-//     "{*} build ./client --include-css client/styles/global.css,client/styles/ui.css",
+//     "{*} build ./client --include-styles client/styles/global.css,client/styles/ui.css",
 //   ],
 //   options: {
 //     "--include-css <paths>": {
