@@ -155,7 +155,7 @@ declare module "@woofjs/client" {
 
   export function watch<T>($value: State<T>, render: (value: T) => Element): Template;
 
-  export function bind<T>($value: State<T>, event = "input"): BoundState<T>;
+  export function bind<T>($value: State<T>, event?: string): BoundState<T>;
 
   /*==================================*\
   ||             Component            ||
