@@ -25,8 +25,8 @@ module.exports = async function buildViews(options, bundleConfig) {
   let nextId = 0;
 
   // Hack CSS imports into frame index so they get included in the build.
-  if (options.includeCSS && options.includeCSS.length > 0) {
-    for (const file of options.includeCSS) {
+  if (options.include?.styles && options.include?.styles?.length > 0) {
+    for (const file of options.include.styles) {
       const fileName = path.basename(file);
       const absolutePath = path.resolve(file);
       const newPath = path.join(bundleSrcRoot, fileName);
@@ -53,6 +53,17 @@ module.exports = async function buildViews(options, bundleConfig) {
 
   // Copy /files to /src
   await fs.copy(frameRoot, bundleSrcRoot);
+
+  // Copy project's `.view/static` files.
+  if (
+    options.projectViewStaticRoot &&
+    fs.existsSync(options.projectViewStaticRoot)
+  ) {
+    await fs.copy(
+      options.projectViewStaticRoot,
+      path.join(bundleSrcRoot, "static")
+    );
+  }
 
   // Write views index file
   const outputPath = path.join(bundleSrcRoot, "views-index.js");

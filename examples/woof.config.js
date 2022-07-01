@@ -2,7 +2,7 @@ export default {
   // Include global project CSS in views
   view: {
     include: {
-      css: ["./client/styles.demo.css"],
+      styles: ["./client/styles.demo.css"],
     },
   },
 

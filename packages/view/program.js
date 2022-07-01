@@ -7,6 +7,7 @@ const chokidar = require("chokidar");
 const express = require("express");
 const buildViews = require("./scripts/build-views");
 const EventEmitter = require("events");
+const findWoofConfig = require("./utils/findWoofConfig");
 
 program.command("start", {
   description: "starts an HTTP server for views",
@@ -15,9 +16,9 @@ program.command("start", {
     "{*} ./client --include-css client/styles/global.css,client/styles/ui.css",
   ],
   options: {
-    "--include-css <paths>": {
+    "--include-styles <paths>": {
       description: "path to CSS files to include, comma separated",
-      key: "includeCSS",
+      key: "includeStyles",
     },
   },
   args: [
@@ -27,12 +28,32 @@ program.command("start", {
     },
   ],
   action: async ({ args, options }) => {
+    const woofConfig = await findWoofConfig();
+
+    const includeStyles = [];
+
+    // Add styles from CLI argument.
+    if (options.includeStyles) {
+      includeStyles.push(
+        ...options.includeStyles.split(",").filter((x) => x.trim() !== "")
+      );
+    }
+
+    // Add styles from woof config file.
+    if (woofConfig?.view?.include?.styles) {
+      includeStyles.push(
+        ...woofConfig.view.include.styles.filter((x) => x.trim() !== "")
+      );
+    }
+
     await serve({
+      ...(woofConfig?.build || {}),
       clientRoot: path.resolve(args.path),
       buildRoot: path.join(process.cwd(), "temp", "views"),
-      includeCSS: options.includeCSS
-        ? options.includeCSS.split(",").filter((x) => x.trim() !== "")
-        : [],
+      projectViewStaticRoot: path.join(process.cwd(), ".view", "static"), // Replace the view index.html.mustache and/or include extra files for your project.
+      include: {
+        styles: includeStyles,
+      },
     });
   },
 });

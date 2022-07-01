@@ -7,3 +7,5 @@ export { initService } from "./initService.js";
 export { parseRoute, sortRoutes, matchRoute } from "./routing.js";
 
 export { makeDebug } from "../makeDebug.js";
+
+export { catchLinks } from "./catchLinks.js";
