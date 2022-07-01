@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   // Include global project CSS in views
   view: {
     include: {
