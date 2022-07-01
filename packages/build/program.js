@@ -45,8 +45,6 @@ program
       };
     }
 
-    console.log(options);
-
     if (options.client) {
       if (options.watch) {
         promises.push(watchClient(options));

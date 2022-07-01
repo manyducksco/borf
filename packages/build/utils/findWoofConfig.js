@@ -2,6 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const process = require("process");
 
+/**
+ * Finds the nearest woof.config.js file in parent directories. This should be at the root of your project if one exists.
+ */
 module.exports = function findWoofConfig(dir = process.cwd()) {
   const files = fs.readdirSync(dir);
 
