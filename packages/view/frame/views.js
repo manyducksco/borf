@@ -4,9 +4,7 @@
 // views-index.js is generated from the views in the project
 import views from "./views-index.js";
 import { h, makeState, mergeStates } from "@woofjs/client";
-import { makeDebug, initService } from "@woofjs/client/helpers";
-
-const root = document.querySelector("#app");
+import { makeDebug, initService, catchLinks } from "@woofjs/client/helpers";
 
 function makeMockRouter() {
   return {
@@ -182,8 +180,28 @@ for (const view of views) {
   collections.push(formatCollection(view));
 }
 
+const root = document.querySelector("#view");
+
 let handlers = {};
 let mounted;
+let activeView;
+
+catchLinks(root, (anchor) => {
+  if (activeView) {
+    const url = new URL(anchor.href);
+
+    // Log navigation as an action.
+    activeView.actions.$log.set((log) => {
+      log.push({
+        timestamp: new Date(),
+        message: `to: ${url.pathname}`,
+        name: "navigate",
+      });
+    });
+
+    console.log({ activeView, url });
+  }
+});
 
 function emitEvent(name, ...args) {
   if (handlers[name]) {
@@ -212,6 +230,10 @@ const api = {
       emitEvent("unmount");
     }
 
+    if (activeView) {
+      activeView = null;
+    }
+
     if (id != null) {
       let found;
 
@@ -227,6 +249,8 @@ const api = {
       if (!found) {
         throw new Error(`View not found.`);
       }
+
+      activeView = found;
 
       const debug = makeDebug();
       const appContext = { makeGetService };

@@ -35,8 +35,8 @@ program
   .action(async ({ options }) => {
     const promises = [];
 
-    // TODO: Find nearest woof.config.js and extract .build settings from it.
-    const woofConfig = findWoofConfig();
+    // Find nearest woof.config.js and extract .build settings from it.
+    const woofConfig = await findWoofConfig();
 
     if (woofConfig && woofConfig.build) {
       options = {
@@ -164,6 +164,7 @@ async function watchClient(options) {
         `,
       ],
     },
+    postcss: options.postcss || undefined,
   };
 
   const buildDir = config.outputPath;
