@@ -7,6 +7,7 @@
   "main": "dist/woof.app.c.js",
   "module": "dist/woof.app.m.js",
   "types": "types.d.ts",
+  "type": "module",
   "scripts": {
     "start": "woof-build -c client/client.js -o build --watch",
     "build": "woof-build -c client/client.js -o build --minify",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@woofjs/build": "file:../packages/build",
     "@woofjs/client": "file:../packages/client",
+    "@woofjs/server": "file:../packages/server",
     "@woofjs/view": "file:../packages/view"
   }
 }

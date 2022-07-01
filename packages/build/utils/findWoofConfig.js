@@ -9,7 +9,7 @@ module.exports = function findWoofConfig(dir = process.cwd()) {
   const files = fs.readdirSync(dir);
 
   for (const file of files) {
-    if (file === "woof.config.js") {
+    if (/^woof\.config\.[cm]?js$/.test(file)) {
       return require(path.join(dir, file));
     }
   }

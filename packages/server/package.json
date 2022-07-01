@@ -1,12 +1,11 @@
 {
   "name": "@woofjs/server",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "description": "",
-  "source": "src/index.js",
-  "main": "dist/woof.server.c.js",
   "types": "types.d.ts",
-  "module": "dist/woof.server.m.js",
   "private": true,
+  "type": "module",
+  "main": "./src/server.js",
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",
@@ -16,19 +15,12 @@
     "build:prod": "npm run build -- --minify"
   },
   "keywords": [],
-  "author": "Tony McCoy <tony@thatsalotofducks.com>",
+  "author": "Morgan Doboszynski <morgan@thatsalotofducks.com>",
   "license": "ISC",
-  "exports": {
-    ".": {
-      "require": "./dist/woof.server.c.js",
-      "import": "./dist/woof.server.m.js"
-    }
-  },
   "devDependencies": {
     "@testing-library/dom": "^8.11.1",
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.7",
-    "@woofjs/router": "^0.3.0",
     "callsite": "^1.0.0",
     "es-jest": "^1.5.0",
     "esbuild": "^0.14.10",
