@@ -55,6 +55,7 @@ function formatCollection(data) {
   for (const { fn, name } of fns) {
     const services = {};
     const attributes = [];
+    const decorators = [];
     const actions = { $log: makeState([]), fns: [] };
     let template;
 
@@ -100,6 +101,9 @@ function formatCollection(data) {
             name: "fired",
           });
         });
+      },
+      decorate(fn) {
+        decorators.push(fn);
       },
       render(component, attrs, children) {
         template = h(component, attrs, children);
@@ -169,7 +173,7 @@ function formatCollection(data) {
       services,
       actions,
       template,
-      component: null,
+      decorators,
     });
   }
 
@@ -202,6 +206,8 @@ catchLinks(root, (anchor) => {
 });
 
 function emitEvent(name, ...args) {
+  console.log("emitting", name, ...args);
+
   if (handlers[name]) {
     for (const callback of handlers[name]) {
       callback(...args);
@@ -222,6 +228,8 @@ const api = {
     return collections;
   },
   setActiveView(id) {
+    console.log(mounted);
+
     if (mounted) {
       mounted.disconnect();
       mounted = null;
@@ -283,7 +291,24 @@ const api = {
         };
       }
 
-      mounted = found.template.init({ makeGetService });
+      const component = found.template.init({ makeGetService });
+
+      mounted = component;
+
+      // Apply decorators.
+      for (const decorator of found.decorators) {
+        mounted = decorator(mounted);
+
+        if (!mounted || !mounted.isTemplate) {
+          throw new TypeError(
+            `Decorators must return an element. Got: ${mounted}`
+          );
+        }
+      }
+
+      if (mounted.isTemplate) {
+        mounted = mounted.init({ makeGetService });
+      }
 
       for (const name in services) {
         if (services[name].beforeConnect) {
@@ -299,7 +324,7 @@ const api = {
         }
       }
 
-      emitEvent("mount", mounted);
+      emitEvent("mount", component);
     }
   },
 };

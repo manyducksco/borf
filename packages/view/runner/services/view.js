@@ -3,6 +3,7 @@ import { proxyState } from "@woofjs/client";
 
 export default (self) => {
   let API;
+  let frameLoaded = false;
 
   const { $params } = self.getService("@router");
 
@@ -82,11 +83,13 @@ export default (self) => {
 
       $collections.set(newCollections);
       API.setActiveView($currentView.get("id"));
+
+      frameLoaded = true;
     });
   });
 
   self.watchState($currentView, (view) => {
-    if (API) {
+    if (frameLoaded) {
       API.setActiveView(view?.id);
     }
   });

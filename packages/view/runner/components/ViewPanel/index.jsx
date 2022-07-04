@@ -31,7 +31,7 @@ export default ($attrs, self) => {
   const $canvasRef = makeState();
   const $canvasSize = makeState({ x: 0, y: 0 });
 
-  const $showAttrsOverlay = makeState(true);
+  const $showAttrsOverlay = makeState(false);
 
   const $viewportBoundsSize = mergeStates(
     $viewportSize,
