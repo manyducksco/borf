@@ -1,6 +1,6 @@
 const esbuild = require("esbuild");
 
-const target = "es2017";
+const target = "es2018";
 let minify = false;
 let watch = false;
 

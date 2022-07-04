@@ -20,9 +20,7 @@ app.static("/static/path"); // Specify a custom path for static files.
 // Each service is created once per request.
 // Two API calls will use two different instances, but all middleware in the same API call will use one instance.
 app.service("example", ExampleService, {
-  // If lifecycle is 'app', one instance is created when the app starts.
-  // If lifecycle is 'request', a new instance is created for each request.
-  lifecycle: "app" | "request",
+  // lifecylce is: one instance is created when the app starts.
   options: {
     /* service options object */
   },
@@ -59,6 +57,8 @@ app.use((ctx) => {
 
   // ctx object has:
   ctx = {
+    // place for middleware to store anything the app creator wants, such as auth information
+    cache: {},
     // middleware can mutate this object as it gets passed through
     request: {
       verb: "post",

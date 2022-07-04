@@ -1,7 +1,12 @@
 import http from "http";
+import { isFunction } from "./helpers/typeChecking.js";
+import { initService } from "./helpers/initService.js";
 import { parseRoute, matchRoute, sortRoutes } from "./helpers/routing.js";
+import { makeDebug } from "./helpers/makeDebug.js";
 
 export function makeApp() {
+  const debug = makeDebug();
+
   let routes = [];
   let services = {};
 
@@ -52,7 +57,7 @@ export function makeApp() {
         services[name] = {
           fn: service,
           instance: null,
-          options,
+          options: null,
         };
       }
 
@@ -92,21 +97,20 @@ export function makeApp() {
     head: (url, func) => {
       return route("HEAD", url, func);
     },
+    use: (func) => {},
     listen: async (port) => {
       routes = sortRoutes(routes);
 
-      return new Promise((resolve, reject) => {
+      return new Promise(async (resolve, reject) => {
         // init services
         for (const name in services) {
           const service = services[name];
 
-          if (service.options.lifecycle == "app") {
-            // First bits of app code are run; service functions called.
-            service.instance = initService({ makeGetService }, service.fn, debug.makeChannel(`service:${name}`), {
-              name,
-              options: service.options,
-            });
-          }
+          // First bits of app code are run; service functions called.
+          service.instance = await initService({ makeGetService }, service.fn, debug.makeChannel(`service:${name}`), {
+            name,
+            options: service.options,
+          });
         }
 
         // init server
@@ -126,6 +130,7 @@ export function makeApp() {
             } catch {}
 
             let ctx = {
+              cache: {},
               request: {
                 method: req.method,
                 headers: req.headers,
@@ -135,7 +140,9 @@ export function makeApp() {
                 status: 200,
                 headers: {},
               },
-              getService: (name) => {},
+              getService: (name) => {
+                return services[name].instance.exports;
+              },
             };
 
             const matched = matchRoute(routes, req.url, {

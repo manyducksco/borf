@@ -2,49 +2,47 @@ import { makeApp } from "@woofjs/server";
 
 const app = makeApp();
 
-const appExampleService = () => {
+const exampleService = (self) => {
   return {
     call: () => {
-      this.options.timesCalled++;
-      return this.options.timesCalled;
+      self.options.timesCalled++;
+      return self.options.timesCalled;
     },
   };
 };
 
-const requestExampleService = () => {
-  return {
-    call: () => {
-      this.options.timesCalled++;
-      return this.options.timesCalled;
-    },
-  };
-};
-
-app.service("appExample", appExampleService, {
-  lifecycle: "app",
+app.service("example", exampleService, {
   options: {
     timesCalled: 0,
   },
 });
 
-app.service("requestExample", requestExampleService, {
-  lifecycle: "request",
-  options: {
-    timesCalled: 0,
-  },
+app.use((ctx) => {
+  ctx.cache.bark = "mrrp";
 });
 
-app.get("/app", (ctx) => {
-  const service = ctx.getService("appExample");
+app.get("/middleware-outline", (ctx) => {
   return {
-    message: `App service called ${service.call()} times.`,
+    message: `Data from middleware: ${ctx.cache.bark}`,
   };
 });
 
-app.get("/request", (ctx) => {
-  const service = ctx.getService("requestExample");
+app.get(
+  "/middleware-inline",
+  (ctx) => {
+    ctx.cache.meow = "RUFF";
+  },
+  (ctx) => {
+    return {
+      message: `Data from middleware: ${ctx.cache.meow}`,
+    };
+  }
+);
+
+app.get("/service", (ctx) => {
+  const service = ctx.getService("example");
   return {
-    message: `Request service called ${service.call()} times.`,
+    message: `Example Service called ${service.call()} times.`,
   };
 });
 

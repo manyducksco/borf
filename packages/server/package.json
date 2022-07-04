@@ -4,8 +4,7 @@
   "description": "",
   "types": "types.d.ts",
   "private": true,
-  "type": "module",
-  "main": "./src/server.js",
+  "main": "./src/index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",
@@ -18,14 +17,12 @@
   "author": "Morgan Doboszynski <morgan@manyducks.co>",
   "license": "ISC",
   "devDependencies": {
-    "@testing-library/dom": "^8.11.1",
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.7",
-    "callsite": "^1.0.0",
+    "color-hash": "^2.0.1",
     "es-jest": "^1.5.0",
     "esbuild": "^0.14.10",
     "jest": "^27.4.6",
-    "nock": "^13.2.4",
     "query-string": "^7.0.1"
   }
 }
