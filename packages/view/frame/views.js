@@ -206,8 +206,6 @@ catchLinks(root, (anchor) => {
 });
 
 function emitEvent(name, ...args) {
-  console.log("emitting", name, ...args);
-
   if (handlers[name]) {
     for (const callback of handlers[name]) {
       callback(...args);
@@ -228,8 +226,6 @@ const api = {
     return collections;
   },
   setActiveView(id) {
-    console.log(mounted);
-
     if (mounted) {
       mounted.disconnect();
       mounted = null;
