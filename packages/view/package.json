@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/view",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Isolated component development for dogs. 🐕",
   "main": "program.js",
   "scripts": {
