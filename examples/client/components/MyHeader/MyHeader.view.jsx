@@ -22,7 +22,7 @@ export default (view) => {
 
   // Provide mock versions of any services used by your component.
   view.service(
-    "@http",
+    "http",
     /**
      * We are using makeMockHTTP from the testing tools to create an `@http` service
      * that returns mock data. This prevents the view from touching a real API.

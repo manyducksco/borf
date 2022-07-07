@@ -1,7 +1,7 @@
 /**
  * Displays one or more children without a parent element.
  */
-export function Fragment(_, self) {
+export function Fragment(self) {
   const node = document.createTextNode("");
 
   self.afterConnect(() => {

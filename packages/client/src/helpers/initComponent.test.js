@@ -8,23 +8,17 @@ import { isComponent, isState } from "./typeChecking.js";
 \*========================*/
 
 const appContext = {
-  makeGetService() {
-    return getService;
+  services: {
+    app: null,
   },
-};
-
-const mockServices = {
-  "@app": appContext,
-  "@debug": {
+  debug: {
     makeChannel(name) {
       return {};
     },
   },
 };
 
-function getService(name) {
-  return mockServices[name];
-}
+appContext.services.app = appContext;
 
 /**
  * Creates a mock DOM node for testing.
@@ -114,18 +108,18 @@ test("connect, disconnect and lifecycle hooks", () => {
   let afterDisconnect = jest.fn();
   let afterDisconnect2 = jest.fn();
 
-  function Component($attrs, self) {
+  function Component(ctx) {
     // 1 functions are using this.*
     this.beforeConnect(beforeConnect);
     this.afterConnect(afterConnect);
     this.beforeDisconnect(beforeDisconnect);
     this.afterDisconnect(afterDisconnect);
 
-    // 2 functions are using self.* (same object)
-    self.beforeConnect(beforeConnect2);
-    self.afterConnect(afterConnect2);
-    self.beforeDisconnect(beforeDisconnect2);
-    self.afterDisconnect(afterDisconnect2);
+    // 2 functions are using ctx.* (same object)
+    ctx.beforeConnect(beforeConnect2);
+    ctx.afterConnect(afterConnect2);
+    ctx.beforeDisconnect(beforeDisconnect2);
+    ctx.afterDisconnect(afterDisconnect2);
 
     return makeDOMNode();
     // return h("p", "This is just a test.");
@@ -221,8 +215,8 @@ test(".node returns the root DOM node", () => {
 test("attributes have correct initial values", () => {
   const initialized = jest.fn();
 
-  function Component($attrs, self) {
-    const attrs = $attrs.get();
+  function Component(ctx) {
+    const attrs = ctx.$attrs.get();
 
     expect(isState(attrs.$stateAsState)).toBe(true);
     expect(attrs.$stateAsState.get()).toBe(5);
@@ -256,8 +250,8 @@ test("attributes have correct initial values", () => {
 });
 
 test("two-way state attributes can be changed from inside the component", () => {
-  function Component($attrs, self) {
-    const { $twoWay } = $attrs.get();
+  function Component(ctx) {
+    const { $twoWay } = ctx.$attrs.get();
 
     $twoWay.set(2);
 
@@ -276,14 +270,14 @@ test("state attributes mapped in the component update when the state changes whi
   const oneWayChanged = jest.fn();
   const nonImmediateChanged = jest.fn();
 
-  function Component($attrs, self) {
-    const $twoWay = $attrs.get("$twoWay");
-    const $oneWay = $attrs.map("oneWay");
+  function Component(ctx) {
+    const $twoWay = ctx.$attrs.get("$twoWay");
+    const $oneWay = ctx.$attrs.map("oneWay");
 
-    self.watchState($twoWay, twoWayChanged);
-    self.watchState($oneWay, oneWayChanged);
+    ctx.watchState($twoWay, twoWayChanged);
+    ctx.watchState($oneWay, oneWayChanged);
 
-    self.watchState($oneWay, nonImmediateChanged, { immediate: false });
+    ctx.watchState($oneWay, nonImmediateChanged, { immediate: false });
 
     return null;
   }
@@ -348,25 +342,25 @@ test("throws when setting a two way attr that isn't a state", () => {
 test("self.isConnected reflects the current state", () => {
   const hookCalled = jest.fn();
 
-  function Component($attrs, self) {
-    self.beforeConnect(() => {
+  function Component(ctx) {
+    ctx.beforeConnect(() => {
       hookCalled();
-      expect(self.isConnected).toBe(false);
+      expect(ctx.isConnected).toBe(false);
     });
 
-    self.afterConnect(() => {
+    ctx.afterConnect(() => {
       hookCalled();
-      expect(self.isConnected).toBe(true);
+      expect(ctx.isConnected).toBe(true);
     });
 
-    self.beforeDisconnect(() => {
+    ctx.beforeDisconnect(() => {
       hookCalled();
-      expect(self.isConnected).toBe(true);
+      expect(ctx.isConnected).toBe(true);
     });
 
-    self.afterDisconnect(() => {
+    ctx.afterDisconnect(() => {
       hookCalled();
-      expect(self.isConnected).toBe(false);
+      expect(ctx.isConnected).toBe(false);
     });
 
     return null;
@@ -406,11 +400,11 @@ test("supports returning subcomponents", () => {
 });
 
 test("throws error when calling self.watchState when component is already connected", () => {
-  function Component($attrs, self) {
-    const $nothing = $attrs.map("nonexistent");
+  function Component(ctx) {
+    const $nothing = ctx.$attrs.map("nonexistent");
 
-    self.afterConnect(() => {
-      self.watchState($nothing, (value) => {
+    ctx.afterConnect(() => {
+      ctx.watchState($nothing, (value) => {
         console.log("This won't run.");
       });
     });
@@ -430,8 +424,8 @@ test("routePreload takes element to show() and resolves when done() is called", 
   const loader = h("div", h("h1", "Loading..."));
   const mount = jest.fn();
 
-  function Component($attrs, self) {
-    self.loadRoute(({ show, done }) => {
+  function Component(ctx) {
+    ctx.loadRoute(({ show, done }) => {
       show(loader);
 
       setTimeout(done, 100);
@@ -455,8 +449,8 @@ test("routePreload takes element to show() and resolves when done() is called", 
 test("routePreload show() throws if value isn't an element", async () => {
   const mount = jest.fn();
 
-  function Component($attrs, self) {
-    self.loadRoute(({ show, done }) => {
+  function Component(ctx) {
+    ctx.loadRoute(({ show, done }) => {
       show("potato");
       done();
     });
@@ -482,8 +476,8 @@ test("routePreload show() throws if value isn't an element", async () => {
 test("routePreload finishes with promise resolution if loadRoute returns one", async () => {
   const mount = jest.fn();
 
-  function Component($attrs, self) {
-    self.loadRoute(() => {
+  function Component(ctx) {
+    ctx.loadRoute(() => {
       return new Promise((resolve) => {
         setTimeout(resolve, 100);
       });

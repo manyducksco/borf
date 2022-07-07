@@ -33,15 +33,15 @@ export function h(element, ...args) {
     /**
      * Initialize the template to produce a component instance.
      */
-    init(app) {
+    init(appContext) {
       // Filter falsy children and convert to component instances.
       const children = flatMap(args)
         .filter((x) => x !== null && x !== undefined && x !== false)
         .map((child) => {
           if (isTemplate(child)) {
-            child = child.init(app);
+            child = child.init(appContext);
           } else if (isString(child) || isNumber(child) || isState(child)) {
-            child = initComponent(app, Text, { value: child });
+            child = initComponent(appContext, Text, { value: child });
           }
 
           if (!isComponent(child)) {
@@ -53,12 +53,12 @@ export function h(element, ...args) {
 
       if (isString(element)) {
         if (element === "" || element === "<>") {
-          return initComponent(app, Fragment, null, children);
+          return initComponent(appContext, Fragment, null, children);
         } else {
-          return initComponent(app, Element, { tagname: element, attrs }, children);
+          return initComponent(appContext, Element, { tagname: element, attrs }, children);
         }
       } else if (isFunction(element)) {
-        return initComponent(app, element, attrs, children);
+        return initComponent(appContext, element, attrs, children);
       } else {
         throw new TypeError(`Expected a tagname or component function. Got: ${element} (${typeof element})`);
       }

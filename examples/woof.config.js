@@ -5,13 +5,4 @@ export default {
       styles: ["client/styles/demo.css"],
     },
   },
-
-  build: {
-    /**
-     * Specify postcss plugins to use in esbuild.
-     */
-    postcss: {
-      plugins: [],
-    },
-  },
 };

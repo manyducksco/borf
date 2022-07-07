@@ -1,6 +1,6 @@
 import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
-export default function CRUD($attrs, self) {
+export default function CRUD(self) {
   self.debug.name = "7GUIs:CRUD";
 
   const $people = makeState([

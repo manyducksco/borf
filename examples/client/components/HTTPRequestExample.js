@@ -1,7 +1,9 @@
 import { makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export default ($attrs, self) => {
+export default (self) => {
+  const { http } = self.services;
+
   self.debug.name = "HTTPRequestExample";
 
   logLifecycle(self);
@@ -14,8 +16,7 @@ export default ($attrs, self) => {
   const refresh = () => {
     $loading.set(true);
 
-    return self
-      .getService("@http")
+    return http
       .get("https://dog.ceo/api/breeds/image/random")
       .then((res) => {
         $image.set(res.body.message);

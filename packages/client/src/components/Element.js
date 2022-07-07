@@ -1,11 +1,9 @@
 import { isArray, isObject, isString, isNumber, isFunction, isBinding, isState } from "../helpers/typeChecking.js";
 
 /**
- * Implements logic for HTML elements created with `v()`.
+ * Implements logic for HTML elements created with `h()`.
  */
-export function Element($attrs, self) {
-  const { children } = self;
-
+export function Element({ $attrs, children, ...self }) {
   const tagname = $attrs.get("tagname");
   const attrs = $attrs.get("attrs") || {}; // attrs passed to the element itself
 

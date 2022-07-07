@@ -15,7 +15,7 @@ import { Outlet } from "../components/Outlet.js";
  * Top level navigation service.
  */
 export default function RouterService(self) {
-  self.debug.name = "woof:@router";
+  self.debug.name = "woof:service:router";
 
   const { options } = self;
 
@@ -92,7 +92,7 @@ export default function RouterService(self) {
   self.afterConnect(() => {
     const root = options.getRoot();
 
-    appOutlet = initComponent(self.getService("@app"), Outlet);
+    appOutlet = initComponent(options.appContext, Outlet);
     appOutlet.connect(root);
 
     history.listen(onRouteChange);
@@ -115,7 +115,7 @@ export default function RouterService(self) {
    * Run when the location changes. Diffs and mounts new routes and updates
    * the $path, $route, $params and $query states accordingly.
    */
-  async function onRouteChange({ location }) {
+  const onRouteChange = async ({ location }) => {
     const matched = matchRoute(routes, location.pathname);
 
     if (matched) {
@@ -149,9 +149,8 @@ export default function RouterService(self) {
 
               activeLayers = activeLayers.slice(0, i);
 
-              const app = self.getService("@app");
-              const outlet = initComponent(app, Outlet);
-              const component = initComponent(app, matchedLayer.component, null, [outlet]);
+              const outlet = initComponent(options.appContext, Outlet);
+              const component = initComponent(options.appContext, matchedLayer.component, null, [outlet]);
 
               const parentLayer = activeLayers[activeLayers.length - 1];
 
@@ -199,7 +198,7 @@ export default function RouterService(self) {
         })
       );
     }
-  }
+  };
 
   return {
     $route: $route.map(),

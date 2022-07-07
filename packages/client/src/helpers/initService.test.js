@@ -5,23 +5,17 @@ import { initService } from "./initService.js";
 \*========================*/
 
 const appContext = {
-  makeGetService() {
-    return getService;
+  services: {
+    app: null,
   },
-};
-
-const mockServices = {
-  "@app": appContext,
-  "@debug": {
+  debug: {
     makeChannel(name) {
       return {};
     },
   },
 };
 
-function getService(name) {
-  return mockServices[name];
-}
+appContext.services.app = appContext;
 
 const debug = {};
 

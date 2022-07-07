@@ -1,22 +1,22 @@
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
 
-export default function HTTPService({ debug, options }) {
-  debug.name = "woof:@http";
+export default function HTTPService(self) {
+  self.debug.name = "woof:service:http";
 
   const _middleware = [];
-  let fetch = options.fetch || window.fetch.bind(window);
+  let fetch = self.options.fetch || window.fetch.bind(window);
   let requestId = 0;
 
-  function request(method, url) {
+  const request = (method, url) => {
     return new HTTPRequest({
       id: ++requestId,
       method,
       url,
       fetch,
-      debug,
+      debug: self.debug,
       middleware: _middleware,
     });
-  }
+  };
 
   return {
     request,

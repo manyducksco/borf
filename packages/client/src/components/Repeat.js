@@ -1,13 +1,15 @@
-import { initComponent } from "../helpers/initComponent.js";
+import { appContextKey, initComponent } from "../helpers/initComponent.js";
 import { isArray } from "../helpers/typeChecking.js";
 
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
  */
-export function Repeat($attrs, self) {
-  self.debug.name = "woof:repeat";
+export function Repeat(self) {
+  self.debug.name = "woof:template:repeat";
 
-  const app = self.getService("@app");
+  const { $attrs } = self;
+
+  const appContext = self[appContextKey];
   const $value = $attrs.map("value");
   const componentFn = $attrs.get("component");
   const getKey = $attrs.get("getKey") || ((value) => value);
@@ -64,7 +66,7 @@ export function Repeat($attrs, self) {
       } else {
         newItems[key.index] = {
           key: key.value,
-          component: initComponent(app, componentFn, key.attrs),
+          component: initComponent(appContext, componentFn, key.attrs),
         };
       }
     }

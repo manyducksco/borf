@@ -5,16 +5,21 @@ import { splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
 
-import HTTPService from "./services/@http.js";
-import PageService from "./services/@page.js";
-import RouterService from "./services/@router.js";
+import HTTPService from "./services/http.js";
+import PageService from "./services/page.js";
+import RouterService from "./services/router.js";
 
 export function makeApp(options = {}) {
   const debug = makeDebug(options.debug);
   const appDebug = debug.makeChannel("woof:app");
 
   const routes = [];
-  const services = {};
+  const registeredServices = {};
+
+  const appContext = {
+    services: {},
+    debug,
+  };
 
   let beforeConnect = async () => true;
   let afterConnect = async () => true;
@@ -135,19 +140,25 @@ export function makeApp(options = {}) {
         throw new TypeError(`Expected a service function. Got: ${service} (${typeof service})`);
       }
 
-      if (!services[name]) {
-        services[name] = {
+      if (!registeredServices[name]) {
+        registeredServices[name] = {
           fn: service,
-          instance: null,
           options,
+          instance: null,
         };
+
+        Object.defineProperty(appContext.services, name, {
+          get() {
+            throw `Service '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other services that access it.`;
+          },
+        });
       }
 
       // Merge with existing fields if overwriting.
-      services[name].fn = service;
+      registeredServices[name].fn = service;
 
       if (config.options !== undefined) {
-        services[name].options = config.options;
+        registeredServices[name].options = config.options;
       }
 
       return methods;
@@ -200,26 +211,32 @@ export function makeApp(options = {}) {
       root = element;
 
       // Create registered services.
-      for (const name in services) {
-        const service = services[name];
+      for (const name in registeredServices) {
+        const service = registeredServices[name];
 
         // First bits of app code are run; service functions called.
-        service.instance = initService({ makeGetService }, service.fn, debug.makeChannel(`service:${name}`), {
+        service.instance = initService(appContext, service.fn, debug.makeChannel(`service:${name}`), {
           name,
           options: service.options,
         });
+
+        // Recreate the object without temporary getter that throws error while this service is not initialized.
+        appContext.services = {
+          ...appContext.services,
+          [name]: service.instance.exports,
+        };
       }
 
       // beforeConnect is the first opportunity to access other services.
       // This is also a good place to configure things before app-level `setup` runs.
-      for (const name in services) {
-        services[name].instance.beforeConnect();
+      for (const name in registeredServices) {
+        registeredServices[name].instance.beforeConnect();
       }
 
       return beforeConnect().then(async () => {
         // Send connected signal to all services.
-        for (const name in services) {
-          services[name].instance.afterConnect();
+        for (const name in registeredServices) {
+          registeredServices[name].instance.afterConnect();
         }
 
         return afterConnect();
@@ -241,14 +258,14 @@ export function makeApp(options = {}) {
      * @param name - Name of a service. Built-in services start with `@`.
      */
     return function getService(name) {
-      if (services[name]) {
-        if (services[name].instance == null) {
+      if (registeredServices[name]) {
+        if (registeredServices[name].instance == null) {
           throw new Error(
             `Service '${name}' was requested before it was initialized from ${type} '${identifier}'. Make sure '${name}' is registered before '${identifier}' on your app.`
           );
         }
 
-        return services[name].instance.exports;
+        return registeredServices[name].instance.exports;
       }
 
       throw new Error(`Service is not registered in this app. Got: ${name}`);
@@ -259,20 +276,11 @@ export function makeApp(options = {}) {
   // Built-in services
   ////
 
-  // App context for components.
-  methods.service("@app", () => {
-    return {
-      makeGetService,
-    };
-  });
-
-  // Prefixed console logging.
-  methods.service("@debug", () => debug);
-
   // Access to matched route and query params.
-  methods.service("@router", RouterService, {
+  methods.service("router", RouterService, {
     options: {
       ...(options.router || {}),
+      appContext,
       routes,
       getRoot() {
         return root;
@@ -281,10 +289,10 @@ export function makeApp(options = {}) {
   });
 
   // Access to document settings like title and favicon.
-  methods.service("@page", PageService);
+  methods.service("page", PageService);
 
   // HTTP client with middleware support.
-  methods.service("@http", HTTPService);
+  methods.service("http", HTTPService);
 
   return methods;
 }

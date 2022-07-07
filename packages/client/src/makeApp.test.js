@@ -29,10 +29,10 @@ test("nested routes are parsed correctly", async () => {
     return h("div");
   }
 
-  app.service("@http", () => {
+  app.service("http", () => {
     return {}; // Override @http, otherwise window.fetch isn't defined in the test so this fails.
   });
-  app.service("@router", (self) => {
+  app.service("router", (self) => {
     const { routes } = self.options;
 
     expect(routes).toStrictEqual([
@@ -91,7 +91,7 @@ test("lifecycle methods", async () => {
   const app = makeApp();
   const root = document.createElement("div");
 
-  app.service("@http", () => {
+  app.service("http", () => {
     return {}; // Override @http, otherwise window.fetch isn't defined in the test so this fails.
   });
 
@@ -111,12 +111,12 @@ test("throws helpful error when accessing services that haven't been created yet
   const app = makeApp();
   const root = document.createElement("div");
 
-  app.service("@http", () => {
+  app.service("http", () => {
     return {}; // Override @http, otherwise window.fetch isn't defined in the test so this fails.
   });
 
-  app.service("one", (self) => {
-    const two = self.getService("two");
+  app.service("one", (ctx) => {
+    const { two } = ctx.services;
 
     return {
       value: 1,
@@ -130,7 +130,9 @@ test("throws helpful error when accessing services that haven't been created yet
     };
   });
 
-  expect(async () => app.connect(root)).rejects.toThrow(
-    "Service 'two' was requested before it was initialized from service 'one'. Make sure 'two' is registered before 'one' on your app."
+  await app.connect(root);
+
+  expect(() => app.connect(root)).rejects.toThrow(
+    "Service 'two' was accessed before it was connected. Make sure 'two' is registered before other services that access it."
   );
 });

@@ -98,11 +98,35 @@ declare module "@woofjs/client" {
     error(...args: any): void;
   };
 
-  export type AppLifecycleCallback = (self: AppSelf) => void | Promise<void>;
+  export type AppLifecycleCallback = (self: AppContext) => void | Promise<void>;
 
-  export type AppSelf = {
-    getService: <T = Object>(name: string) => T;
+  export type Services<T = any> = {
+    router: RouterService;
+    http: HTTPService;
+    page: PageService;
+    [name: keyof T]: T[name];
+  };
+
+  export type AppContext<ServicesType = any> = {
+    services: Services<ServicesType>;
     debug: DebugChannel;
+  };
+
+  export type RouterService = {
+    $route: State<string>;
+    $path: State<string>;
+    $params: State<{ [name: string]: unknown }>;
+    $query: State<{ [name: string]: unknown }>;
+
+    back: (steps?: number) => void;
+    forward: (steps?: number) => void;
+    navigate: (path: string, options?: { replace?: boolean }) => void;
+  };
+
+  export type HTTPService = {};
+
+  export type PageService = {
+    $title: State<string>;
   };
 
   /*==================================*\
@@ -127,13 +151,9 @@ declare module "@woofjs/client" {
     toString(): string;
   };
 
-  type AppContext = {
-    getService: <T = Object>(name: string) => T;
-  };
-
   type Template = {
     readonly isTemplate: true;
-    init(app: AppContext): Component;
+    init(appContext: AppContext): Component;
   };
 
   type BoundState<T> = {
@@ -142,16 +162,14 @@ declare module "@woofjs/client" {
     event: string;
   };
 
-  export function v(tagname: string, attrs: Object, ...children: Template[]): Template;
-  export function v(tagname: string, ...children: Template[]): Template;
-  export function v(component: Component, attrs: Object, ...children: Template[]): Template;
-  export function v(component: Component, ...children: Template[]): Template;
+  export function h(element: string | Component, attrs: Object, ...children: Template[]): Template;
+  export function h(element: string | Component, ...children: Template[]): Template;
 
   export function when($condition: State, element: Element): Template;
 
   export function unless($condition: State, element: Element): Template;
 
-  export function each<T>($values: State<T[]>, component: Component, getKey?: (value: T) => any): Template;
+  export function repeat<T>($values: State<T[]>, component: Component, getKey?: (value: T) => any): Template;
 
   export function watch<T>($value: State<T>, render: (value: T) => Element): Template;
 

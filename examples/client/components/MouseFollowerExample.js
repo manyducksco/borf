@@ -1,12 +1,12 @@
 import { when, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-function MouseFollowerExample($attrs, self) {
+export default function MouseFollowerExample(self) {
   self.debug.name = "MouseFollowerExample";
 
   logLifecycle(self);
 
-  const { $position } = self.getService("mouse");
+  const { $position } = self.services.mouse;
   const bestColor = "#ff0088";
 
   const $isEnabled = makeState(false);
@@ -31,39 +31,6 @@ function MouseFollowerExample($attrs, self) {
 
     $backgroundColor.set("#" + hex);
   };
-
-  // return v("div", { class: "example" }, [
-  //   v("h3", "More complex state management"),
-  //   v("div", [
-  //     when(
-  //       $isEnabled,
-  //       v("div", {
-  //         class: "follower",
-  //         style: {
-  //           transform: $transform,
-  //           backgroundColor: $backgroundColor,
-  //         },
-  //       })
-  //     ),
-
-  //     v("button", { onclick: randomizeColor, disabled: $isDisabled }, [
-  //       "Change Follower Color",
-  //     ]),
-
-  //     when(
-  //       $isNotBestColor,
-  //       v("button", { onclick: resetColor, disabled: $isDisabled }, [
-  //         "Reset to Best Color",
-  //       ])
-  //     ),
-
-  //     v("button", { onclick: () => $isEnabled.set((yes) => !yes) }, [
-  //       $isEnabled.map((yes) =>
-  //         yes ? "Turn Off Follower" : "Turn On Follower"
-  //       ),
-  //     ]),
-  //   ]),
-  // ]);
 
   return (
     <div class="example">
@@ -100,5 +67,3 @@ function MouseFollowerExample($attrs, self) {
     </div>
   );
 }
-
-export default MouseFollowerExample;

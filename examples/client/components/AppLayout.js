@@ -25,8 +25,7 @@ export default function AppLayout() {
   //   );
   // });
 
-  const page = this.getService("@page");
-  const mouse = this.getService("mouse");
+  const { page, mouse } = this.services;
 
   // Display current mouse coordinates as tab title
   this.watchState(mouse.$position, (pos) => {

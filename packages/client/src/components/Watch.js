@@ -1,10 +1,17 @@
 import { isFunction, isTemplate } from "../helpers/typeChecking.js";
 
+import { appContextKey } from "../helpers/initComponent.js";
+
 /**
  * Recreates its contents each time its value changes.
  */
-export function Watch($attrs, self) {
-  self.debug.name = "woof:v:watch";
+export function Watch(self) {
+  const { $attrs, debug } = self;
+  const appContext = self[appContextKey];
+
+  console.log(self);
+
+  debug.name = "woof:template:watch";
 
   const node = document.createTextNode("");
 
@@ -31,7 +38,7 @@ export function Watch($attrs, self) {
     }
 
     if (newItem) {
-      current = newItem.init(self.getService("@app"));
+      current = newItem.init(appContext);
       current.connect(node.parentNode, node);
     }
   }

@@ -1,4 +1,4 @@
-import http from "../services/@http.js";
+import http from "../services/http.js";
 import { makeMockFetch } from "./makeMockFetch.js";
 
 /**

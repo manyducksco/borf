@@ -2,7 +2,7 @@ import { makeState } from "../state/makeState.js";
 import { isString } from "../helpers/typeChecking.js";
 
 export default function PageService(self) {
-  self.debug.name = "woof:@page";
+  self.debug.name = "woof:service:page";
 
   const $title = makeState(document?.title);
 

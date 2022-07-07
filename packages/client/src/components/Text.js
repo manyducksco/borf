@@ -1,4 +1,4 @@
-export function Text($attrs, self) {
+export function Text({ $attrs, ...self }) {
   const node = document.createTextNode("");
 
   function setText(attrs) {

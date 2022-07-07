@@ -1,7 +1,7 @@
 import { when, repeat, bind, makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-function FormExample($attrs, self) {
+function FormExample(self) {
   self.debug.name = "FormExample";
 
   logLifecycle(self);
@@ -48,15 +48,11 @@ function FormExample($attrs, self) {
         <input type="number" value={bind($age)} placeholder="Age" />
         <button disabled={$hasErrors}>Submit</button>
         {when($hasErrors, () =>
-          repeat(
-            $errors,
-            ($attrs, self) => {
-              const $message = $attrs.map((attrs) => attrs.value);
+          repeat($errors, ({ $attrs }) => {
+            const $message = $attrs.map((attrs) => attrs.value);
 
-              return <div style="color:red">{$message}</div>;
-            },
-            (error) => error
-          )
+            return <div style="color:red">{$message}</div>;
+          })
         )}
       </form>
     </div>

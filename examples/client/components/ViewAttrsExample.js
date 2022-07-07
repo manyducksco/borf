@@ -3,7 +3,7 @@ import { when } from "@woofjs/client";
 /**
  * A component to test woof-view attribute handling.
  */
-export default ($attrs, self) => {
+export default ({ $attrs }) => {
   const $name = $attrs.map("name");
   const $quality = $attrs.map("quality");
   const $showQuality = $attrs.map("showQuality");

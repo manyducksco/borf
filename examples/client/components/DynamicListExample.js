@@ -1,7 +1,7 @@
 import { repeat, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-function DynamicListExample($attrs, self) {
+function DynamicListExample(self) {
   self.debug.name = "DynamicListExample";
 
   logLifecycle(self);
@@ -69,23 +69,19 @@ function DynamicListExample($attrs, self) {
           <button onclick={reset}>Reset List</button>
         </div>
 
-        {repeat(
-          $shoppingList,
-          ($attrs, self) => {
-            const $item = $attrs.map("value");
+        {repeat($shoppingList, ({ $attrs }) => {
+          const $item = $attrs.map("value");
 
-            return (
-              <li
-                onclick={() => {
-                  alert($item.get());
-                }}
-              >
-                {$item}
-              </li>
-            );
-          },
-          (item) => item
-        )}
+          return (
+            <li
+              onclick={() => {
+                alert($item.get());
+              }}
+            >
+              {$item}
+            </li>
+          );
+        })}
       </div>
     </div>
   );
