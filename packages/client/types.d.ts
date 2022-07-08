@@ -123,11 +123,29 @@ declare module "@woofjs/client" {
     navigate: (path: string, options?: { replace?: boolean }) => void;
   };
 
-  export type HTTPService = {};
-
   export type PageService = {
     $title: State<string>;
   };
+
+  /*==================================*\
+  ||               HTTP               ||
+  \*==================================*/
+
+  export type HTTPService = {
+    get(url: string): HTTPRequest;
+    post(url: string): HTTPRequest;
+    put(url: string): HTTPRequest;
+    patch(url: string): HTTPRequest;
+    delete(url: string): HTTPRequest;
+  };
+
+  type HTTPRequestContext = {};
+
+  type HTTPRequestOptions = {};
+
+  class HTTPRequest {}
+
+  type HTTPMiddleware = (ctx: HTTPRequestContext) => Promise<void>;
 
   /*==================================*\
   ||             Routing              ||
@@ -179,17 +197,19 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
-  export type Component<AttrsType> = ($attrs: State<AttrsType>, self: ComponentSelf) => Element | null;
+  export type Component<AttrsType> = (self: ComponentContext<AttrsType>) => Element | null;
 
-  export type ComponentSelf = {
-    getService: <T = Object>(name: string) => T;
+  export type ComponentContext<AttrsType> = {
+    $attrs: State<AttrsType>;
+    services: Services;
     debug: DebugChannel;
     children: any;
 
-    beforeConnect: () => void;
-    afterConnect: () => void;
-    beforeDisconnect: () => void;
-    afterDisconnect: () => void;
+    beforeConnect: (callback: () => void) => void;
+    afterConnect: (callback: () => void) => void;
+    beforeDisconnect: (callback: () => void) => void;
+    afterDisconnect: (callback: () => void) => void;
+    transitionOut: (callback: () => Promise<void>) => void;
 
     loadRoute: (show: (element: Element) => void, done: () => void) => Promise<any> | void;
   };
@@ -201,10 +221,10 @@ declare module "@woofjs/client" {
   /**
    * Stores shared variables and functions that can be accessed by components and other services.
    */
-  export type Service = (self: ServiceSelf) => Object;
+  export type Service = (self: ServiceContext) => Object;
 
-  export type ServiceSelf = {
-    getService: getService;
+  export type ServiceContext = {
+    services: Services;
     debug: DebugChannel;
 
     /**
@@ -293,55 +313,4 @@ declare module "@woofjs/client" {
    * Determines whether or not an object is a state.
    */
   export function isState(value: unknown): boolean;
-
-  /*==================================*\
-  ||               HTTP               ||
-  \*==================================*/
-
-  type HTTPRequestContext = {};
-
-  type HTTPRequestOptions = {};
-
-  class HTTPRequest {}
-
-  type HTTPMiddleware = (ctx: HTTPRequestContext) => Promise<void>;
-
-  export type HTTPService = {
-    get(url: string): HTTPRequest;
-    post(url: string): HTTPRequest;
-    put(url: string): HTTPRequest;
-    patch(url: string): HTTPRequest;
-    delete(url: string): HTTPRequest;
-  };
-}
-
-declare module "@woofjs/client/testing" {
-  type TestTools = {};
-
-  type Test = {
-    (t: TestTools): void;
-  };
-
-  type View = {};
-
-  type AddTestFunction = {
-    (name: string, test: Test): void;
-
-    beforeEach(fn: () => any): void;
-    afterEach(fn: () => any): void;
-    beforeAll(fn: () => any): void;
-    afterAll(fn: () => any): void;
-  };
-
-  type AddViewFunction = {
-    (name: string, view: View): void;
-  };
-
-  type SuiteFunction = (test: AddTestFunction, view: AddViewFunction) => void;
-
-  type TestSuite = {
-    run(): Promise<any>;
-  };
-
-  export function makeSuite(setup: SuiteFunction): TestSuite;
 }

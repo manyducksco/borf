@@ -9,8 +9,6 @@ export function Watch(self) {
   const { $attrs, debug } = self;
   const appContext = self[appContextKey];
 
-  console.log(self);
-
   debug.name = "woof:template:watch";
 
   const node = document.createTextNode("");
