@@ -15,8 +15,8 @@
   "author": "Tony McCoy <tony@manyducks.co>",
   "license": "MIT",
   "peerDependencies": {
-    "@woofjs/build": ">=0.1.0",
-    "@woofjs/client": ">=0.11.0"
+    "@woofjs/build": ">=0.3.0",
+    "@woofjs/client": ">=0.14.0"
   },
   "dependencies": {
     "@ratwizard/cli": "^0.17.0",
