@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/client",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Front end routing, components and state for dogs. 🐕",
   "source": "src/index.js",
   "main": "dist/woof.client.c.js",
