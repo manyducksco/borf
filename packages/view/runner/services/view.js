@@ -1,18 +1,18 @@
 import { makeState, mergeStates } from "@woofjs/client";
 import { proxyState } from "@woofjs/client";
 
-export default (self) => {
+export default function () {
   let API;
   let frameLoaded = false;
 
-  const { $params } = self.getService("@router");
+  const { router, page } = this.services;
 
   const $frameRef = makeState();
   const $collections = makeState([]);
 
   const $currentView = mergeStates(
     $collections,
-    $params,
+    router.$params,
     (collections, params) => {
       let matched;
 
@@ -20,7 +20,7 @@ export default (self) => {
         for (const view of collection.views) {
           if (view.path === params.wildcard) {
             matched = view;
-            self.getService("@page").$title.set(collection.name);
+            page.$title.set(collection.name);
             break outer;
           }
         }
@@ -32,7 +32,7 @@ export default (self) => {
 
   const $currentAttrs = proxyState({});
 
-  self.afterConnect(() => {
+  this.afterConnect(() => {
     const frame = $frameRef.get();
 
     frame.addEventListener("load", () => {
@@ -78,7 +78,7 @@ export default (self) => {
           }
         }
 
-        self.debug.log("reloaded views");
+        this.debug.log("reloaded views");
       }
 
       $collections.set(newCollections);
@@ -88,7 +88,7 @@ export default (self) => {
     });
   });
 
-  self.watchState($currentView, (view) => {
+  this.watchState($currentView, (view) => {
     if (frameLoaded) {
       API.setActiveView(view?.id);
     }
@@ -100,4 +100,4 @@ export default (self) => {
     $currentView,
     $currentAttrs,
   };
-};
+}

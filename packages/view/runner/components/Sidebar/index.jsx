@@ -6,16 +6,16 @@ import styles from "./index.module.css";
  * Resizable sidebar component. Drag handle can be placed on left or right side.
  * Stores its last size in localStorage identified by its unique `id` attribute.
  */
-export default ($attrs, self) => {
-  self.debug.name = "Sidebar";
+export default function Sidebar() {
+  this.debug.name = "Sidebar";
 
   const minWidth = 220;
   const defaultWidth = 300;
 
-  const screen = self.getService("screen");
-  const $id = $attrs.map("id");
+  const { screen } = this.services;
+  const $id = this.$attrs.map("id");
   const $settingsKey = $id.map((id) => `woof-view-sidebar-${id}-size`);
-  const $resizeHandle = $attrs.map("resizeHandle");
+  const $resizeHandle = this.$attrs.map("resizeHandle");
   const $noHandle = $resizeHandle.map(
     (value) => value === "none" || value == null
   );
@@ -48,7 +48,7 @@ export default ($attrs, self) => {
   };
 
   // Add/remove mousemove handler depending on drag state.
-  self.watchState($dragging, (dragging) => {
+  this.watchState($dragging, (dragging) => {
     if (dragging) {
       window.addEventListener("mousemove", onWindowMouseMove);
     } else {
@@ -57,11 +57,11 @@ export default ($attrs, self) => {
   });
 
   // Store size when it changes.
-  self.watchState($size, (size) => {
+  this.watchState($size, (size) => {
     window.localStorage.setItem($settingsKey.get(), JSON.stringify(size));
   });
 
-  self.beforeConnect(() => {
+  this.beforeConnect(() => {
     // Load size from localStorage.
     const stored = JSON.parse(
       window.localStorage.getItem($settingsKey.get()) || `${defaultWidth}`
@@ -73,7 +73,7 @@ export default ($attrs, self) => {
   });
 
   // Clean up event handlers on disconnect.
-  self.afterDisconnect(() => {
+  this.afterDisconnect(() => {
     window.removeEventListener("mouseup", onWindowMouseUp);
     window.removeEventListener("mousemove", onWindowMouseMove);
   });
@@ -104,7 +104,7 @@ export default ($attrs, self) => {
         />
       )}
 
-      <div class={styles.content}>{self.children}</div>
+      <div class={styles.content}>{this.children}</div>
     </div>
   );
-};
+}

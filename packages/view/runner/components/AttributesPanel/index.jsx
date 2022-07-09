@@ -17,10 +17,10 @@ import InputToggle from "./InputToggle";
 /**
  * Displays the current view's attributes and provides inputs for editing them.
  */
-export default ($attrs, self) => {
-  self.debug.name = "AttributesPanel";
+export default function AttributesPanel() {
+  this.debug.name = "AttributesPanel";
 
-  const { $currentView } = self.getService("view");
+  const { $currentView } = this.services.view;
 
   const $attributes = $currentView.map((view) => {
     return view?.attributes || [];
@@ -34,8 +34,8 @@ export default ($attrs, self) => {
       {when(
         $hasAttrs,
         <ul class={styles.attrsList}>
-          {repeat($attributes, ($attrs, self) => {
-            const $attribute = $attrs.map("value");
+          {repeat($attributes, function Attribute() {
+            const $attribute = this.$attrs.map("value");
 
             const $name = $attribute.map("name");
             const $description = $attribute.map("description");
@@ -44,7 +44,7 @@ export default ($attrs, self) => {
             const $value = proxyState($attribute.get("$value"));
 
             // Update which state the proxy points to when the attribute changes.
-            self.watchState($attribute, (attr) => {
+            this.watchState($attribute, (attr) => {
               $value.proxy(attr.$value);
             });
 
@@ -99,4 +99,4 @@ export default ($attrs, self) => {
       )}
     </Panel>
   );
-};
+}

@@ -11,7 +11,6 @@ import RouterService from "./services/router.js";
 
 export function makeApp(options = {}) {
   const debug = makeDebug(options.debug);
-  const appDebug = debug.makeChannel("woof:app");
 
   const routes = [];
   const registeredServices = {};
@@ -149,8 +148,11 @@ export function makeApp(options = {}) {
 
         Object.defineProperty(appContext.services, name, {
           get() {
-            throw `Service '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other services that access it.`;
+            throw new Error(
+              `Service '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other services that access it.`
+            );
           },
+          configurable: true,
         });
       }
 
@@ -173,8 +175,8 @@ export function makeApp(options = {}) {
     beforeConnect(fn) {
       beforeConnect = async () =>
         fn({
-          getService: makeGetService({ identifier: "app", type: "app" }),
-          debug: appDebug,
+          services: appContext.services,
+          debug: appContext.debug.makeChannel("woof:app:beforeConnect"),
         });
 
       return methods;
@@ -187,8 +189,8 @@ export function makeApp(options = {}) {
     afterConnect(fn) {
       afterConnect = async () =>
         fn({
-          getService: makeGetService({ identifier: "app", type: "app" }),
-          debug: appDebug,
+          services: appContext.services,
+          debug: appContext.debug.makeChannel("woof:app:afterConnect"),
         });
 
       return methods;
@@ -220,11 +222,11 @@ export function makeApp(options = {}) {
           options: service.options,
         });
 
-        // Recreate the object without temporary getter that throws error while this service is not initialized.
-        appContext.services = {
-          ...appContext.services,
-          [name]: service.instance.exports,
-        };
+        Object.defineProperty(appContext.services, name, {
+          value: service.instance.exports,
+          writable: false,
+          configurable: false,
+        });
       }
 
       // beforeConnect is the first opportunity to access other services.
@@ -243,34 +245,6 @@ export function makeApp(options = {}) {
       });
     },
   };
-
-  ////
-  // Private
-  ////
-
-  function makeGetService({ identifier, type }) {
-    /**
-     * Returns the named service or throws an error if it isn't registered.
-     * Every component and service in the app gets services through this function.
-     *
-     * @example getService("@page").$title.set("New Page Title")
-     *
-     * @param name - Name of a service. Built-in services start with `@`.
-     */
-    return function getService(name) {
-      if (registeredServices[name]) {
-        if (registeredServices[name].instance == null) {
-          throw new Error(
-            `Service '${name}' was requested before it was initialized from ${type} '${identifier}'. Make sure '${name}' is registered before '${identifier}' on your app.`
-          );
-        }
-
-        return registeredServices[name].instance.exports;
-      }
-
-      throw new Error(`Service is not registered in this app. Got: ${name}`);
-    };
-  }
 
   ////
   // Built-in services

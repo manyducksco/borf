@@ -104,8 +104,8 @@ export default function CRUD(self) {
           >
             {repeat(
               $filteredPeople,
-              ($attrs, self) => {
-                const $person = $attrs.map("value");
+              function FilterOption() {
+                const $person = this.$attrs.map("value");
 
                 return (
                   <option value={$person.map("id")}>

@@ -1,20 +1,20 @@
 /**
  * Displays one or more children without a parent element.
  */
-export function Fragment(self) {
+export function Fragment() {
   const node = document.createTextNode("");
 
-  self.afterConnect(() => {
+  this.afterConnect(() => {
     let after = node;
 
-    for (const child of self.children) {
+    for (const child of this.children) {
       child.connect(node.parentNode, after);
       after = child.node;
     }
   });
 
-  self.afterDisconnect(() => {
-    for (const child of self.children) {
+  this.afterDisconnect(() => {
+    for (const child of this.children) {
       child.disconnect();
     }
   });

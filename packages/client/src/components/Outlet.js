@@ -1,11 +1,11 @@
 import { appContextKey } from "../helpers/initComponent.js";
 import { isTemplate } from "../helpers/typeChecking.js";
 
-export function Outlet(self) {
-  const $element = self.$attrs.map("element");
+export function Outlet() {
+  const $element = this.$attrs.map("element");
   const node = document.createTextNode("");
 
-  const appContext = self[appContextKey];
+  const appContext = this[appContextKey];
 
   let connected = null;
 
@@ -25,7 +25,7 @@ export function Outlet(self) {
     }
   }
 
-  self.watchState($element, swapElement);
+  this.watchState($element, swapElement);
 
   return node;
 }

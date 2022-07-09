@@ -3,9 +3,9 @@ import { isArray, isObject, isString, isNumber, isFunction, isBinding, isState }
 /**
  * Implements logic for HTML elements created with `h()`.
  */
-export function Element({ $attrs, children, ...self }) {
-  const tagname = $attrs.get("tagname");
-  const attrs = $attrs.get("attrs") || {}; // attrs passed to the element itself
+export function Element() {
+  const tagname = this.$attrs.get("tagname");
+  const attrs = this.$attrs.get("attrs") || {}; // attrs passed to the element itself
 
   const node = document.createElement(tagname);
 
@@ -21,8 +21,8 @@ export function Element({ $attrs, children, ...self }) {
 
   let watchers = [];
 
-  self.beforeConnect(() => {
-    for (const child of children) {
+  this.beforeConnect(() => {
+    for (const child of this.children) {
       child.connect(node);
     }
 
@@ -31,8 +31,8 @@ export function Element({ $attrs, children, ...self }) {
     if (attrs.class) applyClasses(node, attrs.class, watchers);
   });
 
-  self.afterDisconnect(async () => {
-    for (const child of children) {
+  this.afterDisconnect(async () => {
+    for (const child of this.children) {
       child.disconnect();
     }
 

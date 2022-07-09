@@ -14,16 +14,14 @@ import { Outlet } from "../components/Outlet.js";
 /**
  * Top level navigation service.
  */
-export default function RouterService(self) {
-  self.debug.name = "woof:service:router";
-
-  const { options } = self;
+export default function RouterService() {
+  this.debug.name = "woof:service:router";
 
   let history;
 
-  if (options.history) {
-    history = options.history;
-  } else if (options.hash) {
+  if (this.options.history) {
+    history = this.options.history;
+  } else if (this.options.hash) {
     history = createHashHistory();
   } else {
     history = createBrowserHistory();
@@ -32,7 +30,7 @@ export default function RouterService(self) {
   let routes = [];
 
   // Parse route paths into a matchable format.
-  for (const route of options.routes) {
+  for (const route of this.options.routes) {
     routes.push({
       ...route,
       fragments: parseRoute(route.path).fragments,
@@ -66,7 +64,7 @@ export default function RouterService(self) {
   let isRouteChange = false;
 
   // Update URL when $query changes
-  self.watchState(
+  this.watchState(
     $query,
     (current) => {
       // No-op if this is triggered by a route change.
@@ -89,10 +87,10 @@ export default function RouterService(self) {
     { immediate: false }
   );
 
-  self.afterConnect(() => {
-    const root = options.getRoot();
+  this.afterConnect(() => {
+    const root = this.options.getRoot();
 
-    appOutlet = initComponent(options.appContext, Outlet);
+    appOutlet = initComponent(this.options.appContext, Outlet);
     appOutlet.connect(root);
 
     history.listen(onRouteChange);
@@ -107,7 +105,7 @@ export default function RouterService(self) {
 
       history.push(href);
 
-      self.debug.log(`Intercepted link to '${href}'`);
+      this.debug.log(`Intercepted link to '${href}'`);
     });
   });
 
@@ -149,8 +147,8 @@ export default function RouterService(self) {
 
               activeLayers = activeLayers.slice(0, i);
 
-              const outlet = initComponent(options.appContext, Outlet);
-              const component = initComponent(options.appContext, matchedLayer.component, null, [outlet]);
+              const outlet = initComponent(this.options.appContext, Outlet);
+              const component = initComponent(this.options.appContext, matchedLayer.component, null, [outlet]);
 
               const parentLayer = activeLayers[activeLayers.length - 1];
 
@@ -183,7 +181,7 @@ export default function RouterService(self) {
         }
       }
     } else {
-      self.debug.warn(`No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.`);
+      this.debug.warn(`No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.`);
     }
 
     // Update query params if they've changed.

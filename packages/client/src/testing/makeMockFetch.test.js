@@ -18,6 +18,24 @@ test("returning data from a handler sends it as a JSON body", async () => {
   expect(data).toStrictEqual(users);
 });
 
+test("can access self as function's this", async () => {
+  const users = [
+    { id: 1, name: "Test Guy" },
+    { id: 2, name: "Jimbo Jones" },
+    { id: 3, name: "Snorlax" },
+  ];
+
+  const fetch = makeMockFetch(function () {
+    this.get("/users", () => {
+      return users;
+    });
+  });
+
+  const data = await fetch("/users").then((res) => res.json());
+
+  expect(data).toStrictEqual(users);
+});
+
 test("return a promise from a handler sends the resolved value as a JSON body", async () => {
   const users = [
     { id: 1, name: "Test Guy" },

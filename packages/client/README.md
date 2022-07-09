@@ -19,7 +19,7 @@ import { makeApp, h } from "@woofjs/client";
 const app = makeApp();
 
 // Render <h1>Hello World</h1> regardless of the URL
-app.route("*", () => {
+app.route("*", function () {
   return h("h1", "Hello World");
 });
 
@@ -44,9 +44,9 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 - Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
 
 ```js
-app.route("users/:id", ($attrs, self) => {
+app.route("users/:id", function () {
   // Get route params from router.
-  const { $params } = self.getService("@router");
+  const { $params } = this.services.router;
 
   // Get the live value of :id with '.map()'.
   const $id = $params.map("id");
@@ -65,7 +65,7 @@ Unlike many other frameworks Woof does _not_ use a virtual DOM. Instead, Woof us
 ```js
 import { makeState } from "@woofjs/client";
 
-function Timer($attrs, self) {
+function Timer() {
   // Naming states with a $ is a convention to help point out that they are dynamic.
   // Anywhere you see $seconds used you know that value can change.
   const $seconds = makeState(0);
@@ -81,7 +81,7 @@ function Timer($attrs, self) {
   }
 
   // Increment once per second after the component is connected to the DOM.
-  self.afterConnect(() => {
+  this.afterConnect(() => {
     setInterval(increment, 1000);
   });
 
@@ -103,8 +103,8 @@ Components are reusable modules with their own markup and logic. You can define 
 Components are ubiquitous in front-end frameworks, but Woof's take on them is very inspired by how [React](https://reactjs.org/docs/components-and-props.html) does things.
 
 ```js
-function Example($attrs, self) {
-  const $title = $attrs.map("title");
+function Example() {
+  const $title = this.$attrs.map("title");
 
   return h("div", [
     h("h1", $title),
@@ -116,7 +116,7 @@ function Example($attrs, self) {
 app.route("example", Example);
 
 // They can also be used in the body of another component.
-app.route("other", () => {
+app.route("other", function () {
   return h("div", [
     // Pass attributes in an object just like regular HTML elements
     h(Example, { title: "In Another Component" })
@@ -127,37 +127,55 @@ app.route("other", () => {
 });
 ```
 
-### Component's `self` Object
+### Component Context
+
+Component functions have a context object bound to `this` from inside the function body.
 
 ```js
-function Example($attrs, self) {
-  // Access services.
-  const service = self.getService("name");
+function Example() {
+  // Access services by the name they were registered under.
+  const service = this.services.name;
+
+  // Print debug messages
+  this.debug.name = "component:Example"; // Prefix messages in the console to make tracing easier at a glance.
+  this.debug.log("Something happened.");
+  this.debug.warn("Something happened!");
+  this.debug.error("SOMETHING HAPPENED!!!!");
+
+  // Helpers are available on the component context as well as exported from `@woofjs/client`.
+  // Use these whenever you want to avoid import statements, such as when writing a library or when not using a build system.
+  const { h, when, unless, watch, repeat, bind, makeState, mergeStates, proxyState } = this.helpers;
 
   /*=================================*\
   ||   Component Lifecycle Methods   ||
   \*=================================*/
 
-  self.isConnected; // true if component is connected
+  this.isConnected; // true if component is connected
 
-  self.beforeConnect(() => {
+  this.beforeConnect(() => {
     // Runs when the component is about to be (but is not yet) added to the page.
   });
 
-  self.afterConnect(() => {
+  this.afterConnect(() => {
     // Runs after the component is added to the page.
   });
 
-  self.beforeDisconnect(() => {
+  this.beforeDisconnect(() => {
     // Runs when the component is about to be (but is not yet) removed from the page.
   });
 
-  self.afterDisconnect(() => {
+  this.afterDisconnect(() => {
     // Runs after the component is removed from the page.
   });
 
+  this.transitionOut(async () => {
+    // Runs when the component is about to leave the DOM.
+    // Delays disconnection and 'afterDisconnect' hook until the promise resolves.
+    // Use this to set up an exit animation.
+  });
+
   // Runs a callback function each time a state changes while this component is connected.
-  self.watchState($title, (title) => {
+  this.watchState($title, (title) => {
     console.log("title attribute changed to " + title);
   });
 
@@ -165,18 +183,36 @@ function Example($attrs, self) {
   ||            Children             ||
   \*=================================*/
 
-  // Access the component's children with `self.children`,
+  // Access the component's children with `this.children`,
   // in this case to render them inside a <div>
-  return h("div", self.children);
+  return h("div", this.children);
 });
+```
+
+This context object is also passed as the first parameter in case you're using arrow functions, which don't bind `this`.
+
+```js
+const ArrowExample = (self) => {
+  self.debug.name = "component:ArrowExample";
+
+  self.beforeConnect(() => {
+    self.debug.log("Connected");
+  });
+
+  // ... etc ... //
+
+  return h("div", self.children);
+};
 ```
 
 ### Templating
 
-Every component function gets two parameters; `$` and `self`. `$` is the function you call to create renderable elements. It is heavily based on [hyperscript](https://github.com/hyperhype/hyperscript). It also has helpful utility functions on the object such as `$.if`, `$.each` and others.
+To create elements in woof, you import the `h` function. The `h` function is heavily based on [hyperscript](https://github.com/hyperhype/hyperscript). There are also helpful utility functions for conditionals, loops and more.
 
 ```js
-function Example($attrs, self) {
+import { h } from "@woofjs/client";
+
+function Example() {
   return h("section", [
     h("h1", "Item List"),
     h("p", { style: "color: red" }, "Below is a list of items."),
@@ -211,12 +247,12 @@ That component renders the following HTML.
 
 #### Using JSX
 
-Woof supports JSX, so if you want to write your components as HTML to begin with you totally can. However, it's important to understand how `$` works because that's ultimately what the JSX compiles down to. JSX is simply an alternate syntax for `$`.
+Woof supports JSX, so if you want to write your components as HTML to begin with you totally can. However, it's important to understand how `h` works because that's ultimately what the JSX compiles down to. JSX is simply an alternate syntax for `h`.
 
 > Note that Woof uses a `class` attribute like HTML rather than `className` like React.
 
 ```jsx
-function Example($attrs, self) {
+function Example() {
   return (
     <section>
       <h1>Item List</h1>
@@ -239,11 +275,11 @@ function Example($attrs, self) {
 Using a component is the same as creating an HTML element, but you call `$` with the component instead of a tag name.
 
 ```js
-function Example($attrs, self) {
+function Example() {
   return h(Subcomponent);
 });
 
-function Subcomponent($attrs, self) {
+function Subcomponent() {
   return h("h1", "Hello from inside another component!");
 };
 ```
@@ -251,12 +287,12 @@ function Subcomponent($attrs, self) {
 When using subcomponents, you can pass them attributes just like you can with HTML elements. The Example component in the following code will display `<h1>Hello world!</h1>`.
 
 ```js
-function Example($attrs, self) {
+function Example() {
   return h(Subcomponent, { name: "world" });
 });
 
-function Subcomponent($attrs, self) {
-  const name = $attrs.get("name");
+function Subcomponent() {
+  const name = this.$attrs.get("name");
 
   return h("h1", "Hello ", name, "!");
 };
@@ -265,12 +301,12 @@ function Subcomponent($attrs, self) {
 The same thing with JSX:
 
 ```js
-function Example($attrs, self) {
+function Example() {
   return <Subcomponent name="world" />
 });
 
-function Subcomponent($attrs, self) {
-  const name = $attrs.get("name");
+function Subcomponent() {
+  const name = this.$attrs.get("name");
 
   return <h1>Hello {name}!</h1>
 };
@@ -278,7 +314,7 @@ function Subcomponent($attrs, self) {
 
 ### Helpers
 
-The `$` function supports creating elements and binding data to them. Helpers supply the control flow you would expect like conditionals and loops, plus some things you might not expect like nested routing.
+The `h` function supports creating elements and binding data to them. Helpers supply the control flow you would expect like conditionals and loops.
 
 #### Conditionals (`when` and `unless`)
 
@@ -289,8 +325,10 @@ The `$` function supports creating elements and binding data to them. Helpers su
 The `when` helper displays the element only when the condition is truthy while `unless` displays the element only when the condition is falsy. The condition can be a plain value or a $state.
 
 ```js
-function Example($attrs, self) {
-  const $on = useState(false);
+import { makeState, when, unless } from "@woofjs/client";
+
+function Example() {
+  const $on = makeState(false);
 
   function toggle() {
     $on.set(on => !on);
@@ -312,15 +350,17 @@ function Example($attrs, self) {
 Renders a component once for each item in an array. If the array is stored inside a $state the list will update whenever that $state is updated.
 
 ```js
-function Example($attrs, self) {
+import { makeState, repeat } from "@woofjs/client";
+
+function Example() {
   const $list = makeState(["one", "two", "three"]);
 
   return h(
     "ul",
 
     // Render once for each item in $list. Updates when $list changes.
-    repeat($list, ($attrs, self) => {
-      const $value = $attrs.map((attrs) => attrs.value);
+    repeat($list, function () {
+      const $value = this.$attrs.map((attrs) => attrs.value);
 
       // Return an <li> that contains the current value of this $list item.
       return h("li", $value);
@@ -342,18 +382,35 @@ repeat($list, Component, (item, index) => item.id);
 
 > `watch($state, renderFn)`
 
-> TODO
+Calls a render function whenever the state changes and displays the return value.
+
+```js
+import { makeState, watch } from "@woofjs/client";
+
+function Example() {
+  const $value = makeState("one");
+
+  return h(
+    "div",
+
+    // Displays the return value of the function each time the value changes.
+    watch($value, (value) => {
+      return <span>{value}!!!</span>;
+    })
+  );
+}
+```
 
 #### Two Way Binding (`bind`)
 
-> bind($state, event)
+> bind($state[, event])
 
 Creates a two-way binding to a state. When this bound state is passed to the `value` attribute on an input element, the state will be updated whenever the input's value changes.
 
 ```js
 import { makeState, bind } from "@woofjs/client";
 
-function Example($attrs, self) {
+function Example() {
   const $value = makeState("");
 
   // Displays what the user typed above the text input.
@@ -372,7 +429,7 @@ function Example($attrs, self) {
 Components also support dynamic classes. Pass an object where the keys are the class names, and the classes are added to the element while the values are truthy. The values can be $states if you want to toggle classes dynamically.
 
 ```jsx
-function Example($attrs, self) {
+function Example() {
   return (
     <div
       class={{
@@ -380,10 +437,10 @@ function Example($attrs, self) {
         container: true,
 
         // Includes "active" class when 'isActive' attribute is truthy
-        active: $attrs.map("isActive"),
+        active: this.$attrs.map("isActive"),
       }}
     >
-      {self.children}
+      {this.children}
     </div>
   );
 }
@@ -392,24 +449,24 @@ function Example($attrs, self) {
 Multiple classes:
 
 ```jsx
-function Example($attrs, self) {
-  return <div class={["one", "two"]}>{self.children}</div>;
+function Example() {
+  return <div class={["one", "two"]}>{this.children}</div>;
 }
 ```
 
 A combination:
 
 ```jsx
-function Example($attrs, self) {
+function Example() {
   // The 'container' class is always included while the ones
   // inside the object are shown if their value is truthy.
   return (
     <div
       class={["container", {
-        active: $attrs.map("isActive"),
+        active: this.$attrs.map("isActive"),
       }}
     >
-      {self.children}
+      {this.children}
     </div>
   );
 };
@@ -427,7 +484,7 @@ The following example shows a counter with one page to display the number and an
 
 ```js
 // The `counter` service holds the current count and provides methods for incrementing and decrementing.
-app.service("counter", () => {
+app.service("counter", function () {
   const $count = makeState(0);
 
   return {
@@ -443,7 +500,7 @@ app.service("counter", () => {
   };
 });
 
-app.route("/counter", ($) => {
+app.route("/counter", function () {
   return (
     <div>
       <h1>World's Most Inconvenient Counter Demo</h1>
@@ -454,15 +511,15 @@ app.route("/counter", ($) => {
 });
 
 // The view route displays the count but doesn't let the user change it.
-app.route("/counter/view", ($attrs, self) => {
-  const { $current } = self.getService("counter");
+app.route("/counter/view", function () {
+  const { $current } = this.services.counter;
 
   return <h1>The Count is Now {$current}</h1>;
 });
 
 // The controls route lets the user change the count but doesn't display it.
-app.route("/counter/controls", ($attrs, self) => {
-  const { increment, decrement } = self.getService("counter");
+app.route("/counter/controls", function () {
+  const { increment, decrement } = this.services.counter;
 
   return (
     <div>
@@ -470,6 +527,48 @@ app.route("/counter/controls", ($attrs, self) => {
       <button onclick={decrement}>Decrement</button>
     </div>
   );
+});
+```
+
+### Service Context
+
+```js
+app.service("example", function () {
+  // Access other services by the name they were registered under.
+  // The service being accessed must have been registered before this one or the app will throw an error.
+  const service = this.services.name;
+
+  // Print debug messages
+  this.debug.name = "service:example"; // Prefix messages in the console to make tracing easier at a glance.
+  this.debug.log("Something happened.");
+  this.debug.warn("Something happened!");
+  this.debug.error("SOMETHING HAPPENED!!!!");
+
+  // Helpers are available on the service context as well as exported from `@woofjs/client`.
+  // Use these whenever you need to avoid import statements, such as when not using a build system.
+  const { makeState, mergeStates, proxyState } = this.helpers;
+
+  /*=================================*\
+  ||    Service Lifecycle Methods    ||
+  \*=================================*/
+
+  this.beforeConnect(() => {
+    // Runs when the service is about to be (but is not yet) initialized, before any routing occurs.
+  });
+
+  this.afterConnect(() => {
+    // Runs after the app is connected, initial route has been matched, and the first component is added to the page.
+  });
+
+  // Services live for the lifetime of the app, so they have no disconnect hooks.
+
+  // Runs a callback function each time a state changes.
+  this.watchState($title, (title) => {
+    console.log("title attribute changed to " + title);
+  });
+
+  // All services must return an object.
+  return {};
 });
 ```
 

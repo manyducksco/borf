@@ -1,8 +1,8 @@
 import styles from "./index.module.css";
 import Panel from "../Panel";
 
-export default ($attrs, self) => {
-  const { $currentView } = self.getService("view");
+export default function AboutPanel() {
+  const { $currentView } = this.services.view;
 
   const $description = $currentView.map((view) => {
     if (view) {
@@ -17,4 +17,4 @@ export default ($attrs, self) => {
       <div class={styles.description}>{$description}</div>
     </Panel>
   );
-};
+}

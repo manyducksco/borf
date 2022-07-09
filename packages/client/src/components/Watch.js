@@ -5,16 +5,15 @@ import { appContextKey } from "../helpers/initComponent.js";
 /**
  * Recreates its contents each time its value changes.
  */
-export function Watch(self) {
-  const { $attrs, debug } = self;
-  const appContext = self[appContextKey];
+export function Watch() {
+  const appContext = this[appContextKey];
 
-  debug.name = "woof:template:watch";
+  this.debug.name = "woof:template:watch";
 
   const node = document.createTextNode("");
 
-  const $value = $attrs.map("value");
-  const render = $attrs.get("render");
+  const $value = this.$attrs.map("value");
+  const render = this.$attrs.get("render");
 
   let current;
 
@@ -41,9 +40,9 @@ export function Watch(self) {
     }
   }
 
-  self.watchState($value, update);
+  this.watchState($value, update);
 
-  self.afterDisconnect(() => {
+  this.afterDisconnect(() => {
     if (current) {
       current.disconnect();
       current = null;

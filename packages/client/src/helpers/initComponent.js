@@ -1,9 +1,23 @@
-import { h, when, unless, repeat, watch, bind } from "../h.js";
-import { makeState } from "../state/makeState.js";
-import { mergeStates } from "../state/mergeStates.js";
 import { isTemplate, isDOM, isFunction, isComponent, isState } from "./typeChecking.js";
 
+import { h, when, unless, watch, repeat, bind } from "../h.js";
+import { makeState } from "../state/makeState.js";
+import { mergeStates } from "../state/mergeStates.js";
+import { proxyState } from "../state/proxyState.js";
+
 export const appContextKey = Symbol("appContext");
+
+const componentHelpers = {
+  h,
+  when,
+  unless,
+  watch,
+  repeat,
+  bind,
+  makeState,
+  mergeStates,
+  proxyState,
+};
 
 /**
  * Initializes a component function into a component instance that the framework can work with.
@@ -89,12 +103,10 @@ export function initComponent(appContext, fn, attrs, children) {
   const ctx = {
     $attrs: $attrs.map(), // Read-only from inside the component.
     services: appContext.services,
-    debug: appContext.debug.makeChannel("~"),
+    debug: appContext.debug.makeChannel("component:?"),
     children,
 
-    // Expose helpers so components can be written without imports, for example in libraries.
-    // This avoids the need for peer dependencies because the component has everything it needs injected.
-    helpers: { h, when, unless, repeat, watch, bind, makeState, mergeStates },
+    helpers: componentHelpers,
 
     get isConnected() {
       return isConnected;

@@ -11,13 +11,13 @@ import styles from "./index.module.css";
 
 const viewIcon = "🔭";
 
-export default function Tree($attrs, self) {
-  const $nodes = $attrs.map("nodes");
+export default function Tree() {
+  const $nodes = this.$attrs.map("nodes");
 
   return (
     <ul class={styles.treeList}>
-      {repeat($nodes, ($attrs, self) => {
-        const $node = $attrs.map("value");
+      {repeat($nodes, function ListNode() {
+        const $node = this.$attrs.map("value");
 
         return watch($node, () => {
           const node = $node.get();
@@ -39,11 +39,11 @@ export default function Tree($attrs, self) {
   );
 }
 
-function CollectionNode($attrs, self) {
-  self.debug.name = "Tree/CollectionNode";
+function CollectionNode() {
+  this.debug.name = "Tree/CollectionNode";
 
-  const { $params } = self.getService("@router");
-  const $collection = $attrs.map("node");
+  const { $params } = this.services.router;
+  const $collection = this.$attrs.map("node");
   const $views = $collection.map("views");
   const $hasManyViews = $views.map(
     (views) => views.length > 1 || views[0].name !== "@default"
@@ -59,8 +59,8 @@ function CollectionNode($attrs, self) {
             </summary>
             <div class={styles.nodeChildren}>
               <ul class={styles.treeList}>
-                {repeat($views, ($attrs, self) => {
-                  const $view = $attrs.map("value");
+                {repeat($views, function View() {
+                  const $view = this.$attrs.map("value");
                   const $active = mergeStates(
                     $view,
                     $params,
@@ -116,12 +116,12 @@ function CollectionNode($attrs, self) {
   );
 }
 
-function ChildrenNode($attrs, self) {
-  self.debug.name = "Tree/ChildrenNode";
+function ChildrenNode() {
+  this.debug.name = "Tree/ChildrenNode";
 
   const $expanded = makeState(true);
-  const $segment = $attrs.map("node.segment");
-  const $children = $attrs.map("node.children");
+  const $segment = this.$attrs.map("node.segment");
+  const $children = this.$attrs.map("node.children");
 
   return (
     <li>

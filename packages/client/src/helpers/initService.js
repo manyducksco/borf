@@ -1,5 +1,15 @@
 import { isObject } from "./typeChecking.js";
 
+import { makeState } from "../state/makeState.js";
+import { mergeStates } from "../state/mergeStates.js";
+import { proxyState } from "../state/proxyState.js";
+
+const serviceHelpers = {
+  makeState,
+  mergeStates,
+  proxyState,
+};
+
 export function initService(appContext, fn, debug, config) {
   // Lifecycle hook callbacks
   let onBeforeConnect = [];
@@ -12,6 +22,7 @@ export function initService(appContext, fn, debug, config) {
     debug,
     options: config.options || {},
     services: appContext.services,
+    helpers: serviceHelpers,
 
     beforeConnect(callback) {
       onBeforeConnect.push(callback);

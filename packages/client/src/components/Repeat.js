@@ -4,15 +4,13 @@ import { isArray } from "../helpers/typeChecking.js";
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
  */
-export function Repeat(self) {
-  self.debug.name = "woof:template:repeat";
+export function Repeat() {
+  this.debug.name = "woof:template:repeat";
 
-  const { $attrs } = self;
-
-  const appContext = self[appContextKey];
-  const $value = $attrs.map("value");
-  const componentFn = $attrs.get("component");
-  const getKey = $attrs.get("getKey") || ((value) => value);
+  const appContext = this[appContextKey];
+  const $value = this.$attrs.map("value");
+  const componentFn = this.$attrs.get("component");
+  const getKey = this.$attrs.get("getKey") || ((value) => value);
 
   const node = document.createTextNode("");
 
@@ -79,9 +77,9 @@ export function Repeat(self) {
     connectedItems = newItems;
   }
 
-  self.watchState($value, update);
+  this.watchState($value, update);
 
-  self.afterDisconnect(() => {
+  this.afterDisconnect(() => {
     for (const item of connectedItems) {
       item.component.disconnect();
     }

@@ -1,14 +1,14 @@
 import { makeState } from "../state/makeState.js";
 import { isString } from "../helpers/typeChecking.js";
 
-export default function PageService(self) {
-  self.debug.name = "woof:service:page";
+export default function PageService() {
+  this.debug.name = "woof:service:page";
 
   const $title = makeState(document?.title);
 
-  self.afterConnect(() => {
+  this.afterConnect(() => {
     if (document) {
-      self.watchState(
+      this.watchState(
         $title,
         (current) => {
           if (isString(current)) {

@@ -7,9 +7,9 @@
 ```js
 import { wrapService, makeMockHTTP } from "@woofjs/client/testing";
 
-const mockHTTP = makeMockHTTP((self) => {
+const mockHTTP = makeMockHTTP(function () {
   // Define a mock responder for requests matching 'POST /users/create'
-  self.post("/users/create", (ctx) => {
+  this.post("/users/create", (ctx) => {
     ctx.response.status = 200;
 
     return {
@@ -21,19 +21,21 @@ const mockHTTP = makeMockHTTP((self) => {
     };
   });
 
-  self.delete("/users/:id", (ctx) => {
+  this.delete("/users/:id", (ctx) => {
     ctx.response.status = 204;
   });
 });
 
 // A service that makes HTTP calls:
-function UserService(self) {
+function UserService() {
+  const { http } = this.services;
+
   function createUser(name) {
-    return self.getService("@http").post("/users/create").body({ name });
+    return http.post("/users/create").body({ name });
   }
 
   function deleteUser(id) {
-    return self.getService("@http").delete(`/users/${id}`);
+    return http.delete(`/users/${id}`);
   }
 
   return {
@@ -43,29 +45,26 @@ function UserService(self) {
 }
 
 // And a wrapped version of that service that uses a mock version of @http:
-const WrappedUserService = wrapService(UserService, (self) => {
-  self.service("@http", mockHTTP);
+const makeUserService = wrapService(UserService, function () {
+  this.service("http", mockHTTP);
 });
 ```
 
-And to test:
+And to test (pictured in Jest):
 
 ```js
-test("API calls return expected response", (t) => {
-  t.plan(3);
-  t.timeout(500);
-
-  const service = t.service(WrappedUserService, {
+test("API calls return expected response", async () => {
+  const userService = makeUserService({
     /* options */
   });
 
-  service.createUser("Jimbo Jones").then((res) => {
-    t.equals(res.status, 200);
-    t.equals(res.body.name, "Jimbo Jones");
-  });
+  const createRes = await userService.createUser("Jimbo Jones");
 
-  service.deleteUser(1).then((res) => {
-    t.equals(res.status, 204);
-  });
+  expect(createRes.status).toBe(200);
+  expect(createRes.body.name).toBe("Jimbo Jones");
+
+  const deleteRes = await userService.deleteUser(createRes.body.user.id);
+
+  expect(deleteRes.status).toBe(204);
 });
 ```
