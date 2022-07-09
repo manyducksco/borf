@@ -264,13 +264,26 @@ const api = {
 
       const appContext = { services, debug };
 
-      Object.defineProperty(services, "http", {
-        get() {
-          throw new Error(
-            `Define a mock http service to make HTTP calls in a view. Import makeMockHTTP from @woofjs/client/testing.`
-          );
+      // Define built in services.
+      Object.defineProperties(services, {
+        router: {
+          value: registeredServices.router.exports,
+          writable: true,
+          configurable: true,
         },
-        configurable: true,
+        page: {
+          value: registeredServices.router.exports,
+          writable: true,
+          configurable: true,
+        },
+        http: {
+          get() {
+            throw new Error(
+              `Define a mock http service to make HTTP calls in a view. Import makeMockHTTP from @woofjs/client/testing.`
+            );
+          },
+          configurable: true,
+        },
       });
 
       for (const name in found.services) {
