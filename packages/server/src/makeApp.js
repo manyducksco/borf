@@ -8,35 +8,22 @@ export function makeApp() {
   const debug = makeDebug();
 
   let routes = [];
-  let services = {};
+  let middlewares = [];
+  const registeredServices = {};
 
-  function route(method, url, func) {
-    routes.push({ ...parseRoute(url), method, func });
+  const appContext = {
+    services: {},
+    debug,
+  };
+
+  function route(method, url, handlers) {
+    routes.push({ ...parseRoute(url), method, handlers });
     return methods;
   }
 
-  function makeGetService({ identifier, type }) {
-    /**
-     * Returns the named service or throws an error if it isn't registered.
-     * Every component and service in the app gets services through this function.
-     *
-     * @example getService("@page").$title.set("New Page Title")
-     *
-     * @param name - Name of a service. Built-in services start with `@`.
-     */
-    return function getService(name) {
-      if (services[name]) {
-        if (services[name].instance == null) {
-          throw new Error(
-            `Service '${name}' was requested before it was initialized from ${type} '${identifier}'. Make sure '${name}' is registered before '${identifier}' on your app.`
-          );
-        }
-
-        return services[name].instance.exports;
-      }
-
-      throw new Error(`Service is not registered in this app. Got: ${name}`);
-    };
+  function middleware(handler) {
+    middlewares.push(handler);
+    return methods;
   }
 
   const methods = {
@@ -53,19 +40,28 @@ export function makeApp() {
         throw new TypeError(`Expected a service function. Got: ${service} (${typeof service})`);
       }
 
-      if (!services[name]) {
-        services[name] = {
+      if (!registeredServices[name]) {
+        registeredServices[name] = {
           fn: service,
           instance: null,
           options: null,
         };
       }
 
+      Object.defineProperty(appContext.services, name, {
+        get() {
+          throw new Error(
+            `Service '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other services that access it.`
+          );
+        },
+        configurable: true,
+      });
+
       // Merge with existing fields if overwriting.
-      services[name].fn = service;
+      registeredServices[name].fn = service;
 
       if (config.options !== undefined) {
-        services[name].options = config.options;
+        registeredServices[name].options = config.options;
       }
 
       return methods;
@@ -76,40 +72,48 @@ export function makeApp() {
      * @param url - API path.
      * @param func - Logic.
      */
-    get: (url, func) => {
-      return route("GET", url, func);
+    get: (url, ...handlers) => {
+      return route("GET", url, handlers);
     },
-    post: (url, func) => {
-      return route("POST", url, func);
+    post: (url, ...handlers) => {
+      return route("POST", url, handlers);
     },
-    put: (url, func) => {
-      return route("PUT", url, func);
+    put: (url, ...handlers) => {
+      return route("PUT", url, handlers);
     },
-    patch: (url, func) => {
-      return route("PATCH", url, func);
+    patch: (url, ...handlers) => {
+      return route("PATCH", url, handlers);
     },
-    delete: (url, func) => {
-      return route("DELETE", url, func);
+    delete: (url, ...handlers) => {
+      return route("DELETE", url, handlers);
     },
-    options: (url, func) => {
-      return route("OPTIONS", url, func);
+    options: (url, ...handlers) => {
+      return route("OPTIONS", url, handlers);
     },
-    head: (url, func) => {
-      return route("HEAD", url, func);
+    head: (url, ...handlers) => {
+      return route("HEAD", url, handlers);
     },
-    use: (func) => {},
+    use: (handler) => {
+      return middleware(handler);
+    },
     listen: async (port) => {
       routes = sortRoutes(routes);
 
       return new Promise(async (resolve, reject) => {
         // init services
-        for (const name in services) {
-          const service = services[name];
+        for (const name in registeredServices) {
+          const service = registeredServices[name];
 
           // First bits of app code are run; service functions called.
-          service.instance = await initService({ makeGetService }, service.fn, debug.makeChannel(`service:${name}`), {
+          service.instance = await initService(appContext, service.fn, debug.makeChannel(`service:${name}`), {
             name,
             options: service.options,
+          });
+
+          Object.defineProperty(appContext.services, name, {
+            value: service.instance.exports,
+            writable: false,
+            configurable: false,
           });
         }
 
@@ -140,9 +144,8 @@ export function makeApp() {
                 status: 200,
                 headers: {},
               },
-              getService: (name) => {
-                return services[name].instance.exports;
-              },
+              services: appContext.services,
+              redirect: () => {},
             };
 
             const matched = matchRoute(routes, req.url, {
@@ -152,13 +155,23 @@ export function makeApp() {
             });
 
             if (matched) {
-              let body = (await matched.data.func(ctx)) || ctx.response.body;
+              let index = -1;
+              const handlers = [...middlewares, ...matched.data.handlers];
 
-              if (body && typeof body == "object") {
+              const nextFunc = async () => {
+                index++;
+                current = handlers[index];
+
+                const next = index == handlers.length - 1 ? undefined : nextFunc;
+                ctx.response.body = (await current(ctx, next)) || ctx.response.body;
+              };
+
+              await nextFunc();
+
+              if (ctx.response.body && typeof ctx.response.body == "object") {
                 ctx.response.headers["Content-Type"] = "application/json";
                 res.writeHead(ctx.response.status, ctx.response.headers);
-                body = body ? JSON.stringify(body) : body;
-                res.end(body);
+                res.end(JSON.stringify(ctx.response.body));
               } else {
                 res.writeHead(ctx.response.status, ctx.response.headers);
                 res.end();

@@ -1,4 +1,4 @@
-import { makeApp } from "@woofjs/server";
+const { makeApp } = require("@woofjs/server");
 
 const app = makeApp();
 
@@ -17,20 +17,29 @@ app.service("example", exampleService, {
   },
 });
 
-app.use((ctx) => {
+app.use(async (ctx, next) => {
+  const start = Date.now();
   ctx.cache.bark = "mrrp";
+  await next();
+  const end = Date.now();
+  ctx.response.headers["X-TIMER"] = end - start + "ms";
 });
 
-app.get("/middleware-outline", (ctx) => {
-  return {
-    message: `Data from middleware: ${ctx.cache.bark}`,
-  };
+app.get("/middleware-outline", async (ctx) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        message: `Data from middleware: ${ctx.cache.bark}`,
+      });
+    }, 50 + Math.random() * 100);
+  });
 });
 
 app.get(
   "/middleware-inline",
-  (ctx) => {
+  (ctx, next) => {
     ctx.cache.meow = "RUFF";
+    return next();
   },
   (ctx) => {
     return {
@@ -40,7 +49,7 @@ app.get(
 );
 
 app.get("/service", (ctx) => {
-  const service = ctx.getService("example");
+  const service = ctx.services.example;
   return {
     message: `Example Service called ${service.call()} times.`,
   };

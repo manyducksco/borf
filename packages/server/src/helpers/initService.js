@@ -1,12 +1,10 @@
 import { isObject } from "./typeChecking.js";
 
-export async function initService(app, fn, debug, config) {
-  const getService = app.makeGetService({ identifier: config.name, type: "service" });
-
+export async function initService(appContext, fn, debug, config) {
   const self = {
     debug,
     options: config.options || {},
-    getService,
+    services: appContext.services,
   };
 
   let exports = await fn.call(self, self);

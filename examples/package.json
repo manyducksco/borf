@@ -3,7 +3,6 @@
   "version": "0.3.0",
   "description": "Woof development examples",
   "private": true,
-  "type": "module",
   "scripts": {
     "start": "woof-build -c client/client.js -o build --watch",
     "build": "woof-build -c client/client.js -o build --minify",
