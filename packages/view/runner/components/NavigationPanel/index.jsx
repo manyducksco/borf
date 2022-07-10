@@ -6,10 +6,10 @@ import Tree from "./Tree";
 /**
  * Displays a tree of all views and links to navigate to each.
  */
-export default ($attrs, self) => {
-  self.debug.name = "NavigationPanel";
+export default function NavigationPanel() {
+  this.debug.name = "NavigationPanel";
 
-  const { $collections } = self.getService("view");
+  const { $collections } = this.services.view;
 
   function findNodeWithSegment(tree, segment) {
     for (const node of tree) {
@@ -78,4 +78,4 @@ export default ($attrs, self) => {
       <Tree nodes={$tree} />
     </Panel>
   );
-};
+}

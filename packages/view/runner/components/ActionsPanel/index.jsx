@@ -8,15 +8,15 @@ import Panel from "../Panel";
 /**
  * Displays action log.
  */
-export default ($attrs, self) => {
-  self.debug.name = "ActionsPanel";
+export default function ActionsPanel() {
+  this.debug.name = "ActionsPanel";
 
-  const { $currentView } = self.getService("view");
+  const { $currentView } = this.services.view;
 
   const $actionLog = proxyState([]);
   const $actionsCalled = $actionLog.map((log) => log.length > 0);
 
-  self.watchState($currentView, (view) => {
+  this.watchState($currentView, (view) => {
     if (view) {
       $actionLog.proxy(view.actions.$log);
     } else {
@@ -45,10 +45,10 @@ export default ($attrs, self) => {
       {when(
         $actionsCalled,
         <ol class={styles.actionList}>
-          {repeat($actionLog, ($attrs, self) => {
-            const $name = $attrs.map("value.name");
-            const $message = $attrs.map("value.message");
-            const $timestamp = $attrs.map("value.timestamp", (ts) =>
+          {repeat($actionLog, function () {
+            const $name = this.$attrs.map("value.name");
+            const $message = this.$attrs.map("value.message");
+            const $timestamp = this.$attrs.map("value.timestamp", (ts) =>
               dayjs(ts).format("HH:mm:ss")
             );
 
@@ -62,4 +62,4 @@ export default ($attrs, self) => {
       )}
     </Panel>
   );
-};
+}

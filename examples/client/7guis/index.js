@@ -1,4 +1,4 @@
-export default function SevenGUIs($attrs, self) {
+export default function SevenGUIs(self) {
   return (
     <div>
       <p>

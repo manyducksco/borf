@@ -1,4 +1,4 @@
-import http from "../services/@http.js";
+import http from "../services/http.js";
 import { makeMockFetch } from "./makeMockFetch.js";
 
 /**
@@ -30,12 +30,14 @@ export function makeMockHTTP(fn) {
   const fetch = makeMockFetch(fn);
 
   return function (self) {
-    return http({
+    const wrappedSelf = {
       ...self,
       options: {
         ...self.options,
         fetch,
       },
-    });
+    };
+
+    return http.call(wrappedSelf, wrappedSelf);
   };
 }

@@ -7,7 +7,7 @@ export default (view) => {
   view.description = "Test";
 
   view.service(
-    "@http",
+    "http",
     makeMockHTTP((self) => {
       self.get("https://dog.ceo/api/breeds/image/random", (ctx) => {
         // fireAction fires an action when called without needing to be passed as a component attribute.

@@ -18,7 +18,7 @@ const app = makeApp();
 app.service("screen", screen);
 app.service("view", view);
 
-app.route("*", () => {
+app.route("*", function () {
   return (
     <div class={styles.app}>
       <main class={styles.main}>

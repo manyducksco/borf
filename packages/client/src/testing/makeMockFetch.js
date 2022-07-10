@@ -70,7 +70,7 @@ export function makeMockFetch(fn) {
     },
   };
 
-  fn(self);
+  fn.call(self, self);
 
   routes = sortRoutes(routes);
 

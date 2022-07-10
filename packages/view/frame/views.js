@@ -55,6 +55,7 @@ function formatCollection(data) {
   for (const { fn, name } of fns) {
     const services = {};
     const attributes = [];
+    const decorators = [];
     const actions = { $log: makeState([]), fns: [] };
     let template;
 
@@ -100,6 +101,9 @@ function formatCollection(data) {
             name: "fired",
           });
         });
+      },
+      decorate(fn) {
+        decorators.push(fn);
       },
       render(component, attrs, children) {
         template = h(component, attrs, children);
@@ -169,7 +173,7 @@ function formatCollection(data) {
       services,
       actions,
       template,
-      component: null,
+      decorators,
     });
   }
 
@@ -251,39 +255,83 @@ const api = {
       activeView = found;
 
       const debug = makeDebug();
-      const appContext = { makeGetService };
-
-      const services = {
-        "@app": { exports: appContext },
-        "@debug": { exports: debug },
-        "@router": { exports: makeMockRouter() },
-        "@page": { exports: makeMockPage() },
+      const registeredServices = {
+        router: { exports: makeMockRouter() },
+        page: { exports: makeMockPage() },
       };
+
+      const services = {};
+
+      const appContext = { services, debug };
+
+      // Define built in services.
+      Object.defineProperties(services, {
+        router: {
+          value: registeredServices.router.exports,
+          writable: true,
+          configurable: true,
+        },
+        page: {
+          value: registeredServices.router.exports,
+          writable: true,
+          configurable: true,
+        },
+        http: {
+          get() {
+            throw new Error(
+              `Define a mock http service to make HTTP calls in a view. Import makeMockHTTP from @woofjs/client/testing.`
+            );
+          },
+          configurable: true,
+        },
+      });
+
+      for (const name in found.services) {
+        Object.defineProperty(services, name, {
+          get() {
+            throw new Error(
+              `Service '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other services that access it.`
+            );
+          },
+          configurable: true,
+        });
+      }
 
       for (const name in found.services) {
         const service = found.services[name];
 
-        services[name] = initService(
-          { makeGetService },
+        registeredServices[name] = initService(
+          appContext,
           service.fn,
           debug.makeChannel(`service:${name}`),
           { options: service.options }
         );
+
+        Object.defineProperty(services, name, {
+          value: registeredServices[name].exports,
+          writable: false,
+          configurable: false,
+        });
       }
 
-      function makeGetService() {
-        return (name) => {
-          if (services[name]) {
-            return services[name].exports;
-          }
+      const component = found.template.init(appContext);
 
-          throw new Error(
-            `Service '${name}' was requested but hasn't been defined in this view.`
+      mounted = component;
+
+      // Apply decorators.
+      for (const decorator of found.decorators) {
+        mounted = decorator(mounted);
+
+        if (!mounted || !mounted.isTemplate) {
+          throw new TypeError(
+            `Decorators must return an element. Got: ${mounted}`
           );
-        };
+        }
       }
 
-      mounted = found.template.init({ makeGetService });
+      if (mounted.isTemplate) {
+        mounted = mounted.init(appContext);
+      }
 
       for (const name in services) {
         if (services[name].beforeConnect) {
@@ -299,7 +347,7 @@ const api = {
         }
       }
 
-      emitEvent("mount", mounted);
+      emitEvent("mount", component);
     }
   },
 };

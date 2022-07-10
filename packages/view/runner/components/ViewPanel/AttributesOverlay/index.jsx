@@ -2,12 +2,12 @@ import { makeState } from "@woofjs/client";
 
 import styles from "./index.module.css";
 
-export default ($attrs, self) => {
-  self.debug.name = "AttributesOverlay";
+export default function AttributesOverlay() {
+  this.debug.name = "AttributesOverlay";
 
   const $ref = makeState();
 
-  self.watchState($attrs, (attrs) => {
+  this.watchState(this.$attrs, (attrs) => {
     const json = JSON.stringify(
       attrs.value,
       (key, value) => {
@@ -35,7 +35,7 @@ export default ($attrs, self) => {
       <div class={styles.json} $ref={$ref} />
     </div>
   );
-};
+}
 
 /**
  * Credit to twilson63's github gist: https://gist.github.com/twilson63/e8893770722fad8518513dfdbe018a23

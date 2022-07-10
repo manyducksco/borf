@@ -1,6 +1,6 @@
 import { makeState, bind } from "@woofjs/client";
 
-export default function ComponentAttrsExample($attrs) {
+export default function ComponentAttrsExample() {
   const $message = makeState("test");
 
   return (
@@ -16,7 +16,7 @@ export default function ComponentAttrsExample($attrs) {
   );
 }
 
-function SubComponent($attrs) {
+function SubComponent({ $attrs }) {
   this.debug.name = "SubComponent";
 
   const $state = $attrs.get("$state"); // get state passed as state

@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/view",
-  "version": "0.2.1",
+  "version": "0.4.2",
   "description": "Isolated component development for dogs. 🐕",
   "main": "program.js",
   "scripts": {
@@ -15,8 +15,8 @@
   "author": "Tony McCoy <tony@manyducks.co>",
   "license": "MIT",
   "peerDependencies": {
-    "@woofjs/build": ">=0.1.0",
-    "@woofjs/client": ">=0.11.0"
+    "@woofjs/build": ">=0.3.0",
+    "@woofjs/client": ">=0.14.0"
   },
   "dependencies": {
     "@ratwizard/cli": "^0.17.0",
@@ -27,8 +27,8 @@
     "mustache": "^4.2.0"
   },
   "devDependencies": {
-    "@woofjs/build": "^0.3.2",
-    "@woofjs/client": "^0.13.0",
+    "@woofjs/build": "^0.3.4",
+    "@woofjs/client": "^0.14.1",
     "dayjs": "^1.11.3",
     "dedent": "^0.7.0",
     "nanoid": "^4.0.0"

@@ -1,4 +1,4 @@
-export function Text($attrs, self) {
+export function Text() {
   const node = document.createTextNode("");
 
   function setText(attrs) {
@@ -11,7 +11,7 @@ export function Text($attrs, self) {
     }
   }
 
-  self.watchState($attrs, setText);
+  this.watchState(this.$attrs, setText);
 
   return node;
 }

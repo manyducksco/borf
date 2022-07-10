@@ -1,8 +1,16 @@
 import { isObject } from "./typeChecking.js";
 
-export function initService(app, fn, debug, config) {
-  const getService = app.makeGetService({ identifier: config.name, type: "service" });
+import { makeState } from "../state/makeState.js";
+import { mergeStates } from "../state/mergeStates.js";
+import { proxyState } from "../state/proxyState.js";
 
+const serviceHelpers = {
+  makeState,
+  mergeStates,
+  proxyState,
+};
+
+export function initService(appContext, fn, debug, config) {
   // Lifecycle hook callbacks
   let onBeforeConnect = [];
   let onAfterConnect = [];
@@ -10,10 +18,12 @@ export function initService(app, fn, debug, config) {
   // Cancel functions for state watchers that are currently active.
   let activeWatchers = [];
 
-  const self = {
+  const ctx = {
     debug,
     options: config.options || {},
-    getService,
+    services: appContext.services,
+    helpers: serviceHelpers,
+
     beforeConnect(callback) {
       onBeforeConnect.push(callback);
     },
@@ -25,7 +35,7 @@ export function initService(app, fn, debug, config) {
     },
   };
 
-  const exports = fn.call(self, self);
+  const exports = fn.call(ctx, ctx);
 
   if (!isObject(exports)) {
     throw new TypeError(`A service must return an object. Got: ${exports}`);

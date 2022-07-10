@@ -6,27 +6,30 @@ export default function AppLayout() {
 
   logLifecycle(this);
 
-  // self.loadRoute((show, done) => {
-  //   // When the done() function is called, this content is removed and the real component is connected.
+  const { page, mouse } = this.services;
 
-  //   return show(
-  //     <div>
-  //       <h1>WELCOME</h1>
-  //       <p>This page has examples of things woof can do.</p>
-  //       <p>
-  //         Click the button below to demonstrate calling <code>done()</code> in a component's preload hook. When it's
-  //         triggered by an event, you can create disclaimer pages like this. Generally you would use this to show temp
-  //         content while making API calls.
-  //       </p>
-  //       <button onclick={() => done()} title="demonstrate calling done() in a component's preload hook">
-  //         Continue
-  //       </button>
-  //     </div>
-  //   );
-  // });
+  this.loadRoute(({ show, done }) => {
+    // When the done() function is called, this content is removed and the real component is connected.
 
-  const page = this.getService("@page");
-  const mouse = this.getService("mouse");
+    return show(
+      <div>
+        <h1>WELCOME</h1>
+        <p>This page has examples of things woof can do.</p>
+        <p>
+          Click the button below to demonstrate calling <code>done()</code> in a
+          route component's loadRoute hook. When it's triggered by an event, you
+          can create disclaimer pages like this. Generally you would use this to
+          show temp content while making API calls.
+        </p>
+        <button
+          onclick={() => done()}
+          title="demonstrate calling done() in a component's preload hook"
+        >
+          Continue
+        </button>
+      </div>
+    );
+  });
 
   // Display current mouse coordinates as tab title
   this.watchState(mouse.$position, (pos) => {

@@ -1,4 +1,4 @@
-export default function CircleDrawer($attrs, self) {
+export default function CircleDrawer(self) {
   self.debug.name = "7GUIs:CircleDrawer";
 
   return (

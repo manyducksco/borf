@@ -3,13 +3,13 @@ import { nanoid } from "nanoid";
 
 import styles from "./index.module.css";
 
-export default ($attrs, self) => {
-  self.debug.name = "input:radio";
+export default function InputRadio() {
+  this.debug.name = "input:radio";
 
   const id = nanoid();
 
-  const $options = $attrs.map("options");
-  const $value = $attrs.get("$value");
+  const $options = this.$attrs.map("options");
+  const $value = this.$attrs.get("$value");
 
   const $keyed = $options.map((options) => {
     return options.map((o, i) => {
@@ -41,9 +41,9 @@ export default ($attrs, self) => {
 
   return (
     <div>
-      {repeat($keyed, ($attrs, self) => {
-        const $key = $attrs.map("value.key");
-        const $label = $attrs.map("value.value");
+      {repeat($keyed, function Option() {
+        const $key = this.$attrs.map("value.key");
+        const $label = this.$attrs.map("value.value");
         const $checked = mergeStates($key, $selected, (key, selected) => {
           return key === selected;
         });
@@ -62,4 +62,4 @@ export default ($attrs, self) => {
       })}
     </div>
   );
-};
+}

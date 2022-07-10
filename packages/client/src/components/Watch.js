@@ -1,15 +1,19 @@
 import { isFunction, isTemplate } from "../helpers/typeChecking.js";
 
+import { appContextKey } from "../helpers/initComponent.js";
+
 /**
  * Recreates its contents each time its value changes.
  */
-export function Watch($attrs, self) {
-  self.debug.name = "woof:v:watch";
+export function Watch() {
+  const appContext = this[appContextKey];
+
+  this.debug.name = "woof:template:watch";
 
   const node = document.createTextNode("");
 
-  const $value = $attrs.map("value");
-  const render = $attrs.get("render");
+  const $value = this.$attrs.map("value");
+  const render = this.$attrs.get("render");
 
   let current;
 
@@ -31,14 +35,14 @@ export function Watch($attrs, self) {
     }
 
     if (newItem) {
-      current = newItem.init(self.getService("@app"));
+      current = newItem.init(appContext);
       current.connect(node.parentNode, node);
     }
   }
 
-  self.watchState($value, update);
+  this.watchState($value, update);
 
-  self.afterDisconnect(() => {
+  this.afterDisconnect(() => {
     if (current) {
       current.disconnect();
       current = null;

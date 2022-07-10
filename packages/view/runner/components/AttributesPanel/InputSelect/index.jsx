@@ -2,11 +2,11 @@ import { repeat, mergeStates } from "@woofjs/client";
 
 import styles from "./index.module.css";
 
-export default ($attrs, self) => {
-  self.debug.name = "input:select";
+export default function InputSelect() {
+  this.debug.name = "input:select";
 
-  const $options = $attrs.map("options");
-  const $value = $attrs.get("$value");
+  const $options = this.$attrs.map("options");
+  const $value = this.$attrs.get("$value");
 
   const $keyed = $options.map((options) => {
     return options.map((o, i) => {
@@ -37,9 +37,9 @@ export default ($attrs, self) => {
         $value.set(matched.value);
       }}
     >
-      {repeat($keyed, ($attrs, self) => {
-        const $key = $attrs.map("value.key");
-        const $value = $attrs.map("value.value");
+      {repeat($keyed, function Option() {
+        const $key = this.$attrs.map("value.key");
+        const $value = this.$attrs.map("value.value");
         const $active = mergeStates(
           $selected,
           $key,
@@ -54,4 +54,4 @@ export default ($attrs, self) => {
       })}
     </select>
   );
-};
+}

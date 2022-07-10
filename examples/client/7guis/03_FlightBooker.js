@@ -2,7 +2,7 @@ import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
 const flightTypes = ["one-way flight", "return flight"];
 
-export default function FlightBooker($attrs, self) {
+export default function FlightBooker(self) {
   self.debug.name = "7GUIs:FlightBooker";
 
   const $flightType = makeState(flightTypes[0]);
@@ -64,8 +64,8 @@ export default function FlightBooker($attrs, self) {
           >
             {repeat(
               flightTypes,
-              ($attrs, self) => {
-                const $value = $attrs.map("value");
+              function FlightOption() {
+                const $value = this.$attrs.map("value");
                 const $selected = mergeStates(
                   $value,
                   $flightType,

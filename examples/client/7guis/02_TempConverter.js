@@ -1,6 +1,6 @@
 import { makeState } from "@woofjs/client";
 
-export default function TempConverter($attrs, self) {
+export default function TempConverter(self) {
   self.debug.name = "7GUIs:TempConverter";
 
   const $celsius = makeState(10);

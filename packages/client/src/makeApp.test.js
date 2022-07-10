@@ -1,3 +1,4 @@
+import { createMemoryHistory } from "history";
 import { h } from "./h.js";
 import { makeApp } from "./makeApp.js";
 
@@ -29,10 +30,10 @@ test("nested routes are parsed correctly", async () => {
     return h("div");
   }
 
-  app.service("@http", () => {
-    return {}; // Override @http, otherwise window.fetch isn't defined in the test so this fails.
+  app.service("http", () => {
+    return {}; // Override http, otherwise window.fetch isn't defined in the test so this fails.
   });
-  app.service("@router", (self) => {
+  app.service("router", (self) => {
     const { routes } = self.options;
 
     expect(routes).toStrictEqual([
@@ -91,8 +92,8 @@ test("lifecycle methods", async () => {
   const app = makeApp();
   const root = document.createElement("div");
 
-  app.service("@http", () => {
-    return {}; // Override @http, otherwise window.fetch isn't defined in the test so this fails.
+  app.service("http", () => {
+    return {}; // Override http, otherwise window.fetch isn't defined in the test so this fails.
   });
 
   const beforeConnect = jest.fn();
@@ -107,16 +108,22 @@ test("lifecycle methods", async () => {
   expect(afterConnect).toHaveBeenCalledTimes(1);
 });
 
-test("throws helpful error when accessing services that haven't been created yet from other services", async () => {
-  const app = makeApp();
+test("throws helpful error when accessing services that haven't been created yet from other services", () => {
+  const app = makeApp({
+    router: {
+      history: createMemoryHistory(),
+    },
+  });
   const root = document.createElement("div");
 
-  app.service("@http", () => {
-    return {}; // Override @http, otherwise window.fetch isn't defined in the test so this fails.
+  app.service("http", () => {
+    return {}; // Override http, otherwise window.fetch isn't defined in the test so this fails.
   });
 
-  app.service("one", (self) => {
-    const two = self.getService("two");
+  app.service("one", (ctx) => {
+    const { two } = ctx.services;
+
+    console.log(two);
 
     return {
       value: 1,
@@ -130,7 +137,45 @@ test("throws helpful error when accessing services that haven't been created yet
     };
   });
 
-  expect(async () => app.connect(root)).rejects.toThrow(
-    "Service 'two' was requested before it was initialized from service 'one'. Make sure 'two' is registered before 'one' on your app."
+  expect(app.connect(root)).rejects.toThrow(
+    "Service 'two' was accessed before it was initialized. Make sure 'two' is registered before other services that access it."
   );
+});
+
+test("error doesn't occur if accessing outside of the main function scope", async () => {
+  const app = makeApp({
+    router: {
+      history: createMemoryHistory(),
+    },
+  });
+  const root = document.createElement("div");
+
+  app.service("http", () => {
+    return {}; // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  });
+
+  app.service("one", (ctx) => {
+    return {
+      value: 1,
+
+      // Two is accessible because this function is not called until after it is initialized.
+      get total() {
+        return ctx.services.two.value + this.value;
+      },
+    };
+  });
+
+  app.service("two", () => {
+    return {
+      value: 2,
+    };
+  });
+
+  app.route("*", function () {
+    expect(this.services.one.total).toBe(3);
+
+    return null;
+  });
+
+  await app.connect(root);
 });

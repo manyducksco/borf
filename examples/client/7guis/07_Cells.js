@@ -1,4 +1,4 @@
-export default function Cells($attrs, self) {
+export default function Cells(self) {
   self.debug.name = "7GUIs:Cells";
 
   return (

@@ -98,12 +98,54 @@ declare module "@woofjs/client" {
     error(...args: any): void;
   };
 
-  export type AppLifecycleCallback = (self: AppSelf) => void | Promise<void>;
+  export type AppLifecycleCallback = (self: AppContext) => void | Promise<void>;
 
-  export type AppSelf = {
-    getService: <T = Object>(name: string) => T;
+  export type Services<T = any> = {
+    router: RouterService;
+    http: HTTPService;
+    page: PageService;
+    [name: keyof T]: T[name];
+  };
+
+  export type AppContext<ServicesType = any> = {
+    services: Services<ServicesType>;
     debug: DebugChannel;
   };
+
+  export type RouterService = {
+    $route: State<string>;
+    $path: State<string>;
+    $params: State<{ [name: string]: unknown }>;
+    $query: State<{ [name: string]: unknown }>;
+
+    back: (steps?: number) => void;
+    forward: (steps?: number) => void;
+    navigate: (path: string, options?: { replace?: boolean }) => void;
+  };
+
+  export type PageService = {
+    $title: State<string>;
+  };
+
+  /*==================================*\
+  ||               HTTP               ||
+  \*==================================*/
+
+  export type HTTPService = {
+    get(url: string): HTTPRequest;
+    post(url: string): HTTPRequest;
+    put(url: string): HTTPRequest;
+    patch(url: string): HTTPRequest;
+    delete(url: string): HTTPRequest;
+  };
+
+  type HTTPRequestContext = {};
+
+  type HTTPRequestOptions = {};
+
+  class HTTPRequest {}
+
+  type HTTPMiddleware = (ctx: HTTPRequestContext) => Promise<void>;
 
   /*==================================*\
   ||             Routing              ||
@@ -127,13 +169,9 @@ declare module "@woofjs/client" {
     toString(): string;
   };
 
-  type AppContext = {
-    getService: <T = Object>(name: string) => T;
-  };
-
   type Template = {
     readonly isTemplate: true;
-    init(app: AppContext): Component;
+    init(appContext: AppContext): Component;
   };
 
   type BoundState<T> = {
@@ -142,16 +180,14 @@ declare module "@woofjs/client" {
     event: string;
   };
 
-  export function v(tagname: string, attrs: Object, ...children: Template[]): Template;
-  export function v(tagname: string, ...children: Template[]): Template;
-  export function v(component: Component, attrs: Object, ...children: Template[]): Template;
-  export function v(component: Component, ...children: Template[]): Template;
+  export function h(element: string | Component, attrs: Object, ...children: Template[]): Template;
+  export function h(element: string | Component, ...children: Template[]): Template;
 
   export function when($condition: State, element: Element): Template;
 
   export function unless($condition: State, element: Element): Template;
 
-  export function each<T>($values: State<T[]>, component: Component, getKey?: (value: T) => any): Template;
+  export function repeat<T>($values: State<T[]>, component: Component, getKey?: (value: T) => any): Template;
 
   export function watch<T>($value: State<T>, render: (value: T) => Element): Template;
 
@@ -161,17 +197,19 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
-  export type Component<AttrsType> = ($attrs: State<AttrsType>, self: ComponentSelf) => Element | null;
+  export type Component<AttrsType> = (self: ComponentContext<AttrsType>) => Element | null;
 
-  export type ComponentSelf = {
-    getService: <T = Object>(name: string) => T;
+  export type ComponentContext<AttrsType> = {
+    $attrs: State<AttrsType>;
+    services: Services;
     debug: DebugChannel;
     children: any;
 
-    beforeConnect: () => void;
-    afterConnect: () => void;
-    beforeDisconnect: () => void;
-    afterDisconnect: () => void;
+    beforeConnect: (callback: () => void) => void;
+    afterConnect: (callback: () => void) => void;
+    beforeDisconnect: (callback: () => void) => void;
+    afterDisconnect: (callback: () => void) => void;
+    transitionOut: (callback: () => Promise<void>) => void;
 
     loadRoute: (show: (element: Element) => void, done: () => void) => Promise<any> | void;
   };
@@ -183,10 +221,10 @@ declare module "@woofjs/client" {
   /**
    * Stores shared variables and functions that can be accessed by components and other services.
    */
-  export type Service = (self: ServiceSelf) => Object;
+  export type Service = (self: ServiceContext) => Object;
 
-  export type ServiceSelf = {
-    getService: getService;
+  export type ServiceContext = {
+    services: Services;
     debug: DebugChannel;
 
     /**
@@ -275,55 +313,4 @@ declare module "@woofjs/client" {
    * Determines whether or not an object is a state.
    */
   export function isState(value: unknown): boolean;
-
-  /*==================================*\
-  ||               HTTP               ||
-  \*==================================*/
-
-  type HTTPRequestContext = {};
-
-  type HTTPRequestOptions = {};
-
-  class HTTPRequest {}
-
-  type HTTPMiddleware = (ctx: HTTPRequestContext) => Promise<void>;
-
-  export type HTTPService = {
-    get(url: string): HTTPRequest;
-    post(url: string): HTTPRequest;
-    put(url: string): HTTPRequest;
-    patch(url: string): HTTPRequest;
-    delete(url: string): HTTPRequest;
-  };
-}
-
-declare module "@woofjs/client/testing" {
-  type TestTools = {};
-
-  type Test = {
-    (t: TestTools): void;
-  };
-
-  type View = {};
-
-  type AddTestFunction = {
-    (name: string, test: Test): void;
-
-    beforeEach(fn: () => any): void;
-    afterEach(fn: () => any): void;
-    beforeAll(fn: () => any): void;
-    afterAll(fn: () => any): void;
-  };
-
-  type AddViewFunction = {
-    (name: string, view: View): void;
-  };
-
-  type SuiteFunction = (test: AddTestFunction, view: AddViewFunction) => void;
-
-  type TestSuite = {
-    run(): Promise<any>;
-  };
-
-  export function makeSuite(setup: SuiteFunction): TestSuite;
 }

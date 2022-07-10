@@ -4,12 +4,11 @@ import { makeMockHTTP } from "./makeMockHTTP.js";
 /**
  * A service that makes HTTP requests through the @http service.
  */
-function UserService(self) {
+function UserService(ctx) {
+  const { http } = ctx.services;
+
   async function getUsers() {
-    return self
-      .getService("@http")
-      .get("/users")
-      .then((res) => res.body);
+    return http.get("/users").then((res) => res.body);
   }
 
   return {
@@ -33,7 +32,7 @@ const mockHTTP = makeMockHTTP((self) => {
  * A wrapped version of the component that uses the mock @http service.
  */
 const makeWrapped = wrapService(UserService, (wrapper) => {
-  wrapper.service("@http", mockHTTP);
+  wrapper.service("http", mockHTTP);
 });
 
 test("provides mock services to wrapped service", async () => {

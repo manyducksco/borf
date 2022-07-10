@@ -5,16 +5,13 @@ import AttributesOverlay from "./AttributesOverlay";
 import ToggleButton from "./ToggleButton";
 import ButtonSet from "./ButtonSet";
 
-export default ($attrs, self) => {
-  const { debug } = self;
+export default function ViewPanel() {
+  this.debug.name = "ViewPanel";
 
-  debug.name = "ViewPanel";
+  const { screen, page } = this.services;
+  const { $frameRef, $currentAttrs, $currentView } = this.services.view;
 
-  const screen = self.getService("screen");
-  const { $frameRef, $currentAttrs, $currentView } = self.getService("view");
-  const { $title } = self.getService("@page");
-
-  const $viewTitle = mergeStates($title, $currentView, (title, view) => {
+  const $viewTitle = mergeStates(page.$title, $currentView, (title, view) => {
     if (view == null) {
       return "No View";
     }
@@ -31,7 +28,7 @@ export default ($attrs, self) => {
   const $canvasRef = makeState();
   const $canvasSize = makeState({ x: 0, y: 0 });
 
-  const $showAttrsOverlay = makeState(true);
+  const $showAttrsOverlay = makeState(false);
 
   const $viewportBoundsSize = mergeStates(
     $viewportSize,
@@ -95,11 +92,11 @@ export default ($attrs, self) => {
     screen.$dragging.set(false);
   }
 
-  self.beforeConnect(() => {
+  this.beforeConnect(() => {
     window.addEventListener("resize", onResizeWindow);
   });
 
-  self.afterConnect(() => {
+  this.afterConnect(() => {
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         $canvasSize.set((size) => {
@@ -112,7 +109,7 @@ export default ($attrs, self) => {
     observer.observe($canvasRef.get());
   });
 
-  self.beforeDisconnect(() => {
+  this.beforeDisconnect(() => {
     window.removeEventListener("resize", onResizeWindow);
 
     endDrag();
@@ -262,4 +259,4 @@ export default ($attrs, self) => {
       </div>
     </div>
   );
-};
+}

@@ -1,17 +1,33 @@
-import { makeState } from "../state/makeState.js";
 import { isTemplate, isDOM, isFunction, isComponent, isState } from "./typeChecking.js";
+
+import { h, when, unless, watch, repeat, bind } from "../h.js";
+import { makeState } from "../state/makeState.js";
+import { mergeStates } from "../state/mergeStates.js";
+import { proxyState } from "../state/proxyState.js";
+
+export const appContextKey = Symbol("appContext");
+
+const componentHelpers = {
+  h,
+  when,
+  unless,
+  watch,
+  repeat,
+  bind,
+  makeState,
+  mergeStates,
+  proxyState,
+};
 
 /**
  * Initializes a component function into a component instance that the framework can work with.
  *
- * @param app - App resources such as getService()
+ * @param appContext - App resources such as getService()
  * @param fn - The component function.
  * @param attrs - Attributes passed to the function.
  * @param children - Children passed to the function.
  */
-export function initComponent(app, fn, attrs, children) {
-  const getService = app.makeGetService({ identifier: "~", type: "component" });
-
+export function initComponent(appContext, fn, attrs, children) {
   attrs = attrs || {};
   children = children || [];
 
@@ -80,14 +96,18 @@ export function initComponent(app, fn, attrs, children) {
   const $attrs = makeState(initialAttrs);
 
   /*=============================*\
-  ||     Define self object      ||
+  ||    Define context object    ||
   \*=============================*/
 
   // This is the object the setup function uses to interface with the component.
-  const self = {
-    getService,
+  const ctx = {
+    $attrs: $attrs.map(), // Read-only from inside the component.
+    services: appContext.services,
+    debug: appContext.debug.makeChannel("component:?"),
     children,
-    debug: getService("@debug").makeChannel("~"),
+
+    helpers: componentHelpers,
+
     get isConnected() {
       return isConnected;
     },
@@ -106,6 +126,9 @@ export function initComponent(app, fn, attrs, children) {
     afterDisconnect(callback) {
       onAfterDisconnect.push(callback);
     },
+    transitionOut(callback) {
+      throw new Error(`transitionOut is not yet implemented.`);
+    },
     watchState($state, callback, options = {}) {
       onAfterConnect.push(() => {
         activeWatchers.push(
@@ -118,11 +141,19 @@ export function initComponent(app, fn, attrs, children) {
 
       if (isConnected) {
         throw new Error(
-          "Called self.watchState after component was already connected. This will cause memory leaks. This function should only be called in the body of the component."
+          "Called watchState after component was already connected. This will cause memory leaks. This function should only be called in the body of the component."
         );
       }
     },
   };
+
+  // Add the app context, but key it with a symbol so it can't be accessed outside of Woof's own internal components.
+  Object.defineProperty(ctx, appContextKey, {
+    value: appContext,
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
 
   /*=============================*\
   ||     Watch dynamic attrs     ||
@@ -130,7 +161,7 @@ export function initComponent(app, fn, attrs, children) {
 
   // Update $attrs when state attrs change.
   stateAttrs.forEach(({ name, value }) => {
-    self.watchState(value, (unwrapped) => {
+    ctx.watchState(value, (unwrapped) => {
       $attrs.set((attrs) => {
         attrs[name] = unwrapped;
       });
@@ -141,10 +172,10 @@ export function initComponent(app, fn, attrs, children) {
   ||      Run setup function     ||
   \*=============================*/
 
-  let element = fn.call(self, $attrs.map(), self);
+  let element = fn.call(ctx, ctx);
 
   if (isTemplate(element)) {
-    element = element.init(getService("@app"));
+    element = element.init(appContext);
   } else {
     if (element !== null && !isDOM(element)) {
       let message = `Components must return an h() element, a DOM node or null. Got: ${element}`;
@@ -203,7 +234,7 @@ export function initComponent(app, fn, attrs, children) {
       return new Promise(async (resolve, reject) => {
         const show = (element) => {
           if (isTemplate(element)) {
-            element = element.init(getService("@app"));
+            element = element.init(appContext);
           } else {
             return reject(new TypeError(`Expected an element to display. Got: ${element} (${typeof element})`));
           }

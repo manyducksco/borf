@@ -1,7 +1,7 @@
-export default ($attrs, self) => {
-  self.debug.name = "input:toggle";
+export default function InputToggle() {
+  this.debug.name = "input:toggle";
 
-  const $value = $attrs.get("$value");
+  const $value = this.$attrs.get("$value");
 
   return (
     <input
@@ -12,4 +12,4 @@ export default ($attrs, self) => {
       }}
     />
   );
-};
+}

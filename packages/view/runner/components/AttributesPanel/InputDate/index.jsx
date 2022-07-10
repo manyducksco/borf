@@ -1,3 +1,3 @@
-export default ($attrs, self) => {
+export default function InputDate() {
   return <p>Not yet implemented.</p>;
-};
+}

@@ -1,6 +1,6 @@
 import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
-export default function CRUD($attrs, self) {
+export default function CRUD(self) {
   self.debug.name = "7GUIs:CRUD";
 
   const $people = makeState([
@@ -104,8 +104,8 @@ export default function CRUD($attrs, self) {
           >
             {repeat(
               $filteredPeople,
-              ($attrs, self) => {
-                const $person = $attrs.map("value");
+              function FilterOption() {
+                const $person = this.$attrs.map("value");
 
                 return (
                   <option value={$person.map("id")}>
