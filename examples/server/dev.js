@@ -11,11 +11,26 @@ const exampleService = (self) => {
   };
 };
 
+const asyncService = async (self) => {
+  let waitFor = 50 + Math.random() * 100;
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        call: () => {
+          return waitFor;
+        },
+      });
+    }, waitFor);
+  });
+};
+
 app.service("example", exampleService, {
   options: {
     timesCalled: 0,
   },
 });
+
+app.service("async", asyncService);
 
 app.use(async (ctx, next) => {
   const start = Date.now();
@@ -33,6 +48,7 @@ app.post(
   },
   (ctx) => {
     const service = ctx.services.example;
+    const asyncService = ctx.services.async;
 
     ctx.response.headers[
       "X-SERVICE-CALLS"
@@ -45,6 +61,10 @@ app.post(
     ctx.response.headers[
       "X-REQUEST-BODY"
     ] = `This is some CTX info: ${ctx.request.body.hello}.`;
+
+    ctx.response.headers[
+      "X-SERVICE-ASYNC"
+    ] = `Async Service waited ${asyncService.call()} ms.`;
 
     return new Promise((resolve) => {
       setTimeout(() => {
