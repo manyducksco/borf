@@ -3,7 +3,7 @@ import { isTemplate, isDOM, isFunction, isComponent, isState } from "./typeCheck
 import { h, when, unless, watch, repeat, bind } from "../h.js";
 import { makeState } from "../state/makeState.js";
 import { mergeStates } from "../state/mergeStates.js";
-import { proxyState } from "../state/proxyState.js";
+import { makeProxyState } from "../state/makeProxyState.js";
 
 export const appContextKey = Symbol("appContext");
 
@@ -16,7 +16,7 @@ const componentHelpers = {
   bind,
   makeState,
   mergeStates,
-  proxyState,
+  makeProxyState,
 };
 
 /**

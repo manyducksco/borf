@@ -1,11 +1,11 @@
 import { makeState } from "./makeState";
-import { proxyState } from "./proxyState";
+import { makeProxyState } from "./makeProxyState";
 
 test("can .proxy() to  adopt the value of another state", () => {
   const $state1 = makeState(1);
   const $state2 = makeState("another");
 
-  const $proxy = proxyState($state1);
+  const $proxy = makeProxyState($state1);
 
   expect($proxy.get()).toBe(1);
 
@@ -20,7 +20,7 @@ test("watching and setting on the proxy and originals functions as expected", ()
   const $state1 = makeState(1);
   const $state2 = makeState("another");
 
-  const $proxy = proxyState($state1);
+  const $proxy = makeProxyState($state1);
 
   const cancel = $proxy.watch((value) => {
     expect(value).toBe(3);

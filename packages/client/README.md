@@ -144,7 +144,7 @@ function Example() {
 
   // Helpers are available on the component context as well as exported from `@woofjs/client`.
   // Use these whenever you want to avoid import statements, such as when writing a library or when not using a build system.
-  const { h, when, unless, watch, repeat, bind, makeState, mergeStates, proxyState } = this.helpers;
+  const { h, when, unless, watch, repeat, bind, makeState, makeProxyState, mergeStates } = this.helpers;
 
   /*=================================*\
   ||   Component Lifecycle Methods   ||
@@ -546,7 +546,7 @@ app.service("example", function () {
 
   // Helpers are available on the service context as well as exported from `@woofjs/client`.
   // Use these whenever you need to avoid import statements, such as when not using a build system.
-  const { makeState, mergeStates, proxyState } = this.helpers;
+  const { makeState, mergeStates, makeProxyState } = this.helpers;
 
   /*=================================*\
   ||    Service Lifecycle Methods    ||

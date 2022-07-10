@@ -3,7 +3,7 @@ import { initService } from "../helpers/initService.js";
 import { makeDebug } from "../makeDebug.js";
 import { makeState } from "../state/makeState.js";
 import { mergeStates } from "../state/mergeStates.js";
-import { proxyState } from "../state/proxyState.js";
+import { makeProxyState } from "../state/makeProxyState.js";
 
 import HTTPService from "../services/http.js";
 import PageService from "../services/page.js";
@@ -22,7 +22,7 @@ export function wrapService(service, configure) {
     helpers: {
       makeState,
       mergeStates,
-      proxyState,
+      makeProxyState,
     },
     debug,
   };

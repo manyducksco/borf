@@ -2,12 +2,12 @@ import { isObject } from "./typeChecking.js";
 
 import { makeState } from "../state/makeState.js";
 import { mergeStates } from "../state/mergeStates.js";
-import { proxyState } from "../state/proxyState.js";
+import { makeProxyState } from "../state/makeProxyState.js";
 
 const serviceHelpers = {
   makeState,
   mergeStates,
-  proxyState,
+  makeProxyState,
 };
 
 export function initService(appContext, fn, debug, config) {
