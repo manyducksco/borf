@@ -1,4 +1,4 @@
-const { makeApp } = require("@woofjs/server");
+const { makeApp, makeRouter } = require("@woofjs/server");
 
 const app = makeApp();
 
@@ -19,54 +19,54 @@ app.service("example", exampleService, {
 
 app.use(async (ctx, next) => {
   const start = Date.now();
-  ctx.cache.bark = "mrrp";
+  ctx.response.headers["X-MIDDLEWARE-OUTLINE"] = "mrrp";
   await next();
   const end = Date.now();
   ctx.response.headers["X-TIMER"] = end - start + "ms";
 });
 
-app.get("/middleware-outline", async (ctx) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        message: `Data from middleware: ${ctx.cache.bark}`,
-      });
-    }, 50 + Math.random() * 100);
-  });
-});
-
-app.get(
-  "/middleware-inline",
+app.post(
+  "/full-test",
   (ctx, next) => {
-    ctx.cache.meow = "RUFF";
+    ctx.response.headers["X-MIDDLEWARE-INLINE"] = "RUFF";
     return next();
   },
   (ctx) => {
-    return {
-      message: `Data from middleware: ${ctx.cache.meow}`,
-    };
+    const service = ctx.services.example;
+
+    ctx.response.headers[
+      "X-SERVICE-CALLS"
+    ] = `Example Service called ${service.call()} times.`;
+
+    ctx.response.headers[
+      "X-REQUEST-METHOD"
+    ] = `This is some CTX info: ${ctx.request.method}.`;
+
+    ctx.response.headers[
+      "X-REQUEST-BODY"
+    ] = `This is some CTX info: ${ctx.request.body.hello}.`;
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          message: `Check the headers.`,
+        });
+      }, 50 + Math.random() * 100);
+    });
   }
 );
 
-app.get("/service", (ctx) => {
-  const service = ctx.services.example;
-  return {
-    message: `Example Service called ${service.call()} times.`,
-  };
+const router = makeRouter();
+router.get("/test", () => {
+  return "FROM ROUTER";
 });
+
+app.mount(router);
+app.mount("/router", router);
 
 app.get("/hello", (ctx) => {
-  // An object returned from a route becomes a JSON body automatically.
   return {
-    message: `This is some CTX info: ${ctx.request.method}.`,
-  };
-});
-
-app.post("/hello", (ctx) => {
-  // An object returned from a route becomes a JSON body automatically.
-  ctx.response.status = 200;
-  return {
-    message: `This is some CTX info: ${ctx.request.body.hello}.`,
+    message: `Hello world.`,
   };
 });
 

@@ -96,6 +96,18 @@ export function makeApp() {
     use: (handler) => {
       return middleware(handler);
     },
+    mount: (...args) => {
+      let prefix = "";
+
+      if (typeof args[0] == "string") {
+        prefix = args.shift();
+      }
+
+      const router = args[0];
+      for (const r of router.routes()) {
+        route(r.method, `${prefix}/${r.url}`, r.handlers);
+      }
+    },
     listen: async (port) => {
       routes = sortRoutes(routes);
 
@@ -168,10 +180,16 @@ export function makeApp() {
 
               await nextFunc();
 
-              if (ctx.response.body && typeof ctx.response.body == "object") {
-                ctx.response.headers["Content-Type"] = "application/json";
-                res.writeHead(ctx.response.status, ctx.response.headers);
-                res.end(JSON.stringify(ctx.response.body));
+              if (ctx.response.body) {
+                if (typeof ctx.response.body == "object") {
+                  ctx.response.headers["Content-Type"] = "application/json";
+                  res.writeHead(ctx.response.status, ctx.response.headers);
+                  res.end(JSON.stringify(ctx.response.body));
+                } else if (typeof ctx.response.body == "string") {
+                  ctx.response.headers["Content-Type"] = "text/plain";
+                  res.writeHead(ctx.response.status, ctx.response.headers);
+                  res.end(ctx.response.body);
+                }
               } else {
                 res.writeHead(ctx.response.status, ctx.response.headers);
                 res.end();
