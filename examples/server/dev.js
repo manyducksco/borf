@@ -85,9 +85,7 @@ app.mount(router);
 app.mount("/router", router);
 
 app.get("/hello", (ctx) => {
-  return {
-    message: `Hello world.`,
-  };
+  return "Hello world.";
 });
 
 // Listen for HTTP requests on localhost at specified port number.
