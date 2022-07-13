@@ -314,7 +314,7 @@ const api = {
         });
       }
 
-      const component = found.template.init(appContext);
+      const component = found.template.init(appContext, {});
 
       mounted = component;
 
@@ -330,7 +330,7 @@ const api = {
       }
 
       if (mounted.isTemplate) {
-        mounted = mounted.init(appContext);
+        mounted = mounted.init(appContext, {});
       }
 
       for (const name in services) {

@@ -1,12 +1,13 @@
 import { isFunction, isTemplate } from "../helpers/typeChecking.js";
 
-import { appContextKey } from "../helpers/initComponent.js";
+import { appContextKey, elementContextKey } from "../helpers/initComponent.js";
 
 /**
  * Recreates its contents each time its value changes.
  */
 export function Watch() {
   const appContext = this[appContextKey];
+  const elementContext = this[elementContextKey];
 
   this.debug.name = "woof:template:watch";
 
@@ -35,7 +36,7 @@ export function Watch() {
     }
 
     if (newItem) {
-      current = newItem.init(appContext);
+      current = newItem.init(appContext, elementContext);
       current.connect(node.parentNode, node);
     }
   }

@@ -33,13 +33,24 @@ export function h(element, ...args) {
     /**
      * Initialize the template to produce a component instance.
      */
-    init(appContext) {
+    init(appContext, elementContext = {}) {
+      elementContext = {
+        ...elementContext,
+      };
+
+      // Mark this element and children as SVG before they are instantiated.
+      // HTML and SVG require different functions to create their nodes.
+      // The Element component uses this to choose the correct one.
+      if (!elementContext.isSVG && element === "svg") {
+        elementContext.isSVG = true;
+      }
+
       // Filter falsy children and convert to component instances.
       const children = flatMap(args)
         .filter((x) => x !== null && x !== undefined && x !== false)
         .map((child) => {
           if (isTemplate(child)) {
-            child = child.init(appContext);
+            child = child.init(appContext, elementContext);
           } else if (isString(child) || isNumber(child) || isState(child)) {
             child = initComponent(appContext, Text, { value: child });
           }
@@ -53,12 +64,12 @@ export function h(element, ...args) {
 
       if (isString(element)) {
         if (element === "" || element === "<>") {
-          return initComponent(appContext, Fragment, null, children);
+          return initComponent(appContext, Fragment, null, children, elementContext);
         } else {
-          return initComponent(appContext, Element, { tagname: element, attrs }, children);
+          return initComponent(appContext, Element, { tagname: element, attrs }, children, elementContext);
         }
       } else if (isFunction(element)) {
-        return initComponent(appContext, element, attrs, children);
+        return initComponent(appContext, element, attrs, children, elementContext);
       } else {
         throw new TypeError(`Expected a tagname or component function. Got: ${element} (${typeof element})`);
       }
