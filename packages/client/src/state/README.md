@@ -72,7 +72,7 @@ function Counter() {
 Our click count label is kind of basic. To overcomplicate things and to show off how you might use `.map()`, let's add a dynamic label based on the value of `$count`.
 
 ```js
-import { makeState } from "@woofjs/app";
+import { makeState } from "@woofjs/client";
 
 function Counter() {
   const $count = makeState(0);
@@ -191,6 +191,14 @@ const $isReady = mergeStates($isLoading, $hasData, (isLoading, hasData) => {
 
 [See test suite for code examples](./src/mergeStates.test.js)<br>
 [See implementation](./src/mergeStates.js)
+
+### `makeProxyState`
+
+> TODO
+
+### `makeStore`
+
+> TODO
 
 ---
 

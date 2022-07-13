@@ -1,65 +1,52 @@
-# Miscellaneous Ideas
+## Misc Ideas
 
-## Services object
+### AttrTypes
 
-Instead of `self.getService("name")`, components and other services would be able to access services with `self.services.name`.
+Like PropTypes in React. Actual attributes will be validated against this structure any time they change while in development mode. Throws a descriptive error if the value doesn't match.
 
 ```js
-export function Example(ctx) {
-  const { http, router } = ctx.services;
-  const { h, makeState } = ctx.helpers;
+import { AttrTypes } from "@woofjs/client";
 
-  const $user = makeState();
+function Component() {
+  // Error is thrown if at any point `value` is not a string.
+  const $value = this.$attrs.map("value");
 
-  ctx.afterConnect(() => {
-    http.get(`/users/${router.$params.get("userId")}`).then((res) => {
-      $user.set(res.body);
-    });
-  });
-
-  return h("div", [h("h1", $user.map("name")), h("p", $user.map("bio"))]);
+  return <div>{$value}</div>;
 }
+
+Component.attrTypes = {
+  value: AttrTypes.string.isRequired,
+  object: AttrTypes.shape({
+    id: AttrTypes.number.isRequired,
+    url: AttrTypes.custom(({ value }) => {
+      if (!/^https?:\/\//.test(value)) {
+        return "Expected a URL";
+      }
+    }),
+    category: AttrTypes.oneOf("One", "Two"),
+    data: AttrTypes.oneOfType(AttrTypes.string, AttrTypes.number),
+    list: AttrTypes.array,
+    detailedList: AttrTypes.arrayOf("One", "Two"),
+    dataList: AttrTypes.arrayOfType(AttrTypes.string, AttrTypes.number),
+  }),
+};
 ```
 
-The component above doesn't really make sense but it does show how the services could be accessed.
+### makeStore
+
+> IMPLEMENTED
 
 ```js
-export function Example(ctx) {
-  ctx.$attrs;
-  ctx.services;
+import { makeStore } from "@woofjs/client";
 
-  // Helpers included for library use (no imports needed, therefore no @woofjs/client peer dependency):
-  const { h, when, unless, repeat, watch, bind, makeState, mergeStates } = ctx.helpers;
+// Contents are stored in localStorage with this key.
+// Values persist between page reloads.
+const $state = makeStore("some-name");
 
-  ctx.beforeConnect(() => {});
-  ctx.afterConnect(() => {});
-  ctx.beforeDisconnect(() => {});
-  ctx.afterDisconnect(() => {});
-  ctx.watchState($state, (value) => {});
-
-  // New async lifecycle hook for transitions
-  ctx.transitionOut(async () => {
-    /**
-     * Use this to run exit animations and resolve once animation is complete.
-     * The component waits for the promise to resolve before disconnecting.
-     *
-     * Only runs on the disconnected element; not for children, unlike the disconnect hooks that do
-     * run for everything, even on route changes. This avoids running every transition at once when
-     * routes change. In that case, only the top level route component should transition.
-     */
-  });
-}
+// Showing all arguments. Uses sessionStorage if session: true
+const $state = makeStore("key", defaultValue, { session: true });
 ```
 
-We could also put everything on a single `ctx` object. Services could then share a signature with components, only without `$attrs` or disconnect hooks.
+### Drag and Drop
 
-## Repeat Ideas
-
-```js
-// More nonsense, but this would be what the combined context thing from earlier in this file might look like.
-repeat($list, ({ $attrs, services: { page } }) => {
-  const name = $attrs.map("value.name");
-
-  page.$title.set(name);
-});
-```
+Well, I don't know what this idea would be, but there definitely needs to be a way to wrap the drag and drop API to make it easier to use. Raw drag and drop is a bit rough.
