@@ -123,8 +123,6 @@ test("throws helpful error when accessing services that haven't been created yet
   app.service("one", (ctx) => {
     const { two } = ctx.services;
 
-    console.log(two);
-
     return {
       value: 1,
       total: two.value + 1,

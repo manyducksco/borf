@@ -184,8 +184,6 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
 
   let element = fn.call(ctx, ctx);
 
-  console.log({ attrs, elementContext });
-
   if (isTemplate(element)) {
     element = element.init(appContext, elementContext);
   } else {
