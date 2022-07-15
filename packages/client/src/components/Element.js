@@ -18,8 +18,6 @@ export function Element() {
     node = document.createElement(tagname);
   }
 
-  node.dataset.elementContext = JSON.stringify(elementContext);
-
   if (attrs.$ref) {
     attrs.$ref.set(node);
   }

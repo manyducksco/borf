@@ -38,9 +38,8 @@ export function h(element, ...args) {
         ...elementContext,
       };
 
-      // Mark this element and children as SVG before they are instantiated.
-      // HTML and SVG require different functions to create their nodes.
-      // The Element component uses this to choose the correct one.
+      // Mark this element and children as SVG. HTML and SVG require different functions
+      // to create their nodes, and the Element component uses this to choose the correct one.
       if (!elementContext.isSVG && element === "svg") {
         elementContext.isSVG = true;
       }

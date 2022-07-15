@@ -1,5 +1,6 @@
 const fs = require("fs-extra");
 const path = require("path");
+const xxhash = require("xxhashjs");
 const esbuild = require("esbuild");
 const mustache = require("mustache");
 const stylePlugin = require("esbuild-style-plugin");
@@ -38,6 +39,19 @@ module.exports = async function buildClient(config) {
       stylePlugin({
         postcss: {
           plugins: config.postcss?.plugins || [],
+        },
+        cssModulesOptions: {
+          generateScopedName: function (name, filename, css) {
+            const file = path.basename(filename, ".module.css");
+            const hash = xxhash
+              .h64()
+              .update(css)
+              .digest()
+              .toString(16)
+              .slice(0, 5);
+
+            return file + "_" + name + "_" + hash;
+          },
         },
       }),
     ],

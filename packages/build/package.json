@@ -24,7 +24,8 @@
     "lodash": "^4.17.21",
     "mustache": "^4.2.0",
     "nanoid": "^4.0.0",
-    "superbytes": "^1.3.2"
+    "superbytes": "^1.3.2",
+    "xxhashjs": "^0.2.2"
   },
   "peerDependencies": {
     "@woofjs/client": ">=0.12.1"
