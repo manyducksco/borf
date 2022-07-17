@@ -140,11 +140,6 @@ export default function RouterService() {
             const activeLayer = activeLayers[i];
 
             if (activeLayer?.id !== matchedLayer.id) {
-              if (activeLayer) {
-                // Disconnect first mismatched active and remove remaining layers.
-                activeLayer.component.disconnect();
-              }
-
               activeLayers = activeLayers.slice(0, i);
 
               const outlet = initComponent(this.options.appContext, Outlet);
@@ -153,15 +148,22 @@ export default function RouterService() {
               const parentLayer = activeLayers[activeLayers.length - 1];
 
               const mount = (component) => {
-                if (parentLayer) {
-                  parentLayer.outlet.$attrs.set({
-                    element: component,
-                  });
-                } else {
-                  appOutlet.$attrs.set({
-                    element: component,
-                  });
-                }
+                requestAnimationFrame(() => {
+                  if (activeLayer && activeLayer.component.isConnected) {
+                    // Disconnect first mismatched active and remove remaining layers.
+                    activeLayer.component.disconnect();
+                  }
+
+                  if (parentLayer) {
+                    parentLayer.outlet.$attrs.set({
+                      element: component,
+                    });
+                  } else {
+                    appOutlet.$attrs.set({
+                      element: component,
+                    });
+                  }
+                });
               };
 
               if (component.hasRoutePreload) {
