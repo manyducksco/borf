@@ -3,6 +3,8 @@ import { isFunction } from "./helpers/typeChecking.js";
 import { initService } from "./helpers/initService.js";
 import { parseRoute, matchRoute, sortRoutes } from "./helpers/routing.js";
 import { makeDebug } from "./helpers/makeDebug.js";
+// import busboy from "busboy";
+// import { formidable } from "formidable";
 
 export function makeApp() {
   const debug = makeDebug();
@@ -167,6 +169,42 @@ export function makeApp() {
             });
 
             if (matched) {
+              // const bb = busboy({ headers: req.headers });
+              // bb.on("file", (name, file, info) => {
+              //   const { filename, encoding, mimeType } = info;
+              //   console.log(`File [${name}]: filename: %j, encoding: %j, mimeType: %j`, filename, encoding, mimeType);
+              //   file
+              //     .on("data", (data) => {
+              //       console.log(`File [${name}] got ${data.length} bytes`);
+              //     })
+              //     .on("close", () => {
+              //       console.log(`File [${name}] done`);
+              //     });
+              // });
+              // bb.on("field", (name, val, info) => {
+              //   console.log(`Field [${name}]: value: %j`, val);
+              // });
+              // bb.on("close", () => {
+              //   console.log("Done parsing form!");
+              //   res.writeHead(303, { Connection: "close", Location: "/" });
+              //   res.end();
+              // });
+              // req.pipe(bb);
+
+              // const form = formidable({ multiples: true });
+
+              // form.parse(req, (err, fields, files) => {
+              //   if (err) {
+              //     res.writeHead(err.httpCode || 400, { "Content-Type": "text/plain" });
+              //     res.end(String(err));
+              //     return;
+              //   }
+              //   // res.writeHead(200, { "Content-Type": "application/json" });
+              //   // res.end(JSON.stringify({ fields, files }, null, 2));
+
+              //   console.log("DONE");
+              // });
+
               let index = -1;
               const handlers = [...middlewares, ...matched.data.handlers];
 

@@ -32,5 +32,9 @@
     "esbuild": "^0.14.10",
     "jest": "^27.4.6",
     "query-string": "^7.0.1"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "formidable": "^2.0.1"
   }
 }

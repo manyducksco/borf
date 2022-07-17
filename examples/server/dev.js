@@ -60,7 +60,7 @@ app.post(
 
     ctx.response.headers[
       "X-REQUEST-BODY"
-    ] = `This is some CTX info: ${ctx.request.body.hello}.`;
+    ] = `This is some CTX info: ${ctx.request.body?.hello}.`;
 
     ctx.response.headers[
       "X-SERVICE-ASYNC"
@@ -87,6 +87,28 @@ app.mount("/router", router);
 app.get("/hello", (ctx) => {
   return "Hello world.";
 });
+
+// app.socket("/chat", (ctx) => {
+//   let pingInterval;
+
+//   ctx.onConnect(() => {
+//     pingInterval = setInterval(() => {
+//       ctx.sendMessage("It has been one second.");
+//     }, 1000);
+//   });
+
+//   ctx.onMessage((message) => {
+//     if (message === "ping") {
+//       ctx.sendMessage("pong");
+//     }
+//   });
+
+//   // ctx.sendMessage(() => {});
+
+//   ctx.onDisconnect(() => {
+//     clearInterval(pingInterval);
+//   });
+// });
 
 // Listen for HTTP requests on localhost at specified port number.
 app.listen(4000).then((info) => {
