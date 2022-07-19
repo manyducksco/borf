@@ -32,6 +32,12 @@ program
       "reduce bundle size at the cost of readability; recommended for production builds",
     boolean: true,
   })
+  .option("--relative-bundle-paths", {
+    description:
+      "use paths relative to index.html for importing bundle files, instead of the default absolute paths from the server root",
+    key: "relativeBundlePaths",
+    boolean: true,
+  })
   .action(async ({ options }) => {
     const promises = [];
 
