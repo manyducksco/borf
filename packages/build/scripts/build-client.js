@@ -81,8 +81,10 @@ module.exports = async function buildClient(config) {
     );
 
     const staticDir = path.join(entryDir, "static");
-    const bundlePath = bundleOut.path.replace(publicDir, "");
-    const stylesPath = stylesOut ? stylesOut.path.replace(publicDir, "") : null;
+    const bundlePath = "./" + bundleOut.path.replace(publicDir + "/", "");
+    const stylesPath = stylesOut
+      ? "./" + stylesOut.path.replace(publicDir + "/", "")
+      : null;
 
     const context = {
       scripts: `<script src="${bundlePath}"></script>`,
