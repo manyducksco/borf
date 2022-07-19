@@ -1,6 +1,7 @@
-import { isFunction, isTemplate } from "../helpers/typeChecking.js";
-
+import { isFunction, isString, isNumber, isState, isTemplate } from "../helpers/typeChecking.js";
 import { appContextKey, elementContextKey } from "../helpers/initComponent.js";
+import { h } from "../h.js";
+import { Text } from "./Text.js";
 
 /**
  * Recreates its contents each time its value changes.
@@ -26,8 +27,14 @@ export function Watch() {
       newItem = newItem();
     }
 
-    if (newItem != null && !isTemplate(newItem)) {
-      throw new TypeError(`Watch: render function should return a view or null. Got: ${newItem}`);
+    if (newItem != null) {
+      if (isString(newItem) || isNumber(newItem) || isState(newItem)) {
+        newItem = h(Text, { value: newItem });
+      }
+
+      if (!isTemplate(newItem)) {
+        throw new TypeError(`Watch: render function should return an element, string or null. Got: ${newItem}`);
+      }
     }
 
     if (current) {
