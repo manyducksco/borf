@@ -33,10 +33,10 @@ app.service("example", exampleService, {
 app.service("async", asyncService);
 
 app.use(async (ctx, next) => {
-  const start = Date.now();
   ctx.response.headers["X-MIDDLEWARE-OUTLINE"] = "mrrp";
+  const start = performance.now();
   await next();
-  const end = Date.now();
+  const end = performance.now();
   ctx.response.headers["X-TIMER"] = end - start + "ms";
 });
 

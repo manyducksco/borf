@@ -1,6 +1,7 @@
 import { isArray, isFunction, isNumber, isObject, isString, isTemplate } from "./helpers/typeChecking";
 import { flatMap } from "./helpers/flatMap";
 
+// TODO: List is incomplete. Find and add all.
 const booleanAttrs = [
   "autocomplete",
   "autofocus",
@@ -15,6 +16,9 @@ const booleanAttrs = [
   "spellcheck",
   "translate",
 ];
+
+// TODO: List is incomplete. Find and add all.
+const selfClosingTags = ["meta", "input", "br", "hr", "img"];
 
 export function h(element, ...args) {
   let attributes = {};
@@ -31,17 +35,11 @@ export function h(element, ...args) {
   if (isString(element)) {
     // Regular HTML element.
     init = async (appContext) => {
-      const renderedChildren = await Promise.all(
-        children.map((child) => {
-          if (isString(child) || isNumber(child)) {
-            return child;
-          }
+      const isSelfClosing = selfClosingTags.includes(element);
 
-          if (isTemplate(child)) {
-            return child.init(appContext);
-          }
-        })
-      );
+      if (isSelfClosing && children.length > 0) {
+        throw new Error(`Self-closing tag '${element}' can't contain child elements.`);
+      }
 
       const renderedAttrs = [];
 
@@ -65,10 +63,26 @@ export function h(element, ...args) {
         renderedAttrs.push(`${key}="${attributes[key]}"`);
       }
 
-      if (renderedAttrs.length > 0) {
-        return `<${element} ${renderedAttrs.join(" ")}>${renderedChildren.join("")}</${element}>`;
+      if (isSelfClosing) {
+        return `<${element} ${renderedAttrs.join(" ")}>`;
       } else {
-        return `<${element}>${renderedChildren.join("")}</${element}>`;
+        const renderedChildren = await Promise.all(
+          children.map((child) => {
+            if (isString(child) || isNumber(child)) {
+              return child;
+            }
+
+            if (isTemplate(child)) {
+              return child.init(appContext);
+            }
+          })
+        );
+
+        if (renderedAttrs.length > 0) {
+          return `<${element} ${renderedAttrs.join(" ")}>${renderedChildren.join("")}</${element}>`;
+        } else {
+          return `<${element}>${renderedChildren.join("")}</${element}>`;
+        }
       }
     };
   } else if (isFunction(element)) {
