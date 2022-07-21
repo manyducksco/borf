@@ -1,3 +1,5 @@
+const queryString = require("query-string");
+
 export const FragTypes = {
   Literal: 1,
   Param: 2,
@@ -63,7 +65,8 @@ export function parseRoute(route) {
  * @param path - String to match against routes.
  */
 export function matchRoute(routes, path, options = {}) {
-  const parts = splitRoute(path);
+  const { url, query } = queryString.parseUrl(path);
+  const parts = splitRoute(url);
 
   routes: for (const route of routes) {
     const { fragments } = route;
@@ -122,6 +125,7 @@ export function matchRoute(routes, path, options = {}) {
       path: "/" + matched.map((f) => f.value).join("/"),
       route: "/" + fragments.map((f) => (f.type === FragTypes.Param ? ":" + f.name : f.name)).join("/"),
       params,
+      query,
       data: route,
     };
   }

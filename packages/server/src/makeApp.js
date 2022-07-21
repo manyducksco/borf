@@ -3,8 +3,7 @@ import { isFunction, isObject, isString, isTemplate } from "./helpers/typeChecki
 import { initService } from "./helpers/initService.js";
 import { parseRoute, matchRoute, sortRoutes } from "./helpers/routing.js";
 import { makeDebug } from "./helpers/makeDebug.js";
-// import busboy from "busboy";
-// import { formidable } from "formidable";
+import { parseFormBody } from "./helpers/parseFormBody.js";
 
 export function makeApp() {
   const debug = makeDebug();
@@ -134,32 +133,22 @@ export function makeApp() {
         // init server
         http
           .createServer(async function (req, res) {
-            let body = null;
-            try {
-              const buffers = [];
-
-              for await (const chunk of req) {
-                buffers.push(chunk);
-              }
-
-              const data = Buffer.concat(buffers).toString();
-
-              body = JSON.parse(data);
-            } catch {}
-
             let ctx = {
               cache: {},
+              services: appContext.services,
               request: {
                 method: req.method,
                 headers: req.headers,
-                body,
+                body: null,
               },
               response: {
                 status: 200,
                 headers: {},
               },
-              services: appContext.services,
-              redirect: () => {},
+              redirect: (to, status = 301) => {
+                ctx.response.status = status;
+                ctx.response.headers["Location"] = to;
+              },
             };
 
             const matched = matchRoute(routes, req.url, {
@@ -169,41 +158,30 @@ export function makeApp() {
             });
 
             if (matched) {
-              // const bb = busboy({ headers: req.headers });
-              // bb.on("file", (name, file, info) => {
-              //   const { filename, encoding, mimeType } = info;
-              //   console.log(`File [${name}]: filename: %j, encoding: %j, mimeType: %j`, filename, encoding, mimeType);
-              //   file
-              //     .on("data", (data) => {
-              //       console.log(`File [${name}] got ${data.length} bytes`);
-              //     })
-              //     .on("close", () => {
-              //       console.log(`File [${name}] done`);
-              //     });
-              // });
-              // bb.on("field", (name, val, info) => {
-              //   console.log(`Field [${name}]: value: %j`, val);
-              // });
-              // bb.on("close", () => {
-              //   console.log("Done parsing form!");
-              //   res.writeHead(303, { Connection: "close", Location: "/" });
-              //   res.end();
-              // });
-              // req.pipe(bb);
+              const contentType = req.headers["content-type"];
 
-              // const form = formidable({ multiples: true });
+              if (contentType) {
+                if (contentType.startsWith("application/json")) {
+                  const buffers = [];
 
-              // form.parse(req, (err, fields, files) => {
-              //   if (err) {
-              //     res.writeHead(err.httpCode || 400, { "Content-Type": "text/plain" });
-              //     res.end(String(err));
-              //     return;
-              //   }
-              //   // res.writeHead(200, { "Content-Type": "application/json" });
-              //   // res.end(JSON.stringify({ fields, files }, null, 2));
+                  for await (const chunk of req) {
+                    buffers.push(chunk);
+                  }
 
-              //   console.log("DONE");
-              // });
+                  const data = Buffer.concat(buffers).toString();
+
+                  ctx.request.body = JSON.parse(data);
+                }
+
+                if (
+                  contentType.startsWith("application/x-www-form-urlencoded") ||
+                  contentType.startsWith("multipart/form-data")
+                ) {
+                  const start = performance.now();
+                  ctx.request.body = await parseFormBody(req);
+                  console.log(`Parsed form in ${performance.now() - start}ms`);
+                }
+              }
 
               let index = -1;
               const handlers = [...middlewares, ...matched.data.handlers];
@@ -221,6 +199,7 @@ export function makeApp() {
               if (ctx.response.body) {
                 if (isTemplate(ctx.response.body)) {
                   ctx.response.body = await ctx.response.body.init(appContext);
+                  ctx.response.body = "<!DOCTYPE html>" + ctx.response.body; // Prepend doctype for HTML pages.
                   ctx.response.headers["Content-Type"] = "text/html";
                   res.writeHead(ctx.response.status, ctx.response.headers);
                   res.end(ctx.response.body);

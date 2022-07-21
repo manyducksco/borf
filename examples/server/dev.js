@@ -100,6 +100,58 @@ async function AsyncHeader() {
   });
 }
 
+app.get("/form", () => {
+  return h(Page, { title: "Form Test" }, h(Form));
+});
+
+app.get("/form/submitted", () => {
+  return h(
+    Page,
+    { title: "Thanks" },
+    h(
+      "main",
+      h("h1", "Thank you!"),
+      h("p", "Your form has been submitted."),
+      h("p", h("a", { href: "/form" }, "Return to Form"))
+    )
+  );
+});
+
+app.post("/form", (ctx) => {
+  console.log("body", ctx.request.body);
+
+  ctx.redirect("/form/submitted", 303);
+});
+
+function Page() {
+  return h("html", [
+    h("head", [h("meta", { charset: "utf-8" }), h("title", this.attrs.title)]),
+    h("body", this.children),
+  ]);
+}
+
+function Form() {
+  return h(
+    "form",
+    { method: "post", action: "/form", enctype: "multipart/form-data" },
+    [
+      h("input", {
+        name: "image",
+        type: "file",
+        accept: "image/*",
+        required: true,
+        multiple: true,
+      }),
+      h("input", {
+        name: "description",
+        type: "text",
+        placeholder: "Description",
+      }),
+      h("button", "Submit Form"),
+    ]
+  );
+}
+
 // app.socket("/chat", (ctx) => {
 //   let pingInterval;
 

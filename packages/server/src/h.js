@@ -1,6 +1,21 @@
 import { isArray, isFunction, isNumber, isObject, isString, isTemplate } from "./helpers/typeChecking";
 import { flatMap } from "./helpers/flatMap";
 
+const booleanAttrs = [
+  "autocomplete",
+  "autofocus",
+  "checked",
+  "contenteditable",
+  "disabled",
+  "draggable",
+  "hidden",
+  "multiple",
+  "readonly",
+  "required",
+  "spellcheck",
+  "translate",
+];
+
 export function h(element, ...args) {
   let attributes = {};
   let children;
@@ -42,6 +57,11 @@ export function h(element, ...args) {
           );
         }
 
+        if (booleanAttrs.includes(key)) {
+          renderedAttrs.push(key);
+          continue;
+        }
+
         renderedAttrs.push(`${key}="${attributes[key]}"`);
       }
 
@@ -64,18 +84,26 @@ export function h(element, ...args) {
 
       let result = element.call(ctx, ctx);
 
-      if (typeof result.then === "function") {
+      if (result === undefined) {
+        throw new TypeError(
+          `Component '${element.name}' must return an element, or if you want to render nothing return null to make this explicit.`
+        );
+      }
+
+      if (isFunction(result?.then)) {
         // Async component. Should resolve to a template.
         result = await result;
       }
 
-      if (typeof result === "string") {
+      if (isString(result)) {
         return result;
-      } else if (typeof result === "object" && result.isTemplate) {
-        return result.init(appContext);
-      } else {
-        return "";
       }
+
+      if (isTemplate(result)) {
+        return result.init(appContext);
+      }
+
+      return "";
     };
   }
 
