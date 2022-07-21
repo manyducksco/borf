@@ -1,4 +1,4 @@
-import { repeat, when, unless, proxyState, makeState } from "@woofjs/client";
+import { repeat, when, unless, makeProxyState } from "@woofjs/client";
 import dayjs from "dayjs";
 
 import styles from "./index.module.css";
@@ -13,7 +13,7 @@ export default function ActionsPanel() {
 
   const { $currentView } = this.services.view;
 
-  const $actionLog = proxyState([]);
+  const $actionLog = makeProxyState([]);
   const $actionsCalled = $actionLog.map((log) => log.length > 0);
 
   this.watchState($currentView, (view) => {

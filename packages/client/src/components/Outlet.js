@@ -1,4 +1,4 @@
-import { appContextKey } from "../helpers/initComponent.js";
+import { appContextKey, elementContextKey } from "../helpers/initComponent.js";
 import { isTemplate } from "../helpers/typeChecking.js";
 
 export function Outlet() {
@@ -6,6 +6,7 @@ export function Outlet() {
   const node = document.createTextNode("");
 
   const appContext = this[appContextKey];
+  const elementContext = this[elementContextKey];
 
   let connected = null;
 
@@ -17,7 +18,7 @@ export function Outlet() {
 
     if (element) {
       if (isTemplate(element)) {
-        element = element.init(appContext);
+        element = element.init(appContext, elementContext);
       }
 
       element.connect(node.parentNode, node);

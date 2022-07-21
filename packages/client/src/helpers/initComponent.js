@@ -3,9 +3,10 @@ import { isTemplate, isDOM, isFunction, isComponent, isState } from "./typeCheck
 import { h, when, unless, watch, repeat, bind } from "../h.js";
 import { makeState } from "../state/makeState.js";
 import { mergeStates } from "../state/mergeStates.js";
-import { proxyState } from "../state/proxyState.js";
+import { makeProxyState } from "../state/makeProxyState.js";
 
 export const appContextKey = Symbol("appContext");
+export const elementContextKey = Symbol("elementContext");
 
 const componentHelpers = {
   h,
@@ -16,7 +17,7 @@ const componentHelpers = {
   bind,
   makeState,
   mergeStates,
-  proxyState,
+  makeProxyState,
 };
 
 /**
@@ -26,8 +27,9 @@ const componentHelpers = {
  * @param fn - The component function.
  * @param attrs - Attributes passed to the function.
  * @param children - Children passed to the function.
+ * @param elementContext - Context information for the creation of elements.
  */
-export function initComponent(appContext, fn, attrs, children) {
+export function initComponent(appContext, fn, attrs, children, elementContext) {
   attrs = attrs || {};
   children = children || [];
 
@@ -155,6 +157,14 @@ export function initComponent(appContext, fn, attrs, children) {
     configurable: false,
   });
 
+  // Stores data relevant to rendering, such as if the root element is in an SVG context.
+  Object.defineProperty(ctx, elementContextKey, {
+    value: elementContext,
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
+
   /*=============================*\
   ||     Watch dynamic attrs     ||
   \*=============================*/
@@ -175,7 +185,7 @@ export function initComponent(appContext, fn, attrs, children) {
   let element = fn.call(ctx, ctx);
 
   if (isTemplate(element)) {
-    element = element.init(appContext);
+    element = element.init(appContext, elementContext);
   } else {
     if (element !== null && !isDOM(element)) {
       let message = `Components must return an h() element, a DOM node or null. Got: ${element}`;
@@ -234,7 +244,7 @@ export function initComponent(appContext, fn, attrs, children) {
       return new Promise(async (resolve, reject) => {
         const show = (element) => {
           if (isTemplate(element)) {
-            element = element.init(appContext);
+            element = element.init(appContext, elementContext);
           } else {
             return reject(new TypeError(`Expected an element to display. Got: ${element} (${typeof element})`));
           }

@@ -1,4 +1,4 @@
-import { repeat, unless, when, watch, proxyState } from "@woofjs/client";
+import { repeat, unless, when, watch, makeProxyState } from "@woofjs/client";
 
 import styles from "./index.module.css";
 
@@ -41,7 +41,7 @@ export default function AttributesPanel() {
             const $description = $attribute.map("description");
 
             // Using a proxy to have one state that can point to other states over time.
-            const $value = proxyState($attribute.get("$value"));
+            const $value = makeProxyState($attribute.get("$value"));
 
             // Update which state the proxy points to when the attribute changes.
             this.watchState($attribute, (attr) => {

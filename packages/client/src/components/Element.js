@@ -1,13 +1,22 @@
 import { isArray, isObject, isString, isNumber, isFunction, isBinding, isState } from "../helpers/typeChecking.js";
+import { elementContextKey } from "../helpers/initComponent.js";
 
 /**
  * Implements logic for HTML elements created with `h()`.
  */
 export function Element() {
+  const elementContext = this[elementContextKey];
+
   const tagname = this.$attrs.get("tagname");
   const attrs = this.$attrs.get("attrs") || {}; // attrs passed to the element itself
 
-  const node = document.createElement(tagname);
+  let node;
+
+  if (elementContext.isSVG) {
+    node = document.createElementNS("http://www.w3.org/2000/svg", tagname);
+  } else {
+    node = document.createElement(tagname);
+  }
 
   if (attrs.$ref) {
     attrs.$ref.set(node);

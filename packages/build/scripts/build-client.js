@@ -1,5 +1,6 @@
 const fs = require("fs-extra");
 const path = require("path");
+const xxhash = require("xxhashjs");
 const esbuild = require("esbuild");
 const mustache = require("mustache");
 const stylePlugin = require("esbuild-style-plugin");
@@ -39,6 +40,19 @@ module.exports = async function buildClient(config) {
         postcss: {
           plugins: config.postcss?.plugins || [],
         },
+        cssModulesOptions: {
+          generateScopedName: function (name, filename, css) {
+            const file = path.basename(filename, ".module.css");
+            const hash = xxhash
+              .h64()
+              .update(css)
+              .digest()
+              .toString(16)
+              .slice(0, 5);
+
+            return file + "_" + name + "_" + hash;
+          },
+        },
       }),
     ],
     jsxFactory: "_jsx",
@@ -67,8 +81,19 @@ module.exports = async function buildClient(config) {
     );
 
     const staticDir = path.join(entryDir, "static");
-    const bundlePath = bundleOut.path.replace(publicDir, "");
-    const stylesPath = stylesOut ? stylesOut.path.replace(publicDir, "") : null;
+
+    let bundlePath;
+    let stylesPath;
+
+    if (config.relativeBundlePaths) {
+      bundlePath = "./" + bundleOut.path.replace(publicDir + "/", "");
+      stylesPath = stylesOut
+        ? "./" + stylesOut.path.replace(publicDir + "/", "")
+        : null;
+    } else {
+      bundlePath = bundleOut.path.replace(publicDir, "");
+      stylesPath = stylesOut ? stylesOut.path.replace(publicDir, "") : null;
+    }
 
     const context = {
       scripts: `<script src="${bundlePath}"></script>`,

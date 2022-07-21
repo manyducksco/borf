@@ -9,7 +9,7 @@ import { getProperty } from "./getProperty.js";
  *
  * @param initialValue - Optional starting value or target state.
  */
-export function proxyState(initialValue) {
+export function makeProxyState(initialValue) {
   let $target;
   let current;
   let watchers = [];

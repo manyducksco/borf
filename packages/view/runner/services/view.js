@@ -1,5 +1,5 @@
 import { makeState, mergeStates } from "@woofjs/client";
-import { proxyState } from "@woofjs/client";
+import { makeProxyState } from "@woofjs/client";
 
 export default function () {
   let API;
@@ -30,7 +30,7 @@ export default function () {
     }
   );
 
-  const $currentAttrs = proxyState({});
+  const $currentAttrs = makeProxyState({});
 
   this.afterConnect(() => {
     const frame = $frameRef.get();
