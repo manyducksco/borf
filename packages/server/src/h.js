@@ -1,29 +1,28 @@
-// TODO: Support class arrays, class objects, flatmap children, etc. to match client h() abilities.
+import { isArray, isFunction, isNumber, isObject, isString, isTemplate } from "./helpers/typeChecking";
+import { flatMap } from "./helpers/flatMap";
 
 export function h(element, ...args) {
   let attributes = {};
   let children;
 
-  if (typeof args[0] === "object" && !Array.isArray(args[0])) {
+  if (isObject(args[0]) && !isTemplate(args[0])) {
     attributes = args.shift();
   }
 
-  children = args;
+  children = flatMap(args);
 
   let init;
 
-  if (typeof element === "string") {
+  if (isString(element)) {
     // Regular HTML element.
     init = async (appContext) => {
       const renderedChildren = await Promise.all(
         children.map((child) => {
-          const typeOf = typeof child;
-
-          if (typeOf === "string" || typeOf === "number") {
+          if (isString(child) || isNumber(child)) {
             return child;
           }
 
-          if (typeOf === "object" && child.isTemplate) {
+          if (isTemplate(child)) {
             return child.init(appContext);
           }
         })
@@ -32,6 +31,17 @@ export function h(element, ...args) {
       const renderedAttrs = [];
 
       for (const key in attributes) {
+        if (key === "class") {
+          renderedAttrs.push(renderClasses(attributes[key]));
+          continue;
+        }
+
+        if (key.startsWith("on") && isFunction(attributes[key])) {
+          throw new TypeError(
+            `Event handler functions are not supported in server rendered pages. Got function for '${key}'`
+          );
+        }
+
         renderedAttrs.push(`${key}="${attributes[key]}"`);
       }
 
@@ -41,16 +51,18 @@ export function h(element, ...args) {
         return `<${element}>${renderedChildren.join("")}</${element}>`;
       }
     };
-  } else if (typeof element === "function") {
+  } else if (isFunction(element)) {
     // Component. Could be async.
 
     init = async (appContext) => {
-      const self = {
-        getService: appContext.getService,
+      const ctx = {
+        attrs: attributes,
+        services: appContext.services,
         children,
+        debug: appContext.debug.makeChannel(`component:${element.name || "?"}`),
       };
 
-      let result = element(attributes, self);
+      let result = element.call(ctx, ctx);
 
       if (typeof result.then === "function") {
         // Async component. Should resolve to a template.
@@ -71,4 +83,40 @@ export function h(element, ...args) {
     isTemplate: true,
     init,
   };
+}
+
+function getClassMap(classes) {
+  let classMap = {};
+
+  if (isString(classes)) {
+    // Support multiple classes in one string like HTML.
+    const names = classes.split(" ");
+    for (const name of names) {
+      classMap[name] = true;
+    }
+  } else if (isObject(classes)) {
+    Object.assign(classMap, classes);
+  } else if (isArray(classes)) {
+    Array.from(classes)
+      .filter((item) => item != null)
+      .forEach((item) => {
+        Object.assign(classMap, getClassMap(item));
+      });
+  }
+
+  return classMap;
+}
+
+function renderClasses(classes) {
+  const classMap = getClassMap(classes);
+
+  let classList = [];
+
+  for (const name in classMap) {
+    if (!!classMap[name]) {
+      classList.push(name);
+    }
+  }
+
+  return `class="${classList.join(" ")}"`;
 }

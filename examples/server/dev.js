@@ -1,4 +1,4 @@
-const { makeApp, makeRouter } = require("@woofjs/server");
+const { makeApp, makeRouter, h } = require("@woofjs/server");
 
 const app = makeApp();
 
@@ -87,6 +87,18 @@ app.mount("/router", router);
 app.get("/hello", (ctx) => {
   return "Hello world.";
 });
+
+app.get("/html", async (ctx) => {
+  return h("main", h(AsyncHeader), h("p", "This is an HTML page."));
+});
+
+async function AsyncHeader() {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(h("header", h("h1", "HELLO!")));
+    }, 100);
+  });
+}
 
 // app.socket("/chat", (ctx) => {
 //   let pingInterval;

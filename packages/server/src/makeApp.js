@@ -1,5 +1,5 @@
 import http from "http";
-import { isFunction } from "./helpers/typeChecking.js";
+import { isFunction, isObject, isString, isTemplate } from "./helpers/typeChecking.js";
 import { initService } from "./helpers/initService.js";
 import { parseRoute, matchRoute, sortRoutes } from "./helpers/routing.js";
 import { makeDebug } from "./helpers/makeDebug.js";
@@ -212,18 +212,23 @@ export function makeApp() {
                 index++;
                 current = handlers[index];
 
-                const next = index == handlers.length - 1 ? undefined : nextFunc;
+                const next = index === handlers.length - 1 ? undefined : nextFunc;
                 ctx.response.body = (await current(ctx, next)) || ctx.response.body;
               };
 
               await nextFunc();
 
               if (ctx.response.body) {
-                if (typeof ctx.response.body == "object") {
+                if (isTemplate(ctx.response.body)) {
+                  ctx.response.body = await ctx.response.body.init(appContext);
+                  ctx.response.headers["Content-Type"] = "text/html";
+                  res.writeHead(ctx.response.status, ctx.response.headers);
+                  res.end(ctx.response.body);
+                } else if (isObject(ctx.response.body)) {
                   ctx.response.headers["Content-Type"] = "application/json";
                   res.writeHead(ctx.response.status, ctx.response.headers);
                   res.end(JSON.stringify(ctx.response.body));
-                } else if (typeof ctx.response.body == "string") {
+                } else if (isString(ctx.response.body)) {
                   ctx.response.headers["Content-Type"] = "text/plain";
                   res.writeHead(ctx.response.status, ctx.response.headers);
                   res.end(ctx.response.body);
