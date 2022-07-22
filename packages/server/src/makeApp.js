@@ -1,33 +1,34 @@
 import http from "http";
-import { isFunction, isObject, isString, isTemplate } from "./helpers/typeChecking.js";
+import { isFunction } from "./helpers/typeChecking.js";
 import { initService } from "./helpers/initService.js";
-import { parseRoute, matchRoute, sortRoutes } from "./helpers/routing.js";
+import { parseRoute, sortRoutes } from "./helpers/routing.js";
 import { makeDebug } from "./helpers/makeDebug.js";
-import { parseFormBody } from "./helpers/parseFormBody.js";
+import { makeHandleRequest } from "./helpers/makeHandleRequest.js";
 
 export function makeApp() {
   const debug = makeDebug();
 
-  let routes = [];
-  let middlewares = [];
   const registeredServices = {};
-
   const appContext = {
+    routes: [],
+    middlewares: [],
     services: {},
     debug,
   };
 
-  function route(method, url, handlers) {
-    routes.push({ ...parseRoute(url), method, handlers });
+  function addRoute(method, url, handlers) {
+    appContext.routes.push({ ...parseRoute(url), method, handlers });
     return methods;
   }
 
-  function middleware(handler) {
-    middlewares.push(handler);
-    return methods;
-  }
+  const server = http.createServer(makeHandleRequest(appContext));
 
   const methods = {
+    /**
+     * The node HTTP server object.
+     */
+    server,
+
     /**
      * Registers a service on the app. Services can be referenced in
      * Services and Components using `self.getService(name)`.
@@ -74,28 +75,29 @@ export function makeApp() {
      * @param func - Logic.
      */
     get: (url, ...handlers) => {
-      return route("GET", url, handlers);
+      return addRoute("GET", url, handlers);
     },
     post: (url, ...handlers) => {
-      return route("POST", url, handlers);
+      return addRoute("POST", url, handlers);
     },
     put: (url, ...handlers) => {
-      return route("PUT", url, handlers);
+      return addRoute("PUT", url, handlers);
     },
     patch: (url, ...handlers) => {
-      return route("PATCH", url, handlers);
+      return addRoute("PATCH", url, handlers);
     },
     delete: (url, ...handlers) => {
-      return route("DELETE", url, handlers);
+      return addRoute("DELETE", url, handlers);
     },
     options: (url, ...handlers) => {
-      return route("OPTIONS", url, handlers);
+      return addRoute("OPTIONS", url, handlers);
     },
     head: (url, ...handlers) => {
-      return route("HEAD", url, handlers);
+      return addRoute("HEAD", url, handlers);
     },
     use: (handler) => {
-      return middleware(handler);
+      appContext.middlewares.push(handler);
+      return methods;
     },
     mount: (...args) => {
       let prefix = "";
@@ -106,18 +108,18 @@ export function makeApp() {
 
       const router = args[0];
       for (const r of router.routes()) {
-        route(r.method, `${prefix}/${r.url}`, r.handlers);
+        addRoute(r.method, `${prefix}/${r.url}`, r.handlers);
       }
     },
     listen: async (port) => {
-      routes = sortRoutes(routes);
+      // Sort routes by specificity before any matches are attempted.
+      appContext.routes = sortRoutes(appContext.routes);
 
-      return new Promise(async (resolve, reject) => {
+      return new Promise(async (resolve) => {
         // init services
         for (const name in registeredServices) {
           const service = registeredServices[name];
 
-          // First bits of app code are run; service functions called.
           service.instance = await initService(appContext, service.fn, debug.makeChannel(`service:${name}`), {
             name,
             options: service.options,
@@ -130,100 +132,9 @@ export function makeApp() {
           });
         }
 
-        // init server
-        http
-          .createServer(async function (req, res) {
-            let ctx = {
-              cache: {},
-              services: appContext.services,
-              request: {
-                method: req.method,
-                headers: req.headers,
-                body: null,
-              },
-              response: {
-                status: 200,
-                headers: {},
-              },
-              redirect: (to, status = 301) => {
-                ctx.response.status = status;
-                ctx.response.headers["Location"] = to;
-              },
-            };
-
-            const matched = matchRoute(routes, req.url, {
-              willMatch: (route) => {
-                return route.method == req.method;
-              },
-            });
-
-            if (matched) {
-              const contentType = req.headers["content-type"];
-
-              if (contentType) {
-                if (contentType.startsWith("application/json")) {
-                  const buffers = [];
-
-                  for await (const chunk of req) {
-                    buffers.push(chunk);
-                  }
-
-                  const data = Buffer.concat(buffers).toString();
-
-                  ctx.request.body = JSON.parse(data);
-                }
-
-                if (
-                  contentType.startsWith("application/x-www-form-urlencoded") ||
-                  contentType.startsWith("multipart/form-data")
-                ) {
-                  const start = performance.now();
-                  ctx.request.body = await parseFormBody(req);
-                  console.log(`Parsed form in ${performance.now() - start}ms`);
-                }
-              }
-
-              let index = -1;
-              const handlers = [...middlewares, ...matched.data.handlers];
-
-              const nextFunc = async () => {
-                index++;
-                current = handlers[index];
-
-                const next = index === handlers.length - 1 ? undefined : nextFunc;
-                ctx.response.body = (await current(ctx, next)) || ctx.response.body;
-              };
-
-              await nextFunc();
-
-              if (ctx.response.body) {
-                if (isTemplate(ctx.response.body)) {
-                  ctx.response.body = await ctx.response.body.init(appContext);
-                  ctx.response.body = "<!DOCTYPE html>" + ctx.response.body; // Prepend doctype for HTML pages.
-                  ctx.response.headers["Content-Type"] = "text/html";
-                  res.writeHead(ctx.response.status, ctx.response.headers);
-                  res.end(ctx.response.body);
-                } else if (isObject(ctx.response.body)) {
-                  ctx.response.headers["Content-Type"] = "application/json";
-                  res.writeHead(ctx.response.status, ctx.response.headers);
-                  res.end(JSON.stringify(ctx.response.body));
-                } else if (isString(ctx.response.body)) {
-                  ctx.response.headers["Content-Type"] = "text/plain";
-                  res.writeHead(ctx.response.status, ctx.response.headers);
-                  res.end(ctx.response.body);
-                }
-              } else {
-                res.writeHead(ctx.response.status, ctx.response.headers);
-                res.end();
-              }
-            } else {
-              res.writeHead(404, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ message: "Route not found." }));
-            }
-          })
-          .listen(port, () => {
-            resolve({ port });
-          });
+        server.listen(port, () => {
+          resolve({ port });
+        });
       });
     },
   };
