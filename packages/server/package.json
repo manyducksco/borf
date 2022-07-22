@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "API routes and server rendered pages for dogs. 🐕",
   "types": "types.d.ts",
-  "private": true,
   "source": "src/index.js",
   "main": "dist/woof.server.c.js",
   "module": "dist/woof.server.m.js",
