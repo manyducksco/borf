@@ -1,5 +1,7 @@
 # @woofjs/server
 
+> CAUTION: This package is extremely early in development. Breaking changes are expected and not all documented features are implemented yet.
+
 JSON API companion server for dogs. 🐕
 
 Support your client-side app with an API or create a dynamic server-rendered app.

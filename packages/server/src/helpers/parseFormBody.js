@@ -1,7 +1,4 @@
-import util from "util";
-
 import busboy from "busboy";
-import formidable from "formidable";
 
 /**
  * Parses incoming request bodies encoded as form data.
@@ -51,21 +48,3 @@ export async function parseFormBody(req) {
     req.pipe(bb);
   });
 }
-
-// export async function parseFormBody(req) {
-//   return new Promise((resolve, reject) => {
-//     const form = formidable({ multiples: true });
-
-//     form.parse(req, (err, fields, files) => {
-//       if (err) {
-//         reject(err);
-//         return;
-//       }
-
-//       resolve({
-//         ...fields,
-//         ...files,
-//       });
-//     });
-//   });
-// }

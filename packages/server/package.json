@@ -13,7 +13,8 @@
     "test:coverage": "npm run test -- --coverage",
     "build": "node scripts/build.js",
     "build:watch": "node scripts/build.js --watch",
-    "build:prod": "npm run build -- --minify"
+    "build:prod": "npm run build -- --minify",
+    "prepublishOnly": "node scripts/build.js"
   },
   "exports": {
     ".": {
@@ -27,14 +28,11 @@
   "devDependencies": {
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.7",
+    "busboy": "^1.6.0",
     "color-hash": "^2.0.1",
     "es-jest": "^1.5.0",
     "esbuild": "^0.14.10",
     "jest": "^27.4.6",
     "query-string": "^7.0.1"
-  },
-  "dependencies": {
-    "busboy": "^1.6.0",
-    "formidable": "^3.2.4"
   }
 }
