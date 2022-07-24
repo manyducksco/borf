@@ -4,8 +4,8 @@
   "description": "Woof development examples",
   "private": true,
   "scripts": {
-    "start": "woof-build -c client/client.js -o build --watch",
-    "build": "woof-build -c client/client.js -o build --minify",
+    "start": "woof-build --watch",
+    "build": "woof-build --minify",
     "view": "woof-view start ./client",
     "view:build": "woof-view build ./client -o ./view-static",
     "test": "jest",

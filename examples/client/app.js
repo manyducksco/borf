@@ -33,7 +33,7 @@ const app = makeApp({
     error: true,
   },
   router: {
-    hash: true,
+    hash: false,
   },
 });
 

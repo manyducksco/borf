@@ -1,4 +1,5 @@
 const { makeApp, makeRouter, h } = require("@woofjs/server");
+const { Component } = require("./Component");
 
 const app = makeApp();
 
@@ -89,31 +90,49 @@ app.get("/hello", (ctx) => {
 });
 
 app.get("/html", async (ctx) => {
-  return h("main", h(AsyncHeader), h("p", "This is an HTML page."));
+  return (
+    <main>
+      <AsyncHeader />
+      <p>This is an HTML page.</p>
+    </main>
+  );
 });
 
 async function AsyncHeader() {
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(h("header", h("h1", "HELLO!")));
+      resolve(
+        <header>
+          <h1>HELLO!</h1>
+        </header>
+      );
     }, 100);
   });
 }
 
+app.get("/component", () => {
+  return <Component />;
+});
+
 app.get("/form", () => {
-  return h(Page, { title: "Form Test" }, h(Form));
+  return (
+    <Page title="Form Test">
+      <Form />
+    </Page>
+  );
 });
 
 app.get("/form/submitted", () => {
-  return h(
-    Page,
-    { title: "Thanks" },
-    h(
-      "main",
-      h("h1", "Thank you!"),
-      h("p", "Your form has been submitted."),
-      h("p", h("a", { href: "/form" }, "Return to Form"))
-    )
+  return (
+    <Page title="Thanks">
+      <main>
+        <h1>Thank you!</h1>
+        <p>Your form has been submitted.</p>
+        <p>
+          <a href="/form">Return to Form</a>
+        </p>
+      </main>
+    </Page>
   );
 });
 
@@ -124,55 +143,26 @@ app.post("/form", (ctx) => {
 });
 
 function Page() {
-  return h("html", [
-    h("head", [h("meta", { charset: "utf-8" }), h("title", this.attrs.title)]),
-    h("body", this.children),
-  ]);
-}
-
-function Form() {
-  return h(
-    "form",
-    { method: "post", action: "/form", enctype: "multipart/form-data" },
-    [
-      h("input", {
-        name: "image",
-        type: "file",
-        accept: "image/*",
-        required: true,
-        multiple: true,
-      }),
-      h("input", {
-        name: "description",
-        type: "text",
-        placeholder: "Description",
-      }),
-      h("button", "Submit Form"),
-    ]
+  return (
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>{this.attrs.title}</title>
+      </head>
+      <body>{this.children}</body>
+    </html>
   );
 }
 
-// app.socket("/chat", (ctx) => {
-//   let pingInterval;
-
-//   ctx.onConnect(() => {
-//     pingInterval = setInterval(() => {
-//       ctx.sendMessage("It has been one second.");
-//     }, 1000);
-//   });
-
-//   ctx.onMessage((message) => {
-//     if (message === "ping") {
-//       ctx.sendMessage("pong");
-//     }
-//   });
-
-//   // ctx.sendMessage(() => {});
-
-//   ctx.onDisconnect(() => {
-//     clearInterval(pingInterval);
-//   });
-// });
+function Form() {
+  return (
+    <form method="post" action="/form" enctype="multipart/form-data">
+      <input name="image" type="file" accept="image/*" required multiple />
+      <input name="description" type="text" placeholder="Description text." />
+      <button>Submit Form</button>
+    </form>
+  );
+}
 
 // Listen for HTTP requests on localhost at specified port number.
 app.listen(4000).then((info) => {

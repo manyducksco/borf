@@ -3,22 +3,53 @@ import { flatMap } from "./helpers/flatMap";
 
 // TODO: List is incomplete. Find and add all.
 const booleanAttrs = [
+  "allowfullscreen",
+  "async",
   "autocomplete",
   "autofocus",
+  "autoplay",
   "checked",
   "contenteditable",
+  "controls",
+  "default",
+  "defer",
   "disabled",
   "draggable",
+  "formnovalidate",
   "hidden",
+  "ismap",
+  "itemscope",
+  "loop",
   "multiple",
+  "muted",
+  "nomodule",
+  "open",
+  "playsinline",
   "readonly",
   "required",
+  "reversed",
+  "selected",
   "spellcheck",
   "translate",
+  "truespeed",
 ];
 
-// TODO: List is incomplete. Find and add all.
-const selfClosingTags = ["meta", "input", "br", "hr", "img"];
+const selfClosingTags = [
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr",
+];
 
 export function h(element, ...args) {
   let attributes = {};
@@ -100,7 +131,7 @@ export function h(element, ...args) {
 
       if (result === undefined) {
         throw new TypeError(
-          `Component '${element.name}' must return an element, or if you want to render nothing return null to make this explicit.`
+          `Component '${element.name}' must return an element, or null to make it explicit that you want to output nothing.`
         );
       }
 

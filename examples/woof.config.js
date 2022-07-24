@@ -5,4 +5,12 @@ export default {
       styles: ["client/styles/demo.css"],
     },
   },
+
+  // client: {
+  //   view: {
+  //     include: {
+  //       styles: ["client/styles/demo.css"],
+  //     },
+  //   },
+  // },
 };
