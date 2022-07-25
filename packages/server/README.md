@@ -14,7 +14,7 @@ import ExampleService from "./services/example";
 
 const app = makeApp();
 
-// By default, a server app will try to serve static files from `/public`. You can change this:
+// By default, a server app will try to serve static files from `./static`. You can change this:
 app.static(false); // Don't serve static files at all.
 app.static("/static/path"); // Specify a custom path for static files.
 
@@ -36,6 +36,27 @@ app.get("/some-route", (ctx) => {
   return {
     message: "This is a JSON response.",
   };
+});
+
+// Server-sent events. The connection stays open until the source is closed.
+// This connection is initiated client-side with EventSource.
+// see: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
+app.get("/events", (ctx) => {
+  const source = ctx.makeEventSource();
+
+  // Send a message with content 'whatever'.
+  source.send("whatever");
+
+  // Send a 'ping' event.
+  source.emit("ping");
+
+  // Send a 'usermessage' event with some data. JS objects will be serialized to JSON automatically.
+  source.emit("usermessage", {
+    userId: 1,
+    text: "Hello!",
+  });
+
+  source.close();
 });
 
 // Listen for HTTP requests on localhost at specified port number.
