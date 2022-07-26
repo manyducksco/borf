@@ -2,7 +2,7 @@
  * Displays one or more children without a parent element.
  */
 export function Fragment() {
-  const node = document.createTextNode("");
+  const node = document.createComment("fragment");
 
   this.afterConnect(() => {
     let after = node;

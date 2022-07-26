@@ -12,7 +12,7 @@ export function Repeat() {
   const componentFn = this.$attrs.get("component");
   const getKey = this.$attrs.get("getKey") || ((value) => value);
 
-  const node = document.createTextNode("");
+  const node = document.createComment("repeat");
 
   let connectedItems = [];
 

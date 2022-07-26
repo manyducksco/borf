@@ -3,7 +3,7 @@ import { isTemplate } from "../helpers/typeChecking.js";
 
 export function Outlet() {
   const $element = this.$attrs.map("element");
-  const node = document.createTextNode("");
+  const node = document.createComment("outlet");
 
   const appContext = this[appContextKey];
   const elementContext = this[elementContextKey];
