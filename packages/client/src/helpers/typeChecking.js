@@ -1,3 +1,5 @@
+import $$observable from "symbol-observable";
+
 export const isFunction = (value) => typeof value === "function";
 
 export const isString = (value) => typeof value === "string";
@@ -19,3 +21,5 @@ export const isTemplate = (value) => value && value.isTemplate === true;
 export const isService = (value) => value && value.isService === true;
 
 export const isState = (value) => value && value.isState === true;
+
+export const isObservable = (value) => value && value[$$observable] && value === value[$$observable]();

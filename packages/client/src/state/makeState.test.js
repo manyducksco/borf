@@ -266,3 +266,28 @@ describe("watch", () => {
     expect(watcher).toHaveBeenCalledTimes(1);
   });
 });
+
+test("is Observable", () => {
+  const $state = makeState(1);
+
+  const next = jest.fn();
+
+  const subscription = $state.subscribe({
+    next,
+  });
+
+  $state.set(2);
+  $state.set(3);
+  $state.set(4);
+
+  subscription.unsubscribe();
+
+  $state.set(5);
+
+  expect(next).toHaveBeenCalledTimes(4);
+  expect(next).toHaveBeenCalledWith(1);
+  expect(next).toHaveBeenCalledWith(2);
+  expect(next).toHaveBeenCalledWith(3);
+  expect(next).toHaveBeenCalledWith(4);
+  expect(next).not.toHaveBeenCalledWith(5);
+});

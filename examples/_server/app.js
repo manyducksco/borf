@@ -1,5 +1,8 @@
 const { makeApp, makeRouter, h } = require("@woofjs/server");
 const { Component } = require("./Component");
+const ffmpeg = require("ffmpeg-static");
+
+console.log("ffmpeg", ffmpeg);
 
 const app = makeApp();
 

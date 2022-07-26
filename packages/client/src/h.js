@@ -1,4 +1,12 @@
-import { isFunction, isObject, isString, isNumber, isTemplate, isComponent, isState } from "./helpers/typeChecking.js";
+import {
+  isFunction,
+  isObject,
+  isString,
+  isNumber,
+  isTemplate,
+  isComponent,
+  isObservable,
+} from "./helpers/typeChecking.js";
 import { flatMap } from "./helpers/flatMap.js";
 import { initComponent } from "./helpers/initComponent.js";
 
@@ -50,12 +58,12 @@ export function h(element, ...args) {
         .map((child) => {
           if (isTemplate(child)) {
             child = child.init(appContext, elementContext);
-          } else if (isString(child) || isNumber(child) || isState(child)) {
+          } else if (isString(child) || isNumber(child) || isObservable(child)) {
             child = initComponent(appContext, Text, { value: child });
           }
 
           if (!isComponent(child)) {
-            throw new TypeError(`Children must be components, strings, numbers or states. Got: ${child}`);
+            throw new TypeError(`Children must be components, strings, numbers or observables. Got: ${child}`);
           }
 
           return child;

@@ -1,4 +1,4 @@
-import { isFunction, isString, isNumber, isState, isTemplate } from "../helpers/typeChecking.js";
+import { isFunction, isString, isNumber, isTemplate, isObservable } from "../helpers/typeChecking.js";
 import { appContextKey, elementContextKey } from "../helpers/initComponent.js";
 import { h } from "../h.js";
 import { Text } from "./Text.js";
@@ -12,7 +12,7 @@ export function Watch() {
 
   this.debug.name = "woof:template:watch";
 
-  const node = document.createTextNode("");
+  const node = document.createComment("watch");
 
   const $value = this.$attrs.map("value");
   const render = this.$attrs.get("render");
@@ -28,7 +28,7 @@ export function Watch() {
     }
 
     if (newItem != null) {
-      if (isString(newItem) || isNumber(newItem) || isState(newItem)) {
+      if (isString(newItem) || isNumber(newItem) || isObservable(newItem)) {
         newItem = h(Text, { value: newItem });
       }
 

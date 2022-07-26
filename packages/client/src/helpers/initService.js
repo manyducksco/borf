@@ -16,7 +16,7 @@ export function initService(appContext, fn, debug, config) {
   let onAfterConnect = [];
 
   // Cancel functions for state watchers that are currently active.
-  let activeWatchers = [];
+  let subscriptions = [];
 
   const ctx = {
     debug,
@@ -30,8 +30,8 @@ export function initService(appContext, fn, debug, config) {
     afterConnect(callback) {
       onAfterConnect.push(callback);
     },
-    watchState($state, ...args) {
-      activeWatchers.push($state.watch(...args));
+    watchState($state, callback) {
+      subscriptions.push($state.subscribe({ next: callback }));
     },
   };
 

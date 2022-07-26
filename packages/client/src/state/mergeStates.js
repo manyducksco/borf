@@ -1,3 +1,4 @@
+import $$observable from "symbol-observable";
 import { getProperty } from "./getProperty.js";
 import { mapState } from "./makeState.js";
 import { isString, isFunction, isObject } from "../helpers/typeChecking.js";
@@ -107,6 +108,30 @@ export function mergeStates(...args) {
 
     get isState() {
       return true;
+    },
+
+    /**
+     * Subscribe to this state as an observable.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
+    subscribe(observer) {
+      if (typeof observer !== "object" || observer === null) {
+        observer = {
+          next: observer,
+          error: arguments[1],
+          complete: arguments[2],
+        };
+      }
+
+      const unsubscribe = this.watch(observer.next, { immediate: true });
+
+      return {
+        unsubscribe,
+      };
+    },
+    [$$observable]() {
+      return this;
     },
   };
 }

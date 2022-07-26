@@ -15,6 +15,7 @@ import TwoWayBindExample from "./components/TwoWayBindExample.js";
 import FormExample from "./components/FormExample.js";
 import MouseFollowerExample from "./components/MouseFollowerExample.js";
 import HTTPRequestExample from "./components/HTTPRequestExample.js";
+import JSSExample from "./components/JSSExample.js";
 
 import SevenGUIs from "./7guis";
 import Counter from "./7guis/01_Counter";
@@ -44,6 +45,7 @@ app.route("*", AppLayout, function () {
   this.route("/examples", () => {
     return (
       <div>
+        <JSSExample />
         <ToggleExample />
         <CounterExample />
         <ConditionalExample />

@@ -1,4 +1,4 @@
-import { isArray, isObject, isString, isNumber, isFunction, isBinding, isState } from "../helpers/typeChecking.js";
+import { isArray, isObject, isString, isNumber, isFunction, isBinding, isObservable } from "../helpers/typeChecking.js";
 import { elementContextKey } from "../helpers/initComponent.js";
 
 /**
@@ -54,14 +54,12 @@ export function Element() {
   return node;
 }
 
-function watch($state, callback) {
-  const unwatch = $state.watch((value) => {
-    callback(value);
+function watch(observable, callback) {
+  const subscription = observable.subscribe({
+    next: callback,
   });
 
-  callback($state.get());
-
-  return unwatch;
+  return () => subscription.unsubscribe();
 }
 
 function applyAttrs(element, attrs, watchers) {
@@ -70,7 +68,7 @@ function applyAttrs(element, attrs, watchers) {
 
     // Bind or set value depending on its type.
     if (key === "value") {
-      if (isState(value)) {
+      if (isObservable(value)) {
         watchers.push(
           watch(value, (current) => {
             element.value = String(current);
@@ -98,7 +96,7 @@ function applyAttrs(element, attrs, watchers) {
       }
     } else if (attrMap.events.includes(key)) {
       const eventName = key.slice(2).toLowerCase();
-      const listener = isState(attrs[key]) ? (e) => attrs[key].get()(e) : attrs[key];
+      const listener = isObservable(attrs[key]) ? (e) => attrs[key].get()(e) : attrs[key];
 
       element.addEventListener(eventName, listener);
 
@@ -108,7 +106,7 @@ function applyAttrs(element, attrs, watchers) {
     } else if (!attrMap.private.includes(key)) {
       const isBoolean = attrMap.boolean.includes(key);
 
-      if (isState(value)) {
+      if (isObservable(value)) {
         watchers.push(
           watch(value, (current) => {
             if (current) {
@@ -128,7 +126,7 @@ function applyAttrs(element, attrs, watchers) {
 function applyStyles(element, styles, watchers) {
   const propWatchers = [];
 
-  if (isState(styles)) {
+  if (isObservable(styles)) {
     let unapply;
 
     const unwatch = watch(styles, (current) => {
@@ -151,7 +149,7 @@ function applyStyles(element, styles, watchers) {
           ? (key, value) => element.style.setProperty(key, value)
           : (key, value) => (element.style[key] = value);
 
-      if (isState(value)) {
+      if (isObservable(value)) {
         const unwatch = watch(value, (current) => {
           if (current) {
             setProperty(key, current);
@@ -185,7 +183,7 @@ function applyStyles(element, styles, watchers) {
 function applyClasses(element, classes, watchers) {
   const classWatchers = [];
 
-  if (isState(classes)) {
+  if (isObservable(classes)) {
     let unapply;
 
     const unwatch = watch(classes, (current) => {
@@ -206,7 +204,7 @@ function applyClasses(element, classes, watchers) {
     for (const name in mapped) {
       const value = mapped[name];
 
-      if (isState(value)) {
+      if (isObservable(value)) {
         const unwatch = watch(value, (current) => {
           if (current) {
             element.classList.add(name);

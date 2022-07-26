@@ -1,4 +1,4 @@
-import { isTemplate, isDOM, isFunction, isComponent, isState } from "./typeChecking.js";
+import { isTemplate, isDOM, isFunction, isComponent, isObservable } from "./typeChecking.js";
 
 import { h, when, unless, watch, repeat, bind } from "../h.js";
 import { makeState } from "../state/makeState.js";
@@ -39,9 +39,9 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   let onBeforeDisconnect = [];
   let onAfterDisconnect = [];
 
-  // Cancel functions for state watchers that are currently active.
+  // Cancel functions for state subscriptions that are currently active.
   // All active watchers are cancelled when the component is disconnected.
-  let activeWatchers = [];
+  let subscriptions = [];
 
   let routePreload;
   let isConnected = false;
@@ -52,10 +52,10 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
 
   // Attributes are separated into those that don't change and those that do change through states.
   const staticAttrs = [];
-  const stateAttrs = [];
+  const observableAttrs = [];
 
   for (const name in attrs) {
-    if (isState(attrs[name])) {
+    if (isObservable(attrs[name])) {
       if (name.startsWith("$")) {
         // Pass states through as-is when named with $.
         // Allows subcomponents to directly modify states through an explicit naming convention.
@@ -64,7 +64,7 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
           value: attrs[name],
         });
       } else {
-        stateAttrs.push({
+        observableAttrs.push({
           name,
           value: attrs[name],
         });
@@ -87,10 +87,6 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
 
   const initialAttrs = {};
 
-  stateAttrs.forEach(({ name, value }) => {
-    initialAttrs[name] = value.get();
-  });
-
   staticAttrs.forEach(({ name, value }) => {
     initialAttrs[name] = value;
   });
@@ -105,7 +101,7 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   const ctx = {
     $attrs: $attrs.map(), // Read-only from inside the component.
     services: appContext.services,
-    debug: appContext.debug.makeChannel("component:?"),
+    debug: appContext.debug.makeChannel(`component:${fn.name || "anonymous"}`),
     children,
 
     helpers: componentHelpers,
@@ -131,14 +127,9 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
     transitionOut(callback) {
       throw new Error(`transitionOut is not yet implemented.`);
     },
-    watchState($state, callback, options = {}) {
+    watchState($state, callback) {
       onAfterConnect.push(() => {
-        activeWatchers.push(
-          $state.watch(callback, {
-            immediate: true, // Run callback when component is connected by default. Set to false if you only want to catch changes while the component is connected.
-            ...options,
-          })
-        );
+        subscriptions.push($state.subscribe({ next: callback }));
       });
 
       if (isConnected) {
@@ -170,7 +161,7 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   \*=============================*/
 
   // Update $attrs when state attrs change.
-  stateAttrs.forEach(({ name, value }) => {
+  observableAttrs.forEach(({ name, value }) => {
     ctx.watchState(value, (unwrapped) => {
       $attrs.set((attrs) => {
         attrs[name] = unwrapped;
@@ -318,10 +309,10 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
           callback();
         }
 
-        for (const unwatch of activeWatchers) {
-          unwatch();
+        for (const subscription of subscriptions) {
+          subscription.unsubscribe();
         }
-        activeWatchers = [];
+        subscriptions = [];
       }
 
       isConnected = false;

@@ -1,4 +1,5 @@
 import produce from "immer";
+import $$observable from "symbol-observable";
 import { getProperty } from "./getProperty.js";
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
@@ -114,6 +115,31 @@ export function makeState(initialValue) {
     get isState() {
       return true;
     },
+
+    /**
+     * Subscribe to this state as an observable.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
+    subscribe(observer) {
+      if (typeof observer !== "object" || observer === null) {
+        observer = {
+          next: observer,
+          error: arguments[1],
+          complete: arguments[2],
+        };
+      }
+
+      const unsubscribe = this.watch(observer.next, { immediate: true });
+
+      return {
+        unsubscribe,
+      };
+    },
+
+    [$$observable]() {
+      return this;
+    },
   };
 }
 
@@ -203,6 +229,30 @@ export function mapState(source, transform) {
 
     get isState() {
       return true;
+    },
+
+    /**
+     * Subscribe to this state as an observable.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
+    subscribe(observer) {
+      if (typeof observer !== "object" || observer === null) {
+        observer = {
+          next: observer,
+          error: arguments[1],
+          complete: arguments[2],
+        };
+      }
+
+      const unsubscribe = this.watch(observer.next, { immediate: true });
+
+      return {
+        unsubscribe,
+      };
+    },
+    [$$observable]() {
+      return this;
     },
   };
 }

@@ -23,12 +23,11 @@ export function makeDebug(options = {}, console = window.console) {
   let matchFn;
 
   // Update match function based on how the filter is set.
-  $filter.watch(
-    (current) => {
+  $filter.subscribe({
+    next: (current) => {
       matchFn = makeMatchFn(current);
     },
-    { immediate: true }
-  );
+  });
 
   return {
     $filter,

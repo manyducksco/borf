@@ -1,3 +1,4 @@
+import $$observable from "symbol-observable";
 import { produce } from "immer";
 import { isFunction, isString, isObject, isState } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
@@ -21,15 +22,15 @@ export function makeProxyState(initialValue) {
     current = initialValue;
   }
 
-  let unwatchTarget;
+  let subscription;
 
   function watchTarget() {
-    if (unwatchTarget) {
-      unwatchTarget();
+    if (subscription) {
+      subscription.unsubscribe();
     }
 
-    unwatchTarget = $target.watch(
-      (value) => {
+    subscription = $target.subscribe({
+      next: (value) => {
         if (!deepEqual(value, current)) {
           current = value;
 
@@ -38,8 +39,7 @@ export function makeProxyState(initialValue) {
           }
         }
       },
-      { immediate: true }
-    );
+    });
   }
 
   return {
@@ -112,12 +112,16 @@ export function makeProxyState(initialValue) {
 
       watchers.push(callback);
 
+      if (!subscription) {
+        watchTarget();
+      }
+
       return function unwatch() {
         watchers.splice(watchers.indexOf(callback), 1);
 
-        if (watchers.length === 0 && unwatchTarget) {
-          unwatchTarget();
-          unwatchTarget = null;
+        if (watchers.length === 0 && subscription) {
+          subscription.unsubscribe();
+          subscription = null;
         }
       };
     },
@@ -162,8 +166,9 @@ export function makeProxyState(initialValue) {
     unproxy() {
       $target = null;
 
-      if (unwatchTarget) {
-        unwatchTarget();
+      if (subscription) {
+        subscription.unsubscribe();
+        subscription = null;
       }
     },
 
@@ -173,6 +178,30 @@ export function makeProxyState(initialValue) {
 
     get isState() {
       return true;
+    },
+
+    /**
+     * Subscribe to this state as an observable.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
+    subscribe(observer) {
+      if (typeof observer !== "object" || observer === null) {
+        observer = {
+          next: observer,
+          error: arguments[1],
+          complete: arguments[2],
+        };
+      }
+
+      const unsubscribe = this.watch(observer.next, { immediate: true });
+
+      return {
+        unsubscribe,
+      };
+    },
+    [$$observable]() {
+      return this;
     },
   };
 }
