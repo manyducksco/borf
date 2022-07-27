@@ -1,4 +1,5 @@
 import http from "http";
+import path from "path";
 import { isFunction } from "./helpers/typeChecking.js";
 import { initService } from "./helpers/initService.js";
 import { parseRoute, sortRoutes } from "./helpers/routing.js";
@@ -14,6 +15,11 @@ export function makeApp() {
     middlewares: [],
     services: {},
     debug,
+
+    // Try to serve static files from `./static`.
+    // This works as long as this file has been bundled into server.js
+    // in the build directory.
+    staticPath: path.join(__dirname, "static"),
   };
 
   function addRoute(method, url, handlers) {

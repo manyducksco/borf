@@ -38,7 +38,6 @@ module.exports = async function watch(projectRoot, buildOptions) {
     // entryNames: "[dir]/[name].[hash]",
     bundle: true,
     sourcemap: true,
-    minify: buildOptions.minify,
     write: false,
     target: "es2018",
     format: "iife",
@@ -154,6 +153,8 @@ module.exports = async function watch(projectRoot, buildOptions) {
             buildStaticPath,
             path.join(buildStaticPath, "js")
           );
+        } else {
+          filePath = file.path;
         }
 
         fs.mkdirpSync(path.dirname(filePath));
@@ -283,6 +284,7 @@ module.exports = async function watch(projectRoot, buildOptions) {
             entryNames: "[dir]/client.[hash]",
             outdir: buildStaticPath,
             inject: [path.join(__dirname, "../utils/jsx-shim-client.js")],
+            minify: buildOptions.minify,
             plugins: [
               stylePlugin({
                 postcss: {
@@ -551,7 +553,7 @@ module.exports = async function watch(projectRoot, buildOptions) {
   });
 
   proxy.all("*", (req, res, next) => {
-    // TODO: Proxy requests with relative URLs to the server if one exists.
+    // TODO: Proxy requests to the server if one exists.
 
     if (req.method === "GET" && path.extname(req.path) === "") {
       res.sendFile(path.join(buildPath, "static", "index.html"));

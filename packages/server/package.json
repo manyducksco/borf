@@ -33,5 +33,8 @@
     "esbuild": "^0.14.10",
     "jest": "^27.4.6",
     "query-string": "^7.0.1"
+  },
+  "dependencies": {
+    "send": "^0.18.0"
   }
 }
