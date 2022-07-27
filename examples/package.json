@@ -24,7 +24,6 @@
   "devDependencies": {
     "@woofjs/build": "file:../packages/build",
     "@woofjs/client": "file:../packages/client",
-    "@woofjs/jss": "file:../packages/jss",
     "@woofjs/server": "file:../packages/server",
     "@woofjs/view": "file:../packages/view"
   },
