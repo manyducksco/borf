@@ -22,25 +22,38 @@ test("watching and setting on the proxy and originals functions as expected", ()
 
   const $proxy = makeProxyState($state1);
 
-  const cancel = $proxy.subscribe({
-    next: (value) => {
-      expect(value).toBe(3);
-    },
+  const next = jest.fn();
+
+  const subscription = $proxy.subscribe({
+    next,
   });
+
+  expect(next).toHaveBeenCalledTimes(1);
+  expect(next).toHaveBeenCalledWith(1);
 
   $state1.set(3);
-  cancel();
+
+  expect(next).toHaveBeenCalledTimes(2);
+  expect(next).toHaveBeenCalledWith(3);
+
+  subscription.unsubscribe();
 
   $proxy.proxy($state2);
-  $state2.subscribe({
-    next: (value) => {
-      expect(value).toBe("ANOTHER");
-    },
-  });
 
   expect($proxy.get()).toBe("another");
+  expect(next).toHaveBeenCalledTimes(2);
+  expect(next).not.toHaveBeenCalledWith("another");
 
-  $proxy.set("ANOTHER");
+  const resubscription = $proxy.subscribe(next);
+
+  expect(next).toHaveBeenCalledTimes(3);
+  expect(next).toHaveBeenCalledWith("another");
+
+  $proxy.set("ANOTHER!");
+
+  expect($state2.get()).toBe("ANOTHER!");
+  expect(next).toHaveBeenCalledTimes(4);
+  expect(next).toHaveBeenCalledWith("ANOTHER!");
 });
 
 test("is Observable", () => {

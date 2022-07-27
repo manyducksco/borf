@@ -1,7 +1,7 @@
 import produce from "immer";
 import $$observable from "symbol-observable";
 import { getProperty } from "./getProperty.js";
-import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
+import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 
 /**
@@ -10,14 +10,14 @@ import { deepEqual } from "../helpers/deepEqual.js";
  * @param initialValue - Optional starting value
  */
 export function makeState(initialValue) {
-  let current = initialValue;
-  let watchers = [];
+  let currentValue = initialValue;
+  let observers = [];
 
   return {
-    get(...args) {
-      let value = current;
+    get(...selectors) {
+      let value = currentValue;
 
-      for (const selector of args) {
+      for (const selector of selectors) {
         value = getProperty(value, selector);
       }
 
@@ -27,93 +27,16 @@ export function makeState(initialValue) {
     set(value) {
       if (isFunction(value)) {
         // Produce a new value from a mutated draft with immer.
-        value = produce(current, value);
+        value = produce(currentValue, value);
       }
 
-      if (!deepEqual(current, value)) {
-        current = value;
+      if (!deepEqual(currentValue, value)) {
+        currentValue = value;
 
-        for (const callback of watchers) {
-          callback(current);
+        for (const observer of observers) {
+          observer.next(currentValue);
         }
       }
-    },
-
-    watch(...args) {
-      let key;
-      let callback;
-      let options = {};
-
-      if (isString(args[0])) {
-        key = args.shift();
-      }
-
-      if (isFunction(args[0])) {
-        callback = args.shift();
-      }
-
-      if (isObject(args[0])) {
-        options = args.shift();
-      }
-
-      if (!isFunction(callback)) {
-        throw new TypeError(`Expected a watcher function but none was passed. Received: ${args}`);
-      }
-
-      if (key) {
-        // Track changes to this particular key and only fire when its value changes.
-        let previous = undefined;
-
-        let fn = callback;
-        callback = (value) => {
-          value = getProperty(value, key);
-
-          if (!deepEqual(value, previous)) {
-            previous = value;
-            return fn(value);
-          }
-        };
-      }
-
-      if (options.immediate) {
-        callback(current);
-      }
-
-      watchers.push(callback);
-
-      return function unwatch() {
-        watchers.splice(watchers.indexOf(callback), 1);
-      };
-    },
-
-    map(...args) {
-      let key;
-      let transform = (x) => x;
-
-      if (isString(args[0])) {
-        key = args.shift();
-      }
-
-      if (isFunction(args[0])) {
-        transform = args.shift();
-      }
-
-      if (key) {
-        let fn = transform;
-        transform = (value) => {
-          return fn(getProperty(value, key));
-        };
-      }
-
-      return mapState(this, transform);
-    },
-
-    toString() {
-      return String(current);
-    },
-
-    get isState() {
-      return true;
     },
 
     /**
@@ -122,7 +45,7 @@ export function makeState(initialValue) {
      * @see https://github.com/tc39/proposal-observable
      */
     subscribe(observer) {
-      if (typeof observer !== "object" || observer === null) {
+      if (!isObject(observer)) {
         observer = {
           next: observer,
           error: arguments[1],
@@ -130,15 +53,37 @@ export function makeState(initialValue) {
         };
       }
 
-      const unsubscribe = this.watch(observer.next, { immediate: true });
+      observer.next(currentValue);
+
+      observers.push(observer);
 
       return {
-        unsubscribe,
+        unsubscribe() {
+          observers.splice(observers.indexOf(observer), 1);
+        },
       };
+    },
+
+    map(...selectors) {
+      return mapState(this, (value) => {
+        for (const selector of selectors) {
+          value = getProperty(value, selector);
+        }
+
+        return value;
+      });
+    },
+
+    toString() {
+      return String(currentValue);
     },
 
     [$$observable]() {
       return this;
+    },
+
+    get isState() {
+      return true;
     },
   };
 }
@@ -151,84 +96,14 @@ export function makeState(initialValue) {
  */
 export function mapState(source, transform) {
   return {
-    get(...args) {
+    get(...selectors) {
       let value = transform(source.get());
 
-      for (const selector of args) {
+      for (const selector of selectors) {
         value = getProperty(value, selector);
       }
 
       return value;
-    },
-
-    watch(...args) {
-      let key;
-      let callback;
-      let options = {};
-
-      if (isString(args[0])) {
-        key = args.shift();
-      }
-
-      if (isFunction(args[0])) {
-        callback = args.shift();
-      }
-
-      if (isObject(args[0])) {
-        options = args.shift();
-      }
-
-      if (!isFunction(callback)) {
-        throw new TypeError(`Expected a watcher function. Received: ${callback}`);
-      }
-
-      if (key) {
-        let fn = callback;
-        callback = (value) => {
-          return fn(getProperty(value, key));
-        };
-      }
-
-      let previous = undefined;
-
-      return source.watch((value) => {
-        value = transform(value);
-
-        if (!deepEqual(value, previous)) {
-          previous = value;
-          callback(value);
-        }
-      }, options);
-    },
-
-    map(...args) {
-      let key;
-      let transform = (x) => x;
-
-      if (isString(args[0])) {
-        key = args.shift();
-      }
-
-      if (isFunction(args[0])) {
-        transform = args.shift();
-      }
-
-      if (key) {
-        let fn = transform;
-        transform = (value) => {
-          return fn(getProperty(value, key));
-        };
-      }
-
-      return mapState(this, transform);
-    },
-
-    toString() {
-      return source.toString();
-    },
-
-    get isState() {
-      return true;
     },
 
     /**
@@ -245,14 +120,38 @@ export function mapState(source, transform) {
         };
       }
 
-      const unsubscribe = this.watch(observer.next, { immediate: true });
+      let previous;
 
-      return {
-        unsubscribe,
-      };
+      return source.subscribe((value) => {
+        value = transform(value);
+
+        if (!deepEqual(value, previous)) {
+          previous = value;
+          observer.next(value);
+        }
+      });
     },
+
+    map(...selectors) {
+      return mapState(this, (value) => {
+        for (const selector of selectors) {
+          value = getProperty(value, selector);
+        }
+
+        return value;
+      });
+    },
+
+    toString() {
+      return source.toString();
+    },
+
     [$$observable]() {
       return this;
+    },
+
+    get isState() {
+      return true;
     },
   };
 }

@@ -1,6 +1,6 @@
 # States
 
-## The Basics
+## Initialize
 
 ```js
 import { makeState } from "@woofjs/client";
@@ -10,6 +10,8 @@ const $count = makeState(5);
 
 We now have a state with a value of 5. The `$name` convention helps to clearly mark this as a state. That's not required, but it is recommended.
 
+## Get and Set
+
 You can get and set the value of `$count` through the `get` and `set` methods.
 
 ```js
@@ -18,15 +20,29 @@ $count.set(10); // value of $count is now 10
 $count.get(); // returns 10
 ```
 
-The `watch` method takes a function and calls it each time the value changes, passing the new value. It returns a function that cancels the watcher.
+## Subscribe
+
+The `subscribe` method allows you to observe changes to the state and react when they happen. State subscriptions are compatible with the [TC39 Observable proposal](https://github.com/tc39/proposal-observable).
 
 ```js
-const unwatch = $count.watch((value) => {
-  console.log(value); // Prints the value each time $count is set
+// Callback style.
+const subscription = $count.subscribe((value) => {
+  console.log(value);
 });
 
-unwatch(); // Stop watching
+// Object style. Only 'next' will ever be called because states can't complete or throw errors.
+const subscription = $count.subscribe({
+  next: (value) => {
+    console.log(value);
+  },
+  // error: (e) => {},
+  // complete: () => {}
+});
+
+subscription.unsubscribe();
 ```
+
+## Map
 
 The `map` function creates a second state based on the first by running it through a function. Original value goes in, modified value comes out. Modified value stored in a second state. When the original state changes, the mapped state follows.
 

@@ -170,9 +170,19 @@ describe("map", () => {
     const watchesMappedWithFunction = jest.fn();
     const watchesMappedWithKeyAndFunction = jest.fn();
 
-    $mappedWithKey.watch(watchesMappedWithKey);
-    $mappedWithFunction.watch(watchesMappedWithFunction);
-    $mappedWithKeyAndFunction.watch(watchesMappedWithKeyAndFunction);
+    $mappedWithKey.subscribe(watchesMappedWithKey);
+    $mappedWithFunction.subscribe(watchesMappedWithFunction);
+    $mappedWithKeyAndFunction.subscribe(watchesMappedWithKeyAndFunction);
+
+    expect($mappedWithKey.get()).toBe(10);
+    expect($mappedWithFunction.get()).toBe(10);
+    expect($mappedWithKeyAndFunction.get()).toBe(20);
+    expect(watchesMappedWithKey).toHaveBeenCalledWith(10);
+    expect(watchesMappedWithKey).toHaveBeenCalledTimes(1);
+    expect(watchesMappedWithFunction).toHaveBeenCalledWith(10);
+    expect(watchesMappedWithFunction).toHaveBeenCalledTimes(1);
+    expect(watchesMappedWithKeyAndFunction).toHaveBeenCalledWith(20);
+    expect(watchesMappedWithKeyAndFunction).toHaveBeenCalledTimes(1);
 
     $coords.set({ x: 15, y: 8 });
 
@@ -180,13 +190,13 @@ describe("map", () => {
     expect($mappedWithFunction.get()).toBe(15);
     expect($mappedWithKeyAndFunction.get()).toBe(30);
     expect(watchesMappedWithKey).toHaveBeenCalledWith(15);
-    expect(watchesMappedWithKey).toHaveBeenCalledTimes(1);
+    expect(watchesMappedWithKey).toHaveBeenCalledTimes(2);
     expect(watchesMappedWithFunction).toHaveBeenCalledWith(15);
-    expect(watchesMappedWithFunction).toHaveBeenCalledTimes(1);
+    expect(watchesMappedWithFunction).toHaveBeenCalledTimes(2);
     expect(watchesMappedWithKeyAndFunction).toHaveBeenCalledWith(30);
-    expect(watchesMappedWithKeyAndFunction).toHaveBeenCalledTimes(1);
+    expect(watchesMappedWithKeyAndFunction).toHaveBeenCalledTimes(2);
 
-    // This doesn't touch `x` so none of the watchers should have fired again.
+    // This doesn't touch `x` so none of the subscribers should have fired again.
     $coords.set((current) => {
       current.y = -52;
     });
@@ -195,99 +205,37 @@ describe("map", () => {
     expect($mappedWithFunction.get()).toBe(15);
     expect($mappedWithKeyAndFunction.get()).toBe(30);
     expect(watchesMappedWithKey).toHaveBeenCalledWith(15);
-    expect(watchesMappedWithKey).toHaveBeenCalledTimes(1);
+    expect(watchesMappedWithKey).toHaveBeenCalledTimes(2);
     expect(watchesMappedWithFunction).toHaveBeenCalledWith(15);
-    expect(watchesMappedWithFunction).toHaveBeenCalledTimes(1);
+    expect(watchesMappedWithFunction).toHaveBeenCalledTimes(2);
     expect(watchesMappedWithKeyAndFunction).toHaveBeenCalledWith(30);
-    expect(watchesMappedWithKeyAndFunction).toHaveBeenCalledTimes(1);
+    expect(watchesMappedWithKeyAndFunction).toHaveBeenCalledTimes(2);
   });
 });
 
-describe("watch", () => {
-  test("watch with function", () => {
-    expect.assertions(1);
+describe("subscribe", () => {
+  test("is Observable", () => {
+    const $state = makeState(1);
 
-    const $name = makeState({
-      name: {
-        first: "a",
-        last: "b",
-      },
+    const next = jest.fn();
+
+    const subscription = $state.subscribe({
+      next,
     });
 
-    $name.watch((value) => {
-      expect(value.name.first).toBe("TEST");
-    });
+    $state.set(2);
+    $state.set(3);
+    $state.set(4);
 
-    $name.set((current) => {
-      current.name.first = "TEST";
-    });
+    subscription.unsubscribe();
+
+    $state.set(5);
+
+    expect(next).toHaveBeenCalledTimes(4);
+    expect(next).toHaveBeenCalledWith(1);
+    expect(next).toHaveBeenCalledWith(2);
+    expect(next).toHaveBeenCalledWith(3);
+    expect(next).toHaveBeenCalledWith(4);
+    expect(next).not.toHaveBeenCalledWith(5);
   });
-
-  test("watch with key", () => {
-    expect.assertions(1);
-
-    const $name = makeState({
-      name: {
-        first: "a",
-        last: "b",
-      },
-    });
-
-    $name.watch("name.first", (value) => {
-      expect(value).toBe("TEST");
-    });
-
-    $name.set((current) => {
-      current.name.first = "TEST";
-    });
-  });
-
-  test("mapped values emit new values only when the mapped portion changes", () => {
-    // In other words, updating the state should not re-emit mapped values unless those keys have new values.
-    const $coords = makeState({ x: 10, y: -5 });
-
-    const watcher = jest.fn();
-    $coords.watch("x", watcher);
-
-    $coords.set({ x: 15, y: 8 });
-
-    expect($coords.get("x")).toBe(15);
-    expect(watcher).toHaveBeenCalledWith(15);
-    expect(watcher).toHaveBeenCalledTimes(1);
-
-    // This doesn't touch `x` so the watcher should not have fired again.
-    $coords.set((current) => {
-      current.y = -52;
-    });
-
-    expect($coords.get("x")).toBe(15);
-    expect($coords.get("y")).toBe(-52);
-    expect(watcher).toHaveBeenCalledWith(15);
-    expect(watcher).toHaveBeenCalledTimes(1);
-  });
-});
-
-test("is Observable", () => {
-  const $state = makeState(1);
-
-  const next = jest.fn();
-
-  const subscription = $state.subscribe({
-    next,
-  });
-
-  $state.set(2);
-  $state.set(3);
-  $state.set(4);
-
-  subscription.unsubscribe();
-
-  $state.set(5);
-
-  expect(next).toHaveBeenCalledTimes(4);
-  expect(next).toHaveBeenCalledWith(1);
-  expect(next).toHaveBeenCalledWith(2);
-  expect(next).toHaveBeenCalledWith(3);
-  expect(next).toHaveBeenCalledWith(4);
-  expect(next).not.toHaveBeenCalledWith(5);
 });
