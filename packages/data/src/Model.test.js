@@ -1,129 +1,117 @@
-import { Model } from "./Model";
-
-// (function () {
-//   const test = new Test({
-//     id: 1,
-//     name: "Bob",
-//     hobbies: [{ activity: "Skiing" }, { activity: "Biking" }],
-//   });
-
-//   // test.other = 5;
-
-//   // TODO: Last major issue to solve is that instanceof doesn't work correctly on models.
-//   console.log("accessors", {
-//     id: test.id,
-//     name: test.name,
-//     isTest: test instanceof Test,
-//     isModel: test instanceof Model,
-//   });
-
-//   test.id = 2;
-//   test.hobbies[1].activity = 5;
-
-//   console.log("whole object", inspect(test, false, Infinity, true));
-//   console.log("plain object", inspect(test.toObject(), false, Infinity, true));
-// })();
-
-class Example extends Model {
-  static key = "id";
-
-  static schema = {
-    id: Model.number(),
-  };
-
-  get doubleId() {
-    return this.id * 2;
-  }
-}
-
-const ex = new Example();
-
-console.log(ex);
+import { makeModel } from "./Model";
 
 describe("instantiation", () => {
   test("throws if key isn't defined", () => {
-    class NoKey extends Model {}
-
     expect(() => {
-      const _ = new NoKey();
+      const NoKey = makeModel({});
     }).toThrow(/must define a key/i);
   });
 
   test("throws if schema isn't defined", () => {
-    class NoSchema extends Model {
-      static key = "id";
-    }
-
     expect(() => {
-      const _ = new NoSchema();
+      const NoSchema = makeModel({
+        key: "id",
+      });
     }).toThrow(/must define a schema/i);
   });
 
   test("throws if schema doesn't include key", () => {
-    class NoSchema extends Model {
-      static key = "id";
-
-      static schema = {
-        name: Model.string(),
-      };
-    }
-
     expect(() => {
-      const _ = new NoSchema();
+      const BadKey = makeModel({
+        key: "id",
+        schema(m) {
+          return m
+            .object({
+              name: m.string(),
+            })
+            .strict();
+        },
+      });
     }).toThrow(/schema doesn't include key/i);
+  });
+
+  test("throws if schema isn't a function", () => {
+    expect(() => {
+      const BadSchemaType = makeModel({
+        key: "id",
+        schema: {
+          name: "uh what",
+        },
+      });
+    }).toThrow(/schema must be a function/i);
+  });
+
+  test("throws if schema function doesn't return an object validator", () => {
+    expect(() => {
+      const BadSchemaType = makeModel({
+        key: "id",
+        schema: (m) => {
+          return m.number();
+        },
+      });
+    }).toThrow(/schema function must return a/i);
   });
 });
 
-describe("inheritance", () => {
-  test("instanceof works correctly on subclasses", () => {
-    class One extends Model {
-      static key = "id";
-      static schema = { id: Model.number() };
-    }
+describe("instanceof", () => {
+  test("instanceof identifies models as an instance of itself", () => {
+    const One = makeModel({
+      key: "id",
+      schema(m) {
+        return m
+          .object({
+            id: m.number(),
+          })
+          .strict();
+      },
+    });
+
+    const Two = makeModel({
+      key: "id",
+      schema(m) {
+        return m
+          .object({
+            id: m.number(),
+          })
+          .strict();
+      },
+    });
 
     const one = new One({ id: 1 });
-    expect(one).toBeInstanceOf(One);
-    expect(one).toBeInstanceOf(Model);
-
-    class Two extends One {
-      static key = "id";
-      static schema = { id: Model.number() };
-    }
-
     const two = new Two({ id: 2 });
+
+    expect(one).toBeInstanceOf(One);
+    expect(one).not.toBeInstanceOf(Two);
+
     expect(two).toBeInstanceOf(Two);
-    expect(two).toBeInstanceOf(One);
-    expect(two).toBeInstanceOf(Model);
+    expect(two).not.toBeInstanceOf(One);
+  });
+});
 
-    class Three extends Two {
-      static key = "id";
-      static schema = { id: Model.number() };
-    }
-
-    const three = new Three({ id: 3 });
-    expect(three).toBeInstanceOf(Three);
-    expect(three).toBeInstanceOf(Two);
-    expect(three).toBeInstanceOf(One);
-    expect(three).toBeInstanceOf(Model);
+describe("computed properties", () => {
+  test.skip("are accessible on instance", () => {
+    // const Test = makeModel({});
+    // TODO
   });
 });
 
 describe("validation", () => {
   test("valid object", () => {
-    class Test extends Model {
-      static key = "id";
-
-      static schema = {
-        id: Model.number(),
-        name: Model.string(),
-        hobbies: Model.arrayOf(
-          Model.shape({
-            activity: Model.string(),
-          })
-        ),
-        maybe: Model.boolean().optional(),
-      };
-    }
+    const Test = makeModel({
+      key: "id",
+      schema(m) {
+        return m.object({
+          id: m.number(),
+          name: m.string(),
+          hobbies: m.arrayOf(
+            m.object({
+              activity: m.string(),
+            })
+          ),
+          maybe: m.boolean().optional(),
+        });
+      },
+    });
 
     const result = Test.validate({
       id: 1,
@@ -136,20 +124,23 @@ describe("validation", () => {
   });
 
   test("invalid object", () => {
-    class Test extends Model {
-      static key = "id";
-
-      static schema = {
-        id: Model.number(),
-        name: Model.string(),
-        hobbies: Model.arrayOf(
-          Model.shape({
-            activity: Model.string(),
+    const Test = makeModel({
+      key: "id",
+      schema(m) {
+        return m
+          .object({
+            id: m.number(),
+            name: m.string(),
+            hobbies: m.arrayOf(
+              m.object({
+                activity: m.string(),
+              })
+            ),
+            maybe: m.boolean().optional(),
           })
-        ),
-        maybe: Model.boolean().optional(),
-      };
-    }
+          .strict();
+      },
+    });
 
     const fn = jest.fn();
 
@@ -164,36 +155,38 @@ describe("validation", () => {
       wawawa: {},
     });
 
+    console.log(result.errors);
+
     expect(result.valid).toBe(false);
     expect(result.errors).toStrictEqual([
       {
         path: ["id"],
-        error: "expected a number; received a string",
+        message: "expected a number; received a string",
         received: "string",
       },
       {
         path: ["name"],
-        error: "expected a string; received a number",
+        message: "expected a string; received a number",
         received: 5,
       },
       {
         path: ["hobbies", 0, "activity"],
-        error: "expected a string; received a symbol",
+        message: "expected a string; received a symbol",
         received: Symbol("programming"),
       },
       {
         path: ["hobbies", 1],
-        error: "expected an object; received an array",
+        message: "expected an object; received an array",
         received: [2],
       },
       {
         path: ["maybe"],
-        error: "expected a boolean; received a function",
-        received: fn,
+        message: "expected a boolean; received a function",
+        // received: fn,
       },
       {
         path: ["wawawa"],
-        error: "unknown field is not allowed",
+        message: "invalid property; not defined in schema",
         received: {},
       },
     ]);

@@ -14,24 +14,29 @@ Data models, collections and validation for dogs. 🐕
 Define the structure of your objects with Models.
 
 ```js
-import { Model } from "@woofjs/data";
+import { makeModel } from "@woofjs/data";
 
-class User extends Model {
-  static key = "id";
+const User = makeModel({
+  key: "id",
 
-  static schema = {
-    id: Model.number(),
-    name: Model.shape({
-      family: Model.string().optional(),
-      given: Model.string(),
-      format: Model.oneOf(["family-given", "given-family"]).optional(),
-    }),
-    status: Model.oneOf(["offline", "online"]),
-    createdAt: Model.string().pattern(/\d{4}-\d{2}-\d{2}Z\d{2}:\d{2}\.\d{3}Z/),
-  };
+  schema(m) {
+    const datePattern = /\d{4}-\d{2}-\d{2}Z\d{2}:\d{2}\.\d{3}Z/;
 
-  // Full name as a computed property.
-  // Access with `user.fullName`.
+    return m
+      .object({
+        id: m.number(),
+        name: m.shape({
+          family: m.string().optional(),
+          given: m.string(),
+          format: m.oneOf("family-given", "given-family").optional(),
+        }),
+        status: m.oneOf("offline", "online"),
+        createdAt: m.string().pattern(datePattern),
+      })
+      .strict();
+  },
+
+  // Computed property; accessible on a model instance as `instance.fullName`, just like other model data.
   get fullName() {
     if (this.name.family == null) {
       return this.name.given;
@@ -42,8 +47,8 @@ class User extends Model {
       // Support given name first (e.g. Western names)
       return `${this.name.given} ${this.name.family}`;
     }
-  }
-}
+  },
+});
 ```
 
 ### Validating objects
@@ -65,16 +70,19 @@ In this case `valid` would be false and `errors` would contain this:
 ```js
 [
   {
-    key: "name",
-    error: "expected an object; received a string",
+    path: ["name"],
+    message: "expected an object; received a string",
+    received: "Bob Jones"
   },
   {
-    key: "status",
-    error: "not present; expected one of: 'offline', 'online'"
+    path: ["status"],
+    message: "expected one of: 'offline', 'online'; received undefined",
+    received: undefined
   }
   {
-    key: "createdAt",
-    error: "string does not match expected pattern",
+    path: ["createdAt"],
+    message: "string does not match expected pattern",
+    received: "yesterday"
   },
 ];
 ```
@@ -108,7 +116,7 @@ const Users = collectionOf(User);
 
 ### Adding and removing records
 
-Collections have three methods to modify their collected records; `add`, `remove` and `clear`.
+Collections have three methods to modify their collected records; `insert`, `remove` and `clear`.
 
 ```js
 // A User instance.
@@ -123,7 +131,7 @@ const user = new User({
   createdAt: new Date().toISOString(),
 });
 
-await Users.add(user);
+await Users.insert(user);
 
 await Users.remove(user);
 
@@ -131,10 +139,10 @@ await Users.remove(user);
 await Users.clear();
 ```
 
-The `add` and `remove` methods can take one or more objects, and `remove` can also take IDs.
+The `insert` and `remove` methods can take one or more objects, and `remove` can also take IDs.
 
 ```js
-await Users.add(user1, user2, user3);
+await Users.insert(user1, user2, user3);
 
 await Users.remove(user1, 123, user3);
 ```
@@ -190,12 +198,12 @@ const cancel = Users.on("add", (users) => {
   // Do something with the new records.
 });
 
-const cancel = Users.on("remove", (users) => {
-  // Do something with the removed records.
-});
-
 const cancel = Posts.on("update", (users) => {
   // Do something with the updated records.
+});
+
+const cancel = Users.on("remove", (users) => {
+  // Do something with the removed records.
 });
 
 // Cancel to stop listening for changes.
