@@ -1,4 +1,4 @@
-import { makeModel } from "./Model";
+import { makeModel } from "./makeModel.js";
 
 describe("instantiation", () => {
   test("throws if key isn't defined", () => {
@@ -89,9 +89,53 @@ describe("instanceof", () => {
 });
 
 describe("computed properties", () => {
-  test.skip("are accessible on instance", () => {
-    // const Test = makeModel({});
-    // TODO
+  test("are accessible on instance", () => {
+    const User = makeModel({
+      key: "id",
+
+      schema(m) {
+        const datePattern = /\d{4}-\d{2}-\d{2}Z\d{2}:\d{2}\.\d{3}Z/;
+
+        return m
+          .object({
+            id: m.number(),
+            name: m.object({
+              family: m.string().optional(),
+              given: m.string(),
+              format: m.oneOf("family-given", "given-family").optional(),
+            }),
+            status: m.oneOf("offline", "online"),
+            createdAt: m.string().pattern(datePattern),
+          })
+          .strict();
+      },
+
+      // Computed property; accessible on a model instance as `instance.fullName`, just like other model data.
+      get fullName() {
+        if (this.name.family == null) {
+          return this.name.given;
+        } else if (this.name.format === "family-given") {
+          // Support family name first (e.g. Japanese, Korean names, etc.)
+          return `${this.name.family} ${this.name.given}`;
+        } else {
+          // Support given name first (e.g. Western names)
+          return `${this.name.given} ${this.name.family}`;
+        }
+      },
+    });
+
+    const user = new User({
+      id: 1,
+      name: {
+        family: "山中",
+        given: "さわお",
+        format: "family-given",
+      },
+      status: "online",
+      createdAt: new Date().toISOString(),
+    });
+
+    expect(user.fullName).toBe("山中 さわお");
   });
 });
 
@@ -142,20 +186,16 @@ describe("validation", () => {
       },
     });
 
-    const fn = jest.fn();
+    const fn = () => {};
+    const symbolProgramming = Symbol("programming");
 
     const result = Test.validate({
       id: "string",
       name: 5,
-      hobbies: [
-        { activity: Symbol("programming"), extra: "this is allowed" },
-        [2],
-      ],
+      hobbies: [{ activity: symbolProgramming, extra: "this is allowed" }, [2]],
       maybe: fn,
       wawawa: {},
     });
-
-    console.log(result.errors);
 
     expect(result.valid).toBe(false);
     expect(result.errors).toStrictEqual([
@@ -172,7 +212,7 @@ describe("validation", () => {
       {
         path: ["hobbies", 0, "activity"],
         message: "expected a string; received a symbol",
-        received: Symbol("programming"),
+        received: symbolProgramming,
       },
       {
         path: ["hobbies", 1],
@@ -182,7 +222,7 @@ describe("validation", () => {
       {
         path: ["maybe"],
         message: "expected a boolean; received a function",
-        // received: fn,
+        received: fn,
       },
       {
         path: ["wawawa"],

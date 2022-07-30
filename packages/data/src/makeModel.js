@@ -1,7 +1,3 @@
-"use strict";
-
-import util from "util";
-
 import $$observable from "symbol-observable";
 import DeepProxy from "proxy-deep";
 import { flatMap } from "./helpers/flatMap.js";
@@ -20,11 +16,29 @@ import { cloneDeep } from "./helpers/cloneDeep.js";
 
 export class ModelError extends Error {}
 
-export function makeModel({ key, schema, ...attrs }) {
+const $$typeModel = Symbol("type:model");
+const $$typeRecord = Symbol("type:record");
+
+export function isModel(object) {
+  return object[$$typeModel] === $$typeModel;
+}
+
+export function isRecord(object) {
+  return object[$$typeRecord] === $$typeRecord;
+}
+
+export function makeModel(options) {
   const $$model = Symbol("Model");
+
+  let key = options.key;
+  let schema = options.schema;
 
   if (key == null) {
     throw new ModelError("You must define a key for your model.");
+  }
+
+  if (typeof key !== "string") {
+    throw new ModelError("Key must be a string.");
   }
 
   if (schema == null) {
@@ -62,58 +76,84 @@ export function makeModel({ key, schema, ...attrs }) {
     };
   }
 
+  // All keys that are being forwarded from options to the model.
+  const forwardProps = Object.keys(options).filter(
+    (key) => key !== "key" && key !== "schema"
+  );
+
   function Model(data) {
     const observers = [];
-    const model = {};
-
-    const methods = {
-      subscribe(observer) {
-        if (typeof observer === "function") {
-          observer = {
-            next: observer,
-            error: arguments[1],
-            complete: arguments[2],
-          };
-        }
-
-        observers.push(observer);
-
-        return {
-          unsubscribe: () => {
-            observers.splice(observers.indexOf(observer), 1);
-          },
-        };
-      },
-
-      toObject() {
-        const object = {};
-
-        for (const key in schema) {
-          if (model[key] !== undefined) {
-            object[key] = model[key];
-          }
-        }
-
-        return cloneDeep(object);
-      },
-
-      [$$observable]() {
-        return this;
-      },
-
-      [$$model]: true,
-
-      ...attrs,
+    const model = {
+      ...cloneDeep(data),
     };
 
-    Object.assign(model, cloneDeep(data), methods);
+    const privateKeys = ["subscribe", "toObject", $$observable, $$model];
+
+    Object.defineProperties(model, {
+      _key: {
+        get() {
+          return this[key];
+        },
+      },
+
+      subscribe: {
+        value: (observer) => {
+          if (typeof observer === "function") {
+            observer = {
+              next: observer,
+              error: arguments[1],
+              complete: arguments[2],
+            };
+          }
+
+          observers.push(observer);
+
+          return {
+            unsubscribe: () => {
+              observers.splice(observers.indexOf(observer), 1);
+            },
+          };
+        },
+      },
+
+      toObject: {
+        value: () => {
+          const object = {};
+
+          const ignoreKeys = [].concat(privateKeys, forwardProps);
+          for (const key in model) {
+            if (key !== undefined && !ignoreKeys.includes(key)) {
+              object[key] = model[key];
+            }
+          }
+
+          return cloneDeep(object);
+        },
+      },
+
+      [$$observable]: {
+        value() {
+          return this;
+        },
+      },
+
+      [$$model]: {
+        value: $$model,
+      },
+
+      [$$typeRecord]: {
+        value: $$typeRecord,
+      },
+    });
+
+    // Object.assign(model, cloneDeep(data), methods);
 
     const proxy = new DeepProxy(model, {
       get(object, prop) {
         let value = object[prop];
 
         // Return values from methods as is.
-        if (this.path.length === 0 && Object.keys(methods).includes(prop)) {
+        if (this.path.length === 0 && Object.keys(privateKeys).includes(prop)) {
           return value;
         }
 
@@ -135,11 +175,11 @@ export function makeModel({ key, schema, ...attrs }) {
 
         const { valid, errors } = validate(potential);
 
-        // inspect({ potential, valid, errors });
-
         if (!valid) {
           const err = errors[0];
-          throw new TypeError(`${pathToKey(err.path)} - ${err.error}`);
+          throw new TypeError(
+            `${pathToKey(err.path)} - ${err.message}; received ${err.value}`
+          );
         }
 
         // Update and notify observers.
@@ -150,7 +190,17 @@ export function makeModel({ key, schema, ...attrs }) {
       },
     });
 
-    Object.setPrototypeOf(model, Model);
+    for (const key in options) {
+      if (forwardProps.includes(key)) {
+        const value = Object.getOwnPropertyDescriptor(options, key);
+
+        if (typeof value.value === "function") {
+          value.value = value.value.bind(proxy);
+        }
+
+        Object.defineProperty(proxy, key, value);
+      }
+    }
 
     return proxy;
   }
@@ -161,12 +211,16 @@ export function makeModel({ key, schema, ...attrs }) {
 
   Object.defineProperty(Model, Symbol.hasInstance, {
     value: (instance) => {
-      if (instance[$$model]) {
+      if (instance[$$model] === $$model) {
         return true;
       }
 
       return false;
     },
+  });
+
+  Object.defineProperty(Model, $$typeModel, {
+    value: $$typeModel,
   });
 
   return Model;
@@ -461,7 +515,7 @@ class StringValidator extends Validator {
       throw new TypeError("expected a regexp");
     }
 
-    this._pattern = pattern;
+    this._pattern = regexp;
     return this;
   }
 
@@ -580,15 +634,7 @@ class OneOfValidator extends Validator {
   constructor(validators) {
     super();
 
-    validators = flatMap(validators);
-
-    for (const validator of validators) {
-      if (!(validator instanceof Validator)) {
-        throw new TypeError("key '" + key + "' is not a validator");
-      }
-    }
-
-    this._validators = validators;
+    this._validators = flatMap(validators);
   }
 
   _checkType(value, context) {
@@ -596,16 +642,32 @@ class OneOfValidator extends Validator {
     let valid = false;
 
     for (const validator of this._validators) {
-      const result = validator._validate(value, context);
+      if (validator instanceof Validator) {
+        const result = validator._validate(value, context);
 
-      // inspect({ value, context, result });
+        // inspect({ value, context, result });
 
-      // Succeed on first validator that checks out.
-      if (result.errors.length === 0) {
-        valid = true;
-        break;
+        // Succeed on first validator that checks out.
+        if (result.errors.length === 0) {
+          valid = true;
+          break;
+        } else {
+          errors.push(...result.errors);
+        }
       } else {
-        errors.push(...result.errors);
+        // If not a validator, compare as a literal value.
+        if (value === validator) {
+          valid = true;
+          break;
+        } else {
+          errors.push(
+            new ValidatorError(
+              "did not match expected values; received " +
+                getTypeNameWithArticle(value),
+              context
+            )
+          );
+        }
       }
     }
 

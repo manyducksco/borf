@@ -19,19 +19,19 @@ import { makeModel } from "@woofjs/data";
 const User = makeModel({
   key: "id",
 
-  schema(m) {
+  schema(v) {
     const datePattern = /\d{4}-\d{2}-\d{2}Z\d{2}:\d{2}\.\d{3}Z/;
 
-    return m
+    return v
       .object({
-        id: m.number(),
-        name: m.shape({
-          family: m.string().optional(),
-          given: m.string(),
-          format: m.oneOf("family-given", "given-family").optional(),
+        id: v.number(),
+        name: v.shape({
+          family: v.string().optional(),
+          given: v.string(),
+          format: v.oneOf("family-given", "given-family").optional(),
         }),
-        status: m.oneOf("offline", "online"),
-        createdAt: m.string().pattern(datePattern),
+        status: v.oneOf("offline", "online"),
+        createdAt: v.string().pattern(datePattern),
       })
       .strict();
   },
