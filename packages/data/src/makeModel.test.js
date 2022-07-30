@@ -88,57 +88,6 @@ describe("instanceof", () => {
   });
 });
 
-describe("computed properties", () => {
-  test("are accessible on instance", () => {
-    const User = makeModel({
-      key: "id",
-
-      schema(m) {
-        const datePattern = /\d{4}-\d{2}-\d{2}Z\d{2}:\d{2}\.\d{3}Z/;
-
-        return m
-          .object({
-            id: m.number(),
-            name: m.object({
-              family: m.string().optional(),
-              given: m.string(),
-              format: m.oneOf("family-given", "given-family").optional(),
-            }),
-            status: m.oneOf("offline", "online"),
-            createdAt: m.string().pattern(datePattern),
-          })
-          .strict();
-      },
-
-      // Computed property; accessible on a model instance as `instance.fullName`, just like other model data.
-      get fullName() {
-        if (this.name.family == null) {
-          return this.name.given;
-        } else if (this.name.format === "family-given") {
-          // Support family name first (e.g. Japanese, Korean names, etc.)
-          return `${this.name.family} ${this.name.given}`;
-        } else {
-          // Support given name first (e.g. Western names)
-          return `${this.name.given} ${this.name.family}`;
-        }
-      },
-    });
-
-    const user = new User({
-      id: 1,
-      name: {
-        family: "山中",
-        given: "さわお",
-        format: "family-given",
-      },
-      status: "online",
-      createdAt: new Date().toISOString(),
-    });
-
-    expect(user.fullName).toBe("山中 さわお");
-  });
-});
-
 describe("validation", () => {
   test("valid object", () => {
     const Test = makeModel({

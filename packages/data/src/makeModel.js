@@ -5,8 +5,10 @@ import { cloneDeep } from "./helpers/cloneDeep.js";
 
 // const Test = makeModel({
 //   key: "id",
-//   schema: {
-//     id: Model.number()
+//   schema: v => {
+//     return v.object({
+//       id: Model.number()
+//     });
 //   }
 // });
 
@@ -27,11 +29,8 @@ export function isRecord(object) {
   return object[$$typeRecord] === $$typeRecord;
 }
 
-export function makeModel(options) {
+export function makeModel({ key, schema }) {
   const $$model = Symbol("Model");
-
-  let key = options.key;
-  let schema = options.schema;
 
   if (key == null) {
     throw new ModelError("You must define a key for your model.");
@@ -73,13 +72,9 @@ export function makeModel(options) {
           received: e.context.value,
         };
       }),
+      key: errors.length === 0 ? object[key] : undefined,
     };
   }
-
-  // All keys that are being forwarded from options to the model.
-  const forwardProps = Object.keys(options).filter(
-    (key) => key !== "key" && key !== "schema"
-  );
 
   function Model(data) {
     const observers = [];
@@ -87,10 +82,15 @@ export function makeModel(options) {
       ...cloneDeep(data),
     };
 
-    const privateKeys = ["subscribe", "toObject", $$observable, $$model];
+    // Non-data props attached to each model instance.
+    const properties = {
+      _keyProp: {
+        get() {
+          return key;
+        },
+      },
 
-    Object.defineProperties(model, {
-      _key: {
+      _keyValue: {
         get() {
           return this[key];
         },
@@ -120,7 +120,7 @@ export function makeModel(options) {
         value: () => {
           const object = {};
 
-          const ignoreKeys = [].concat(privateKeys, forwardProps);
+          const ignoreKeys = Object.keys(properties);
           for (const key in model) {
             if (key !== undefined && !ignoreKeys.includes(key)) {
               object[key] = model[key];
@@ -144,21 +144,20 @@ export function makeModel(options) {
       [$$typeRecord]: {
         value: $$typeRecord,
       },
-    });
+    };
 
-    // Object.assign(model, cloneDeep(data), methods);
+    Object.defineProperties(model, properties);
 
-    const proxy = new DeepProxy(model, {
+    return new DeepProxy(model, {
       get(object, prop) {
         let value = object[prop];
 
-        // Return values from methods as is.
-        if (this.path.length === 0 && Object.keys(privateKeys).includes(prop)) {
+        // Return values from modelProps as is.
+        if (this.path.length === 0 && Object.keys(properties).includes(prop)) {
           return value;
         }
 
-        // Return a nested proxy for any data that can be mutated.
-        if (typeof value === "object" && value != null) {
+        if (isMutableType(value)) {
           value = this.nest(value);
         }
 
@@ -189,20 +188,6 @@ export function makeModel(options) {
         }
       },
     });
-
-    for (const key in options) {
-      if (forwardProps.includes(key)) {
-        const value = Object.getOwnPropertyDescriptor(options, key);
-
-        if (typeof value.value === "function") {
-          value.value = value.value.bind(proxy);
-        }
-
-        Object.defineProperty(proxy, key, value);
-      }
-    }
-
-    return proxy;
   }
 
   Object.defineProperty(Model, "validate", {
@@ -682,6 +667,10 @@ class OneOfValidator extends Validator {
 /*============================*\
 ||           Helpers          ||
 \*============================*/
+
+function isMutableType(value) {
+  return typeof value === "object" && value != null;
+}
 
 function pathToKey(path) {
   let key = "";
