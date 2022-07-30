@@ -1,4 +1,4 @@
-import { isTemplate, isDOM, isFunction, isComponent, isObservable } from "./typeChecking.js";
+import { isTemplate, isDOM, isFunction, isComponent, isObservable, isState } from "./typeChecking.js";
 
 import { h, when, unless, watch, repeat, bind } from "../h.js";
 import { makeState } from "../state/makeState.js";
@@ -50,13 +50,13 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   ||         Parse attrs         ||
   \*=============================*/
 
-  // Attributes are separated into those that don't change and those that do change through states.
+  // Attributes are separated into those that change and those that don't.
   const staticAttrs = [];
   const observableAttrs = [];
 
   for (const name in attrs) {
-    if (isObservable(attrs[name])) {
-      if (name.startsWith("$")) {
+    if (name.startsWith("$")) {
+      if (isState(attrs[name])) {
         // Pass states through as-is when named with $.
         // Allows subcomponents to directly modify states through an explicit naming convention.
         staticAttrs.push({
@@ -64,20 +64,18 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
           value: attrs[name],
         });
       } else {
-        observableAttrs.push({
-          name,
-          value: attrs[name],
-        });
-      }
-    } else {
-      if (name.startsWith("$")) {
         throw new TypeError(`Attributes beginning with $ must be states. Got: ${typeof attrs[name]}`);
-      } else {
-        staticAttrs.push({
-          name,
-          value: attrs[name],
-        });
       }
+    } else if (isObservable(attrs[name])) {
+      observableAttrs.push({
+        name,
+        value: attrs[name],
+      });
+    } else {
+      staticAttrs.push({
+        name,
+        value: attrs[name],
+      });
     }
   }
 
@@ -89,6 +87,12 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
 
   staticAttrs.forEach(({ name, value }) => {
     initialAttrs[name] = value;
+  });
+
+  observableAttrs.forEach(({ name, value }) => {
+    if (isState(value)) {
+      initialAttrs[name] = value.get();
+    }
   });
 
   const $attrs = makeState(initialAttrs);

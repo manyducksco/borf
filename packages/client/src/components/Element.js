@@ -28,16 +28,16 @@ export function Element() {
     delete attrs.className;
   }
 
-  let watchers = [];
+  let subscriptions = [];
 
   this.beforeConnect(() => {
     for (const child of this.children) {
       child.connect(node);
     }
 
-    applyAttrs(node, attrs, watchers);
-    if (attrs.style) applyStyles(node, attrs.style, watchers);
-    if (attrs.class) applyClasses(node, attrs.class, watchers);
+    applyAttrs(node, attrs, subscriptions);
+    if (attrs.style) applyStyles(node, attrs.style, subscriptions);
+    if (attrs.class) applyClasses(node, attrs.class, subscriptions);
   });
 
   this.afterDisconnect(async () => {
@@ -45,38 +45,30 @@ export function Element() {
       child.disconnect();
     }
 
-    for (const callback of watchers) {
-      callback();
+    for (const subscription of subscriptions) {
+      subscription.unsubscribe();
     }
-    watchers = [];
+    subscriptions = [];
   });
 
   return node;
 }
 
-function watch(observable, callback) {
-  const subscription = observable.subscribe({
-    next: callback,
-  });
-
-  return () => subscription.unsubscribe();
-}
-
-function applyAttrs(element, attrs, watchers) {
+function applyAttrs(element, attrs, subscriptions) {
   for (const key in attrs) {
     const value = attrs[key];
 
     // Bind or set value depending on its type.
     if (key === "value") {
       if (isObservable(value)) {
-        watchers.push(
-          watch(value, (current) => {
+        subscriptions.push(
+          value.subscribe((current) => {
             element.value = String(current);
           })
         );
       } else if (isBinding(value)) {
-        watchers.push(
-          watch(value.$value, (current) => {
+        subscriptions.push(
+          value.$value.subscribe((current) => {
             element.value = String(current);
           })
         );
@@ -88,27 +80,27 @@ function applyAttrs(element, attrs, watchers) {
 
         element.addEventListener(value.event, listener);
 
-        watchers.push(() => {
+        subscriptions.push(() => {
           element.removeEventListener(value.event, listener);
         });
       } else {
         element.value = String(value);
       }
-    } else if (attrMap.events.includes(key)) {
+    } else if (eventAttrs.includes(key.toLowerCase())) {
       const eventName = key.slice(2).toLowerCase();
       const listener = isObservable(attrs[key]) ? (e) => attrs[key].get()(e) : attrs[key];
 
       element.addEventListener(eventName, listener);
 
-      watchers.push(() => {
+      subscriptions.push(() => {
         element.removeEventListener(eventName, listener);
       });
-    } else if (!attrMap.private.includes(key)) {
-      const isBoolean = attrMap.boolean.includes(key);
+    } else if (!privateAttrs.includes(key)) {
+      const isBoolean = booleanAttrs.includes(key);
 
       if (isObservable(value)) {
-        watchers.push(
-          watch(value, (current) => {
+        subscriptions.push(
+          value.subscribe((current) => {
             if (current) {
               element.setAttribute(key, isBoolean ? "" : current.toString());
             } else {
@@ -123,22 +115,24 @@ function applyAttrs(element, attrs, watchers) {
   }
 }
 
-function applyStyles(element, styles, watchers) {
-  const propWatchers = [];
+function applyStyles(element, styles, subscriptions) {
+  const propSubscriptions = [];
 
   if (isObservable(styles)) {
     let unapply;
 
-    const unwatch = watch(styles, (current) => {
-      if (isFunction(unapply)) {
-        unapply();
-      }
-      element.style = null;
-      unapply = applyStyles(element, current, watchers);
+    const subscription = styles.subscribe((current) => {
+      requestAnimationFrame(() => {
+        if (isFunction(unapply)) {
+          unapply();
+        }
+        element.style = null;
+        unapply = applyStyles(element, current, subscriptions);
+      });
     });
 
-    watchers.push(unwatch);
-    propWatchers.push(unwatch);
+    subscriptions.push(subscription);
+    propSubscriptions.push(subscription);
   } else if (isString(styles)) {
     element.style = styles;
   } else if (isObject(styles)) {
@@ -150,7 +144,7 @@ function applyStyles(element, styles, watchers) {
           : (key, value) => (element.style[key] = value);
 
       if (isObservable(value)) {
-        const unwatch = watch(value, (current) => {
+        const subscription = value.subscribe((current) => {
           if (current) {
             setProperty(key, current);
           } else {
@@ -158,8 +152,8 @@ function applyStyles(element, styles, watchers) {
           }
         });
 
-        watchers.push(unwatch);
-        propWatchers.push(unwatch);
+        subscriptions.push(subscription);
+        propSubscriptions.push(subscription);
       } else if (isString(value)) {
         setProperty(key, value);
       } else if (isNumber(value)) {
@@ -173,31 +167,31 @@ function applyStyles(element, styles, watchers) {
   }
 
   return function unapply() {
-    for (const unwatch of propWatchers) {
-      unwatch();
-      watchers.splice(watchers.indexOf(unwatch), 1);
+    for (const subscription of propSubscriptions) {
+      subscription.unsubscribe();
+      subscriptions.splice(subscriptions.indexOf(subscription), 1);
     }
   };
 }
 
-function applyClasses(element, classes, watchers) {
-  const classWatchers = [];
+function applyClasses(element, classes, subscriptions) {
+  const classSubscriptions = [];
 
   if (isObservable(classes)) {
     let unapply;
 
-    const unwatch = watch(classes, (current) => {
+    const subscription = classes.subscribe((current) => {
       requestAnimationFrame(() => {
         if (isFunction(unapply)) {
           unapply();
         }
         element.removeAttribute("class");
-        unapply = applyClasses(element, current, watchers);
+        unapply = applyClasses(element, current, subscriptions);
       });
     });
 
-    watchers.push(unwatch);
-    classWatchers.push(unwatch);
+    subscriptions.push(subscription);
+    classSubscriptions.push(subscription);
   } else {
     const mapped = getClassMap(classes);
 
@@ -205,7 +199,7 @@ function applyClasses(element, classes, watchers) {
       const value = mapped[name];
 
       if (isObservable(value)) {
-        const unwatch = watch(value, (current) => {
+        const subscription = value.subscribe((current) => {
           if (current) {
             element.classList.add(name);
           } else {
@@ -213,8 +207,8 @@ function applyClasses(element, classes, watchers) {
           }
         });
 
-        watchers.push(unwatch);
-        classWatchers.push(unwatch);
+        subscriptions.push(subscription);
+        classSubscriptions.push(subscription);
       } else if (value) {
         element.classList.add(name);
       }
@@ -222,9 +216,9 @@ function applyClasses(element, classes, watchers) {
   }
 
   return function unapply() {
-    for (const unwatch of classWatchers) {
-      unwatch();
-      watchers.splice(watchers.indexOf(unwatch), 1);
+    for (const subscription of classSubscriptions) {
+      subscription.unsubscribe();
+      subscriptions.splice(subscriptions.indexOf(subscription), 1);
     }
   };
 }
@@ -273,57 +267,95 @@ function toSameType(target, source) {
   return source;
 }
 
-const attrMap = {
-  // Attributes in this list will not be forwarded to the DOM node.
-  private: ["$ref", "children", "class", "value", "style", "data"],
-  boolean: [
-    "disabled",
-    "contenteditable",
-    "draggable",
-    "hidden",
-    "spellcheck",
-    "autocomplete",
-    "autofocus",
-    "translate",
-  ],
-  events: [
-    "onclick",
-    "ondblclick",
-    "onmousedown",
-    "onmouseup",
-    "onmouseover",
-    "onmousemove",
-    "onmouseout",
-    "onmouseenter",
-    "onmouseleave",
-    "ontouchcancel",
-    "ontouchend",
-    "ontouchmove",
-    "ontouchstart",
-    "ondragstart",
-    "ondrag",
-    "ondragenter",
-    "ondragleave",
-    "ondragover",
-    "ondrop",
-    "ondragend",
-    "onkeydown",
-    "onkeypress",
-    "onkeyup",
-    "onunload",
-    "onabort",
-    "onerror",
-    "onresize",
-    "onscroll",
-    "onselect",
-    "onchange",
-    "onsubmit",
-    "onreset",
-    "onfocus",
-    "onblur",
-    "oninput",
-    "onanimationend",
-    "onanimationiteration",
-    "onanimationstart",
-  ],
-};
+// Attributes in this list will not be forwarded to the DOM node.
+const privateAttrs = ["$ref", "children", "class", "value", "style", "data"];
+
+const booleanAttrs = [
+  "allowfullscreen",
+  "async",
+  "autocomplete",
+  "autofocus",
+  "autoplay",
+  "checked",
+  "contenteditable",
+  "controls",
+  "default",
+  "defer",
+  "disabled",
+  "draggable",
+  "formnovalidate",
+  "hidden",
+  "ismap",
+  "itemscope",
+  "loop",
+  "multiple",
+  "muted",
+  "nomodule",
+  "open",
+  "playsinline",
+  "readonly",
+  "required",
+  "reversed",
+  "selected",
+  "spellcheck",
+  "translate",
+  "truespeed",
+];
+
+const selfClosingTags = [
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr",
+];
+
+const eventAttrs = [
+  "onclick",
+  "ondblclick",
+  "onmousedown",
+  "onmouseup",
+  "onmouseover",
+  "onmousemove",
+  "onmouseout",
+  "onmouseenter",
+  "onmouseleave",
+  "ontouchcancel",
+  "ontouchend",
+  "ontouchmove",
+  "ontouchstart",
+  "ondragstart",
+  "ondrag",
+  "ondragenter",
+  "ondragleave",
+  "ondragover",
+  "ondrop",
+  "ondragend",
+  "onkeydown",
+  "onkeypress",
+  "onkeyup",
+  "onunload",
+  "onabort",
+  "onerror",
+  "onresize",
+  "onscroll",
+  "onselect",
+  "onchange",
+  "onsubmit",
+  "onreset",
+  "onfocus",
+  "onblur",
+  "oninput",
+  "onanimationend",
+  "onanimationiteration",
+  "onanimationstart",
+];
