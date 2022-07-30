@@ -19,7 +19,7 @@ import { makeModel } from "@woofjs/data";
 const User = makeModel({
   key: "id",
 
-  schema(v) {
+  schema: (v) => {
     const datePattern = /\d{4}-\d{2}-\d{2}Z\d{2}:\d{2}\.\d{3}Z/;
 
     return v
@@ -35,25 +35,12 @@ const User = makeModel({
       })
       .strict();
   },
-
-  // Computed property; accessible on a model instance as `instance.fullName`, just like other model data.
-  get fullName() {
-    if (this.name.family == null) {
-      return this.name.given;
-    } else if (this.name.format === "family-given") {
-      // Support family name first (e.g. Japanese, Korean names, etc.)
-      return `${this.name.family} ${this.name.given}`;
-    } else {
-      // Support given name first (e.g. Western names)
-      return `${this.name.given} ${this.name.family}`;
-    }
-  },
 });
 ```
 
 ### Validating objects
 
-Model classes can be used to validate plain objects to determine if the data in the objects matches the model schema.
+Models can be used to validate plain objects to determine if the object data matches the model schema.
 
 ```js
 const data = {
@@ -62,10 +49,10 @@ const data = {
   createdAt: "yesterday",
 };
 
-const { valid, errors } = User.validate(data);
+const { valid, errors, key } = User.validate(data);
 ```
 
-In this case `valid` would be false and `errors` would contain this:
+In this case `valid` would be `false`, `key` would be `undefined` and `errors` would contain this:
 
 ```js
 [
@@ -116,7 +103,7 @@ const Users = collectionOf(User);
 
 ### Adding and removing records
 
-Collections have three methods to modify their collected records; `insert`, `remove` and `clear`.
+Collections have three methods to modify their collected records; `set`, `delete` and `clear`.
 
 ```js
 // A User instance.
@@ -131,29 +118,25 @@ const user = new User({
   createdAt: new Date().toISOString(),
 });
 
-await Users.insert(user);
+await Users.set(user);
 
-await Users.remove(user);
+await Users.delete(user);
 
 // Remove all records.
 await Users.clear();
 ```
 
-The `insert` and `remove` methods can take one or more objects, and `remove` can also take IDs.
+The `set` and `delete` methods can take one or more objects, and `delete` can also take IDs.
 
 ```js
-await Users.insert(user1, user2, user3);
+await Users.set(user1, user2, user3);
 
-await Users.remove(user1, 123, user3);
+await Users.delete(user1, 123, user3);
 ```
 
 ### Updating records
 
-Model IDs in a collection are unique, so if you want to update an existing record you just `add` another object with the same ID.
-
-```js
-const
-```
+Model IDs in a collection are unique, so if you want to update an existing record you just `set` another object with the same ID.
 
 ### Querying records
 
@@ -172,12 +155,12 @@ const onlineUsers = await Users.filter((user) => {
 });
 ```
 
-`find` and `filter` return observables, so if you want to subscribe to a live query instead of getting a value once, you can call `.subscribe` instead of using `.then` or `await`.
+`find` and `filter` return observables, so if you want to subscribe to a live query instead of getting a value only once, you can call `.subscribe`.
 
 ```js
 const subscription = Users.filter((user) => user.status === "online").subscribe(
   (results) => {
-    // Gets the filtered results whenever changes occur in the collection.
+    // Gets the list of online users whenever the collection changes.
   }
 );
 
@@ -202,7 +185,7 @@ const cancel = Posts.on("update", (users) => {
   // Do something with the updated records.
 });
 
-const cancel = Users.on("remove", (users) => {
+const cancel = Users.on("delete", (users) => {
   // Do something with the removed records.
 });
 

@@ -84,13 +84,7 @@ export function makeModel({ key, schema }) {
 
     // Non-data props attached to each model instance.
     const properties = {
-      _keyProp: {
-        get() {
-          return key;
-        },
-      },
-
-      _keyValue: {
+      _key: {
         get() {
           return this[key];
         },
@@ -190,22 +184,27 @@ export function makeModel({ key, schema }) {
     });
   }
 
-  Object.defineProperty(Model, "validate", {
-    value: validate,
-  });
-
-  Object.defineProperty(Model, Symbol.hasInstance, {
-    value: (instance) => {
-      if (instance[$$model] === $$model) {
-        return true;
-      }
-
-      return false;
+  Object.defineProperties(Model, {
+    validate: {
+      value: validate,
+      enumerable: true,
     },
-  });
+    key: {
+      value: key,
+      enumerable: true,
+    },
+    [Symbol.hasInstance]: {
+      value: (instance) => {
+        if (instance[$$model] === $$model) {
+          return true;
+        }
 
-  Object.defineProperty(Model, $$typeModel, {
-    value: $$typeModel,
+        return false;
+      },
+    },
+    [$$typeModel]: {
+      value: $$typeModel,
+    },
   });
 
   return Model;
