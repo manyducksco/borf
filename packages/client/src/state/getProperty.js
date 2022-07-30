@@ -1,4 +1,4 @@
-import { isFunction } from "../helpers/typeChecking.js";
+import { isFunction, isArray } from "../helpers/typeChecking.js";
 
 /**
  * Gets a (nested) property of an object.
@@ -22,7 +22,17 @@ export function getProperty(object, selector) {
   }
 
   if (isFunction(selector)) {
-    return selector(object);
+    try {
+      return selector(object);
+    } catch (err) {
+      if (err instanceof TypeError && err.message.includes("of undefined")) {
+        // Function tried to access properties on an undefined object.
+        return undefined;
+      } else {
+        // Rethrow any other error.
+        throw err;
+      }
+    }
   }
 
   if (object != null) {
@@ -33,7 +43,7 @@ export function getProperty(object, selector) {
       const part = parsed.shift();
 
       if (part === "*") {
-        if (Array.isArray(value)) {
+        if (isArray(value)) {
           return value.map((v) => getProperty(v, parsed.join(".")));
         } else {
           value = undefined;

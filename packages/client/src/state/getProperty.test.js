@@ -24,3 +24,31 @@ test("reads nested properties from an object or array", () => {
   expect(getProperty(data, "friends[*].name.first")).toStrictEqual(["Dean", "Sammy", "Peter", "Joey"]);
   expect(getProperty(data, "friends[*].name.suffix")).toStrictEqual([undefined, "Jr.", undefined, undefined]);
 });
+
+test("gracefully returns undefined if function selector accesses an undefined property", () => {
+  const data = {
+    name: {
+      first: "Jimbo",
+      last: "Jones",
+    },
+  };
+
+  // Would normally throw a TypeError: Cannot read properties of undefined
+  // This is caught and undefined is returned instead.
+  expect(getProperty(data, (o) => o.name.nonexistent.prop)).toBe(undefined);
+});
+
+test("throws error if selector function encounters any other type of error", () => {
+  const data = {
+    name: {
+      first: "Jimbo",
+      last: "Jones",
+    },
+  };
+
+  expect(() => {
+    getProperty(data, (o) => {
+      throw new Error("uh oh!");
+    });
+  }).toThrow("uh oh!");
+});
