@@ -117,7 +117,6 @@ export function collectionOf(model) {
         }
       }
 
-      // TODO: Silently ignore keys that aren't in the store?
       if (deleted.length > 0) {
         emit("delete", deleted);
       }
@@ -144,13 +143,101 @@ export function collectionOf(model) {
      */
     async find(keyOrFn) {},
 
-    async filter(fn) {
-      const { controller, object } = makeSubscribableThenable({
-        subscribe: (observer) => {},
-        unsubscribe: (observer) => {},
-      });
+    filter(fn) {
+      const observers = [];
+      let promise;
 
-      return object;
+      const calculate = () => {
+        const matches = [];
+        for (const [key, value] of store) {
+          if (fn(value)) {
+            matches.push(value);
+          }
+        }
+        return matches;
+      };
+
+      const createPromise = (observable) => {
+        return new Promise((resolve) => {
+          return resolve(calculate());
+        });
+      };
+
+      const update = () => {
+        const matches = calculate();
+        for (const observer of observers) {
+          observer.next(matches);
+        }
+      };
+
+      return {
+        subscribe(observer) {
+          if (promise != null) {
+            throw new Error(
+              `This Observable has already been converted to a Promise.`
+            );
+          }
+
+          if (typeof observer === "function") {
+            observer = {
+              next: observer,
+              error: arguments[1],
+              complete: arguments[2],
+            };
+          }
+
+          if (observers.length === 0) {
+            listeners["add"].push(update);
+            listeners["update"].push(update);
+            listeners["delete"].push(update);
+          }
+
+          observers.push(observer);
+          observer.next(calculate());
+
+          return {
+            unsubscribe: () => {
+              observers.splice(observers.indexOf(observer), 1);
+
+              if (observers.length === 0) {
+                listeners["add"].splice(listeners["add"].indexOf(update), 1);
+                listeners["update"].splice(
+                  listeners["update"].indexOf(update),
+                  1
+                );
+                listeners["delete"].splice(
+                  listeners["delete"].indexOf(update),
+                  1
+                );
+              }
+            },
+          };
+        },
+
+        then(...args) {
+          if (!promise) {
+            promise = createPromise();
+          }
+
+          return promise.then(...args);
+        },
+
+        catch(...args) {
+          if (!promise) {
+            promise = createPromise();
+          }
+
+          return promise.catch(...args);
+        },
+
+        finally(...args) {
+          if (!promise) {
+            promise = createPromise();
+          }
+
+          return promise.finally(...args);
+        },
+      };
     },
 
     [Symbol.iterator]: function* () {
@@ -160,50 +247,3 @@ export function collectionOf(model) {
     },
   };
 }
-
-/**
- * Create an object that functions as either a promise or an observable.
- * `.then()` or `await` will unsubscribe after receiving the first value,
- * while `.subscribe()` will return a subscription that keeps listening
- * until manually unsubscribed.
- */
-// function makeSubscribableThenable(unsubscribe) {
-//   const observers = [];
-//   let promise;
-
-//   const controller = {
-//     next(...args) {
-//       for (const observer of observers) {
-//         observer.next(...args);
-//       }
-//     },
-//   };
-
-//   const object = {
-//     subscribe(observer) {
-//       if (typeof observer === "function") {
-//         observer = {
-//           next: observer,
-//           error: arguments[1],
-//           complete: arguments[2],
-//         };
-//       }
-
-//       observers.push(observer);
-
-//       return {
-//         unsubscribe: () => {
-//           observers.splice(observers.indexOf(observer), 1);
-//         },
-//       };
-//     },
-
-//     then() {},
-
-//     catch() {},
-
-//     finally() {},
-//   };
-
-//   return { controller, object };
-// }

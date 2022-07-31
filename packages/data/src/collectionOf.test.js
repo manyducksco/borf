@@ -76,3 +76,70 @@ test("is iterable", async () => {
 
   expect(iterations).toBe(3);
 });
+
+test("filter", async () => {
+  const Users = collectionOf(User);
+
+  await Users.set(
+    {
+      id: 1,
+      name: "Test",
+      status: "offline",
+    },
+    {
+      id: 2,
+      name: "Test 2",
+      status: "online",
+    },
+    {
+      id: 3,
+      name: "Test 3",
+      status: "offline",
+    }
+  );
+
+  const promised = await Users.filter((u) => u.status === "online");
+
+  expect(promised).toStrictEqual([{ id: 2, name: "Test 2", status: "online" }]);
+
+  const observed = [];
+
+  const sub = Users.filter((u) => u.status === "online").subscribe((users) => {
+    observed.push(users);
+  });
+
+  expect(observed).toStrictEqual([
+    [{ id: 2, name: "Test 2", status: "online" }],
+  ]);
+
+  await Users.set({
+    id: 1,
+    name: "Test",
+    status: "online",
+  });
+
+  expect(observed).toStrictEqual([
+    [{ id: 2, name: "Test 2", status: "online" }],
+    [
+      { id: 1, name: "Test", status: "online" },
+      { id: 2, name: "Test 2", status: "online" },
+    ],
+  ]);
+
+  sub.unsubscribe();
+
+  await Users.set({
+    id: 3,
+    name: "Test 3",
+    status: "online",
+  });
+
+  // No change expected after unsubscribe.
+  expect(observed).toStrictEqual([
+    [{ id: 2, name: "Test 2", status: "online" }],
+    [
+      { id: 1, name: "Test", status: "online" },
+      { id: 2, name: "Test 2", status: "online" },
+    ],
+  ]);
+});
