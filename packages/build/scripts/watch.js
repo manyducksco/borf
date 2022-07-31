@@ -493,7 +493,7 @@ function getServerEntryPath(projectRoot, woofConfig) {
 
   if (fs.existsSync(serverFolder)) {
     for (const fileName of fs.readdirSync(serverFolder)) {
-      if (/^app.[jt]sx?$/.test(fileName)) {
+      if (/^app.m?[jt]sx?$/.test(fileName)) {
         return path.join(serverFolder, fileName);
       }
     }
