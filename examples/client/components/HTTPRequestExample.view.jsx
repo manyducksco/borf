@@ -9,14 +9,12 @@ export default (view) => {
   view.service(
     "http",
     makeMockHTTP((self) => {
-      self.get("https://dog.ceo/api/breeds/image/random", (ctx) => {
+      self.get("/hello-json", (ctx) => {
         // fireAction fires an action when called without needing to be passed as a component attribute.
-        view.fireAction("requested dog image");
+        view.fireAction("made request");
 
         return {
-          message:
-            "https://images.dog.ceo/breeds/deerhound-scottish/n02092002_14369.jpg",
-          status: "success",
+          message: "Hello from mock HTTP!",
         };
       });
     })

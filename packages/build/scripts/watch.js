@@ -1,16 +1,21 @@
-const { println } = require("@ratwizard/cli");
+const { print, println } = require("@ratwizard/cli");
+const ip = require("ip");
 const fs = require("fs-extra");
 const path = require("path");
 const express = require("express");
+const expressProxy = require("express-http-proxy");
 const esbuild = require("esbuild");
 const chokidar = require("chokidar");
 const xxhash = require("xxhashjs");
 const cheerio = require("cheerio");
 const htmlMinifier = require("html-minifier");
+const nodemon = require("nodemon");
 const stylePlugin = require("esbuild-style-plugin");
 const { EventEmitter } = require("events");
 
 module.exports = async function watch(projectRoot, buildOptions) {
+  const getPort = (await import("get-port")).default;
+
   /**
    * 1. Watch server, client and static folders.
    * 2. Trigger esbuild on server when server files change.
@@ -333,176 +338,42 @@ module.exports = async function watch(projectRoot, buildOptions) {
   ||          /server           ||
   \*============================*/
 
+  let serverPort;
+
   if (serverEntryPath) {
+    const hold = ExposedPromise();
+
     const serverPath = path.dirname(serverEntryPath);
+    serverPort = await getPort();
 
-    const serverWatcher = chokidar.watch([`${serverPath}/**/*`], {
-      persistent: true,
-      ignoreInitial: true,
-    });
-
-    function updateServerFiles(files) {
-      // Delete old files.
-      for (const file of ctx.serverFiles) {
-        fs.unlinkSync(file.path);
-      }
-
-      const writtenFiles = [];
-
-      // Write new ones.
-      for (const file of files) {
-        const fileName = path.basename(file.path);
-
-        // Server entry point gets written as server.js
-        if (/^server\.(.+?)\.js(\.map)?$/.test(fileName)) {
-          const filePath = path.join(
-            buildPath,
-            fileName.replace(/^server(.+?)\.js/, function (sub, match) {
-              return sub.replace(match, "");
-            })
-          );
-
-          writtenFiles.push({
-            ...file,
-            path: filePath,
-            entry: true,
-          });
-
-          fs.mkdirpSync(path.dirname(filePath));
-          fs.writeFileSync(filePath, file.contents);
-          println(
-            `<cyan>[server]</cyan> wrote ${filePath.replace(projectRoot, "")}`
-          );
-        } else {
-          // Everything else goes in /build/static
-          let filePath;
-
-          if (/\.css(\.map)?$/.test(file.path)) {
-            filePath = file.path.replace(
-              buildPath,
-              path.join(buildStaticPath, "css")
-            );
-          } else if (/\.js(\.map)?$/.test(file.path)) {
-            filePath = file.path.replace(
-              buildPath,
-              path.join(buildStaticPath, "js")
-            );
-          }
-
-          writtenFiles.push({
-            ...file,
-            path: filePath,
-          });
-
-          fs.mkdirpSync(path.dirname(filePath));
-          fs.writeFileSync(filePath, file.contents);
-          println(
-            `<cyan>[server]</cyan> wrote ${filePath.replace(projectRoot, "")}`
-          );
-        }
-      }
-
-      const manifestPath = path.join(buildPath, "static.json");
-      const manifest = {
-        entry: null,
-        styles: [],
-      };
-
-      for (const file of writtenFiles) {
-        if (file.entry) {
-          manifest.entry = path.basename(file.path);
-        } else if (path.extname(file.path) === ".css") {
-          let filePath = file.path.replace(path.join(buildPath, "static"), "");
-
-          if (!filePath.startsWith("/")) {
-            filePath = "/" + filePath;
-          }
-
-          manifest.styles.push(filePath);
-        }
-      }
-
-      writtenFiles.push({
-        path: manifestPath,
+    nodemon({
+      script: serverEntryPath,
+      watch: [path.join(serverPath, "**", "*")],
+      stdout: false,
+      env: {
+        PORT: serverPort,
+      },
+    })
+      .on("start", () => {
+        hold.resolve();
+      })
+      .on("stdout", (buffer) => {
+        print(`<magenta>[server]</magenta> ${buffer.toString()}`);
+      })
+      .on("stderr", (buffer) => {
+        print(
+          `<magenta>[server]</magenta> <red>ERROR:</red> ${buffer.toString()}`
+        );
+      })
+      .on("quit", () => {
+        println(`<magenta>[server]</magenta> server has quit`);
+      })
+      .on("restart", () => {
+        println(`<magenta>[server]</magenta> *restarted*`);
       });
 
-      fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-
-      // Update references.
-      ctx.serverFiles = writtenFiles;
-    }
-
-    let serverBundle;
-
-    async function buildServer() {
-      const start = Date.now();
-
-      if (serverBundle) {
-        try {
-          const incremental = await serverBundle.rebuild();
-
-          updateServerFiles(incremental.outputFiles);
-          events.emit("server built");
-
-          println(
-            `<cyan>[server]</cyan> rebuilt in <cyan>${
-              Date.now() - start
-            }ms</cyan>`
-          );
-        } catch (err) {
-          console.log(err);
-        }
-      } else {
-        try {
-          serverBundle = await esbuild.build({
-            ...esbuildConfigBase,
-            entryPoints: [serverEntryPath],
-            entryNames: "[dir]/server.[hash]",
-            outdir: buildPath,
-            platform: "node",
-            inject: [path.join(__dirname, "../utils/jsx-shim-server.js")],
-            plugins: [
-              stylePlugin({
-                postcss: {
-                  plugins: woofConfig.server?.postcss?.plugins || [],
-                },
-                cssModulesOptions: {
-                  generateScopedName: function (name, filename, css) {
-                    const file = path.basename(filename, ".module.css");
-                    const hash = xxhash
-                      .h64()
-                      .update(css)
-                      .digest()
-                      .toString(16)
-                      .slice(0, 5);
-
-                    return file + "_" + name + "_" + hash;
-                  },
-                },
-              }),
-            ],
-            incremental: true,
-          });
-
-          updateServerFiles(serverBundle.outputFiles);
-          events.emit("server built");
-
-          println(
-            `<cyan>[server]</cyan> built in <cyan>${
-              Date.now() - start
-            }ms</cyan>`
-          );
-        } catch (err) {
-          console.log(err);
-        }
-      }
-    }
-
-    const triggerBuild = makeTimeoutTrigger(buildServer, 100);
-
-    serverWatcher.on("all", triggerBuild);
-
-    await buildServer();
+    // Wait until server starts to proceed.
+    await hold;
   }
 
   /*============================*\
@@ -511,55 +382,53 @@ module.exports = async function watch(projectRoot, buildOptions) {
 
   const proxy = express();
 
-  proxy.use(express.static(path.join(buildPath, "static")));
-
-  const getPort = (await import("get-port")).default;
   const proxyPort = await getPort({
     port: [4000, 4001, 4002, 4003, 4004, 4005],
   });
 
+  if (clientEntryPath) {
+    // Client bundle listens for and is notified of rebuilds using Server Sent Events.
+    proxy.get("/_bundle", (req, res) => {
+      res.set({
+        "Cache-Control": "no-cache",
+        "Content-Type": "text/event-stream",
+        Connection: "keep-alive",
+      });
+      res.flushHeaders();
+
+      // Tell the client to retry every 10 seconds if connectivity is lost
+      res.write("retry: 10000\n\n");
+
+      const update = () => {
+        res.write(`data: ${Math.round(Math.random() * 9999999)}\n\n`);
+      };
+
+      events.on("client built", update);
+
+      res.on("close", () => {
+        events.off("client built", update);
+        res.end();
+      });
+    });
+  }
+
+  if (serverPort != null) {
+    proxy.use(expressProxy(`http://localhost:${serverPort}`));
+  } else if (clientEntryPath) {
+    proxy.use(express.static(path.join(buildPath, "static")));
+    proxy.all("*", (req, res, next) => {
+      if (req.method === "GET" && path.extname(req.path) === "") {
+        res.sendFile(path.join(buildPath, "static", "index.html"));
+      } else {
+        next();
+      }
+    });
+  }
+
   proxy.listen(proxyPort, () => {
     println(
-      `\nVisit <yellow>http://localhost:${proxyPort}</yellow> in a browser to see app.`
+      `<yellow>[proxy]</yellow> app is running at <yellow>http://localhost:${proxyPort}</yellow> and <yellow>http://${ip.address()}:${proxyPort}</yellow>`
     );
-
-    println(
-      `\n<yellow>[proxy]</yellow> app will auto reload when files are saved`
-    );
-  });
-
-  // Client bundle listens for and is notified of rebuilds using Server Sent Events.
-  proxy.get("/_bundle", (req, res) => {
-    res.set({
-      "Cache-Control": "no-cache",
-      "Content-Type": "text/event-stream",
-      Connection: "keep-alive",
-    });
-    res.flushHeaders();
-
-    // Tell the client to retry every 10 seconds if connectivity is lost
-    res.write("retry: 10000\n\n");
-
-    const update = () => {
-      res.write(`data: ${Math.round(Math.random() * 9999999)}\n\n`);
-    };
-
-    events.on("client built", update);
-
-    res.on("close", () => {
-      events.off("client built", update);
-      res.end();
-    });
-  });
-
-  proxy.all("*", (req, res, next) => {
-    // TODO: Proxy requests to the server if one exists.
-
-    if (req.method === "GET" && path.extname(req.path) === "") {
-      res.sendFile(path.join(buildPath, "static", "index.html"));
-    } else {
-      next();
-    }
   });
 };
 
@@ -667,4 +536,22 @@ function esBuildPrint(result) {
 
     println(`${indent}<yellow>^</yellow>`);
   }
+}
+
+/**
+ * Create a promise with its resolve and reject functions available on the promise itself.
+ */
+function ExposedPromise() {
+  let _resolve;
+  let _reject;
+
+  const promise = new Promise((resolve, reject) => {
+    _resolve = resolve;
+    _reject = reject;
+  });
+
+  promise.resolve = _resolve;
+  promise.reject = _reject;
+
+  return promise;
 }

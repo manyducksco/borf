@@ -1,4 +1,4 @@
-import { makeState } from "@woofjs/client";
+import { makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export default (self) => {
@@ -9,41 +9,37 @@ export default (self) => {
   logLifecycle(self);
 
   const $loading = makeState(false);
-  const $image = makeState();
+  const $message = makeState();
 
-  const $label = $loading.map((yes) => (yes ? "NOW LOADING..." : "Loaded!"));
+  const $label = mergeStates($message, $loading, (message, loading) => {
+    if (loading) {
+      return "LOADING...";
+    } else {
+      return message;
+    }
+  });
 
-  const refresh = () => {
+  const getMessage = () => {
     $loading.set(true);
 
     return http
-      .get("https://dog.ceo/api/breeds/image/random")
+      .get("/hello-json")
+      .header("accept", "application/json")
       .then((res) => {
-        $image.set(res.body.message);
+        $message.set(res.body.message);
       })
       .finally(() => {
         $loading.set(false);
       });
   };
 
-  self.afterConnect(() => {
-    refresh();
-  });
-
   return (
     <div class="example">
       <h3>
-        HTTP requests with <code>@http</code> service
+        HTTP requests with <code>http</code> service
       </h3>
       <div>
-        <img
-          src={$image}
-          style={{
-            height: "400px",
-            border: "2px solid orange",
-          }}
-        />
-        <button onclick={refresh}>Next Doggo</button>
+        <button onclick={getMessage}>Get Message</button>
         {$label}
       </div>
     </div>

@@ -1,6 +1,7 @@
-import { makeApp, makeRouter } from "@woofjs/server";
+const { makeApp, makeRouter } = require("@woofjs/server");
 
 const app = makeApp();
+const PORT = process.env.PORT || 4000;
 
 const exampleService = (self) => {
   return {
@@ -88,7 +89,13 @@ app.get("/hello", (ctx) => {
   return "Hello world.";
 });
 
+app.get("/hello-json", () => {
+  return {
+    message: "Hello from the server!",
+  };
+});
+
 // Listen for HTTP requests on localhost at specified port number.
-app.listen(4000).then((info) => {
+app.listen(PORT).then((info) => {
   console.log(`connected on port ${info.port}`);
 });

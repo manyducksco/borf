@@ -15,11 +15,7 @@ export function makeApp() {
     middlewares: [],
     services: {},
     debug,
-
-    // Try to serve static files from `./static`.
-    // This works as long as this file has been bundled into server.js
-    // in the build directory.
-    staticPath: path.join(__dirname, "static"),
+    staticPath: path.join(process.cwd(), "build/static"),
   };
 
   function addRoute(method, url, handlers) {
