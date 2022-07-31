@@ -80,8 +80,10 @@ function applyAttrs(element, attrs, subscriptions) {
 
         element.addEventListener(value.event, listener);
 
-        subscriptions.push(() => {
-          element.removeEventListener(value.event, listener);
+        subscriptions.push({
+          unsubscribe: () => {
+            element.removeEventListener(value.event, listener);
+          },
         });
       } else {
         element.value = String(value);
@@ -92,8 +94,10 @@ function applyAttrs(element, attrs, subscriptions) {
 
       element.addEventListener(eventName, listener);
 
-      subscriptions.push(() => {
-        element.removeEventListener(eventName, listener);
+      subscriptions.push({
+        unsubscribe: () => {
+          element.removeEventListener(eventName, listener);
+        },
       });
     } else if (!privateAttrs.includes(key)) {
       const isBoolean = booleanAttrs.includes(key);
