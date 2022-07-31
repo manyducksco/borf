@@ -33,7 +33,7 @@ export function makeProxyState(initialValue) {
   }
 
   function subscribeToTarget() {
-    if (!subscription) {
+    if ($target && !subscription) {
       subscription = $target.subscribe({
         next: updateValue,
       });
