@@ -77,6 +77,15 @@ export function makeModel({ key, schema }) {
   }
 
   function Model(data) {
+    const _result = validate(data);
+
+    if (!_result.valid) {
+      const err = _result.errors[0];
+      throw new ModelError(
+        `${pathToKey(err.path)} - ${err.message}; received ${err.value}`
+      );
+    }
+
     const observers = [];
     const model = {
       ...cloneDeep(data),
