@@ -6,6 +6,7 @@
   "source": "src/index.js",
   "main": "dist/woof.data.c.js",
   "module": "dist/woof.data.m.js",
+  "private": true,
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",
