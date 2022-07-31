@@ -23,6 +23,7 @@ export function makeHandleRequest(appContext) {
       cache: {},
       services,
       request: {
+        url: req.url,
         method: req.method,
         headers: req.headers,
         body: undefined,
@@ -32,17 +33,43 @@ export function makeHandleRequest(appContext) {
         headers: {},
         body: undefined,
       },
-      redirect: (to, status = 301) => {
-        ctx.response.status = status;
+
+      // TODO: Use node request and response instead of custom objects to allow streams and advanced request handling.
+      // _req: req,
+      // _res: res,
+
+      redirect: (to, statusCode = 301) => {
+        ctx.response.status = statusCode;
         ctx.response.headers["Location"] = to;
       },
-      makeEventSource: () => {
-        return {
-          send: () => {},
-          emit: () => {},
-          close: () => {},
-        };
-      },
+      // makeEventSource: (options = {}) => {
+      //   res.writeHead(200, {
+      //     "Cache-Control": "no-cache",
+      //     "Content-Type": "text/event-stream",
+      //     Connection: "keep-alive",
+      //   });
+
+      //   // Tell the client to retry every 10 seconds if connectivity is lost
+      //   res.write(`retry: ${options.retryTimeout || 10000}\n\n`);
+
+      //   const update = () => {
+      //     res.write(`data: ${Math.round(Math.random() * 9999999)}\n\n`);
+      //   };
+
+      //   res.on("close", () => {
+      //     res.end();
+      //   });
+
+      //   return {
+      //     sendData: (data) => {
+      //       res.write(`data: ${data}\n\n`);
+      //     },
+      //     sendEvent: (name, data) => {
+      //       res.write(`event: ${name}\ndata: ${data}\n\n`);
+      //     },
+      //     close: () => {},
+      //   };
+      // },
     };
 
     const matched = matchRoute(routes, req.url, {
@@ -71,9 +98,7 @@ export function makeHandleRequest(appContext) {
           contentType.startsWith("application/x-www-form-urlencoded") ||
           contentType.startsWith("multipart/form-data")
         ) {
-          const start = performance.now();
           ctx.request.body = await parseFormBody(req);
-          console.log(`Parsed form in ${performance.now() - start}ms`);
         }
       }
 
@@ -90,24 +115,28 @@ export function makeHandleRequest(appContext) {
 
       await nextFunc();
 
-      if (ctx.response.body) {
+      // Automatically handle content-type and body formatting when returned from handler function.
+      if (!res.headersSent && !res.writableEnded && ctx.response.body) {
         if (isTemplate(ctx.response.body)) {
-          ctx.response.body = await ctx.response.body.init(appContext);
-          ctx.response.body = "<!DOCTYPE html>" + ctx.response.body; // Prepend doctype for HTML pages.
-          ctx.response.headers["Content-Type"] = "text/html";
-          res.writeHead(ctx.response.status, ctx.response.headers);
-          res.end(ctx.response.body);
+          res.setHeader("content-type", "text/html");
+          const body = await ctx.response.body.init(appContext);
+          res.write("<!DOCTYPE html>" + body); // Prepend doctype for HTML pages.
         } else if (isObject(ctx.response.body)) {
-          ctx.response.headers["Content-Type"] = "application/json";
-          res.writeHead(ctx.response.status, ctx.response.headers);
-          res.end(JSON.stringify(ctx.response.body));
+          res.setHeader("content-type", "application/json");
+          res.write(JSON.stringify(ctx.response.body));
         } else if (isString(ctx.response.body)) {
-          ctx.response.headers["Content-Type"] = "text/plain";
-          res.writeHead(ctx.response.status, ctx.response.headers);
-          res.end(ctx.response.body);
+          res.setHeader("content-type", "text/plain");
+          res.write(ctx.response.body);
         }
-      } else {
+      }
+
+      // Send headers if they haven't yet been sent.
+      if (!res.headersSent) {
         res.writeHead(ctx.response.status, ctx.response.headers);
+      }
+
+      // End the request if it hasn't yet been ended.
+      if (!res.writableEnded) {
         res.end();
       }
     } else {
