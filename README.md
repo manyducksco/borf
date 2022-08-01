@@ -27,7 +27,5 @@ The total gzipped size of `@woofjs/client` is currently 26.5 kB. This could be r
 
 These are the current third party dependencies and what they do:
 
-- [`color-hash`](https://bundlephobia.com/package/color-hash@2.0.1) for deterministic colors for debug channel names in the console. Adds 3.9 kB to gzipped size.
-  - Lets us limit the saturation and hue to a range that works in both light and dark modes.
 - [`query-string`](https://bundlephobia.com/package/query-string@7.1.1) for comprehensive query string parsing support. Adds 2.3 kB to gzipped size.
   - Users can edit query params and user input is the wild west, so this is not that large for the utility it offers.
