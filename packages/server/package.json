@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/server",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "API routes and server rendered pages for dogs. 🐕",
   "main": "lib/index.js",
   "types": "types.d.ts",
