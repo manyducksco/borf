@@ -255,11 +255,11 @@ export async function watch(projectRoot, buildOptions) {
         if (err.code === "ENOENT") {
           if (clientEntryPath) {
             println(
-              `<red>[ERROR]</red> /static/index.html file not found. Please create one to serve as the entry point for your client app.`
+              `<green>[client]</green> <red>ERROR:</red> /static/index.html file not found. Please create one to serve as the entry point for your client app.`
             );
           }
         } else {
-          println(`<red>[ERROR]</red> ${err.message}`);
+          println(`<green>[client]</green> <red>ERROR:</red> ${err.message}`);
         }
       }
 
@@ -292,7 +292,7 @@ export async function watch(projectRoot, buildOptions) {
             entryPoints: [clientEntryPath],
             entryNames: "[dir]/client.[hash]",
             outdir: buildStaticPath,
-            inject: [path.join(__dirname, "../utils/jsx-shim-client.js")],
+            inject: [path.join(__dirname, "./utils/jsx-shim.js")],
             minify: buildOptions.minify,
             plugins: [
               stylePlugin({
