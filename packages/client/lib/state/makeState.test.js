@@ -250,8 +250,8 @@ describe("immutability", () => {
 
     value.label = "modified";
 
-    // Object is frozen.
-    expect(value.label).toBe("original");
+    // State still returns original object.
+    expect($state.get().label).toBe("original");
 
     $state.set((value) => {
       value.label = "modified";

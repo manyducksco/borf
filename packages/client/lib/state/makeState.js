@@ -2,8 +2,8 @@ import $$observable from "symbol-observable";
 import { getProperty } from "./getProperty.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
-import { deepFreeze } from "../helpers/deepFreeze.js";
 import { produce } from "./produce.js";
+import { cloneDeep } from "../helpers/cloneDeep.js";
 
 /**
  * Creates a state container in the form of a function.
@@ -11,7 +11,7 @@ import { produce } from "./produce.js";
  * @param initialValue - Optional starting value
  */
 export function makeState(initialValue) {
-  let currentValue = deepFreeze(initialValue);
+  let currentValue = initialValue;
   let observers = [];
 
   return {
@@ -22,7 +22,7 @@ export function makeState(initialValue) {
         value = getProperty(value, selector);
       }
 
-      return value;
+      return cloneDeep(value);
     },
 
     set(value) {
@@ -31,7 +31,7 @@ export function makeState(initialValue) {
       }
 
       if (!deepEqual(currentValue, value)) {
-        currentValue = deepFreeze(value);
+        currentValue = value;
 
         for (const observer of observers) {
           observer.next(currentValue);

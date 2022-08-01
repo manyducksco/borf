@@ -1,10 +1,10 @@
 import $$observable from "symbol-observable";
 import { isFunction, isState } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
-import { deepFreeze } from "../helpers/deepFreeze.js";
 import { produce } from "./produce.js";
 import { mapState } from "./makeState.js";
 import { getProperty } from "./getProperty.js";
+import { cloneDeep } from "../helpers/cloneDeep.js";
 
 /**
  * Creates a state container that proxies the value of another state.
@@ -20,12 +20,12 @@ export function makeProxyState(initialValue) {
   if (isState(initialValue)) {
     $target = initialValue;
   } else {
-    currentValue = deepFreeze(initialValue);
+    currentValue = initialValue;
   }
 
   function updateValue(value) {
     if (!deepEqual(value, currentValue)) {
-      currentValue = deepFreeze(value);
+      currentValue = value;
 
       for (const observer of observers) {
         observer.next(currentValue);
@@ -59,7 +59,7 @@ export function makeProxyState(initialValue) {
           value = getProperty(value, selector);
         }
 
-        return value;
+        return cloneDeep(value);
       }
     },
 
