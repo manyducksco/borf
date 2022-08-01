@@ -37,8 +37,16 @@
     "xxhashjs": "^0.2.2"
   },
   "peerDependencies": {
-    "@woofjs/client": "^0.18.0",
-    "@woofjs/server": "^0.2.0"
+    "@woofjs/client": ">=0.18.0",
+    "@woofjs/server": ">=0.2.0"
+  },
+  "peerDependenciesMeta": {
+    "@woofjs/client": {
+      "optional": true
+    },
+    "@woofjs/server": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@woofjs/client": "^0.18.1",

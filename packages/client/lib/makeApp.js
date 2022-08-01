@@ -173,11 +173,14 @@ export function makeApp(options = {}) {
      * If the function returns a Promise, the app will not be connected until the Promise resolves.
      */
     beforeConnect(fn) {
-      beforeConnect = async () =>
-        fn({
+      beforeConnect = async () => {
+        const ctx = {
           services: appContext.services,
           debug: appContext.debug.makeChannel("woof:app:beforeConnect"),
-        });
+        };
+
+        return fn.call(ctx, ctx);
+      };
 
       return methods;
     },
@@ -187,11 +190,14 @@ export function makeApp(options = {}) {
      * This function is called after the first route match.
      */
     afterConnect(fn) {
-      afterConnect = async () =>
-        fn({
+      afterConnect = async () => {
+        const ctx = {
           services: appContext.services,
           debug: appContext.debug.makeChannel("woof:app:afterConnect"),
-        });
+        };
+
+        return fn.call(ctx, ctx);
+      };
 
       return methods;
     },
