@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/view",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Isolated component development for dogs. 🐕",
   "main": "cli.js",
   "type": "module",
@@ -28,8 +28,8 @@
     "mustache": "^4.2.0"
   },
   "devDependencies": {
-    "@woofjs/build": "^0.6.2",
-    "@woofjs/client": "^0.17.1",
+    "@woofjs/build": "^0.7.0",
+    "@woofjs/client": "^0.18.0",
     "dayjs": "^1.11.3",
     "dedent": "^0.7.0",
     "nanoid": "^4.0.0"
