@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-const { program } = require("@ratwizard/cli");
-
-const build = require("./scripts/build");
-const watch = require("./scripts/watch");
+import { program } from "@ratwizard/cli";
+import { build, watch } from "./lib/index.js";
 
 program
   .option("-w, --watch", {
@@ -32,12 +30,5 @@ program
     } else {
       await build(process.cwd(), buildOptions);
     }
-  });
-
-if (!module.parent) {
-  // Called from CLI
-  program.run(process.argv);
-} else {
-  // Imported from another file
-  module.exports = { build, watch };
-}
+  })
+  .run(process.argv);

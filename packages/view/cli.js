@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-const { program, println, Command } = require("@ratwizard/cli");
-const path = require("path");
-const fs = require("fs-extra");
-const chokidar = require("chokidar");
-const express = require("express");
-const buildViews = require("./scripts/build-views");
-const EventEmitter = require("events");
-const findWoofConfig = require("./utils/findWoofConfig");
+import { program, println } from "@ratwizard/cli";
+import path from "path";
+import fs from "fs-extra";
+import chokidar from "chokidar";
+import express from "express";
+import buildViews from "./scripts/build-views";
+import EventEmitter from "events";
+import findWoofConfig from "./utils/findWoofConfig.js";
 
 program.command("start", {
   description: "starts an HTTP server for views",

@@ -2,14 +2,15 @@
   "name": "@woofjs/view",
   "version": "0.5.1",
   "description": "Isolated component development for dogs. 🐕",
-  "main": "program.js",
+  "main": "cli.js",
+  "type": "module",
   "scripts": {
-    "build": "woof-build -c runner/runner.jsx -o build --minify",
-    "start": "woof-build -c runner/runner.jsx -o build --watch",
+    "build": "woof-build --minify",
+    "start": "woof-build --watch --minify",
     "prepublishOnly": "npm run build"
   },
   "bin": {
-    "woof-view": "program.js"
+    "woof-view": "cli.js"
   },
   "keywords": [],
   "author": "Tony McCoy <tony@manyducks.co>",

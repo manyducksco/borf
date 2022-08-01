@@ -1,5 +1,5 @@
 import "./global.css";
-import styles from "./runner.module.css";
+import styles from "./app.module.css";
 
 import { makeApp } from "@woofjs/client";
 

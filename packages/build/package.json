@@ -2,12 +2,15 @@
   "name": "@woofjs/build",
   "version": "0.6.2",
   "description": "Web framework build scripts for dogs. 🐕",
-  "main": "program.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "main": "lib/index.js",
+  "type": "module",
   "bin": {
-    "woof-build": "program.js"
+    "woof-build": "cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./lib/index.js"
+    }
   },
   "keywords": [],
   "author": "Tony McCoy <tony@manyducks.co>",
