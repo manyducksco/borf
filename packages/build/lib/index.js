@@ -1,4 +1,2 @@
-import build from "./build.js";
-import watch from "./watch.js";
-
-export { build, watch };
+export { build } from "./build.js";
+export { watch } from "./watch.js";

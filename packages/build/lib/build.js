@@ -1,6 +1,6 @@
-const gzipSize = require("gzip-size");
-const superbytes = require("superbytes");
+import gzipSize from "gzip-size";
+import superbytes from "superbytes";
 
-module.exports = async function build(projectRoot, buildConfig) {
+export async function build(projectRoot, buildConfig) {
   console.log("Build not yet implemented.");
-};
+}

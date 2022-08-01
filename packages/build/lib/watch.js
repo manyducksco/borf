@@ -1,21 +1,24 @@
-const { print, println } = require("@ratwizard/cli");
-const ip = require("ip");
-const fs = require("fs-extra");
-const path = require("path");
-const express = require("express");
-const expressProxy = require("express-http-proxy");
-const esbuild = require("esbuild");
-const chokidar = require("chokidar");
-const xxhash = require("xxhashjs");
-const cheerio = require("cheerio");
-const htmlMinifier = require("html-minifier");
-const nodemon = require("nodemon");
-const stylePlugin = require("esbuild-style-plugin");
-const { EventEmitter } = require("events");
+import { print, println } from "@ratwizard/cli";
+import { fileURLToPath } from "url";
+import ip from "ip";
+import fs from "fs-extra";
+import path from "path";
+import express from "express";
+import expressProxy from "express-http-proxy";
+import esbuild from "esbuild";
+import chokidar from "chokidar";
+import xxhash from "xxhashjs";
+import cheerio from "cheerio";
+import htmlMinifier from "html-minifier";
+import nodemon from "nodemon";
+import getPort from "get-port";
+import stylePlugin from "esbuild-style-plugin";
+import EventEmitter from "events";
 
-module.exports = async function watch(projectRoot, buildOptions) {
-  const getPort = (await import("get-port")).default;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+export async function watch(projectRoot, buildOptions) {
   /**
    * 1. Watch server, client and static folders.
    * 2. Trigger esbuild on server when server files change.
@@ -26,7 +29,8 @@ module.exports = async function watch(projectRoot, buildOptions) {
   let woofConfig = {};
 
   try {
-    woofConfig = require(path.join(projectRoot, "woof.config.js"));
+    woofConfig = (await import(path.join(projectRoot, "woof.config.js")))
+      .default;
   } catch {}
 
   const clientEntryPath = getClientEntryPath(projectRoot, woofConfig);
@@ -430,7 +434,7 @@ module.exports = async function watch(projectRoot, buildOptions) {
       `<yellow>[proxy]</yellow> app is running at <yellow>http://localhost:${proxyPort}</yellow> and <yellow>http://${ip.address()}:${proxyPort}</yellow>`
     );
   });
-};
+}
 
 /**
  * Returns a function that either runs the callback, or, if the callback is currently running,
