@@ -8,11 +8,7 @@
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",
-    "test:coverage": "npm run test -- --coverage",
-    "build": "node scripts/build.js",
-    "build:watch": "node scripts/build.js --watch",
-    "build:prod": "npm run build -- --minify",
-    "prepublishOnly": "node scripts/build.js"
+    "test:coverage": "npm run test -- --coverage"
   },
   "keywords": [],
   "author": "Morgan Doboszynski <morgan@manyducks.co>",
