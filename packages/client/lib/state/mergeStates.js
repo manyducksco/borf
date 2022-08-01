@@ -3,6 +3,7 @@ import { getProperty } from "./getProperty.js";
 import { mapState } from "./makeState.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
+import { deepFreeze } from "../helpers/deepFreeze.js";
 
 export function mergeStates(...args) {
   const merge = args.pop();
@@ -23,7 +24,7 @@ export function mergeStates(...args) {
     const value = merge(...values);
 
     if (!deepEqual(value, currentValue)) {
-      currentValue = value;
+      currentValue = deepFreeze(value);
 
       for (const observer of observers) {
         observer.next(currentValue);

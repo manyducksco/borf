@@ -1,8 +1,9 @@
-import produce from "immer";
 import $$observable from "symbol-observable";
 import { getProperty } from "./getProperty.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
+import { deepFreeze } from "../helpers/deepFreeze.js";
+import { produce } from "./produce.js";
 
 /**
  * Creates a state container in the form of a function.
@@ -10,7 +11,7 @@ import { deepEqual } from "../helpers/deepEqual.js";
  * @param initialValue - Optional starting value
  */
 export function makeState(initialValue) {
-  let currentValue = initialValue;
+  let currentValue = deepFreeze(initialValue);
   let observers = [];
 
   return {
@@ -26,12 +27,11 @@ export function makeState(initialValue) {
 
     set(value) {
       if (isFunction(value)) {
-        // Produce a new value from a mutated draft with immer.
         value = produce(currentValue, value);
       }
 
       if (!deepEqual(currentValue, value)) {
-        currentValue = value;
+        currentValue = deepFreeze(value);
 
         for (const observer of observers) {
           observer.next(currentValue);

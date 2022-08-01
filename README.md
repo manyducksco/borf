@@ -31,5 +31,3 @@ These are the current third party dependencies and what they do:
   - Lets us limit the saturation and hue to a range that works in both light and dark modes.
 - [`query-string`](https://bundlephobia.com/package/query-string@7.1.1) for comprehensive query string parsing support. Adds 2.3 kB to gzipped size.
   - Users can edit query params and user input is the wild west, so this is not that large for the utility it offers.
-- [`immer`](https://bundlephobia.com/package/immer@9.0.14) for mutation-style updates in `$state.set()`. Adds 5.6 kB to gzipped size.
-  - Makes it simple to modify states that hold large, deeply nested objects.

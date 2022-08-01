@@ -239,3 +239,28 @@ describe("subscribe", () => {
     expect(next).not.toHaveBeenCalledWith(5);
   });
 });
+
+describe("immutability", () => {
+  test("state object is immutable", () => {
+    const $state = makeState({ label: "original" });
+
+    const value = $state.get();
+
+    expect(value.label).toBe("original");
+
+    value.label = "modified";
+
+    // Object is frozen.
+    expect(value.label).toBe("original");
+
+    $state.set((value) => {
+      value.label = "modified";
+    });
+
+    // Value was changed correctly.
+    expect($state.get().label).toBe("modified");
+
+    // State object was replaced instead of mutated.
+    expect($state.get() !== value).toBe(true);
+  });
+});

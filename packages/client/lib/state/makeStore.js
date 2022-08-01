@@ -1,6 +1,6 @@
-import produce from "immer";
 import { isFunction } from "../helpers/typeChecking.js";
 import { makeState } from "./makeState.js";
+import { produce } from "./produce.js";
 
 /**
  * Creates a state that persists its value to localStorage (or sessionStorage).
@@ -29,7 +29,6 @@ export function makeStore(key, defaultValue, options) {
 
     set(value) {
       if (isFunction(value)) {
-        // Produce a new value from a mutated draft with immer.
         value = produce(current, value);
       }
 

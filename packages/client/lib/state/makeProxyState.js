@@ -1,7 +1,8 @@
 import $$observable from "symbol-observable";
-import { produce } from "immer";
 import { isFunction, isState } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
+import { deepFreeze } from "../helpers/deepFreeze.js";
+import { produce } from "./produce.js";
 import { mapState } from "./makeState.js";
 import { getProperty } from "./getProperty.js";
 
@@ -19,12 +20,12 @@ export function makeProxyState(initialValue) {
   if (isState(initialValue)) {
     $target = initialValue;
   } else {
-    currentValue = initialValue;
+    currentValue = deepFreeze(initialValue);
   }
 
   function updateValue(value) {
     if (!deepEqual(value, currentValue)) {
-      currentValue = value;
+      currentValue = deepFreeze(value);
 
       for (const observer of observers) {
         observer.next(currentValue);
@@ -64,8 +65,7 @@ export function makeProxyState(initialValue) {
 
     set(value) {
       if (isFunction(value)) {
-        // Produce a new value from a mutated draft with immer.
-        value = produce(currentValue, (draft) => value(draft));
+        value = produce(currentValue, value);
       }
 
       if ($target) {

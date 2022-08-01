@@ -2,19 +2,13 @@
   "name": "@woofjs/client",
   "version": "0.17.1",
   "description": "Front end routing, components and state for dogs. 🐕",
-  "source": "src/index.js",
-  "main": "dist/woof.client.c.js",
-  "module": "dist/woof.client.m.js",
+  "main": "lib/index.js",
   "types": "types.d.ts",
+  "type": "module",
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",
-    "test:coverage": "npm run test -- --coverage",
-    "build": "node scripts/build.js",
-    "build:watch": "node scripts/build.js --watch",
-    "build:prod": "npm run build -- --minify",
-    "prepublishOnly": "npm run build:prod",
-    "gsize": "gzip-size dist/woof.client.m.js"
+    "test:coverage": "npm run test -- --coverage"
   },
   "keywords": [
     "web app",
@@ -26,31 +20,30 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "require": "./dist/woof.client.c.js",
-      "import": "./dist/woof.client.m.js"
+      "import": "./lib/index.js"
     },
     "./testing": {
-      "require": "./dist/woof.client.testing.c.js",
-      "import": "./dist/woof.client.testing.m.js"
+      "import": "./lib/testing/index.js"
     },
     "./helpers": {
-      "require": "./dist/woof.client.helpers.c.js",
-      "import": "./dist/woof.client.helpers.m.js"
+      "import": "./lib/helpers/index.js"
     }
   },
-  "devDependencies": {
-    "@testing-library/dom": "^8.11.3",
-    "@types/jest": "^27.4.1",
-    "@types/node": "^17.0.21",
+  "dependencies": {
     "color-hash": "^2.0.1",
-    "es-jest": "^1.5.0",
-    "esbuild": "^0.14.25",
     "fetch-ponyfill": "^7.1.0",
     "history": "^5.3.0",
-    "immer": "^9.0.15",
-    "jest": "^27.5.1",
     "query-string": "^7.1.1",
     "symbol-observable": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^28.1.6",
+    "es-jest": "^2.0.0",
+    "jest": "^28.1.3"
+  },
+  "jest": {
+    "preset": "es-jest",
+    "testEnvironment": "jsdom"
   },
   "gitHead": "2efc7784364de098c788e5f3947f80f1e720236a"
 }

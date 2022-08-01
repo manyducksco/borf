@@ -107,7 +107,7 @@ export function makeHandleRequest(appContext) {
 
       const nextFunc = async () => {
         index++;
-        current = handlers[index];
+        const current = handlers[index];
 
         const next = index === handlers.length - 1 ? undefined : nextFunc;
         ctx.response.body = (await current(ctx, next)) || ctx.response.body;

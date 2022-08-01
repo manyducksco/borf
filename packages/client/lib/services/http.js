@@ -21,7 +21,7 @@ export default function HTTPService() {
   return {
     request,
 
-    addMiddleware(...middleware) {
+    use(...middleware) {
       _middleware.push(...middleware);
 
       return this;

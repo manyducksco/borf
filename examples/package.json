@@ -3,6 +3,7 @@
   "version": "0.3.0",
   "description": "Woof development examples",
   "private": true,
+  "type": "module",
   "scripts": {
     "start": "woof-build --watch",
     "build": "woof-build --minify",

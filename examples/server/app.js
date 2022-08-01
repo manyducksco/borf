@@ -1,4 +1,4 @@
-const { makeApp, makeRouter } = require("@woofjs/server");
+import { makeApp, makeRouter } from "@woofjs/server";
 
 const app = makeApp();
 const PORT = process.env.PORT || 4000;

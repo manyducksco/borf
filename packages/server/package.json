@@ -2,10 +2,9 @@
   "name": "@woofjs/server",
   "version": "0.1.1",
   "description": "API routes and server rendered pages for dogs. 🐕",
+  "main": "lib/index.js",
   "types": "types.d.ts",
-  "source": "src/index.js",
-  "main": "dist/woof.server.c.js",
-  "module": "dist/woof.server.m.js",
+  "type": "module",
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",
@@ -15,26 +14,23 @@
     "build:prod": "npm run build -- --minify",
     "prepublishOnly": "node scripts/build.js"
   },
-  "exports": {
-    ".": {
-      "require": "./dist/woof.server.c.js",
-      "import": "./dist/woof.server.m.js"
-    }
-  },
   "keywords": [],
   "author": "Morgan Doboszynski <morgan@manyducks.co>",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.7",
-    "busboy": "^1.6.0",
-    "color-hash": "^2.0.1",
     "es-jest": "^1.5.0",
     "esbuild": "^0.14.10",
-    "jest": "^27.4.6",
-    "query-string": "^7.0.1"
+    "jest": "^27.4.6"
   },
   "dependencies": {
-    "send": "^0.18.0"
+    "send": "^0.18.0",
+    "query-string": "^7.0.1",
+    "busboy": "^1.6.0",
+    "color-hash": "^2.0.1"
+  },
+  "jest": {
+    "preset": "es-jest"
   }
 }

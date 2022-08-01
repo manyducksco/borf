@@ -1,5 +1,3 @@
-import ColorHash from "color-hash";
-
 /**
  * Creates a factory for channels; prefixed console objects that only
  * print when the debug filter matches that channel's name.
@@ -13,11 +11,6 @@ import ColorHash from "color-hash";
 export function makeDebug(options = {}, console = global.console) {
   let filter = options.filter || "*,-woof:*";
   let matchFn = makeMatchFn(filter);
-
-  const hash = new ColorHash({
-    lightness: [0.6, 0.7],
-    saturation: [0.6, 0.7],
-  });
 
   return {
     get filter() {
@@ -51,7 +44,7 @@ export function makeDebug(options = {}, console = global.console) {
             return () => {};
           }
 
-          return console.log.bind(window.console, `%c[${name}]`, `color:${hash.hex(name)};font-weight:bold`);
+          return console.log.bind(window.console, `[${name}]`);
         },
 
         get warn() {
@@ -59,7 +52,7 @@ export function makeDebug(options = {}, console = global.console) {
             return () => {};
           }
 
-          return console.warn.bind(window.console, `%c[${name}]`, `color:${hash.hex(name)};font-weight:bold`);
+          return console.warn.bind(window.console, `[${name}]`);
         },
 
         get error() {
@@ -67,7 +60,7 @@ export function makeDebug(options = {}, console = global.console) {
             return () => {};
           }
 
-          return console.error.bind(window.console, `%c[${name}]`, `color:${hash.hex(name)};font-weight:bold`);
+          return console.error.bind(window.console, `[${name}]`);
         },
       };
     },

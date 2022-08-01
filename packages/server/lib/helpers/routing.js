@@ -1,4 +1,4 @@
-const queryString = require("query-string");
+import queryString from "query-string";
 
 export const FragTypes = {
   Literal: 1,

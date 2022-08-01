@@ -167,7 +167,7 @@ Here are all the functions you'll find on a state and how to call them:
 - `.set` for updating the current value
   - `.set(newValue)` to set a new value
   - `.set(current => newValue)` to replace the current value by returning a new one
-  - `.set(current => {})` to update the current value by mutating it ([produces a new value behind the scenes](https://immerjs.github.io/immer/))
+  - `.set(current => {})` to update the current value by mutating it
 - `.map` for deriving new states from this state
   - `.map()` to create a read-only copy of this state
   - `.map(current => newValue)` to make a state with `newValue` from this state's `current` value

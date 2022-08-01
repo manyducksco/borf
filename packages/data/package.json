@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "description": "Data models, collections and validation for dogs. 🐕",
   "types": "types.d.ts",
-  "source": "src/index.js",
-  "main": "dist/woof.data.c.js",
-  "module": "dist/woof.data.m.js",
+  "main": "lib/index.js",
+  "type": "module",
   "private": true,
   "scripts": {
     "test": "jest",
@@ -19,18 +18,22 @@
   "keywords": [],
   "exports": {
     ".": {
-      "require": "./dist/woof.data.c.js",
-      "import": "./dist/woof.data.m.js"
+      "import": "./lib/index.js"
     }
   },
   "author": "Tony McCoy <tony@manyducks.co>",
   "license": "MIT",
+  "dependencies": {
+    "proxy-deep": "^3.1.1",
+    "symbol-observable": "^4.0.0"
+  },
   "devDependencies": {
     "@types/jest": "^28.1.6",
     "es-jest": "^2.0.0",
     "esbuild": "^0.14.51",
-    "jest": "^28.1.3",
-    "proxy-deep": "^3.1.1",
-    "symbol-observable": "^4.0.0"
+    "jest": "^28.1.3"
+  },
+  "jest": {
+    "preset": "es-jest"
   }
 }
