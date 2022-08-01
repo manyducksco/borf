@@ -1,4 +1,4 @@
-import { makeApp, makeRouter } from "@woofjs/server";
+import { makeApp, makeRouter, html } from "@woofjs/server";
 
 const app = makeApp();
 const PORT = process.env.PORT || 4000;
@@ -94,6 +94,26 @@ app.get("/hello-json", () => {
     message: "Hello from the server!",
   };
 });
+
+app.get("/hello-html", function () {
+  return html`
+    <!DOCTYPE html>
+    <head>
+      <title>DEMO!</title>
+    </head>
+    <body>
+      <div class="container">
+        <h1>Title</h1>
+
+        ${AsyncHeader(html`<p>This is a child</p>`)}
+      </div>
+    </body>
+  `;
+});
+
+async function AsyncHeader(children) {
+  return html`<div class="container">${children}</div>`;
+}
 
 // Listen for HTTP requests on localhost at specified port number.
 app.listen(PORT).then((info) => {

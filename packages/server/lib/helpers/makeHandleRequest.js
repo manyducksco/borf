@@ -13,10 +13,6 @@ export function makeHandleRequest(appContext) {
   const hasIndexHTML = staticPath && fs.existsSync(path.join(staticPath, "index.html"));
 
   return async function handleRequest(req, res) {
-    if (hasIndexHTML && canFallBackToIndexHTML(req)) {
-      req.url = "/index.html";
-    }
-
     const { routes, services, middlewares } = appContext;
 
     const ctx = {
@@ -119,8 +115,7 @@ export function makeHandleRequest(appContext) {
       if (!res.headersSent && !res.writableEnded && ctx.response.body) {
         if (isTemplate(ctx.response.body)) {
           res.setHeader("content-type", "text/html");
-          const body = await ctx.response.body.init(appContext);
-          res.write("<!DOCTYPE html>" + body); // Prepend doctype for HTML pages.
+          res.write(await ctx.response.body.render());
         } else if (isObject(ctx.response.body)) {
           res.setHeader("content-type", "application/json");
           res.write(JSON.stringify(ctx.response.body));
@@ -140,6 +135,10 @@ export function makeHandleRequest(appContext) {
         res.end();
       }
     } else {
+      if (hasIndexHTML && canFallBackToIndexHTML(req)) {
+        req.url = "/index.html";
+      }
+
       // Try serving static files, otherwise return 404.
       if (req.method === "GET" || req.method === "HEAD") {
         const stream = send(req, req.url, {
