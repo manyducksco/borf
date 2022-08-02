@@ -167,12 +167,9 @@ export function watch($value, render) {
  * @param event - The event that triggers an update to `$value`. Defaults to "input".
  */
 export function bind($value, event = "input") {
-  const binding = { $value, event };
-
-  Object.defineProperty(binding, "isBinding", {
-    writable: false,
-    value: true,
-  });
-
-  return binding;
+  return {
+    $value,
+    event,
+    isBinding: true,
+  };
 }

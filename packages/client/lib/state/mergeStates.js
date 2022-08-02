@@ -24,7 +24,7 @@ export function mergeStates(...args) {
     const value = merge(...values);
 
     if (!deepEqual(value, currentValue)) {
-      currentValue = value;
+      currentValue = cloneDeep(value);
 
       for (const observer of observers) {
         observer.next(currentValue);
@@ -69,7 +69,7 @@ export function mergeStates(...args) {
       let value;
 
       if (observing) {
-        value = cloneDeep(currentValue);
+        value = currentValue;
       } else {
         value = merge(...states.map((state) => state.get()));
       }
@@ -78,7 +78,7 @@ export function mergeStates(...args) {
         value = getProperty(value, selector);
       }
 
-      return value;
+      return cloneDeep(value);
     },
 
     subscribe(observer) {

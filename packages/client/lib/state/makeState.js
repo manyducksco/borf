@@ -28,6 +28,8 @@ export function makeState(initialValue) {
     set(value) {
       if (isFunction(value)) {
         value = produce(currentValue, value);
+      } else {
+        value = cloneDeep(value);
       }
 
       if (!deepEqual(currentValue, value)) {
@@ -53,7 +55,7 @@ export function makeState(initialValue) {
         };
       }
 
-      observer.next(currentValue);
+      observer.next(cloneDeep(currentValue));
 
       observers.push(observer);
 

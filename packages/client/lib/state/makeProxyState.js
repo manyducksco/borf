@@ -66,6 +66,8 @@ export function makeProxyState(initialValue) {
     set(value) {
       if (isFunction(value)) {
         value = produce(currentValue, value);
+      } else {
+        value = cloneDeep(value);
       }
 
       if ($target) {

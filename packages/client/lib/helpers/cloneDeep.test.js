@@ -14,10 +14,20 @@ test("clones objects", () => {
 
   const clone = cloneDeep(original);
 
-  expect(original).toStrictEqual(clone);
+  expect(clone).toStrictEqual(original);
 
   clone.firstLevel.string = "changed";
   clone.firstLevel.secondLevel.thirdLevel.array[2] = 5;
 
-  expect(original).not.toStrictEqual(clone);
+  expect(clone).not.toStrictEqual(original);
+});
+
+test("returns non-objects as is", () => {
+  const num = 5;
+  const str = "a string";
+  const fn = () => {};
+
+  expect(cloneDeep(num)).toBe(num);
+  expect(cloneDeep(str)).toBe(str);
+  expect(cloneDeep(fn)).toBe(fn);
 });

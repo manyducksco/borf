@@ -60,6 +60,8 @@ function applyAttrs(element, attrs, subscriptions) {
 
     // Bind or set value depending on its type.
     if (key === "value") {
+      console.log({ key, value, isBinding: isBinding(value) });
+
       if (isObservable(value)) {
         subscriptions.push(
           value.subscribe((current) => {
@@ -69,9 +71,12 @@ function applyAttrs(element, attrs, subscriptions) {
       } else if (isBinding(value)) {
         subscriptions.push(
           value.$value.subscribe((current) => {
+            console.log("subscribed", current);
             element.value = String(current);
           })
         );
+
+        console.log(value.$value.get());
 
         const listener = (e) => {
           const updated = toSameType(value.$value.get(), e.target.value);
@@ -142,15 +147,11 @@ function applyStyles(element, styles, subscriptions) {
   } else if (isObject(styles)) {
     for (const key in styles) {
       const value = styles[key];
-      const setProperty =
-        key.indexOf("-") > -1
-          ? (key, value) => element.style.setProperty(key, value)
-          : (key, value) => (element.style[key] = value);
 
       if (isObservable(value)) {
         const subscription = value.subscribe((current) => {
           if (current) {
-            setProperty(key, current);
+            element.style.setProperty(key, current);
           } else {
             element.style.removeProperty(key);
           }
@@ -159,9 +160,9 @@ function applyStyles(element, styles, subscriptions) {
         subscriptions.push(subscription);
         propSubscriptions.push(subscription);
       } else if (isString(value)) {
-        setProperty(key, value);
+        element.style.setProperty(key, value);
       } else if (isNumber(value)) {
-        setProperty(key, value + "px");
+        element.style.setProperty(key, value + "px");
       } else {
         throw new TypeError(`Style properties should be strings, $states or numbers. Got (${key}: ${value})`);
       }
