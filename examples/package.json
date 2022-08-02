@@ -25,10 +25,8 @@
   "devDependencies": {
     "@woofjs/build": "file:../packages/build",
     "@woofjs/client": "file:../packages/client",
+    "@woofjs/data": "file:../packages/data",
     "@woofjs/server": "file:../packages/server",
     "@woofjs/view": "file:../packages/view"
-  },
-  "dependencies": {
-    "rxjs": "^7.5.6"
   }
 }
