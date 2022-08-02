@@ -3,7 +3,6 @@ import { getProperty } from "./getProperty.js";
 import { mapState } from "./makeState.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
-import { cloneDeep } from "../helpers/cloneDeep.js";
 
 export function mergeStates(...args) {
   const merge = args.pop();
@@ -24,7 +23,7 @@ export function mergeStates(...args) {
     const value = merge(...values);
 
     if (!deepEqual(value, currentValue)) {
-      currentValue = cloneDeep(value);
+      currentValue = value;
 
       for (const observer of observers) {
         observer.next(currentValue);
@@ -78,7 +77,7 @@ export function mergeStates(...args) {
         value = getProperty(value, selector);
       }
 
-      return cloneDeep(value);
+      return value;
     },
 
     subscribe(observer) {

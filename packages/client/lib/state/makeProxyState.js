@@ -4,7 +4,6 @@ import { deepEqual } from "../helpers/deepEqual.js";
 import { produce } from "./produce.js";
 import { mapState } from "./makeState.js";
 import { getProperty } from "./getProperty.js";
-import { cloneDeep } from "../helpers/cloneDeep.js";
 
 /**
  * Creates a state container that proxies the value of another state.
@@ -59,15 +58,13 @@ export function makeProxyState(initialValue) {
           value = getProperty(value, selector);
         }
 
-        return cloneDeep(value);
+        return value;
       }
     },
 
     set(value) {
       if (isFunction(value)) {
         value = produce(currentValue, value);
-      } else {
-        value = cloneDeep(value);
       }
 
       if ($target) {
