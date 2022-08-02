@@ -33,6 +33,7 @@
     "mustache": "^4.2.0",
     "nanoid": "^4.0.0",
     "nodemon": "^2.0.19",
+    "pako": "^2.0.4",
     "superbytes": "^1.3.2",
     "xxhashjs": "^0.2.2"
   },

@@ -5,6 +5,8 @@ import { isObject, isString, isTemplate } from "./typeChecking.js";
 import { matchRoute } from "./routing.js";
 import { parseFormBody } from "./parseFormBody.js";
 
+const mime = send.mime;
+
 /**
  * Takes an appContext and returns a request handling callback for a node http server.
  */
@@ -135,12 +137,27 @@ export function makeHandleRequest(appContext) {
         res.end();
       }
     } else {
-      if (hasIndexHTML && canFallBackToIndexHTML(req)) {
-        req.url = "/index.html";
-      }
-
       // Try serving static files, otherwise return 404.
       if (req.method === "GET" || req.method === "HEAD") {
+        if (hasIndexHTML && canFallBackToIndexHTML(req)) {
+          req.url = "/index.html";
+        } else if (staticPath != null) {
+          const acceptEncoding = req.headers["accept-encoding"] || "";
+
+          // Check if .gz version of asset exists and serve it.
+          if (acceptEncoding.includes("gzip") && fs.existsSync(path.join(staticPath, req.url + ".gz"))) {
+            const type = mime.lookup(req.url);
+            const charset = mime.charsets.lookup(type);
+
+            res.setHeader("Content-Type", type + (charset ? "; charset=" + charset : ""));
+            res.setHeader("Content-Encoding", "gzip");
+            res.setHeader("Vary", "Accept-Encoding");
+
+            req.url += ".gz";
+            console.log("serving gzip version: " + req.url);
+          }
+        }
+
         const stream = send(req, req.url, {
           root: staticPath,
           maxage: 0,
@@ -164,9 +181,9 @@ function canFallBackToIndexHTML(req) {
   const { method, headers, url } = req;
 
   // Method is not GET or HEAD.
-  if (method !== "GET" && method !== "HEAD") {
-    return false;
-  }
+  // if (method !== "GET" && method !== "HEAD") {
+  //   return false;
+  // }
 
   // Accept header is not sent.
   if (!isString(headers.accept)) {

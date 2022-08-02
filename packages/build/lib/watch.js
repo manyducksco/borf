@@ -1,5 +1,4 @@
 import { print, println } from "@ratwizard/cli";
-import { fileURLToPath } from "url";
 import ip from "ip";
 import fs from "fs-extra";
 import path from "path";
@@ -14,9 +13,7 @@ import nodemon from "nodemon";
 import getPort from "get-port";
 import stylePlugin from "esbuild-style-plugin";
 import EventEmitter from "events";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import esbuildConfig from "./esbuildConfig.js";
 
 export async function watch(projectRoot, buildOptions) {
   /**
@@ -41,30 +38,6 @@ export async function watch(projectRoot, buildOptions) {
 
   // Emits build events.
   const events = new EventEmitter();
-
-  const esbuildConfigBase = {
-    // entryPoints: [config.entryPath],
-    // entryNames: "[dir]/[name].[hash]",
-    bundle: true,
-    sourcemap: true,
-    write: false,
-    target: "es2018",
-    format: "iife",
-    loader: {
-      ".js": "jsx",
-      ".png": "file",
-      ".jpg": "file",
-      ".jpeg": "file",
-      ".svg": "file",
-      ".webp": "file",
-      ".ttf": "file",
-      ".otf": "file",
-      ".woff": "file",
-      ".woff2": "file",
-    },
-    jsxFactory: "_jsx",
-    jsxFragment: '"<>"',
-  };
 
   await fs.emptyDir(buildPath);
   println(`<blue>[build]</blue> cleaned build folder`);
@@ -288,11 +261,10 @@ export async function watch(projectRoot, buildOptions) {
       } else {
         try {
           clientBundle = await esbuild.build({
-            ...esbuildConfigBase,
+            ...esbuildConfig,
             entryPoints: [clientEntryPath],
             entryNames: "[dir]/client.[hash]",
             outdir: buildStaticPath,
-            inject: [path.join(__dirname, "./utils/jsx-shim.js")],
             minify: buildOptions.minify,
             plugins: [
               stylePlugin({
@@ -385,6 +357,8 @@ export async function watch(projectRoot, buildOptions) {
   \*============================*/
 
   const proxy = express();
+
+  proxy.disable("x-powered-by");
 
   const proxyPort = await getPort({
     port: [4000, 4001, 4002, 4003, 4004, 4005],

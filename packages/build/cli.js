@@ -13,6 +13,10 @@ program
       "Reduce bundle size at the cost of readability; recommended for production builds. Only affects the client app.",
     boolean: true,
   })
+  .option("--compress", {
+    description: "Pre-compress assets with GZIP compression during build.",
+    boolean: true,
+  })
   .option("--relative-bundle-paths", {
     description:
       "Use paths relative to index.html for importing client bundle files instead of the default absolute paths.",
@@ -22,6 +26,7 @@ program
   .action(async ({ options }) => {
     const buildOptions = {
       minify: options.minify || false,
+      compress: options.compress || false,
       relativeBundlePaths: options.relativeBundlePaths || false,
     };
 

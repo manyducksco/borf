@@ -5,8 +5,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start:prod": "node server/app.js",
     "start": "woof-build --watch",
-    "build": "woof-build --minify",
+    "build": "woof-build --minify --compress",
     "view": "woof-view start ./client",
     "view:build": "woof-view build ./client -o ./view-static",
     "test": "jest",
