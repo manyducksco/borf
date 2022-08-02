@@ -1,4 +1,4 @@
-import { colorHash } from "./helpers/colorHash.js";
+import colorHash from "simple-color-hash";
 import { makeState } from "./state/makeState.js";
 
 /**
@@ -13,6 +13,14 @@ import { makeState } from "./state/makeState.js";
  */
 export function makeDebug(options = {}, console = window.console) {
   const $filter = makeState(options.filter || "*,-woof:*");
+
+  const hash = (str) => {
+    return colorHash({
+      str,
+      sat: { min: 0.35, max: 0.55 },
+      light: { min: 0.6, max: 0.6 },
+    });
+  };
 
   let matchFn;
 
@@ -48,7 +56,7 @@ export function makeDebug(options = {}, console = window.console) {
             return () => {};
           }
 
-          return console.log.bind(window.console, `%c[${name}]`, `color:${colorHash(name)};font-weight:bold`);
+          return console.log.bind(window.console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
         },
 
         get warn() {
@@ -56,7 +64,7 @@ export function makeDebug(options = {}, console = window.console) {
             return () => {};
           }
 
-          return console.warn.bind(window.console, `%c[${name}]`, `color:${colorHash(name)};font-weight:bold`);
+          return console.warn.bind(window.console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
         },
 
         get error() {
@@ -64,7 +72,7 @@ export function makeDebug(options = {}, console = window.console) {
             return () => {};
           }
 
-          return console.error.bind(window.console, `%c[${name}]`, `color:${colorHash(name)};font-weight:bold`);
+          return console.error.bind(window.console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
         },
       };
     },
