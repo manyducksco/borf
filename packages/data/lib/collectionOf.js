@@ -1,3 +1,4 @@
+import $$observable from "symbol-observable";
 import { isModel, isRecord } from "./makeModel.js";
 
 export function collectionOf(model) {
@@ -141,7 +142,112 @@ export function collectionOf(model) {
     /**
      * Gets the first record with matching key or that receives a true value after being passed through a lookup function.
      */
-    async find(keyOrFn) {},
+    find(selector) {
+      const observers = [];
+      let promise;
+      let previous;
+
+      const calculate = () => {
+        if (typeof selector === "function") {
+          for (const [key, value] of store) {
+            if (selector(value)) {
+              return value;
+            }
+          }
+        } else {
+          return store.get(selector);
+        }
+      };
+
+      const createPromise = () => {
+        return new Promise((resolve) => {
+          return resolve(calculate());
+        });
+      };
+
+      const update = () => {
+        const match = calculate();
+        if (match !== previous) {
+          previous = match;
+          for (const observer of observers) {
+            observer.next(match);
+          }
+        }
+      };
+
+      return {
+        subscribe(observer) {
+          if (promise != null) {
+            throw new Error(
+              `This Observable has already been converted to a Promise.`
+            );
+          }
+
+          if (typeof observer === "function") {
+            observer = {
+              next: observer,
+              error: arguments[1],
+              complete: arguments[2],
+            };
+          }
+
+          if (observers.length === 0) {
+            listeners["add"].push(update);
+            listeners["update"].push(update);
+            listeners["delete"].push(update);
+          }
+
+          observers.push(observer);
+          observer.next(calculate());
+
+          return {
+            unsubscribe: () => {
+              observers.splice(observers.indexOf(observer), 1);
+
+              if (observers.length === 0) {
+                listeners["add"].splice(listeners["add"].indexOf(update), 1);
+                listeners["update"].splice(
+                  listeners["update"].indexOf(update),
+                  1
+                );
+                listeners["delete"].splice(
+                  listeners["delete"].indexOf(update),
+                  1
+                );
+              }
+            },
+          };
+        },
+
+        [$$observable]() {
+          return this;
+        },
+
+        then(...args) {
+          if (!promise) {
+            promise = createPromise();
+          }
+
+          return promise.then(...args);
+        },
+
+        catch(...args) {
+          if (!promise) {
+            promise = createPromise();
+          }
+
+          return promise.catch(...args);
+        },
+
+        finally(...args) {
+          if (!promise) {
+            promise = createPromise();
+          }
+
+          return promise.finally(...args);
+        },
+      };
+    },
 
     filter(fn) {
       const observers = [];
@@ -157,7 +263,7 @@ export function collectionOf(model) {
         return matches;
       };
 
-      const createPromise = (observable) => {
+      const createPromise = () => {
         return new Promise((resolve) => {
           return resolve(calculate());
         });
@@ -212,6 +318,10 @@ export function collectionOf(model) {
               }
             },
           };
+        },
+
+        [$$observable]() {
+          return this;
         },
 
         then(...args) {

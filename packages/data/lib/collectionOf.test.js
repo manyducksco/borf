@@ -77,6 +77,111 @@ test("is iterable", async () => {
   expect(iterations).toBe(3);
 });
 
+test("find", async () => {
+  const Users = collectionOf(User);
+
+  await Users.set(
+    {
+      id: 1,
+      name: "Test",
+      status: "offline",
+    },
+    {
+      id: 2,
+      name: "Test 2",
+      status: "online",
+    },
+    {
+      id: 3,
+      name: "Test 3",
+      status: "offline",
+    }
+  );
+
+  const promisedWithId = await Users.find(2);
+  const promisedWithFn = await Users.find((u) => u.id === 3);
+
+  expect(promisedWithId).toStrictEqual({
+    id: 2,
+    name: "Test 2",
+    status: "online",
+  });
+
+  expect(promisedWithFn).toStrictEqual({
+    id: 3,
+    name: "Test 3",
+    status: "offline",
+  });
+
+  let observed = [];
+
+  const subWithId = Users.find(2).subscribe((user) => {
+    observed.push(user);
+  });
+
+  expect(observed).toStrictEqual([
+    {
+      id: 2,
+      name: "Test 2",
+      status: "online",
+    },
+  ]);
+
+  // Update observed user. Should see observer fire.
+  await Users.set({
+    id: 2,
+    name: "Updated",
+    status: "offline",
+  });
+
+  expect(observed.length).toBe(2);
+
+  // Update other user. Observer should not fire.
+  await Users.set({
+    id: 4,
+    name: "New",
+    status: "offline",
+  });
+
+  expect(observed.length).toBe(2);
+
+  subWithId.unsubscribe();
+
+  observed = [];
+
+  const subWithFunc = Users.find((u) => u.id === 3).subscribe((user) => {
+    observed.push(user);
+  });
+
+  expect(observed).toStrictEqual([
+    {
+      id: 3,
+      name: "Test 3",
+      status: "offline",
+    },
+  ]);
+
+  // Update observed user. Should see observer fire.
+  await Users.set({
+    id: 3,
+    name: "Updated",
+    status: "online",
+  });
+
+  expect(observed.length).toBe(2);
+
+  // Update other user. Observer should not fire.
+  await Users.set({
+    id: 4,
+    name: "New",
+    status: "offline",
+  });
+
+  expect(observed.length).toBe(2);
+
+  subWithFunc.unsubscribe();
+});
+
 test("filter", async () => {
   const Users = collectionOf(User);
 
