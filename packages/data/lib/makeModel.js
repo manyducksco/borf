@@ -121,7 +121,7 @@ export function makeModel({ key, schema }) {
 
       toObject: {
         value: () => {
-          const object = {};
+          const object = Object.create(null);
 
           const ignoreKeys = Object.keys(properties);
           for (const key in model) {
@@ -261,8 +261,8 @@ Validators.custom = function custom(fn) {
   return new Validator().refine(fn);
 };
 
-Validators.instanceOf = function instanceOf() {
-  return new InstanceOfValidator();
+Validators.instanceOf = function instanceOf(object) {
+  return new InstanceOfValidator(object);
 };
 
 Validators.oneOf = function oneOf(...validators) {
