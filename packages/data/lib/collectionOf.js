@@ -1,10 +1,20 @@
 import $$observable from "symbol-observable";
 import { isModel, isRecord } from "./makeModel.js";
+import { SortedMap } from "./helpers/SortedMap.js";
+import { flatMap } from "./helpers/flatMap.js";
 
-export function collectionOf(model) {
+/**
+ * Creates a new collection of records conforming to a `model` schema.
+ *
+ * @param model - A model for validation.
+ * @param options.sortBy - A property name to sort ascending, or a function that receives two values and returns -1, 1 or 0.
+ */
+export function collectionOf(model, options = {}) {
   if (!isModel(model)) {
     throw new TypeError(`Expected a model. Received: ${model}`);
   }
+
+  options = options || {};
 
   const listeners = {
     add: [],
@@ -17,7 +27,9 @@ export function collectionOf(model) {
     }
   };
 
-  const store = new Map();
+  const store = new SortedMap({
+    compare: makeCompareFn(model.schema, options.sortBy),
+  });
 
   return {
     on(event, callback) {
@@ -47,6 +59,8 @@ export function collectionOf(model) {
     async set(...records) {
       const validated = [];
 
+      records = flatMap(records);
+
       for (let i = 0; i < records.length; i++) {
         let record = records[i];
 
@@ -65,16 +79,16 @@ export function collectionOf(model) {
           );
         }
 
-        validated.push({ key, record });
+        validated.push([key, record]);
       }
 
       const added = [];
       const updated = [];
 
-      for (const { key, record } of validated) {
-        const exists = !!store.get(key);
+      for (const [key, record] of validated) {
+        const exists = store.has(key);
 
-        store.set(key, record);
+        store.set(key, record, { sort: false });
 
         if (exists) {
           added.push(record);
@@ -82,6 +96,8 @@ export function collectionOf(model) {
           updated.push(record);
         }
       }
+
+      store.sort();
 
       if (added.length > 0) {
         emit("add", added);
@@ -98,6 +114,8 @@ export function collectionOf(model) {
     async delete(...records) {
       const keys = [];
 
+      records = flatMap(records);
+
       for (const record of records) {
         if (typeof record === "object" && record != null) {
           keys.push(record[model.key]);
@@ -108,7 +126,6 @@ export function collectionOf(model) {
 
       const deleted = [];
 
-      // console.log(keys);
       for (const key of keys) {
         const record = store.get(key);
 
@@ -355,5 +372,67 @@ export function collectionOf(model) {
         yield value;
       }
     },
+
+    forEach(callback) {
+      for (const entry of store) {
+        callback(entry);
+      }
+    },
+
+    get size() {
+      return store.size;
+    },
   };
+}
+
+function makeCompareFn(schema, sortBy) {
+  const type = typeof sortBy;
+
+  if (type === "function") {
+    return (a, b) => sortBy(a[1], b[1]);
+  }
+
+  if (type === "string") {
+    if (!schema._shape.hasOwnProperty(sortBy)) {
+      throw new Error(`sortBy key '${sortBy}' is not in the model's schema.`);
+    }
+
+    return (a, b) => {
+      const aValue = a[1][sortBy];
+      const bValue = b[1][sortBy];
+
+      if (aValue < bValue) {
+        return -1;
+      } else if (aValue > bValue) {
+        return 1;
+      } else {
+        return 0;
+      }
+    };
+  }
+
+  if (type != null && type === "object") {
+    const { key, descending } = sortBy;
+
+    if (typeof key !== "string") {
+      throw new TypeError(`sortBy.key must be a string. Got: ${key}`);
+    }
+
+    if (!schema._shape.hasOwnProperty(key)) {
+      throw new Error(`sortBy key '${key}' is not in the model's schema.`);
+    }
+
+    if (descending != null && typeof descending !== "boolean") {
+      throw new TypeError(
+        `sortBy.descending must be a boolean. Got: ${descending}`
+      );
+    }
+
+    const compare =
+      descending === true
+        ? (a, b) => (a > b ? -1 : b < a ? 1 : 0)
+        : (a, b) => (a < b ? -1 : b > a ? 1 : 0);
+
+    return (a, b) => compare(a[1][key], b[1][key]);
+  }
 }

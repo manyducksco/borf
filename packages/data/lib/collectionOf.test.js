@@ -17,12 +17,14 @@ const User = makeModel({
 test("exports", () => {
   const Users = collectionOf(User);
 
+  expect(typeof Users.size).toBe("number");
   expect(typeof Users.get).toBe("function");
   expect(typeof Users.set).toBe("function");
   expect(typeof Users.delete).toBe("function");
   expect(typeof Users.clear).toBe("function");
   expect(typeof Users.find).toBe("function");
   expect(typeof Users.filter).toBe("function");
+  expect(typeof Users.forEach).toBe("function");
 });
 
 test("get, set and delete", async () => {
@@ -247,4 +249,54 @@ test("filter", async () => {
       { id: 2, name: "Test 2", status: "online" },
     ],
   ]);
+});
+
+test("sorting", async () => {
+  const records = [
+    {
+      id: 1,
+      name: "Barnaby",
+      status: "online",
+    },
+    {
+      id: 2,
+      name: "Arnold",
+      status: "offline",
+    },
+    {
+      id: 3,
+      name: "Charles",
+      status: "offline",
+    },
+  ];
+
+  // Sorted by string:
+
+  const stringSorted = collectionOf(User, {
+    sortBy: "name",
+  });
+  await stringSorted.set(records);
+
+  expect([...stringSorted].map((r) => r.id)).toStrictEqual([2, 1, 3]);
+
+  // Sorted by string/desc:
+
+  const stringSortedDesc = collectionOf(User, {
+    sortBy: {
+      key: "name",
+      descending: true,
+    },
+  });
+  await stringSortedDesc.set(records);
+
+  expect([...stringSortedDesc].map((r) => r.id)).toStrictEqual([3, 1, 2]);
+
+  // Sorted by function:
+
+  const funcSorted = collectionOf(User, {
+    sortBy: (a, b) => (a.name < b.name ? -1 : 1),
+  });
+  await funcSorted.set(records);
+
+  expect([...funcSorted].map((r) => r.id)).toStrictEqual([2, 1, 3]);
 });

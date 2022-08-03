@@ -202,6 +202,10 @@ export function makeModel({ key, schema }) {
       value: key,
       enumerable: true,
     },
+    schema: {
+      value: schema,
+      enumerable: true,
+    },
     [Symbol.hasInstance]: {
       value: (instance) => {
         if (instance[$$model] === $$model) {

@@ -2,16 +2,11 @@
 
 Data models, collections and validation for dogs. 🐕
 
-## Terminology
-
-- **Model**: A class that defines a data object in your app.
-- **Schema**: An object that defines the shape of a Model's data.
-- **Record**: An instance of a Model, or a plain JS object that fits the model's schema.
-- **Collection**: A container for a group of records that all adhere to one Model. Provides methods for querying and modifying those records.
+Modern apps may have many sources of data, but you still need a single source of truth. In `@woofjs/data`, models ensure the truth that your data is what you expect it to be, while collections ensure that only one copy of a given record exists at once in that collection.
 
 ## Models
 
-Define the structure of your objects with Models.
+Models ensure that your data is structured how you expect by enforcing a schema that you define. Model instances (called 'records') are uniquely identified by the value of their `key`.
 
 ```js
 import { makeModel } from "@woofjs/data";
@@ -40,7 +35,7 @@ const User = makeModel({
 
 ### Validating objects
 
-Models can be used to validate plain objects to determine if the object data matches the model schema.
+Models can validate plain objects to determine if they match the model's schema.
 
 ```js
 const data = {
@@ -49,43 +44,46 @@ const data = {
   createdAt: "yesterday",
 };
 
-const { valid, errors, key } = User.validate(data);
-```
+const result = User.validate(data);
 
-In this case `valid` would be `false`, `key` would be `undefined` and `errors` would contain this:
-
-```js
-[
-  {
-    path: ["name"],
-    message: "expected an object; received a string",
-    received: "Bob Jones"
-  },
-  {
-    path: ["status"],
-    message: "expected one of: 'offline', 'online'; received undefined",
-    received: undefined
-  }
-  {
-    path: ["createdAt"],
-    message: "string does not match expected pattern",
-    received: "yesterday"
-  },
-];
+// result:
+{
+  key: undefined,
+  valid: false,
+  errors: [
+    {
+      path: ["name"],
+      message: "expected an object; received a string",
+      received: "Bob Jones"
+    },
+    {
+      path: ["status"],
+      message: "expected one of: 'offline', 'online'; received undefined",
+      received: undefined
+    }
+    {
+      path: ["createdAt"],
+      message: "string does not match expected pattern",
+      received: "yesterday"
+    },
+  ]
+}
 ```
 
 ### Subscribing to changes
 
-Model instances are observables, meaning you can `.subscribe` to them to be notified of any changes.
+Records are observable, meaning you can `.subscribe` to them to receive new values when the data they hold has changed.
 
 ```js
 const user = new User(data);
 
 const subscription = user.subscribe((latest) => {
-  console.log("user data changed", latest);
+  console.log(`Hello ${latest.name.given}!`);
 });
 
-user.name = "Jimothy Derbs"; // Observer receives the data with this new name.
+user.name.given = "Jimothy"; // Observer receives the data with this new name.
+
+// "Hello Jimothy!"
 
 // Stop receiving changes
 subscription.unsubscribe();
@@ -93,7 +91,7 @@ subscription.unsubscribe();
 
 ## Collections
 
-Maintain a collection of records belonging to the same model.
+Collections group records that conform to a model's schema. Records are identified by their `key`, so only one copy of a given record can exist in a collection at one time.
 
 ```js
 import { collectionOf } from "@woofjs/data";
@@ -191,4 +189,26 @@ const cancel = Users.on("delete", (users) => {
 
 // Cancel to stop listening for changes.
 cancel();
+```
+
+### Sorting collections
+
+Collections can be sorted so their records always appear in a certain order when filtered or iterated through. The `sortBy` option can be a string, object or function. All three ways to define it are outlined below.
+
+```js
+const Users = collectionOf(User, {
+  // Sort by 'createdAt' ascending
+  sortBy: "createdAt",
+
+  // Sort by 'createdAt' descending
+  sortBy: {
+    key: "createdAt",
+    descending: true,
+  },
+
+  // Or pass a sort function directly that takes two records.
+  sortBy: (a, b) => {
+    return a.createdAt < b.createdAt ? -1 : 1;
+  },
+});
 ```
