@@ -29,5 +29,5 @@ export default {
   },
   jsxFactory: "_jsx",
   jsxFragment: '"<>"',
-  inject: [path.join(__dirname, "./utils/jsx-shim.js")],
+  inject: [path.join(__dirname, "./jsxShim.js")],
 };

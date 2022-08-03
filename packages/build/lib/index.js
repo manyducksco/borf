@@ -1,4 +1,4 @@
-import esbuildConfig from "./esbuildConfig.js";
+import esbuildConfig from "./utils/esbuildConfig.js";
 
 export { esbuildConfig };
 export { build } from "./build.js";

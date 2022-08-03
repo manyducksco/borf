@@ -1,4 +1,4 @@
-import { print, println } from "@ratwizard/cli";
+import { println } from "@ratwizard/cli";
 import ip from "ip";
 import fs from "fs-extra";
 import path from "path";
@@ -6,14 +6,17 @@ import express from "express";
 import expressProxy from "express-http-proxy";
 import esbuild from "esbuild";
 import chokidar from "chokidar";
-import xxhash from "xxhashjs";
-import cheerio from "cheerio";
-import htmlMinifier from "html-minifier";
 import nodemon from "nodemon";
 import getPort from "get-port";
 import stylePlugin from "esbuild-style-plugin";
 import EventEmitter from "events";
-import esbuildConfig from "./esbuildConfig.js";
+import esbuildConfig from "./utils/esbuildConfig.js";
+
+import log from "./utils/log.js";
+import { generateScopedClassName } from "./utils/generateScopedClassName.js";
+import { writeClientFiles } from "./utils/writeClientFiles.js";
+import { writeStaticFiles } from "./utils/writeStaticFiles.js";
+import { makeTimer } from "./utils/timer.js";
 
 export async function watch(projectRoot, buildOptions) {
   /**
@@ -40,7 +43,7 @@ export async function watch(projectRoot, buildOptions) {
   const events = new EventEmitter();
 
   await fs.emptyDir(buildPath);
-  println(`<blue>[build]</blue> cleaned build folder`);
+  log.build("cleaned build folder");
 
   // Track which files exist for cleanup when builds are updated.
   const ctx = {
@@ -53,39 +56,26 @@ export async function watch(projectRoot, buildOptions) {
   ||          /static           ||
   \*============================*/
 
-  function updateStaticFiles() {
-    if (fs.existsSync(staticPath)) {
-      for (const file of ctx.staticFiles) {
-        fs.unlinkSync(file.path);
-      }
+  async function updateStaticFiles() {
+    const end = makeTimer();
 
-      const copiedFiles = [];
+    for (const file of ctx.staticFiles) {
+      fs.unlinkSync(file.path);
+    }
 
-      fs.copySync(staticPath, path.join(buildPath, "static"), {
-        filter: (src, dest) => {
-          if (src.replace(staticPath, "") === "/index.html") {
-            return false; // Skip index.html which is handled by client build
-          }
+    ctx.staticFiles = await writeStaticFiles({
+      projectRoot,
+      staticPath,
+      buildPath,
+      buildStaticPath,
+      clientEntryPath,
+      buildOptions,
+    });
 
-          // Wooooo side effects
-          if (src !== staticPath) {
-            copiedFiles.push({ path: dest });
-          }
+    const time = end();
 
-          return true;
-        },
-      });
-
-      for (const file of copiedFiles) {
-        println(
-          `<magenta>[static]</magenta> copied ${file.path.replace(
-            projectRoot,
-            ""
-          )}`
-        );
-      }
-
-      ctx.staticFiles = copiedFiles;
+    if (ctx.staticFiles.length > 0) {
+      log.static("built in", "%c" + time);
     }
   }
 
@@ -96,7 +86,8 @@ export async function watch(projectRoot, buildOptions) {
 
   staticWatcher.on("all", updateStaticFiles);
   events.on("client built", updateStaticFiles);
-  events.on("server built", updateStaticFiles);
+
+  await updateStaticFiles();
 
   /*============================*\
   ||          /client           ||
@@ -113,150 +104,35 @@ export async function watch(projectRoot, buildOptions) {
       }
     );
 
-    function updateClientFiles(files) {
-      // Delete old files.
+    async function updateClientFiles(clientBundle) {
       for (const file of ctx.clientFiles) {
         fs.unlinkSync(file.path);
       }
 
-      const writtenFiles = [];
-
-      // Write new ones.
-      for (const file of files) {
-        let filePath;
-
-        if (/\.css(\.map)?$/.test(file.path)) {
-          filePath = file.path.replace(
-            buildStaticPath,
-            path.join(buildStaticPath, "css")
-          );
-        } else if (/\.js(\.map)?$/.test(file.path)) {
-          filePath = file.path.replace(
-            buildStaticPath,
-            path.join(buildStaticPath, "js")
-          );
-        } else {
-          filePath = file.path;
-        }
-
-        fs.mkdirpSync(path.dirname(filePath));
-        fs.writeFileSync(filePath, file.contents);
-        println(
-          `<green>[client]</green> wrote ${filePath.replace(projectRoot, "")}`
-        );
-
-        writtenFiles.push({
-          ...file,
-          path: filePath,
-        });
-      }
-
-      // Write index.html
-      try {
-        const index = fs.readFileSync(path.join(staticPath, "index.html"));
-        const $ = cheerio.load(index);
-
-        const styles = writtenFiles.filter(
-          (file) => path.extname(file.path) === ".css"
-        );
-        const scripts = writtenFiles.filter(
-          (file) => path.extname(file.path) === ".js"
-        );
-
-        // Add styles to head.
-        for (const file of styles) {
-          let href = file.path.replace(buildStaticPath, "");
-
-          if (buildOptions.relativeBundlePaths) {
-            href = "." + href;
-          }
-
-          $("head").append(`<link rel="stylesheet" href="${href}">`);
-        }
-
-        // Add bundle reload listener to head.
-        $("head").append(`
-          <script>
-            const events = new EventSource("/_bundle");
-
-            events.addEventListener("message", (message) => {
-              window.location.reload();
-            });
-
-            window.addEventListener("beforeunload", () => {
-              events.close();
-            });
-          </script>
-        `);
-
-        // Add scripts to body.
-        for (const file of scripts) {
-          let src = file.path.replace(buildStaticPath, "");
-
-          if (buildOptions.relativeBundlePaths) {
-            src = "." + src;
-          }
-
-          $("body").append(`<script src="${src}"></script>`);
-        }
-
-        let html = $.html();
-
-        if (buildOptions.minify) {
-          html = htmlMinifier.minify(html, {
-            collapseWhitespace: true,
-            conservativeCollapse: false,
-            preserveLineBreaks: false,
-            removeScriptTypeAttributes: true,
-            minifyCSS: true,
-            minifyJS: true,
-          });
-        }
-
-        fs.writeFileSync(path.join(buildStaticPath, "index.html"), html);
-
-        println(
-          `<green>[client]</green> wrote ${path
-            .join(buildStaticPath, "index.html")
-            .replace(projectRoot, "")}`
-        );
-
-        writtenFiles.push({
-          path: path.join(buildStaticPath, "index.html"),
-        });
-      } catch (err) {
-        if (err.code === "ENOENT") {
-          if (clientEntryPath) {
-            println(
-              `<green>[client]</green> <red>ERROR:</red> /static/index.html file not found. Please create one to serve as the entry point for your client app.`
-            );
-          }
-        } else {
-          println(`<green>[client]</green> <red>ERROR:</red> ${err.message}`);
-        }
-      }
-
-      // Update references.
-      ctx.clientFiles = writtenFiles;
+      ctx.clientFiles = await writeClientFiles({
+        clientBundle,
+        projectRoot,
+        staticPath,
+        buildStaticPath,
+        clientEntryPath,
+        buildOptions,
+        isDevelopment: true,
+      });
     }
 
     let clientBundle;
 
     async function buildClient() {
-      const start = Date.now();
+      const end = makeTimer();
 
       if (clientBundle) {
         try {
           const incremental = await clientBundle.rebuild();
 
-          updateClientFiles(incremental.outputFiles);
+          await updateClientFiles(incremental);
           events.emit("client built");
 
-          println(
-            `<green>[client]</green> rebuilt in <green>${
-              Date.now() - start
-            }ms</green>`
-          );
+          log.client("rebuilt in", "%c" + end());
         } catch (err) {}
       } else {
         try {
@@ -272,31 +148,17 @@ export async function watch(projectRoot, buildOptions) {
                   plugins: woofConfig.client?.postcss?.plugins || [],
                 },
                 cssModulesOptions: {
-                  generateScopedName: function (name, filename, css) {
-                    const file = path.basename(filename, ".module.css");
-                    const hash = xxhash
-                      .h64()
-                      .update(css)
-                      .digest()
-                      .toString(16)
-                      .slice(0, 5);
-
-                    return file + "_" + name + "_" + hash;
-                  },
+                  generateScopedName: generateScopedClassName,
                 },
               }),
             ],
             incremental: true,
           });
 
-          updateClientFiles(clientBundle.outputFiles);
+          await updateClientFiles(clientBundle);
           events.emit("client built");
 
-          println(
-            `<green>[client]</green> built in <green>${
-              Date.now() - start
-            }ms</green>`
-          );
+          log.client("built in", "%c" + end());
         } catch (err) {
           console.error(err);
         }
@@ -334,18 +196,16 @@ export async function watch(projectRoot, buildOptions) {
         hold.resolve();
       })
       .on("stdout", (buffer) => {
-        print(`<magenta>[server]</magenta> ${buffer.toString()}`);
+        log.server(buffer.toString());
       })
       .on("stderr", (buffer) => {
-        print(
-          `<magenta>[server]</magenta> <red>ERROR:</red> ${buffer.toString()}`
-        );
+        log.server("<red>ERROR:</red>", buffer.toString());
       })
       .on("quit", () => {
-        println(`<magenta>[server]</magenta> server has quit`);
+        log.server("server has quit");
       })
       .on("restart", () => {
-        println(`<magenta>[server]</magenta> *restarted*`);
+        log.server("* restarted *");
       });
 
     // Wait until server starts to proceed.
@@ -404,8 +264,11 @@ export async function watch(projectRoot, buildOptions) {
   }
 
   proxy.listen(proxyPort, () => {
-    println(
-      `<yellow>[proxy]</yellow> app is running at <yellow>http://localhost:${proxyPort}</yellow> and <yellow>http://${ip.address()}:${proxyPort}</yellow>`
+    log.proxy(
+      "app is running at",
+      `%chttp://localhost:${proxyPort}`,
+      "and",
+      `%chttp://${ip.address()}:${proxyPort}`
     );
   });
 }
