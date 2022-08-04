@@ -1,23 +1,23 @@
 export class SortedMap {
-  #index = new Map();
-  #records = [];
-  #options = {};
+  _index = new Map();
+  _records = [];
+  _options = {};
 
   constructor(options) {
-    this.#options = options || {};
+    this._options = options || {};
   }
 
   get size() {
-    return this.#records.length;
+    return this._records.length;
   }
 
   has(key) {
-    return this.#index.has(key);
+    return this._index.has(key);
   }
 
   get(key) {
-    const index = this.#index.get(key);
-    return this.#records[index]?.[1];
+    const index = this._index.get(key);
+    return this._records[index]?.[1];
   }
 
   /**
@@ -25,14 +25,14 @@ export class SortedMap {
    * If the value is new, `.sort()` will be run automatically unless `options.sort` is `false.
    */
   set(key, value, options = {}) {
-    const index = this.#index.get(key);
-    const record = this.#records[index];
+    const index = this._index.get(key);
+    const record = this._records[index];
 
     if (record) {
       record[1] = value;
     } else {
-      this.#records.push([key, value]);
-      this.#index.set(key, this.#records.length - 1);
+      this._records.push([key, value]);
+      this._index.set(key, this._records.length - 1);
 
       if (options.sort !== false) {
         this.sort();
@@ -41,16 +41,16 @@ export class SortedMap {
   }
 
   delete(key) {
-    if (this.#index.has(key)) {
-      const i = this.#index.get(key);
-      this.#records.splice(i, 1);
+    if (this._index.has(key)) {
+      const i = this._index.get(key);
+      this._records.splice(i, 1);
 
       const index = new Map();
-      for (let i = 0; i < this.#records.length; i++) {
-        const record = this.#records[i];
+      for (let i = 0; i < this._records.length; i++) {
+        const record = this._records[i];
         index.set(record[0], i);
       }
-      this.#index = index;
+      this._index = index;
 
       return true;
     }
@@ -59,42 +59,42 @@ export class SortedMap {
   }
 
   keys() {
-    return makeIterator(this.#records.map((r) => r[0]));
+    return makeIterator(this._records.map((r) => r[0]));
   }
 
   values() {
-    return makeIterator(this.#records.map((r) => r[1]));
+    return makeIterator(this._records.map((r) => r[1]));
   }
 
   entries() {
-    return makeIterator(this.#records);
+    return makeIterator(this._records);
   }
 
   forEach(callback) {
-    for (const entry of makeIterator(this.#records)) {
+    for (const entry of makeIterator(this._records)) {
       callback(entry);
     }
   }
 
   [Symbol.iterator]() {
-    return makeIterator(this.#records);
+    return makeIterator(this._records);
   }
 
   /**
    * Sorts records and rebuilds index.
    */
   sort() {
-    const compare = this.#options.compare;
+    const compare = this._options.compare;
 
     if (compare != null) {
-      this.#records.sort(compare);
+      this._records.sort(compare);
 
       const index = new Map();
-      for (let i = 0; i < this.#records.length; i++) {
-        const record = this.#records[i];
+      for (let i = 0; i < this._records.length; i++) {
+        const record = this._records[i];
         index.set(record[0], i);
       }
-      this.#index = index;
+      this._index = index;
     }
   }
 }

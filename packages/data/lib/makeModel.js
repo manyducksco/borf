@@ -292,7 +292,7 @@ class Validator {
   _isNullable = false;
   _isPresent = false;
 
-  _refineFuncs = [];
+  _refiners = [];
 
   optional() {
     this._isRequired = false;
@@ -308,7 +308,7 @@ class Validator {
    * Refine validation with a function that takes the value and returns an error message if it fails validation.
    */
   refine(fn) {
-    this._refineFuncs.push(fn);
+    this._refiners.push(fn);
     return this;
   }
 
@@ -324,12 +324,6 @@ class Validator {
       this._isPresent = true;
     }
 
-    if (value === null && !this._isNullable) {
-      errors.push(
-        new ValidatorError("property is not nullable", { ...context, value })
-      );
-    }
-
     if (this._isRequired && !this._isPresent) {
       errors.push(
         new ValidatorError("property is required", { ...context, value })
@@ -337,25 +331,36 @@ class Validator {
     }
 
     if (this._isPresent) {
-      // Check type if value passes basic checks.
-      const _errors = this._checkType(value, context);
+      if (value === null) {
+        if (!this._isNullable) {
+          errors.push(
+            new ValidatorError("property is not nullable", {
+              ...context,
+              value,
+            })
+          );
+        }
+      } else {
+        // Check type if value passes basic checks.
+        const _errors = this._checkType(value, context);
 
-      if (_errors.length > 0) {
-        errors.push(..._errors);
-      } else if (this._refineFuncs.length > 0) {
-        // Refine if value passes type checking.
-        for (const fn of this._refineFuncs) {
-          const message = fn(value);
+        if (_errors.length > 0) {
+          errors.push(..._errors);
+        } else if (this._refiners.length > 0) {
+          // Refine if value passes type checking.
+          for (const fn of this._refiners) {
+            const message = fn(value);
 
-          if (message != null) {
-            if (typeof message === "string") {
-              errors.push(new ValidatorError(message, { ...context, value }));
-            } else {
-              throw new TypeError(
-                `Refine function must return a string or null/undefined. Received ${getTypeNameWithArticle(
-                  message
-                )}.`
-              );
+            if (message != null) {
+              if (typeof message === "string") {
+                errors.push(new ValidatorError(message, { ...context, value }));
+              } else {
+                throw new TypeError(
+                  `Refine function must return a string or null/undefined. Received ${getTypeNameWithArticle(
+                    message
+                  )}.`
+                );
+              }
             }
           }
         }
