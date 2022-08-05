@@ -99,7 +99,7 @@ declare module "@woofjs/data" {
     /**
      * Refine this validator with a custom validation function.
      *
-     * @param fn - Receives the value and, if invalid, returns the error message string. Should return undefined if value is valid.
+     * @param fn - Receives the value and returns an error message string if there are any issues.
      */
     refine(fn: RefineFunc): this;
   }
@@ -117,7 +117,19 @@ declare module "@woofjs/data" {
     strict(): this;
   }
 
-  interface StringValidator extends Validator {}
+  interface StringValidator extends Validator {
+    pattern(regexp: RegExp): this;
+
+    /**
+     * Requires this string to parse as a valid JS date with `Date.parse` or `new Date()`;
+     */
+    date(): this;
+
+    /**
+     * Requires this string to be a valid ISO 8601 date string.
+     */
+    isoDate(): this;
+  }
 
   interface SymbolValidator extends Validator {}
 

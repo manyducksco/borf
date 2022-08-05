@@ -510,15 +510,41 @@ class ObjectValidator extends Validator {
 }
 
 class StringValidator extends Validator {
-  _pattern = null;
-
   pattern(regexp) {
     if (!(regexp instanceof RegExp)) {
       throw new TypeError("expected a regexp");
     }
 
-    this._pattern = regexp;
-    return this;
+    return this.refine((value) => {
+      if (!regexp.test(value)) {
+        return "string does not match expected pattern";
+      }
+    });
+  }
+
+  /**
+   * Validates that the string is in a valid ISO date format.
+   */
+  isoDate() {
+    const regexp =
+      /^(\d{4})-(\d{2})-(\d{2})T((\d{2}):(\d{2})(:\d{2})?)(\.\d{3})?(Z|[+-]\d{2}(:\d{2})?)$/;
+
+    return this.refine((value) => {
+      if (!regexp.test(value)) {
+        return "expected a valid ISO 8601 date string";
+      }
+    });
+  }
+
+  /**
+   * Validates that the string can be parsed as a date by JavaScript.
+   */
+  date() {
+    return this.refine((value) => {
+      if (isNaN(Date.parse(value))) {
+        return "expected a valid date";
+      }
+    });
   }
 
   _checkType(value, context) {
@@ -531,15 +557,6 @@ class StringValidator extends Validator {
           { ...context, value }
         )
       );
-    } else if (this._pattern) {
-      if (!this._pattern.test(value)) {
-        errors.push(
-          new ValidatorError("string does not match expected pattern", {
-            ...context,
-            value,
-          })
-        );
-      }
     }
 
     return errors;
