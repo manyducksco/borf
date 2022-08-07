@@ -4,6 +4,7 @@ import send from "send";
 import { isObject, isString, isTemplate } from "./helpers/typeChecking.js";
 import { matchRoute } from "./helpers/routing.js";
 import { parseFormBody } from "./helpers/parseFormBody.js";
+import { EventSource } from "./helpers/EventSource.js";
 
 const mime = send.mime;
 
@@ -14,71 +15,42 @@ export function makeListener(appContext) {
   const staticPath = fs.existsSync(appContext.staticPath) ? path.resolve(appContext.staticPath) : null;
   const hasIndexHTML = staticPath && fs.existsSync(path.join(staticPath, "index.html"));
 
-  return async function requestListener(req, res, next) {
+  return async function requestListener(req, res) {
     const { routes, services, middlewares } = appContext;
 
     const matched = matchRoute(routes, req.url, {
       willMatch: (route) => {
-        return route.method == req.method;
+        return route.method === req.method;
       },
     });
 
     if (matched) {
-      console.log("matched", matched);
+      const request = {
+        url: req.url,
+        path: matched.path,
+        params: matched.params,
+        query: matched.query,
+        method: req.method,
+        headers: req.headers,
+        body: undefined,
+        socket: req.socket,
+      };
+
+      const response = {
+        status: 200,
+        headers: {},
+        body: undefined,
+      };
+
       const ctx = {
         cache: {},
         services,
-        request: {
-          path: matched.path,
-          params: matched.params,
-          query: matched.query,
-          method: req.method,
-          headers: req.headers,
-          body: undefined,
-          socket: req.socket,
+        request,
+        response,
+        redirect(to, statusCode = 301) {
+          response.status = statusCode;
+          response.headers["Location"] = to;
         },
-        response: {
-          status: 200,
-          headers: {},
-          body: undefined,
-        },
-
-        // TODO: Use node request and response instead of custom objects to allow streams and advanced request handling.
-        // _req: req,
-        // _res: res,
-
-        redirect: (to, statusCode = 301) => {
-          ctx.response.status = statusCode;
-          ctx.response.headers["Location"] = to;
-        },
-        // makeEventSource: (options = {}) => {
-        //   res.writeHead(200, {
-        //     "Cache-Control": "no-cache",
-        //     "Content-Type": "text/event-stream",
-        //     Connection: "keep-alive",
-        //   });
-
-        //   // Tell the client to retry every 10 seconds if connectivity is lost
-        //   res.write(`retry: ${options.retryTimeout || 10000}\n\n`);
-
-        //   const update = () => {
-        //     res.write(`data: ${Math.round(Math.random() * 9999999)}\n\n`);
-        //   };
-
-        //   res.on("close", () => {
-        //     res.end();
-        //   });
-
-        //   return {
-        //     sendData: (data) => {
-        //       res.write(`data: ${data}\n\n`);
-        //     },
-        //     sendEvent: (name, data) => {
-        //       res.write(`event: ${name}\ndata: ${data}\n\n`);
-        //     },
-        //     close: () => {},
-        //   };
-        // },
       };
 
       const contentType = req.headers["content-type"];
@@ -115,7 +87,23 @@ export function makeListener(appContext) {
         ctx.response.body = (await current(ctx, next)) || ctx.response.body;
       };
 
-      await nextFunc();
+      try {
+        await nextFunc();
+      } catch (err) {
+        ctx.response.status = 500;
+        ctx.response.body = {
+          error: err.message,
+        };
+
+        if (typeof err.captureStackTrace === "function") {
+          err.captureStackTrace(ctx.response.body);
+        }
+      }
+
+      if (ctx.response.body && ctx.response.body instanceof EventSource) {
+        ctx.response.body.start(res);
+        return;
+      }
 
       // Automatically handle content-type and body formatting when returned from handler function.
       if (!res.headersSent && !res.writableEnded && ctx.response.body) {

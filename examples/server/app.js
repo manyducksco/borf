@@ -1,4 +1,4 @@
-import { makeApp, makeRouter, html } from "@woofjs/server";
+import { makeApp, makeRouter, html, EventSource } from "@woofjs/server";
 
 const app = makeApp();
 const PORT = process.env.PORT || 4000;
@@ -114,6 +114,25 @@ app.get("/hello-html", function () {
 async function AsyncHeader(...children) {
   return html`<div class="container">${children}</div>`;
 }
+
+app.get("/timer", function () {
+  return new EventSource((connection) => {
+    let seconds = 10;
+
+    connection.emit("time", seconds);
+
+    setInterval(() => {
+      --seconds;
+
+      if (seconds === 0) {
+        connection.send("Timer is up!");
+        connection.close();
+      } else {
+        connection.emit("time", seconds);
+      }
+    }, 1000);
+  });
+});
 
 // Listen for HTTP requests on localhost at specified port number.
 app.listen(PORT).then((info) => {

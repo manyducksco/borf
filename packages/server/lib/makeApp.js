@@ -26,13 +26,6 @@ export function makeApp() {
 
   const listener = makeListener(appContext);
 
-  // TODO: Implement express-like thing where the app is a handler function for a node http server.
-  const app = function (req, res, next) {
-    listener(req, res, next);
-  };
-
-  const server = http.createServer(listener);
-
   const methods = {
     /**
      * Registers a service on the app. Services can be referenced in
@@ -116,7 +109,18 @@ export function makeApp() {
         addRoute(route.method, `${prefix}/${route.url}`, router._middlewares.concat(route.handlers));
       }
     },
-    listen: async (port) => {
+
+    /**
+     * Returns the app's listener callback for mounting in an existing node HTTP server.
+     */
+    listener() {
+      return listener;
+    },
+
+    /**
+     * Starts an HTTP server on the specified port and begins listening for requests.
+     */
+    async listen(port) {
       // Sort routes by specificity before any matches are attempted.
       appContext.routes = sortRoutes(appContext.routes);
 
@@ -137,7 +141,7 @@ export function makeApp() {
           });
         }
 
-        server.listen(port, () => {
+        http.createServer(listener).listen(port, () => {
           resolve({ port });
         });
       });
