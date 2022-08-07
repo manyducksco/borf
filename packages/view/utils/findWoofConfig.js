@@ -1,11 +1,11 @@
-const fs = require("fs");
-const path = require("path");
-const process = require("process");
+import fs from "node:fs";
+import path from "node:path";
+import process from "node:process";
 
 /**
  * Finds the nearest woof.config.js file in parent directories. This should be at the root of your project if one exists.
  */
-module.exports = async function findWoofConfig(dir = process.cwd()) {
+export default async function findWoofConfig(dir = process.cwd()) {
   const files = fs.readdirSync(dir);
 
   for (const file of files) {
@@ -27,4 +27,4 @@ module.exports = async function findWoofConfig(dir = process.cwd()) {
   }
 
   return null;
-};
+}

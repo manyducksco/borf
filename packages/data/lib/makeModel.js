@@ -408,17 +408,20 @@ class FunctionValidator extends Validator {
 }
 
 class NumberValidator extends Validator {
-  _min = -Infinity;
-  _max = Infinity;
-
   min(value) {
-    this._min = value;
-    return this;
+    return this.refine((num) => {
+      if (num < value) {
+        return "value must be no less than " + value;
+      }
+    });
   }
 
   max(value) {
-    this._max = value;
-    return this;
+    return this.refine((num) => {
+      if (num > value) {
+        return "value must be no greater than " + value;
+      }
+    });
   }
 
   _checkType(value, context) {

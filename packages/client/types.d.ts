@@ -1,6 +1,11 @@
-import type { History } from "history";
-
 declare module "@woofjs/client" {
+  /**
+   * Creates a new woof app.
+   *
+   * @param options - Configuration options.
+   */
+  export function makeApp(options: AppOptions): App;
+
   /*==================================*\
   ||               App                ||
   \*==================================*/
@@ -45,24 +50,17 @@ declare module "@woofjs/client" {
        *
        * @see https://www.npmjs.com/package/history
        */
-      history?: History;
+      history?: import("history").History;
     };
   }
-
-  /**
-   * Creates a new woof app.
-   *
-   * @param options - Configuration options.
-   */
-  export function makeApp(options: AppOptions): App;
 
   /**
    *
    */
   export type App = {
     /**
-     * Registers a service on the app. Services can be referenced from
-     * other Services and Components using `self.getService(name)`.
+     * Registers a service on the app. Services can be referenced from components and other services
+     * in the `this.services` object.
      *
      * @param name - Unique string to name this service.
      * @param service - Service class. One instance will be created and shared.
@@ -70,8 +68,23 @@ declare module "@woofjs/client" {
      */
     service(name: string, service: Service, options?: any): App;
 
+    /**
+     * Registers a new route that will render `component` when `path` matches the current URL.
+     * Register nested routes by passing a function as the third argument. Nested route components
+     * will be rendered as this `component`'s children.
+     *
+     * @param path - Path to match.
+     * @param component - Component to render when path matches URL.
+     * @param defineRoutes - Optional function to define nested routes.
+     */
     route(path: string, component: Component, defineRoutes?: DefineRoutesFn): App;
 
+    /**
+     * Register a route that will redirect to another when the `path` matches the current URL.
+     *
+     * @param path - Path to match.
+     * @param to - Path to redirect location.
+     */
     redirect(path: string, to: string): App;
 
     /**
@@ -197,7 +210,10 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
-  export type Component<AttrsType> = (self: ComponentContext<AttrsType>) => Element | null;
+  export type Component<AttrsType> = (
+    this: ComponentContext<AttrsType>,
+    ctx: ComponentContext<AttrsType>
+  ) => Element | null;
 
   export type ComponentContext<AttrsType> = {
     $attrs: State<AttrsType>;
@@ -221,7 +237,7 @@ declare module "@woofjs/client" {
   /**
    * Stores shared variables and functions that can be accessed by components and other services.
    */
-  export type Service = (self: ServiceContext) => Object;
+  export type Service = (ctx: ServiceContext) => Object;
 
   export type ServiceContext = {
     services: Services;

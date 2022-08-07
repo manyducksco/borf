@@ -4,6 +4,7 @@
 
 import { println } from "@ratwizard/cli";
 import { esbuildConfig } from "@woofjs/build";
+import { fileURLToPath } from "url";
 import fs from "fs-extra";
 import path from "path";
 import esbuild from "esbuild";
@@ -15,6 +16,9 @@ import EventEmitter from "events";
 const isIgnored = /node_modules|^\./;
 const isView = /\.view\.m?[jt]sx?$/;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export default async function serve(options) {
   const app = express();
 
@@ -22,8 +26,8 @@ export default async function serve(options) {
     port: [5000, 5001, 5002, 5003, 5004, 5005],
   });
 
-  const frameDir = path.resolve("temp/views/bundle/public");
-  const runnerDir = path.join(__dirname, "build/public");
+  const frameDir = path.resolve("temp/views/bundle/static");
+  const runnerDir = path.join(__dirname, "../build/static");
 
   const events = new EventEmitter();
 

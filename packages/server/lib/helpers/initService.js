@@ -1,13 +1,13 @@
 import { isObject } from "./typeChecking.js";
 
 export async function initService(appContext, fn, debug, config) {
-  const self = {
+  const ctx = {
     debug,
     options: config.options || {},
     services: appContext.services,
   };
 
-  let exports = await fn.call(self, self);
+  let exports = await fn.call(ctx, ctx);
 
   if (!isObject(exports)) {
     throw new TypeError(`A service must return an object. Got: ${exports}`);

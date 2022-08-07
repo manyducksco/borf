@@ -3,11 +3,9 @@ import { makeModel, collectionOf } from "@woofjs/data";
 const Post = makeModel({
   key: "id",
   schema: (v) => {
-    return v
-      .object({
-        id: v.number(),
-      })
-      .strict();
+    return v.object({
+      id: v.number(),
+    });
   },
 });
 

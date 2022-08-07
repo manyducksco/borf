@@ -4,7 +4,8 @@ import { isFunction } from "./helpers/typeChecking.js";
 import { initService } from "./helpers/initService.js";
 import { parseRoute, sortRoutes } from "./helpers/routing.js";
 import { makeDebug } from "./helpers/makeDebug.js";
-import { makeHandleRequest } from "./helpers/makeHandleRequest.js";
+
+import { makeListener } from "./makeListener.js";
 
 export function makeApp() {
   const debug = makeDebug();
@@ -23,14 +24,16 @@ export function makeApp() {
     return methods;
   }
 
-  const server = http.createServer(makeHandleRequest(appContext));
+  const listener = makeListener(appContext);
+
+  // TODO: Implement express-like thing where the app is a handler function for a node http server.
+  const app = function (req, res, next) {
+    listener(req, res, next);
+  };
+
+  const server = http.createServer(listener);
 
   const methods = {
-    /**
-     * The node HTTP server object.
-     */
-    server,
-
     /**
      * Registers a service on the app. Services can be referenced in
      * Services and Components using `self.getService(name)`.
@@ -104,13 +107,13 @@ export function makeApp() {
     mount: (...args) => {
       let prefix = "";
 
-      if (typeof args[0] == "string") {
+      if (typeof args[0] === "string") {
         prefix = args.shift();
       }
 
       const router = args[0];
-      for (const r of router.routes()) {
-        addRoute(r.method, `${prefix}/${r.url}`, r.handlers);
+      for (const route of router._routes) {
+        addRoute(route.method, `${prefix}/${route.url}`, router._middlewares.concat(route.handlers));
       }
     },
     listen: async (port) => {

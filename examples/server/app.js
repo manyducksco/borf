@@ -111,7 +111,7 @@ app.get("/hello-html", function () {
   `;
 });
 
-async function AsyncHeader(children) {
+async function AsyncHeader(...children) {
   return html`<div class="container">${children}</div>`;
 }
 

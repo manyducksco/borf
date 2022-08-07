@@ -1,74 +1,21 @@
 import fs from "fs";
 import path from "path";
 import send from "send";
-import { isObject, isString, isTemplate } from "./typeChecking.js";
-import { matchRoute } from "./routing.js";
-import { parseFormBody } from "./parseFormBody.js";
+import { isObject, isString, isTemplate } from "./helpers/typeChecking.js";
+import { matchRoute } from "./helpers/routing.js";
+import { parseFormBody } from "./helpers/parseFormBody.js";
 
 const mime = send.mime;
 
 /**
- * Takes an appContext and returns a request handling callback for a node http server.
+ * Returns a request handler callback for a node `http` server.
  */
-export function makeHandleRequest(appContext) {
+export function makeListener(appContext) {
   const staticPath = fs.existsSync(appContext.staticPath) ? path.resolve(appContext.staticPath) : null;
   const hasIndexHTML = staticPath && fs.existsSync(path.join(staticPath, "index.html"));
 
-  return async function handleRequest(req, res) {
+  return async function requestListener(req, res, next) {
     const { routes, services, middlewares } = appContext;
-
-    const ctx = {
-      cache: {},
-      services,
-      request: {
-        url: req.url,
-        method: req.method,
-        headers: req.headers,
-        body: undefined,
-      },
-      response: {
-        status: 200,
-        headers: {},
-        body: undefined,
-      },
-
-      // TODO: Use node request and response instead of custom objects to allow streams and advanced request handling.
-      // _req: req,
-      // _res: res,
-
-      redirect: (to, statusCode = 301) => {
-        ctx.response.status = statusCode;
-        ctx.response.headers["Location"] = to;
-      },
-      // makeEventSource: (options = {}) => {
-      //   res.writeHead(200, {
-      //     "Cache-Control": "no-cache",
-      //     "Content-Type": "text/event-stream",
-      //     Connection: "keep-alive",
-      //   });
-
-      //   // Tell the client to retry every 10 seconds if connectivity is lost
-      //   res.write(`retry: ${options.retryTimeout || 10000}\n\n`);
-
-      //   const update = () => {
-      //     res.write(`data: ${Math.round(Math.random() * 9999999)}\n\n`);
-      //   };
-
-      //   res.on("close", () => {
-      //     res.end();
-      //   });
-
-      //   return {
-      //     sendData: (data) => {
-      //       res.write(`data: ${data}\n\n`);
-      //     },
-      //     sendEvent: (name, data) => {
-      //       res.write(`event: ${name}\ndata: ${data}\n\n`);
-      //     },
-      //     close: () => {},
-      //   };
-      // },
-    };
 
     const matched = matchRoute(routes, req.url, {
       willMatch: (route) => {
@@ -77,6 +24,63 @@ export function makeHandleRequest(appContext) {
     });
 
     if (matched) {
+      console.log("matched", matched);
+      const ctx = {
+        cache: {},
+        services,
+        request: {
+          path: matched.path,
+          params: matched.params,
+          query: matched.query,
+          method: req.method,
+          headers: req.headers,
+          body: undefined,
+          socket: req.socket,
+        },
+        response: {
+          status: 200,
+          headers: {},
+          body: undefined,
+        },
+
+        // TODO: Use node request and response instead of custom objects to allow streams and advanced request handling.
+        // _req: req,
+        // _res: res,
+
+        redirect: (to, statusCode = 301) => {
+          ctx.response.status = statusCode;
+          ctx.response.headers["Location"] = to;
+        },
+        // makeEventSource: (options = {}) => {
+        //   res.writeHead(200, {
+        //     "Cache-Control": "no-cache",
+        //     "Content-Type": "text/event-stream",
+        //     Connection: "keep-alive",
+        //   });
+
+        //   // Tell the client to retry every 10 seconds if connectivity is lost
+        //   res.write(`retry: ${options.retryTimeout || 10000}\n\n`);
+
+        //   const update = () => {
+        //     res.write(`data: ${Math.round(Math.random() * 9999999)}\n\n`);
+        //   };
+
+        //   res.on("close", () => {
+        //     res.end();
+        //   });
+
+        //   return {
+        //     sendData: (data) => {
+        //       res.write(`data: ${data}\n\n`);
+        //     },
+        //     sendEvent: (name, data) => {
+        //       res.write(`event: ${name}\ndata: ${data}\n\n`);
+        //     },
+        //     close: () => {},
+        //   };
+        // },
+      };
+
       const contentType = req.headers["content-type"];
 
       if (contentType) {
