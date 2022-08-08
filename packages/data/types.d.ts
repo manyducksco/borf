@@ -18,13 +18,18 @@ declare module "@woofjs/data" {
    */
   export function makeModel(options: ModelOptions<any>): Model<any>;
 
+  /**
+   * Standalone schema validators.
+   */
+  export const v: Validators;
+
   interface Model<Schema> {
     new (data: Schema): Record<Schema>;
 
     /**
      * Validates an object against this model's schema.
      */
-    validate(data: unknown): ValidationResult;
+    validate(data: unknown): ModelValidationResult;
 
     /**
      * The key property. This is the same value that was passed as `key` when the model was defined.
@@ -33,8 +38,6 @@ declare module "@woofjs/data" {
   }
 
   interface Record<Schema> {
-    [Property: keyof Schema]: S[Property];
-
     /**
      * Subscribe to changes on this record.
      *
@@ -73,8 +76,13 @@ declare module "@woofjs/data" {
     received: unknown;
   }
 
-  interface ValidationResult {
+  interface ModelValidationResult extends ValidationResult {
     key: any;
+    valid: boolean;
+    errors: ValidationError[];
+  }
+
+  interface ValidationResult {
     valid: boolean;
     errors: ValidationError[];
   }
@@ -102,13 +110,37 @@ declare module "@woofjs/data" {
      * @param fn - Receives the value and returns an error message string if there are any issues.
      */
     refine(fn: RefineFunc): this;
+
+    /**
+     * Validate `value` against this schema.
+     */
+    validate(value: unknown): ValidationResult;
+
+    /**
+     * Validate `value` against this schema and throw a TypeError if validation fails.
+     */
+    assert(value: unknown): void;
   }
 
   interface BooleanValidator extends Validator {}
 
   interface FunctionValidator extends Validator {}
 
-  interface NumberValidator extends Validator {}
+  interface NumberValidator extends Validator {
+    /**
+     * Require the number to be no less than `value`.
+     *
+     * @param value - Minimum value.
+     */
+    min(value: number): this;
+
+    /**
+     * Require the number to be no greater than `value`.
+     *
+     * @param value - Maximum value.
+     */
+    max(value: number): this;
+  }
 
   interface ObjectValidator extends Validator {
     /**

@@ -38,7 +38,7 @@ describe("instantiation", () => {
           name: "uh what",
         },
       });
-    }).toThrow(/schema must be a function/i);
+    }).toThrow("must be a v.object()");
   });
 
   test("throws if schema function doesn't return an object validator", () => {
@@ -49,7 +49,7 @@ describe("instantiation", () => {
           return m.number();
         },
       });
-    }).toThrow(/schema function must return a/i);
+    }).toThrow("must be a v.object()");
   });
 });
 

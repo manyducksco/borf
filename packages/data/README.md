@@ -9,27 +9,23 @@ Modern apps may have many sources of data, but you still need a single source of
 Models ensure that your data is structured how you expect by enforcing a schema that you define. Model instances (called 'records') are uniquely identified by the value of their `key`.
 
 ```js
-import { makeModel } from "@woofjs/data";
+import { makeModel, v } from "@woofjs/data";
 
 const User = makeModel({
   key: "id",
 
-  schema: (v) => {
-    const datePattern = /\d{4}-\d{2}-\d{2}Z\d{2}:\d{2}\.\d{3}Z/;
-
-    return v
-      .object({
-        id: v.number(),
-        name: v.shape({
-          family: v.string().optional(),
-          given: v.string(),
-          format: v.oneOf("family-given", "given-family").optional(),
-        }),
-        status: v.oneOf("offline", "online"),
-        createdAt: v.string().pattern(datePattern),
-      })
-      .strict();
-  },
+  schema: v
+    .object({
+      id: v.number(),
+      name: v.shape({
+        family: v.string().optional(),
+        given: v.string(),
+        format: v.oneOf("family-given", "given-family").optional(),
+      }),
+      status: v.oneOf("offline", "online"),
+      createdAt: v.string().isoDate(),
+    })
+    .strict(),
 });
 ```
 
