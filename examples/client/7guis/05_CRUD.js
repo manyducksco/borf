@@ -75,7 +75,7 @@ export default function CRUD(self) {
   }
 
   // Update fields when selection changes.
-  self.watchState($selectedId, (id) => {
+  self.subscribeTo($selectedId, (id) => {
     const person = $people.get().find((p) => p.id === id);
 
     if (person) {

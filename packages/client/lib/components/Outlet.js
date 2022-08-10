@@ -12,7 +12,7 @@ export function Outlet() {
 
   function swapElement(element) {
     if (connected) {
-      connected.disconnect();
+      connected.disconnect({ allowTransitionOut: true });
       connected = null;
     }
 
@@ -26,7 +26,7 @@ export function Outlet() {
     }
   }
 
-  this.watchState($element, swapElement);
+  this.subscribeTo($element, swapElement);
 
   return node;
 }

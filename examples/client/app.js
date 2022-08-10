@@ -1,6 +1,6 @@
 import "./styles/demo.css";
 
-import { makeApp } from "@woofjs/client";
+import { makeApp, makeState } from "@woofjs/client";
 
 import CounterService from "./services/CounterService.js";
 import MouseService from "./services/MouseService.js";
@@ -66,6 +66,71 @@ app.route("*", AppLayout, function () {
       </div>
     );
   });
+
+  this.route(
+    "/transitions",
+    function () {
+      return (
+        <div>
+          <ul>
+            <li>
+              <a href="/transitions/one">One</a>
+            </li>
+            <li>
+              <a href="/transitions/two">Two</a>
+            </li>
+            <li>
+              <a href="/transitions/three">Three</a>
+            </li>
+          </ul>
+          <div>{this.children}</div>
+        </div>
+      );
+    },
+    function () {
+      const TransitionPage = function () {
+        this.debug.name = "TransitionPage";
+
+        const $ref = makeState();
+        const $classes = makeState({
+          transitionPage: true,
+        });
+
+        this.afterConnect(() => {
+          $classes.set((classes) => {
+            classes.enter = true;
+            classes.exit = false;
+          });
+        });
+
+        this.transitionOut(() => {
+          this.debug.log("transitionOut");
+
+          $classes.set((classes) => {
+            classes.enter = false;
+            classes.exit = true;
+          });
+
+          return new Promise((resolve) => {
+            $ref.get().addEventListener("transitionend", () => {
+              resolve();
+            });
+          });
+        });
+
+        return (
+          <div $ref={$ref} class={$classes}>
+            {this.$attrs.map("label")}
+          </div>
+        );
+      };
+
+      this.route("/one", <TransitionPage label="One" />);
+      this.route("/two", <TransitionPage label="Two" />);
+      this.route("/three", <TransitionPage label="Three" />);
+      this.redirect("*", "./one");
+    }
+  );
 
   this.route("/7guis", SevenGUIs, function () {
     this.route("/counter", Counter);

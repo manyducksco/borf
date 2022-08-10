@@ -15,7 +15,7 @@ export function Fragment() {
 
   this.afterDisconnect(() => {
     for (const child of this.children) {
-      child.disconnect();
+      child.disconnect({ allowTransitionOut: true });
     }
   });
 

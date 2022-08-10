@@ -1,6 +1,6 @@
 import { makeDebug } from "./makeDebug.js";
 import { initService } from "./helpers/initService.js";
-import { isFunction, isString } from "./helpers/typeChecking.js";
+import { isFunction, isString, isTemplate } from "./helpers/typeChecking.js";
 import { splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
@@ -27,7 +27,7 @@ export function makeApp(options = {}) {
   let layerId = 0;
 
   /**
-   * Parses routes into a flat data structure appropriate for handling by the @router service.
+   * Parses routes into a flat data structure appropriate for handling by the router service.
    *
    * @param path - Path to match before calling handlers.
    * @param component - Component to display when route matches.
@@ -35,6 +35,11 @@ export function makeApp(options = {}) {
    * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
    */
   function prepareRoutes(path, component, defineRoutes = null, layers = []) {
+    if (isTemplate(component)) {
+      const c = component;
+      component = () => c;
+    }
+
     if (!isFunction(component)) {
       throw new TypeError(`Route needs a path and a component function. Got: ${path} and ${component}`);
     }

@@ -8,15 +8,11 @@ export default function PageService() {
 
   this.afterConnect(() => {
     if (document) {
-      this.watchState(
-        $title,
-        (current) => {
-          if (isString(current)) {
-            document.title = current;
-          }
-        },
-        { immediate: false }
-      );
+      this.subscribeTo($title, (current) => {
+        if (isString(current)) {
+          document.title = current;
+        }
+      });
     }
   });
 

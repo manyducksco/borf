@@ -38,7 +38,7 @@ export function Watch() {
     }
 
     if (current) {
-      current.disconnect();
+      current.disconnect({ allowTransitionOut: true });
       current = null;
     }
 
@@ -48,11 +48,11 @@ export function Watch() {
     }
   }
 
-  this.watchState($value, update);
+  this.subscribeTo($value, update);
 
   this.afterDisconnect(() => {
     if (current) {
-      current.disconnect();
+      current.disconnect({ allowTransitionOut: true });
       current = null;
     }
   });

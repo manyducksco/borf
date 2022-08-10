@@ -168,14 +168,18 @@ function Example() {
     // Runs after the component is removed from the page.
   });
 
-  this.transitionOut(async () => {
-    // Runs when the component is about to leave the DOM.
-    // Delays disconnection and 'afterDisconnect' hook until the promise resolves.
-    // Use this to set up an exit animation.
+  this.transitionOut(() => {
+    return new Promise((resolve) => {
+      // Runs when the component is about to leave the DOM.
+      // Delays disconnection and 'afterDisconnect' hook until the promise resolves.
+      // Use this to set up an exit animation.
+
+      setTimeout(resolve, 500);
+    });
   });
 
-  // Runs a callback function each time a state changes while this component is connected.
-  this.watchState($title, (title) => {
+  // Runs a callback function each time an observable emits a value while this component is connected.
+  this.subscribeTo($title, (title) => {
     console.log("title attribute changed to " + title);
   });
 
@@ -562,8 +566,8 @@ app.service("example", function () {
 
   // Services live for the lifetime of the app, so they have no disconnect hooks.
 
-  // Runs a callback function each time a state changes.
-  this.watchState($title, (title) => {
+  // Runs a callback function each time a state changes (or any observable emits a value).
+  this.subscribeTo($title, (title) => {
     console.log("title attribute changed to " + title);
   });
 

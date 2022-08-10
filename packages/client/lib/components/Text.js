@@ -11,7 +11,7 @@ export function Text() {
     }
   }
 
-  this.watchState(this.$attrs, setText);
+  this.subscribeTo(this.$attrs, setText);
 
   return node;
 }

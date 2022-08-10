@@ -32,7 +32,7 @@ export default function AppLayout() {
   // });
 
   // Display current mouse coordinates as tab title
-  this.watchState(mouse.$position, (pos) => {
+  this.subscribeTo(mouse.$position, (pos) => {
     page.$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
   });
 

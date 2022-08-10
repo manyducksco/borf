@@ -64,28 +64,24 @@ export default function RouterService() {
   let isRouteChange = false;
 
   // Update URL when $query changes
-  this.watchState(
-    $query,
-    (current) => {
-      // No-op if this is triggered by a route change.
-      if (isRouteChange) {
-        isRouteChange = false;
-        return;
-      }
+  this.subscribeTo($query, (current) => {
+    // No-op if this is triggered by a route change.
+    if (isRouteChange) {
+      isRouteChange = false;
+      return;
+    }
 
-      const params = new URLSearchParams();
+    const params = new URLSearchParams();
 
-      for (const key in current) {
-        params.set(key, current[key]);
-      }
+    for (const key in current) {
+      params.set(key, current[key]);
+    }
 
-      history.replace({
-        pathname: history.location.pathname,
-        search: "?" + params.toString(),
-      });
-    },
-    { immediate: false }
-  );
+    history.replace({
+      pathname: history.location.pathname,
+      search: "?" + params.toString(),
+    });
+  });
 
   this.afterConnect(() => {
     const root = this.options.getRoot();
@@ -151,7 +147,7 @@ export default function RouterService() {
                 requestAnimationFrame(() => {
                   if (activeLayer && activeLayer.component.isConnected) {
                     // Disconnect first mismatched active and remove remaining layers.
-                    activeLayer.component.disconnect();
+                    activeLayer.component.disconnect({ allowTransitionOut: true });
                   }
 
                   if (parentLayer) {

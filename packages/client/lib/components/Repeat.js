@@ -26,7 +26,7 @@ export function Repeat() {
     // Disconnect all if updated with empty values.
     if (newValues == null) {
       for (const item of connectedItems) {
-        item.component.disconnect();
+        item.component.disconnect({ allowTransitionOut: true });
       }
       connectedItems = [];
 
@@ -50,7 +50,7 @@ export function Repeat() {
       const stillPresent = !!newKeys.find((key) => key.value === item.key);
 
       if (!stillPresent) {
-        item.component.disconnect();
+        item.component.disconnect({ allowTransitionOut: true });
       }
     }
 
@@ -77,7 +77,7 @@ export function Repeat() {
     connectedItems = newItems;
   }
 
-  this.watchState($value, update);
+  this.subscribeTo($value, update);
 
   this.afterDisconnect(() => {
     for (const item of connectedItems) {

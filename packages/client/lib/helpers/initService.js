@@ -1,15 +1,5 @@
 import { isObject } from "./typeChecking.js";
 
-import { makeState } from "../state/makeState.js";
-import { mergeStates } from "../state/mergeStates.js";
-import { makeProxyState } from "../state/makeProxyState.js";
-
-const serviceHelpers = {
-  makeState,
-  mergeStates,
-  makeProxyState,
-};
-
 export function initService(appContext, fn, debug, config) {
   // Lifecycle hook callbacks
   let onBeforeConnect = [];
@@ -22,7 +12,6 @@ export function initService(appContext, fn, debug, config) {
     debug,
     options: config.options || {},
     services: appContext.services,
-    helpers: serviceHelpers,
 
     beforeConnect(callback) {
       onBeforeConnect.push(callback);
@@ -30,8 +19,15 @@ export function initService(appContext, fn, debug, config) {
     afterConnect(callback) {
       onAfterConnect.push(callback);
     },
+
     watchState($state, callback) {
+      debug.warn("watchState is deprecated. Use subscribeTo instead.");
+
       subscriptions.push($state.subscribe({ next: callback }));
+    },
+
+    subscribeTo(observable, ...args) {
+      subscriptions.push(observable.subscribe(...args));
     },
   };
 

@@ -44,3 +44,18 @@ body {
   display: flex;
   align-items: center;
 }
+
+.transitionPage {
+  position: relative;
+  border: 1px solid orange;
+  transform: translateX(100%);
+  transition: transform 500ms;
+}
+
+.transitionPage.enter {
+  transform: translateX(0);
+}
+
+.transitionPage.exit {
+  transform: translateX(-100%);
+}

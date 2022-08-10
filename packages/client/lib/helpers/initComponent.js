@@ -1,24 +1,8 @@
 import { isTemplate, isDOM, isFunction, isComponent, isObservable, isState } from "./typeChecking.js";
-
-import { h, when, unless, watch, repeat, bind } from "../h.js";
 import { makeState } from "../state/makeState.js";
-import { mergeStates } from "../state/mergeStates.js";
-import { makeProxyState } from "../state/makeProxyState.js";
 
 export const appContextKey = Symbol("appContext");
 export const elementContextKey = Symbol("elementContext");
-
-const componentHelpers = {
-  h,
-  when,
-  unless,
-  watch,
-  repeat,
-  bind,
-  makeState,
-  mergeStates,
-  makeProxyState,
-};
 
 /**
  * Initializes a component function into a component instance that the framework can work with.
@@ -39,10 +23,11 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   let onBeforeDisconnect = [];
   let onAfterDisconnect = [];
 
-  // Cancel functions for state subscriptions that are currently active.
-  // All active watchers are cancelled when the component is disconnected.
+  // Track currently active subscriptions.
+  // All observers are unsubscribed when the component is disconnected.
   let subscriptions = [];
 
+  let transitionOutCallback;
   let routePreload;
   let isConnected = false;
 
@@ -101,14 +86,14 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   ||    Define context object    ||
   \*=============================*/
 
+  const debug = appContext.debug.makeChannel(`component:${fn.name || "anonymous"}`);
+
   // This is the object the setup function uses to interface with the component.
   const ctx = {
     $attrs: $attrs.map(), // Read-only from inside the component.
     services: appContext.services,
-    debug: appContext.debug.makeChannel(`component:${fn.name || "anonymous"}`),
+    debug,
     children,
-
-    helpers: componentHelpers,
 
     get isConnected() {
       return isConnected;
@@ -129,9 +114,11 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
       onAfterDisconnect.push(callback);
     },
     transitionOut(callback) {
-      throw new Error(`transitionOut is not yet implemented.`);
+      transitionOutCallback = callback;
     },
     watchState($state, callback) {
+      debug.warn(`watchState is deprecated. Use subscribeTo instead.`);
+
       onAfterConnect.push(() => {
         subscriptions.push($state.subscribe({ next: callback }));
       });
@@ -140,6 +127,22 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
         throw new Error(
           "Called watchState after component was already connected. This will cause memory leaks. This function should only be called in the body of the component."
         );
+      }
+    },
+    /**
+     * Subscribes to an observable and handles unsubscription when the component is disconnected.
+     */
+    subscribeTo(observable, ...args) {
+      if (isConnected) {
+        // If called when the component is connected, we assume this code is in a lifecycle hook
+        // where it will be retriggered at some point again after the component is reconnected.
+        subscriptions.push(observable.subscribe(...args));
+      } else {
+        // This should only happen if called in the body of the component.
+        // This code is not always re-run between when a component is disconnected and reconnected.
+        onAfterConnect.push(() => {
+          subscriptions.push(observable.subscribe(...args));
+        });
       }
     },
   };
@@ -166,9 +169,9 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
 
   // Update $attrs when state attrs change.
   observableAttrs.forEach(({ name, value }) => {
-    ctx.watchState(value, (unwrapped) => {
+    ctx.subscribeTo(value, (next) => {
       $attrs.set((attrs) => {
-        attrs[name] = unwrapped;
+        attrs[name] = next;
       });
     });
   });
@@ -294,32 +297,64 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
 
     /**
      * Disconnects this component from the DOM and runs lifecycle hooks.
+     * The `allowTransitionOut` property should be `true` when this component is directly
+     * being disconnected. It won't be passed on to children to avoid all transitions
+     * triggering when a router changes. Only the top level component should animate out.
      */
-    disconnect() {
+    disconnect({ allowTransitionOut = false } = {}) {
       if (component.isConnected) {
-        for (const callback of onBeforeDisconnect) {
-          callback();
-        }
+        if (allowTransitionOut && transitionOutCallback) {
+          const promise = transitionOutCallback();
 
-        if (isComponent(element)) {
-          element.disconnect();
-        } else if (isDOM(element)) {
-          element.parentNode.removeChild(element);
-        }
+          if (!(promise instanceof Promise)) {
+            throw new TypeError(`transitionOut callback must return a promise.`);
+          }
 
-        isConnected = false;
+          for (const callback of onBeforeDisconnect) {
+            callback();
+          }
 
-        for (const callback of onAfterDisconnect) {
-          callback();
-        }
+          promise.then(() => {
+            if (isComponent(element)) {
+              element.disconnect();
+            } else if (isDOM(element)) {
+              element.parentNode.removeChild(element);
+            }
 
-        for (const subscription of subscriptions) {
-          subscription.unsubscribe();
+            isConnected = false;
+
+            for (const callback of onAfterDisconnect) {
+              callback();
+            }
+
+            for (const subscription of subscriptions) {
+              subscription.unsubscribe();
+            }
+            subscriptions = [];
+          });
+        } else {
+          for (const callback of onBeforeDisconnect) {
+            callback();
+          }
+
+          if (isComponent(element)) {
+            element.disconnect();
+          } else if (isDOM(element)) {
+            element.parentNode.removeChild(element);
+          }
+
+          isConnected = false;
+
+          for (const callback of onAfterDisconnect) {
+            callback();
+          }
+
+          for (const subscription of subscriptions) {
+            subscription.unsubscribe();
+          }
+          subscriptions = [];
         }
-        subscriptions = [];
       }
-
-      isConnected = false;
     },
   };
 

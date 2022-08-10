@@ -25,10 +25,8 @@ export function makeDebug(options = {}, console = window.console) {
   let matchFn;
 
   // Update match function based on how the filter is set.
-  $filter.subscribe({
-    next: (current) => {
-      matchFn = makeMatchFn(current);
-    },
+  $filter.subscribe((current) => {
+    matchFn = makeMatchFn(current);
   });
 
   return {
