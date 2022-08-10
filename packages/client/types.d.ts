@@ -4,7 +4,7 @@ declare module "@woofjs/client" {
    *
    * @param options - Configuration options.
    */
-  export function makeApp(options: AppOptions): App;
+  export function makeApp(options?: AppOptions): App;
 
   /*==================================*\
   ||               App                ||
@@ -77,7 +77,7 @@ declare module "@woofjs/client" {
      * @param component - Component to render when path matches URL.
      * @param defineRoutes - Optional function to define nested routes.
      */
-    route(path: string, component: Component, defineRoutes?: DefineRoutesFn): App;
+    route(path: string, component: ComponentFn, defineRoutes?: DefineRoutesFn): App;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -113,11 +113,12 @@ declare module "@woofjs/client" {
 
   export type AppLifecycleCallback = (self: AppContext) => void | Promise<void>;
 
-  export type Services<T = any> = {
+  export type Services<Type = any> = {
     router: RouterService;
     http: HTTPService;
     page: PageService;
-    [name: keyof T]: T[name];
+
+    [name: keyof Type]: Type[name];
   };
 
   export type AppContext<ServicesType = any> = {
@@ -156,7 +157,7 @@ declare module "@woofjs/client" {
 
   type HTTPRequestOptions = {};
 
-  class HTTPRequest {}
+  interface HTTPRequest {}
 
   type HTTPMiddleware = (ctx: HTTPRequestContext) => Promise<void>;
 
@@ -165,7 +166,7 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   type RouteHelpers = {
-    route: (path: string, component: Component, defineRoutes?: DefineRoutesFn) => RouteHelpers;
+    route: (path: string, component: ComponentFn, defineRoutes?: DefineRoutesFn) => RouteHelpers;
     redirect: (path: string, to: string) => RouteHelpers;
   };
 
@@ -184,7 +185,7 @@ declare module "@woofjs/client" {
 
   type Template = {
     readonly isTemplate: true;
-    init(appContext: AppContext): Component;
+    init(appContext: AppContext): ComponentFn;
   };
 
   type BoundState<T> = {
@@ -193,14 +194,14 @@ declare module "@woofjs/client" {
     event: string;
   };
 
-  export function h(element: string | Component, attrs: Object, ...children: Template[]): Template;
-  export function h(element: string | Component, ...children: Template[]): Template;
+  export function h(element: string | ComponentFn, attrs: Object, ...children: Template[]): Template;
+  export function h(element: string | ComponentFn, ...children: Template[]): Template;
 
   export function when($condition: State, element: Element): Template;
 
   export function unless($condition: State, element: Element): Template;
 
-  export function repeat<T>($values: State<T[]>, component: Component, getKey?: (value: T) => any): Template;
+  export function repeat<T>($values: State<T[]>, component: ComponentFn, getKey?: (value: T) => any): Template;
 
   export function watch<T>($value: State<T>, render: (value: T) => Element): Template;
 
@@ -210,14 +211,36 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
-  export type Component<AttrsType> = (
-    this: ComponentContext<AttrsType>,
-    ctx: ComponentContext<AttrsType>
+  export class Component<AttrsType = any, ServicesType = any> implements ComponentContext<AttrsType, ServicesType> {
+    $attrs: State<AttrsType>;
+    services: Services<ServicesType>;
+    debug: DebugChannel;
+    children: any;
+
+    constructor(fn?: ComponentFn<AttrsType, ServicesType>);
+
+    bootstrap(
+      this: ComponentContext<AttrsType, ServicesType>,
+      self: ComponentContext<AttrsType, ServicesType>
+    ): Element | null;
+
+    beforeConnect: (callback: () => void) => void;
+    afterConnect: (callback: () => void) => void;
+    beforeDisconnect: (callback: () => void) => void;
+    afterDisconnect: (callback: () => void) => void;
+    transitionOut: (callback: () => Promise<void>) => void;
+
+    loadRoute: (show: (element: Element) => void, done: () => void) => Promise<any> | void;
+  }
+
+  export type ComponentFn<AttrsType, ServicesType> = (
+    this: ComponentContext<AttrsType, ServicesType>,
+    self: ComponentContext<AttrsType, ServicesType>
   ) => Element | null;
 
-  export type ComponentContext<AttrsType> = {
+  export interface ComponentContext<AttrsType = any, ServicesType = any> {
     $attrs: State<AttrsType>;
-    services: Services;
+    services: Services<ServicesType>;
     debug: DebugChannel;
     children: any;
 
@@ -228,7 +251,7 @@ declare module "@woofjs/client" {
     transitionOut: (callback: () => Promise<void>) => void;
 
     loadRoute: (show: (element: Element) => void, done: () => void) => Promise<any> | void;
-  };
+  }
 
   /*==================================*\
   ||             Service              ||
