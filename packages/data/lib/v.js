@@ -62,18 +62,18 @@ function makeValidationError(message, context) {
 }
 
 class Validator {
-  #isOptional = false;
-  #isNullable = false;
-  #isPresent = false;
-  #refinements = [];
+  _isOptional = false;
+  _isNullable = false;
+  _isPresent = false;
+  _refinements = [];
 
   optional() {
-    this.#isOptional = true;
+    this._isOptional = true;
     return this;
   }
 
   nullable() {
-    this.#isNullable = true;
+    this._isNullable = true;
     return this;
   }
 
@@ -81,7 +81,7 @@ class Validator {
    * Refine validation with a function that takes the value and returns an error message if it fails validation.
    */
   refine(fn) {
-    this.#refinements.push(fn);
+    this._refinements.push(fn);
     return this;
   }
 
@@ -95,19 +95,17 @@ class Validator {
 
     context = context || { path: [] };
 
-    if (value !== undefined) {
-      this.#isPresent = true;
-    }
+    this._isPresent = value !== undefined;
 
-    if (!this.#isPresent && !this.#isOptional) {
+    if (!this._isPresent && !this._isOptional) {
       errors.push(
         makeValidationError("property is required", { ...context, value })
       );
     }
 
-    if (this.#isPresent) {
+    if (this._isPresent) {
       if (value === null) {
-        if (!this.#isNullable) {
+        if (!this._isNullable) {
           errors.push(
             makeValidationError("property is not nullable", {
               ...context,
@@ -121,9 +119,9 @@ class Validator {
 
         if (_errors.length > 0) {
           errors.push(..._errors);
-        } else if (this.#refinements.length > 0) {
+        } else if (this._refinements.length > 0) {
           // Refine if value passes type checking.
-          for (const fn of this.#refinements) {
+          for (const fn of this._refinements) {
             const message = fn(value);
 
             if (message != null) {
@@ -281,8 +279,6 @@ export class ObjectValidator extends Validator {
           ...context,
           path: [...context.path, key],
         });
-
-        // inspect({ key, value: value[key], validator: this._shape[key] });
 
         errors.push(...result.errors);
       }
