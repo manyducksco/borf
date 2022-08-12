@@ -60,7 +60,11 @@ export async function watch(projectRoot, buildOptions) {
     const end = makeTimer();
 
     for (const file of ctx.staticFiles) {
-      fs.unlinkSync(file.path);
+      try {
+        fs.unlinkSync(file.path);
+      } catch (err) {
+        log.static("<red>" + err.code + ":</red>", err.message);
+      }
     }
 
     ctx.staticFiles = await writeStaticFiles({
@@ -87,7 +91,9 @@ export async function watch(projectRoot, buildOptions) {
   staticWatcher.on("all", updateStaticFiles);
   events.on("client built", updateStaticFiles);
 
-  await updateStaticFiles();
+  if (clientEntryPath == null) {
+    await updateStaticFiles();
+  }
 
   /*============================*\
   ||          /client           ||

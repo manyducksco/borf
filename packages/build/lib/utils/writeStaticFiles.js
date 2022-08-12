@@ -46,7 +46,7 @@ export async function writeStaticFiles({
         }
 
         // Wooooo side effects
-        if (src !== staticPath) {
+        if (src !== staticPath && !fs.statSync(src).isDirectory()) {
           copiedFiles.push({ path: dest });
         }
 
