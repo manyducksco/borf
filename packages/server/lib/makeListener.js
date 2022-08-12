@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import send from "send";
-import { isObject, isString, isTemplate } from "./helpers/typeChecking.js";
+import { isString, isTemplate } from "./helpers/typeChecking.js";
 import { matchRoute } from "./helpers/routing.js";
 import { parseFormBody } from "./helpers/parseFormBody.js";
 import { EventSource } from "./helpers/EventSource.js";
@@ -92,12 +92,13 @@ export function makeListener(appContext) {
       } catch (err) {
         ctx.response.status = 500;
         ctx.response.body = {
-          error: err.message,
+          error: {
+            message: err.message,
+            stack: err.stack,
+          },
         };
 
-        if (typeof err.captureStackTrace === "function") {
-          err.captureStackTrace(ctx.response.body);
-        }
+        console.error(err);
       }
 
       if (ctx.response.body && ctx.response.body instanceof EventSource) {
@@ -106,28 +107,25 @@ export function makeListener(appContext) {
       }
 
       // Automatically handle content-type and body formatting when returned from handler function.
-      if (!res.headersSent && !res.writableEnded && ctx.response.body) {
+      if (ctx.response.body) {
         if (isTemplate(ctx.response.body)) {
-          res.setHeader("content-type", "text/html");
-          res.write(await ctx.response.body.render());
-        } else if (isObject(ctx.response.body)) {
-          res.setHeader("content-type", "application/json");
-          res.write(JSON.stringify(ctx.response.body));
+          ctx.response.headers["content-type"] = "text/html";
+          ctx.response.body = await ctx.response.body.render();
         } else if (isString(ctx.response.body)) {
-          res.setHeader("content-type", "text/plain");
-          res.write(ctx.response.body);
+          ctx.response.headers["content-type"] = "text/plain";
+        } else if (ctx.response.headers["content-type"] == null) {
+          ctx.response.headers["content-type"] = "application/json";
+          ctx.response.body = JSON.stringify(ctx.response.body);
         }
       }
 
-      // Send headers if they haven't yet been sent.
-      if (!res.headersSent) {
-        res.writeHead(ctx.response.status, ctx.response.headers);
+      res.writeHead(ctx.response.status, ctx.response.headers);
+
+      if (ctx.response.body != null) {
+        res.write(Buffer.from(ctx.response.body));
       }
 
-      // End the request if it hasn't yet been ended.
-      if (!res.writableEnded) {
-        res.end();
-      }
+      res.end();
     } else {
       // Try serving static files, otherwise return 404.
       if (req.method === "GET" || req.method === "HEAD") {

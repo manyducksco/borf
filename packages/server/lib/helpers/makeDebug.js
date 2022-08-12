@@ -44,7 +44,7 @@ export function makeDebug(options = {}, console = global.console) {
             return () => {};
           }
 
-          return console.log.bind(window.console, `[${name}]`);
+          return console.log.bind(console, `[${name}]`);
         },
 
         get warn() {
@@ -52,7 +52,7 @@ export function makeDebug(options = {}, console = global.console) {
             return () => {};
           }
 
-          return console.warn.bind(window.console, `[${name}]`);
+          return console.warn.bind(console, `[${name}]`);
         },
 
         get error() {
@@ -60,7 +60,7 @@ export function makeDebug(options = {}, console = global.console) {
             return () => {};
           }
 
-          return console.error.bind(window.console, `[${name}]`);
+          return console.error.bind(console, `[${name}]`);
         },
       };
     },
