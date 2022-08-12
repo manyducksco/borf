@@ -1,7 +1,8 @@
 import { makeState } from "../state/makeState.js";
 import { isString } from "../helpers/typeChecking.js";
+import { Service } from "../Service.js";
 
-export default function PageService() {
+const PageService = new Service(function () {
   this.debug.name = "woof:service:page";
 
   const $title = makeState(document?.title);
@@ -19,4 +20,6 @@ export default function PageService() {
   return {
     $title,
   };
-}
+});
+
+export default PageService;

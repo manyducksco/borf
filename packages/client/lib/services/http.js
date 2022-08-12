@@ -1,6 +1,7 @@
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
+import { Service } from "../Service.js";
 
-export default function HTTPService() {
+const HTTPService = new Service(function () {
   this.debug.name = "woof:service:http";
 
   const _middleware = [];
@@ -51,7 +52,9 @@ export default function HTTPService() {
       return request("head", url);
     },
   };
-}
+});
+
+export default HTTPService;
 
 export class HTTPRequest {
   #id;

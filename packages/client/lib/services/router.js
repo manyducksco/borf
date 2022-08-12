@@ -8,13 +8,14 @@ import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
 import { initComponent } from "../helpers/initComponent.js";
+import { Service } from "../Service.js";
 
 import { Outlet } from "../components/Outlet.js";
 
 /**
  * Top level navigation service.
  */
-export default function RouterService() {
+const RouterService = new Service(function () {
   this.debug.name = "woof:service:router";
 
   let history;
@@ -235,4 +236,6 @@ export default function RouterService() {
       }
     },
   };
-}
+});
+
+export default RouterService;

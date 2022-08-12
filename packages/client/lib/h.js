@@ -15,6 +15,7 @@ import { Watch } from "./components/Watch.js";
 import { Repeat } from "./components/Repeat.js";
 import { Element } from "./components/Element.js";
 import { Fragment } from "./components/Fragment.js";
+import { Component } from "./Component.js";
 
 /**
  * Template function. Used in components to render content.
@@ -68,6 +69,10 @@ export function h(element, ...args) {
 
           return child;
         });
+
+      if (element instanceof Component) {
+        element = element.bootstrap;
+      }
 
       if (isString(element)) {
         if (element === "" || element === "<>") {

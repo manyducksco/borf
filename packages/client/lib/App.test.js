@@ -1,9 +1,9 @@
 import { createMemoryHistory } from "history";
 import { h } from "./h.js";
-import { makeApp } from "./makeApp.js";
+import { App } from "./App.js";
 
 test("nested routes are parsed correctly", async () => {
-  const app = makeApp();
+  const app = new App();
   const root = document.createElement("div");
 
   function AppLayout() {
@@ -89,7 +89,7 @@ test("nested routes are parsed correctly", async () => {
 });
 
 test("lifecycle methods", async () => {
-  const app = makeApp();
+  const app = new App();
   const root = document.createElement("div");
 
   app.service("http", () => {
@@ -109,7 +109,7 @@ test("lifecycle methods", async () => {
 });
 
 test("throws helpful error when accessing services that haven't been created yet from other services", () => {
-  const app = makeApp({
+  const app = new App({
     router: {
       history: createMemoryHistory(),
     },
@@ -141,7 +141,7 @@ test("throws helpful error when accessing services that haven't been created yet
 });
 
 test("error doesn't occur if accessing outside of the main function scope", async () => {
-  const app = makeApp({
+  const app = new App({
     router: {
       history: createMemoryHistory(),
     },

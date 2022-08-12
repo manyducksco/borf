@@ -1,6 +1,18 @@
-import { makeApp, Component } from "@woofjs/client";
+import { App, Component, Service, ServiceFn, ServicesOf } from "@woofjs/client";
 
-const app = makeApp();
+const message = new Service((self) => {
+  return {
+    message: "hello",
+  };
+});
+
+const app = new App({
+  services: {
+    message: message,
+  },
+});
+
+type AppServices = ServicesOf<typeof app>;
 
 interface ExampleAttrs {
   title: string;
@@ -12,16 +24,21 @@ interface ServicesType {
   };
 }
 
-const Example = new Component<ExampleAttrs, ServicesType>((self) => {
-  const $title = self.$attrs.map((attrs) => attrs.title);
+const Example = new Component<ExampleAttrs, ServicesType>(function () {
+  this.debug.name = "Example";
 
-  const { http, page, router, arbitrary } = self.services;
+  const $title = this.$attrs.map((attrs) => attrs.title);
+
+  const { http, page, router, arbitrary } = this.services;
+
+  http.use(async (ctx, next) => {});
 
   // http.get("/test")
 
   // self.services.
 
   return null;
+  // return <h1>{$title}</h1>;
 });
 
 class Example2 extends Component<ExampleAttrs, ServicesType> {

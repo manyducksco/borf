@@ -1,14 +1,15 @@
 import { isArray, isObject, isString, isNumber, isFunction, isBinding, isObservable } from "../helpers/typeChecking.js";
 import { elementContextKey } from "../helpers/initComponent.js";
+import { Component } from "../Component.js";
 
 /**
  * Implements logic for HTML elements created with `h()`.
  */
-export function Element() {
-  const elementContext = this[elementContextKey];
+export const Element = new Component((self) => {
+  const elementContext = self[elementContextKey];
 
-  const tagname = this.$attrs.get("tagname");
-  const attrs = this.$attrs.get("attrs") || {}; // attrs passed to the element itself
+  const tagname = self.$attrs.get("tagname");
+  const attrs = self.$attrs.get("attrs") || {}; // attrs passed to the element itself
 
   let node;
 
@@ -30,8 +31,8 @@ export function Element() {
 
   let subscriptions = [];
 
-  this.beforeConnect(() => {
-    for (const child of this.children) {
+  self.beforeConnect(() => {
+    for (const child of self.children) {
       child.connect(node);
     }
 
@@ -40,8 +41,8 @@ export function Element() {
     if (attrs.class) applyClasses(node, attrs.class, subscriptions);
   });
 
-  this.afterDisconnect(async () => {
-    for (const child of this.children) {
+  self.afterDisconnect(async () => {
+    for (const child of self.children) {
       child.disconnect();
     }
 
@@ -52,7 +53,7 @@ export function Element() {
   });
 
   return node;
-}
+});
 
 function applyAttrs(element, attrs, subscriptions) {
   for (const key in attrs) {

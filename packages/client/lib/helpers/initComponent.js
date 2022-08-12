@@ -1,5 +1,6 @@
 import { isTemplate, isDOM, isFunction, isComponent, isObservable, isState } from "./typeChecking.js";
 import { makeState } from "../state/makeState.js";
+import { Component } from "../Component.js";
 
 export const appContextKey = Symbol("appContext");
 export const elementContextKey = Symbol("elementContext");
@@ -179,6 +180,10 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   /*=============================*\
   ||      Run setup function     ||
   \*=============================*/
+
+  if (fn instanceof Component) {
+    fn = fn.bootstrap;
+  }
 
   let element = fn.call(ctx, ctx);
 

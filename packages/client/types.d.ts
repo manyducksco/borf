@@ -10,7 +10,7 @@ declare module "@woofjs/client" {
   ||               App                ||
   \*==================================*/
 
-  interface AppOptions {
+  interface AppOptions<ServicesType> {
     /**
      * Options for debug system.
      */
@@ -52,12 +52,18 @@ declare module "@woofjs/client" {
        */
       history?: import("history").History;
     };
+
+    services?: ServicesType;
   }
 
   /**
    *
    */
-  export type App = {
+  export class App<ServicesType> {
+    constructor(options: AppOptions<ServicesType>);
+
+    readonly services: ServicesType;
+
     /**
      * Registers a service on the app. Services can be referenced from components and other services
      * in the `this.services` object.
@@ -66,7 +72,7 @@ declare module "@woofjs/client" {
      * @param service - Service class. One instance will be created and shared.
      * @param options - Object to be passed to service as `self.options`.
      */
-    service(name: string, service: Service, options?: any): App;
+    service(name: string, service: ServiceFn, options?: any): this;
 
     /**
      * Registers a new route that will render `component` when `path` matches the current URL.
@@ -77,7 +83,7 @@ declare module "@woofjs/client" {
      * @param component - Component to render when path matches URL.
      * @param defineRoutes - Optional function to define nested routes.
      */
-    route(path: string, component: ComponentFn, defineRoutes?: DefineRoutesFn): App;
+    route(path: string, component: ComponentFn, defineRoutes?: DefineRoutesFn): this;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -85,7 +91,7 @@ declare module "@woofjs/client" {
      * @param path - Path to match.
      * @param to - Path to redirect location.
      */
-    redirect(path: string, to: string): App;
+    redirect(path: string, to: string): this;
 
     /**
      * Runs a function after services are created but before routes are connected.
@@ -93,8 +99,8 @@ declare module "@woofjs/client" {
      *
      * @param fn - Setup function.
      */
-    beforeConnect(fn: AppLifecycleCallback): App;
-    afterConnect(fn: AppLifecycleCallback): App;
+    beforeConnect(fn: AppLifecycleCallback): this;
+    afterConnect(fn: AppLifecycleCallback): this;
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -102,7 +108,7 @@ declare module "@woofjs/client" {
      * @param root - DOM node or a selector string.
      */
     connect(root: string | Node): Promise<void>;
-  };
+  }
 
   type DebugChannel = {
     name: string;
@@ -113,12 +119,21 @@ declare module "@woofjs/client" {
 
   export type AppLifecycleCallback = (self: AppContext) => void | Promise<void>;
 
-  export type Services<Type = any> = {
+  export interface Services<Type = any> {
     router: RouterService;
     http: HTTPService;
     page: PageService;
 
-    [name: keyof Type]: Type[name];
+    // TODO: Extend these keys based on Type like I was trying to do below.
+    [name: string]: {
+      [name: string]: any;
+    };
+    // [name in keyof Type]: Type[name];
+  }
+
+  // Extract the type of an app's services for use in registering components and services.
+  export type ServicesOf<App> = {
+    [name in keyof App["services"]]: ReturnType<typeof App["services"][name]["bootstrap"]>;
   };
 
   export type AppContext<ServicesType = any> = {
@@ -146,6 +161,7 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   export type HTTPService = {
+    use(middleware: HTTPMiddleware): this;
     get(url: string): HTTPRequest;
     post(url: string): HTTPRequest;
     put(url: string): HTTPRequest;
@@ -159,7 +175,7 @@ declare module "@woofjs/client" {
 
   interface HTTPRequest {}
 
-  type HTTPMiddleware = (ctx: HTTPRequestContext) => Promise<void>;
+  type HTTPMiddleware = (ctx: HTTPRequestContext, next: () => Promise<void>) => Promise<void>;
 
   /*==================================*\
   ||             Routing              ||
@@ -217,7 +233,7 @@ declare module "@woofjs/client" {
     debug: DebugChannel;
     children: any;
 
-    constructor(fn?: ComponentFn<AttrsType, ServicesType>);
+    constructor(bootstrap?: ComponentFn<AttrsType, ServicesType>);
 
     bootstrap(
       this: ComponentContext<AttrsType, ServicesType>,
@@ -260,22 +276,35 @@ declare module "@woofjs/client" {
   /**
    * Stores shared variables and functions that can be accessed by components and other services.
    */
-  export type Service = (ctx: ServiceContext) => Object;
+  export type ServiceFn<ExportsType, OptionsType> = (
+    this: ServiceContext<OptionsType>,
+    ctx: ServiceContext<OptionsType>
+  ) => ExportsType;
 
-  export type ServiceContext = {
+  export type ServiceContext<OptionsType> = {
     services: Services;
     debug: DebugChannel;
 
     /**
      * Object with options passed to this service when it was registered.
      */
-    options: {
-      [name: string]: any;
-    };
+    options: OptionsType;
 
     beforeConnect: () => void;
     afterConnect: () => void;
   };
+
+  class Service<ExportsType, OptionsType> implements ServiceContext<ExportsType, OptionsType> {
+    services: Services;
+    debug: DebugChannel;
+
+    constructor(bootstrap?: ServiceFn<ExportsType, OptionsType>);
+
+    bootstrap(this: ServiceContext<OptionsType>, self: ServiceContext<OptionsType>): object | null;
+
+    beforeConnect: (callback: () => void) => void;
+    afterConnect: (callback: () => void) => void;
+  }
 
   /*==================================*\
   ||              State               ||

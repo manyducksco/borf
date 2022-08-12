@@ -1,6 +1,6 @@
 import "./styles/demo.css";
 
-import { makeApp, makeState } from "@woofjs/client";
+import { App, makeState } from "@woofjs/client";
 
 import CounterService from "./services/CounterService.js";
 import MouseService from "./services/MouseService.js";
@@ -25,17 +25,17 @@ import CRUD from "./7guis/05_CRUD";
 import CircleDrawer from "./7guis/06_CircleDrawer";
 import Cells from "./7guis/07_Cells";
 
-const timer = new EventSource("/timer");
+// const timer = new EventSource("/timer");
 
-timer.addEventListener("time", (event) => {
-  console.log("time:", event.data + " seconds remaining");
-});
+// timer.addEventListener("time", (event) => {
+//   console.log("time:", event.data + " seconds remaining");
+// });
 
-timer.addEventListener("message", (event) => {
-  console.log("message:", event.data);
-});
+// timer.addEventListener("message", (event) => {
+//   console.log("message:", event.data);
+// });
 
-const app = makeApp({
+const app = new App({
   debug: {
     filter: "*",
     log: true,
