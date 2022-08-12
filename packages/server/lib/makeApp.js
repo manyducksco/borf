@@ -7,8 +7,8 @@ import { makeDebug } from "./helpers/makeDebug.js";
 
 import { makeListener } from "./makeListener.js";
 
-export function makeApp() {
-  const debug = makeDebug();
+export function makeApp(options = {}) {
+  const debug = makeDebug(options.debug);
 
   const registeredServices = {};
   const appContext = {
@@ -24,9 +24,11 @@ export function makeApp() {
     return methods;
   }
 
-  const listener = makeListener(appContext);
+  const server = http.createServer(makeListener(appContext));
 
   const methods = {
+    server,
+
     /**
      * Registers a service on the app. Services can be referenced in
      * Services and Components using `self.getService(name)`.
@@ -111,13 +113,6 @@ export function makeApp() {
     },
 
     /**
-     * Returns the app's listener callback for mounting in an existing node HTTP server.
-     */
-    listener() {
-      return listener;
-    },
-
-    /**
      * Starts an HTTP server on the specified port and begins listening for requests.
      */
     async listen(port) {
@@ -141,7 +136,7 @@ export function makeApp() {
           });
         }
 
-        http.createServer(listener).listen(port, () => {
+        server.listen(port, () => {
           resolve({ port });
         });
       });
