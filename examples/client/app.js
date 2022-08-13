@@ -1,6 +1,6 @@
 import "./styles/demo.css";
 
-import { App, makeState } from "@woofjs/client";
+import { App, makeState, Service } from "@woofjs/client";
 
 import CounterService from "./services/CounterService.js";
 import MouseService from "./services/MouseService.js";

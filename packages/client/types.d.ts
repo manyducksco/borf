@@ -60,9 +60,9 @@ declare module "@woofjs/client" {
    *
    */
   export class App<ServicesType> {
-    constructor(options: AppOptions<ServicesType>);
+    constructor(options?: AppOptions<ServicesType>);
 
-    readonly services: ServicesType;
+    readonly _services: ServicesType;
 
     /**
      * Registers a service on the app. Services can be referenced from components and other services
@@ -73,6 +73,8 @@ declare module "@woofjs/client" {
      * @param options - Object to be passed to service as `self.options`.
      */
     service(name: string, service: ServiceFn, options?: any): this;
+
+    component<AttrsType>(bootstrap: ComponentFn<AttrsType, ServicesOf<this>>): Component<AttrsType, ServicesOf<this>>;
 
     /**
      * Registers a new route that will render `component` when `path` matches the current URL.
@@ -119,24 +121,22 @@ declare module "@woofjs/client" {
 
   export type AppLifecycleCallback = (self: AppContext) => void | Promise<void>;
 
-  export interface Services<Type = any> {
+  type DefaultServices = {
     router: RouterService;
     http: HTTPService;
     page: PageService;
-
-    // TODO: Extend these keys based on Type like I was trying to do below.
-    [name: string]: {
-      [name: string]: any;
-    };
-    // [name in keyof Type]: Type[name];
-  }
-
-  // Extract the type of an app's services for use in registering components and services.
-  export type ServicesOf<App> = {
-    [name in keyof App["services"]]: ReturnType<typeof App["services"][name]["bootstrap"]>;
   };
 
-  export type AppContext<ServicesType = any> = {
+  export type Services<Type> = DefaultServices & {
+    [name in keyof Type]: Type[name];
+  };
+
+  // Extract the type of an app's services for use when defining components.
+  export type ServicesOf<App> = {
+    [name in keyof App["_services"]]: ReturnType<App["_services"][name]["bootstrap"]>;
+  };
+
+  export type AppContext<ServicesType> = {
     services: Services<ServicesType>;
     debug: DebugChannel;
   };
@@ -228,6 +228,8 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   export class Component<AttrsType = any, ServicesType = any> implements ComponentContext<AttrsType, ServicesType> {
+    _attrs: AttrsType;
+
     $attrs: State<AttrsType>;
     services: Services<ServicesType>;
     debug: DebugChannel;
@@ -276,7 +278,7 @@ declare module "@woofjs/client" {
   /**
    * Stores shared variables and functions that can be accessed by components and other services.
    */
-  export type ServiceFn<ExportsType, OptionsType> = (
+  export type ServiceFn<OptionsType = {}, ExportsType = any> = (
     this: ServiceContext<OptionsType>,
     ctx: ServiceContext<OptionsType>
   ) => ExportsType;
@@ -294,13 +296,13 @@ declare module "@woofjs/client" {
     afterConnect: () => void;
   };
 
-  class Service<ExportsType, OptionsType> implements ServiceContext<ExportsType, OptionsType> {
+  export class Service<OptionsType, ExportsType> implements ServiceContext<OptionsType> {
     services: Services;
     debug: DebugChannel;
 
-    constructor(bootstrap?: ServiceFn<ExportsType, OptionsType>);
+    constructor(bootstrap?: ServiceFn<OptionsType, ExportsType>);
 
-    bootstrap(this: ServiceContext<OptionsType>, self: ServiceContext<OptionsType>): object | null;
+    bootstrap(this: ServiceContext<OptionsType>, self: ServiceContext<OptionsType>): ExportsType;
 
     beforeConnect: (callback: () => void) => void;
     afterConnect: (callback: () => void) => void;
@@ -381,4 +383,14 @@ declare module "@woofjs/client" {
    * Determines whether or not an object is a state.
    */
   export function isState(value: unknown): boolean;
+}
+
+declare namespace JSX {
+  interface IntrinsicElements {
+    [elemName: string]: any;
+  }
+
+  interface ElementAttributesProperty {
+    _attrs;
+  }
 }

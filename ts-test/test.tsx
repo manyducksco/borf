@@ -1,49 +1,52 @@
-import { App, Component, Service, ServiceFn, ServicesOf } from "@woofjs/client";
+import { App, Component, Service } from "@woofjs/client";
 
-const message = new Service((self) => {
+import type { ServicesOf } from "@woofjs/client";
+
+const ExampleService = new Service((self) => {
   return {
+    /**
+     * Comment that shows up on inline documentation.
+     */
     message: "hello",
   };
 });
 
-const app = new App({
+const UserService = new Service((self) => {
+  // self.options.
+
+  return {
+    async getUsers() {
+      return [];
+    },
+  };
+});
+
+const options = {
   services: {
-    message: message,
+    example: ExampleService,
+  },
+};
+
+const app = new App({
+  // It's pretty much necessary to define the services in an object so the types can be extracted.
+  services: {
+    example: ExampleService,
+    users: UserService,
   },
 });
 
-type AppServices = ServicesOf<typeof app>;
+export type AppServices = ServicesOf<typeof app>;
 
-interface ExampleAttrs {
-  title: string;
-}
-
-interface ServicesType {
-  arbitrary: {
-    whatever: string;
-  };
-}
-
-const Example = new Component<ExampleAttrs, ServicesType>(function () {
-  this.debug.name = "Example";
-
-  const $title = this.$attrs.map((attrs) => attrs.title);
-
-  const { http, page, router, arbitrary } = this.services;
-
-  http.use(async (ctx, next) => {});
-
-  // http.get("/test")
-
-  // self.services.
+// Define components from the app to automatically inherit the app's types?
+const Example0 = app.component(function () {
+  this.services.example.message;
 
   return null;
-  // return <h1>{$title}</h1>;
 });
 
-class Example2 extends Component<ExampleAttrs, ServicesType> {
+class Example2 extends Component<{}, AppServices> {
   bootstrap() {
-    this.services.http.get("/test");
+    this.services.example.message;
 
     return null;
   }
