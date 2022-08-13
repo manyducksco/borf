@@ -64,7 +64,17 @@ declare module "@woofjs/server" {
 
   type EventSourceCallback = (connection: EventSourceConnection) => void;
 
-  interface EventSourceConnection {
+  class EventSourceConnection {
+    /**
+     * Listen for events on this connection with a callback.
+     */
+    on(event: "close", callback: () => void): void;
+
+    /**
+     * Unregister a callback that is currently listening for events.
+     */
+    off(event: "close", callback: () => void): void;
+
     /**
      * Send raw data without an event.
      *
