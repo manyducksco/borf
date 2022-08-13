@@ -1,9 +1,9 @@
-import { println } from "@ratwizard/cli";
 import ip from "ip";
 import fs from "fs-extra";
 import path from "path";
-import express from "express";
-import expressProxy from "express-http-proxy";
+import http from "http";
+import httpProxy from "http-proxy";
+import send from "send";
 import esbuild from "esbuild";
 import chokidar from "chokidar";
 import nodemon from "nodemon";
@@ -222,59 +222,69 @@ export async function watch(projectRoot, buildOptions) {
   ||        Proxy Server        ||
   \*============================*/
 
-  const proxy = express();
+  const proxy =
+    serverPort != null
+      ? httpProxy.createProxyServer({
+          target: {
+            host: "localhost",
+            port: serverPort,
+          },
+        })
+      : null;
 
-  proxy.disable("x-powered-by");
-
-  const proxyPort = await getPort({
-    port: [4000, 4001, 4002, 4003, 4004, 4005],
-  });
-
-  if (clientEntryPath) {
-    // Client bundle listens for and is notified of rebuilds using Server Sent Events.
-    proxy.get("/_bundle", (req, res) => {
-      res.set({
+  const devProxy = http.createServer((req, res) => {
+    if (req.method === "GET" && req.url === "/_bundle") {
+      res.writeHead(200, {
         "Cache-Control": "no-cache",
         "Content-Type": "text/event-stream",
         Connection: "keep-alive",
       });
-      res.flushHeaders();
 
-      // Tell the client to retry every 10 seconds if connectivity is lost
-      res.write("retry: 10000\n\n");
+      res.write(`retry: ${10000}\n\n`);
 
       const update = () => {
-        res.write(`data: ${Math.round(Math.random() * 9999999)}\n\n`);
+        res.write("data: time to reload\n\n");
       };
 
       events.on("client built", update);
 
       res.on("close", () => {
         events.off("client built", update);
+      });
+    } else if (proxy) {
+      proxy.web(req, res);
+    } else if (clientEntryPath) {
+      // Serve static files for client-only apps.
+      const stream = send(req, req.url, {
+        root: buildStaticPath,
+        maxage: 0,
+      });
+
+      stream.on("error", function onError(err) {
+        res.writeHead(err.status);
         res.end();
       });
+
+      stream.pipe(res);
+    }
+  });
+
+  if (proxy) {
+    devProxy.on("upgrade", (req, socket, head) => {
+      proxy.ws(req, socket, head);
     });
   }
 
-  if (serverPort != null) {
-    proxy.use(expressProxy(`http://localhost:${serverPort}`));
-  } else if (clientEntryPath) {
-    proxy.use(express.static(path.join(buildPath, "static")));
-    proxy.all("*", (req, res, next) => {
-      if (req.method === "GET" && path.extname(req.path) === "") {
-        res.sendFile(path.join(buildPath, "static", "index.html"));
-      } else {
-        next();
-      }
-    });
-  }
+  const devServerPort = await getPort({
+    port: [4000, 4001, 4002, 4003, 4004, 4005],
+  });
 
-  proxy.listen(proxyPort, () => {
+  devProxy.listen(devServerPort, () => {
     log.proxy(
       "app is running at",
-      `%chttp://localhost:${proxyPort}`,
+      `%chttp://localhost:${devServerPort}`,
       "and",
-      `%chttp://${ip.address()}:${proxyPort}`
+      `%chttp://${ip.address()}:${devServerPort}`
     );
   });
 }
@@ -344,44 +354,6 @@ function getServerEntryPath(projectRoot, woofConfig) {
         return path.join(serverFolder, fileName);
       }
     }
-  }
-}
-
-function esBuildPrint(result) {
-  for (const error of result.errors) {
-    println(`<red>[ERROR]</red> ${error.text}`);
-    println(`<grey>${error.location.line}</grey>  ${error.location.lineText}`);
-
-    let indent = "";
-
-    for (
-      let i = 0;
-      i < String(error.location.line).length + 2 + error.location.column;
-      i++
-    ) {
-      indent += " ";
-    }
-
-    println(`${indent}<red>^</red>`);
-  }
-
-  for (const warning of result.warnings) {
-    println(`<yellow>[WARNING]</yellow> ${warning.text}`);
-    println(
-      `<grey>${warning.location.line}</grey>  ${warning.location.lineText}`
-    );
-
-    let indent = "";
-
-    for (
-      let i = 0;
-      i < String(warning.location.line).length + 2 + warning.location.column;
-      i++
-    ) {
-      indent += " ";
-    }
-
-    println(`${indent}<yellow>^</yellow>`);
   }
 }
 
