@@ -132,8 +132,8 @@ declare module "@woofjs/client" {
   };
 
   // Extract the type of an app's services for use when defining components.
-  export type ServicesOf<App> = {
-    [name in keyof App["_services"]]: ReturnType<App["_services"][name]["bootstrap"]>;
+  export type ServicesOf<App> = DefaultServices & {
+    [name in keyof App["_services"]]: ReturnType<App["_services"][name]["init"]>;
   };
 
   export type AppContext<ServicesType> = {
@@ -229,10 +229,10 @@ declare module "@woofjs/client" {
 
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  export type WoofElement<AttrsType> = (attrs: AttrsType) => { render: ComponentFn<AttrsType> };
+  export type WoofElement<AttrsType> = (attrs: AttrsType) => { init: ComponentFn<AttrsType> };
 
-  export type Component<AttrsType = any, ServicesType = any> = {
-    new <AttrsType, ServicesType>(fn: ComponentFn<AttrsType, ServicesType>): WoofElement<AttrsType>;
+  export type Component<AttrsType, ServicesType> = {
+    new <AttrsType = any, ServicesType = any>(fn: ComponentFn<AttrsType, ServicesType>): WoofElement<AttrsType>;
   };
   export const Component: Component<AttrsType, ServicesType> = function () {};
 
@@ -281,10 +281,17 @@ declare module "@woofjs/client" {
     afterConnect: () => void;
   };
 
-  export type Service<OptionsType = any, ServicesType = any, ExportsType = any> = {
-    new <OptionsType, ServicesType>(fn: ServiceFn<OptionsType, ExportsType>): WoofService<ExportsType>;
-  };
-  export const Service: Service<AttrsType, ServicesType, ExportsType> = function () {};
+  class Service<ExportsType> implements ServiceContext<any, any> {
+    services: Services<ServicesType>;
+    debug: DebugChannel;
+
+    constructor(fn?: ServiceFn<any, ExportsType>);
+
+    init(): ExportsType;
+
+    beforeConnect: () => void;
+    afterConnect: () => void;
+  }
 
   /*==================================*\
   ||              State               ||
@@ -370,6 +377,6 @@ declare namespace JSX {
   }
 
   interface ElementClass {
-    render: any;
+    init: any;
   }
 }
