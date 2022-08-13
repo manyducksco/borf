@@ -2,14 +2,16 @@ import { App, Component, Service } from "@woofjs/client";
 
 import type { ServicesOf } from "@woofjs/client";
 
-const ExampleService = new Service((self) => {
-  return {
-    /**
-     * Comment that shows up on inline documentation.
-     */
-    message: "hello",
-  };
-});
+import { ExampleService } from "./Services";
+
+// const ExampleService = new Service((self) => {
+//   return {
+//     /**
+//      * Comment that shows up on inline documentation.
+//      */
+//     message: "hello",
+//   };
+// });
 
 const UserService = new Service((self) => {
   // self.options.

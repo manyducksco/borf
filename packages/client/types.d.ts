@@ -227,29 +227,14 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
-  export class Component<AttrsType = any, ServicesType = any> implements ComponentContext<AttrsType, ServicesType> {
-    _attrs: AttrsType;
+  // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
+  // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
+  export type WoofElement<AttrsType> = (attrs: AttrsType) => { render: ComponentFn<AttrsType> };
 
-    $attrs: State<AttrsType>;
-    services: Services<ServicesType>;
-    debug: DebugChannel;
-    children: any;
-
-    constructor(bootstrap?: ComponentFn<AttrsType, ServicesType>);
-
-    bootstrap(
-      this: ComponentContext<AttrsType, ServicesType>,
-      self: ComponentContext<AttrsType, ServicesType>
-    ): Element | null;
-
-    beforeConnect: (callback: () => void) => void;
-    afterConnect: (callback: () => void) => void;
-    beforeDisconnect: (callback: () => void) => void;
-    afterDisconnect: (callback: () => void) => void;
-    transitionOut: (callback: () => Promise<void>) => void;
-
-    loadRoute: (show: (element: Element) => void, done: () => void) => Promise<any> | void;
-  }
+  export type Component<AttrsType = any, ServicesType = any> = {
+    new <AttrsType, ServicesType>(fn: ComponentFn<AttrsType, ServicesType>): WoofElement<AttrsType>;
+  };
+  export const Component: Component<AttrsType, ServicesType> = function () {};
 
   export type ComponentFn<AttrsType, ServicesType> = (
     this: ComponentContext<AttrsType, ServicesType>,
@@ -283,8 +268,8 @@ declare module "@woofjs/client" {
     ctx: ServiceContext<OptionsType>
   ) => ExportsType;
 
-  export type ServiceContext<OptionsType> = {
-    services: Services;
+  export type ServiceContext<OptionsType, ServicesType> = {
+    services: Services<ServicesType>;
     debug: DebugChannel;
 
     /**
@@ -296,17 +281,10 @@ declare module "@woofjs/client" {
     afterConnect: () => void;
   };
 
-  export class Service<OptionsType, ExportsType> implements ServiceContext<OptionsType> {
-    services: Services;
-    debug: DebugChannel;
-
-    constructor(bootstrap?: ServiceFn<OptionsType, ExportsType>);
-
-    bootstrap(this: ServiceContext<OptionsType>, self: ServiceContext<OptionsType>): ExportsType;
-
-    beforeConnect: (callback: () => void) => void;
-    afterConnect: (callback: () => void) => void;
-  }
+  export type Service<OptionsType = any, ServicesType = any, ExportsType = any> = {
+    new <OptionsType, ServicesType>(fn: ServiceFn<OptionsType, ExportsType>): WoofService<ExportsType>;
+  };
+  export const Service: Service<AttrsType, ServicesType, ExportsType> = function () {};
 
   /*==================================*\
   ||              State               ||
@@ -385,12 +363,13 @@ declare module "@woofjs/client" {
   export function isState(value: unknown): boolean;
 }
 
+// TODO: Define all elements and the attributes they support.
 declare namespace JSX {
   interface IntrinsicElements {
     [elemName: string]: any;
   }
 
-  interface ElementAttributesProperty {
-    _attrs;
+  interface ElementClass {
+    render: any;
   }
 }

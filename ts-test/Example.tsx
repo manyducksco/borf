@@ -1,21 +1,17 @@
 import { Component } from "@woofjs/client";
 import type { AppServices } from "./test";
 
-export const Example = new Component<{ name: string }, AppServices>(
-  function () {
-    const { example } = this.services;
+type ExampleAttrs = {
+  name: string;
+};
 
-    const $name = this.$attrs.map((a) => a.name);
+export const Example = new Component<ExampleAttrs, AppServices>(function () {
+  const { example } = this.services;
 
-    return <p>{example.message}</p>;
-  }
-);
+  const $name = this.$attrs.map((a) => a.name);
 
-class Example2 extends Component<{ name: string }, AppServices> {
-  bootstrap() {
-    return <p>{this.services.example.message}</p>;
-  }
-}
+  return <p>{example.message}</p>;
+});
 
 const Parent = new Component<{}, AppServices>(function () {
   const { users } = this.services;
@@ -26,7 +22,7 @@ const Parent = new Component<{}, AppServices>(function () {
 
   return (
     <div>
-      <Example2 name="A name">5</Example2>
+      <Example name={5}>5</Example>
     </div>
   );
 });
