@@ -1,5 +1,6 @@
 import http from "http";
 import path from "path";
+import fs from "fs";
 import { isFunction } from "./helpers/typeChecking.js";
 import { initService } from "./helpers/initService.js";
 import { parseRoute, sortRoutes } from "./helpers/routing.js";
@@ -16,7 +17,7 @@ export function makeApp(options = {}) {
     middlewares: [],
     services: {},
     debug,
-    staticPath: path.join(process.cwd(), "build/static"),
+    staticPath: path.join(process.cwd(), process.env.WOOF_STATIC_PATH || "build/static"),
   };
 
   function addRoute(method, url, handlers) {
@@ -28,6 +29,29 @@ export function makeApp(options = {}) {
 
   const methods = {
     server,
+
+    /**
+     * Choose a custom directory to serve static files from. Set to `false` to disable the static file server.
+     */
+    static(directory) {
+      if (typeof directory === "boolean") {
+        if (directory === false) {
+          appContext.staticPath = null;
+        }
+      } else if (typeof directory === "string") {
+        if (!path.isAbsolute(directory)) {
+          directory = path.resolve(process.cwd(), directory);
+        }
+
+        if (!fs.existsSync(directory)) {
+          throw new Error(`Static directory '${directory}' doesn't exist!`);
+        }
+
+        appContext.staticPath = directory;
+      } else {
+        throw new TypeError(`Expected a boolean or string. Got: ${directory}`);
+      }
+    },
 
     /**
      * Registers a service on the app. Services can be referenced in

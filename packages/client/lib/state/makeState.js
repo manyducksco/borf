@@ -1,8 +1,8 @@
 import $$observable from "symbol-observable";
+import { produce } from "immer";
 import { getProperty } from "./getProperty.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
-import { produce } from "./produce.js";
 
 /**
  * Creates a state container in the form of a function.

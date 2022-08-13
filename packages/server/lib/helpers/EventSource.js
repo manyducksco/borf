@@ -1,3 +1,5 @@
+import EventEmitter from "events";
+
 export class EventSource {
   /**
    *
@@ -19,25 +21,37 @@ export class EventSource {
       Connection: "keep-alive",
     });
 
+    const connection = new EventSourceConnection(res);
+
     // Tell the client to retry every 10 seconds (by default) if connectivity is lost.
     // res.write(`retry: ${this.options.retryTimeout || 10000}\n\n`);
 
     res.on("close", () => {
       res.end();
+      connection.emit("close");
     });
 
-    const connection = {
-      send(data) {
-        res.write(`data: ${data}\n\n`);
-      },
-      emit(name, data) {
-        res.write(`event: ${name}\ndata: ${data}\n\n`);
-      },
-      close() {
-        res.end();
-      },
-    };
-
     this.fn(connection);
+  }
+}
+
+class EventSourceConnection extends EventEmitter {
+  #res = null;
+
+  constructor(res) {
+    super();
+    this.#res = res;
+  }
+
+  send(data) {
+    this.#res.write(`data: ${data}\n\n`);
+  }
+
+  emit(event, data) {
+    this.#res.write(`event: ${event}\ndata: ${data}\n\n`);
+  }
+
+  close() {
+    this.#res.end();
   }
 }

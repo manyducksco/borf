@@ -12,9 +12,6 @@ const mime = send.mime;
  * Returns a request handler callback for a node `http` server.
  */
 export function makeListener(appContext) {
-  const staticPath = fs.existsSync(appContext.staticPath) ? path.resolve(appContext.staticPath) : null;
-  const hasIndexHTML = staticPath && fs.existsSync(path.join(staticPath, "index.html"));
-
   return async function requestListener(req, res) {
     const { routes, services, middlewares } = appContext;
 
@@ -129,6 +126,10 @@ export function makeListener(appContext) {
     } else {
       // Try serving static files, otherwise return 404.
       if (req.method === "GET" || req.method === "HEAD") {
+        // TODO: Probably avoid reading from disk to check for fallback.
+        const staticPath = fs.existsSync(appContext.staticPath) ? path.resolve(appContext.staticPath) : null;
+        const hasIndexHTML = staticPath && fs.existsSync(path.join(staticPath, "index.html"));
+
         if (hasIndexHTML && canFallBackToIndexHTML(req)) {
           req.url = "/index.html";
         } else if (staticPath != null) {
