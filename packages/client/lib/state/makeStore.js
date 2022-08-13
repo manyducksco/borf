@@ -1,6 +1,6 @@
+import { produce } from "immer";
 import { isFunction } from "../helpers/typeChecking.js";
 import { makeState } from "./makeState.js";
-import { produce } from "./produce.js";
 
 /**
  * Creates a state that persists its value to localStorage (or sessionStorage).

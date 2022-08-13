@@ -1,7 +1,7 @@
 import $$observable from "symbol-observable";
+import { produce } from "immer";
 import { isFunction, isState } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
-import { produce } from "./produce.js";
 import { mapState } from "./makeState.js";
 import { getProperty } from "./getProperty.js";
 
