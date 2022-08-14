@@ -1,7 +1,7 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
 
-import { makeState } from "../state/makeState.js";
+import { State } from "../State.js";
 import { matchRoute, parseRoute } from "../helpers/routing.js";
 import { isObject } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
@@ -15,7 +15,7 @@ import { Outlet } from "../components/Outlet.js";
 /**
  * Top level navigation service.
  */
-const RouterService = new Service(function () {
+export default new Service(function RouterService() {
   this.debug.name = "woof:service:router";
 
   let history;
@@ -56,10 +56,10 @@ const RouterService = new Service(function () {
   let activeLayers = [];
   let lastQuery;
 
-  const $route = makeState(); // Route path with placeholder parameters
-  const $path = makeState(); // Real path as it shows up in the URL bar
-  const $params = makeState({}); // Matched values for named route params
-  const $query = makeState({}); // Magic state that syncs with with the browser's query params
+  const $route = new State(""); // Route path with placeholder parameters
+  const $path = new State(""); // Real path as it shows up in the URL bar
+  const $params = new State({}); // Matched values for named route params
+  const $query = new State({}); // Magic state that syncs with with the browser's query params
 
   // Track and skip updating the URL when the change came from URL navigation
   let isRouteChange = false;
@@ -237,5 +237,3 @@ const RouterService = new Service(function () {
     },
   };
 });
-
-export default RouterService;

@@ -1,10 +1,10 @@
-import { bind, makeState } from "@woofjs/client";
+import { bind, State } from "@woofjs/client";
 
 export default function Timer(self) {
   self.debug.name = "7GUIs:Timer";
 
-  const $duration = makeState(10); // duration in seconds
-  const $elapsed = makeState(0); // elapsed time in seconds
+  const $duration = new State(10); // duration in seconds
+  const $elapsed = new State(0); // elapsed time in seconds
 
   let lastTick = null;
 

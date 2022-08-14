@@ -1,4 +1,4 @@
-import { when, makeState } from "@woofjs/client";
+import { when, State } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export default function MouseFollowerExample(self) {
@@ -9,9 +9,9 @@ export default function MouseFollowerExample(self) {
   const { $position } = self.services.mouse;
   const bestColor = "#ff0088";
 
-  const $isEnabled = makeState(false);
+  const $isEnabled = new State(false);
   const $isDisabled = $isEnabled.map((yes) => !yes);
-  const $backgroundColor = makeState(bestColor);
+  const $backgroundColor = new State(bestColor);
   const $transform = $position.map(
     (pos) => `translate(${pos.x}px, ${pos.y}px)`
   );

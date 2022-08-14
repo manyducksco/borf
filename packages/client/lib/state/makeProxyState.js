@@ -3,7 +3,7 @@ import { produce } from "immer";
 import { isFunction, isState } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 import { mapState } from "./makeState.js";
-import { getProperty } from "./getProperty.js";
+import { getProperty } from "../helpers/getProperty.js";
 
 /**
  * Creates a state container that proxies the value of another state.

@@ -1,5 +1,5 @@
 import colorHash from "simple-color-hash";
-import { makeState } from "./state/makeState.js";
+import { State } from "./State.js";
 
 /**
  * Creates a factory for channels; prefixed console objects that only
@@ -12,7 +12,7 @@ import { makeState } from "./state/makeState.js";
  * @param options - Options for the debug instance. Specify an initial `filter` and enable or disable `log`, `warn` or `error` with booleans.
  */
 export function makeDebug(options = {}, console = window.console) {
-  const $filter = makeState(options.filter || "*,-woof:*");
+  const $filter = new State(options.filter || "*,-woof:*");
 
   const hash = (str) => {
     return colorHash({

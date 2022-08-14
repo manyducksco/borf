@@ -10,6 +10,7 @@ import PageService from "./services/page.js";
 import RouterService from "./services/router.js";
 
 import { Service } from "./Service.js";
+import { Component } from "./Component.js";
 
 export class App {
   _routes = [];
@@ -63,6 +64,10 @@ export class App {
     if (isTemplate(component)) {
       const c = component;
       component = () => c;
+    }
+
+    if (component instanceof Component) {
+      component = component.bootstrap;
     }
 
     if (!isFunction(component)) {

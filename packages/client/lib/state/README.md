@@ -3,9 +3,9 @@
 ## Initialize
 
 ```js
-import { makeState } from "@woofjs/client";
+import { State } from "@woofjs/client";
 
-const $count = makeState(5);
+const $count = new State(5);
 ```
 
 We now have a state with a value of 5. The `$name` convention helps to clearly mark this as a state. That's not required, but it is recommended.
@@ -66,10 +66,10 @@ _Mapped states can themselves be mapped._ Mapped states support everything a nor
 Everyone loves a good click counter. Useless in real life but great for showing how state handling works.
 
 ```js
-import { makeState } from "@woofjs/client";
+import { State } from "@woofjs/client";
 
 function Counter() {
-  const $count = makeState(0);
+  const $count = new State(0);
 
   function increment() {
     $count.set((current) => current + 1);
@@ -88,10 +88,10 @@ function Counter() {
 Our click count label is kind of basic. To overcomplicate things and to show off how you might use `.map()`, let's add a dynamic label based on the value of `$count`.
 
 ```js
-import { makeState } from "@woofjs/client";
+import { State } from "@woofjs/client";
 
 function Counter() {
-  const $count = makeState(0);
+  const $count = new State(0);
 
   function increment() {
     $count.set((current) => current + 1);
@@ -150,12 +150,12 @@ $state.get((value) => value.map((item) => item.id));
 
 ## API
 
-### `makeState`
+### `State`
 
 ```js
-import { makeState } from "@woofjs/state";
+import { State } from "@woofjs/state";
 
-const $state = makeState("🤷‍♂️");
+const $state = new State("🤷‍♂️");
 ```
 
 Here are all the functions you'll find on a state and how to call them:
@@ -185,9 +185,6 @@ Here are all the functions you'll find on a state and how to call them:
 
 A state produced by `.map()` supports everything aside from `.set()` (because mapped states derive their values from the original state).
 
-[See test suite for code examples](./src/makeState.test.js)<br>
-[See implementation](./src/makeState.js)
-
 ### `mergeStates`
 
 Takes two or more states followed by a merge function. This function receives the values of each state in the order they were passed and returns a value for a new state. This function is run each time any of the states changes.
@@ -197,16 +194,13 @@ It's a lot like `.map`, but for transforming multiple states into one.
 ```js
 import { mergeStates } from "@woofjs/state";
 
-const $isLoading = makeState(true);
-const $hasData = makeState(false);
+const $isLoading = new State(true);
+const $hasData = new State(false);
 
 const $isReady = mergeStates($isLoading, $hasData, (isLoading, hasData) => {
   return hasData && !isLoading;
 });
 ```
-
-[See test suite for code examples](./src/mergeStates.test.js)<br>
-[See implementation](./src/mergeStates.js)
 
 ### `makeProxyState`
 

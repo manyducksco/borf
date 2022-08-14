@@ -36,64 +36,67 @@ export function h(element, ...args) {
     attrs = args.shift();
   }
 
-  const template = {
-    attrs,
+  return new Template(element, attrs, args);
+}
 
-    /**
-     * Initialize the template to produce a component instance.
-     */
-    init(appContext, elementContext = {}) {
-      elementContext = {
-        ...elementContext,
-      };
+class Template {
+  constructor(element, attrs, children) {
+    this.element = element;
+    this.attrs = attrs || {};
+    this.children = children || [];
+  }
 
-      // Mark this element and children as SVG. HTML and SVG require different functions
-      // to create their nodes, and the Element component uses this to choose the correct one.
-      if (!elementContext.isSVG && element === "svg") {
-        elementContext.isSVG = true;
-      }
+  get isTemplate() {
+    return true;
+  }
 
-      // Filter falsy children and convert to component instances.
-      const children = flatMap(args)
-        .filter((x) => x !== null && x !== undefined && x !== false)
-        .map((child) => {
-          if (isTemplate(child)) {
-            child = child.init(appContext, elementContext);
-          } else if (isString(child) || isNumber(child) || isObservable(child)) {
-            child = initComponent(appContext, Text, { value: child });
-          }
+  init(appContext, elementContext = {}) {
+    elementContext = {
+      ...elementContext,
+    };
 
-          if (!isComponent(child)) {
-            throw new TypeError(`Children must be components, strings, numbers or observables. Got: ${child}`);
-          }
+    // Mark this element and children as SVG. HTML and SVG require different functions
+    // to create their nodes, and the Element component uses this to choose the correct one.
+    if (!elementContext.isSVG && this.element === "svg") {
+      elementContext.isSVG = true;
+    }
 
-          return child;
-        });
-
-      if (element instanceof Component) {
-        element = element.bootstrap;
-      }
-
-      if (isString(element)) {
-        if (element === "" || element === "<>") {
-          return initComponent(appContext, Fragment, null, children, elementContext);
-        } else {
-          return initComponent(appContext, Element, { tagname: element, attrs }, children, elementContext);
+    // Filter falsy children and convert to component instances.
+    const children = flatMap(this.children)
+      .filter((x) => x !== null && x !== undefined && x !== false)
+      .map((child) => {
+        if (isTemplate(child)) {
+          child = child.init(appContext, elementContext);
+        } else if (isString(child) || isNumber(child) || isObservable(child)) {
+          child = initComponent(appContext, Text, { value: child });
         }
-      } else if (isFunction(element)) {
-        return initComponent(appContext, element, attrs, children, elementContext);
+
+        if (!isComponent(child)) {
+          throw new TypeError(`Children must be components, strings, numbers or observables. Got: ${child}`);
+        }
+
+        return child;
+      });
+
+    let { element, attrs } = this;
+
+    if (element instanceof Component) {
+      element = element.bootstrap;
+    }
+
+    if (isString(element)) {
+      if (element === "" || element === "<>") {
+        return initComponent(appContext, Fragment, null, children, elementContext);
       } else {
-        throw new TypeError(`Expected a tagname or component function. Got: ${element} (${typeof element})`);
+        return initComponent(appContext, Element, { tagname: element, attrs }, children, elementContext);
       }
-    },
-  };
-
-  Object.defineProperty(template, "isTemplate", {
-    writable: false,
-    value: true,
-  });
-
-  return template;
+    } else if (isFunction(element)) {
+      return initComponent(appContext, element, attrs, children, elementContext);
+    } else {
+      console.error("Element", element);
+      throw new TypeError(`Expected a tagname or component function. Got ${typeof element}`);
+    }
+  }
 }
 
 /**

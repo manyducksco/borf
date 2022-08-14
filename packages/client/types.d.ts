@@ -62,7 +62,9 @@ declare module "@woofjs/client" {
   export class App<ServicesType> {
     constructor(options?: AppOptions<ServicesType>);
 
-    readonly _services: ServicesType;
+    readonly _services: {
+      [Name in keyof ServicesType]: ServicesType[Name] extends Service<infer E> ? E : ReturnType<ServicesType[Name]>;
+    };
 
     /**
      * Registers a service on the app. Services can be referenced from components and other services
@@ -73,8 +75,6 @@ declare module "@woofjs/client" {
      * @param options - Object to be passed to service as `self.options`.
      */
     service(name: string, service: ServiceFn, options?: any): this;
-
-    component<AttrsType>(bootstrap: ComponentFn<AttrsType, ServicesOf<this>>): Component<AttrsType, ServicesOf<this>>;
 
     /**
      * Registers a new route that will render `component` when `path` matches the current URL.
@@ -128,12 +128,12 @@ declare module "@woofjs/client" {
   };
 
   export type Services<Type> = DefaultServices & {
-    [name in keyof Type]: Type[name];
+    [Name in keyof Type]: Type[Name];
   };
 
   // Extract the type of an app's services for use when defining components.
   export type ServicesOf<App> = DefaultServices & {
-    [name in keyof App["_services"]]: ReturnType<App["_services"][name]["init"]>;
+    [Name in keyof App["_services"]]: App["_services"][Name];
   };
 
   export type AppContext<ServicesType> = {
@@ -315,24 +315,6 @@ declare module "@woofjs/client" {
     unsubscribe(): void;
   }
 
-  // Extract an array of T for an array of State<T>
-  type MappedArgsType<ArgsType extends State<any>[]> = {
-    [Index in keyof ArgsType]: ArgsType[Index] extends State<infer T> ? T : null;
-  } & ArgsType["length"];
-
-  /**
-   * An intermediate state with a list of states to merge.
-   * Not particularly useful on its own, but takes a merge function
-   * through the `.into(fn)` method. This function takes the states' values
-   * in the same order they were passed, returning the new value of the resulting state.
-   */
-  class MergeState<ArgsType> {
-    /**
-     * Asdf
-     */
-    into<MergedType>(fn: (...values: MappedArgsType<ArgsType>) => MergedType): ReadOnlyState<MergedType>;
-  }
-
   export class State<Type> implements Observable<Type> {
     /**
      * Takes one or more states to merge.
@@ -354,15 +336,22 @@ declare module "@woofjs/client" {
     get<V = unknown>(selector: string): V;
 
     /**
-     * Returns a new value.
+     * Passes the current value to a mapping function and returns the result of that function.
      *
-     * @param newValue - Replacement value
+     * @param fn - Function to map the current value to the one you want to get.
+     */
+    get<V = unknown>(fn: (current: Type) => V): V;
+
+    /**
+     * Replaces the state's value with `newValue`.
+     *
+     * @param newValue - New value.
      */
     set(newValue: Type): void;
 
     /**
      * Produces a new value using a function that can either mutate `current` or return a new value.
-     * Mutations are applied on a cloned version of `current` that replaces the old one, immutably.
+     * Mutations are applied on a cloned version of `current` that replaces the old one.
      */
     set(fn: (current: Type) => Type | void): void;
 
@@ -372,9 +361,29 @@ declare module "@woofjs/client" {
     map(): ReadOnlyState<Type>;
     map<V = unknown>(selector: string): ReadOnlyState<V>;
     map<V>(transform: (current: Type) => V): ReadOnlyState<V>;
-    map<V>(selector: string, transform: (selected: unknown) => V): ReadOnlyState<V>;
 
     toString(): string;
+  }
+
+  // Infers the type of the value of a state.
+  type StateType<S> = S extends State<infer T> ? T : null;
+
+  // Extract an array of T for an array of State<T>
+  type StateValues<ArgsType extends State<any>[]> = {
+    [Index in keyof ArgsType]: StateType<ArgsType[Index]>;
+  } & ArgsType["length"];
+
+  /**
+   * An intermediate state with a list of states to merge.
+   * Not particularly useful on its own, but takes a merge function
+   * through the `.into(fn)` method. This function takes the states' values
+   * in the same order they were passed, returning the new value of the resulting state.
+   */
+  class MergeState<ArgsType> {
+    /**
+     * Asdf
+     */
+    into<MergedType>(fn: (...values: StateValues<ArgsType>) => MergedType): ReadOnlyState<MergedType>;
   }
 
   /**

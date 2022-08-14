@@ -1,4 +1,4 @@
-import { bind, makeState } from "@woofjs/client";
+import { bind, State } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 function TwoWayBindExample(self) {
@@ -6,8 +6,8 @@ function TwoWayBindExample(self) {
 
   logLifecycle(self);
 
-  const $text = makeState("edit me");
-  const $size = makeState(18);
+  const $text = new State("edit me");
+  const $size = new State(18);
 
   return (
     <div class="example">

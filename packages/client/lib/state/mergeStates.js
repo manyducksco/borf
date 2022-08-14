@@ -1,5 +1,5 @@
 import $$observable from "symbol-observable";
-import { getProperty } from "./getProperty.js";
+import { getProperty } from "../helpers/getProperty.js";
 import { mapState } from "./makeState.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";

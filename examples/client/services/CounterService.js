@@ -1,14 +1,17 @@
-import { makeState } from "@woofjs/client";
+import { State, Service } from "@woofjs/client";
 
 /**
  * Exposes a $current value and increments it by one each second.
  */
-export default function CounterService() {
-  const $current = makeState(0);
+export default new Service(function CounterService() {
+  const $current = new State(0);
 
   this.afterConnect(() => {
+    console.log($current.get());
+
     setInterval(() => {
       $current.set((current) => current + 1);
+      console.log($current.get());
     }, 1000);
   });
 
@@ -19,4 +22,4 @@ export default function CounterService() {
       $current.set(0);
     },
   };
-}
+});

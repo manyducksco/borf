@@ -1,6 +1,6 @@
 import "./styles/demo.css";
 
-import { App, makeState, Service } from "@woofjs/client";
+import { App, State } from "@woofjs/client";
 
 import CounterService from "./services/CounterService.js";
 import MouseService from "./services/MouseService.js";
@@ -95,8 +95,8 @@ app.route("*", AppLayout, function () {
       const TransitionPage = function () {
         this.debug.name = "TransitionPage";
 
-        const $ref = makeState();
-        const $classes = makeState({
+        const $ref = new State();
+        const $classes = new State({
           transitionPage: true,
         });
 

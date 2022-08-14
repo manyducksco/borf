@@ -5,7 +5,7 @@ import type { ServicesOf } from "@woofjs/client";
 // import { ExampleService } from "./Services";
 
 const $label = new State("asdf");
-const $label2 = new State("wasd");
+const $label2 = new State(12345);
 
 const $message = State.merge($label, $label2).into((one, two) => {
   return one + two;
@@ -38,17 +38,11 @@ export const app = new App({
   services: {
     example: ExampleService,
     users: UserService,
+    fn: () => ({ isFunction: true }),
   },
 });
 
 export type AppServices = ServicesOf<typeof app>;
-
-// Define components from the app to automatically inherit the app's types?
-const Example0 = app.component(function () {
-  this.services.example.message;
-
-  return null;
-});
 
 const Example3 = new Component((self) => {
   const $title = self.$attrs.map((attrs) => attrs.title);

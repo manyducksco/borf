@@ -1,15 +1,19 @@
-import { makeState, mergeStates } from "@woofjs/client";
+import { Component, State, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export default (self) => {
+export default new Component((self) => {
   const { http } = self.services;
 
   self.debug.name = "HTTPRequestExample";
 
   logLifecycle(self);
 
-  const $loading = makeState(false);
-  const $message = makeState();
+  const $loading = new State(false);
+  const $message = new State();
+
+  // const $label = State.merge($message, $loading).into((message, loading) =>
+  //   loading ? "LOADING..." : message
+  // );
 
   const $label = mergeStates($message, $loading, (message, loading) => {
     if (loading) {
@@ -44,4 +48,4 @@ export default (self) => {
       </div>
     </div>
   );
-};
+});

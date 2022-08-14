@@ -1,4 +1,4 @@
-import { isFunction, isArray } from "../helpers/typeChecking.js";
+import { isFunction, isArray } from "./typeChecking.js";
 
 /**
  * Gets a (nested) property of an object.
