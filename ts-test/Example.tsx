@@ -1,4 +1,5 @@
 import { Component } from "@woofjs/client";
+import { app } from "./test";
 import type { AppServices } from "./test";
 
 type ExampleAttrs = {
@@ -10,10 +11,14 @@ export const Example = new Component<ExampleAttrs, AppServices>(function () {
 
   const $name = this.$attrs.map((a) => a.name);
 
+  this.subscribeTo($name, (value) => {
+    console.log(value);
+  });
+
   return <p>{example.message}</p>;
 });
 
-const Parent = new Component<{}, AppServices>(function () {
+const Parent = new Component(app, function () {
   const { users } = this.services;
 
   this.beforeConnect(async () => {
@@ -21,7 +26,7 @@ const Parent = new Component<{}, AppServices>(function () {
   });
 
   return (
-    <div>
+    <div id={5}>
       <Example name={5}>5</Example>
     </div>
   );

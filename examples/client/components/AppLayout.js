@@ -1,6 +1,9 @@
+import { Component } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle";
 
-export default function AppLayout() {
+import { app } from "../app.js";
+
+export default new Component(app, function AppLayout() {
   this.debug.name = "🐕";
   this.debug.log("hi");
 
@@ -64,4 +67,4 @@ export default function AppLayout() {
       {this.children}
     </div>
   );
-}
+});

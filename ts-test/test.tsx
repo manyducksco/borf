@@ -1,8 +1,15 @@
-import { App, Component, Service } from "@woofjs/client";
+import { App, Component, Service, State } from "@woofjs/client";
 
 import type { ServicesOf } from "@woofjs/client";
 
 // import { ExampleService } from "./Services";
+
+const $label = new State("asdf");
+const $label2 = new State("wasd");
+
+const $message = State.merge($label, $label2).into((one, two) => {
+  return one + two;
+});
 
 const ExampleService = new Service((self) => {
   // TODO: Service functions don't have self and context typed correctly.
@@ -26,7 +33,7 @@ const UserService = new Service((self) => {
   };
 });
 
-const app = new App({
+export const app = new App({
   // It's pretty much necessary to define the services in an object so the types can be extracted.
   services: {
     example: ExampleService,

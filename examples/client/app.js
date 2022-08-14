@@ -35,7 +35,7 @@ import Cells from "./7guis/07_Cells";
 //   console.log("message:", event.data);
 // });
 
-const app = new App({
+export const app = new App({
   debug: {
     filter: "*",
     log: true,
@@ -44,6 +44,10 @@ const app = new App({
   },
   router: {
     hash: false,
+  },
+  services: {
+    counter: CounterService,
+    mouse: MouseService,
   },
 });
 

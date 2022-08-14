@@ -233,6 +233,11 @@ declare module "@woofjs/client" {
 
   export type Component<AttrsType, ServicesType> = {
     new <AttrsType = any, ServicesType = any>(fn: ComponentFn<AttrsType, ServicesType>): WoofElement<AttrsType>;
+
+    new <AttrsType = any, ServicesType = any>(
+      app: App<ServicesType>,
+      fn: ComponentFn<AttrsType, DefaultServices & { [name in keyof ServicesType]: ReturnType<ServicesType[name]> }>
+    ): WoofElement<AttrsType>;
   };
   export const Component: Component<AttrsType, ServicesType> = function () {};
 
@@ -247,11 +252,19 @@ declare module "@woofjs/client" {
     debug: DebugChannel;
     children: any;
 
-    beforeConnect: (callback: () => void) => void;
-    afterConnect: (callback: () => void) => void;
-    beforeDisconnect: (callback: () => void) => void;
-    afterDisconnect: (callback: () => void) => void;
-    transitionOut: (callback: () => Promise<void>) => void;
+    beforeConnect(callback: () => void): void;
+    afterConnect(callback: () => void): void;
+    beforeDisconnect(callback: () => void): void;
+    afterDisconnect(callback: () => void): void;
+    transitionOut(callback: () => Promise<void>): void;
+
+    subscribeTo<Type>(observable: Observable<Type>, observer: Observer<Type>): void;
+    subscribeTo<Type>(
+      observable: Observable<Type>,
+      next?: (value: Type) => void,
+      error?: (err: Error) => void,
+      complete?: () => void
+    ): void;
 
     loadRoute: (show: (element: Element) => void, done: () => void) => Promise<any> | void;
   }
@@ -263,29 +276,21 @@ declare module "@woofjs/client" {
   /**
    * Stores shared variables and functions that can be accessed by components and other services.
    */
-  export type ServiceFn<OptionsType = {}, ExportsType = any> = (
-    this: ServiceContext<OptionsType>,
-    ctx: ServiceContext<OptionsType>
-  ) => ExportsType;
+  export type ServiceFn<ExportsType> = (this: ServiceContext, ctx: ServiceContext) => ExportsType;
 
-  export type ServiceContext<OptionsType, ServicesType> = {
-    services: Services<ServicesType>;
+  export type ServiceContext = {
+    services: Services<any>; // Non-default services can't be typed on other services.
     debug: DebugChannel;
-
-    /**
-     * Object with options passed to this service when it was registered.
-     */
-    options: OptionsType;
 
     beforeConnect: () => void;
     afterConnect: () => void;
   };
 
-  class Service<ExportsType> implements ServiceContext<any, any> {
-    services: Services<ServicesType>;
+  class Service<ExportsType> implements ServiceContext {
+    services: Services<any>;
     debug: DebugChannel;
 
-    constructor(fn?: ServiceFn<any, ExportsType>);
+    constructor(fn?: ServiceFn<ExportsType>);
 
     init(): ExportsType;
 
@@ -297,14 +302,45 @@ declare module "@woofjs/client" {
   ||              State               ||
   \*==================================*/
 
-  type WatchOptions = {
-    /**
-     * Run the watcher function right away with the current value.
-     */
-    immediate: boolean;
-  };
+  interface Observer<Type> {
+    next(value: Type): void;
+  }
 
-  type State<Type> = {
+  interface Observable<Type> {
+    subscribe(observer: Observer<Type>): Subscription;
+    subscribe(next: (value: Type) => void): Subscription;
+  }
+
+  interface Subscription {
+    unsubscribe(): void;
+  }
+
+  // Extract an array of T for an array of State<T>
+  type MappedArgsType<ArgsType extends State<any>[]> = {
+    [Index in keyof ArgsType]: ArgsType[Index] extends State<infer T> ? T : null;
+  } & ArgsType["length"];
+
+  /**
+   * An intermediate state with a list of states to merge.
+   * Not particularly useful on its own, but takes a merge function
+   * through the `.into(fn)` method. This function takes the states' values
+   * in the same order they were passed, returning the new value of the resulting state.
+   */
+  class MergeState<ArgsType> {
+    /**
+     * Asdf
+     */
+    into<MergedType>(fn: (...values: MappedArgsType<ArgsType>) => MergedType): ReadOnlyState<MergedType>;
+  }
+
+  export class State<Type> implements Observable<Type> {
+    /**
+     * Takes one or more states to merge.
+     */
+    static merge<ArgsType extends State<any>[]>(...args: ArgsType): MergeState<ArgsType>;
+
+    constructor(initialValue: Type);
+
     /**
      * Returns the current value.
      */
@@ -330,23 +366,21 @@ declare module "@woofjs/client" {
      */
     set(fn: (current: Type) => Type | void): void;
 
-    watch(callback: (current: Type) => void): () => void;
-    watch(callback: (current: Type) => void, options: WatchOptions): () => void;
-    watch<V = unknown>(selector: string, callback: (selected: V) => void): () => void;
-    watch<V = unknown>(selector: string, callback: (selected: V) => void, options: WatchOptions): () => void;
+    subscribe(observer: Observer<Type>): Subscription;
+    subscribe(next: (value: Type) => void): Subscription;
 
-    map(): MapState<Type>;
-    map<V = unknown>(selector: string): MapState<V>;
-    map<V>(transform: (current: Type) => V): MapState<V>;
-    map<V>(selector: string, transform: (selected: unknown) => V): MapState<V>;
+    map(): ReadOnlyState<Type>;
+    map<V = unknown>(selector: string): ReadOnlyState<V>;
+    map<V>(transform: (current: Type) => V): ReadOnlyState<V>;
+    map<V>(selector: string, transform: (selected: unknown) => V): ReadOnlyState<V>;
 
     toString(): string;
-  };
+  }
 
   /**
    * A read-only state derived from another state. Supports everything a regular State supports besides `.set()`.
    */
-  type MapState<Type> = {
+  type ReadOnlyState<Type> = {
     [Property in keyof State<Type> as Exclude<Property, "set">]: State<Type>[Property];
   };
 
@@ -373,6 +407,7 @@ declare module "@woofjs/client" {
 // TODO: Define all elements and the attributes they support.
 declare namespace JSX {
   interface IntrinsicElements {
+    // div: { id?: string };
     [elemName: string]: any;
   }
 
