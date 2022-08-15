@@ -7,7 +7,7 @@ type ExampleAttrs = {
 };
 
 export const Example = new Component<ExampleAttrs, AppServices>(function () {
-  const { example } = this.services;
+  const { example, users } = this.services;
 
   const $name = this.$attrs.map((a) => a.name);
 

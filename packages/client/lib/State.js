@@ -5,11 +5,11 @@ import { deepEqual } from "./helpers/deepEqual.js";
 import { getProperty } from "./helpers/getProperty.js";
 
 export class State {
-  #value;
-  #observers = [];
+  _value;
+  _observers = [];
 
   constructor(initialValue) {
-    this.#value = freeze(initialValue, true);
+    this._value = freeze(initialValue, true);
   }
 
   static merge(...states) {
@@ -17,7 +17,7 @@ export class State {
   }
 
   get(...selectors) {
-    let value = this.#value;
+    let value = this._value;
 
     for (const selector of selectors) {
       value = getProperty(value, selector);
@@ -28,13 +28,13 @@ export class State {
 
   set(value) {
     if (isFunction(value)) {
-      value = produce(this.#value, value);
+      value = produce(this._value, value);
     }
 
-    if (!deepEqual(this.#value, value)) {
-      this.#value = value;
+    if (!deepEqual(this._value, value)) {
+      this._value = value;
 
-      for (const observer of this.#observers) {
+      for (const observer of this._observers) {
         observer.next(value);
       }
     }
@@ -59,19 +59,19 @@ export class State {
       };
     }
 
-    observer.next(this.#value);
+    observer.next(this._value);
 
-    this.#observers.push(observer);
+    this._observers.push(observer);
 
     return {
       unsubscribe: () => {
-        this.#observers.splice(this.#observers.indexOf(observer), 1);
+        this._observers.splice(this._observers.indexOf(observer), 1);
       },
     };
   }
 
   toString() {
-    return String(this.#value);
+    return String(this._value);
   }
 
   [observable]() {
@@ -84,13 +84,18 @@ export class State {
 }
 
 class StateMerge {
-  #states = [];
+  _states = [];
+  _observers = [];
 
   constructor(states) {
-    this.#states = states;
+    this._states = states;
   }
 
-  into(fn) {}
+  into(fn) {
+    return new MergedState(this._states, fn);
+  }
+
+  #subscribeToStates() {}
 }
 
 class ReadOnlyState extends State {
@@ -104,18 +109,18 @@ class ReadOnlyState extends State {
 }
 
 class MappedState extends ReadOnlyState {
-  #source;
-  #transform;
+  _source;
+  _transform;
 
   constructor(source, transform) {
     super(undefined);
 
-    this.#source = source;
-    this.#transform = transform;
+    this._source = source;
+    this._transform = transform;
   }
 
   get(...selectors) {
-    let value = this.#transform(this.#source.get());
+    let value = this._transform(this._source.get());
 
     for (const selector of selectors) {
       value = getProperty(value, selector);
@@ -145,8 +150,8 @@ class MappedState extends ReadOnlyState {
 
     let previous;
 
-    return this.#source.subscribe((value) => {
-      value = this.#transform(value);
+    return this._source.subscribe((value) => {
+      value = this._transform(value);
 
       if (!deepEqual(value, previous)) {
         previous = value;
@@ -156,6 +161,18 @@ class MappedState extends ReadOnlyState {
   }
 
   toString() {
-    return this.#source.toString();
+    return this._source.toString();
+  }
+}
+
+class MergedState extends ReadOnlyState {
+  _states = [];
+  _observers = [];
+  _observing = false;
+  _merge;
+
+  constructor(states, merge) {
+    this._states = states;
+    this._merge = merge;
   }
 }

@@ -236,7 +236,7 @@ declare module "@woofjs/client" {
 
     new <AttrsType = any, ServicesType = any>(
       app: App<ServicesType>,
-      fn: ComponentFn<AttrsType, DefaultServices & { [name in keyof ServicesType]: ReturnType<ServicesType[name]> }>
+      fn: ComponentFn<AttrsType, ServicesOf<App<ServicesType>>>
     ): WoofElement<AttrsType>;
   };
   export const Component: Component<AttrsType, ServicesType> = function () {};
