@@ -264,3 +264,27 @@ describe("immutability", () => {
     expect($state.get() !== value).toBe(true);
   });
 });
+
+describe("merge", () => {
+  test("a", () => {
+    const $one = new State(1);
+    const $two = new State(2);
+    const $three = new State(3);
+
+    const merged = State.merge($one, $two);
+
+    const $sum = merged.into((one, two) => {
+      return one + two;
+    });
+
+    expect($sum.get()).toBe(3);
+
+    // .with() creates a new merge with the additional state
+    const $withed = merged.with($three).into((one, two, three) => {
+      return one + two + three;
+    });
+
+    expect($withed.get()).toBe(6);
+    expect($sum.get()).toBe(3);
+  });
+});

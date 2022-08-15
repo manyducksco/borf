@@ -18,6 +18,20 @@ export const Example = new Component<ExampleAttrs, AppServices>(function () {
   return <p>{example.message}</p>;
 });
 
+export const Example2 = new Component<ExampleAttrs>(app, function () {
+  const { example, users } = this.services;
+
+  this.services.
+
+  const $name = this.$attrs.map((a) => a.name);
+
+  this.subscribeTo($name, (value) => {
+    console.log(value);
+  });
+
+  return <p>{example.message}</p>;
+});
+
 const Parent = new Component(app, function () {
   const { users } = this.services;
 

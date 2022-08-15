@@ -7,9 +7,11 @@ import type { ServicesOf } from "@woofjs/client";
 const $label = new State("asdf");
 const $label2 = new State(12345);
 
-const $message = State.merge($label, $label2).into((one, two) => {
-  return one + two;
-});
+const $message = State.merge($label)
+  .with($label2)
+  .into((one, two) => {
+    return one + two;
+  });
 
 const ExampleService = new Service((self) => {
   // TODO: Service functions don't have self and context typed correctly.

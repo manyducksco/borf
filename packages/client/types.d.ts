@@ -1,4 +1,6 @@
 declare module "@woofjs/client" {
+  import { Concat } from "typescript-tuple";
+
   /**
    * Creates a new woof app.
    *
@@ -234,6 +236,11 @@ declare module "@woofjs/client" {
   export type Component<AttrsType, ServicesType> = {
     new <AttrsType = any, ServicesType = any>(fn: ComponentFn<AttrsType, ServicesType>): WoofElement<AttrsType>;
 
+    new <AttrsType = any, infer>(
+      app: App<ServicesType>,
+      fn: ComponentFn<AttrsType, ServicesOf<App<ServicesType>>>
+    ): WoofElement<AttrsType>;
+
     new <AttrsType = any, ServicesType = any>(
       app: App<ServicesType>,
       fn: ComponentFn<AttrsType, ServicesOf<App<ServicesType>>>
@@ -384,6 +391,8 @@ declare module "@woofjs/client" {
      * Asdf
      */
     into<MergedType>(fn: (...values: StateValues<ArgsType>) => MergedType): ReadOnlyState<MergedType>;
+
+    with<MoreArgsType extends State<any>[]>(...states: MoreArgsType): MergeState<Concat<ArgsType, MoreArgsType>>;
   }
 
   /**
