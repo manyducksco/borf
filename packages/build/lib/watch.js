@@ -199,7 +199,9 @@ export async function watch(projectRoot, buildOptions) {
       },
     })
       .on("start", () => {
-        hold.resolve();
+        setTimeout(() => {
+          hold.resolve();
+        }, 100);
       })
       .on("stdout", (buffer) => {
         log.server(buffer.toString());
@@ -267,6 +269,10 @@ export async function watch(projectRoot, buildOptions) {
 
       stream.pipe(res);
     }
+  });
+
+  devProxy.on("error", (err) => {
+    console.error(err);
   });
 
   if (proxy) {
