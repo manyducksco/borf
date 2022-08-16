@@ -1,21 +1,22 @@
 import { isFunction, isString, isNumber, isTemplate, isObservable } from "../helpers/typeChecking.js";
-import { appContextKey, elementContextKey } from "../helpers/initComponent.js";
+import { $$appContext, $$elementContext } from "../keys.js";
 import { h } from "../h.js";
 import { Text } from "./Text.js";
+import { makeComponent } from "../makeComponent.js";
 
 /**
  * Recreates its contents each time its value changes.
  */
-export function Watch() {
-  const appContext = this[appContextKey];
-  const elementContext = this[elementContextKey];
+export const Watch = makeComponent((ctx) => {
+  const appContext = ctx[$$appContext];
+  const elementContext = ctx[$$elementContext];
 
-  this.debug.name = "woof:template:watch";
+  ctx.debug.name = "woof:template:watch";
 
   const node = document.createComment("watch");
 
-  const $value = this.$attrs.map("value");
-  const render = this.$attrs.get("render");
+  const $value = ctx.$attrs.map("value");
+  const render = ctx.$attrs.get("render");
 
   let current;
 
@@ -48,9 +49,9 @@ export function Watch() {
     }
   }
 
-  this.subscribeTo($value, update);
+  ctx.subscribeTo($value, update);
 
-  this.afterDisconnect(() => {
+  ctx.afterDisconnect(() => {
     if (current) {
       current.disconnect({ allowTransitionOut: true });
       current = null;
@@ -58,4 +59,4 @@ export function Watch() {
   });
 
   return node;
-}
+});

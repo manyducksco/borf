@@ -1,21 +1,17 @@
-import { Component, State, mergeStates } from "@woofjs/client";
+import { makeComponent, makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export default new Component((self) => {
+export default makeComponent((self) => {
   const { http } = self.services;
 
   self.debug.name = "HTTPRequestExample";
 
   logLifecycle(self);
 
-  const $loading = new State(false);
-  const $message = new State();
+  const $loading = makeState(false);
+  const $message = makeState();
 
-  // const $label = State.merge($message, $loading).into((message, loading) =>
-  //   loading ? "LOADING..." : message
-  // );
-
-  const $label = mergeStates($message, $loading, (message, loading) => {
+  const $label = mergeStates([$message, $loading], ([message, loading]) => {
     if (loading) {
       return "LOADING...";
     } else {

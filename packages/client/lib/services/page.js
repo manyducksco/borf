@@ -1,15 +1,15 @@
-import { State } from "../State.js";
+import { makeState } from "../state/makeState.js";
 import { isString } from "../helpers/typeChecking.js";
-import { Service } from "../Service.js";
+import { makeService } from "../makeService.js";
 
-export default new Service(function PageService() {
-  this.debug.name = "woof:service:page";
+export default makeService((ctx) => {
+  ctx.debug.name = "woof:service:page";
 
-  const $title = new State(document?.title);
+  const $title = makeState(document?.title);
 
-  this.afterConnect(() => {
+  ctx.afterConnect(() => {
     if (document) {
-      this.subscribeTo($title, (current) => {
+      ctx.subscribeTo($title, (current) => {
         if (isString(current)) {
           document.title = current;
         }

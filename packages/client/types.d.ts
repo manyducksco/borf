@@ -6,7 +6,7 @@ declare module "@woofjs/client" {
    *
    * @param options - Configuration options.
    */
-  export function makeApp(options?: AppOptions): App;
+  export function makeApp<ServicesType>(options?: AppOptions<ServicesType>): App<ServicesType>;
 
   /*==================================*\
   ||               App                ||
@@ -61,22 +61,8 @@ declare module "@woofjs/client" {
   /**
    *
    */
-  export class App<ServicesType> {
-    constructor(options?: AppOptions<ServicesType>);
-
-    readonly _services: {
-      [Name in keyof ServicesType]: ServicesType[Name] extends Service<infer E> ? E : ReturnType<ServicesType[Name]>;
-    };
-
-    /**
-     * Registers a service on the app. Services can be referenced from components and other services
-     * in the `this.services` object.
-     *
-     * @param name - Unique string to name this service.
-     * @param service - Service class. One instance will be created and shared.
-     * @param options - Object to be passed to service as `self.options`.
-     */
-    service(name: string, service: ServiceFn, options?: any): this;
+  interface App<ServicesType> {
+    readonly _services: ServicesType;
 
     /**
      * Registers a new route that will render `component` when `path` matches the current URL.
@@ -87,7 +73,7 @@ declare module "@woofjs/client" {
      * @param component - Component to render when path matches URL.
      * @param defineRoutes - Optional function to define nested routes.
      */
-    route(path: string, component: ComponentFn, defineRoutes?: DefineRoutesFn): this;
+    route(path: string, component: ComponentFn<{}, ServicesType>, defineRoutes?: DefineRoutesFn): this;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -103,8 +89,8 @@ declare module "@woofjs/client" {
      *
      * @param fn - Setup function.
      */
-    beforeConnect(fn: AppLifecycleCallback): this;
-    afterConnect(fn: AppLifecycleCallback): this;
+    beforeConnect(fn: AppLifecycleCallback<ServicesType>): this;
+    afterConnect(fn: AppLifecycleCallback<ServicesType>): this;
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -121,9 +107,12 @@ declare module "@woofjs/client" {
     error(...args: any): void;
   };
 
-  export type AppLifecycleCallback = (self: AppContext) => void | Promise<void>;
+  export type AppLifecycleCallback<ServicesType> = (
+    this: AppContext<ServicesType>,
+    self: AppContext<ServicesType>
+  ) => void | Promise<void>;
 
-  type DefaultServices = {
+  export type DefaultServices = {
     router: RouterService;
     http: HTTPService;
     page: PageService;
@@ -134,8 +123,10 @@ declare module "@woofjs/client" {
   };
 
   // Extract the type of an app's services for use when defining components.
-  export type ServicesOf<App> = DefaultServices & {
-    [Name in keyof App["_services"]]: App["_services"][Name];
+  export type ServicesOf<T extends App<any>> = DefaultServices & UnwrapServices<T["_services"]>;
+
+  export type UnwrapServices<T> = {
+    [Name in keyof T]: T[Name] extends Service<infer U> ? U : T[Name] extends Function ? ReturnType<T[Name]> : T[Name];
   };
 
   export type AppContext<ServicesType> = {
@@ -159,23 +150,130 @@ declare module "@woofjs/client" {
   };
 
   /*==================================*\
+  ||            Observable            ||
+  \*==================================*/
+
+  interface Observable<Type> {
+    subscribe(observer: Observer<Type>): Subscription;
+    subscribe(next: (value: Type) => void): Subscription;
+  }
+
+  interface Observer<Type> {
+    next(value: Type): void;
+  }
+
+  interface Subscription {
+    unsubscribe(): void;
+  }
+
+  /*==================================*\
   ||               HTTP               ||
   \*==================================*/
 
-  export type HTTPService = {
+  export interface HTTPService {
     use(middleware: HTTPMiddleware): this;
-    get(url: string): HTTPRequest;
-    post(url: string): HTTPRequest;
-    put(url: string): HTTPRequest;
-    patch(url: string): HTTPRequest;
-    delete(url: string): HTTPRequest;
-  };
+    get<T = any>(url: string): HTTPRequest<T>;
+    put<T = any>(url: string): HTTPRequest<T>;
+    patch<T = any>(url: string): HTTPRequest<T>;
+    post<T = any>(url: string): HTTPRequest<T>;
+    delete<T = any>(url: string): HTTPRequest<T>;
+    head(url: string): HTTPRequest<void>;
+  }
 
-  type HTTPRequestContext = {};
+  type HTTPRequestContext = {
+    method: string;
+    headers: Headers;
+    body: any;
+  };
 
   type HTTPRequestOptions = {};
 
-  interface HTTPRequest {}
+  type HTTPResponse<BodyType> = {
+    status: number;
+    statusText: string;
+    headers: {
+      [name: string]: string;
+    };
+    body: BodyType;
+  };
+
+  interface HTTPRequest<T> extends Promise<HTTPResponse<T>> {
+    readonly isRelative: boolean;
+
+    /**
+     * Gets the current request URL.
+     */
+    url(): string;
+
+    /**
+     * Sets the request URL.
+     */
+    url(value: string): void;
+
+    /**
+     * Gets the current header value by name.
+     */
+    header(name: string): string | undefined;
+
+    /**
+     * Sets a header value.
+     */
+    header(name: string, value: string): this;
+
+    /**
+     * Sets multiple headers at once using an object.
+     * Merges values with existing headers.
+     */
+    header(headers: { [name: string]: string }): this;
+
+    /**
+     * Gets the current header value by name.
+     */
+    headers(name: string): string | undefined;
+
+    /**
+     * Sets a header value.
+     */
+    headers(name: string, value: ToStringable): this;
+
+    /**
+     * Sets multiple headers at once using an object.
+     * New values are merged with existing headers.
+     */
+    headers(headers: { [name: string]: ToStringable }): this;
+
+    /**
+     * Gets the value of the named query param.
+     */
+    query(name: string): string | undefined;
+
+    /**
+     * Sets the value of the named query param.
+     */
+    query(name: string, value: ToStringable): this;
+
+    /**
+     * Sets multiple query params at once using an object.
+     * New values are merged with existing params.
+     */
+    query(params: { [name: string]: ToStringable }): this;
+
+    /**
+     * Sets the request body.
+     */
+    body(value: any): this;
+
+    /**
+     * Defines a check for whether the response code indicates an error or success.
+     * If this function returns false for a status code, it will be thrown as an error.
+     */
+    ok(check: (status: number) => boolean): this;
+
+    /**
+     * Returns the response object (if there is one).
+     */
+    response(): HTTPResponse<T> | undefined;
+  }
 
   type HTTPMiddleware = (ctx: HTTPRequestContext, next: () => Promise<void>) => Promise<void>;
 
@@ -184,7 +282,7 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   type RouteHelpers = {
-    route: (path: string, component: ComponentFn, defineRoutes?: DefineRoutesFn) => RouteHelpers;
+    route: (path: string, component: ComponentFn<any, any>, defineRoutes?: DefineRoutesFn) => RouteHelpers;
     redirect: (path: string, to: string) => RouteHelpers;
   };
 
@@ -203,7 +301,7 @@ declare module "@woofjs/client" {
 
   type Template = {
     readonly isTemplate: true;
-    init(appContext: AppContext): ComponentFn;
+    init(appContext: AppContext<any>): ComponentFn<any, any>;
   };
 
   type BoundState<T> = {
@@ -212,14 +310,22 @@ declare module "@woofjs/client" {
     event: string;
   };
 
-  export function h(element: string | ComponentFn, attrs: Object, ...children: Template[]): Template;
-  export function h(element: string | ComponentFn, ...children: Template[]): Template;
+  export function h(
+    element: string | Component<any> | ComponentFn<any, any>,
+    attrs: Object,
+    ...children: Template[]
+  ): Template;
+  export function h(element: string | Component<any> | ComponentFn<any, any>, ...children: Template[]): Template;
 
-  export function when($condition: State, element: Element): Template;
+  export function when($condition: State<any>, element: Element): Template;
 
-  export function unless($condition: State, element: Element): Template;
+  export function unless($condition: State<any>, element: Element): Template;
 
-  export function repeat<T>($values: State<T[]>, component: ComponentFn, getKey?: (value: T) => any): Template;
+  export function repeat<T>(
+    $values: State<T[]>,
+    component: Component<any> | ComponentFn<any, any>,
+    getKey?: (value: T) => any
+  ): Template;
 
   export function watch<T>($value: State<T>, render: (value: T) => Element): Template;
 
@@ -231,22 +337,16 @@ declare module "@woofjs/client" {
 
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  export type WoofElement<AttrsType> = (attrs: AttrsType) => { init: ComponentFn<AttrsType> };
+  export type Component<AttrsType> = (attrs: AttrsType) => { init: ComponentFn<AttrsType> };
 
-  export type Component<AttrsType, ServicesType> = {
-    new <AttrsType = any, ServicesType = any>(fn: ComponentFn<AttrsType, ServicesType>): WoofElement<AttrsType>;
+  export function makeComponent<AttrsType, ServicesType>(
+    fn: ComponentFn<AttrsType, ServicesType>
+  ): Component<AttrsType>;
 
-    new <AttrsType = any, infer>(
-      app: App<ServicesType>,
-      fn: ComponentFn<AttrsType, ServicesOf<App<ServicesType>>>
-    ): WoofElement<AttrsType>;
-
-    new <AttrsType = any, ServicesType = any>(
-      app: App<ServicesType>,
-      fn: ComponentFn<AttrsType, ServicesOf<App<ServicesType>>>
-    ): WoofElement<AttrsType>;
-  };
-  export const Component: Component<AttrsType, ServicesType> = function () {};
+  export function makeComponent<AttrsType, ServicesType>(
+    app: App<ServicesType>,
+    fn: ComponentFn<AttrsType, DefaultServices & UnwrapServices<ServicesType>>
+  ): Component<AttrsType>;
 
   export type ComponentFn<AttrsType, ServicesType> = (
     this: ComponentContext<AttrsType, ServicesType>,
@@ -280,6 +380,8 @@ declare module "@woofjs/client" {
   ||             Service              ||
   \*==================================*/
 
+  export function makeService<ExportsType>(fn: ServiceFn<ExportsType>): Service<ExportsType>;
+
   /**
    * Stores shared variables and functions that can be accessed by components and other services.
    */
@@ -293,43 +395,20 @@ declare module "@woofjs/client" {
     afterConnect: () => void;
   };
 
-  class Service<ExportsType> implements ServiceContext {
-    services: Services<any>;
-    debug: DebugChannel;
-
-    constructor(fn?: ServiceFn<ExportsType>);
-
-    init(): ExportsType;
-
+  export type Service<ExportsType> = {
+    exports: ExportsType;
+    init(): void;
     beforeConnect: () => void;
     afterConnect: () => void;
-  }
+  };
 
   /*==================================*\
   ||              State               ||
   \*==================================*/
 
-  interface Observer<Type> {
-    next(value: Type): void;
-  }
+  export function makeState<Type>(initialValue?: Type): State<Type>;
 
-  interface Observable<Type> {
-    subscribe(observer: Observer<Type>): Subscription;
-    subscribe(next: (value: Type) => void): Subscription;
-  }
-
-  interface Subscription {
-    unsubscribe(): void;
-  }
-
-  export class State<Type> implements Observable<Type> {
-    /**
-     * Takes one or more states to merge.
-     */
-    static merge<ArgsType extends State<any>[]>(...args: ArgsType): MergeState<ArgsType>;
-
-    constructor(initialValue: Type);
-
+  type State<Type> = {
     /**
      * Returns the current value.
      */
@@ -345,9 +424,9 @@ declare module "@woofjs/client" {
     /**
      * Passes the current value to a mapping function and returns the result of that function.
      *
-     * @param fn - Function to map the current value to the one you want to get.
+     * @param transform - Function to map the current value to the one you want to get.
      */
-    get<V = unknown>(fn: (current: Type) => V): V;
+    get<V>(transform: (current: Type) => V): V;
 
     /**
      * Replaces the state's value with `newValue`.
@@ -365,56 +444,31 @@ declare module "@woofjs/client" {
     subscribe(observer: Observer<Type>): Subscription;
     subscribe(next: (value: Type) => void): Subscription;
 
-    map(): ReadOnlyState<Type>;
-    map<V = unknown>(selector: string): ReadOnlyState<V>;
-    map<V>(transform: (current: Type) => V): ReadOnlyState<V>;
+    map(): ImmutableState<Type>;
+    map<V>(transform: (current: Type) => V): ImmutableState<V>;
 
     toString(): string;
-  }
+  };
+
+  type ImmutableState<Type> = {
+    [Prop in keyof Omit<State<Type>, "set">]: State<Type>[Prop];
+  };
 
   // Infers the type of the value of a state.
-  type StateType<S> = S extends State<infer T> ? T : null;
+  type UnwrapState<T> = T extends State<infer V> ? V : T;
 
   // Extract an array of T for an array of State<T>
   type StateValues<ArgsType extends State<any>[]> = {
-    [Index in keyof ArgsType]: StateType<ArgsType[Index]>;
+    [Index in keyof ArgsType]: UnwrapState<ArgsType[Index]>;
   } & ArgsType["length"];
-
-  /**
-   * An intermediate state with a list of states to merge.
-   * Not particularly useful on its own, but takes a merge function
-   * through the `.into(fn)` method. This function takes the states' values
-   * in the same order they were passed, returning the new value of the resulting state.
-   */
-  class MergeState<ArgsType> {
-    /**
-     * Asdf
-     */
-    into<MergedType>(fn: (...values: StateValues<ArgsType>) => MergedType): ReadOnlyState<MergedType>;
-
-    with<MoreArgsType extends State<any>[]>(...states: MoreArgsType): MergeState<Concat<ArgsType, MoreArgsType>>;
-  }
-
-  /**
-   * A read-only state derived from another state. Supports everything a regular State supports besides `.set()`.
-   */
-  type ReadOnlyState<Type> = {
-    [Property in keyof State<Type> as Exclude<Property, "set">]: State<Type>[Property];
-  };
-
-  /**
-   * Creates a new state.
-   *
-   * @param initialValue - Optional starting value
-   */
-  export function makeState<T>(initialValue?: T): State<T>;
 
   /**
    * Takes multiple states followed by a function.
    * Each time any of the states' values change, the function is passed the values in the same order to return a new value.
    * Similar to `.map` but with several states being collapsed down to one.
    */
-  export function mergeStates<T>(...args: any): State<any>;
+  // TODO: Get types right. Arrays passed in are not being interpreted as tuples.
+  export function mergeStates<T extends [...State<any>], R>(states: T, merge: (values: StateValues<T>) => R): State<R>;
 
   /**
    * Determines whether or not an object is a state.

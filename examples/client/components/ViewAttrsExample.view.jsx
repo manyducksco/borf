@@ -1,4 +1,4 @@
-import { State } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
 import ViewAttrsExample from "./ViewAttrsExample";
 
@@ -49,7 +49,7 @@ export default (view) => {
 
     showQuality: view.attribute(true),
 
-    $randomState: view.attribute(new State(5), {
+    $randomState: view.attribute(makeState(5), {
       description: "A state just to show what state attributes look like.",
     }),
 

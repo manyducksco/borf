@@ -1,23 +1,17 @@
-import { initService } from "./initService.js";
+import { makeService } from "./makeService.js";
 
 /*========================*\
 ||         Utils          ||
 \*========================*/
 
 const appContext = {
-  services: {
-    app: null,
-  },
+  services: {},
   debug: {
     makeChannel(name) {
       return {};
     },
   },
 };
-
-appContext.services.app = appContext;
-
-const debug = {};
 
 /*========================*\
 ||         Tests          ||
@@ -29,18 +23,18 @@ test("lifecycle hooks", () => {
   const beforeConnect2 = jest.fn();
   const afterConnect2 = jest.fn();
 
-  function Service(self) {
+  const service = makeService(function (ctx) {
     // Testing both this.* and self.* (same object)
     this.beforeConnect(beforeConnect);
     this.afterConnect(afterConnect);
 
-    self.beforeConnect(beforeConnect2);
-    self.afterConnect(afterConnect2);
+    ctx.beforeConnect(beforeConnect2);
+    ctx.afterConnect(afterConnect2);
 
     return { works: true };
-  }
+  });
 
-  const result = initService(appContext, Service, debug, { name: "test" });
+  const result = service.init({ appContext, name: "test" });
 
   expect(result.exports).toStrictEqual({ works: true });
 
@@ -64,28 +58,28 @@ test("lifecycle hooks", () => {
   expect(afterConnect2).toHaveBeenCalledTimes(1);
 });
 
-test("throws if fn doesn't return an object", () => {
-  function NullService() {
+test("throws if bootstrap doesn't return an object", () => {
+  const nullService = makeService(() => {
     return null;
-  }
+  });
 
-  function StringService() {
+  const stringService = makeService(() => {
     return "nope";
-  }
+  });
 
-  function FunctionService() {
+  const functionService = makeService(() => {
     return function () {
       return {};
     };
-  }
+  });
 
-  function RegularService() {
+  const regularService = makeService(() => {
     return { thisIsNormal: true };
-  }
+  });
 
-  expect(() => initService(appContext, NullService, debug, { name: "test" })).toThrow();
-  expect(() => initService(appContext, StringService, debug, { name: "test" })).toThrow();
-  expect(() => initService(appContext, FunctionService, debug, { name: "test" })).toThrow();
+  expect(() => nullService.init({ appContext, name: "test" })).toThrow();
+  expect(() => stringService.init({ appContext, name: "test" })).toThrow();
+  expect(() => functionService.init({ appContext, name: "test" })).toThrow();
 
-  expect(() => initService(appContext, RegularService, debug, { name: "test" })).not.toThrow();
+  expect(() => regularService.init({ appContext, name: "test" })).not.toThrow();
 });

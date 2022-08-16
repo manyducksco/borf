@@ -1,9 +1,9 @@
-import { State } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
 export default function TempConverter(self) {
   self.debug.name = "7GUIs:TempConverter";
 
-  const $celsius = new State(10);
+  const $celsius = makeState(10);
   const $fahrenheit = $celsius.map((c) => c * (9 / 5) + 32);
 
   function setFahrenheit(f) {

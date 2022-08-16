@@ -1,11 +1,12 @@
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
-import { Service } from "../Service.js";
 
-export default new Service(function HTTPService() {
-  this.debug.name = "woof:service:http";
+import { makeService } from "../makeService.js";
+
+export default makeService((ctx) => {
+  ctx.debug.name = "woof:service:http";
 
   const _middleware = [];
-  let fetch = this.options.fetch || window.fetch.bind(window);
+  const fetch = window.fetch.bind(window); // TODO: Find good way to pass this for mocking
   let requestId = 0;
 
   const request = (method, url) => {
@@ -14,7 +15,7 @@ export default new Service(function HTTPService() {
       method,
       url,
       fetch,
-      debug: this.debug,
+      debug: ctx.debug,
       middleware: _middleware,
     });
   };
@@ -221,6 +222,8 @@ export class HTTPRequest {
    */
   ok(fn) {
     this.#isOk = fn;
+
+    return this;
   }
 
   response() {

@@ -1,9 +1,9 @@
-import { repeat, bind, State, mergeStates } from "@woofjs/client";
+import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
 export default function CRUD(self) {
   self.debug.name = "7GUIs:CRUD";
 
-  const $people = new State([
+  const $people = makeState([
     {
       id: 1,
       name: "Hans",
@@ -20,13 +20,13 @@ export default function CRUD(self) {
       surname: "Tisch",
     },
   ]);
-  const $nextId = new State(4);
-  const $selectedId = new State(1);
+  const $nextId = makeState(4);
+  const $selectedId = makeState(1);
 
-  const $nameInput = new State("");
-  const $surnameInput = new State("");
+  const $nameInput = makeState("");
+  const $surnameInput = makeState("");
 
-  const $filterPrefix = new State("");
+  const $filterPrefix = makeState("");
 
   // TODO: Concert to State.merge
   const $filteredPeople = mergeStates(

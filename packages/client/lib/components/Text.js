@@ -1,4 +1,6 @@
-export function Text() {
+import { makeComponent } from "../makeComponent.js";
+
+export const Text = makeComponent((ctx) => {
   const node = document.createTextNode("");
 
   function setText(attrs) {
@@ -11,7 +13,7 @@ export function Text() {
     }
   }
 
-  this.subscribeTo(this.$attrs, setText);
+  ctx.subscribeTo(ctx.$attrs, setText);
 
   return node;
-}
+});

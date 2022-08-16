@@ -1,4 +1,4 @@
-import { when, repeat, bind, State, mergeStates } from "@woofjs/client";
+import { when, repeat, bind, makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export default function FormExample() {
@@ -6,16 +6,14 @@ export default function FormExample() {
 
   logLifecycle(this);
 
-  const $firstName = new State("");
-  const $lastName = new State("");
-  const $age = new State(18);
+  const $firstName = makeState("");
+  const $lastName = makeState("");
+  const $age = makeState(18);
 
   // TODO: Convert to State.merge
   const $errors = mergeStates(
-    $firstName,
-    $lastName,
-    $age,
-    (first, last, age) => {
+    [$firstName, $lastName, $age],
+    ([first, last, age]) => {
       let errors = [];
 
       if (first.trim() == "") {

@@ -1,16 +1,18 @@
-import { appContextKey, initComponent } from "../helpers/initComponent.js";
+import { makeComponent } from "../makeComponent.js";
+import { initComponent } from "../helpers/initComponent.js";
 import { isArray } from "../helpers/typeChecking.js";
+import { $$appContext } from "../keys.js";
 
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
  */
-export function Repeat() {
-  this.debug.name = "woof:template:repeat";
+export const Repeat = makeComponent((ctx) => {
+  ctx.debug.name = "woof:template:repeat";
 
-  const appContext = this[appContextKey];
-  const $value = this.$attrs.map("value");
-  const componentFn = this.$attrs.get("component");
-  const getKey = this.$attrs.get("getKey") || ((value) => value);
+  const appContext = ctx[$$appContext];
+  const $value = ctx.$attrs.map("value");
+  const componentFn = ctx.$attrs.get("component");
+  const getKey = ctx.$attrs.get("getKey") || ((value) => value);
 
   const node = document.createComment("repeat");
 
@@ -77,9 +79,9 @@ export function Repeat() {
     connectedItems = newItems;
   }
 
-  this.subscribeTo($value, update);
+  ctx.subscribeTo($value, update);
 
-  this.afterDisconnect(() => {
+  ctx.afterDisconnect(() => {
     for (const item of connectedItems) {
       item.component.disconnect();
     }
@@ -87,4 +89,4 @@ export function Repeat() {
   });
 
   return node;
-}
+});

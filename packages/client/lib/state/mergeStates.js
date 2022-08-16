@@ -4,12 +4,17 @@ import { mapState } from "./makeState.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 
-export function mergeStates(...args) {
-  const merge = args.pop();
-  const states = args;
-
+/**
+ * Combine multiple states into one.
+ *
+ * @example
+ * const $multiplied = mergeStates([$number1, $number2], (values) => {
+ *   return values[0] * values[1];
+ * });
+ */
+export function mergeStates(states, merge) {
   if (!isFunction(merge)) {
-    throw new TypeError(`Last argument should be a function. Got: ${merge}`);
+    throw new TypeError(`Second argument should be a function. Got: ${merge}`);
   }
 
   let observers = [];
@@ -20,7 +25,7 @@ export function mergeStates(...args) {
   let values = [];
 
   function updateValue() {
-    const value = merge(...values);
+    const value = merge(values);
 
     if (!deepEqual(value, currentValue)) {
       currentValue = value;
@@ -70,7 +75,7 @@ export function mergeStates(...args) {
       if (observing) {
         value = currentValue;
       } else {
-        value = merge(...states.map((state) => state.get()));
+        value = merge(states.map((state) => state.get()));
       }
 
       for (const selector of selectors) {

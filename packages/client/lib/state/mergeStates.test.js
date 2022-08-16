@@ -4,7 +4,7 @@ import { mergeStates } from "./mergeStates.js";
 test("produces a new value when dependent states change", () => {
   const state1 = makeState(false);
   const state2 = makeState(true);
-  const bothTrue = mergeStates(state1, state2, (...args) => !args.some((value) => value === false));
+  const bothTrue = mergeStates([state1, state2], (values) => !values.some((value) => value === false));
 
   expect(bothTrue.get()).toBe(false);
 
@@ -21,15 +21,13 @@ test("is Observable", () => {
   const $value = makeState(1);
   const $multiply = makeState(2);
 
-  const $merged = mergeStates($value, $multiply, (value, multiply) => {
+  const $merged = mergeStates([$value, $multiply], ([value, multiply]) => {
     return value * multiply;
   });
 
   const next = jest.fn();
 
-  const subscription = $merged.subscribe({
-    next,
-  });
+  const subscription = $merged.subscribe(next);
 
   $value.set(2);
   $value.set(3);

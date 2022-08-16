@@ -1,16 +1,16 @@
-import { repeat, bind, State, mergeStates } from "@woofjs/client";
+import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
 const flightTypes = ["one-way flight", "return flight"];
 
 export default function FlightBooker(self) {
   self.debug.name = "7GUIs:FlightBooker";
 
-  const $flightType = new State(flightTypes[0]);
-  const $startDate = new State(formatDate(new Date()));
-  const $returnDate = new State(formatDate(new Date()));
+  const $flightType = makeState(flightTypes[0]);
+  const $startDate = makeState(formatDate(new Date()));
+  const $returnDate = makeState(formatDate(new Date()));
 
-  const $startDateIsValid = new State(true);
-  const $returnDateIsValid = new State(true);
+  const $startDateIsValid = makeState(true);
+  const $returnDateIsValid = makeState(true);
 
   // TODO: Convert to State.merge
   // const $formIsValid = State.merge($startDateIsValid, $returnDateIsValid).into(

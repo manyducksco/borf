@@ -1,5 +1,7 @@
 import colorHash from "simple-color-hash";
-import { State } from "./State.js";
+import { makeState } from "../state/makeState.js";
+
+const noop = () => {};
 
 /**
  * Creates a factory for channels; prefixed console objects that only
@@ -12,7 +14,7 @@ import { State } from "./State.js";
  * @param options - Options for the debug instance. Specify an initial `filter` and enable or disable `log`, `warn` or `error` with booleans.
  */
 export function makeDebug(options = {}, console = window.console) {
-  const $filter = new State(options.filter || "*,-woof:*");
+  const $filter = makeState(options.filter || "*,-woof:*");
 
   const hash = (str) => {
     return colorHash({
@@ -51,7 +53,7 @@ export function makeDebug(options = {}, console = window.console) {
 
         get log() {
           if (options.log === false || !matchFn(name)) {
-            return () => {};
+            return noop;
           }
 
           return console.log.bind(window.console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
@@ -59,7 +61,7 @@ export function makeDebug(options = {}, console = window.console) {
 
         get warn() {
           if (options.warn === false || !matchFn(name)) {
-            return () => {};
+            return noop;
           }
 
           return console.warn.bind(window.console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
@@ -67,7 +69,7 @@ export function makeDebug(options = {}, console = window.console) {
 
         get error() {
           if (options.error === false || !matchFn(name)) {
-            return () => {};
+            return noop;
           }
 
           return console.error.bind(window.console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);

@@ -1,41 +1,36 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
 
-import { State } from "../State.js";
-import { matchRoute, parseRoute } from "../helpers/routing.js";
+import { $$appContext } from "../keys.js";
+import { makeState } from "../state/makeState.js";
+import { matchRoute } from "../helpers/routing.js";
 import { isObject } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
 import { initComponent } from "../helpers/initComponent.js";
-import { Service } from "../Service.js";
+import { makeService } from "../makeService.js";
 
 import { Outlet } from "../components/Outlet.js";
 
 /**
  * Top level navigation service.
  */
-export default new Service(function RouterService() {
-  this.debug.name = "woof:service:router";
+export default makeService((ctx) => {
+  ctx.debug.name = "woof:service:router";
+
+  const appContext = ctx[$$appContext];
+  const options = appContext.options.router;
+  const routes = appContext.routes;
 
   let history;
 
-  if (this.options.history) {
-    history = this.options.history;
-  } else if (this.options.hash) {
+  if (options.history) {
+    history = options.history;
+  } else if (options.hash) {
     history = createHashHistory();
   } else {
     history = createBrowserHistory();
-  }
-
-  let routes = [];
-
-  // Parse route paths into a matchable format.
-  for (const route of this.options.routes) {
-    routes.push({
-      ...route,
-      fragments: parseRoute(route.path).fragments,
-    });
   }
 
   // Test redirects to make sure all possible redirect targets actually exist.
@@ -56,16 +51,16 @@ export default new Service(function RouterService() {
   let activeLayers = [];
   let lastQuery;
 
-  const $route = new State(""); // Route path with placeholder parameters
-  const $path = new State(""); // Real path as it shows up in the URL bar
-  const $params = new State({}); // Matched values for named route params
-  const $query = new State({}); // Magic state that syncs with with the browser's query params
+  const $route = makeState(""); // Route path with placeholder parameters
+  const $path = makeState(""); // Real path as it shows up in the URL bar
+  const $params = makeState({}); // Matched values for named route params
+  const $query = makeState({}); // Magic state that syncs with with the browser's query params
 
   // Track and skip updating the URL when the change came from URL navigation
   let isRouteChange = false;
 
   // Update URL when $query changes
-  this.subscribeTo($query, (current) => {
+  ctx.subscribeTo($query, (current) => {
     // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
@@ -84,10 +79,10 @@ export default new Service(function RouterService() {
     });
   });
 
-  this.afterConnect(() => {
-    const root = this.options.getRoot();
+  ctx.afterConnect(() => {
+    const root = appContext.rootElement;
 
-    appOutlet = initComponent(this.options.appContext, Outlet);
+    appOutlet = initComponent(appContext, Outlet);
     appOutlet.connect(root);
 
     history.listen(onRouteChange);
@@ -102,7 +97,7 @@ export default new Service(function RouterService() {
 
       history.push(href);
 
-      this.debug.log(`Intercepted link to '${href}'`);
+      ctx.debug.log(`Intercepted link to '${href}'`);
     });
   });
 
@@ -110,7 +105,7 @@ export default new Service(function RouterService() {
    * Run when the location changes. Diffs and mounts new routes and updates
    * the $path, $route, $params and $query states accordingly.
    */
-  const onRouteChange = async ({ location }) => {
+  async function onRouteChange({ location }) {
     const matched = matchRoute(routes, location.pathname);
 
     if (matched) {
@@ -139,8 +134,8 @@ export default new Service(function RouterService() {
             if (activeLayer?.id !== matchedLayer.id) {
               activeLayers = activeLayers.slice(0, i);
 
-              const outlet = initComponent(this.options.appContext, Outlet);
-              const component = initComponent(this.options.appContext, matchedLayer.component, null, [outlet]);
+              const outlet = initComponent(appContext, Outlet);
+              const component = initComponent(appContext, matchedLayer.component, null, [outlet]);
 
               const parentLayer = activeLayers[activeLayers.length - 1];
 
@@ -180,7 +175,7 @@ export default new Service(function RouterService() {
         }
       }
     } else {
-      this.debug.warn(`No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.`);
+      ctx.debug.warn(`No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.`);
     }
 
     // Update query params if they've changed.
@@ -195,7 +190,7 @@ export default new Service(function RouterService() {
         })
       );
     }
-  };
+  }
 
   return {
     $route: $route.map(),

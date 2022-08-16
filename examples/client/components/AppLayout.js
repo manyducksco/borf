@@ -1,9 +1,9 @@
-import { Component } from "@woofjs/client";
+import { makeComponent } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle";
 
 import { app } from "../app.js";
 
-export default new Component(app, function AppLayout() {
+export default makeComponent(app, function AppLayout() {
   this.debug.name = "🐕";
   this.debug.log("hi");
 

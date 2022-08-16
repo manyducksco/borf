@@ -1,4 +1,4 @@
-import { State } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
 /**
  * A really contrived header that makes an HTTP call to get the user's name.
@@ -9,7 +9,7 @@ export function MyHeader({ $attrs, ...self }) {
   const onclick = $attrs.get("onclick");
 
   const $greeting = $attrs.map("greeting");
-  const $name = new State("...");
+  const $name = makeState("...");
 
   self.beforeConnect(() => {
     http.get("/users/me").then((res) => {

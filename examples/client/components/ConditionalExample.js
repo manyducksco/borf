@@ -1,4 +1,4 @@
-import { when, State } from "@woofjs/client";
+import { when, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export default function ConditionalExample(self) {
@@ -6,7 +6,7 @@ export default function ConditionalExample(self) {
 
   logLifecycle(self);
 
-  const $show = new State(false);
+  const $show = makeState(false);
   const $label = $show.map((on) => (on ? "Hide Text" : "Show Text"));
 
   return (

@@ -1,15 +1,15 @@
 import { isArray, isObject, isString, isNumber, isFunction, isBinding, isObservable } from "../helpers/typeChecking.js";
-import { elementContextKey } from "../helpers/initComponent.js";
-import { Component } from "../Component.js";
+import { makeComponent } from "../makeComponent.js";
+import { $$elementContext } from "../keys.js";
 
 /**
  * Implements logic for HTML elements created with `h()`.
  */
-export const Element = new Component((self) => {
-  const elementContext = self[elementContextKey];
+export const Element = makeComponent((ctx) => {
+  const elementContext = ctx[$$elementContext];
 
-  const tagname = self.$attrs.get("tagname");
-  const attrs = self.$attrs.get("attrs") || {}; // attrs passed to the element itself
+  const tagname = ctx.$attrs.get("tagname");
+  const attrs = ctx.$attrs.get("attrs") || {}; // attrs passed to the element itself
 
   let node;
 
@@ -31,8 +31,8 @@ export const Element = new Component((self) => {
 
   let subscriptions = [];
 
-  self.beforeConnect(() => {
-    for (const child of self.children) {
+  ctx.beforeConnect(() => {
+    for (const child of ctx.children) {
       child.connect(node);
     }
 
@@ -41,8 +41,8 @@ export const Element = new Component((self) => {
     if (attrs.class) applyClasses(node, attrs.class, subscriptions);
   });
 
-  self.afterDisconnect(async () => {
-    for (const child of self.children) {
+  ctx.afterDisconnect(async () => {
+    for (const child of ctx.children) {
       child.disconnect();
     }
 

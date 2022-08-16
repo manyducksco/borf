@@ -1,7 +1,7 @@
-import { State, bind } from "@woofjs/client";
+import { makeState, bind } from "@woofjs/client";
 
 export default function ComponentAttrsExample() {
-  const $message = new State("test");
+  const $message = makeState("test");
 
   return (
     <div class="example">
@@ -21,7 +21,7 @@ function SubComponent({ $attrs }) {
 
   const $state = $attrs.get("$state"); // get state passed as state
   const unwrapped = $attrs.get("unwrapped"); // get unwrapped value once
-  const $unwrapped = $attrs.map("unwrapped"); // map unwrapped value to new state
+  const $unwrapped = $attrs.map("unwrapped"); // map unwrapped value to makeState
 
   return (
     <div>

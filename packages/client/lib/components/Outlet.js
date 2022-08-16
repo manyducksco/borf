@@ -1,12 +1,13 @@
-import { appContextKey, elementContextKey } from "../helpers/initComponent.js";
+import { makeComponent } from "../makeComponent.js";
 import { isTemplate } from "../helpers/typeChecking.js";
+import { $$appContext, $$elementContext } from "../keys.js";
 
-export function Outlet() {
-  const $element = this.$attrs.map("element");
+export const Outlet = makeComponent((ctx) => {
+  const $element = ctx.$attrs.map("element");
   const node = document.createComment("outlet");
 
-  const appContext = this[appContextKey];
-  const elementContext = this[elementContextKey];
+  const appContext = ctx[$$appContext];
+  const elementContext = ctx[$$elementContext];
 
   let connected = null;
 
@@ -26,7 +27,7 @@ export function Outlet() {
     }
   }
 
-  this.subscribeTo($element, swapElement);
+  ctx.subscribeTo($element, swapElement);
 
   return node;
-}
+});

@@ -1,9 +1,9 @@
-import { State } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
 export default function Counter() {
   this.debug.name = "7GUIs:Counter";
 
-  const $count = new State(0);
+  const $count = makeState(0);
 
   return (
     <div class="example">

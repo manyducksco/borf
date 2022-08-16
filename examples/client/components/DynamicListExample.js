@@ -1,4 +1,4 @@
-import { repeat, State } from "@woofjs/client";
+import { repeat, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 function DynamicListExample(self) {
@@ -8,8 +8,8 @@ function DynamicListExample(self) {
 
   const initialList = ["apple", "banana", "potato", "fried chicken"];
 
-  const $shoppingList = new State(initialList);
-  const $inputValue = new State("");
+  const $shoppingList = makeState(initialList);
+  const $inputValue = makeState("");
 
   const getSorted = () => {
     return $shoppingList

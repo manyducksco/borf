@@ -1,9 +1,7 @@
 import { isTemplate, isDOM, isFunction, isComponent, isObservable, isState } from "./typeChecking.js";
 import { makeState } from "../state/makeState.js";
-import { Component } from "../Component.js";
 
-export const appContextKey = Symbol("appContext");
-export const elementContextKey = Symbol("elementContext");
+import { $$appContext, $$elementContext } from "../keys.js";
 
 /**
  * Initializes a component function into a component instance that the framework can work with.
@@ -149,7 +147,7 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   };
 
   // Add the app context, but key it with a symbol so it can't be accessed outside of Woof's own internal components.
-  Object.defineProperty(ctx, appContextKey, {
+  Object.defineProperty(ctx, $$appContext, {
     value: appContext,
     writable: false,
     enumerable: false,
@@ -157,7 +155,7 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   });
 
   // Stores data relevant to rendering, such as if the root element is in an SVG context.
-  Object.defineProperty(ctx, elementContextKey, {
+  Object.defineProperty(ctx, $$elementContext, {
     value: elementContext,
     writable: false,
     enumerable: false,
@@ -180,10 +178,6 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   /*=============================*\
   ||      Run setup function     ||
   \*=============================*/
-
-  if (fn instanceof Component) {
-    fn = fn.bootstrap;
-  }
 
   let element = fn.call(ctx, ctx);
 

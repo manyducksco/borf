@@ -1,7 +1,7 @@
-import { Service } from "@woofjs/client";
+import { makeService } from "@woofjs/client";
 import type { AppServices } from "./test";
 
-export const ExampleService = new Service(function () {
+export const ExampleService = makeService(function () {
   const services = this.services as AppServices;
 
   services.users.getUsers().then(() => {

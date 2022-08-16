@@ -29,5 +29,8 @@
     "@woofjs/data": "file:../packages/data",
     "@woofjs/server": "file:../packages/server",
     "@woofjs/view": "file:../packages/view"
+  },
+  "dependencies": {
+    "ramda": "^0.28.0"
   }
 }

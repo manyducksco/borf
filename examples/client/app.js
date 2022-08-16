@@ -1,9 +1,11 @@
 import "./styles/demo.css";
 
-import { App, State } from "@woofjs/client";
+import { makeApp, makeState } from "@woofjs/client";
 
 import CounterService from "./services/CounterService.js";
 import MouseService from "./services/MouseService.js";
+
+import { path } from "ramda";
 
 import AppLayout from "./components/AppLayout";
 import ComponentAttrsExample from "./components/ComponentAttrsExample.js";
@@ -35,7 +37,7 @@ import Cells from "./7guis/07_Cells";
 //   console.log("message:", event.data);
 // });
 
-export const app = new App({
+export const app = makeApp({
   debug: {
     filter: "*",
     log: true,
@@ -50,9 +52,6 @@ export const app = new App({
     mouse: MouseService,
   },
 });
-
-app.service("counter", CounterService);
-app.service("mouse", MouseService);
 
 app.route("*", AppLayout, function () {
   this.route("/examples", () => {
@@ -95,8 +94,8 @@ app.route("*", AppLayout, function () {
       const TransitionPage = function () {
         this.debug.name = "TransitionPage";
 
-        const $ref = new State();
-        const $classes = new State({
+        const $ref = makeState();
+        const $classes = makeState({
           transitionPage: true,
         });
 

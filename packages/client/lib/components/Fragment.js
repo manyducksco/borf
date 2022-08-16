@@ -1,23 +1,25 @@
+import { makeComponent } from "../makeComponent.js";
+
 /**
  * Displays one or more children without a parent element.
  */
-export function Fragment() {
+export const Fragment = makeComponent((ctx) => {
   const node = document.createComment("fragment");
 
-  this.afterConnect(() => {
+  ctx.afterConnect(() => {
     let after = node;
 
-    for (const child of this.children) {
+    for (const child of ctx.children) {
       child.connect(node.parentNode, after);
       after = child.node;
     }
   });
 
-  this.afterDisconnect(() => {
-    for (const child of this.children) {
+  ctx.afterDisconnect(() => {
+    for (const child of ctx.children) {
       child.disconnect({ allowTransitionOut: true });
     }
   });
 
   return node;
-}
+});
