@@ -1,16 +1,15 @@
-import { omit } from "ramda";
-
-import { makeDebug } from "./helpers/makeDebug.js";
 import { isFunction, isObject, isService, isString, isTemplate } from "./helpers/typeChecking.js";
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
+import { omit } from "./helpers/omit.js";
 
 import HTTPService from "./services/http.js";
 import PageService from "./services/page.js";
 import RouterService from "./services/router.js";
 
 import { makeService } from "./makeService.js";
+import { makeDebug } from "./makeDebug.js";
 
 export function makeApp(options = {}) {
   const services = {
@@ -236,11 +235,11 @@ export function makeApp(options = {}) {
         services[name] = service;
 
         // Initialize the service to make sure its exports are defined.
-        service.init({ appContext, name });
+        const exports = service.init({ appContext, name });
 
         // Add to appContext.services
         Object.defineProperty(appContext.services, name, {
-          value: service.exports,
+          value: exports,
           writable: false,
           enumerable: true,
           configurable: false,

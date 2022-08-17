@@ -43,27 +43,29 @@ function UserService() {
     deleteUser,
   };
 }
-
-// And a wrapped version of that service that uses a mock version of @http:
-const makeUserService = wrapService(UserService, function () {
-  this.service("http", mockHTTP);
-});
 ```
 
 And to test (pictured in Jest):
 
 ```js
 test("API calls return expected response", async () => {
-  const userService = makeUserService({
-    /* options */
+  const userService = wrapService(UserService, {
+    services: {
+      http: mockHTTP,
+    },
   });
 
-  const createRes = await userService.createUser("Jimbo Jones");
+  // Run lifecycle hooks
+  userService.beforeConnect();
+  userService.afterConnect();
+
+  // Access the exported object at 'exports'
+  const createRes = await userService.exports.createUser("Jimbo Jones");
 
   expect(createRes.status).toBe(200);
   expect(createRes.body.name).toBe("Jimbo Jones");
 
-  const deleteRes = await userService.deleteUser(createRes.body.user.id);
+  const deleteRes = await userService.exports.deleteUser(createRes.body.user.id);
 
   expect(deleteRes.status).toBe(204);
 });

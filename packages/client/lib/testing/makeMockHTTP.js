@@ -1,5 +1,6 @@
-import http from "../services/http.js";
+import { makeDebug } from "../makeDebug.js";
 import { makeMockFetch } from "./makeMockFetch.js";
+import http from "../services/http.js";
 
 /**
  * @example
@@ -22,22 +23,26 @@ import { makeMockFetch } from "./makeMockFetch.js";
  *   });
  * });
  *
- * const createComponent = wrapComponent(TestComponent, (self) => {
- *   self.service("@http", http);
+ * const createComponent = wrapComponent(TestComponent, {
+ *   services: {
+ *     http
+ *   }
  * });
  */
 export function makeMockHTTP(fn) {
   const fetch = makeMockFetch(fn);
 
-  return function (self) {
-    const wrappedSelf = {
-      ...self,
+  return function () {
+    const appContext = {
+      services: {},
       options: {
-        ...self.options,
-        fetch,
+        http: {
+          _fetch: fetch,
+        },
       },
+      debug: makeDebug({ filter: "-woof:*" }),
     };
 
-    return http.call(wrappedSelf, wrappedSelf);
+    return http.init({ appContext, name: "http" });
   };
 }

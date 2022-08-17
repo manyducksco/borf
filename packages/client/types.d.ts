@@ -126,7 +126,11 @@ declare module "@woofjs/client" {
   export type ServicesOf<T extends App<any>> = DefaultServices & UnwrapServices<T["_services"]>;
 
   export type UnwrapServices<T> = {
-    [Name in keyof T]: T[Name] extends Service<infer U> ? U : T[Name] extends Function ? ReturnType<T[Name]> : T[Name];
+    [Name in keyof T]: T[Name] extends Service<infer U>
+      ? U
+      : T[Name] extends (...args: any) => any
+      ? ReturnType<T[Name]>
+      : T[Name];
   };
 
   export type AppContext<ServicesType> = {
@@ -171,12 +175,62 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   export interface HTTPService {
+    /**
+     * Add middleware to the HTTP service for all requests.
+     * Middleware can intercept outgoing requests and modify incoming responses.
+     *
+     * @param middleware - Async middleware function.
+     */
     use(middleware: HTTPMiddleware): this;
+
+    /**
+     * Make an HTTP request to `url` with any `method`.
+     *
+     * @param method - HTTP method.
+     * @param url - Request endpoint.
+     */
+    request<T>(method: string, url: string): HTTPRequest<T>;
+
+    /**
+     * Make an HTTP `GET` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
     get<T = any>(url: string): HTTPRequest<T>;
+
+    /**
+     * Make an HTTP `PUT` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
     put<T = any>(url: string): HTTPRequest<T>;
+
+    /**
+     * Make an HTTP `PATCH` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
     patch<T = any>(url: string): HTTPRequest<T>;
+
+    /**
+     * Make an HTTP `POST` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
     post<T = any>(url: string): HTTPRequest<T>;
+
+    /**
+     * Make an HTTP `DELETE` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
     delete<T = any>(url: string): HTTPRequest<T>;
+
+    /**
+     * Make an HTTP `HEAD` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
     head(url: string): HTTPRequest<void>;
   }
 
@@ -197,7 +251,12 @@ declare module "@woofjs/client" {
     body: BodyType;
   };
 
+  type HTTPMiddleware = (ctx: HTTPRequestContext, next: () => Promise<void>) => Promise<void>;
+
   interface HTTPRequest<T> extends Promise<HTTPResponse<T>> {
+    /**
+     * True if this request is to a URL relative to the current page.
+     */
     readonly isRelative: boolean;
 
     /**
@@ -259,7 +318,7 @@ declare module "@woofjs/client" {
     query(params: { [name: string]: ToStringable }): this;
 
     /**
-     * Sets the request body.
+     * Sets the request body to `value`.
      */
     body(value: any): this;
 
@@ -274,8 +333,6 @@ declare module "@woofjs/client" {
      */
     response(): HTTPResponse<T> | undefined;
   }
-
-  type HTTPMiddleware = (ctx: HTTPRequestContext, next: () => Promise<void>) => Promise<void>;
 
   /*==================================*\
   ||             Routing              ||
@@ -337,7 +394,7 @@ declare module "@woofjs/client" {
 
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  export type Component<AttrsType> = (attrs: AttrsType) => { init: ComponentFn<AttrsType> };
+  export type Component<AttrsType> = (attrs: AttrsType) => { init: ComponentFn<AttrsType, any> };
 
   export function makeComponent<AttrsType, ServicesType>(
     fn: ComponentFn<AttrsType, ServicesType>
@@ -354,18 +411,89 @@ declare module "@woofjs/client" {
   ) => Element | null;
 
   export interface ComponentContext<AttrsType = any, ServicesType = any> {
+    /**
+     * Attributes passed into to this component.
+     *
+     * @example
+     * <User name="Bob" age={42} />
+     *
+     * // Inside the component ctx.$attrs.get() returns:
+     * {
+     *   name: "Bob",
+     *   age: 42
+     * }
+     */
     $attrs: State<AttrsType>;
+
+    /**
+     * An object containing services registered on the app.
+     */
     services: Services<ServicesType>;
+
+    /**
+     * A debug channel unique to this component. It has log, warn and error methods like `console`,
+     * but you can also set a prefix by changing `debug.name`.
+     *
+     * Useful for logging info that you want to hide in production without
+     * deleting all your `console.log`s. Just change the filter in the `makeApp` options object
+     * to specify only what you want to see.
+     */
     debug: DebugChannel;
+
+    /**
+     * Other elements passed between the opening and closing tags of this component.
+     *
+     * @example
+     * ```jsx
+     * <Container>
+     *   <h1>These are children.</h1>
+     *   <p>Use `ctx.children` in this component's template to render these elements.</p>
+     *   <OtherComponent />
+     * </Container>
+     * ```
+     */
     children: any;
 
+    /**
+     * Registers a callback to run before the component is connected to the DOM.
+     */
     beforeConnect(callback: () => void): void;
-    afterConnect(callback: () => void): void;
-    beforeDisconnect(callback: () => void): void;
-    afterDisconnect(callback: () => void): void;
-    transitionOut(callback: () => Promise<void>): void;
 
+    /**
+     * Registers a callback to run after the component is connected to the DOM.
+     */
+    afterConnect(callback: () => void): void;
+
+    /**
+     * Registers a callback to run before the component is removed from the DOM.
+     */
+    beforeDisconnect(callback: () => void): void;
+
+    /**
+     * Registers a callback to run after the component is removed from the DOM.
+     */
+    afterDisconnect(callback: () => void): void;
+
+    /**
+     * Subscribes to an observable while this component is connected.
+     *
+     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
+     * @param observer - An observer object with `next`, `error` and `complete` methods.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
     subscribeTo<Type>(observable: Observable<Type>, observer: Observer<Type>): void;
+
+    /**
+     * Subscribes to an observable while this component is connected.
+     *
+     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
+     * @param next - Callback to receive `next` values from the observable.
+     * @param error - Callback to receive `error` values from the observable.
+     * @param complete - Callback to receive the `complete` signal from the observable.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
     subscribeTo<Type>(
       observable: Observable<Type>,
       next?: (value: Type) => void,
@@ -373,6 +501,7 @@ declare module "@woofjs/client" {
       complete?: () => void
     ): void;
 
+    transitionOut(callback: () => Promise<void>): void;
     loadRoute: (show: (element: Element) => void, done: () => void) => Promise<any> | void;
   }
 
@@ -444,13 +573,13 @@ declare module "@woofjs/client" {
     subscribe(observer: Observer<Type>): Subscription;
     subscribe(next: (value: Type) => void): Subscription;
 
-    map(): ImmutableState<Type>;
-    map<V>(transform: (current: Type) => V): ImmutableState<V>;
+    map(): ReadonlyState<Type>;
+    map<V>(transform: (current: Type) => V): ReadonlyState<V>;
 
     toString(): string;
   };
 
-  type ImmutableState<Type> = {
+  type ReadonlyState<Type> = {
     [Prop in keyof Omit<State<Type>, "set">]: State<Type>[Prop];
   };
 
@@ -468,7 +597,18 @@ declare module "@woofjs/client" {
    * Similar to `.map` but with several states being collapsed down to one.
    */
   // TODO: Get types right. Arrays passed in are not being interpreted as tuples.
-  export function mergeStates<T extends [...State<any>], R>(states: T, merge: (values: StateValues<T>) => R): State<R>;
+  export function mergeStates<T extends [...State<any>[]], R>(
+    merge: (values: StateValues<T>) => R,
+    ...states: T
+  ): State<R>;
+
+  export function mergeStates<States extends [...State<any>[]]>(...states: States): StateMerge<States>;
+
+  interface StateMerge<States extends [...State<any>[]]> {
+    with<MoreStates extends [...State<any>[]]>(...states: MoreStates): StateMerge<Concat<States, MoreStates>>;
+
+    into<Result>(merge: (...values: StateValues<States>) => Result): ReadonlyState<Result>;
+  }
 
   /**
    * Determines whether or not an object is a state.

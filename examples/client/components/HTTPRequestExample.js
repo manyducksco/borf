@@ -9,9 +9,9 @@ export default makeComponent((self) => {
   logLifecycle(self);
 
   const $loading = makeState(false);
-  const $message = makeState();
+  const $message = makeState("");
 
-  const $label = mergeStates([$message, $loading], ([message, loading]) => {
+  const $label = mergeStates($message, $loading).into((message, loading) => {
     if (loading) {
       return "LOADING...";
     } else {
@@ -19,7 +19,7 @@ export default makeComponent((self) => {
     }
   });
 
-  const getMessage = () => {
+  const getMessage = async () => {
     $loading.set(true);
 
     return http

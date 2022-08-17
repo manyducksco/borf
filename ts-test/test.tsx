@@ -12,14 +12,13 @@ import type { ServicesOf } from "@woofjs/client";
 
 const $label = makeState("asdf");
 const $label2 = makeState(12345);
+const $label3 = makeState("123123");
 
-const $message = mergeStates(
-  ([one, two]) => {
-    return one + two;
-  },
-  $label,
-  $label2
-);
+const $message = mergeStates($label, $label2)
+  .with($label3)
+  .into((one, two, three) => {
+    return one + two + three;
+  });
 
 const ExampleService = makeService((self) => {
   // TODO: Service functions don't have self and context typed correctly.
@@ -54,10 +53,10 @@ export const app = makeApp({
 
 export type AppServices = ServicesOf<typeof app>;
 
-const Example3 = makeComponent((self) => {
+const Example3 = makeComponent<any, AppServices>((self) => {
   const $title = self.$attrs.map((attrs) => attrs.title);
 
-  const { http } = self.services;
+  const { http, example, fn } = self.services;
 
   return null;
 });

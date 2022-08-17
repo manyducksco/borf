@@ -7,7 +7,7 @@ import {
   isComponent,
   isObservable,
 } from "./helpers/typeChecking.js";
-import { flatMap } from "./helpers/flatMap.js";
+import { flatten } from "./helpers/flatten.js";
 import { initComponent } from "./helpers/initComponent.js";
 
 import { Text } from "./components/Text.js";
@@ -63,7 +63,7 @@ class Template {
     }
 
     // Filter falsy children and convert to component instances.
-    const children = flatMap(this.children)
+    const children = flatten(this.children)
       .filter((x) => x !== null && x !== undefined && x !== false)
       .map((child) => {
         if (isTemplate(child)) {

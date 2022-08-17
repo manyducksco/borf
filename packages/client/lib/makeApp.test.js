@@ -1,100 +1,17 @@
 import { createMemoryHistory } from "history";
-import { h } from "./h.js";
 import { makeApp } from "./makeApp.js";
-
-test("nested routes are parsed correctly", async () => {
-  const app = makeApp();
-  const root = document.createElement("div");
-
-  function AppLayout() {
-    return h("div", this.children);
-  }
-
-  function UserLayout() {
-    return h("div", this.children);
-  }
-
-  function Login() {
-    return h("div");
-  }
-
-  function Logout() {
-    return h("div");
-  }
-
-  function UserList() {
-    return h("div");
-  }
-
-  function UserEdit() {
-    return h("div");
-  }
-
-  app.service("http", () => {
-    return {}; // Override http, otherwise window.fetch isn't defined in the test so this fails.
-  });
-  app.service("router", (self) => {
-    const { routes } = self.options;
-
-    expect(routes).toStrictEqual([
-      {
-        path: "/login",
-        layers: [{ id: 0, component: Login }],
-      },
-      {
-        path: "/logout",
-        layers: [{ id: 1, component: Logout }],
-      },
-      {
-        path: "users",
-        layers: [
-          { id: 2, component: AppLayout },
-          { id: 3, component: UserLayout },
-          { id: 4, component: UserList },
-        ],
-      },
-      {
-        path: "users/:userId/edit",
-        layers: [
-          { id: 2, component: AppLayout },
-          { id: 3, component: UserLayout },
-          { id: 5, component: UserEdit },
-        ],
-      },
-      {
-        path: "users/*",
-        redirect: "/users",
-      },
-      {
-        path: "/somewhere/*",
-        redirect: "/users",
-      },
-    ]);
-
-    return {};
-  });
-
-  app.route("/login", Login);
-  app.route("/logout", Logout);
-  app.route("/*", AppLayout, function () {
-    this.route("/users", UserLayout, function () {
-      this.route("/", UserList);
-      this.route("/:userId/edit", UserEdit);
-      this.redirect("*", "./");
-    });
-  });
-  app.redirect("/somewhere/*", "/users");
-
-  await app.connect(root);
-});
+import { makeService } from "./makeService.js";
 
 test("lifecycle methods", async () => {
-  const app = makeApp();
-  const root = document.createElement("div");
-
-  app.service("http", () => {
-    return {}; // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  const app = makeApp({
+    router: {
+      history: createMemoryHistory(),
+    },
+    services: {
+      http: {}, // Override http, otherwise window.fetch isn't defined in the test so this fails.
+    },
   });
+  const root = document.createElement("div");
 
   const beforeConnect = jest.fn();
   const afterConnect = jest.fn();
@@ -109,18 +26,7 @@ test("lifecycle methods", async () => {
 });
 
 test("throws helpful error when accessing services that haven't been created yet from other services", () => {
-  const app = makeApp({
-    router: {
-      history: createMemoryHistory(),
-    },
-  });
-  const root = document.createElement("div");
-
-  app.service("http", () => {
-    return {}; // Override http, otherwise window.fetch isn't defined in the test so this fails.
-  });
-
-  app.service("one", (ctx) => {
+  const one = makeService((ctx) => {
     const { two } = ctx.services;
 
     return {
@@ -129,11 +35,23 @@ test("throws helpful error when accessing services that haven't been created yet
     };
   });
 
-  app.service("two", () => {
+  const two = makeService((ctx) => {
     return {
       value: 2,
     };
   });
+
+  const app = makeApp({
+    router: {
+      history: createMemoryHistory(),
+    },
+    services: {
+      http: {}, // Override http, otherwise window.fetch isn't defined in the test so this fails.
+      one,
+      two,
+    },
+  });
+  const root = document.createElement("div");
 
   expect(app.connect(root)).rejects.toThrow(
     "Service 'two' was accessed before it was initialized. Make sure 'two' is registered before other services that access it."
@@ -141,18 +59,7 @@ test("throws helpful error when accessing services that haven't been created yet
 });
 
 test("error doesn't occur if accessing outside of the main function scope", async () => {
-  const app = makeApp({
-    router: {
-      history: createMemoryHistory(),
-    },
-  });
-  const root = document.createElement("div");
-
-  app.service("http", () => {
-    return {}; // Override http, otherwise window.fetch isn't defined in the test so this fails.
-  });
-
-  app.service("one", (ctx) => {
+  const one = makeService((ctx) => {
     return {
       value: 1,
 
@@ -163,11 +70,23 @@ test("error doesn't occur if accessing outside of the main function scope", asyn
     };
   });
 
-  app.service("two", () => {
+  const two = makeService(() => {
     return {
       value: 2,
     };
   });
+
+  const app = makeApp({
+    router: {
+      history: createMemoryHistory(),
+    },
+    services: {
+      http: {}, // Override http, otherwise window.fetch isn't defined in the test so this fails.
+      one,
+      two,
+    },
+  });
+  const root = document.createElement("div");
 
   app.route("*", function () {
     expect(this.services.one.total).toBe(3);

@@ -19,9 +19,7 @@ export default function FlightBooker(self) {
   //   }
   // );
 
-  const $formIsValid = mergeStates(
-    $startDateIsValid,
-    $returnDateIsValid,
+  const $formIsValid = mergeStates($startDateIsValid, $returnDateIsValid).into(
     (d1, d2) => {
       return d1 && d2;
     }
@@ -73,9 +71,7 @@ export default function FlightBooker(self) {
               flightTypes,
               function FlightOption() {
                 const $value = this.$attrs.map("value");
-                const $selected = mergeStates(
-                  $value,
-                  $flightType,
+                const $selected = mergeStates($value, $flightType).into(
                   (value, current) => {
                     return value === current;
                   }

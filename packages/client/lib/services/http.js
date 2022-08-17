@@ -1,12 +1,12 @@
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
-
+import { $$appContext } from "../keys.js";
 import { makeService } from "../makeService.js";
 
 export default makeService((ctx) => {
   ctx.debug.name = "woof:service:http";
 
   const _middleware = [];
-  const fetch = window.fetch.bind(window); // TODO: Find good way to pass this for mocking
+  const fetch = ctx[$$appContext].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
   let requestId = 0;
 
   const request = (method, url) => {

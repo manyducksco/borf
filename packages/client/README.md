@@ -14,9 +14,9 @@ Front end routing, components and state for dogs. 🐕
 ## Hello World
 
 ```js
-import { App, h } from "@woofjs/client";
+import { makeApp, h } from "@woofjs/client";
 
-const app = new App();
+const app = makeApp();
 
 // Render <h1>Hello World</h1> regardless of the URL
 app.route("*", function () {
@@ -63,12 +63,12 @@ app.route("users/:id", function () {
 Unlike many other frameworks Woof does _not_ use a virtual DOM. Instead, Woof uses objects called States to hold data which needs to change. States are sprinkled into your components, binding their data to the elements where that data is needed. When the value of a State gets updated, any DOM nodes bound to that state are immediately updated to match. No other processing is needed.
 
 ```js
-import { Component, State } from "@woofjs/client";
+import { makeComponent, makeState } from "@woofjs/client";
 
-const Timer = new Component((self) => {
+const Timer = makeComponent((self) => {
   // Naming states with a $ is a convention to help point out that they are dynamic.
   // Anywhere you see $seconds used you know that value can change.
-  const $seconds = new State(0);
+  const $seconds = makeState(0);
 
   // Adds 1 to the current value of $seconds.
   function increment() {
@@ -103,7 +103,7 @@ Components are reusable modules with their own markup and logic. You can define 
 Components are ubiquitous in front-end frameworks, but Woof's take on them is very inspired by how [React](https://reactjs.org/docs/components-and-props.html) does things.
 
 ```js
-const Example = new Component(function () {
+const Example = makeComponent(function () {
   const $title = this.$attrs.map("title");
 
   return h("div", [
@@ -132,7 +132,7 @@ app.route("other", function () {
 Component functions have a context object bound to `this` from inside the function body.
 
 ```js
-const Example = new Component(function () {
+const Example = makeComponent(function () {
   // Access services by the name they were registered under.
   const service = this.services.name;
 

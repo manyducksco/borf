@@ -1,6 +1,7 @@
-import { makeState } from "../state/makeState.js";
+import { makeComponent } from "../../makeComponent.js";
+import { makeState } from "../../state/makeState.js";
 
-export default function MockRouterService() {
+export default makeComponent(function MockRouterService() {
   const $path = makeState("/test");
   const $route = makeState("/test");
   const $params = makeState({});
@@ -16,4 +17,4 @@ export default function MockRouterService() {
     forward() {},
     navigate() {},
   };
-}
+});

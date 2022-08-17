@@ -7,11 +7,8 @@ export default makeService(function CounterService() {
   const $current = makeState(0);
 
   this.afterConnect(() => {
-    console.log($current.get());
-
     setInterval(() => {
       $current.set((current) => current + 1);
-      console.log($current.get());
     }, 1000);
   });
 

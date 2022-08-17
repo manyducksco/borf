@@ -89,6 +89,9 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
 
   // This is the object the setup function uses to interface with the component.
   const ctx = {
+    [$$appContext]: appContext,
+    [$$elementContext]: elementContext,
+
     $attrs: $attrs.map(), // Read-only from inside the component.
     services: appContext.services,
     debug,
@@ -145,22 +148,6 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
       }
     },
   };
-
-  // Add the app context, but key it with a symbol so it can't be accessed outside of Woof's own internal components.
-  Object.defineProperty(ctx, $$appContext, {
-    value: appContext,
-    writable: false,
-    enumerable: false,
-    configurable: false,
-  });
-
-  // Stores data relevant to rendering, such as if the root element is in an SVG context.
-  Object.defineProperty(ctx, $$elementContext, {
-    value: elementContext,
-    writable: false,
-    enumerable: false,
-    configurable: false,
-  });
 
   /*=============================*\
   ||     Watch dynamic attrs     ||
@@ -360,6 +347,8 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   Object.defineProperty(component, "isComponent", {
     value: true,
     writable: false,
+    enumerable: true,
+    configurable: false,
   });
 
   return component;

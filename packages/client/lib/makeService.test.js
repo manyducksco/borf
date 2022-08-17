@@ -34,23 +34,23 @@ test("lifecycle hooks", () => {
     return { works: true };
   });
 
-  const result = service.init({ appContext, name: "test" });
+  const exports = service.init({ appContext, name: "test" });
 
-  expect(result.exports).toStrictEqual({ works: true });
+  expect(exports).toStrictEqual({ works: true });
 
   expect(beforeConnect).toHaveBeenCalledTimes(0);
   expect(afterConnect).toHaveBeenCalledTimes(0);
   expect(beforeConnect2).toHaveBeenCalledTimes(0);
   expect(afterConnect2).toHaveBeenCalledTimes(0);
 
-  result.beforeConnect();
+  service.beforeConnect();
 
   expect(beforeConnect).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(0);
   expect(beforeConnect2).toHaveBeenCalledTimes(1);
   expect(afterConnect2).toHaveBeenCalledTimes(0);
 
-  result.afterConnect();
+  service.afterConnect();
 
   expect(beforeConnect).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(1);

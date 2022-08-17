@@ -1,5 +1,5 @@
 import colorHash from "simple-color-hash";
-import { makeState } from "../state/makeState.js";
+import { makeState } from "./state/makeState.js";
 
 const noop = () => {};
 
@@ -11,10 +11,13 @@ const noop = () => {};
  * deleting all your `console.log`s. Just change the filter to specify
  * only what you want to see.
  *
- * @param options - Options for the debug instance. Specify an initial `filter` and enable or disable `log`, `warn` or `error` with booleans.
+ * @param options - Options for the debug instance. Specify an initial `filter` and enable/disable `log`, `warn` or `error` with booleans.
  */
-export function makeDebug(options = {}, console = window.console) {
+export function makeDebug(options = {}) {
   const $filter = makeState(options.filter || "*,-woof:*");
+
+  // Accept a _console option for mocking during testing.
+  const console = options._console || window?.console || global?.console;
 
   const hash = (str) => {
     return colorHash({

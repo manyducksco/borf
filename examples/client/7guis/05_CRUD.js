@@ -29,9 +29,7 @@ export default function CRUD(self) {
   const $filterPrefix = makeState("");
 
   // TODO: Concert to State.merge
-  const $filteredPeople = mergeStates(
-    $people,
-    $filterPrefix,
+  const $filteredPeople = mergeStates($people, $filterPrefix).into(
     (people, prefix) => {
       if (prefix.trim() === "") {
         return people;

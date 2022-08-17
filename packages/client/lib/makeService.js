@@ -13,15 +13,11 @@ export function makeService(fn) {
   // Subscriptions for observables observed through subscribeTo
   const subscriptions = [];
 
-  return {
-    exports: null,
-
+  const service = {
     /**
      * Called by the App to initialize the service.
      */
     init({ appContext, name }) {
-      const debugChannel = appContext.debug.makeChannel(`woof:serviceInit:${name}`);
-
       const ctx = {
         [$$appContext]: appContext,
 
@@ -38,31 +34,13 @@ export function makeService(fn) {
         },
       };
 
-      this.exports = fn.call(ctx, ctx);
+      const exports = fn.call(ctx, ctx);
 
-      if (onBeforeConnect.length > 0) {
-        debugChannel.log(
-          `registered ${onBeforeConnect.length} beforeConnect callback${onBeforeConnect.length === 1 ? "" : "s"}`
-        );
+      if (!isObject(exports)) {
+        throw new TypeError(`A service must return an object. Got: ${exports}`);
       }
 
-      if (onAfterConnect.length > 0) {
-        debugChannel.log(
-          `registered ${onAfterConnect.length} afterConnect callback${onAfterConnect.length === 1 ? "" : "s"}`
-        );
-      }
-
-      if (subscriptions.length > 0) {
-        debugChannel.log(`subscribed to ${subscriptions.length} observable${subscriptions.length === 1 ? "" : "s"}`);
-      }
-
-      debugChannel.log("exports", this.exports);
-
-      if (!isObject(this.exports)) {
-        throw new TypeError(`A service must return an object. Got: ${this.exports}`);
-      }
-
-      return this;
+      return exports;
     },
 
     /**
@@ -82,9 +60,14 @@ export function makeService(fn) {
         callback();
       }
     },
-
-    get isService() {
-      return true;
-    },
   };
+
+  Object.defineProperty(service, "isService", {
+    value: true,
+    writable: false,
+    enumerable: true,
+    configurable: false,
+  });
+
+  return service;
 }

@@ -8,11 +8,23 @@ import { deepEqual } from "../helpers/deepEqual.js";
  * Combine multiple states into one.
  *
  * @example
- * const $multiplied = mergeStates([$number1, $number2], (values) => {
- *   return values[0] * values[1];
+ * const $multiplied = mergeStates($number1, $number2).into((one, two) => {
+ *   return one * two;
  * });
  */
-export function mergeStates(states, merge) {
+export function mergeStates(...states) {
+  return {
+    with(...moreStates) {
+      return mergeStates(...states, ...moreStates);
+    },
+
+    into(fn) {
+      return makeMergedState(states, fn);
+    },
+  };
+}
+
+function makeMergedState(states, merge) {
   if (!isFunction(merge)) {
     throw new TypeError(`Second argument should be a function. Got: ${merge}`);
   }
@@ -25,7 +37,7 @@ export function mergeStates(states, merge) {
   let values = [];
 
   function updateValue() {
-    const value = merge(values);
+    const value = merge(...values);
 
     if (!deepEqual(value, currentValue)) {
       currentValue = value;
@@ -75,7 +87,7 @@ export function mergeStates(states, merge) {
       if (observing) {
         value = currentValue;
       } else {
-        value = merge(states.map((state) => state.get()));
+        value = merge(...states.map((state) => state.get()));
       }
 
       for (const selector of selectors) {

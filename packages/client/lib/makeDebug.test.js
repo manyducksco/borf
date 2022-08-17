@@ -46,9 +46,9 @@ describe("makeDebug", () => {
       error: jest.fn(),
     };
 
-    const noLog = makeDebug({ log: false }, _console).makeChannel("test");
-    const noWarn = makeDebug({ warn: false }, _console).makeChannel("test");
-    const noError = makeDebug({ error: false }, _console).makeChannel("test");
+    const noLog = makeDebug({ log: false, _console }).makeChannel("test");
+    const noWarn = makeDebug({ warn: false, _console }).makeChannel("test");
+    const noError = makeDebug({ error: false, _console }).makeChannel("test");
 
     noLog.log("silent");
     noLog.warn("prints");

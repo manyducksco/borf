@@ -18,19 +18,19 @@ export const Example = makeComponent<ExampleAttrs, AppServices>(function () {
   return <p>{example.message}</p>;
 });
 
-export const Example2 = makeComponent<ExampleAttrs>(app, function () {
-  const { example, users } = this.services;
+// export const Example2 = makeComponent<ExampleAttrs>(app, function () {
+//   const { example, users } = this.services;
 
-  this.services.
+//   this.services.
 
-  const $name = this.$attrs.map((a) => a.name);
+//   const $name = this.$attrs.map((a) => a.name);
 
-  this.subscribeTo($name, (value) => {
-    console.log(value);
-  });
+//   this.subscribeTo($name, (value) => {
+//     console.log(value);
+//   });
 
-  return <p>{example.message}</p>;
-});
+//   return <p>{example.message}</p>;
+// });
 
 const Parent = makeComponent(app, function () {
   const { users, http } = this.services;
@@ -39,9 +39,9 @@ const Parent = makeComponent(app, function () {
     const u = await users.getUsers();
   });
 
-  http.get("/test").then(res => {
+  http.get("/test").then((res) => {
     console.log(res);
-  })
+  });
 
   return (
     <div id={5}>

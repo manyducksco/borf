@@ -11,9 +11,8 @@ export default function FormExample() {
   const $age = makeState(18);
 
   // TODO: Convert to State.merge
-  const $errors = mergeStates(
-    [$firstName, $lastName, $age],
-    ([first, last, age]) => {
+  const $errors = mergeStates($firstName, $lastName, $age).into(
+    (first, last, age) => {
       let errors = [];
 
       if (first.trim() == "") {

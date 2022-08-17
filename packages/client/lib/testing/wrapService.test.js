@@ -28,15 +28,12 @@ const mockHTTP = makeMockHTTP((self) => {
   });
 });
 
-/**
- * A wrapped version of the component that uses the mock @http service.
- */
-const makeWrapped = wrapService(UserService, (wrapper) => {
-  wrapper.service("http", mockHTTP);
-});
-
 test("provides mock services to wrapped service", async () => {
-  const service = makeWrapped();
+  const service = wrapService(UserService, {
+    services: {
+      http: mockHTTP,
+    },
+  });
 
   const users = await service.exports.getUsers();
 

@@ -1,72 +1,54 @@
-import { isObject, isFunction } from "../helpers/typeChecking.js";
-import { initService } from "../helpers/initService.js";
+import { isObject, isFunction, isService } from "../helpers/typeChecking.js";
 import { makeDebug } from "../makeDebug.js";
-import { makeState } from "../state/makeState.js";
-import { mergeStates } from "../state/mergeStates.js";
-import { makeProxyState } from "../state/makeProxyState.js";
+import { makeService } from "../makeService.js";
 
-import HTTPService from "../services/http.js";
-import PageService from "../services/page.js";
-
-import MockRouterService from "./MockRouterService.js";
+import MockHTTPService from "./mocks/MockHTTPService.js";
+import MockPageService from "./mocks/MockPageService.js";
+import MockRouterService from "./mocks/MockRouterService.js";
 
 /**
- * Wraps a service with a set of mock services.
+ * Creates a service in a mock container for testing purposes.
  */
-export function wrapService(service, configure) {
-  const debug = makeDebug({ filter: "*,-woof:*" });
-  const registeredServices = {};
-
-  const appContext = {
-    services: {},
-    helpers: {
-      makeState,
-      mergeStates,
-      makeProxyState,
-    },
-    debug,
-  };
-
-  const ctx = {
-    /**
-     * Registers a new service for this container.
-     *
-     * @param name - Key by which to access the service
-     * @param service - Function to create the service, or an object to set directly.
-     */
-    service(name, service, options = {}) {
-      if (isFunction(service)) {
-        registeredServices[name] = initService(appContext, service, debug.makeChannel(`service:${name}`), {
-          name,
-          options,
-        });
-        appContext.services[name] = registeredServices[name].exports;
-      } else if (isObject(service)) {
-        registeredServices[name] = {
-          exports: service,
-        };
-        appContext.services[name] = service;
-      } else {
-        throw new TypeError(`Expected a service function or object for service ${name}. Received: ${service}`);
-      }
-
-      return ctx;
-    },
-  };
-
-  ctx.service("page", PageService);
-  ctx.service("router", MockRouterService);
-  ctx.service("http", HTTPService, {
-    fetch: () => {
-      throw new Error(`Pass a mock http service to make HTTP requests inside a wrapper.`);
-    },
-  });
-
-  if (isFunction(configure)) {
-    configure.call(ctx, ctx);
+export function wrapService(service, options = {}) {
+  if (isFunction(service)) {
+    service = makeService(service);
   }
 
-  return function makeWrapped(options = {}) {
-    return initService(appContext, service, debug.makeChannel(`service:wrapped`), { options });
+  if (!isService(service)) {
+    throw new Error(`Expected a service or service function as the first argument.`);
+  }
+
+  const appContext = {
+    services: {
+      router: MockRouterService,
+      page: MockPageService,
+      http: MockHTTPService,
+    },
+    options: {},
+    debug: makeDebug({ filter: options.filter || "*,-woof:*" }),
+  };
+
+  if (options.services) {
+    for (let [name, service] of Object.entries(options.services)) {
+      if (isObject(service) && !isService(service)) {
+        service = () => service;
+      }
+
+      if (isFunction(service)) {
+        service = makeService(service);
+      }
+
+      if (!isService(service)) {
+        throw new Error(`Expected a service, service function or plain object for service '${name}'`);
+      }
+
+      appContext.services[name] = service.init({ appContext, name });
+    }
+  }
+
+  return {
+    exports: service.init({ appContext, name: "wrapped" }),
+    beforeConnect: service.beforeConnect,
+    afterConnect: service.afterConnect,
   };
 }
