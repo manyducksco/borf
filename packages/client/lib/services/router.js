@@ -20,7 +20,7 @@ export default makeService((ctx) => {
   ctx.debug.name = "woof:service:router";
 
   const appContext = ctx[$$appContext];
-  const options = appContext.options.router;
+  const options = appContext.options.router || {};
   const routes = appContext.routes;
 
   let history;
