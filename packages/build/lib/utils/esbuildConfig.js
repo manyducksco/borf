@@ -27,7 +27,6 @@ export default {
     ".woff": "file",
     ".woff2": "file",
   },
-  jsxFactory: "_jsx",
-  jsxFragment: '"<>"',
-  inject: [path.join(__dirname, "./jsxShim.js")],
+  jsx: "automatic",
+  jsxImportSource: "@woofjs/client",
 };

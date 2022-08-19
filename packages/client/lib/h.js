@@ -40,7 +40,7 @@ export function h(element, ...args) {
   return new Template(element, attrs, args);
 }
 
-class Template {
+export class Template {
   constructor(element, attrs, children) {
     this.element = element;
     this.attrs = attrs || {};

@@ -1,6 +1,6 @@
 declare module "@woofjs/client" {
-  import { Concat } from "typescript-tuple";
-  import { History } from "history";
+  import type { Concat } from "typescript-tuple";
+  import type { History } from "history";
 
   /**
    * Creates a new woof app.
@@ -403,6 +403,19 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
+  export function makeComponent<AttrsType, ServicesType>(
+    fn: ComponentFn<AttrsType, ServicesType>
+  ): Component<AttrsType>;
+
+  /**
+   * Creates a component, passing in the reference to the app to infer services.
+   * This signature is designed to be used in plain JS to get service autocomplete.
+   */
+  export function makeComponent<ServicesType>(
+    app: App<ServicesType>,
+    fn: ComponentFn<any, ServicesType>
+  ): Component<any>;
+
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
   export type Component<AttrsType> = (attrs: ComponentAttrs<AttrsType>) => { init: ComponentFn<AttrsType, any> };
@@ -415,15 +428,6 @@ declare module "@woofjs/client" {
       ? AttrsType[Name]
       : AttrsType[Name] | Observable<AttrsType[Name]>;
   };
-
-  export function makeComponent<AttrsType, ServicesType>(
-    fn: ComponentFn<AttrsType, ServicesType>
-  ): Component<AttrsType>;
-
-  export function makeComponent<AttrsType, ServicesType>(
-    app: App<ServicesType>,
-    fn: ComponentFn<AttrsType, DefaultServices & UnwrapServices<ServicesType>>
-  ): Component<AttrsType>;
 
   export type ComponentFn<AttrsType, ServicesType> = (
     this: ComponentContext<AttrsType, ServicesType>,
@@ -636,6 +640,35 @@ declare module "@woofjs/client" {
    * Determines whether or not an object is a state.
    */
   export function isState(value: unknown): boolean;
+}
+
+declare module "@woofjs/client/jsx-runtime" {
+  import type { Template, Component, ComponentFn } from "@woofjs/client";
+
+  export function jsx(
+    element: string | Component<any> | ComponentFn<any, any>,
+    props: { [name: string]: any; children: Template },
+    key: any
+  ): Template;
+
+  export function jsxs(
+    element: string | Component<any> | ComponentFn<any, any>,
+    props: { [name: string]: any; children: Template[] },
+    key: any
+  ): Template;
+}
+
+declare module "@woofjs/client/jsx-dev-runtime" {
+  import type { Template } from "@woofjs/client";
+
+  export function jsxDEV(
+    element: string | Component<any> | ComponentFn<any, any>,
+    props: { [name: string]: any; children: Template | Template[] },
+    key: any,
+    isStaticChildren: boolean,
+    source: any,
+    self: any
+  ): Template;
 }
 
 // TODO: Define all elements and the attributes they support.

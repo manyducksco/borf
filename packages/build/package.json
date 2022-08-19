@@ -20,7 +20,7 @@
     "autoprefixer": "^10.4.8",
     "cheerio": "^1.0.0-rc.12",
     "chokidar": "^3.5.3",
-    "esbuild": "^0.15.2",
+    "esbuild": "^0.15.5",
     "esbuild-style-plugin": "^1.6.0",
     "fs-extra": "^10.1.0",
     "get-port": "^6.1.2",

@@ -24,6 +24,12 @@
     },
     "./testing": {
       "import": "./lib/testing/index.js"
+    },
+    "./jsx-runtime": {
+      "import": "./lib/jsx/jsx-runtime.js"
+    },
+    "./jsx-dev-runtime": {
+      "import": "./lib/jsx/jsx-dev-runtime.js"
     }
   },
   "dependencies": {
