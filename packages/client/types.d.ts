@@ -1,5 +1,6 @@
 declare module "@woofjs/client" {
   import { Concat } from "typescript-tuple";
+  import { History } from "history";
 
   /**
    * Creates a new woof app.
@@ -41,6 +42,9 @@ declare module "@woofjs/client" {
       error?: boolean;
     };
 
+    /**
+     * Options to configure how routing works.
+     */
     router?: {
       /**
        * Use hash-based routing if true.
@@ -52,14 +56,18 @@ declare module "@woofjs/client" {
        *
        * @see https://www.npmjs.com/package/history
        */
-      history?: import("history").History;
+      history?: History;
     };
 
+    /**
+     *
+     */
     services?: ServicesType;
   }
 
   /**
-   *
+   * An app is the central object of a Woof app. It handles mounting and unmounting of routes
+   * based on the current URL and providing services to components rendered under those routes.
    */
   interface App<ServicesType> {
     readonly _services: ServicesType;
@@ -73,7 +81,7 @@ declare module "@woofjs/client" {
      * @param component - Component to render when path matches URL.
      * @param defineRoutes - Optional function to define nested routes.
      */
-    route(path: string, component: ComponentFn<{}, ServicesType>, defineRoutes?: DefineRoutesFn): this;
+    route(path: string, component: ComponentFn<{}, UnwrapServices<ServicesType>>, defineRoutes?: DefineRoutesFn): this;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -84,13 +92,18 @@ declare module "@woofjs/client" {
     redirect(path: string, to: string): this;
 
     /**
-     * Runs a function after services are created but before routes are connected.
-     * Use this to configure services or set initial state.
+     * Runs a callback function after services are created but before any components have been connected.
      *
-     * @param fn - Setup function.
+     * @param callback - Setup function.
      */
-    beforeConnect(fn: AppLifecycleCallback<ServicesType>): this;
-    afterConnect(fn: AppLifecycleCallback<ServicesType>): this;
+    beforeConnect(callback: AppLifecycleCallback<ServicesType>): this;
+
+    /**
+     * Runs a callback function just after the initial route is connected.
+     *
+     * @param callback - Setup function.
+     */
+    afterConnect(callback: AppLifecycleCallback<ServicesType>): this;
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -107,6 +120,11 @@ declare module "@woofjs/client" {
     error(...args: any): void;
   };
 
+  export type AppContext<ServicesType> = {
+    services: Services<ServicesType>;
+    debug: DebugChannel;
+  };
+
   export type AppLifecycleCallback<ServicesType> = (
     this: AppContext<ServicesType>,
     self: AppContext<ServicesType>
@@ -118,12 +136,10 @@ declare module "@woofjs/client" {
     page: PageService;
   };
 
-  export type Services<Type> = DefaultServices & {
-    [Name in keyof Type]: Type[Name];
-  };
+  export type Services<Type> = DefaultServices & UnwrapServices<Type>;
 
   // Extract the type of an app's services for use when defining components.
-  export type ServicesOf<T extends App<any>> = DefaultServices & UnwrapServices<T["_services"]>;
+  export type ServicesOf<T> = T extends App<infer S> ? DefaultServices & UnwrapServices<S> : DefaultServices;
 
   export type UnwrapServices<T> = {
     [Name in keyof T]: T[Name] extends Service<infer U>
@@ -131,11 +147,6 @@ declare module "@woofjs/client" {
       : T[Name] extends (...args: any) => any
       ? ReturnType<T[Name]>
       : T[Name];
-  };
-
-  export type AppContext<ServicesType> = {
-    services: Services<ServicesType>;
-    debug: DebugChannel;
   };
 
   export type RouterService = {
@@ -361,9 +372,9 @@ declare module "@woofjs/client" {
     init(appContext: AppContext<any>): ComponentFn<any, any>;
   };
 
-  type BoundState<T> = {
+  type StateBinding<T> = {
     readonly isBinding: true;
-    $value: State<T>;
+    $value: MutableState<T>;
     event: string;
   };
 
@@ -374,19 +385,19 @@ declare module "@woofjs/client" {
   ): Template;
   export function h(element: string | Component<any> | ComponentFn<any, any>, ...children: Template[]): Template;
 
-  export function when($condition: State<any>, element: Element): Template;
+  export function watch<T>(value: Observable<T>, render: (value: T) => Element): Template;
 
-  export function unless($condition: State<any>, element: Element): Template;
+  export function when(condition: Observable<any>, element: Element): Template;
+
+  export function unless(condition: Observable<any>, element: Element): Template;
 
   export function repeat<T>(
-    $values: State<T[]>,
+    values: Observable<T[]>,
     component: Component<any> | ComponentFn<any, any>,
     getKey?: (value: T) => any
   ): Template;
 
-  export function watch<T>($value: State<T>, render: (value: T) => Element): Template;
-
-  export function bind<T>($value: State<T>, event?: string): BoundState<T>;
+  export function bind<T>(value: MutableState<T>, event?: string): StateBinding<T>;
 
   /*==================================*\
   ||             Component            ||
@@ -394,7 +405,16 @@ declare module "@woofjs/client" {
 
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  export type Component<AttrsType> = (attrs: AttrsType) => { init: ComponentFn<AttrsType, any> };
+  export type Component<AttrsType> = (attrs: ComponentAttrs<AttrsType>) => { init: ComponentFn<AttrsType, any> };
+
+  /**
+   * Components can take observables of the same type as attributes for any value.
+   */
+  export type ComponentAttrs<AttrsType> = {
+    [Name in keyof AttrsType]: AttrsType[Name] extends Observable<any>
+      ? AttrsType[Name]
+      : AttrsType[Name] | Observable<AttrsType[Name]>;
+  };
 
   export function makeComponent<AttrsType, ServicesType>(
     fn: ComponentFn<AttrsType, ServicesType>
@@ -535,9 +555,9 @@ declare module "@woofjs/client" {
   ||              State               ||
   \*==================================*/
 
-  export function makeState<Type>(initialValue?: Type): State<Type>;
+  export function makeState<Type>(initialValue?: Type): MutableState<Type>;
 
-  type State<Type> = {
+  interface State<Type> {
     /**
      * Returns the current value.
      */
@@ -557,6 +577,20 @@ declare module "@woofjs/client" {
      */
     get<V>(transform: (current: Type) => V): V;
 
+    subscribe(observer: Observer<Type>): Subscription;
+    subscribe(next: (value: Type) => void): Subscription;
+
+    map(): State<Type>;
+    map<V>(transform: (current: Type) => V): State<V>;
+
+    toString(): string;
+  }
+
+  /**
+   * A state that can be updated using a `.set()` method.
+   * This is the type of state you get from calling `makeState()`.
+   */
+  interface MutableState<Type> extends State<Type> {
     /**
      * Replaces the state's value with `newValue`.
      *
@@ -569,19 +603,7 @@ declare module "@woofjs/client" {
      * Mutations are applied on a cloned version of `current` that replaces the old one.
      */
     set(fn: (current: Type) => Type | void): void;
-
-    subscribe(observer: Observer<Type>): Subscription;
-    subscribe(next: (value: Type) => void): Subscription;
-
-    map(): ReadonlyState<Type>;
-    map<V>(transform: (current: Type) => V): ReadonlyState<V>;
-
-    toString(): string;
-  };
-
-  type ReadonlyState<Type> = {
-    [Prop in keyof Omit<State<Type>, "set">]: State<Type>[Prop];
-  };
+  }
 
   // Infers the type of the value of a state.
   type UnwrapState<T> = T extends State<infer V> ? V : T;
@@ -607,7 +629,7 @@ declare module "@woofjs/client" {
   interface StateMerge<States extends [...State<any>[]]> {
     with<MoreStates extends [...State<any>[]]>(...states: MoreStates): StateMerge<Concat<States, MoreStates>>;
 
-    into<Result>(merge: (...values: StateValues<States>) => Result): ReadonlyState<Result>;
+    into<Result>(merge: (...values: StateValues<States>) => Result): State<Result>;
   }
 
   /**
