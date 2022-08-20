@@ -234,7 +234,7 @@ export function makeApp(options = {}) {
         // Store this service which is guaranteed to be a Service back in the app's _services store.
         services[name] = service;
 
-        // Initialize the service to make sure its exports are defined.
+        // Initialize the service to get its exports.
         const exports = service.init({ appContext, name });
 
         // Add to appContext.services
@@ -246,8 +246,7 @@ export function makeApp(options = {}) {
         });
       }
 
-      // beforeConnect is the first opportunity to access other services.
-      // This is also a good place to configure things before app-level `setup` runs.
+      // beforeConnect is the first opportunity to configure services before anything else happens.
       for (const service of Object.values(services)) {
         service.beforeConnect();
       }

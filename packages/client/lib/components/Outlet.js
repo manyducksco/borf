@@ -11,7 +11,7 @@ export const Outlet = makeComponent((ctx) => {
 
   let connected = null;
 
-  function swapElement(element) {
+  ctx.subscribeTo($element, (element) => {
     if (connected) {
       connected.disconnect({ allowTransitionOut: true });
       connected = null;
@@ -25,9 +25,7 @@ export const Outlet = makeComponent((ctx) => {
       element.connect(node.parentNode, node);
       connected = element;
     }
-  }
-
-  ctx.subscribeTo($element, swapElement);
+  });
 
   return node;
 });

@@ -106,7 +106,7 @@ export class Template {
  * @param element - Element to display when $condition is truthy.
  */
 export function when($condition, element) {
-  return h(Watch, {
+  return new Template(Watch, {
     value: $condition,
     render: (value) => {
       if (value) {
@@ -128,7 +128,7 @@ export function when($condition, element) {
  * @param element - Element to display when $condition is falsy.
  */
 export function unless($condition, element) {
-  return h(Watch, {
+  return new Template(Watch, {
     value: $condition,
     render: (value) => {
       if (value) {
@@ -148,7 +148,7 @@ export function unless($condition, element) {
  * @param getKey - Takes an array item and returns a unique key. If not provided then the array index will be used.
  */
 export function repeat($values, component, getKey = null) {
-  return h(Repeat, { value: $values, component, getKey });
+  return new Template(Repeat, { value: $values, component, getKey });
 }
 
 /**
@@ -158,7 +158,7 @@ export function repeat($values, component, getKey = null) {
  * @param render - Function that takes the latest value and returns an element to display.
  */
 export function watch($value, render) {
-  return h(Watch, { value: $value, render });
+  return new Template(Watch, { value: $value, render });
 }
 
 /**

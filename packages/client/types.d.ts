@@ -618,21 +618,22 @@ declare module "@woofjs/client" {
   } & ArgsType["length"];
 
   /**
-   * Takes multiple states followed by a function.
-   * Each time any of the states' values change, the function is passed the values in the same order to return a new value.
+   * Takes multiple states to merge into one through a function.
+   * Each time any of the states' values change, the function receives all state values in the same order to calculate a new value.
    * Similar to `.map` but with several states being collapsed down to one.
    */
-  // TODO: Get types right. Arrays passed in are not being interpreted as tuples.
-  export function mergeStates<T extends [...State<any>[]], R>(
-    merge: (values: StateValues<T>) => R,
-    ...states: T
-  ): State<R>;
-
   export function mergeStates<States extends [...State<any>[]]>(...states: States): StateMerge<States>;
 
   interface StateMerge<States extends [...State<any>[]]> {
+    /**
+     * Create a new merge with all existing states plus any new states passed to `with`.
+     */
     with<MoreStates extends [...State<any>[]]>(...states: MoreStates): StateMerge<Concat<States, MoreStates>>;
 
+    /**
+     * Takes a merge function. Each time any of the states in this merge receive a new value, this function is called with the values of
+     * all the merged states in the order they were passed. Whatever this function returns becomes the new value of a derived state.
+     */
     into<Result>(merge: (...values: StateValues<States>) => Result): State<Result>;
   }
 

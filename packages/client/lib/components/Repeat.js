@@ -10,15 +10,15 @@ export const Repeat = makeComponent((ctx) => {
   ctx.debug.name = "woof:template:repeat";
 
   const appContext = ctx[$$appContext];
-  const $value = ctx.$attrs.map("value");
-  const componentFn = ctx.$attrs.get("component");
-  const getKey = ctx.$attrs.get("getKey") || ((value) => value);
+  const $value = ctx.$attrs.map((a) => a.value);
+  const componentFn = ctx.$attrs.get((a) => a.component);
+  const getKey = ctx.$attrs.get((a) => a.getKey) || ((value) => value);
 
   const node = document.createComment("repeat");
 
   let connectedItems = [];
 
-  function update(newValues) {
+  ctx.subscribeTo($value, (newValues) => {
     if (!isArray(newValues)) {
       throw new TypeError(
         `Repeat expects an array or a state containing an array. Got: ${newValues} (${typeof newValues})`
@@ -77,9 +77,7 @@ export const Repeat = makeComponent((ctx) => {
     }
 
     connectedItems = newItems;
-  }
-
-  ctx.subscribeTo($value, update);
+  });
 
   ctx.afterDisconnect(() => {
     for (const item of connectedItems) {

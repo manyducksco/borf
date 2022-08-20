@@ -20,7 +20,7 @@ export const Watch = makeComponent((ctx) => {
 
   let current;
 
-  function update(value) {
+  ctx.subscribeTo($value, (value) => {
     let newItem = render(value);
 
     // Allow functions that return an element
@@ -47,9 +47,7 @@ export const Watch = makeComponent((ctx) => {
       current = newItem.init(appContext, elementContext);
       current.connect(node.parentNode, node);
     }
-  }
-
-  ctx.subscribeTo($value, update);
+  });
 
   ctx.afterDisconnect(() => {
     if (current) {
