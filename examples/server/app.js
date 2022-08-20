@@ -3,6 +3,8 @@ import { makeApp, makeRouter, html, EventSource } from "@woofjs/server";
 const app = makeApp();
 const PORT = process.env.PORT || 4000;
 
+app.cors();
+
 const exampleService = (self) => {
   return {
     call: () => {
@@ -34,38 +36,42 @@ app.service("example", exampleService, {
 app.service("async", asyncService);
 
 app.use(async (ctx, next) => {
-  ctx.response.headers["X-MIDDLEWARE-OUTLINE"] = "mrrp";
+  ctx.response.headers.set("X-MIDDLEWARE-OUTLINE", "mrrp");
   const start = performance.now();
   await next();
   const end = performance.now();
-  ctx.response.headers["X-TIMER"] = end - start + "ms";
+  ctx.response.headers.set("X-TIMER", end - start + "ms");
 });
 
 app.post(
   "/full-test",
   (ctx, next) => {
-    ctx.response.headers["X-MIDDLEWARE-INLINE"] = "RUFF";
+    ctx.response.headers.set("X-MIDDLEWARE-INLINE", "RUFF");
     return next();
   },
   (ctx) => {
     const service = ctx.services.example;
     const asyncService = ctx.services.async;
 
-    ctx.response.headers[
-      "X-SERVICE-CALLS"
-    ] = `Example Service called ${service.call()} times.`;
+    ctx.response.headers.set(
+      "X-SERVICE-CALLS",
+      `Example Service called ${service.call()} times.`
+    );
 
-    ctx.response.headers[
-      "X-REQUEST-METHOD"
-    ] = `This is some CTX info: ${ctx.request.method}.`;
+    ctx.response.headers.set(
+      "X-REQUEST-METHOD",
+      `This is some CTX info: ${ctx.request.method}.`
+    );
 
-    ctx.response.headers[
-      "X-REQUEST-BODY"
-    ] = `This is some CTX info: ${ctx.request.body?.hello}.`;
+    ctx.response.headers.set(
+      "X-REQUEST-BODY",
+      `This is some CTX info: ${ctx.request.body?.hello}.`
+    );
 
-    ctx.response.headers[
-      "X-SERVICE-ASYNC"
-    ] = `Async Service waited ${asyncService.call()} ms.`;
+    ctx.response.headers.set(
+      "X-SERVICE-ASYNC",
+      `Async Service waited ${asyncService.call()} ms.`
+    );
 
     return new Promise((resolve) => {
       setTimeout(() => {

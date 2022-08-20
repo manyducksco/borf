@@ -18,6 +18,7 @@ export function makeApp(options = {}) {
     services: {},
     debug,
     staticPath: path.join(process.cwd(), process.env.WOOF_STATIC_PATH || "build/static"),
+    cors: null,
   };
 
   function addRoute(method, url, handlers) {
@@ -31,26 +32,16 @@ export function makeApp(options = {}) {
     server,
 
     /**
-     * Choose a custom directory to serve static files from. Set to `false` to disable the static file server.
+     * Add a directory to serve static files from.
      */
-    static(directory) {
-      if (typeof directory === "boolean") {
-        if (directory === false) {
-          appContext.staticPath = null;
-        }
-      } else if (typeof directory === "string") {
-        if (!path.isAbsolute(directory)) {
-          directory = path.resolve(process.cwd(), directory);
-        }
+    static(prefix, directory) {
+      appContext.routes.push({
+        ...parseRoute(`${prefix}/*`),
+        method: "GET",
+        staticDirectory: directory,
+      });
 
-        if (!fs.existsSync(directory)) {
-          throw new Error(`Static directory '${directory}' doesn't exist!`);
-        }
-
-        appContext.staticPath = directory;
-      } else {
-        throw new TypeError(`Expected a boolean or string. Got: ${directory}`);
-      }
+      return methods;
     },
 
     /**
@@ -113,15 +104,19 @@ export function makeApp(options = {}) {
     delete: (url, ...handlers) => {
       return addRoute("DELETE", url, handlers);
     },
-    options: (url, ...handlers) => {
-      return addRoute("OPTIONS", url, handlers);
-    },
     head: (url, ...handlers) => {
       return addRoute("HEAD", url, handlers);
     },
     use: (handler) => {
       appContext.middlewares.push(handler);
       return methods;
+    },
+    cors: (options = {}) => {
+      appContext.cors = {
+        allowOrigin: ["*"],
+        allowMethods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+        ...options,
+      };
     },
     mount: (...args) => {
       let prefix = "";

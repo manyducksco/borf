@@ -14,9 +14,24 @@ import ExampleService from "./services/example";
 
 const app = makeApp();
 
-// By default, a server app will try to serve static files from `./static`. You can change this:
-app.static(false); // Don't serve static files at all.
-app.static("/static/path"); // Specify a custom path for static files.
+const corsDefaults = {
+  allowOrigin: ["*"],
+  allowMethods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+};
+
+const corsOptions = {
+  ...corsDefaults,
+  allowCredentials: true, // Determines if Access-Control-Allow-Credentials is set
+  allowHeaders: [], // Access-Control-Allow-Headers. If not passed, defaults to the value of Access-Control-Request-Headers on the request
+  exposeHeaders: [], // Access-Control-Expose-Headers
+  maxAge: 99999999999999999, // (in seconds) Access-Control-Max-Age
+};
+
+app.cors(); // Allow all methods on all origins.
+app.cors(corsOptions); // Use specified options.
+
+// Serve static files (tries static files after matching routes)
+app.static("/static/path", "/path/to/file/dir/on/this/machine"); // Specify a custom path for static files.
 
 // Share logic and state between handlers with services.
 // Each service is created once per request.
@@ -169,7 +184,7 @@ router.get("/", () => {
 });
 
 router.get("manual/json", (ctx) => {
-  ctx.response.headers["content-type"] = "application/json";
+  ctx.response.headers.set("content-type", "application/json");
 
   return JSON.stringify({
     message: "This is returned as string, but content-type is set to application/json",

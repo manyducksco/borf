@@ -46,9 +46,6 @@ export function makeRouter() {
     delete(url, ...handlers) {
       return addRoute("DELETE", url, handlers);
     },
-    options(url, ...handlers) {
-      return addRoute("OPTIONS", url, handlers);
-    },
     head(url, ...handlers) {
       return addRoute("HEAD", url, handlers);
     },
