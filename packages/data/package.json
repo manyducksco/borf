@@ -5,6 +5,7 @@
   "types": "types.d.ts",
   "main": "lib/index.js",
   "type": "module",
+  "sideEffects": false,
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",
