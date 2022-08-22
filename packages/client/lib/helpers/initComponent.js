@@ -118,19 +118,6 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
     transitionOut(callback) {
       transitionOutCallback = callback;
     },
-    watchState($state, callback) {
-      debug.warn(`watchState is deprecated. Use subscribeTo instead.`);
-
-      onAfterConnect.push(() => {
-        subscriptions.push($state.subscribe({ next: callback }));
-      });
-
-      if (isConnected) {
-        throw new Error(
-          "Called watchState after component was already connected. This will cause memory leaks. This function should only be called in the body of the component."
-        );
-      }
-    },
     /**
      * Subscribes to an observable and handles unsubscription when the component is disconnected.
      */

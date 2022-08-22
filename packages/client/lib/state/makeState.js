@@ -1,6 +1,5 @@
 import $$observable from "symbol-observable";
-import { produce } from "immer";
-import { getProperty } from "../helpers/getProperty.js";
+import produce from "immer";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 
@@ -10,18 +9,16 @@ import { deepEqual } from "../helpers/deepEqual.js";
  * @param initialValue - Optional starting value
  */
 export function makeState(initialValue) {
-  let currentValue = initialValue;
+  let currentValue = produce(initialValue, (x) => x);
   let observers = [];
 
   return {
-    get(...selectors) {
-      let value = currentValue;
-
-      for (const selector of selectors) {
-        value = getProperty(value, selector);
+    get(callbackFn) {
+      if (callbackFn) {
+        return produce(currentValue, callbackFn);
+      } else {
+        return currentValue;
       }
-
-      return value;
     },
 
     set(value) {
@@ -36,6 +33,10 @@ export function makeState(initialValue) {
           observer.next(currentValue);
         }
       }
+    },
+
+    map(callbackFn = null) {
+      return mapState(this, callbackFn);
     },
 
     /**
@@ -63,22 +64,12 @@ export function makeState(initialValue) {
       };
     },
 
-    map(...selectors) {
-      return mapState(this, (value) => {
-        for (const selector of selectors) {
-          value = getProperty(value, selector);
-        }
-
-        return value;
-      });
-    },
-
-    toString() {
-      return String(currentValue);
-    },
-
     [$$observable]() {
       return this;
+    },
+
+    [Symbol.toStringTag]() {
+      return "State";
     },
 
     get isState() {
@@ -90,26 +81,35 @@ export function makeState(initialValue) {
 /**
  * Creates a state whose value is a result of running a source state's value through a transform function.
  *
- * @param source - Source state
- * @param transform - Function that takes source's value and returns a new value
+ * @param sourceState - Source state
+ * @param transformFn - Function that takes source's value and returns a new value
  */
-export function mapState(source, transform) {
-  return {
-    get(...selectors) {
-      let value = transform(source.get());
+export function mapState(sourceState, transformFn = null) {
+  if (transformFn == null) {
+    transformFn = (x) => x;
+  } else if (!isFunction(transformFn)) {
+    throw new TypeError(`.map() expected a transform function or null/undefined. Got: ${typeof transformFn}`);
+  }
 
-      for (const selector of selectors) {
-        value = getProperty(value, selector);
+  return {
+    get(callbackFn = null) {
+      let value = sourceState.get();
+
+      if (transformFn) {
+        value = produce(value, transformFn);
+      }
+
+      if (callbackFn) {
+        value = produce(value, callbackFn);
       }
 
       return value;
     },
 
-    /**
-     * Subscribe to this state as an observable.
-     *
-     * @see https://github.com/tc39/proposal-observable
-     */
+    map(callbackFn = null) {
+      return mapState(this, callbackFn);
+    },
+
     subscribe(observer) {
       if (typeof observer !== "object" || observer === null) {
         observer = {
@@ -121,8 +121,8 @@ export function mapState(source, transform) {
 
       let previous;
 
-      return source.subscribe((value) => {
-        value = transform(value);
+      return sourceState.subscribe((value) => {
+        value = produce(value, transformFn);
 
         if (!deepEqual(value, previous)) {
           previous = value;
@@ -131,22 +131,12 @@ export function mapState(source, transform) {
       });
     },
 
-    map(...selectors) {
-      return mapState(this, (value) => {
-        for (const selector of selectors) {
-          value = getProperty(value, selector);
-        }
-
-        return value;
-      });
-    },
-
-    toString() {
-      return source.toString();
-    },
-
     [$$observable]() {
       return this;
+    },
+
+    [Symbol.toStringTag]() {
+      return "State";
     },
 
     get isState() {

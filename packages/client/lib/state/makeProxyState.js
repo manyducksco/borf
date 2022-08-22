@@ -3,7 +3,6 @@ import { produce } from "immer";
 import { isFunction, isState } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 import { mapState } from "./makeState.js";
-import { getProperty } from "../helpers/getProperty.js";
 
 /**
  * Creates a state container that proxies the value of another state.
@@ -48,14 +47,14 @@ export function makeProxyState(initialValue) {
   }
 
   return {
-    get(...selectors) {
+    get(callbackFn) {
       if ($target) {
-        return $target.get(...selectors);
+        return $target.get(callbackFn);
       } else {
         let value = currentValue;
 
-        for (const selector of selectors) {
-          value = getProperty(value, selector);
+        if (callbackFn) {
+          value = produce(value, callbackFn);
         }
 
         return value;
@@ -72,6 +71,10 @@ export function makeProxyState(initialValue) {
       } else {
         updateValue(value);
       }
+    },
+
+    map(callbackFn = null) {
+      return mapState(this, callbackFn);
     },
 
     subscribe(observer) {
@@ -102,16 +105,6 @@ export function makeProxyState(initialValue) {
       };
     },
 
-    map(...selectors) {
-      return mapState(this, (value) => {
-        for (const selector of selectors) {
-          value = getProperty(value, selector);
-        }
-
-        return value;
-      });
-    },
-
     /**
      * Set the proxy target to a new state.
      */
@@ -136,12 +129,12 @@ export function makeProxyState(initialValue) {
       $target = null;
     },
 
-    toString() {
-      return $target.toString();
-    },
-
     [$$observable]() {
       return this;
+    },
+
+    [Symbol.toStringTag]() {
+      return "ProxyState";
     },
 
     get isState() {

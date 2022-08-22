@@ -3,9 +3,9 @@
 ## Initialize
 
 ```js
-import { State } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
-const $count = new State(5);
+const $count = makeState(5);
 ```
 
 We now have a state with a value of 5. The `$name` convention helps to clearly mark this as a state. That's not required, but it is recommended.
@@ -49,11 +49,9 @@ The `map` function creates a second state based on the first by running it throu
 ```js
 const $doubled = $count.map((n) => n * 2);
 
-$doubled.get(); // $count is 10, so $doubled returns 20
+$doubled.get(); // returns 20 while $count is 10
 
-// There is no $doubled.set() since $doubled gets its value from $count.
-// Setting the original state updates mapped states:
-$count.set(7);
+$count.set(7); // When the original state's value changes, mapped states will follow
 
 $count.get(); // now returns 7
 $doubled.get(); // now returns 14
@@ -66,10 +64,10 @@ _Mapped states can themselves be mapped._ Mapped states support everything a nor
 Everyone loves a good click counter. Useless in real life but great for showing how state handling works.
 
 ```js
-import { State } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
 function Counter() {
-  const $count = new State(0);
+  const $count = makeState(0);
 
   function increment() {
     $count.set((current) => current + 1);
@@ -91,7 +89,7 @@ Our click count label is kind of basic. To overcomplicate things and to show off
 import { State } from "@woofjs/client";
 
 function Counter() {
-  const $count = new State(0);
+  const $count = makeState(0);
 
   function increment() {
     $count.set((current) => current + 1);
@@ -128,26 +126,6 @@ Now our label reads:
 - Clicked 4 times.
 - ...
 
-## Selectors
-
-Selectors are shorthand for accessing nested properties on objects and arrays stored in a State. Nested keys are separated by `.` and `[]`s are used to access array items by index. An `[*]` index turns the result into an array by running the rest of the selector on each item.
-
-Below are some examples of selectors and their equivalent functions:
-
-```js
-// Get the `width` property
-$state.get("width");
-$state.get((value) => value.width);
-
-// Get the last name of the 8th (from 0) user in an array called `users`
-$state.get("users[7].name.last");
-$state.get((value) => value.users[7].name.last);
-
-// Get an array of all `id` values for each object in an array
-$state.get("[*].id");
-$state.get((value) => value.map((item) => item.id));
-```
-
 ## API
 
 ### `State`
@@ -155,47 +133,38 @@ $state.get((value) => value.map((item) => item.id));
 ```js
 import { State } from "@woofjs/state";
 
-const $state = new State("🤷‍♂️");
+const $state = makeState("🤷‍♂️");
 ```
 
 Here are all the functions you'll find on a state and how to call them:
 
 - `.get` for getting the current value
   - `.get()` to get the current value
-  - `.get("some.key")` to get a nested part of the current value &ndash; works when the value is an object
-  - `.get(current => value)` to derive a new state from this state's `current` value and return it
+  - `.get(current => value)` to derive a makeState from this state's `current` value and return it
 - `.set` for updating the current value
   - `.set(newValue)` to set a new value
   - `.set(current => newValue)` to replace the current value by returning a new one
   - `.set(current => {})` to update the current value by mutating it
-- `.map` for deriving new states from this state
+- `.map` for deriving makeStates from this state
   - `.map()` to create a read-only copy of this state
   - `.map(current => newValue)` to make a state with `newValue` from this state's `current` value
-  - `.map("some.key")` to make a new state out of a nested part of this state's value &ndash; equivalent to `.map(current => current.some.key)`
-  - `.map("some.key", selected => newValue))` to make a new state out of a nested part of this state's value, as returned from a mapping function
-- `.watch` for observing changes to this state
-  - `.watch(current => {})` to watch for new values whenever the state is set &ndash; returns an `unwatch()` function
-  - `.watch("some.key", selected => {})` to watch for changes to a nested part of the state's value &ndash; returns an `unwatch()` function
-  - one of the following...
-    - `.watch(current => {}, options)`
-    - `.watch("some.key", selected => {}, options)`
-    - ...where `options` is an object with these properties
-      - `.immediate` (boolean) if true, call the watch function once with the current value
-- `.toString()` to get the current value as a string
+- `.subscribe` for observing changes to this state
+  - `.subscribe({ next: (value) => {} })` to watch for new values whenever the state is set &ndash; returns a subscription object with an `unsubscribe` method to stop receiving new values.
+  - `.subscribe(value => {})` which is a shorthand for the above syntax
 
 A state produced by `.map()` supports everything aside from `.set()` (because mapped states derive their values from the original state).
 
 ### `mergeStates`
 
-Takes two or more states followed by a merge function. This function receives the values of each state in the order they were passed and returns a value for a new state. This function is run each time any of the states changes.
+Takes two or more states followed by a merge function. This function receives the values of each state in the order they were passed and returns a value for a makeState. This function is run each time any of the states changes.
 
 It's a lot like `.map`, but for transforming multiple states into one.
 
 ```js
 import { mergeStates } from "@woofjs/state";
 
-const $isLoading = new State(true);
-const $hasData = new State(false);
+const $isLoading = makeState(true);
+const $hasData = makeState(false);
 
 const $isReady = mergeStates($isLoading, $hasData, (isLoading, hasData) => {
   return hasData && !isLoading;

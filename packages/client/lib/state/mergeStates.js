@@ -1,5 +1,5 @@
 import $$observable from "symbol-observable";
-import { getProperty } from "../helpers/getProperty.js";
+import produce from "immer";
 import { mapState } from "./makeState.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
@@ -24,9 +24,9 @@ export function mergeStates(...states) {
   };
 }
 
-function makeMergedState(states, merge) {
-  if (!isFunction(merge)) {
-    throw new TypeError(`Second argument should be a function. Got: ${merge}`);
+function makeMergedState(states, mergeFn) {
+  if (!isFunction(mergeFn)) {
+    throw new TypeError(`Second argument should be a function. Got: ${mergeFn}`);
   }
 
   let observers = [];
@@ -37,7 +37,7 @@ function makeMergedState(states, merge) {
   let values = [];
 
   function updateValue() {
-    const value = merge(...values);
+    const value = mergeFn(...values);
 
     if (!deepEqual(value, currentValue)) {
       currentValue = value;
@@ -81,20 +81,24 @@ function makeMergedState(states, merge) {
   }
 
   return {
-    get(...selectors) {
+    get(callbackFn = null) {
       let value;
 
       if (observing) {
         value = currentValue;
       } else {
-        value = merge(...states.map((state) => state.get()));
+        value = mergeFn(...states.map((state) => state.get()));
       }
 
-      for (const selector of selectors) {
-        value = getProperty(value, selector);
+      if (callbackFn) {
+        value = produce(value, callbackFn);
       }
 
       return value;
+    },
+
+    map(callbackFn = null) {
+      return mapState(this, callbackFn);
     },
 
     subscribe(observer) {
@@ -125,18 +129,8 @@ function makeMergedState(states, merge) {
       };
     },
 
-    map(...selectors) {
-      return mapState(this, (value) => {
-        for (const selector of selectors) {
-          value = getProperty(value, selector);
-        }
-
-        return value;
-      });
-    },
-
-    toString() {
-      return String(this.get());
+    [Symbol.toStringTag]() {
+      return "State";
     },
 
     [$$observable]() {
