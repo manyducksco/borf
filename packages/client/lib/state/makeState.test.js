@@ -12,18 +12,6 @@ describe("get", () => {
     const $state = makeState(5);
     expect($state.get((x) => x * 2)).toBe(10);
   });
-
-  test("mutations in callback function don't mutate original", () => {
-    const $state = makeState({ value: 5 });
-
-    expect(
-      $state.get((x) => {
-        x.value++;
-      })
-    ).toStrictEqual({ value: 6 });
-
-    expect($state.get()).toStrictEqual({ value: 5 });
-  });
 });
 
 describe("set", () => {

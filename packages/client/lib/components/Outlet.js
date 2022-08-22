@@ -3,7 +3,7 @@ import { isTemplate } from "../helpers/typeChecking.js";
 import { $$appContext, $$elementContext } from "../keys.js";
 
 export const Outlet = makeComponent((ctx) => {
-  const $element = ctx.$attrs.map("element");
+  const $element = ctx.$attrs.map((a) => a.element);
   const node = document.createComment("outlet");
 
   const appContext = ctx[$$appContext];

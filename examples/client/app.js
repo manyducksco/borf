@@ -123,7 +123,7 @@ app.route("*", AppLayout, function () {
 
         return (
           <div $ref={$ref} class={$classes}>
-            {this.$attrs.map("label")}
+            {this.$attrs.map((a) => a.label)}
           </div>
         );
       };

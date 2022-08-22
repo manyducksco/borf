@@ -70,7 +70,7 @@ function DynamicListExample(self) {
         </div>
 
         {repeat($shoppingList, ({ $attrs }) => {
-          const $item = $attrs.map("value");
+          const $item = $attrs.map((a) => a.value);
 
           return (
             <li

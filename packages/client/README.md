@@ -49,7 +49,7 @@ app.route("users/:id", function () {
   const { $params } = this.services.router;
 
   // Get the live value of :id with '.map()'.
-  const $id = $params.map("id");
+  const $id = $params.map((p) => p.id);
 
   // Render it into a <p> tag. The ID portion will update if the URL changes.
   return h("p", "User's ID is ", $id);
@@ -104,7 +104,7 @@ Components are ubiquitous in front-end frameworks, but Woof's take on them is ve
 
 ```js
 const Example = makeComponent(function () {
-  const $title = this.$attrs.map("title");
+  const $title = this.$attrs.map(a => a.title);
 
   return h("div", [
     h("h1", $title),
@@ -441,7 +441,7 @@ function Example() {
         container: true,
 
         // Includes "active" class when 'isActive' attribute is truthy
-        active: this.$attrs.map("isActive"),
+        active: this.$attrs.map((a) => a.isActive),
       }}
     >
       {this.children}
@@ -467,7 +467,7 @@ function Example() {
   return (
     <div
       class={["container", {
-        active: this.$attrs.map("isActive"),
+        active: this.$attrs.map(a => a.isActive),
       }}
     >
       {this.children}

@@ -274,8 +274,8 @@ test("state attributes mapped in the component update when the state changes whi
   const oneWayChanged = jest.fn();
 
   function Component(ctx) {
-    const $twoWay = ctx.$attrs.get("$twoWay");
-    const $oneWay = ctx.$attrs.map("oneWay");
+    const $twoWay = ctx.$attrs.get((a) => a.$twoWay);
+    const $oneWay = ctx.$attrs.map((a) => a.oneWay);
 
     ctx.subscribeTo($twoWay, twoWayChanged);
     ctx.subscribeTo($oneWay, oneWayChanged);
@@ -394,27 +394,6 @@ test("supports returning subcomponents", () => {
 
   expect(parent.children.length).toBe(0);
 });
-
-// test("throws error when calling self.watchState when component is already connected", () => {
-//   function Component(ctx) {
-//     const $nothing = ctx.$attrs.map("nonexistent");
-
-//     ctx.afterConnect(() => {
-//       ctx.watchState($nothing, (value) => {
-//         console.log("This won't run.");
-//       });
-//     });
-
-//     return null;
-//   }
-
-//   const result = initComponent(appContext, Component);
-//   const parent = makeDOMNode();
-
-//   expect(() => {
-//     result.connect(parent);
-//   }).toThrow();
-// });
 
 test("routePreload takes element to show() and resolves when done() is called", async () => {
   const loader = h("div", h("h1", "Loading..."));

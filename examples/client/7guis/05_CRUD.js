@@ -96,7 +96,7 @@ export default function CRUD(self) {
         </div>
         <div>
           <select
-            size={$filteredPeople.map("length", (value) => Math.max(value, 2))}
+            size={$filteredPeople.map((fp) => Math.max(fp.length, 2))}
             value={$selectedId}
             onchange={(e) => {
               $selectedId.set(Number(e.target.value));
@@ -105,11 +105,12 @@ export default function CRUD(self) {
             {repeat(
               $filteredPeople,
               function FilterOption() {
-                const $person = this.$attrs.map("value");
+                const $person = this.$attrs.map((a) => a.value);
 
                 return (
-                  <option value={$person.map("id")}>
-                    {$person.map("surname")}, {$person.map("name")}
+                  <option value={$person.map((p) => p.id)}>
+                    {$person.map((p) => p.surname)},{" "}
+                    {$person.map((p) => p.name)}
                   </option>
                 );
               },

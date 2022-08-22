@@ -4,11 +4,11 @@ import { when } from "@woofjs/client";
  * A component to test woof-view attribute handling.
  */
 export default ({ $attrs }) => {
-  const $name = $attrs.map("name");
-  const $quality = $attrs.map("quality");
-  const $showQuality = $attrs.map("showQuality");
-  const $color = $attrs.map("color", (color) => color || "#000");
-  const $punctuation = $attrs.map("punctuation");
+  const $name = $attrs.map((a) => a.name);
+  const $quality = $attrs.map((a) => a.quality);
+  const $showQuality = $attrs.map((a) => a.showQuality);
+  const $color = $attrs.map((a) => a.color || "#000");
+  const $punctuation = $attrs.map((a) => a.punctuation);
 
   // Mapping multiple attribute values into a single state is possible, like so.
   const $percentage = $attrs.map((attrs) => {
@@ -18,7 +18,7 @@ export default ({ $attrs }) => {
     return percentage * multiplier + "%";
   });
 
-  const onclick = $attrs.get("onclick");
+  const onclick = $attrs.get((a) => a.onclick);
 
   return (
     <div>

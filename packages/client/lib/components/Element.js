@@ -8,8 +8,8 @@ import { $$elementContext } from "../keys.js";
 export const Element = makeComponent((ctx) => {
   const elementContext = ctx[$$elementContext];
 
-  const tagname = ctx.$attrs.get("tagname");
-  const attrs = ctx.$attrs.get("attrs") || {}; // attrs passed to the element itself
+  const tagname = ctx.$attrs.get((a) => a.tagname);
+  const attrs = ctx.$attrs.get((a) => a.attrs || {}); // attrs passed to the element itself
 
   let node;
 

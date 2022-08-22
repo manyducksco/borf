@@ -8,7 +8,7 @@ export function MyHeader({ $attrs, ...self }) {
 
   const onclick = $attrs.get("onclick");
 
-  const $greeting = $attrs.map("greeting");
+  const $greeting = $attrs.map((a) => a.greeting);
   const $name = makeState("...");
 
   self.beforeConnect(() => {

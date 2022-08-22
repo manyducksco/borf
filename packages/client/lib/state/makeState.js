@@ -15,7 +15,7 @@ export function makeState(initialValue) {
   return {
     get(callbackFn) {
       if (callbackFn) {
-        return produce(currentValue, callbackFn);
+        return callbackFn(currentValue);
       } else {
         return currentValue;
       }
@@ -96,11 +96,11 @@ export function mapState(sourceState, transformFn = null) {
       let value = sourceState.get();
 
       if (transformFn) {
-        value = produce(value, transformFn);
+        value = transformFn(value);
       }
 
       if (callbackFn) {
-        value = produce(value, callbackFn);
+        value = callbackFn(value);
       }
 
       return value;
@@ -122,7 +122,7 @@ export function mapState(sourceState, transformFn = null) {
       let previous;
 
       return sourceState.subscribe((value) => {
-        value = produce(value, transformFn);
+        value = transformFn(value);
 
         if (!deepEqual(value, previous)) {
           previous = value;

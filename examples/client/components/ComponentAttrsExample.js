@@ -19,9 +19,9 @@ export default function ComponentAttrsExample() {
 function SubComponent({ $attrs }) {
   this.debug.name = "SubComponent";
 
-  const $state = $attrs.get("$state"); // get state passed as state
-  const unwrapped = $attrs.get("unwrapped"); // get unwrapped value once
-  const $unwrapped = $attrs.map("unwrapped"); // map unwrapped value to makeState
+  const $state = $attrs.get((a) => a.$state); // get state passed as state
+  const unwrapped = $attrs.get((a) => a.unwrapped); // get unwrapped value once
+  const $unwrapped = $attrs.map((a) => a.unwrapped); // map unwrapped value to state
 
   return (
     <div>

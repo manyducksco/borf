@@ -15,8 +15,8 @@ export const Watch = makeComponent((ctx) => {
 
   const node = document.createComment("watch");
 
-  const $value = ctx.$attrs.map("value");
-  const render = ctx.$attrs.get("render");
+  const $value = ctx.$attrs.map((a) => a.value);
+  const render = ctx.$attrs.get((a) => a.render);
 
   let current;
 
