@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/build",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "description": "Web framework build scripts for dogs. 🐕",
   "main": "lib/index.js",
   "type": "module",
@@ -54,7 +54,7 @@
     }
   },
   "devDependencies": {
-    "@woofjs/client": "^0.21.0",
-    "@woofjs/server": "^0.6.0"
+    "@woofjs/client": "^0.22.0",
+    "@woofjs/server": "^0.6.1"
   }
 }
