@@ -1,6 +1,6 @@
-import { makeState, bind } from "@woofjs/client";
+import { makeComponent, makeState, bind } from "@woofjs/client";
 
-export default function ComponentAttrsExample() {
+export const ComponentAttrsExample = makeComponent(() => {
   const $message = makeState("test");
 
   return (
@@ -14,10 +14,10 @@ export default function ComponentAttrsExample() {
       </div>
     </div>
   );
-}
+});
 
-function SubComponent({ $attrs }) {
-  this.debug.name = "SubComponent";
+const SubComponent = makeComponent(({ $attrs, debug }) => {
+  debug.name = "SubComponent";
 
   const $state = $attrs.get((a) => a.$state); // get state passed as state
   const unwrapped = $attrs.get((a) => a.unwrapped); // get unwrapped value once
@@ -37,4 +37,4 @@ function SubComponent({ $attrs }) {
       </button>
     </div>
   );
-}
+});

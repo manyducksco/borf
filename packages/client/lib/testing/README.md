@@ -7,9 +7,9 @@
 ```js
 import { wrapService, makeMockHTTP } from "@woofjs/client/testing";
 
-const mockHTTP = makeMockHTTP(function () {
+const mockHTTP = makeMockHTTP((on) => {
   // Define a mock responder for requests matching 'POST /users/create'
-  this.post("/users/create", (ctx) => {
+  on.post("/users/create", (ctx) => {
     ctx.response.status = 200;
 
     return {
@@ -21,14 +21,14 @@ const mockHTTP = makeMockHTTP(function () {
     };
   });
 
-  this.delete("/users/:id", (ctx) => {
+  on.delete("/users/:id", (ctx) => {
     ctx.response.status = 204;
   });
 });
 
 // A service that makes HTTP calls:
-function UserService() {
-  const { http } = this.services;
+const UserService = (ctx) => {
+  const { http } = ctx.services;
 
   function createUser(name) {
     return http.post("/users/create").body({ name });
@@ -42,7 +42,7 @@ function UserService() {
     createUser,
     deleteUser,
   };
-}
+};
 ```
 
 And to test (pictured in Jest):

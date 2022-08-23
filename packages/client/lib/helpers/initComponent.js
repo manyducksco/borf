@@ -6,13 +6,17 @@ import { $$appContext, $$elementContext } from "../keys.js";
 /**
  * Initializes a component function into a component instance that the framework can work with.
  *
- * @param appContext - App resources such as getService()
- * @param fn - The component function.
- * @param attrs - Attributes passed to the function.
- * @param children - Children passed to the function.
- * @param elementContext - Context information for the creation of elements.
+ * @param componentFn - The component function.
+ * @param config - Config object
+ *
+ * @param config.appContext - App resources such as getService()
+ * @param config.attrs - Attributes passed to the function.
+ * @param config.children - Children passed to the function.
+ * @param config.elementContext - Context information for the creation of elements.
  */
-export function initComponent(appContext, fn, attrs, children, elementContext) {
+export function initComponent(componentFn, config) {
+  let { attrs, children, appContext, elementContext } = config;
+
   attrs = attrs || {};
   children = children || [];
 
@@ -85,7 +89,7 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   ||    Define context object    ||
   \*=============================*/
 
-  const debug = appContext.debug.makeChannel(`component:${fn.name || "anonymous"}`);
+  const debug = appContext.debug.makeChannel(`component:${componentFn.name || "anonymous"}`);
 
   // This is the object the setup function uses to interface with the component.
   const ctx = {
@@ -153,10 +157,10 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
   ||      Run setup function     ||
   \*=============================*/
 
-  let element = fn.call(ctx, ctx);
+  let element = componentFn(ctx);
 
   if (isTemplate(element)) {
-    element = element.init(appContext, elementContext);
+    element = element.init({ appContext, elementContext });
   } else {
     if (element !== null && !isDOM(element)) {
       let message = `Components must return an h() element, a DOM node or null. Got: ${element}`;
@@ -215,7 +219,7 @@ export function initComponent(appContext, fn, attrs, children, elementContext) {
       return new Promise(async (resolve, reject) => {
         const show = (element) => {
           if (isTemplate(element)) {
-            element = element.init(appContext, elementContext);
+            element = element.init({ appContext, elementContext });
           } else {
             return reject(new TypeError(`Expected an element to display. Got: ${element} (${typeof element})`));
           }

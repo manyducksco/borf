@@ -19,7 +19,7 @@ export const Outlet = makeComponent((ctx) => {
 
     if (element) {
       if (isTemplate(element)) {
-        element = element.init(appContext, elementContext);
+        element = element.init({ appContext, elementContext });
       }
 
       element.connect(node.parentNode, node);

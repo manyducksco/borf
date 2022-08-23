@@ -47,10 +47,6 @@ export function makeApp(options = {}) {
       component = () => c;
     }
 
-    // if (isFunction(component)) {
-    //   component = new Component(component);
-    // }
-
     if (!isFunction(component)) {
       throw new TypeError(`Route needs a path and a component function. Got: ${path} and ${component}`);
     }
@@ -96,7 +92,7 @@ export function makeApp(options = {}) {
         },
       };
 
-      defineRoutes.call(helpers, helpers);
+      defineRoutes(helpers);
     } else {
       routes.push({
         path,
@@ -158,7 +154,7 @@ export function makeApp(options = {}) {
           debug: appContext.debug.makeChannel("woof:app:beforeConnect"),
         };
 
-        return fn.call(ctx, ctx);
+        return fn(ctx);
       };
 
       return this;
@@ -175,7 +171,7 @@ export function makeApp(options = {}) {
           debug: appContext.debug.makeChannel("woof:app:afterConnect"),
         };
 
-        return fn.call(ctx, ctx);
+        return fn(ctx);
       };
 
       return this;

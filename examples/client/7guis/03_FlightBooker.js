@@ -1,9 +1,15 @@
-import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
+import {
+  makeComponent,
+  repeat,
+  bind,
+  makeState,
+  mergeStates,
+} from "@woofjs/client";
 
 const flightTypes = ["one-way flight", "return flight"];
 
-export default function FlightBooker(self) {
-  self.debug.name = "7GUIs:FlightBooker";
+export default makeComponent((ctx) => {
+  ctx.debug.name = "7GUIs:FlightBooker";
 
   const $flightType = makeState(flightTypes[0]);
   const $startDate = makeState(formatDate(new Date()));
@@ -117,4 +123,4 @@ export default function FlightBooker(self) {
       </form>
     </div>
   );
-}
+});

@@ -1,10 +1,10 @@
-import { repeat, makeState } from "@woofjs/client";
+import { makeComponent, repeat, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-function DynamicListExample(self) {
-  self.debug.name = "DynamicListExample";
+export const DynamicListExample = makeComponent((ctx) => {
+  ctx.debug.name = "DynamicListExample";
 
-  logLifecycle(self);
+  logLifecycle(ctx);
 
   const initialList = ["apple", "banana", "potato", "fried chicken"];
 
@@ -19,7 +19,7 @@ function DynamicListExample(self) {
   };
 
   const reset = () => {
-    self.debug.log(initialList);
+    ctx.debug.log(initialList);
     $shoppingList.set(initialList);
   };
 
@@ -85,6 +85,4 @@ function DynamicListExample(self) {
       </div>
     </div>
   );
-}
-
-export default DynamicListExample;
+});

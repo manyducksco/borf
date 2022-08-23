@@ -18,8 +18,8 @@ export function mergeStates(...states) {
       return mergeStates(...states, ...moreStates);
     },
 
-    into(fn) {
-      return makeMergedState(states, fn);
+    into(mergeFn) {
+      return makeMergedState(states, mergeFn);
     },
   };
 }
@@ -80,7 +80,7 @@ function makeMergedState(states, mergeFn) {
     }
   }
 
-  return {
+  const state = {
     get(callbackFn = null) {
       let value;
 
@@ -98,7 +98,7 @@ function makeMergedState(states, mergeFn) {
     },
 
     map(callbackFn = null) {
-      return mapState(this, callbackFn);
+      return mapState(state, callbackFn);
     },
 
     subscribe(observer) {
@@ -128,17 +128,19 @@ function makeMergedState(states, mergeFn) {
         },
       };
     },
-
-    [Symbol.toStringTag]() {
-      return "State";
-    },
-
-    [$$observable]() {
-      return this;
-    },
-
-    get isState() {
-      return true;
-    },
   };
+
+  Object.defineProperties(state, {
+    [$$observable]: {
+      value: () => state,
+    },
+    [Symbol.toStringTag]: {
+      value: () => "State",
+    },
+    isState: {
+      value: true,
+    },
+  });
+
+  return state;
 }

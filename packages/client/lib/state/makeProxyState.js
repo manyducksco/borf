@@ -46,7 +46,7 @@ export function makeProxyState(initialValue) {
     }
   }
 
-  return {
+  const state = {
     get(callbackFn) {
       if ($target) {
         return $target.get(callbackFn);
@@ -74,7 +74,7 @@ export function makeProxyState(initialValue) {
     },
 
     map(callbackFn = null) {
-      return mapState(this, callbackFn);
+      return mapState(state, callbackFn);
     },
 
     subscribe(observer) {
@@ -128,17 +128,19 @@ export function makeProxyState(initialValue) {
       unsubscribeFromTarget();
       $target = null;
     },
-
-    [$$observable]() {
-      return this;
-    },
-
-    [Symbol.toStringTag]() {
-      return "ProxyState";
-    },
-
-    get isState() {
-      return true;
-    },
   };
+
+  Object.defineProperties(state, {
+    [$$observable]: {
+      value: () => state,
+    },
+    [Symbol.toStringTag]: {
+      value: () => "ProxyState",
+    },
+    isState: {
+      value: true,
+    },
+  });
+
+  return state;
 }

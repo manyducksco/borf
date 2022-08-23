@@ -4,10 +4,10 @@ import logLifecycle from "../utils/logLifecycle.js";
 /**
  * Displays a div that toggles a class when clicked and a label based on the current status.
  */
-export default makeComponent((self) => {
-  self.debug.name = "ToggleExample";
+export const ToggleExample = makeComponent((ctx) => {
+  ctx.debug.name = "ToggleExample";
 
-  logLifecycle(self);
+  logLifecycle(ctx);
 
   const $active = makeState(false);
   const $status = $active.map((current) => (current ? "ON" : "OFF"));

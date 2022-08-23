@@ -7,7 +7,7 @@ export async function initService(appContext, fn, debug, config) {
     services: appContext.services,
   };
 
-  let exports = await fn.call(ctx, ctx);
+  let exports = await fn(ctx);
 
   if (!isObject(exports)) {
     throw new TypeError(`A service must return an object. Got: ${exports}`);

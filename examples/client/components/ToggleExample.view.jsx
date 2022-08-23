@@ -1,4 +1,4 @@
-import ToggleExample from "./ToggleExample.js";
+import { ToggleExample } from "./ToggleExample.js";
 
 export default function (view) {
   view.render(ToggleExample);

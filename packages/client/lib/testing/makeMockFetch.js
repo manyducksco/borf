@@ -10,15 +10,15 @@ const { Response } = require("fetch-ponyfill")();
  * import { makeMockFetch } from "@woofjs/app/testing";
  *
  * // Create a mock HTTP instance
- * const fetch = makeMockFetch((self) => {
- *   self.get("/example/route", (ctx) => {
+ * const fetch = makeMockFetch((on) => {
+ *   on.get("/example/route", (ctx) => {
  *     // Respond with JSON
  *     return {
  *       message: "success"
  *     }
  *   });
  *
- *   self.put("/users/:id", (ctx) => {
+ *   on.put("/users/:id", (ctx) => {
  *     ctx.response.status = 200;
  *
  *     return {
@@ -37,7 +37,7 @@ export function makeMockFetch(fn) {
   let routes = [];
   const calls = [];
 
-  const self = {
+  const ctx = {
     handle(method, url, handler) {
       routes.push({
         method,
@@ -70,7 +70,7 @@ export function makeMockFetch(fn) {
     },
   };
 
-  fn.call(self, self);
+  fn(ctx);
 
   routes = sortRoutes(routes);
 

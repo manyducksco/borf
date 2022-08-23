@@ -66,7 +66,7 @@ export const Repeat = makeComponent((ctx) => {
       } else {
         newItems[key.index] = {
           key: key.value,
-          component: initComponent(appContext, componentFn, key.attrs),
+          component: initComponent(componentFn, { attrs: key.attrs, appContext }),
         };
       }
     }

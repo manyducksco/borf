@@ -16,8 +16,6 @@ import { Repeat } from "./components/Repeat.js";
 import { Element } from "./components/Element.js";
 import { Fragment } from "./components/Fragment.js";
 
-// import { makeComponent } from "./makeComponent.js";
-
 /**
  * Template function. Used in components to render content.
  *
@@ -51,7 +49,7 @@ export class Template {
     return true;
   }
 
-  init(appContext, elementContext = {}) {
+  init({ appContext, elementContext = {} }) {
     elementContext = {
       ...elementContext,
     };
@@ -67,9 +65,14 @@ export class Template {
       .filter((x) => x !== null && x !== undefined && x !== false)
       .map((child) => {
         if (isTemplate(child)) {
-          child = child.init(appContext, elementContext);
+          child = child.init({ appContext, elementContext });
         } else if (isString(child) || isNumber(child) || isObservable(child)) {
-          child = initComponent(appContext, Text, { value: child });
+          child = initComponent(Text, {
+            attrs: {
+              value: child,
+            },
+            appContext,
+          });
         }
 
         if (!isComponent(child)) {
@@ -83,12 +86,20 @@ export class Template {
 
     if (isString(element)) {
       if (element === "" || element === "<>") {
-        return initComponent(appContext, Fragment, null, children, elementContext);
+        return initComponent(Fragment, { children, appContext, elementContext });
       } else {
-        return initComponent(appContext, Element, { tagname: element, attrs }, children, elementContext);
+        return initComponent(Element, {
+          attrs: {
+            tagname: element,
+            attrs,
+          },
+          children,
+          appContext,
+          elementContext,
+        });
       }
     } else if (isFunction(element)) {
-      return initComponent(appContext, element, attrs, children, elementContext);
+      return initComponent(element, { attrs, children, appContext, elementContext });
     } else {
       console.error("Element", element);
       throw new TypeError(`Expected a tagname or component function. Got ${typeof element}`);

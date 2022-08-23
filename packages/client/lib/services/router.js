@@ -82,7 +82,7 @@ export default makeService((ctx) => {
   ctx.afterConnect(() => {
     const root = appContext.rootElement;
 
-    appOutlet = initComponent(appContext, Outlet);
+    appOutlet = initComponent(Outlet, { appContext });
     appOutlet.connect(root);
 
     history.listen(onRouteChange);
@@ -134,8 +134,8 @@ export default makeService((ctx) => {
             if (activeLayer?.id !== matchedLayer.id) {
               activeLayers = activeLayers.slice(0, i);
 
-              const outlet = initComponent(appContext, Outlet);
-              const component = initComponent(appContext, matchedLayer.component, null, [outlet]);
+              const outlet = initComponent(Outlet, { appContext });
+              const component = initComponent(matchedLayer.component, { children: [outlet], appContext });
 
               const parentLayer = activeLayers[activeLayers.length - 1];
 

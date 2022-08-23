@@ -1,10 +1,10 @@
-import { bind, makeState } from "@woofjs/client";
+import { bind, makeComponent, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-function TwoWayBindExample(self) {
-  self.debug.name = "TwoWayBindExample";
+export const TwoWayBindExample = makeComponent((ctx) => {
+  ctx.debug.name = "TwoWayBindExample";
 
-  logLifecycle(self);
+  logLifecycle(ctx);
 
   const $text = makeState("edit me");
   const $size = makeState(18);
@@ -28,6 +28,4 @@ function TwoWayBindExample(self) {
       </div>
     </div>
   );
-}
-
-export default TwoWayBindExample;
+});

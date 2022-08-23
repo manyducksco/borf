@@ -20,10 +20,7 @@ const $message = mergeStates($label, $label2)
     return one + two + three;
   });
 
-const ExampleService = makeService((self) => {
-  // TODO: Service functions don't have self and context typed correctly.
-  // self.
-
+const ExampleService = makeService((ctx) => {
   return {
     /**
      * Comment that shows up on inline documentation.
@@ -32,9 +29,7 @@ const ExampleService = makeService((self) => {
   };
 });
 
-const UserService = makeService((self) => {
-  // self.options.
-
+const UserService = makeService((ctx) => {
   return {
     async getUsers() {
       return [];
@@ -53,10 +48,10 @@ export const app = makeApp({
 
 export type AppServices = ServicesOf<typeof app>;
 
-const Example3 = makeComponent<any, AppServices>((self) => {
-  const $title = self.$attrs.map((attrs) => attrs.title);
+const Example3 = makeComponent<any, AppServices>((ctx) => {
+  const $title = ctx.$attrs.map((attrs) => attrs.title);
 
-  const { http, example, fn } = self.services;
+  const { http, example, fn } = ctx.services;
 
   return null;
 });

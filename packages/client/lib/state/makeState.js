@@ -12,7 +12,7 @@ export function makeState(initialValue) {
   let currentValue = produce(initialValue, (x) => x);
   let observers = [];
 
-  return {
+  const state = {
     get(callbackFn) {
       if (callbackFn) {
         return callbackFn(currentValue);
@@ -36,7 +36,7 @@ export function makeState(initialValue) {
     },
 
     map(callbackFn = null) {
-      return mapState(this, callbackFn);
+      return mapState(state, callbackFn);
     },
 
     /**
@@ -63,19 +63,21 @@ export function makeState(initialValue) {
         },
       };
     },
-
-    [$$observable]() {
-      return this;
-    },
-
-    [Symbol.toStringTag]() {
-      return "State";
-    },
-
-    get isState() {
-      return true;
-    },
   };
+
+  Object.defineProperties(state, {
+    [$$observable]: {
+      value: () => state,
+    },
+    [Symbol.toStringTag]: {
+      value: () => "State",
+    },
+    isState: {
+      value: true,
+    },
+  });
+
+  return state;
 }
 
 /**
@@ -91,7 +93,7 @@ export function mapState(sourceState, transformFn = null) {
     throw new TypeError(`.map() expected a transform function or null/undefined. Got: ${typeof transformFn}`);
   }
 
-  return {
+  const state = {
     get(callbackFn = null) {
       let value = sourceState.get();
 
@@ -107,7 +109,7 @@ export function mapState(sourceState, transformFn = null) {
     },
 
     map(callbackFn = null) {
-      return mapState(this, callbackFn);
+      return mapState(state, callbackFn);
     },
 
     subscribe(observer) {
@@ -130,17 +132,19 @@ export function mapState(sourceState, transformFn = null) {
         }
       });
     },
-
-    [$$observable]() {
-      return this;
-    },
-
-    [Symbol.toStringTag]() {
-      return "State";
-    },
-
-    get isState() {
-      return true;
-    },
   };
+
+  Object.defineProperties(state, {
+    [$$observable]: {
+      value: () => state,
+    },
+    [Symbol.toStringTag]: {
+      value: () => "State",
+    },
+    isState: {
+      value: true,
+    },
+  });
+
+  return state;
 }

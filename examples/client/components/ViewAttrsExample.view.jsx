@@ -1,6 +1,6 @@
 import { makeState } from "@woofjs/client";
 
-import ViewAttrsExample from "./ViewAttrsExample";
+import { ViewAttrsExample } from "./ViewAttrsExample";
 
 export default (view) => {
   view.description =

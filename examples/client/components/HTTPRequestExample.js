@@ -1,12 +1,12 @@
 import { makeComponent, makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export default makeComponent((self) => {
-  const { http } = self.services;
+export const HTTPRequestExample = makeComponent((ctx) => {
+  const { http } = ctx.services;
 
-  self.debug.name = "HTTPRequestExample";
+  ctx.debug.name = "HTTPRequestExample";
 
-  logLifecycle(self);
+  logLifecycle(ctx);
 
   const $loading = makeState(false);
   const $message = makeState("");

@@ -1,20 +1,22 @@
 /**
  * Logs lifecycle hooks of a component for debugging/learning purposes.
+ *
+ * @param ctx - Component context object
  */
-export default function logLifecycle(self) {
-  self.beforeConnect(() => {
-    self.debug.log("lifecycle: beforeConnect");
+export default function logLifecycle(ctx) {
+  ctx.beforeConnect(() => {
+    ctx.debug.log("lifecycle: beforeConnect");
   });
 
-  self.afterConnect(() => {
-    self.debug.log("lifecycle: afterConnect");
+  ctx.afterConnect(() => {
+    ctx.debug.log("lifecycle: afterConnect");
   });
 
-  self.beforeDisconnect(() => {
-    self.debug.log("lifecycle: beforeDisconnect");
+  ctx.beforeDisconnect(() => {
+    ctx.debug.log("lifecycle: beforeDisconnect");
   });
 
-  self.afterDisconnect(() => {
-    self.debug.log("lifecycle: afterDisconnect");
+  ctx.afterDisconnect(() => {
+    ctx.debug.log("lifecycle: afterDisconnect");
   });
 }

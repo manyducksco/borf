@@ -1,14 +1,15 @@
 import { when } from "@woofjs/client";
+import { prop, propOr } from "ramda";
 
 /**
  * A component to test woof-view attribute handling.
  */
-export default ({ $attrs }) => {
-  const $name = $attrs.map((a) => a.name);
-  const $quality = $attrs.map((a) => a.quality);
-  const $showQuality = $attrs.map((a) => a.showQuality);
-  const $color = $attrs.map((a) => a.color || "#000");
-  const $punctuation = $attrs.map((a) => a.punctuation);
+export const ViewAttrsExample = makeComponent(({ $attrs }) => {
+  const $name = $attrs.map(prop("name"));
+  const $quality = $attrs.map(prop("quality"));
+  const $showQuality = $attrs.map(prop("showQuality"));
+  const $color = $attrs.map(propOr("#000", "color"));
+  const $punctuation = $attrs.map(prop("punctuation"));
 
   // Mapping multiple attribute values into a single state is possible, like so.
   const $percentage = $attrs.map((attrs) => {
@@ -35,4 +36,4 @@ export default ({ $attrs }) => {
       <button onclick={onclick}>Click this button</button>
     </div>
   );
-};
+});

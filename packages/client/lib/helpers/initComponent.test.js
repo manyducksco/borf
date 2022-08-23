@@ -69,7 +69,7 @@ test("returns a component", () => {
     return h("p", "This is just a test.");
   }
 
-  const result = initComponent(appContext, Component);
+  const result = initComponent(Component, { appContext });
 
   expect(isComponent(result)).toBe(true);
 });
@@ -89,12 +89,12 @@ test("throws if component doesn't return an element or null", () => {
     return h("p", "This is expected.");
   }
 
-  expect(() => initComponent(appContext, InvalidOne)).toThrow();
-  expect(() => initComponent(appContext, InvalidTwo)).toThrow();
-  expect(() => initComponent(appContext, InvalidThree)).toThrow();
+  expect(() => initComponent(InvalidOne, { appContext })).toThrow();
+  expect(() => initComponent(InvalidTwo, { appContext })).toThrow();
+  expect(() => initComponent(InvalidThree, { appContext })).toThrow();
 
-  expect(() => initComponent(appContext, Valid)).not.toThrow();
-  expect(() => initComponent(appContext, AlsoValid)).not.toThrow();
+  expect(() => initComponent(Valid, { appContext })).not.toThrow();
+  expect(() => initComponent(AlsoValid, { appContext })).not.toThrow();
 });
 
 test("connect, disconnect and lifecycle hooks", () => {
@@ -129,7 +129,7 @@ test("connect, disconnect and lifecycle hooks", () => {
     // return h("p", "This is just a test.");
   }
 
-  const result = initComponent(appContext, Component);
+  const result = initComponent(Component, { appContext });
 
   expect(parent.children.length).toBe(1);
   expect(result.isConnected).toBe(false);
@@ -205,10 +205,10 @@ test(".node returns the root DOM node", () => {
     return this.children;
   }
 
-  const nullResult = initComponent(appContext, NullComponent);
-  const domResult = initComponent(appContext, DOMComponent);
-  const nestedResult = initComponent(appContext, NestedComponent);
-  const childrenResult = initComponent(appContext, ChildrenComponent, null, root);
+  const nullResult = initComponent(NullComponent, { appContext });
+  const domResult = initComponent(DOMComponent, { appContext });
+  const nestedResult = initComponent(NestedComponent, { appContext });
+  const childrenResult = initComponent(ChildrenComponent, { appContext, children: root });
 
   expect(nullResult.node).toBe(null);
   expect(domResult.node).toBe(root);
@@ -231,7 +231,7 @@ test("attributes have correct initial values", () => {
     expect(attrs.normalAttr).toStrictEqual({ cool: "yeah" });
 
     expect(() => {
-      $attrs.set({ nope: "you can't do this." });
+      ctx.$attrs.set({ nope: "you can't do this." });
     }).toThrow();
 
     // Call mock function to prove this ran.
@@ -244,10 +244,13 @@ test("attributes have correct initial values", () => {
   const $stateAsValue = makeState("yo");
   const normalAttr = { cool: "yeah" };
 
-  initComponent(appContext, Component, {
-    $stateAsState,
-    stateAsValue: $stateAsValue,
-    normalAttr,
+  initComponent(Component, {
+    attrs: {
+      $stateAsState,
+      stateAsValue: $stateAsValue,
+      normalAttr,
+    },
+    appContext,
   });
 
   expect(initialized).toHaveBeenCalledTimes(1);
@@ -264,7 +267,7 @@ test("two-way state attributes can be changed from inside the component", () => 
 
   const $twoWay = makeState(1);
 
-  initComponent(appContext, Component, { $twoWay });
+  initComponent(Component, { attrs: { $twoWay }, appContext });
 
   expect($twoWay.get()).toBe(2);
 });
@@ -286,9 +289,12 @@ test("state attributes mapped in the component update when the state changes whi
   const $twoWay = makeState(1);
   const $oneWay = makeState("hello");
 
-  const result = initComponent(appContext, Component, {
-    $twoWay,
-    oneWay: $oneWay,
+  const result = initComponent(Component, {
+    attrs: {
+      $twoWay,
+      oneWay: $oneWay,
+    },
+    appContext,
   });
   const parent = makeDOMNode();
 
@@ -331,7 +337,7 @@ test("throws when setting a two way attr that isn't a state", () => {
   function Component() {}
 
   expect(() => {
-    initComponent(appContext, Component, { $state: "not state" });
+    initComponent(Component, { attrs: { $state: "not state" }, appContext });
   }).toThrow();
 });
 
@@ -362,7 +368,7 @@ test("self.isConnected reflects the current state", () => {
     return null;
   }
 
-  const result = initComponent(appContext, Component);
+  const result = initComponent(Component, { appContext });
   const parent = makeDOMNode();
 
   result.connect(parent);
@@ -382,7 +388,7 @@ test("supports returning subcomponents", () => {
     return h(Subcomponent);
   }
 
-  const result = initComponent(appContext, Component);
+  const result = initComponent(Component, { appContext });
   const parent = makeDOMNode();
 
   result.connect(parent);
@@ -409,7 +415,7 @@ test("routePreload takes element to show() and resolves when done() is called", 
     return null;
   }
 
-  const result = initComponent(appContext, Component);
+  const result = initComponent(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(true);
 
@@ -433,7 +439,7 @@ test("routePreload show() throws if value isn't an element", async () => {
     return null;
   }
 
-  const result = initComponent(appContext, Component);
+  const result = initComponent(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(true);
 
@@ -461,7 +467,7 @@ test("routePreload finishes with promise resolution if loadRoute returns one", a
     return null;
   }
 
-  const result = initComponent(appContext, Component);
+  const result = initComponent(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(true);
 
@@ -480,7 +486,7 @@ test("routePreload resolves immediately if no loadRoute callback is defined", as
     return null;
   }
 
-  const result = initComponent(appContext, Component);
+  const result = initComponent(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(false);
   expect(result.routePreload(mount)).resolves.not.toThrow();

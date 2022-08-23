@@ -1,7 +1,7 @@
 import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
-export default function CRUD(self) {
-  self.debug.name = "7GUIs:CRUD";
+export default function CRUD(ctx) {
+  ctx.debug.name = "7GUIs:CRUD";
 
   const $people = makeState([
     {
@@ -75,7 +75,7 @@ export default function CRUD(self) {
   }
 
   // Update fields when selection changes.
-  self.subscribeTo($selectedId, (id) => {
+  ctx.subscribeTo($selectedId, (id) => {
     const person = $people.get().find((p) => p.id === id);
 
     if (person) {
@@ -104,8 +104,8 @@ export default function CRUD(self) {
           >
             {repeat(
               $filteredPeople,
-              function FilterOption() {
-                const $person = this.$attrs.map((a) => a.value);
+              function FilterOption({ $attrs }) {
+                const $person = $attrs.map((a) => a.value);
 
                 return (
                   <option value={$person.map((p) => p.id)}>

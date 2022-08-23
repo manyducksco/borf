@@ -1,12 +1,12 @@
-import { when, makeState } from "@woofjs/client";
+import { when, makeState, makeComponent } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export default function MouseFollowerExample(self) {
-  self.debug.name = "MouseFollowerExample";
+export const MouseFollowerExample = makeComponent((ctx) => {
+  ctx.debug.name = "MouseFollowerExample";
 
-  logLifecycle(self);
+  logLifecycle(ctx);
 
-  const { $position } = self.services.mouse;
+  const { $position } = ctx.services.mouse;
   const bestColor = "#ff0088";
 
   const $isEnabled = makeState(false);
@@ -66,4 +66,4 @@ export default function MouseFollowerExample(self) {
       </div>
     </div>
   );
-}
+});

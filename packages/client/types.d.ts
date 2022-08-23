@@ -125,10 +125,7 @@ declare module "@woofjs/client" {
     debug: DebugChannel;
   };
 
-  export type AppLifecycleCallback<ServicesType> = (
-    this: AppContext<ServicesType>,
-    self: AppContext<ServicesType>
-  ) => void | Promise<void>;
+  export type AppLifecycleCallback<ServicesType> = (ctx: AppContext<ServicesType>) => void | Promise<void>;
 
   export type DefaultServices = {
     router: RouterService;
@@ -407,18 +404,11 @@ declare module "@woofjs/client" {
     fn: ComponentFn<AttrsType, ServicesType>
   ): Component<AttrsType>;
 
-  /**
-   * Creates a component, passing in the reference to the app to infer services.
-   * This signature is designed to be used in plain JS to get service autocomplete.
-   */
-  export function makeComponent<ServicesType>(
-    app: App<ServicesType>,
-    fn: ComponentFn<any, ServicesType>
-  ): Component<any>;
-
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  export type Component<AttrsType> = (attrs: ComponentAttrs<AttrsType>) => { init: ComponentFn<AttrsType, any> };
+  export type Component<AttrsType> = (attrs: ComponentAttrs<AttrsType>) => {
+    init: ComponentFn<AttrsType, any>;
+  };
 
   /**
    * Components can take observables of the same type as attributes for any value.
@@ -429,12 +419,9 @@ declare module "@woofjs/client" {
       : AttrsType[Name] | Observable<AttrsType[Name]>;
   };
 
-  export type ComponentFn<AttrsType, ServicesType> = (
-    this: ComponentContext<AttrsType, ServicesType>,
-    self: ComponentContext<AttrsType, ServicesType>
-  ) => Element | null;
+  export type ComponentFn<AttrsType, ServicesType> = (ctx: ComponentContext<AttrsType, ServicesType>) => Element | null;
 
-  export interface ComponentContext<AttrsType = any, ServicesType = any> {
+  export interface ComponentContext<AttrsType, ServicesType> {
     /**
      * Attributes passed into to this component.
      *
@@ -538,7 +525,7 @@ declare module "@woofjs/client" {
   /**
    * Stores shared variables and functions that can be accessed by components and other services.
    */
-  export type ServiceFn<ExportsType> = (this: ServiceContext, ctx: ServiceContext) => ExportsType;
+  export type ServiceFn<ExportsType> = (ctx: ServiceContext) => ExportsType;
 
   export type ServiceContext = {
     services: Services<any>; // Non-default services can't be typed on other services.
@@ -676,7 +663,7 @@ declare module "@woofjs/client/jsx-dev-runtime" {
 declare namespace JSX {
   interface IntrinsicElements {
     // div: { id?: string };
-    [elemName: string]: any;
+    [elemName: string]: Template;
   }
 
   interface ElementClass {

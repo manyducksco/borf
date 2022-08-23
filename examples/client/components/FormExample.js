@@ -1,10 +1,17 @@
-import { when, repeat, bind, makeState, mergeStates } from "@woofjs/client";
+import {
+  when,
+  repeat,
+  bind,
+  makeState,
+  mergeStates,
+  makeComponent,
+} from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export default function FormExample() {
-  this.debug.name = "FormExample";
+export const FormExample = makeComponent((ctx) => {
+  ctx.debug.name = "FormExample";
 
-  logLifecycle(this);
+  logLifecycle(ctx);
 
   const $firstName = makeState("");
   const $lastName = makeState("");
@@ -55,4 +62,4 @@ export default function FormExample() {
       </form>
     </div>
   );
-}
+});

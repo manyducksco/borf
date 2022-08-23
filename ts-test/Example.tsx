@@ -1,41 +1,27 @@
 import { makeComponent } from "@woofjs/client";
-import { app } from "./test";
+import { prop } from "ramda";
 import type { AppServices } from "./test";
 
 type ExampleAttrs = {
   name: string;
 };
 
-export const Example = makeComponent<ExampleAttrs, AppServices>(function () {
-  const { example, users } = this.services;
+export const Example = makeComponent<ExampleAttrs, AppServices>((ctx) => {
+  const { example, users } = ctx.services;
 
-  const $name = this.$attrs.map((a) => a.name);
+  const $name = ctx.$attrs.map(prop("name"));
 
-  this.subscribeTo($name, (value) => {
+  ctx.subscribeTo($name, (value) => {
     console.log(value);
   });
 
   return <p>{example.message}</p>;
 });
 
-// export const Example2 = makeComponent<ExampleAttrs>(app, function () {
-//   const { example, users } = this.services;
+const Parent = makeComponent((ctx) => {
+  const { users, http } = ctx.services;
 
-//   this.services.
-
-//   const $name = this.$attrs.map((a) => a.name);
-
-//   this.subscribeTo($name, (value) => {
-//     console.log(value);
-//   });
-
-//   return <p>{example.message}</p>;
-// });
-
-const Parent = makeComponent(app, function () {
-  const { users, http } = this.services;
-
-  this.beforeConnect(async () => {
+  ctx.beforeConnect(async () => {
     const u = await users.getUsers();
   });
 
@@ -46,6 +32,10 @@ const Parent = makeComponent(app, function () {
   return (
     <div id={5}>
       <Example name={5}>5</Example>
+      <Example name="test">
+        <div>Children should not be allowed</div>
+        <div>Not allowed</div>
+      </Example>
     </div>
   );
 });

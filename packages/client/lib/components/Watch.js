@@ -44,7 +44,7 @@ export const Watch = makeComponent((ctx) => {
     }
 
     if (newItem) {
-      current = newItem.init(appContext, elementContext);
+      current = newItem.init({ appContext, elementContext });
       current.connect(node.parentNode, node);
     }
   });

@@ -3,13 +3,13 @@ import logLifecycle from "../utils/logLifecycle";
 
 import { app } from "../app.js";
 
-export default makeComponent(app, function AppLayout() {
-  this.debug.name = "🐕";
-  this.debug.log("hi");
+export const AppLayout = makeComponent(app, (ctx) => {
+  ctx.debug.name = "🐕";
+  ctx.debug.log("hi");
 
-  logLifecycle(this);
+  logLifecycle(ctx);
 
-  const { page, mouse } = this.services;
+  const { page, mouse } = ctx.services;
 
   // this.loadRoute(({ show, done }) => {
   //   // When the done() function is called, this content is removed and the real component is connected.
@@ -35,7 +35,7 @@ export default makeComponent(app, function AppLayout() {
   // });
 
   // Display current mouse coordinates as tab title
-  this.subscribeTo(mouse.$position, (pos) => {
+  ctx.subscribeTo(mouse.$position, (pos) => {
     page.$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
   });
 
@@ -64,7 +64,7 @@ export default makeComponent(app, function AppLayout() {
         </ul>
       </nav>
 
-      {this.children}
+      {ctx.children}
     </div>
   );
 });
