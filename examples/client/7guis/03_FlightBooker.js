@@ -73,24 +73,20 @@ export default makeComponent((ctx) => {
               $flightType.set(e.target.value);
             }}
           >
-            {repeat(
-              flightTypes,
-              function FlightOption() {
-                const $value = this.$attrs.map((a) => a.value);
-                const $selected = mergeStates($value, $flightType).into(
-                  (value, current) => {
-                    return value === current;
-                  }
-                );
+            {repeat(flightTypes, ({ $attrs }) => {
+              const $value = $attrs.map((a) => a.value);
+              const $selected = mergeStates($value, $flightType).into(
+                (value, current) => {
+                  return value === current;
+                }
+              );
 
-                return (
-                  <option value={$value} selected={$selected}>
-                    {$value}
-                  </option>
-                );
-              },
-              (value) => value
-            )}
+              return (
+                <option value={$value} selected={$selected}>
+                  {$value}
+                </option>
+              );
+            })}
           </select>
         </div>
 
