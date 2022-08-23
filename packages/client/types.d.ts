@@ -259,7 +259,7 @@ declare module "@woofjs/client" {
     body: BodyType;
   };
 
-  type HTTPMiddleware = (ctx: HTTPRequestContext, next: () => Promise<void>) => Promise<void>;
+  type HTTPMiddleware = <T>(req: HTTPRequest<T>, next: () => Promise<void>) => Promise<void>;
 
   interface HTTPRequest<T> extends Promise<HTTPResponse<T>> {
     /**
@@ -283,9 +283,15 @@ declare module "@woofjs/client" {
     header(name: string): string | undefined;
 
     /**
-     * Sets a header value.
+     * Sets the value of the header with name `name` to `value`.
+     * If `value` is null the header is removed.
      */
-    header(name: string, value: string): this;
+    header(name: string, value: ToStringable | null): this;
+
+    /**
+     * Clears the value of the header with name `name`.
+     */
+    header(name: string, value: null): this;
 
     /**
      * Sets multiple headers at once using an object.
@@ -294,36 +300,38 @@ declare module "@woofjs/client" {
     header(headers: { [name: string]: string }): this;
 
     /**
-     * Gets the current header value by name.
+     * Returns the current value of the header with name `name`.
      */
     headers(name: string): string | undefined;
 
     /**
-     * Sets a header value.
+     * Sets the value of the header with name `name` to `value`.
+     * If `value` is null the header is removed.
      */
-    headers(name: string, value: ToStringable): this;
+    headers(name: string, value: ToStringable | null): this;
 
     /**
      * Sets multiple headers at once using an object.
      * New values are merged with existing headers.
      */
-    headers(headers: { [name: string]: ToStringable }): this;
+    headers(headers: { [name: string]: ToStringable | null }): this;
 
     /**
-     * Gets the value of the named query param.
+     * Returns the value of the query param with name `name`.
      */
     query(name: string): string | undefined;
 
     /**
-     * Sets the value of the named query param.
+     * Sets the value of the query param with name `name` to `value`.
+     * If `value` is null the query param is removed.
      */
-    query(name: string, value: ToStringable): this;
+    query(name: string, value: ToStringable | null): this;
 
     /**
      * Sets multiple query params at once using an object.
      * New values are merged with existing params.
      */
-    query(params: { [name: string]: ToStringable }): this;
+    query(params: { [name: string]: ToStringable | null }): this;
 
     /**
      * Sets the request body to `value`.
@@ -442,12 +450,12 @@ declare module "@woofjs/client" {
     services: Services<ServicesType>;
 
     /**
-     * A debug channel unique to this component. It has log, warn and error methods like `console`,
-     * but you can also set a prefix by changing `debug.name`.
+     * A unique debug channel for this component. Has `log`, `warn` and `error` methods like `console`.
+     * You can also set a prefix by changing `debug.name`.
      *
-     * Useful for logging info that you want to hide in production without
-     * deleting all your `console.log`s. Just change the filter in the `makeApp` options object
-     * to specify only what you want to see.
+     * Messages printed to a debug channel can be filtered based on settings passed to your app.
+     * This is a good alternative to `console.log` because you can simply filter messages out in production
+     * instead of removing all your `console.log` calls.
      */
     debug: DebugChannel;
 
@@ -513,7 +521,7 @@ declare module "@woofjs/client" {
     ): void;
 
     transitionOut(callback: () => Promise<void>): void;
-    loadRoute: (show: (element: Element) => void, done: () => void) => Promise<any> | void;
+    loadRoute: (callbackFn: (helpers: { show: (element: Element) => void }) => Promise<void>) => void;
   }
 
   /*==================================*\
@@ -528,11 +536,30 @@ declare module "@woofjs/client" {
   export type ServiceFn<ExportsType> = (ctx: ServiceContext) => ExportsType;
 
   export type ServiceContext = {
+    /**
+     * An object containing services registered on the app.
+     */
     services: Services<any>; // Non-default services can't be typed on other services.
+
+    /**
+     * A unique debug channel for this component. Has `log`, `warn` and `error` methods like `console`.
+     * You can also set a prefix by changing `debug.name`.
+     *
+     * Messages printed to a debug channel can be filtered based on settings passed to your app.
+     * This is a good alternative to `console.log` because you can simply filter messages out in production
+     * instead of removing all your `console.log` calls.
+     */
     debug: DebugChannel;
 
-    beforeConnect: () => void;
-    afterConnect: () => void;
+    /**
+     * Registers a callback to run before the app is connected.
+     */
+    beforeConnect: (callback: () => void) => void;
+
+    /**
+     * Registers a callback to run after the app is connected and the first route match has taken place.
+     */
+    afterConnect: (callback: () => void) => void;
   };
 
   export type Service<ExportsType> = {
@@ -555,26 +582,26 @@ declare module "@woofjs/client" {
     get(): Type;
 
     /**
-     * Returns a nested property from the current value. Works with objects and arrays.
-     *
-     * @param selector - Property name (e.g. `some.value`, `names[3].first`, `length`)
-     */
-    get<V = unknown>(selector: string): V;
-
-    /**
      * Passes the current value to a mapping function and returns the result of that function.
      *
-     * @param transform - Function to map the current value to the one you want to get.
+     * @param callbackFn - Function to map the current value to the value you want.
      */
-    get<V>(transform: (current: Type) => V): V;
+    get<V>(callbackFn: (current: Type) => V): V;
+
+    /**
+     * Returns a read only copy of this state.
+     */
+    map(): State<Type>;
+
+    /**
+     * Returns a new state that takes the return value of `callbackFn` when called with the value of this state.
+     *
+     * @param callbackFn - Function to map the current state's value to the new state's value.
+     */
+    map<V>(callbackFn: (current: Type) => V): State<V>;
 
     subscribe(observer: Observer<Type>): Subscription;
     subscribe(next: (value: Type) => void): Subscription;
-
-    map(): State<Type>;
-    map<V>(transform: (current: Type) => V): State<V>;
-
-    toString(): string;
   }
 
   /**
@@ -647,7 +674,7 @@ declare module "@woofjs/client/jsx-runtime" {
 }
 
 declare module "@woofjs/client/jsx-dev-runtime" {
-  import type { Template } from "@woofjs/client";
+  import type { Template, Component, ComponentFn } from "@woofjs/client";
 
   export function jsxDEV(
     element: string | Component<any> | ComponentFn<any, any>,
@@ -663,7 +690,7 @@ declare module "@woofjs/client/jsx-dev-runtime" {
 declare namespace JSX {
   interface IntrinsicElements {
     // div: { id?: string };
-    [elemName: string]: Template;
+    [elemName: string]: any;
   }
 
   interface ElementClass {
