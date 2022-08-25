@@ -150,7 +150,7 @@ declare module "@woofjs/client" {
     $route: State<string>;
     $path: State<string>;
     $params: State<{ [name: string]: unknown }>;
-    $query: State<{ [name: string]: unknown }>;
+    $query: MutableState<{ [name: string]: unknown }>;
 
     back: (steps?: number) => void;
     forward: (steps?: number) => void;
@@ -158,7 +158,7 @@ declare module "@woofjs/client" {
   };
 
   export type PageService = {
-    $title: State<string>;
+    $title: MutableState<string>;
   };
 
   /*==================================*\
@@ -390,17 +390,43 @@ declare module "@woofjs/client" {
   ): Template;
   export function h(element: string | Component<any> | ComponentFn<any, any>, ...children: Template[]): Template;
 
+  /**
+   * Displays the result of `render` each time `value` changes.
+   */
   export function watch<T>(value: Observable<T>, render: (value: T) => Element): Template;
 
+  /**
+   * Displays `element` when `condition` is truthy.
+   */
   export function when(condition: Observable<any>, element: Element): Template;
 
+  /**
+   * Displays `element` when `condition` is falsy.
+   */
   export function unless(condition: Observable<any>, element: Element): Template;
 
+  /**
+   * Attributes passed to a component rendered by `repeat`.
+   */
+  export type RepeatAttrs<T> = {
+    index: number;
+    value: T;
+  };
+
+  /**
+   * Repeats a component for each item in `values`.
+   */
   export function repeat<T>(
-    values: Observable<T[]>,
-    component: Component<any> | ComponentFn<any, any>,
+    values: T[] | Observable<T[]>,
+    component: ComponentFn<RepeatAttrs<T>, any>,
     getKey?: (value: T) => any
   ): Template;
+
+  // export function repeat<T>(
+  //   values: T[] | Observable<T[]>,
+  //   component: Component<RepeatAttrs<T>>,
+  //   getKey?: (value: T) => any
+  // ): Template;
 
   export function bind<T>(value: MutableState<T>, event?: string): StateBinding<T>;
 
@@ -410,24 +436,29 @@ declare module "@woofjs/client" {
 
   export function makeComponent<AttrsType, ServicesType>(
     fn: ComponentFn<AttrsType, ServicesType>
-  ): Component<AttrsType>;
+  ): Component<ObservableAttrs<AttrsType>>;
 
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  export type Component<AttrsType> = (attrs: ComponentAttrs<AttrsType>) => {
+  export type Component<AttrsType> = (attrs: AttrsType) => {
     init: ComponentFn<AttrsType, any>;
   };
 
   /**
    * Components can take observables of the same type as attributes for any value.
+   * This utility unwraps the values in the observables to their value type.
    */
-  export type ComponentAttrs<AttrsType> = {
-    [Name in keyof AttrsType]: AttrsType[Name] extends Observable<any>
-      ? AttrsType[Name]
-      : AttrsType[Name] | Observable<AttrsType[Name]>;
+  export type UnwrappedAttrs<AttrsType> = {
+    [Name in keyof AttrsType]: AttrsType[Name] extends Observable<infer Type> ? Type : AttrsType[Name];
   };
 
-  export type ComponentFn<AttrsType, ServicesType> = (ctx: ComponentContext<AttrsType, ServicesType>) => Element | null;
+  export type ObservableAttrs<AttrsType> = {
+    [Name in keyof AttrsType]: AttrsType[Name] extends Observable ? AttrsType[Name] : Observable<AttrsType[Name]>;
+  };
+
+  export type ComponentFn<AttrsType, ServicesType> = (
+    ctx: ComponentContext<UnwrappedAttrs<AttrsType>, ServicesType>
+  ) => Element | null;
 
   export interface ComponentContext<AttrsType, ServicesType> {
     /**
@@ -528,6 +559,15 @@ declare module "@woofjs/client" {
   ||             Service              ||
   \*==================================*/
 
+  /**
+   * Creates a blueprint for a service.
+   *
+   * Services are containers for state and shared methods, attached to an app and accessible from all components
+   * rendered by that app. Only a single instance of each service is created, making them a great place to store state
+   * that needs to be shared among multiple components.
+   *
+   * @param fn - Service definition function. Returns an object that will be accessible to components accessing the service.
+   */
   export function makeService<ExportsType>(fn: ServiceFn<ExportsType>): Service<ExportsType>;
 
   /**
@@ -560,6 +600,33 @@ declare module "@woofjs/client" {
      * Registers a callback to run after the app is connected and the first route match has taken place.
      */
     afterConnect: (callback: () => void) => void;
+
+    /**
+     * Subscribes to an observable while this service is connected.
+     *
+     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
+     * @param observer - An observer object with `next`, `error` and `complete` methods.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
+    subscribeTo<Type>(observable: Observable<Type>, observer: Observer<Type>): void;
+
+    /**
+     * Subscribes to an observable while this service is connected.
+     *
+     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
+     * @param next - Callback to receive `next` values from the observable.
+     * @param error - Callback to receive `error` values from the observable.
+     * @param complete - Callback to receive the `complete` signal from the observable.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
+    subscribeTo<Type>(
+      observable: Observable<Type>,
+      next?: (value: Type) => void,
+      error?: (err: Error) => void,
+      complete?: () => void
+    ): void;
   };
 
   export type Service<ExportsType> = {

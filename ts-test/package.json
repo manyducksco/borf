@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@woofjs/client": "file:../packages/client",
+    "@woofjs/data": "file:../packages/data",
     "typescript": "^4.7.4"
   },
   "devDependencies": {
