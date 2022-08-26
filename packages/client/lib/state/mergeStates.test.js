@@ -39,6 +39,19 @@ test("with method creates a new merge with additional states", () => {
   expect($message2.get()).toBe("asdf12345123123");
 });
 
+test("produces a usable state without 'into' or 'with'", () => {
+  const $number = makeState(1);
+  const $string = makeState("hello");
+
+  const $merged = mergeStates($number, $string);
+
+  expect($merged.get()).toStrictEqual([1, "hello"]);
+
+  $string.set("CHANGED");
+
+  expect($merged.get()).toStrictEqual([1, "CHANGED"]);
+});
+
 test("is Observable", () => {
   const $value = makeState(1);
   const $multiply = makeState(2);

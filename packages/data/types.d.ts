@@ -76,9 +76,13 @@ declare module "@woofjs/data" {
   \*==============================*/
 
   /**
-   * Extracts a TypeScript type from a model's schema.
+   * Extracts a TypeScript type from a model or validator schema.
    */
-  export type ShapeOf<T extends Model<any>> = TypeFrom<T["schema"]>;
+  export type ShapeOf<T> = T extends Model<any>
+    ? TypeFrom<T["schema"]>
+    : T extends Validator<any>
+    ? TypeFrom<T>
+    : unknown;
 
   /**
    * Extracts a TypeScript type from a validator.
@@ -92,7 +96,7 @@ declare module "@woofjs/data" {
   \*==============================*/
 
   /**
-   * Create a collection of records that all conform to one model.
+   * Create a collection of records that conform to one model.
    */
   export function collectionOf<Schema>(
     model: Model<Schema>,
@@ -192,14 +196,24 @@ declare module "@woofjs/data" {
 
     oneOf<V extends OneOfValues, T extends V[]>(
       ...values: T
-    ): OneOfValidator<T>;
+    ): OneOfValidator<OneOfTuple<T>>;
   };
 
-  type OneOfValues = string | number | Validator;
+  type OneOfTuple<T> = ({
+    [K in keyof T]: T[K] extends Validator<infer U> ? U : T[K];
+  } & T["length"])[number];
 
-  type UnionOf<T extends any[]> = T[number];
+  type OneOfValues =
+    | string
+    | number
+    | null
+    | undefined
+    | boolean
+    | bigint
+    | symbol
+    | Validator;
 
-  export function tuplify<V extends OneOfValues, T extends V[]>(...ary: T): T;
+  // export function tuplify<V extends OneOfValues, T extends V[]>(...ary: T): T;
 
   interface Validator<T = any> {
     _type: T;

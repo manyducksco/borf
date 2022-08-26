@@ -5,20 +5,20 @@ import {
   makeState,
   mergeStates,
 } from "@woofjs/client";
-import { makeModel, collectionOf, ShapeOf, v, tuplify } from "@woofjs/data";
+import { makeModel, collectionOf, ShapeOf, v } from "@woofjs/data";
 
 import type { ServicesOf } from "@woofjs/client";
 
 const UserSchema = v.object({
   id: v.number(),
   name: v.string(),
-  status: v.oneOf("online", "offline", "busy"),
+  status: v.oneOf("online", "offline", "busy", v.number()),
   preferences: v.object({
     email: v.boolean(),
   }),
 });
 
-const t = tuplify("online", "offline", "busy", v.string());
+// const t = tuplify("online", "offline", "busy", v.string());
 
 const User = makeModel({
   key: "id",

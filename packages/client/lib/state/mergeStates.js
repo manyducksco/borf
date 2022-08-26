@@ -14,6 +14,8 @@ import { deepEqual } from "../helpers/deepEqual.js";
  */
 export function mergeStates(...states) {
   return {
+    ...makeMergedState(states, (...values) => values),
+
     with(...moreStates) {
       return mergeStates(...states, ...moreStates);
     },

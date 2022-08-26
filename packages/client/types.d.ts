@@ -406,19 +406,11 @@ declare module "@woofjs/client" {
   export function unless(condition: Observable<any>, element: Element): Template;
 
   /**
-   * Attributes passed to a component rendered by `repeat`.
-   */
-  export type RepeatAttrs<T> = {
-    index: number;
-    value: T;
-  };
-
-  /**
    * Repeats a component for each item in `values`.
    */
   export function repeat<T>(
     values: T[] | Observable<T[]>,
-    component: ComponentFn<RepeatAttrs<T>, any>,
+    component: ComponentFn<any, { index: number; value: T }>,
     getKey?: (value: T) => any
   ): Template;
 
@@ -434,33 +426,60 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
-  export function makeComponent<AttrsType, ServicesType>(
-    fn: ComponentFn<AttrsType, ServicesType>
-  ): Component<ObservableAttrs<AttrsType>>;
+  type DefaultServicesType = any;
+  type DefaultAttrsType = {};
+  type DefaultChildrenType = void;
+
+  // Takes types in order of <Services, Attrs, Children> because all components are going to want services
+  // defined because most will use them. Some components don't take attrs and many might not take children.
+  // This order makes it possible to leave off the less commonly used types.
+  export function makeComponent<
+    ServicesType = DefaultServicesType,
+    AttrsType = DefaultAttrsType,
+    ChildrenType = DefaultChildrenType
+  >(fn: ComponentFn<ServicesType, AttrsType, ChildrenType>): Component<ObservableAttrs<AttrsType>, ChildrenType>;
+
+  export type ComponentFn<
+    ServicesType = DefaultServicesType,
+    AttrsType = DefaultAttrsType,
+    ChildrenType = DefaultChildrenType
+  > = (ctx: ComponentContext<ServicesType, UnwrappedAttrs<AttrsType>, ChildrenType>) => Element | null;
 
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  export type Component<AttrsType> = (attrs: AttrsType) => {
-    init: ComponentFn<AttrsType, any>;
+  export type Component<AttrsType, ChildrenType> = (attrs: AttrsType) => {
+    init: ComponentFn<any, AttrsType>;
   };
 
   /**
    * Components can take observables of the same type as attributes for any value.
    * This utility unwraps the values in the observables to their value type.
+   *
+   * Attrs beginning with `$` are not unwrapped as these must be MutableStates according to Woof component logic.
    */
   export type UnwrappedAttrs<AttrsType> = {
-    [Name in keyof AttrsType]: AttrsType[Name] extends Observable<infer Type> ? Type : AttrsType[Name];
+    [Name in keyof AttrsType]: Name extends `$${infer T}`
+      ? AttrsType[Name]
+      : AttrsType[Name] extends Observable<infer Type>
+      ? Type
+      : AttrsType[Name];
   };
 
+  /**
+   * Allows attributes that aren't Observable type to be passed as an observable or the raw value.
+   * Components unwrap observable attributes into their raw values by the time they're accessed.
+   */
   export type ObservableAttrs<AttrsType> = {
-    [Name in keyof AttrsType]: AttrsType[Name] extends Observable ? AttrsType[Name] : Observable<AttrsType[Name]>;
+    [Name in keyof AttrsType]: AttrsType[Name] extends Observable<any>
+      ? AttrsType[Name]
+      : AttrsType[Name] | Observable<AttrsType[Name]>;
   };
 
-  export type ComponentFn<AttrsType, ServicesType> = (
-    ctx: ComponentContext<UnwrappedAttrs<AttrsType>, ServicesType>
-  ) => Element | null;
-
-  export interface ComponentContext<AttrsType, ServicesType> {
+  export interface ComponentContext<
+    ServicesType = DefaultServicesType,
+    AttrsType = DefaultAttrsType,
+    ChildrenType = DefaultChildrenType
+  > {
     /**
      * Attributes passed into to this component.
      *
@@ -502,7 +521,7 @@ declare module "@woofjs/client" {
      * </Container>
      * ```
      */
-    children: any;
+    children: ChildrenType;
 
     /**
      * Registers a callback to run before the component is connected to the DOM.
@@ -684,7 +703,7 @@ declare module "@woofjs/client" {
     set(newValue: Type): void;
 
     /**
-     * Produces a new value using a function that can either mutate `current` or return a new value.
+     * Produces a new value using a function. Can either mutate `current` or return a new value.
      * Mutations are applied on a cloned version of `current` that replaces the old one.
      */
     set(fn: (current: Type) => Type | void): void;
@@ -703,13 +722,16 @@ declare module "@woofjs/client" {
    * Each time any of the states' values change, the function receives all state values in the same order to calculate a new value.
    * Similar to `.map` but with several states being collapsed down to one.
    */
-  export function mergeStates<States extends [...State<any>[]]>(...states: States): StateMerge<States>;
+  export function mergeStates<States extends [...State<any>[]]>(...states: States): MergeState<States>;
 
-  interface StateMerge<States extends [...State<any>[]]> {
+  /**
+   * A new state that holds an array of values of the states passed to `mergeStates`. Can be refined further with methods.
+   */
+  interface MergeState<States extends [...State<any>[]]> extends State<StateValues<States>> {
     /**
      * Create a new merge with all existing states plus any new states passed to `with`.
      */
-    with<MoreStates extends [...State<any>[]]>(...states: MoreStates): StateMerge<Concat<States, MoreStates>>;
+    with<MoreStates extends [...State<any>[]]>(...states: MoreStates): MergeState<Concat<States, MoreStates>>;
 
     /**
      * Takes a merge function. Each time any of the states in this merge receive a new value, this function is called with the values of
@@ -721,7 +743,7 @@ declare module "@woofjs/client" {
   /**
    * Determines whether or not an object is a state.
    */
-  export function isState(value: unknown): boolean;
+  export function isState(value: unknown): boolean is State<unknown>;
 }
 
 declare module "@woofjs/client/jsx-runtime" {
