@@ -67,7 +67,7 @@ export const app = makeApp({
 
 export type AppServices = ServicesOf<typeof app>;
 
-const Example3 = makeComponent<any, AppServices>((ctx) => {
+const Example3 = makeComponent<AppServices, any>((ctx) => {
   const $title = ctx.$attrs.map((attrs) => attrs.title);
 
   const { http, example, fn } = ctx.services;

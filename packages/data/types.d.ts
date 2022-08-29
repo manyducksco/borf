@@ -213,8 +213,6 @@ declare module "@woofjs/data" {
     | symbol
     | Validator;
 
-  // export function tuplify<V extends OneOfValues, T extends V[]>(...ary: T): T;
-
   interface Validator<T = any> {
     _type: T;
 
@@ -234,9 +232,17 @@ declare module "@woofjs/data" {
      * Validate `value` against this schema and throw a TypeError if validation fails.
      */
     assert(value: unknown): void;
+
+    optional(): this;
+
+    nullable(): this;
   }
 
-  interface BooleanValidator extends Validator<boolean> {}
+  interface BooleanValidator extends Validator<boolean> {
+    optional(): BooleanValidator;
+
+    nullable(): typeof this;
+  }
 
   interface FunctionValidator extends Validator<(...args: any) => any> {}
 

@@ -6,7 +6,7 @@ type ExampleAttrs = {
   name: string;
 };
 
-export const Example = makeComponent<ExampleAttrs, AppServices>((ctx) => {
+export const Example = makeComponent<AppServices, ExampleAttrs>((ctx) => {
   const { example, users } = ctx.services;
 
   const $name = ctx.$attrs.map(prop("name"));
@@ -30,7 +30,11 @@ const Parent = makeComponent((ctx) => {
   });
 
   return (
-    <div id={5}>
+    <div id={(5).toString()} style={{ backgroundColor: "#fff" }}>
+      <h1 lang="en" translate="yes">
+        Test
+      </h1>
+
       <Example name={5}>5</Example>
       <Example name="test">
         <div>Children should not be allowed</div>
