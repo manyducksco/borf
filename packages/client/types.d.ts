@@ -777,7 +777,8 @@ declare module "@woofjs/client/jsx-dev-runtime" {
 
 // TODO: Define all elements and the attributes they support.
 declare namespace JSX {
-  import { ObservableAttrs, Observable } from "@woofjs/client";
+  import { ObservableAttrs, Observable, MutableState } from "@woofjs/client";
+  import * as CSS from "csstype";
 
   type MaybeObservable<T> = T | Observable<T>;
 
@@ -839,7 +840,7 @@ declare namespace JSX {
      * @example
      * <div class={["class", "class2", { "conditional": $value }]} />
      */
-    class: string | ClassMap | Array<string | ClassMap | Array<string | ClassMap>>;
+    class: string | ClassMap | Array<string | ClassMap | (string | ClassMap)[]>;
 
     /**
      * Specifies whether the element's content can be edited.
@@ -956,7 +957,7 @@ declare namespace JSX {
     /**
      * Inline CSS styles.
      */
-    style: import("csstype").Properties;
+    style: Styles;
 
     /**
      * @see https://html.spec.whatwg.org/multipage/interaction.html#attr-tabindex
@@ -985,16 +986,109 @@ declare namespace JSX {
     translate: "" | "yes" | "no";
   }
 
+  interface Styles extends CSS.Properties, CSS.PropertiesHyphen {}
+
   interface ClassMap {
     [className: string]: boolean | Observable<boolean>;
   }
 
+  type EventHandler<E> = (event: E) => void;
+
+  interface HTMLGlobalEvents {
+    onabort: EventHandler<Event>;
+    onauxclick: EventHandler<PointerEvent>;
+    onbeforeinput: EventHandler<InputEvent>;
+    onbeforematch: EventHandler<Event>;
+    oncancel: EventHandler<Event>;
+    oncanplay: EventHandler<Event>;
+    oncanplaythrough: EventHandler<Event>;
+    onchange: EventHandler<Event>;
+    onclick: EventHandler<PointerEvent>;
+    onclose: EventHandler<Event>;
+    oncontextlost: EventHandler<Event>;
+    oncontextmenu: EventHandler<PointerEvent>;
+    oncontextrestored: EventHandler<Event>;
+    oncuechange: EventHandler<Event>;
+    ondblclick: EventHandler<MouseEvent>;
+
+    // TODO: Make sure these are typed correctly
+    ondrag: EventHandler<DragEvent>;
+    ondragend: EventHandler<DragEvent>;
+    ondragenter: EventHandler<DragEvent>;
+    ondragleave: EventHandler<DragEvent>;
+    ondragover: EventHandler<DragEvent>;
+    ondragstart: EventHandler<DragEvent>;
+    ondrop: EventHandler<PointerEvent>;
+
+    ondurationchange: EventHandler<Event>;
+    onemptied: EventHandler<Event>;
+    onended: EventHandler<Event>;
+    onformdata: EventHandler<FormDataEvent>;
+    oninput: EventHandler<InputEvent>;
+    oninvalid: EventHandler<Event>;
+    onkeydown: EventHandler<KeyboardEvent>;
+
+    onkeypress;
+    onkeyup;
+    onloadeddata;
+    onloadedmetadata;
+    onloadstart;
+    onmousedown;
+    onmouseenter;
+    onmouseleave;
+    onmousemove;
+    onmouseout;
+    onmouseover;
+    onmouseup;
+    onpause;
+    onplay;
+    onplaying;
+    onprogress;
+    onratechange;
+    onreset;
+    onsecuritypolicyviolation;
+    onseeked;
+    onseeking;
+    onselect;
+    onslotchange;
+    onstalled;
+    onsubmit;
+    onsuspend;
+    ontimeupdate;
+    ontoggle;
+    onvolumechange;
+    onwaiting;
+    onwebkitanimationend;
+    onwebkitanimationiteration;
+    onwebkitanimationstart;
+    onwebkittransitionend;
+    onwheel;
+  }
+
+  interface HTMLDocumentAndElementEvents {
+    oncopy;
+    oncut;
+    onpaste;
+  }
+
   type PartialGlobals = Partial<HTMLGlobalAttributes>;
-  type Globals = {
+
+  type GlobalAttributes = {
     [K in keyof PartialGlobals]: MaybeObservable<PartialGlobals[K]>;
   };
 
-  interface HTMLElementAttributes extends Globals {}
+  type PartialEvents = Partial<HTMLGlobalEvents> & Partial<HTMLDocumentAndElementEvents>;
+
+  type GlobalEvents = {
+    [K in keyof PartialEvents]: MaybeObservable<PartialEvents[K]>;
+  };
+
+  interface ElementAttributes<T extends HTMLElement> extends GlobalAttributes, GlobalEvents {
+    /**
+     * A state that receives a reference to the DOM element.
+     */
+    $ref?: MutableState<HTMLElement>;
+  }
 
   /**
    * The following elements are defined based on the WHATWG HTML spec:
@@ -1005,20 +1099,20 @@ declare namespace JSX {
   || 4.3                       Sections ||
   \*====================================*/
 
-  interface ArticleElementAttributes extends HTMLElementAttributes {}
-  interface SectionElementAttributes extends HTMLElementAttributes {}
-  interface NavElementAttributes extends HTMLElementAttributes {}
-  interface AsideElementAttributes extends HTMLElementAttributes {}
-  interface H1ElementAttributes extends HTMLElementAttributes {}
-  interface H2ElementAttributes extends HTMLElementAttributes {}
-  interface H3ElementAttributes extends HTMLElementAttributes {}
-  interface h4ElementAttributes extends HTMLElementAttributes {}
-  interface H5ElementAttributes extends HTMLElementAttributes {}
-  interface H6ElementAttributes extends HTMLElementAttributes {}
-  interface HgroupElementAttributes extends HTMLElementAttributes {}
-  interface HeaderElementAttributes extends HTMLElementAttributes {}
-  interface FooterElementAttributes extends HTMLElementAttributes {}
-  interface AddressElementAttributes extends HTMLElementAttributes {}
+  interface ArticleElementAttributes extends ElementAttributes<HTMLAnchorElement> {}
+  interface SectionElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface NavElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface AsideElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface H1ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+  interface H2ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+  interface H3ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+  interface h4ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+  interface H5ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+  interface H6ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+  interface HgroupElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface HeaderElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface FooterElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface AddressElementAttributes extends ElementAttributes<HTMLElement> {}
 
   interface IntrinsicElements {
     /**
@@ -1153,19 +1247,18 @@ declare namespace JSX {
   || 4.4               Grouping content ||
   \*====================================*/
 
-  interface PElementAttributes extends HTMLElementAttributes {}
-  interface HrElementAttributes extends HTMLElementAttributes {}
-  interface PreElementAttributes extends HTMLElementAttributes {}
-  interface BlockquoteElementAttributes extends HTMLElementAttributes {
+  interface PElementAttributes extends ElementAttributes<HTMLParagraphElement> {}
+  interface HrElementAttributes extends ElementAttributes<HTMLHRElement> {}
+  interface PreElementAttributes extends ElementAttributes<HTMLPreElement> {}
+  interface BlockquoteElementAttributes extends ElementAttributes<HTMLQuoteElement> {
     /**
-     * Link to the source of the quotation or more information about the edit.
-     * Must be a valid URL potentially surrounded by spaces.
+     * Link to the source of the quotation. Must be a valid URL potentially surrounded by spaces.
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-blockquote-cite
      */
     cite?: MaybeObservable<string | undefined>;
   }
-  interface OlElementAttributes extends HTMLElementAttributes {
+  interface OlElementAttributes extends ElementAttributes<HTMLOListElement> {
     /**
      * Indicates that the list is a descending list (..., 3, 2, 1).
      * If the attribute is omitted, the list is an ascending list (1, 2, 3, ...).
@@ -1189,16 +1282,16 @@ declare namespace JSX {
      */
     type?: MaybeObservable<"l" | "a" | "A" | "i" | "I" | undefined>;
   }
-  interface UlElementAttributes extends HTMLElementAttributes {}
-  interface MenuElementAttributes extends HTMLElementAttributes {}
-  interface LiElementAttributes extends HTMLElementAttributes {}
-  interface DlElementAttributes extends HTMLElementAttributes {}
-  interface DtElementAttributes extends HTMLElementAttributes {}
-  interface DdElementAttributes extends HTMLElementAttributes {}
-  interface FigureElementAttributes extends HTMLElementAttributes {}
-  interface FigcaptionElementAttributes extends HTMLElementAttributes {}
-  interface MainElementAttributes extends HTMLElementAttributes {}
-  interface DivElementAttributes extends HTMLElementAttributes {}
+  interface UlElementAttributes extends ElementAttributes<HTMLUListElement> {}
+  interface MenuElementAttributes extends ElementAttributes<HTMLMenuElement> {}
+  interface LiElementAttributes extends ElementAttributes<HTMLLIElement> {}
+  interface DlElementAttributes extends ElementAttributes<HTMLDListElement> {}
+  interface DtElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface DdElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface FigureElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface FigcaptionElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface MainElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface DivElementAttributes extends ElementAttributes<HTMLDivElement> {}
 
   interface IntrinsicElements {
     /**
@@ -1240,7 +1333,7 @@ declare namespace JSX {
     ol: OlElementAttributes;
 
     /**
-     * The ul element represents a list of items, where the order of the items is not important —
+     * The `ul` element represents a list of items, where the order of the items is not important —
      * that is, where changing the order would not materially change the meaning of the document.
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
@@ -1249,7 +1342,7 @@ declare namespace JSX {
 
     /**
      * The `menu` element represents a toolbar consisting of its contents, in the form of
-     * an unordered list of items (represented by li elements), each of which represents
+     * an unordered list of items (represented by `li` elements), each of which represents
      * a command that the user can perform or activate.
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-menu-element
@@ -1257,7 +1350,7 @@ declare namespace JSX {
     menu: MenuElementAttributes;
 
     /**
-     * The `li` element represents a list item. If its parent element is an ol, ul, or menu element,
+     * The `li` element represents a list item. If its parent element is an `ol`, `ul`, or `menu` element,
      * then the element is an item of the parent element's list.
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
@@ -1265,9 +1358,9 @@ declare namespace JSX {
     li: LiElementAttributes;
 
     /**
-     * The `dl` element represents an association list consisting of zero or more name-value groups (a description list).
-     * Name-value groups may be terms and definitions, metadata topics and values, questions and answers,
-     * or any other groups of name-value data.
+     * The `dl` element represents an association list consisting of zero or more name-value groups
+     * (a description list). Name-value groups may be terms and definitions, metadata topics and values,
+     * questions and answers, or any other groups of name-value data.
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element
      */
@@ -1316,8 +1409,8 @@ declare namespace JSX {
      * The `div` element has no special meaning at all. It represents its children.
      *
      * Authors are strongly encouraged to view the `div` element as an element of last resort,
-     * for when no other element is suitable. Use of more appropriate elements instead of the
-     * `div` element leads to better accessibility for readers and easier maintainability for authors.
+     * for when no other element is suitable. Use of more appropriate elements instead of the `div`
+     * element leads to better accessibility for readers and easier maintainability for authors.
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-div-element
      */
@@ -1328,8 +1421,53 @@ declare namespace JSX {
   || 4.5           Text-level semantics ||
   \*====================================*/
 
-  interface AnchorElementAttributes extends HTMLElementAttributes {
-    href: string | Observable<string>;
+  /**
+   * Attributes for an HTML `<a>` element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a
+   */
+  interface AnchorElementAttributes extends ElementAttributes<HTMLAnchorElement> {
+    /**
+     * A hyperlink address. Must be a valid URL potentially surrounded by spaces.
+     *
+     * @see https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+     */
+    href?: MaybeObservable<string>;
+
+    /**
+     * The `target` attribute, if present, must be a valid browsing context name or keyword.
+     * It gives the name of the browsing context that will be used. User agents use this name when following hyperlinks.
+     *
+     * A common usage is `target: "_blank"` to cause a link to open in a new tab.
+     *
+     * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-target
+     * @see https://html.spec.whatwg.org/multipage/browsers.html#valid-browsing-context-name-or-keyword
+     */
+    target?: MaybeObservable<string>;
+
+    /**
+     * The `download` attribute is a string indicating that the linked resource is intended to be downloaded rather than displayed in the browser.
+     * The value, if any, specifies the default file name for use in labeling the resource in a local file system.
+     * If the name is not a valid file name in the underlying OS, the browser will adjust it.
+     *
+     * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-download
+     */
+    download?: MaybeObservable<string>;
+
+    /**
+     * A space-separated list of URLs. When the link is followed, the browser will send `POST` requests with the body PING to the URLs.
+     * Typically for tracking.
+     *
+     * @see https://html.spec.whatwg.org/multipage/links.html#ping
+     */
+    ping?: MaybeObservable<string>;
+
+    /**
+     *
+     *
+     * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-rel
+     */
+    rel?: MaybeObservable<string>;
   }
 
   interface IntrinsicElements {
@@ -1366,7 +1504,7 @@ declare namespace JSX {
 
   // Temp fallback while types are being worked on.
   interface IntrinsicElements {
-    [element: string]: any;
+    [tagname: string]: any;
   }
 
   interface ElementClass {
