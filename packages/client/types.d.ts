@@ -414,11 +414,11 @@ declare module "@woofjs/client" {
     getKey?: (value: T) => any
   ): Template;
 
-  // export function repeat<T>(
-  //   values: T[] | Observable<T[]>,
-  //   component: Component<RepeatAttrs<T>>,
-  //   getKey?: (value: T) => any
-  // ): Template;
+  export function repeat<T>(
+    values: T[] | Observable<T[]>,
+    component: Component<RepeatAttrs<T>, void>,
+    getKey?: (value: T) => any
+  ): Template;
 
   export function bind<T>(value: MutableState<T>, event?: string): StateBinding<T>;
 
@@ -747,7 +747,7 @@ declare module "@woofjs/client" {
 }
 
 declare module "@woofjs/client/jsx-runtime" {
-  import type { Template, Component, ComponentFn } from "@woofjs/client";
+  import type { Template, Component, ComponentFn, ToStringable } from "@woofjs/client";
 
   export function jsx(
     element: string | Component<any> | ComponentFn<any, any>,
@@ -777,7 +777,7 @@ declare module "@woofjs/client/jsx-dev-runtime" {
 
 // TODO: Define all elements and the attributes they support.
 declare namespace JSX {
-  import { ObservableAttrs, Observable, MutableState } from "@woofjs/client";
+  import { ObservableAttrs, Observable, MutableState, ToStringable } from "@woofjs/client";
   import * as CSS from "csstype";
 
   type MaybeObservable<T> = T | Observable<T>;
@@ -886,7 +886,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id
      */
-    id: string;
+    id: ToStringable;
 
     /**
      * @see https://html.spec.whatwg.org/multipage/interaction.html#the-inert-attribute
@@ -1432,7 +1432,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
      */
-    href?: MaybeObservable<string>;
+    href?: MaybeObservable<string | undefined>;
 
     /**
      * The `target` attribute, if present, must be a valid browsing context name or keyword.
@@ -1443,7 +1443,7 @@ declare namespace JSX {
      * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-target
      * @see https://html.spec.whatwg.org/multipage/browsers.html#valid-browsing-context-name-or-keyword
      */
-    target?: MaybeObservable<string>;
+    target?: MaybeObservable<string | undefined>;
 
     /**
      * The `download` attribute is a string indicating that the linked resource is intended to be downloaded rather than displayed in the browser.
@@ -1452,7 +1452,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-download
      */
-    download?: MaybeObservable<string>;
+    download?: MaybeObservable<string | undefined>;
 
     /**
      * A space-separated list of URLs. When the link is followed, the browser will send `POST` requests with the body PING to the URLs.
@@ -1460,14 +1460,14 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/links.html#ping
      */
-    ping?: MaybeObservable<string>;
+    ping?: MaybeObservable<string | undefined>;
 
-    /**
+    /**xs
      *
      *
      * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-rel
      */
-    rel?: MaybeObservable<string>;
+    rel?: MaybeObservable<string | undefined>;
   }
 
   interface IntrinsicElements {
