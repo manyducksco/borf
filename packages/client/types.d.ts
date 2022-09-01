@@ -995,80 +995,533 @@ declare namespace JSX {
   type EventHandler<E> = (event: E) => void;
 
   interface HTMLGlobalEvents {
-    onabort: EventHandler<Event>;
+    /**
+     * The `auxclick` event is fired at an Element when a non-primary pointing device button
+     * (any mouse button other than the primary—usually leftmost—button) has been pressed
+     * and released both within the same element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event
+     */
     onauxclick: EventHandler<PointerEvent>;
+    /**
+     * The `beforeinput` event fires when the value of an `<input>` or `<textarea>` element is about to be modified.
+     * The event also applies to elements with `contenteditable` enabled, and to any element when `designMode` is turned on.
+     *
+     * This allows web apps to override text edit behavior before the browser modifies the DOM tree, and provides more control
+     * over input events to improve performance.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/beforeinput_event
+     */
     onbeforeinput: EventHandler<InputEvent>;
+
     onbeforematch: EventHandler<Event>;
+    /**
+     * The `blur` event fires when an element has lost focus.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event
+     */
+    onblur: EventHandler<Event>;
+    /**
+     * The `cancel` event fires on a `<dialog>` when the user instructs the browser that they wish to dismiss the current open dialog.
+     * For example, the browser might fire this event when the user presses the `Esc` key or clicks a "Close dialog" button which is part of the browser's UI.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/cancel_event
+     */
     oncancel: EventHandler<Event>;
-    oncanplay: EventHandler<Event>;
-    oncanplaythrough: EventHandler<Event>;
+
+    /**
+     * The `change` event is fired for `<input>`, `<select>`, and `<textarea>` elements when the user modifies the element's value.
+     * Unlike the `input` event, the change event is not necessarily fired for each alteration to an element's value.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event
+     */
     onchange: EventHandler<Event>;
+    /**
+     * An element receives a `click` event when a pointing device button (such as a mouse's primary mouse button) is both pressed
+     * and released while the pointer is located inside the element.
+     *
+     * `click` fires after both the `mousedown` and `mouseup` events have fired, in that order.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event
+     */
     onclick: EventHandler<PointerEvent>;
+    /**
+     * The `close` event is fired on an `HTMLDialogElement` object when the dialog it represents has been closed.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/close_event
+     */
     onclose: EventHandler<Event>;
+
     oncontextlost: EventHandler<Event>;
+    /**
+     * The `contextmenu` event fires when the user attempts to open a context menu.
+     * This event is typically triggered by clicking the right mouse button, or by pressing the context menu key.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/contextmenu_event
+     */
     oncontextmenu: EventHandler<PointerEvent>;
+
     oncontextrestored: EventHandler<Event>;
+    /**
+     * The `cuechange` event fires when a `TextTrack` has changed the currently displaying cues.
+     * The event is fired on both the `TextTrack` and the `HTMLTrackElement` in which it's being presented, if any.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLTrackElement/cuechange_event
+     */
     oncuechange: EventHandler<Event>;
+    /**
+     * The `dblclick` event fires when a pointing device button (such as a mouse's primary button) is double-clicked;
+     * that is, when it's rapidly clicked twice on a single element within a very short span of time.
+     *
+     * `dblclick` fires after two `click` events (and by extension, after two pairs of `mousedown` and `mouseup` events).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event
+     */
     ondblclick: EventHandler<MouseEvent>;
-
-    // TODO: Make sure these are typed correctly
+    /**
+     * The `drag` event is fired every few hundred milliseconds as an element or text selection is being dragged by the user.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drag_event
+     */
     ondrag: EventHandler<DragEvent>;
+    /**
+     * The `dragend` event is fired when a drag operation is being ended (by releasing a mouse button or hitting the escape key).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragend_event
+     */
     ondragend: EventHandler<DragEvent>;
+    /**
+     * The `dragenter` event is fired when a dragged element or text selection enters a valid drop target.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragenter_event
+     */
     ondragenter: EventHandler<DragEvent>;
+    /**
+     * The `dragleave` event is fired when a dragged element or text selection leaves a valid drop target.
+     *
+     * This event is not cancelable.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragleave_event
+     */
     ondragleave: EventHandler<DragEvent>;
-    ondragover: EventHandler<DragEvent>;
-    ondragstart: EventHandler<DragEvent>;
+    /**
+     * The `dragover` event is fired when an element or text selection is being dragged over a valid drop target (every few hundred milliseconds).
+     *
+     * The event is fired on the drop target(s).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragover_event
+     */
+    ondragover: EventHandler<Event>;
+    /**
+     * The `dragstart` event is fired when the user starts dragging an element or text selection.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragstart_event
+     */
+    ondragstart: EventHandler<Event>;
+    /**
+     * The drop event is fired when an element or text selection is dropped on a valid drop target.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drop_event
+     */
     ondrop: EventHandler<PointerEvent>;
-
+    /**
+     * The `durationchange` event is fired when the `duration` attribute of a media element (`<audio>`, `<video>`) has been updated.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/durationchange_event
+     */
     ondurationchange: EventHandler<Event>;
-    onemptied: EventHandler<Event>;
-    onended: EventHandler<Event>;
+    /**
+     * The `error` event is fired on an `Element` object when a resource failed to load, or can't be used.
+     * For example, if a script has an execution error or an image can't be found or is invalid.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/error_event
+     */
+    onerror: EventHandler<ErrorEvent>;
+    /**
+     * The `focus` event fires when an element has received focus.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event
+     */
+    onfocus: EventHandler<Event>;
+    /**
+     * The `formdata` event fires after the entry list representing the form's data is constructed.
+     * This happens when the form is submitted, but can also be triggered by the invocation of a `FormData()` constructor.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/formdata_event
+     */
     onformdata: EventHandler<FormDataEvent>;
+    /**
+     * The `input` event fires when the value of an `<input>`, `<select>`, or `<textarea>` element has been changed.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/input_event
+     */
     oninput: EventHandler<InputEvent>;
+    /**
+     * The `invalid` event fires when a submittable element has been checked for validity and doesn't satisfy its constraints.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event
+     */
     oninvalid: EventHandler<Event>;
+    /**
+     * The` keydown` event is fired when a key is pressed.
+     *
+     * Unlike the `keypress` event, the `keydown` event is fired for all keys, regardless of whether they produce a character value.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
+     */
     onkeydown: EventHandler<KeyboardEvent>;
+    /**
+     * The `keypress` event is fired when a key that produces a character value is pressed down.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keypress_event
+     * @deprecated
+     */
+    onkeypress: EventHandler<KeyboardEvent>;
+    /**
+     * The `keyup` event is fired when a key is released.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keyup_event
+     */
+    onkeyup: EventHandler<KeyboardEvent>;
 
-    onkeypress;
-    onkeyup;
-    onloadeddata;
-    onloadedmetadata;
-    onloadstart;
-    onmousedown;
-    onmouseenter;
-    onmouseleave;
-    onmousemove;
-    onmouseout;
-    onmouseover;
-    onmouseup;
-    onpause;
-    onplay;
-    onplaying;
-    onprogress;
-    onratechange;
-    onreset;
-    onsecuritypolicyviolation;
-    onseeked;
-    onseeking;
-    onselect;
-    onslotchange;
-    onstalled;
-    onsubmit;
-    onsuspend;
-    ontimeupdate;
-    ontoggle;
-    onvolumechange;
-    onwaiting;
-    onwebkitanimationend;
-    onwebkitanimationiteration;
-    onwebkitanimationstart;
-    onwebkittransitionend;
-    onwheel;
+    onload: EventHandler<Event>;
+    /**
+     * The `loadeddata` event is fired when the frame at the current playback position of the media has finished loading; often the first frame.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event
+     */
+    onloadeddata: EventHandler<Event>;
+    /**
+     * The `loadedmetadata` event is fired when the metadata has been loaded.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event
+     */
+    onloadedmetadata: EventHandler<Event>;
+    /**
+     * The `loadstart` event is fired when the browser has started to load a resource.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadstart_event
+     */
+    onloadstart: EventHandler<Event>;
+    /**
+     * The `mousedown` event is fired at an element when a pointing device button is pressed while the pointer is inside the element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
+     */
+    onmousedown: EventHandler<MouseEvent>;
+    /**
+     * The `mouseenter` event is fired at an element when a pointing device (usually a mouse) is initially moved
+     * so that its hotspot is within the element at which the event was fired.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseenter_event
+     */
+    onmouseenter: EventHandler<MouseEvent>;
+    /**
+     * The `mouseleave` event is fired at an element when the cursor of a pointing device (usually a mouse) is moved out of it.
+     *
+     * `mouseleave` and `mouseout` are similar but differ in that `mouseleave` does not bubble and `mouseout` does.
+     * This means that `mouseleave` is fired when the pointer has exited the element and all of its descendants,
+     * whereas `mouseout` is fired when the pointer leaves the element or leaves one of the element's descendants
+     * (even if the pointer is still within the element).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseleave_event
+     */
+    onmouseleave: EventHandler<MouseEvent>;
+    /**
+     * The `mousemove` event is fired at an element when a pointing device (usually a mouse) is moved while the cursor's hotspot is inside it.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
+     */
+    onmousemove: EventHandler<MouseEvent>;
+    /**
+     * The `mouseout` event is fired at an element when a pointing device (usually a mouse) is used to move the cursor
+     * so that it is no longer contained within the element or one of its children.
+     *
+     * `mouseout` is also delivered to an element if the cursor enters a child element, because the child element obscures the visible area of the element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
+     */
+    onmouseout: EventHandler<MouseEvent>;
+    /**
+     * The `mouseover` event is fired at an element when a pointing device (such as a mouse or trackpad) is used
+     * to move the cursor onto the element or one of its child elements.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseover_event
+     */
+    onmouseover: EventHandler<MouseEvent>;
+    /**
+     * The `mouseup` event is fired at an element when a button on a pointing device (such as a mouse or trackpad) is released while the pointer is located inside it.
+     *
+     * `mouseup` events are the counterpoint to `mousedown` events.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
+     */
+    onmouseup: EventHandler<MouseEvent>;
+    /**
+     * The `reset` event fires when a `<form>` is reset.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reset_event
+     */
+    onreset: EventHandler<Event>;
+    /**
+     * The `scroll` event fires when an element has been scrolled.
+     *
+     * **Note:** In iOS UIWebViews, scroll events are not fired while scrolling is taking place; they are only fired after the scrolling has completed.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scroll_event
+     */
+    onscroll: EventHandler<Event>;
+    /**
+     * The `select` event fires when some text has been selected.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/select_event
+     */
+    onselect: EventHandler<Event>;
+    /**
+     * The `slotchange` event is fired on a `<slot>` element when the node(s) contained in that slot change.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLSlotElement/slotchange_event
+     */
+    onslotchange: EventHandler<Event>;
+    /**
+     * The `submit` event fires when a `<form>` is submitted.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/submit_event
+     */
+    onsubmit: EventHandler<SubmitEvent>;
+    /**
+     * The `toggle` event fires when the open/closed state of a `<details>` element is toggled.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDetailsElement/toggle_event
+     */
+    ontoggle: EventHandler<Event>;
+    /**
+     * The `animationend` event is fired when a CSS Animation has completed. If the animation aborts before reaching completion,
+     * such as if the element is removed from the DOM or the animation is removed from the element, the `animationend` event is not fired.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event
+     */
+    onanimationend: EventHandler<Event>;
+    /**
+     * The `animationiteration` event is fired when an iteration of a CSS Animation ends, and another one begins.
+     * This event does not occur at the same time as the `animationend` event, and therefore does not occur for animations
+     * with an `animation-iteration-count` of one.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationiteration_event
+     */
+    onanimationiteration: EventHandler<Event>;
+    /**
+     * The `animationstart` event is fired when a CSS Animation has started. If there is an `animation-delay`, this event will fire
+     * once the delay period has expired. A negative delay will cause the event to fire with an `elapsedTime` equal to the absolute value
+     * of the delay (and, correspondingly, the animation will begin playing at that time index into the sequence).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationstart_event
+     */
+    onanimationstart: EventHandler<Event>;
+    /**
+     * The `transitionend` event is fired when a CSS transition has completed. In the case where a transition is removed before completion,
+     * such as if the `transition-property` is removed or `display` is set to `none`, then the event will not be generated.
+     *
+     * The `transitionend` event is fired in both directions - as it finishes transitioning to the transitioned state,
+     * and when it fully reverts to the default or non-transitioned state. If there is no transition delay or duration,
+     * if both are 0s or neither is declared, there is no transition, and none of the transition events are fired.
+     * If the `transitioncancel` event is fired, the `transitionend` event will not fire.
+     *
+     * This event is not cancelable.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionend_event
+     */
+    ontransitionend: EventHandler<Event>;
+    /**
+     * The `wheel` event fires when the user rotates a wheel button on a pointing device (typically a mouse).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
+     */
+    onwheel: EventHandler<WheelEvent>;
+  }
+
+  // TODO: Move media events that don't bubble into this interface
+  interface HTMLMediaElementEvents {
+    /**
+     * The `abort` event is fired when the resource was not fully loaded, but not as the result of an error.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/abort_event
+     */
+    onabort: EventHandler<Event>;
+    /**
+     * The `canplay` event is fired when the user agent can play the media, but estimates that not enough data has been loaded
+     * to play the media up to its end without having to stop for further buffering of content.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event
+     */
+    oncanplay: EventHandler<Event>;
+    /**
+     * The `canplaythrough` event is fired when the user agent can play the media, and estimates that enough data has been loaded
+     * to play the media up to its end without having to stop for further buffering of content.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
+     */
+    oncanplaythrough: EventHandler<Event>;
+    /**
+     * The `emptied` event is fired when the media has become empty; for example, this event is sent if the media has already been loaded
+     * (or partially loaded), and the `load()` method is called to reload it.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event
+     */
+    onemptied: EventHandler<Event>;
+    /**
+     * The `ended` event is fired when playback or streaming has stopped because the end of the media was reached or because no further data is available.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ended_event
+     */
+    onended: EventHandler<Event>;
+    /**
+     * The `pause` event is sent when a request to pause an activity is handled and the activity has entered its paused state,
+     * most commonly after the media has been paused through a call to the element's `pause()` method.
+     *
+     * The event is sent once the `pause()` method returns and after the media element's `paused` property has been changed to `true`.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
+     */
+    onpause: EventHandler<Event>;
+    /**
+     * The `play` event is fired when the `paused` property is changed from `true` to `false`, as a result of the `play` method, or the `autoplay` attribute.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
+     */
+    onplay: EventHandler<Event>;
+    /**
+     * The `playing` event is fired after playback is first started, and whenever it is restarted.
+     * For example it is fired when playback resumes after having been paused or delayed due to lack of data.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playing_event
+     */
+    onplaying: EventHandler<Event>;
+    /**
+     * The `progress` event is fired periodically as the browser loads a resource.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
+     */
+    onprogress: EventHandler<Event>;
+    /**
+     * The `ratechange` event is fired when the playback rate has changed.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ratechange_event
+     */
+    onratechange: EventHandler<Event>;
+    /**
+     * The `seeked` event is fired when a seek operation completed, the current playback position has changed, and the Boolean `seeking` attribute is changed to `false`.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeked_event
+     */
+    onseeked: EventHandler<Event>;
+    /**
+     * The `seeking` event is fired when a seek operation starts, meaning the Boolean `seeking` attribute has changed to `true` and the media is seeking a new position.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeking_event
+     */
+    onseeking: EventHandler<Event>;
+    /**
+     * The `stalled` event is fired when the user agent is trying to fetch media data, but data is unexpectedly not forthcoming.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/stalled_event
+     */
+    onstalled: EventHandler<Event>;
+    /**
+     * The `suspend` event is fired when media data loading has been suspended.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/suspend_event
+     */
+    onsuspend: EventHandler<Event>;
+    /**
+     * The `timeupdate` event is fired when the time indicated by the `currentTime` attribute has been updated.
+     *
+     * The event frequency is dependent on the system load, but will be thrown between about 4Hz and 66Hz(assuming the event handlers don't take longer than 250ms to run).
+     * User agents are encouraged to vary the frequency of the event based on the system load and the average cost of processing the event each time,
+     * so that the UI updates are not any more frequent than the user agent can comfortably handle while decoding the video.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/timeupdate_event
+     */
+    ontimeupdate: EventHandler<Event>;
+    /**
+     * The `volumechange` event is fired when the volume has changed.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volumechange_event
+     */
+    onvolumechange: EventHandler<Event>;
+    /**
+     * The `waiting` event is fired when playback has stopped because of a temporary lack of data.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waiting_event
+     */
+    onwaiting: EventHandler<Event>;
   }
 
   interface HTMLDocumentAndElementEvents {
-    oncopy;
-    oncut;
-    onpaste;
+    /**
+     * The `copy` event fires when the user initiates a copy action through the browser's user interface.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/copy_event
+     */
+    oncopy: EventHandler<ClipboardEvent>;
+    /**
+     * The `cut` event is fired when the user has initiated a "cut" action through the browser's user interface.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/cut_event
+     */
+    oncut: EventHandler<Event>;
+    /**
+     * The `paste` event is fired when the user has initiated a "paste" action through the browser's user interface.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event
+     */
+    onpaste: EventHandler<Event>;
   }
 
   type PartialGlobals = Partial<HTMLGlobalAttributes>;
