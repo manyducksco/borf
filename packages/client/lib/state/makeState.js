@@ -3,12 +3,30 @@ import produce from "immer";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 
+class InvalidStateError extends Error {
+  constructor(message, value) {
+    super(message);
+    this.value = value;
+  }
+}
+
 /**
  * Creates a state container in the form of a function.
  *
  * @param initialValue - Optional starting value
+ * @param options - Options object
  */
-export function makeState(initialValue) {
+export function makeState(initialValue, options = {}) {
+  // options.validate - function that takes potential values and returns an error message string if they are invalid.
+
+  if (options.validate) {
+    const message = options.validate(initialValue);
+
+    if (message) {
+      throw new InvalidStateError(message, initialValue);
+    }
+  }
+
   let currentValue = produce(initialValue, (x) => x);
   let observers = [];
 
@@ -24,6 +42,14 @@ export function makeState(initialValue) {
     set(value) {
       if (isFunction(value)) {
         value = produce(currentValue, value);
+      }
+
+      if (options.validate) {
+        const message = options.validate(value);
+
+        if (message) {
+          throw new InvalidStateError(message, value);
+        }
       }
 
       if (!deepEqual(currentValue, value)) {

@@ -384,11 +384,11 @@ declare module "@woofjs/client" {
   };
 
   export function h(
-    element: string | Component<any> | ComponentFn<any, any>,
+    element: string | Component<any, any> | ComponentFn<any, any>,
     attrs: Object,
     ...children: Template[]
   ): Template;
-  export function h(element: string | Component<any> | ComponentFn<any, any>, ...children: Template[]): Template;
+  export function h(element: string | Component<any, any> | ComponentFn<any, any>, ...children: Template[]): Template;
 
   /**
    * Displays the result of `render` each time `value` changes.
@@ -416,7 +416,7 @@ declare module "@woofjs/client" {
 
   export function repeat<T>(
     values: T[] | Observable<T[]>,
-    component: Component<RepeatAttrs<T>, void>,
+    component: Component<{ index: number; value: T }, void>,
     getKey?: (value: T) => any
   ): Template;
 
@@ -659,7 +659,15 @@ declare module "@woofjs/client" {
   ||              State               ||
   \*==================================*/
 
-  export function makeState<Type>(initialValue?: Type): MutableState<Type>;
+  export type StateOptions = {
+    /**
+     * Runs after each `.set()` call, before the new value is applied.
+     * Returns an error message if the value doesn't pass validation.
+     */
+    validate: (value: unknown) => string | void;
+  };
+
+  export function makeState<Type>(initialValue?: Type, options?: StateOptions): MutableState<Type>;
 
   interface State<Type> {
     /**
@@ -750,13 +758,13 @@ declare module "@woofjs/client/jsx-runtime" {
   import type { Template, Component, ComponentFn, ToStringable } from "@woofjs/client";
 
   export function jsx(
-    element: string | Component<any> | ComponentFn<any, any>,
+    element: string | Component<any, any> | ComponentFn<any, any>,
     props: { [name: string]: any; children: Template },
     key: any
   ): Template;
 
   export function jsxs(
-    element: string | Component<any> | ComponentFn<any, any>,
+    element: string | Component<any, any> | ComponentFn<any, any>,
     props: { [name: string]: any; children: Template[] },
     key: any
   ): Template;
@@ -766,7 +774,7 @@ declare module "@woofjs/client/jsx-dev-runtime" {
   import type { Template, Component, ComponentFn } from "@woofjs/client";
 
   export function jsxDEV(
-    element: string | Component<any> | ComponentFn<any, any>,
+    element: string | Component<any, any> | ComponentFn<any, any>,
     props: { [name: string]: any; children: Template | Template[] },
     key: any,
     isStaticChildren: boolean,
@@ -1559,7 +1567,7 @@ declare namespace JSX {
   interface H1ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
   interface H2ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
   interface H3ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
-  interface h4ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+  interface H4ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
   interface H5ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
   interface H6ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
   interface HgroupElementAttributes extends ElementAttributes<HTMLElement> {}

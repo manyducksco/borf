@@ -166,18 +166,14 @@ import { mergeStates } from "@woofjs/state";
 const $isLoading = makeState(true);
 const $hasData = makeState(false);
 
-const $isReady = mergeStates($isLoading, $hasData, (isLoading, hasData) => {
+// Combines several states into an array state with those values: [true, false]
+const $merged = mergeStates($isLoading, $hasData);
+
+// Consolidates a merged state into a new state with the result of the merge function.
+const $isReady = $merged.into((isLoading, hasData) => {
   return hasData && !isLoading;
 });
 ```
-
-### `makeProxyState`
-
-> TODO
-
-### `makeStore`
-
-> TODO
 
 ---
 
