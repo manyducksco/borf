@@ -7,13 +7,13 @@ declare module "@woofjs/client" {
    *
    * @param options - Configuration options.
    */
-  export function makeApp<ServicesType>(options?: AppOptions<ServicesType>): App<ServicesType>;
+  export function makeApp<AppServices = any>(options?: AppOptions): App<AppServices>;
 
   /*==================================*\
   ||               App                ||
   \*==================================*/
 
-  interface AppOptions<ServicesType> {
+  interface AppOptions {
     /**
      * Options for debug system.
      */
@@ -58,11 +58,6 @@ declare module "@woofjs/client" {
        */
       history?: History;
     };
-
-    /**
-     *
-     */
-    services?: ServicesType;
   }
 
   /**
@@ -70,7 +65,15 @@ declare module "@woofjs/client" {
    * based on the current URL and providing services to components rendered under those routes.
    */
   interface App<ServicesType> {
-    readonly _services: ServicesType;
+    /**
+     * Registers a service on this app. Services have only one instance created per app.
+     * Any component rendered under one of this app's routes, as well as any other services
+     * registered on this app will be able to access this new service.
+     *
+     * @param name - Name the service is accessed by.
+     * @param service - The service. Can be a service from `makeService`, a function or a plain object.
+     */
+    service<Name extends keyof ServicesType>(name: Name, service: ServicesType[Name]): this;
 
     /**
      * Registers a new route that will render `component` when `path` matches the current URL.
@@ -81,7 +84,8 @@ declare module "@woofjs/client" {
      * @param component - Component to render when path matches URL.
      * @param defineRoutes - Optional function to define nested routes.
      */
-    route(path: string, component: ComponentFn<{}, UnwrapServices<ServicesType>>, defineRoutes?: DefineRoutesFn): this;
+    // TODO: Infer child type by defineRoutes
+    route(path: string, component: ComponentLike<{}, any>, defineRoutes?: DefineRoutesFn): this;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -128,25 +132,25 @@ declare module "@woofjs/client" {
   export type AppLifecycleCallback<ServicesType> = (ctx: AppContext<ServicesType>) => void | Promise<void>;
 
   export type DefaultServices = {
-    router: RouterService;
-    http: HTTPService;
-    page: PageService;
+    router: ExportsOf<RouterService>;
+    http: ExportsOf<HTTPService>;
+    page: ExportsOf<PageService>;
   };
 
-  export type Services<Type> = DefaultServices & UnwrapServices<Type>;
+  export type Services<T> = DefaultServices & { [K in keyof T]: ExportsOf<T[K]> };
 
-  // Extract the type of an app's services for use when defining components.
-  export type ServicesOf<T> = T extends App<infer S> ? DefaultServices & UnwrapServices<S> : DefaultServices;
+  // export type ServicesOf<A> = A extends App<infer U> ? Services<U> : unknown;
+
+  /**
+   * Unwraps a service, service function or service object into its exports type.
+   */
+  export type ExportsOf<T> = T extends ServiceLike<infer U> ? U : T extends (...args: any) => any ? ReturnType<T> : T;
 
   export type UnwrapServices<T> = {
-    [Name in keyof T]: T[Name] extends Service<infer U>
-      ? U
-      : T[Name] extends (...args: any) => any
-      ? ReturnType<T[Name]>
-      : T[Name];
+    [Name in keyof T]: ExportsOf<T[Name]>;
   };
 
-  export type RouterService = {
+  export type RouterService = Service<{
     $route: State<string>;
     $path: State<string>;
     $params: State<{ [name: string]: unknown }>;
@@ -155,23 +159,23 @@ declare module "@woofjs/client" {
     back: (steps?: number) => void;
     forward: (steps?: number) => void;
     navigate: (path: string, options?: { replace?: boolean }) => void;
-  };
+  }>;
 
-  export type PageService = {
+  export type PageService = Service<{
     $title: MutableState<string>;
-  };
+  }>;
 
   /*==================================*\
   ||            Observable            ||
   \*==================================*/
 
-  interface Observable<Type> {
-    subscribe(observer: Observer<Type>): Subscription;
-    subscribe(next: (value: Type) => void): Subscription;
+  interface Observable<T> {
+    subscribe(observer: Observer<T>): Subscription;
+    subscribe(next: (value: T) => void): Subscription;
   }
 
-  interface Observer<Type> {
-    next(value: Type): void;
+  interface Observer<T> {
+    next(value: T): void;
   }
 
   interface Subscription {
@@ -182,7 +186,7 @@ declare module "@woofjs/client" {
   ||               HTTP               ||
   \*==================================*/
 
-  export interface HTTPService {
+  export type HTTPService = Service<{
     /**
      * Add middleware to the HTTP service for all requests.
      * Middleware can intercept outgoing requests and modify incoming responses.
@@ -240,7 +244,7 @@ declare module "@woofjs/client" {
      * @param url - Request endpoint.
      */
     head(url: string): HTTPRequest<void>;
-  }
+  }>;
 
   type HTTPRequestContext = {
     method: string;
@@ -355,7 +359,7 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   type RouteHelpers = {
-    route: (path: string, component: ComponentFn<any, any>, defineRoutes?: DefineRoutesFn) => RouteHelpers;
+    route: (path: string, component: ComponentLike<any, any, any>, defineRoutes?: DefineRoutesFn) => RouteHelpers;
     redirect: (path: string, to: string) => RouteHelpers;
   };
 
@@ -374,7 +378,7 @@ declare module "@woofjs/client" {
 
   type Template = {
     readonly isTemplate: true;
-    init(appContext: AppContext<any>): ComponentFn<any, any>;
+    init(appContext: AppContext<any>): ComponentFn<any, any, any>;
   };
 
   type StateBinding<T> = {
@@ -383,12 +387,8 @@ declare module "@woofjs/client" {
     event: string;
   };
 
-  export function h(
-    element: string | Component<any, any> | ComponentFn<any, any>,
-    attrs: Object,
-    ...children: Template[]
-  ): Template;
-  export function h(element: string | Component<any, any> | ComponentFn<any, any>, ...children: Template[]): Template;
+  export function h(element: string | ComponentLike<any, any, any>, attrs: Object, ...children: Template[]): Template;
+  export function h(element: string | ComponentLike<any, any, any>, ...children: Template[]): Template;
 
   /**
    * Displays the result of `render` each time `value` changes.
@@ -410,7 +410,7 @@ declare module "@woofjs/client" {
    */
   export function repeat<T>(
     values: T[] | Observable<T[]>,
-    component: ComponentFn<any, { index: number; value: T }>,
+    component: ComponentFn<any, { index: number; value: T }, void>,
     getKey?: (value: T) => any
   ): Template;
 
@@ -426,13 +426,15 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
+  /**
+   * Shorthand type for anything that passes as a component wherever components are expected.
+   */
+  type ComponentLike<A, C> = Component<A, C> | ComponentFn<A, C>;
+
   type DefaultServicesType = any;
   type DefaultAttrsType = {};
   type DefaultChildrenType = void;
 
-  // Takes types in order of <Services, Attrs, Children>. Most components are going to want services
-  // defined because most will use them. Some components don't take attrs and many might not take children.
-  // This order makes it possible to leave off the less commonly used types.
   export function makeComponent<
     ServicesType = DefaultServicesType,
     AttrsType = DefaultAttrsType,
@@ -443,12 +445,12 @@ declare module "@woofjs/client" {
     ServicesType = DefaultServicesType,
     AttrsType = DefaultAttrsType,
     ChildrenType = DefaultChildrenType
-  > = (ctx: ComponentContext<ServicesType, UnwrappedAttrs<AttrsType>, ChildrenType>) => Element | null;
+  > = (ctx: ComponentContext<ServicesType, AttrsType, ChildrenType>) => Element | null;
 
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  export type Component<AttrsType, ChildrenType> = (props: AttrsType) => {
-    init: ComponentFn<any, AttrsType, ChildrenType>;
+  export type Component<AttrsType, ChildrenType> = (props: ObservableAttrs<AttrsType>) => {
+    init: ComponentFn<any, ObservableAttrs<AttrsType>, ChildrenType>;
   };
 
   /**
@@ -492,12 +494,7 @@ declare module "@woofjs/client" {
      *   age: 42
      * }
      */
-    $attrs: State<AttrsType>;
-
-    /**
-     * An object containing services registered on the app.
-     */
-    services: Services<ServicesType>;
+    $attrs: State<UnwrappedAttrs<AttrsType>>;
 
     /**
      * A unique debug channel for this component. Has `log`, `warn` and `error` methods like `console`.
@@ -522,6 +519,16 @@ declare module "@woofjs/client" {
      * ```
      */
     children: ChildrenType;
+
+    /**
+     * Returns the service registered under `name` or throws an error if the service isn't registered.
+     */
+    getService<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
+
+    /**
+     * Returns an array of named services in the same order the names were passed.
+     */
+    getService<K extends keyof Services<ServicesType>>(names: K[]): any[];
 
     /**
      * Registers a callback to run before the component is connected to the DOM.
@@ -579,6 +586,11 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   /**
+   * Shorthand type for anything that passes as a service wherever services are expected.
+   */
+  type ServiceLike<E> = Service<E> | ServiceFn<E> | E;
+
+  /**
    * Creates a blueprint for a service.
    *
    * Services are containers for state and shared methods, attached to an app and accessible from all components
@@ -594,12 +606,7 @@ declare module "@woofjs/client" {
    */
   export type ServiceFn<ExportsType> = (ctx: ServiceContext) => ExportsType;
 
-  export type ServiceContext = {
-    /**
-     * An object containing services registered on the app.
-     */
-    services: Services<any>; // Non-default services can't be typed on other services.
-
+  export type ServiceContext<ServicesType = any> = {
     /**
      * A unique debug channel for this component. Has `log`, `warn` and `error` methods like `console`.
      * You can also set a prefix by changing `debug.name`.
@@ -609,6 +616,16 @@ declare module "@woofjs/client" {
      * instead of removing all your `console.log` calls.
      */
     debug: DebugChannel;
+
+    /**
+     * Returns the service registered under `name` or throws an error if the service isn't registered.
+     */
+    getService<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
+
+    /**
+     * Returns an array of named services in the same order the names were passed.
+     */
+    getService<K extends keyof Services<ServicesType>>(names: K[]): any[];
 
     /**
      * Registers a callback to run before the app is connected.

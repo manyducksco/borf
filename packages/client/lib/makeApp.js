@@ -2,7 +2,6 @@ import { isFunction, isObject, isService, isString, isTemplate } from "./helpers
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
-import { omit } from "./helpers/omit.js";
 
 import HTTPService from "./services/http.js";
 import PageService from "./services/page.js";
@@ -18,11 +17,9 @@ export function makeApp(options = {}) {
     http: HTTPService, // HTTP client with middleware support.
   };
 
-  Object.assign(services, options.services);
-
   const appContext = {
     services: {},
-    options: omit(["services"], options),
+    options: options,
     routes: [],
     debug: makeDebug(options.debug),
     rootElement: null,
@@ -109,6 +106,18 @@ export function makeApp(options = {}) {
   ////
 
   return {
+    /**
+     * Registers a new service accessible by services and components in this app.
+     *
+     * @param name - Name of the service.
+     * @param service - The service object.
+     */
+    service(name, service) {
+      services[name] = service;
+
+      return this;
+    },
+
     /**
      * Adds a route to the list for matching when the URL changes.
      *

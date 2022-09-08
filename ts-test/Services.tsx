@@ -1,10 +1,9 @@
 import { makeService } from "@woofjs/client";
-import type { AppServices } from "./test";
 
 export const ExampleService = makeService((ctx) => {
-  const services = ctx.services as AppServices;
+  const users = ctx.getService("users");
 
-  services.users.getUsers().then(() => {
+  users.getUsers().then(() => {
     ctx.debug.log();
   });
 

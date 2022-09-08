@@ -5,7 +5,7 @@ import { prop } from "ramda";
  * A really contrived header that makes an HTTP call to get the user's name.
  */
 export const MyHeader = makeComponent(({ $attrs, ...ctx }) => {
-  const { http } = ctx.services;
+  const http = ctx.getService("http");
 
   const onclick = $attrs.get("onclick");
 

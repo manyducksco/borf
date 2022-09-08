@@ -11,6 +11,7 @@ Prepare for v1.0
   - [x] `this` binding in service and component functions; take the context as the first parameter instead
     - This gives more than one way to do the same thing, complicating explanations.
 - Reconsider if proxy states are a good idea or indicative of some design flaw in the framework.
+  - [x] Remove. They are a design flaw. Only states and mergeState should be necessary.
   - Proxy states are hard to explain.
   - They are used in Quack to point a single state to multiple other states over time as route params change.
   - Recreating a route component whenever the router matches anything (even the same route) would help prevent the need for this.
@@ -35,7 +36,7 @@ The new route definition syntax would support passing an object with additional 
 app.route("/some/path/:id", SomeComponent, {
   preload: (ctx) => {
     return new Promise((resolve) => {
-      const { $params } = ctx.services.router;
+      const { $params } = ctx.service("router");
 
       // Display this element until the promise resolves or until .show() is called with something else.
       ctx.show(<h1>NOW LOADING...</h1>);

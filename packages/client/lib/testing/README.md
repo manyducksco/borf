@@ -28,7 +28,7 @@ const mockHTTP = makeMockHTTP((on) => {
 
 // A service that makes HTTP calls:
 const UserService = (ctx) => {
-  const { http } = ctx.services;
+  const http = ctx.getService("http");
 
   function createUser(name) {
     return http.post("/users/create").body({ name });

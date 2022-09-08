@@ -9,7 +9,7 @@ import MockRouterService from "./mocks/MockRouterService.js";
 /**
  * Creates a service in a mock container for testing purposes.
  */
-export function wrapService(service, options = {}) {
+export function wrapService(service, configFn) {
   if (isFunction(service)) {
     service = makeService(service);
   }
@@ -25,11 +25,11 @@ export function wrapService(service, options = {}) {
       http: MockHTTPService,
     },
     options: {},
-    debug: makeDebug({ filter: options.filter || "*,-woof:*" }),
+    debug: makeDebug({ filter: "*,-woof:*" }),
   };
 
-  if (options.services) {
-    for (let [name, service] of Object.entries(options.services)) {
+  const configContext = {
+    service(name, service) {
       if (isObject(service) && !isService(service)) {
         service = () => service;
       }
@@ -43,8 +43,10 @@ export function wrapService(service, options = {}) {
       }
 
       appContext.services[name] = service.init({ appContext, name });
-    }
-  }
+    },
+  };
+
+  configFn(configContext);
 
   return {
     exports: service.init({ appContext, name: "wrapped" }),

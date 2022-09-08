@@ -6,7 +6,7 @@ export const MouseFollowerExample = makeComponent((ctx) => {
 
   logLifecycle(ctx);
 
-  const { $position } = ctx.services.mouse;
+  const { $position } = ctx.getService("mouse");
   const bestColor = "#ff0088";
 
   const $isEnabled = makeState(false);

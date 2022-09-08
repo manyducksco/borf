@@ -1,4 +1,4 @@
-import { isObject } from "./helpers/typeChecking.js";
+import { isObject, isString } from "./helpers/typeChecking.js";
 import { $$appContext } from "./keys.js";
 
 /**
@@ -20,9 +20,20 @@ export function makeService(fn) {
     init({ appContext, name }) {
       const ctx = {
         [$$appContext]: appContext,
-
         debug: appContext.debug.makeChannel(`service:${name}`),
-        services: appContext.services,
+
+        getService(name) {
+          if (isString(name)) {
+            if (appContext.services[name]) {
+              return appContext.services[name];
+            }
+            throw new Error(`Service '${name}' is not registered on this app.`);
+          } else if (isArrayOf(isString, name)) {
+            return name.map(ctx.getService);
+          } else {
+            throw new TypeError(`Expected a service name or array of service names.`);
+          }
+        },
         beforeConnect: (callback) => {
           onBeforeConnect.push(callback);
         },

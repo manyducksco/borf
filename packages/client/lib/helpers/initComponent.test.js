@@ -104,26 +104,15 @@ test("connect, disconnect and lifecycle hooks", () => {
 
   // Two hooks for each lifecycle event to make sure multiples are supported.
   let beforeConnect = jest.fn();
-  let beforeConnect2 = jest.fn();
   let afterConnect = jest.fn();
-  let afterConnect2 = jest.fn();
   let beforeDisconnect = jest.fn();
-  let beforeDisconnect2 = jest.fn();
   let afterDisconnect = jest.fn();
-  let afterDisconnect2 = jest.fn();
 
   function Component(ctx) {
-    // 1 functions are using this.*
-    this.beforeConnect(beforeConnect);
-    this.afterConnect(afterConnect);
-    this.beforeDisconnect(beforeDisconnect);
-    this.afterDisconnect(afterDisconnect);
-
-    // 2 functions are using ctx.* (same object)
-    ctx.beforeConnect(beforeConnect2);
-    ctx.afterConnect(afterConnect2);
-    ctx.beforeDisconnect(beforeDisconnect2);
-    ctx.afterDisconnect(afterDisconnect2);
+    ctx.beforeConnect(beforeConnect);
+    ctx.afterConnect(afterConnect);
+    ctx.beforeDisconnect(beforeDisconnect);
+    ctx.afterDisconnect(afterDisconnect);
 
     return makeDOMNode();
     // return h("p", "This is just a test.");
@@ -134,13 +123,9 @@ test("connect, disconnect and lifecycle hooks", () => {
   expect(parent.children.length).toBe(1);
   expect(result.isConnected).toBe(false);
   expect(beforeConnect).toHaveBeenCalledTimes(0);
-  expect(beforeConnect2).toHaveBeenCalledTimes(0);
   expect(afterConnect).toHaveBeenCalledTimes(0);
-  expect(afterConnect2).toHaveBeenCalledTimes(0);
   expect(beforeDisconnect).toHaveBeenCalledTimes(0);
-  expect(beforeDisconnect2).toHaveBeenCalledTimes(0);
   expect(afterDisconnect).toHaveBeenCalledTimes(0);
-  expect(afterDisconnect2).toHaveBeenCalledTimes(0);
 
   result.connect(parent, after);
 
@@ -148,13 +133,9 @@ test("connect, disconnect and lifecycle hooks", () => {
   expect(parent.children.length).toBe(2);
   expect(result.isConnected).toBe(true);
   expect(beforeConnect).toHaveBeenCalledTimes(1);
-  expect(beforeConnect2).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(1);
-  expect(afterConnect2).toHaveBeenCalledTimes(1);
   expect(beforeDisconnect).toHaveBeenCalledTimes(0);
-  expect(beforeDisconnect2).toHaveBeenCalledTimes(0);
   expect(afterDisconnect).toHaveBeenCalledTimes(0);
-  expect(afterDisconnect2).toHaveBeenCalledTimes(0);
 
   // Connect again to confirm that lifecycle hooks aren't called again.
   result.connect(parent, after);
@@ -163,13 +144,9 @@ test("connect, disconnect and lifecycle hooks", () => {
   expect(parent.children.length).toBe(2);
   expect(result.isConnected).toBe(true);
   expect(beforeConnect).toHaveBeenCalledTimes(1);
-  expect(beforeConnect2).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(1);
-  expect(afterConnect2).toHaveBeenCalledTimes(1);
   expect(beforeDisconnect).toHaveBeenCalledTimes(0);
-  expect(beforeDisconnect2).toHaveBeenCalledTimes(0);
   expect(afterDisconnect).toHaveBeenCalledTimes(0);
-  expect(afterDisconnect2).toHaveBeenCalledTimes(0);
 
   result.disconnect();
 
@@ -177,13 +154,9 @@ test("connect, disconnect and lifecycle hooks", () => {
   expect(parent.children.length).toBe(1);
   expect(result.isConnected).toBe(false);
   expect(beforeConnect).toHaveBeenCalledTimes(1);
-  expect(beforeConnect2).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(1);
-  expect(afterConnect2).toHaveBeenCalledTimes(1);
   expect(beforeDisconnect).toHaveBeenCalledTimes(1);
-  expect(beforeDisconnect2).toHaveBeenCalledTimes(1);
   expect(afterDisconnect).toHaveBeenCalledTimes(1);
-  expect(afterDisconnect2).toHaveBeenCalledTimes(1);
 });
 
 test(".node returns the root DOM node", () => {
@@ -201,8 +174,8 @@ test(".node returns the root DOM node", () => {
     return h(DOMComponent);
   }
 
-  function ChildrenComponent() {
-    return this.children;
+  function ChildrenComponent(ctx) {
+    return ctx.children;
   }
 
   const nullResult = initComponent(NullComponent, { appContext });

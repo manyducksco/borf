@@ -7,7 +7,8 @@ type ExampleAttrs = {
 };
 
 export const Example = makeComponent<AppServices, ExampleAttrs>((ctx) => {
-  const { example, users } = ctx.services;
+  const example = ctx.getService("example");
+  const users = ctx.getService("users");
 
   const $name = ctx.$attrs.map(prop("name"));
 
@@ -18,8 +19,9 @@ export const Example = makeComponent<AppServices, ExampleAttrs>((ctx) => {
   return <p>{example.message}</p>;
 });
 
-const Parent = makeComponent((ctx) => {
-  const { users, http } = ctx.services;
+const Parent = makeComponent<AppServices>((ctx) => {
+  const http = ctx.getService("http");
+  const users = ctx.getService("users");
 
   ctx.beforeConnect(async () => {
     const u = await users.getUsers();

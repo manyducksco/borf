@@ -2,7 +2,7 @@ import { makeComponent, makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export const HTTPRequestExample = makeComponent((ctx) => {
-  const { http } = ctx.services;
+  const http = ctx.getService("http");
 
   ctx.debug.name = "HTTPRequestExample";
 

@@ -8,6 +8,11 @@ export const isNumber = (value) => typeof value === "number";
 
 export const isArray = (value) => Array.isArray(value);
 
+/**
+ * Validates that `value` is an array and all items pass `checkFn`.
+ */
+export const isArrayOf = (checkFn, value) => isArray(value) && !value.some((x) => !checkFn(x));
+
 export const isObject = (value) => value != null && typeof value === "object" && !isArray(value);
 
 export const isDOM = (value) => value != null && (value instanceof Node || value.isDOM === true);

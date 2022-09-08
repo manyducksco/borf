@@ -5,7 +5,7 @@ import { makeMockHTTP } from "./makeMockHTTP.js";
  * A service that makes HTTP requests through the @http service.
  */
 function UserService(ctx) {
-  const { http } = ctx.services;
+  const http = ctx.getService("http");
 
   async function getUsers() {
     return http.get("/users").then((res) => res.body);
@@ -17,10 +17,10 @@ function UserService(ctx) {
 }
 
 /**
- * A mock HTTP service that responds to HTTP requests as the @http service.
+ * A mock HTTP service that responds to HTTP requests.
  */
-const mockHTTP = makeMockHTTP((self) => {
-  self.get("/users", (ctx) => {
+const mockHTTP = makeMockHTTP((http) => {
+  http.get("/users", (ctx) => {
     return [
       { id: 1, user: "Jimbo Jones" },
       { id: 2, user: "Snorlax" },
@@ -29,10 +29,8 @@ const mockHTTP = makeMockHTTP((self) => {
 });
 
 test("provides mock services to wrapped service", async () => {
-  const service = wrapService(UserService, {
-    services: {
-      http: mockHTTP,
-    },
+  const service = wrapService(UserService, (ctx) => {
+    ctx.service("http", mockHTTP);
   });
 
   const users = await service.exports.getUsers();

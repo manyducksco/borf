@@ -7,26 +7,8 @@ test("returning data from a handler sends it as a JSON body", async () => {
     { id: 3, name: "Snorlax" },
   ];
 
-  const fetch = makeMockFetch((self) => {
-    self.get("/users", () => {
-      return users;
-    });
-  });
-
-  const data = await fetch("/users").then((res) => res.json());
-
-  expect(data).toStrictEqual(users);
-});
-
-test("can access self as function's this", async () => {
-  const users = [
-    { id: 1, name: "Test Guy" },
-    { id: 2, name: "Jimbo Jones" },
-    { id: 3, name: "Snorlax" },
-  ];
-
-  const fetch = makeMockFetch(function () {
-    this.get("/users", () => {
+  const fetch = makeMockFetch((http) => {
+    http.get("/users", () => {
       return users;
     });
   });
@@ -43,8 +25,8 @@ test("return a promise from a handler sends the resolved value as a JSON body", 
     { id: 3, name: "Snorlax" },
   ];
 
-  const fetch = makeMockFetch((self) => {
-    self.get("/users", () => {
+  const fetch = makeMockFetch((http) => {
+    http.get("/users", () => {
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve(users);
@@ -59,8 +41,8 @@ test("return a promise from a handler sends the resolved value as a JSON body", 
 });
 
 test("handler can read params and body from context object", async () => {
-  const fetch = makeMockFetch((self) => {
-    self.put("/users/:id", (ctx) => {
+  const fetch = makeMockFetch((http) => {
+    http.put("/users/:id", (ctx) => {
       ctx.response.status = 201;
 
       expect(ctx.request.body).toStrictEqual({
@@ -89,7 +71,7 @@ test("handler can read params and body from context object", async () => {
 });
 
 test("throws when requesting a route with no defined handler", async () => {
-  const fetch = makeMockFetch((self) => {
+  const fetch = makeMockFetch((http) => {
     /* Nothing */
   });
 

@@ -7,11 +7,10 @@ test("lifecycle methods", async () => {
     router: {
       history: createMemoryHistory(),
     },
-    services: {
-      http: {}, // Override http, otherwise window.fetch isn't defined in the test so this fails.
-    },
   });
   const root = document.createElement("div");
+
+  app.service("http", {}); // Override http, otherwise window.fetch isn't defined in the test so this fails.
 
   const beforeConnect = jest.fn();
   const afterConnect = jest.fn();
@@ -27,7 +26,7 @@ test("lifecycle methods", async () => {
 
 test("throws helpful error when accessing services that haven't been created yet from other services", () => {
   const one = makeService((ctx) => {
-    const { two } = ctx.services;
+    const two = ctx.getService("two");
 
     return {
       value: 1,
@@ -45,13 +44,12 @@ test("throws helpful error when accessing services that haven't been created yet
     router: {
       history: createMemoryHistory(),
     },
-    services: {
-      http: {}, // Override http, otherwise window.fetch isn't defined in the test so this fails.
-      one,
-      two,
-    },
   });
   const root = document.createElement("div");
+
+  app.service("http", {}); // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  app.service("one", one);
+  app.service("two", two);
 
   expect(app.connect(root)).rejects.toThrow(
     "Service 'two' was accessed before it was initialized. Make sure 'two' is registered before other services that access it."
@@ -65,7 +63,7 @@ test("error doesn't occur if accessing outside of the main function scope", asyn
 
       // Two is accessible because this function is not called until after it is initialized.
       get total() {
-        return ctx.services.two.value + this.value;
+        return ctx.getService("two").value + this.value;
       },
     };
   });
@@ -80,16 +78,15 @@ test("error doesn't occur if accessing outside of the main function scope", asyn
     router: {
       history: createMemoryHistory(),
     },
-    services: {
-      http: {}, // Override http, otherwise window.fetch isn't defined in the test so this fails.
-      one,
-      two,
-    },
   });
   const root = document.createElement("div");
 
-  app.route("*", function () {
-    expect(this.services.one.total).toBe(3);
+  app.service("http", {}); // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  app.service("one", one);
+  app.service("two", two);
+
+  app.route("*", function (ctx) {
+    expect(ctx.getService("one").total).toBe(3);
 
     return null;
   });

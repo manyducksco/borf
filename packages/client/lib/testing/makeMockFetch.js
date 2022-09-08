@@ -46,27 +46,27 @@ export function makeMockFetch(fn) {
         handler,
       });
 
-      return self;
+      return ctx;
     },
 
     get(url, handler) {
-      return self.handle("get", url, handler);
+      return ctx.handle("get", url, handler);
     },
 
     put(url, handler) {
-      return self.handle("put", url, handler);
+      return ctx.handle("put", url, handler);
     },
 
     patch(url, handler) {
-      return self.handle("patch", url, handler);
+      return ctx.handle("patch", url, handler);
     },
 
     post(url, handler) {
-      return self.handle("post", url, handler);
+      return ctx.handle("post", url, handler);
     },
 
     delete(url, handler) {
-      return self.handle("delete", url, handler);
+      return ctx.handle("delete", url, handler);
     },
   };
 

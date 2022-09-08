@@ -44,9 +44,9 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 - Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
 
 ```js
-app.route("users/:id", function () {
+app.route("users/:id", (ctx) => {
   // Get route params from router.
-  const { $params } = this.services.router;
+  const { $params } = ctx.service("router");
 
   // Get the live value of :id with '.map()'.
   const $id = $params.map((p) => p.id);
@@ -65,7 +65,7 @@ Unlike many other frameworks Woof does _not_ use a virtual DOM. Instead, Woof us
 ```js
 import { makeComponent, makeState } from "@woofjs/client";
 
-const Timer = makeComponent((self) => {
+const Timer = makeComponent((ctx) => {
   // Naming states with a $ is a convention to help point out that they are dynamic.
   // Anywhere you see $seconds used you know that value can change.
   const $seconds = makeState(0);
@@ -81,7 +81,7 @@ const Timer = makeComponent((self) => {
   }
 
   // Increment once per second after the component is connected to the DOM.
-  self.afterConnect(() => {
+  ctx.afterConnect(() => {
     setInterval(increment, 1000);
   });
 
@@ -103,8 +103,8 @@ Components are reusable modules with their own markup and logic. You can define 
 Components are ubiquitous in front-end frameworks, but Woof's take on them is very inspired by how [React](https://reactjs.org/docs/components-and-props.html) does things.
 
 ```js
-const Example = makeComponent(function () {
-  const $title = this.$attrs.map(a => a.title);
+const Example = makeComponent((ctx) => {
+  const $title = ctx.$attrs.map(a => a.title);
 
   return h("div", [
     h("h1", $title),
@@ -116,7 +116,7 @@ const Example = makeComponent(function () {
 app.route("example", Example);
 
 // They can also be used in the body of another component.
-app.route("other", function () {
+app.route("other", () => {
   return h("div", [
     // Pass attributes in an object just like regular HTML elements
     h(Example, { title: "In Another Component" })
@@ -129,46 +129,42 @@ app.route("other", function () {
 
 ### Component Context
 
-Component functions have a context object bound to `this` from inside the function body.
+Component functions receive a component context object as the first argument.
 
 ```js
-const Example = makeComponent(function () {
+const Example = makeComponent((ctx) => {
   // Access services by the name they were registered under.
-  const service = this.services.name;
+  const service = ctx.service("name");
 
   // Print debug messages
-  this.debug.name = "component:Example"; // Prefix messages in the console to make tracing easier at a glance.
-  this.debug.log("Something happened.");
-  this.debug.warn("Something happened!");
-  this.debug.error("SOMETHING HAPPENED!!!!");
-
-  // Helpers are available on the component context as well as exported from `@woofjs/client`.
-  // Use these whenever you want to avoid import statements, such as when writing a library or when not using a build system.
-  const { h, when, unless, watch, repeat, bind, makeState, makeProxyState, mergeStates } = this.helpers;
+  ctx.debug.name = "component:Example"; // Prefix messages in the console to make tracing easier at a glance.
+  ctx.debug.log("Something happened.");
+  ctx.debug.warn("Something happened!");
+  ctx.debug.error("SOMETHING HAPPENED!!!!");
 
   /*=================================*\
   ||   Component Lifecycle Methods   ||
   \*=================================*/
 
-  this.isConnected; // true if component is connected
+  ctx.isConnected; // true if component is connected
 
-  this.beforeConnect(() => {
+  ctx.beforeConnect(() => {
     // Runs when the component is about to be (but is not yet) added to the page.
   });
 
-  this.afterConnect(() => {
+  ctx.afterConnect(() => {
     // Runs after the component is added to the page.
   });
 
-  this.beforeDisconnect(() => {
+  ctx.beforeDisconnect(() => {
     // Runs when the component is about to be (but is not yet) removed from the page.
   });
 
-  this.afterDisconnect(() => {
+  ctx.afterDisconnect(() => {
     // Runs after the component is removed from the page.
   });
 
-  this.transitionOut(() => {
+  ctx.transitionOut(() => {
     return new Promise((resolve) => {
       // Runs when the component is about to leave the DOM.
       // Delays disconnection and 'afterDisconnect' hook until the promise resolves.
@@ -179,7 +175,7 @@ const Example = makeComponent(function () {
   });
 
   // Runs a callback function each time an observable emits a value while this component is connected.
-  this.subscribeTo($title, (title) => {
+  ctx.subscribeTo($title, (title) => {
     console.log("title attribute changed to " + title);
   });
 
@@ -187,26 +183,10 @@ const Example = makeComponent(function () {
   ||            Children             ||
   \*=================================*/
 
-  // Access the component's children with `this.children`,
+  // Access the component's children with `ctx.children`,
   // in this case to render them inside a <div>
-  return h("div", this.children);
+  return h("div", ctx.children);
 });
-```
-
-This context object is also passed as the first parameter in case you're using arrow functions, which don't bind `this`.
-
-```js
-const ArrowExample = (self) => {
-  self.debug.name = "component:ArrowExample";
-
-  self.beforeConnect(() => {
-    self.debug.log("Connected");
-  });
-
-  // ... etc ... //
-
-  return h("div", self.children);
-};
 ```
 
 ### Templating

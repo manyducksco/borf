@@ -1,15 +1,14 @@
 import { makeComponent } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle";
 
-import { app } from "../app.js";
-
-export const AppLayout = makeComponent(app, (ctx) => {
+export const AppLayout = makeComponent((ctx) => {
   ctx.debug.name = "🐕";
   ctx.debug.log("hi");
 
   logLifecycle(ctx);
 
-  const { page, mouse } = ctx.services;
+  const page = ctx.getService("page");
+  const mouse = ctx.getService("mouse");
 
   // this.loadRoute(({ show, done }) => {
   //   // When the done() function is called, this content is removed and the real component is connected.

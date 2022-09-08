@@ -87,11 +87,10 @@ export const app = makeApp({
   router: {
     hash: false,
   },
-  services: {
-    counter: CounterService,
-    mouse: MouseService,
-  },
 });
+
+app.service("counter", CounterService);
+app.service("mouse", MouseService);
 
 app.route("*", AppLayout, (sub) => {
   sub.route("/examples", () => {
