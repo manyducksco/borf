@@ -1,4 +1,4 @@
-export default function SevenGUIs(self) {
+export default function SevenGUIs() {
   return (
     <div>
       <p>
@@ -31,7 +31,7 @@ export default function SevenGUIs(self) {
         </li>
       </ul>
 
-      <div>{self.children}</div>
+      <div>{this.children}</div>
     </div>
   );
 }

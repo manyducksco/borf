@@ -1,5 +1,5 @@
-export default function CircleDrawer(self) {
-  self.debug.name = "7GUIs:CircleDrawer";
+export default function CircleDrawer() {
+  this.debug.name = "7GUIs:CircleDrawer";
 
   return (
     <div class="example">

@@ -7,7 +7,7 @@ declare module "@woofjs/client" {
    *
    * @param options - Configuration options.
    */
-  export function makeApp<AppServices = any>(options?: AppOptions): App<AppServices>;
+  export function makeApp<ServicesType = any>(options?: AppOptions): App<ServicesType>;
 
   /*==================================*\
   ||               App                ||
@@ -85,7 +85,7 @@ declare module "@woofjs/client" {
      * @param defineRoutes - Optional function to define nested routes.
      */
     // TODO: Infer child type by defineRoutes
-    route(path: string, component: ComponentLike<{}, any>, defineRoutes?: DefineRoutesFn): this;
+    route(path: string, component: Component | Template, defineRoutes?: DefineRoutesFn): this;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -125,30 +125,23 @@ declare module "@woofjs/client" {
   };
 
   export type AppContext<ServicesType> = {
-    services: Services<ServicesType>;
+    /**
+     * Returns the service registered under `name` or throws an error if the service isn't registered.
+     */
+    getService<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
+
     debug: DebugChannel;
   };
 
-  export type AppLifecycleCallback<ServicesType> = (ctx: AppContext<ServicesType>) => void | Promise<void>;
+  export type AppLifecycleCallback<ServicesType> = (this: AppContext<ServicesType>) => void | Promise<void>;
 
   export type DefaultServices = {
-    router: ExportsOf<RouterService>;
-    http: ExportsOf<HTTPService>;
-    page: ExportsOf<PageService>;
+    router: ReturnType<RouterService>;
+    http: ReturnType<HTTPService>;
+    page: ReturnType<PageService>;
   };
 
-  export type Services<T> = DefaultServices & { [K in keyof T]: ExportsOf<T[K]> };
-
-  // export type ServicesOf<A> = A extends App<infer U> ? Services<U> : unknown;
-
-  /**
-   * Unwraps a service, service function or service object into its exports type.
-   */
-  export type ExportsOf<T> = T extends ServiceLike<infer U> ? U : T extends (...args: any) => any ? ReturnType<T> : T;
-
-  export type UnwrapServices<T> = {
-    [Name in keyof T]: ExportsOf<T[Name]>;
-  };
+  export type Services<T extends Record<string, Service>> = DefaultServices & { [K in keyof T]: ReturnType<T[K]> };
 
   export type RouterService = Service<{
     $route: State<string>;
@@ -358,12 +351,12 @@ declare module "@woofjs/client" {
   ||             Routing              ||
   \*==================================*/
 
-  type RouteHelpers = {
-    route: (path: string, component: ComponentLike<any, any, any>, defineRoutes?: DefineRoutesFn) => RouteHelpers;
-    redirect: (path: string, to: string) => RouteHelpers;
+  type NestedRouteContext = {
+    route: (path: string, component: Component | Template, defineRoutes?: DefineRoutesFn) => NestedRouteContext;
+    redirect: (path: string, to: string) => NestedRouteContext;
   };
 
-  type DefineRoutesFn = (helpers: RouteHelpers) => void;
+  type DefineRoutesFn = (this: NestedRouteContext) => void;
 
   /*==================================*\
   ||            Templating            ||
@@ -378,7 +371,7 @@ declare module "@woofjs/client" {
 
   type Template = {
     readonly isTemplate: true;
-    init(appContext: AppContext<any>): ComponentFn<any, any, any>;
+    init(appContext: AppContext<any>): Component;
   };
 
   type StateBinding<T> = {
@@ -387,8 +380,8 @@ declare module "@woofjs/client" {
     event: string;
   };
 
-  export function h(element: string | ComponentLike<any, any, any>, attrs: Object, ...children: Template[]): Template;
-  export function h(element: string | ComponentLike<any, any, any>, ...children: Template[]): Template;
+  export function h(element: string | Component, attrs: Object, ...children: Template[]): Template;
+  export function h(element: string | Component, ...children: Template[]): Template;
 
   /**
    * Displays the result of `render` each time `value` changes.
@@ -410,13 +403,7 @@ declare module "@woofjs/client" {
    */
   export function repeat<T>(
     values: T[] | Observable<T[]>,
-    component: ComponentFn<any, { index: number; value: T }, void>,
-    getKey?: (value: T) => any
-  ): Template;
-
-  export function repeat<T>(
-    values: T[] | Observable<T[]>,
-    component: Component<{ index: number; value: T }, void>,
+    component: Component<any, { index: number; value: T }, void>,
     getKey?: (value: T) => any
   ): Template;
 
@@ -426,32 +413,15 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
-  /**
-   * Shorthand type for anything that passes as a component wherever components are expected.
-   */
-  type ComponentLike<A, C> = Component<A, C> | ComponentFn<A, C>;
-
-  type DefaultServicesType = any;
-  type DefaultAttrsType = {};
-  type DefaultChildrenType = void;
-
-  export function makeComponent<
-    ServicesType = DefaultServicesType,
-    AttrsType = DefaultAttrsType,
-    ChildrenType = DefaultChildrenType
-  >(fn: ComponentFn<ServicesType, AttrsType, ChildrenType>): Component<ObservableAttrs<AttrsType>, ChildrenType>;
-
-  export type ComponentFn<
-    ServicesType = DefaultServicesType,
-    AttrsType = DefaultAttrsType,
-    ChildrenType = DefaultChildrenType
-  > = (ctx: ComponentContext<ServicesType, AttrsType, ChildrenType>) => Element | null;
+  export type Component<ServicesType = any, AttrsType = any, ChildrenType = any> = (
+    this: ComponentContext<ServicesType, AttrsType, ChildrenType>
+  ) => Element | null;
 
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  export type Component<AttrsType, ChildrenType> = (props: ObservableAttrs<AttrsType>) => {
-    init: ComponentFn<any, ObservableAttrs<AttrsType>, ChildrenType>;
-  };
+  // export type Component<AttrsType, ChildrenType> = (props: ObservableAttrs<AttrsType>) => {
+  //   init: ComponentFn<any, ObservableAttrs<AttrsType>, ChildrenType>;
+  // };
 
   /**
    * Components can take observables of the same type as attributes for any value.
@@ -477,11 +447,7 @@ declare module "@woofjs/client" {
       : AttrsType[Name] | Observable<AttrsType[Name]>;
   };
 
-  export interface ComponentContext<
-    ServicesType = DefaultServicesType,
-    AttrsType = DefaultAttrsType,
-    ChildrenType = DefaultChildrenType
-  > {
+  export interface ComponentContext<ServicesType, AttrsType, ChildrenType> {
     /**
      * Attributes passed into to this component.
      *
@@ -524,11 +490,6 @@ declare module "@woofjs/client" {
      * Returns the service registered under `name` or throws an error if the service isn't registered.
      */
     getService<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
-
-    /**
-     * Returns an array of named services in the same order the names were passed.
-     */
-    getService<K extends keyof Services<ServicesType>>(names: K[]): any[];
 
     /**
      * Registers a callback to run before the component is connected to the DOM.
@@ -585,28 +546,9 @@ declare module "@woofjs/client" {
   ||             Service              ||
   \*==================================*/
 
-  /**
-   * Shorthand type for anything that passes as a service wherever services are expected.
-   */
-  type ServiceLike<E> = Service<E> | ServiceFn<E> | E;
+  export type Service<E> = (this: ServiceContext<any>) => E;
 
-  /**
-   * Creates a blueprint for a service.
-   *
-   * Services are containers for state and shared methods, attached to an app and accessible from all components
-   * rendered by that app. Only a single instance of each service is created, making them a great place to store state
-   * that needs to be shared among multiple components.
-   *
-   * @param fn - Service definition function. Returns an object that will be accessible to components accessing the service.
-   */
-  export function makeService<ExportsType>(fn: ServiceFn<ExportsType>): Service<ExportsType>;
-
-  /**
-   * Stores shared variables and functions that can be accessed by components and other services.
-   */
-  export type ServiceFn<ExportsType> = (ctx: ServiceContext) => ExportsType;
-
-  export type ServiceContext<ServicesType = any> = {
+  export type ServiceContext<ServicesType> = {
     /**
      * A unique debug channel for this component. Has `log`, `warn` and `error` methods like `console`.
      * You can also set a prefix by changing `debug.name`.
@@ -621,11 +563,6 @@ declare module "@woofjs/client" {
      * Returns the service registered under `name` or throws an error if the service isn't registered.
      */
     getService<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
-
-    /**
-     * Returns an array of named services in the same order the names were passed.
-     */
-    getService<K extends keyof Services<ServicesType>>(names: K[]): any[];
 
     /**
      * Registers a callback to run before the app is connected.
@@ -665,12 +602,12 @@ declare module "@woofjs/client" {
     ): void;
   };
 
-  export type Service<ExportsType> = {
-    exports: ExportsType;
-    init(): void;
-    beforeConnect: () => void;
-    afterConnect: () => void;
-  };
+  // export type Service<ExportsType> = {
+  //   exports: ExportsType;
+  //   init(): void;
+  //   beforeConnect: () => void;
+  //   afterConnect: () => void;
+  // };
 
   /*==================================*\
   ||              State               ||
@@ -772,26 +709,26 @@ declare module "@woofjs/client" {
 }
 
 declare module "@woofjs/client/jsx-runtime" {
-  import type { Template, Component, ComponentFn, ToStringable } from "@woofjs/client";
+  import type { Template, Component, ToStringable } from "@woofjs/client";
 
   export function jsx(
-    element: string | Component<any, any> | ComponentFn<any, any>,
+    element: string | Component,
     props: { [name: string]: any; children: Template },
     key: any
   ): Template;
 
   export function jsxs(
-    element: string | Component<any, any> | ComponentFn<any, any>,
+    element: string | Component,
     props: { [name: string]: any; children: Template[] },
     key: any
   ): Template;
 }
 
 declare module "@woofjs/client/jsx-dev-runtime" {
-  import type { Template, Component, ComponentFn } from "@woofjs/client";
+  import type { Template, Component } from "@woofjs/client";
 
   export function jsxDEV(
-    element: string | Component<any, any> | ComponentFn<any, any>,
+    element: string | Component,
     props: { [name: string]: any; children: Template | Template[] },
     key: any,
     isStaticChildren: boolean,

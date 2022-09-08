@@ -1,15 +1,15 @@
 import { bind, makeState } from "@woofjs/client";
 
-export default function Timer(self) {
-  self.debug.name = "7GUIs:Timer";
+export default function Timer() {
+  this.debug.name = "7GUIs:Timer";
 
   const $duration = makeState(10); // duration in seconds
   const $elapsed = makeState(0); // elapsed time in seconds
 
   let lastTick = null;
 
-  function tick() {
-    if (self.isConnected) {
+  const tick = () => {
+    if (this.isConnected) {
       const now = Date.now();
 
       // Only update if $elapsed hasn't yet reached $duration
@@ -24,9 +24,9 @@ export default function Timer(self) {
       lastTick = now;
       window.requestAnimationFrame(tick);
     }
-  }
+  };
 
-  self.afterConnect(() => {
+  this.afterConnect(() => {
     lastTick = Date.now();
 
     tick();

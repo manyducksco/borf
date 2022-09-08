@@ -1,5 +1,5 @@
-export default function Cells(self) {
-  self.debug.name = "7GUIs:Cells";
+export default function Cells() {
+  this.debug.name = "7GUIs:Cells";
 
   return (
     <div class="example">

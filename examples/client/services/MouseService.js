@@ -1,10 +1,10 @@
-import { makeService, makeState } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
-export default makeService((ctx) => {
+export function MouseService() {
   const $position = makeState({ x: 0, y: 0 });
 
-  ctx.afterConnect(() => {
-    ctx.debug.log("listening for mousemove events");
+  this.afterConnect(() => {
+    this.debug.log("listening for mousemove events");
 
     window.addEventListener("mousemove", (e) => {
       $position.set({
@@ -17,4 +17,4 @@ export default makeService((ctx) => {
   return {
     $position,
   };
-});
+}

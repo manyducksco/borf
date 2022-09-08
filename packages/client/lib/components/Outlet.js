@@ -1,17 +1,16 @@
-import { makeComponent } from "../makeComponent.js";
 import { isTemplate } from "../helpers/typeChecking.js";
 import { $$appContext, $$elementContext } from "../keys.js";
 
-export const Outlet = makeComponent((ctx) => {
-  const $element = ctx.$attrs.map((a) => a.element);
+export function Outlet() {
+  const $element = this.$attrs.map((a) => a.element);
   const node = document.createComment("outlet");
 
-  const appContext = ctx[$$appContext];
-  const elementContext = ctx[$$elementContext];
+  const appContext = this[$$appContext];
+  const elementContext = this[$$elementContext];
 
   let connected = null;
 
-  ctx.subscribeTo($element, (element) => {
+  this.subscribeTo($element, (element) => {
     if (connected) {
       connected.disconnect({ allowTransitionOut: true });
       connected = null;
@@ -28,4 +27,4 @@ export const Outlet = makeComponent((ctx) => {
   });
 
   return node;
-});
+}

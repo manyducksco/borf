@@ -184,7 +184,7 @@ export function initComponent(componentFn, config) {
   ||      Run setup function     ||
   \*=============================*/
 
-  let element = componentFn(ctx);
+  let element = componentFn.call(ctx);
 
   if (isTemplate(element)) {
     element = element.init({ appContext, elementContext });

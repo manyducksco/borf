@@ -1,12 +1,12 @@
-import { makeService, makeState } from "@woofjs/client";
+import { makeState } from "@woofjs/client";
 
 /**
  * Exposes a $current value and increments it by one each second.
  */
-export default makeService((ctx) => {
+export function CounterService() {
   const $current = makeState(0);
 
-  ctx.afterConnect(() => {
+  this.afterConnect(() => {
     setInterval(() => {
       $current.set((current) => current + 1);
     }, 1000);
@@ -19,4 +19,4 @@ export default makeService((ctx) => {
       $current.set(0);
     },
   };
-});
+}

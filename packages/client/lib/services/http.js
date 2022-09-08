@@ -1,12 +1,11 @@
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
 import { $$appContext } from "../keys.js";
-import { makeService } from "../makeService.js";
 
-export default makeService((ctx) => {
-  ctx.debug.name = "woof:service:http";
+export function HTTPService() {
+  this.debug.name = "woof:service:http";
 
   const _middleware = [];
-  const fetch = ctx[$$appContext].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
+  const fetch = this[$$appContext].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
   let requestId = 0;
 
   const request = (method, url) => {
@@ -15,7 +14,7 @@ export default makeService((ctx) => {
       method,
       url,
       fetch,
-      debug: ctx.debug,
+      debug: this.debug,
       middleware: _middleware,
     });
   };
@@ -53,7 +52,7 @@ export default makeService((ctx) => {
       return request("head", url);
     },
   };
-});
+}
 
 export class HTTPRequest {
   #id;

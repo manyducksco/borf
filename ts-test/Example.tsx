@@ -1,12 +1,12 @@
 import { makeComponent } from "@woofjs/client";
 import { prop } from "ramda";
-import type { AppServices } from "./test";
+import type { Services } from "./test";
 
 type ExampleAttrs = {
   name: string;
 };
 
-export const Example = makeComponent<AppServices, ExampleAttrs>((ctx) => {
+export const Example = makeComponent<Services, ExampleAttrs>((ctx) => {
   const example = ctx.getService("example");
   const users = ctx.getService("users");
 
@@ -19,7 +19,7 @@ export const Example = makeComponent<AppServices, ExampleAttrs>((ctx) => {
   return <p>{example.message}</p>;
 });
 
-const Parent = makeComponent<AppServices>((ctx) => {
+const Parent = makeComponent<Services>((ctx) => {
   const http = ctx.getService("http");
   const users = ctx.getService("users");
 

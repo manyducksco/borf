@@ -1,6 +1,6 @@
-import { makeComponent, makeState, bind } from "@woofjs/client";
+import { makeState, bind } from "@woofjs/client";
 
-export const ComponentAttrsExample = makeComponent(() => {
+export function ComponentAttrsExample() {
   const $message = makeState("test");
 
   return (
@@ -14,14 +14,14 @@ export const ComponentAttrsExample = makeComponent(() => {
       </div>
     </div>
   );
-});
+}
 
-const SubComponent = makeComponent(({ $attrs, debug }) => {
-  debug.name = "SubComponent";
+function SubComponent() {
+  this.debug.name = "SubComponent";
 
-  const $state = $attrs.get((a) => a.$state); // get state passed as state
-  const unwrapped = $attrs.get((a) => a.unwrapped); // get unwrapped value once
-  const $unwrapped = $attrs.map((a) => a.unwrapped); // map unwrapped value to state
+  const $state = this.$attrs.get((a) => a.$state); // get state passed as state
+  const unwrapped = this.$attrs.get((a) => a.unwrapped); // get unwrapped value once
+  const $unwrapped = this.$attrs.map((a) => a.unwrapped); // map unwrapped value to state
 
   return (
     <div>
@@ -37,4 +37,4 @@ const SubComponent = makeComponent(({ $attrs, debug }) => {
       </button>
     </div>
   );
-});
+}

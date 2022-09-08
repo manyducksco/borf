@@ -1,10 +1,10 @@
-import { makeComponent, repeat, makeState } from "@woofjs/client";
+import { repeat, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const DynamicListExample = makeComponent((ctx) => {
-  ctx.debug.name = "DynamicListExample";
+export function DynamicListExample() {
+  this.debug.name = "DynamicListExample";
 
-  logLifecycle(ctx);
+  logLifecycle(this);
 
   const initialList = ["apple", "banana", "potato", "fried chicken"];
 
@@ -19,7 +19,7 @@ export const DynamicListExample = makeComponent((ctx) => {
   };
 
   const reset = () => {
-    ctx.debug.log(initialList);
+    this.debug.log(initialList);
     $shoppingList.set(initialList);
   };
 
@@ -69,8 +69,8 @@ export const DynamicListExample = makeComponent((ctx) => {
           <button onclick={reset}>Reset List</button>
         </div>
 
-        {repeat($shoppingList, ({ $attrs }) => {
-          const $item = $attrs.map((a) => a.value);
+        {repeat($shoppingList, function ListItem() {
+          const $item = this.$attrs.map((a) => a.value);
 
           return (
             <li
@@ -85,4 +85,4 @@ export const DynamicListExample = makeComponent((ctx) => {
       </div>
     </div>
   );
-});
+}

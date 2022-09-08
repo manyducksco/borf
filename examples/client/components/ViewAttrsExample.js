@@ -4,7 +4,9 @@ import { prop, propOr } from "ramda";
 /**
  * A component to test woof-view attribute handling.
  */
-export const ViewAttrsExample = makeComponent(({ $attrs }) => {
+export function ViewAttrsExample() {
+  const { $attrs } = this;
+
   const $name = $attrs.map(prop("name"));
   const $quality = $attrs.map(prop("quality"));
   const $showQuality = $attrs.map(prop("showQuality"));
@@ -36,4 +38,4 @@ export const ViewAttrsExample = makeComponent(({ $attrs }) => {
       <button onclick={onclick}>Click this button</button>
     </div>
   );
-});
+}

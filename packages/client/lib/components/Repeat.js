@@ -1,4 +1,3 @@
-import { makeComponent } from "../makeComponent.js";
 import { initComponent } from "../helpers/initComponent.js";
 import { isArray } from "../helpers/typeChecking.js";
 import { $$appContext } from "../keys.js";
@@ -6,19 +5,19 @@ import { $$appContext } from "../keys.js";
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
  */
-export const Repeat = makeComponent((ctx) => {
-  ctx.debug.name = "woof:template:repeat";
+export function Repeat() {
+  this.debug.name = "woof:template:repeat";
 
-  const appContext = ctx[$$appContext];
-  const $value = ctx.$attrs.map((a) => a.value);
-  const componentFn = ctx.$attrs.get((a) => a.component);
-  const getKey = ctx.$attrs.get((a) => a.getKey) || ((value) => value);
+  const appContext = this[$$appContext];
+  const $value = this.$attrs.map((a) => a.value);
+  const componentFn = this.$attrs.get((a) => a.component);
+  const getKey = this.$attrs.get((a) => a.getKey) || ((value) => value);
 
   const node = document.createComment("repeat");
 
   let connectedItems = [];
 
-  ctx.subscribeTo($value, (newValues) => {
+  this.subscribeTo($value, (newValues) => {
     if (!isArray(newValues)) {
       throw new TypeError(
         `Repeat expects an array or a state containing an array. Got: ${newValues} (${typeof newValues})`
@@ -79,7 +78,7 @@ export const Repeat = makeComponent((ctx) => {
     connectedItems = newItems;
   });
 
-  ctx.afterDisconnect(() => {
+  this.afterDisconnect(() => {
     for (const item of connectedItems) {
       item.component.disconnect();
     }
@@ -87,4 +86,4 @@ export const Repeat = makeComponent((ctx) => {
   });
 
   return node;
-});
+}

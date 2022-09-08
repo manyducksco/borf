@@ -1,17 +1,10 @@
-import {
-  when,
-  repeat,
-  bind,
-  makeState,
-  mergeStates,
-  makeComponent,
-} from "@woofjs/client";
+import { when, repeat, bind, makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const FormExample = makeComponent((ctx) => {
-  ctx.debug.name = "FormExample";
+export function FormExample() {
+  this.debug.name = "FormExample";
 
-  logLifecycle(ctx);
+  logLifecycle(this);
 
   const $firstName = makeState("");
   const $lastName = makeState("");
@@ -39,10 +32,10 @@ export const FormExample = makeComponent((ctx) => {
   );
   const $hasErrors = $errors.map((current) => current.length > 0);
 
-  function onsubmit(e) {
+  const onsubmit = (e) => {
     e.preventDefault();
     alert("Thank you for your submission.");
-  }
+  };
 
   return (
     <div class="example">
@@ -53,8 +46,8 @@ export const FormExample = makeComponent((ctx) => {
         <input type="number" value={bind($age)} placeholder="Age" />
         <button disabled={$hasErrors}>Submit</button>
         {when($hasErrors, () =>
-          repeat($errors, ({ $attrs }) => {
-            const $message = $attrs.map((attrs) => attrs.value);
+          repeat($errors, function Error() {
+            const $message = this.$attrs.map((attrs) => attrs.value);
 
             return <div style="color:red">{$message}</div>;
           })
@@ -62,4 +55,4 @@ export const FormExample = makeComponent((ctx) => {
       </form>
     </div>
   );
-});
+}

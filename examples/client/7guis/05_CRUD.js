@@ -1,7 +1,7 @@
 import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
-export default function CRUD(ctx) {
-  ctx.debug.name = "7GUIs:CRUD";
+export default function CRUD() {
+  this.debug.name = "7GUIs:CRUD";
 
   const $people = makeState([
     {
@@ -42,7 +42,7 @@ export default function CRUD(ctx) {
   );
 
   // Creates a new person from the current input values.
-  function create() {
+  const create = () => {
     $people.set((current) => {
       // Get next ID and increment by 1.
       const id = $nextId.get();
@@ -55,24 +55,24 @@ export default function CRUD(ctx) {
         surname: $surnameInput.get(),
       });
     });
-  }
+  };
 
   // Sets the selected person's name to the current input values.
-  function update() {
+  const update = () => {
     $people.set((current) => {
       const person = current.find((p) => p.id === $selectedId.get());
 
       person.name = $nameInput.get();
       person.surname = $surnameInput.get();
     });
-  }
+  };
 
   // Deletes the selected person.
-  function del() {
+  const del = () => {
     $people.set((current) => {
       return current.filter((p) => p.id !== $selectedId.get());
     });
-  }
+  };
 
   // Update fields when selection changes.
   ctx.subscribeTo($selectedId, (id) => {
@@ -102,20 +102,15 @@ export default function CRUD(ctx) {
               $selectedId.set(Number(e.target.value));
             }}
           >
-            {repeat(
-              $filteredPeople,
-              function FilterOption({ $attrs }) {
-                const $person = $attrs.map((a) => a.value);
+            {repeat($filteredPeople, function FilterOption() {
+              const $person = this.$attrs.map((a) => a.value);
 
-                return (
-                  <option value={$person.map((p) => p.id)}>
-                    {$person.map((p) => p.surname)},{" "}
-                    {$person.map((p) => p.name)}
-                  </option>
-                );
-              },
-              (person) => person.id
-            )}
+              return (
+                <option value={$person.map((p) => p.id)}>
+                  {$person.map((p) => p.surname)}, {$person.map((p) => p.name)}
+                </option>
+              );
+            })}
           </select>
         </div>
         <div>

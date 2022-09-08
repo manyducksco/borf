@@ -1,13 +1,13 @@
-import { isFunction, isObject, isService, isString, isTemplate } from "./helpers/typeChecking.js";
+import { isFunction, isObject, isString, isTemplate } from "./helpers/typeChecking.js";
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
+import { initService } from "./helpers/initService.js";
 
-import HTTPService from "./services/http.js";
-import PageService from "./services/page.js";
-import RouterService from "./services/router.js";
+import { HTTPService } from "./services/http.js";
+import { PageService } from "./services/page.js";
+import { RouterService } from "./services/router.js";
 
-import { makeService } from "./makeService.js";
 import { makeDebug } from "./makeDebug.js";
 
 export function makeApp(options = {}) {
@@ -89,7 +89,7 @@ export function makeApp(options = {}) {
         },
       };
 
-      defineRoutes(helpers);
+      defineRoutes.call(helpers);
     } else {
       routes.push({
         path,
@@ -110,7 +110,7 @@ export function makeApp(options = {}) {
      * Registers a new service accessible by services and components in this app.
      *
      * @param name - Name of the service.
-     * @param service - The service object.
+     * @param service - The service function.
      */
     service(name, service) {
       services[name] = service;
@@ -217,34 +217,19 @@ export function makeApp(options = {}) {
       for (const name in services) {
         let service = services[name];
 
-        // Wrap a plain object in a function that returns it.
-        if (isObject(service) && !isService(service)) {
-          service = () => service;
+        if (!isFunction(service)) {
+          throw new Error(`Service '${name}' must be a function that returns an object. Got ${typeof services[name]}`);
         }
 
-        // Wrap a function in a Service instance.
-        if (isFunction(service)) {
-          service = makeService(service);
+        services[name] = initService(service, { appContext, name });
+
+        if (!isObject(services[name].exports)) {
+          throw new TypeError(`Service function for '${name}' did not return an object.`);
         }
-
-        // Expect the result to be a Service instance.
-        if (!isService(service)) {
-          throw new Error(
-            `Service '${name}' must be an object, function that returns an object, or an instance of Service. Got ${typeof services[
-              name
-            ]}`
-          );
-        }
-
-        // Store this service which is guaranteed to be a Service back in the app's _services store.
-        services[name] = service;
-
-        // Initialize the service to get its exports.
-        const exports = service.init({ appContext, name });
 
         // Add to appContext.services
         Object.defineProperty(appContext.services, name, {
-          value: exports,
+          value: services[name].exports,
           writable: false,
           enumerable: true,
           configurable: false,

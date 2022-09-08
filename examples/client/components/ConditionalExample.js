@@ -1,10 +1,10 @@
-import { when, makeState, makeComponent } from "@woofjs/client";
+import { when, makeState } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const ConditionalExample = makeComponent((ctx) => {
-  ctx.debug.name = "ConditionalExample";
+export function ConditionalExample() {
+  this.debug.name = "ConditionalExample";
 
-  logLifecycle(ctx);
+  logLifecycle(this);
 
   const $show = makeState(false);
   const $label = $show.map((on) => (on ? "Hide Text" : "Show Text"));
@@ -26,4 +26,4 @@ export const ConditionalExample = makeComponent((ctx) => {
       </div>
     </div>
   );
-});
+}

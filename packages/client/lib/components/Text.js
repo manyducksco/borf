@@ -1,9 +1,7 @@
-import { makeComponent } from "../makeComponent.js";
-
-export const Text = makeComponent((ctx) => {
+export function Text() {
   const node = document.createTextNode("");
 
-  ctx.subscribeTo(ctx.$attrs, (attrs) => {
+  this.subscribeTo(this.$attrs, (attrs) => {
     if (attrs.value != null) {
       node.textContent = String(attrs.value);
     } else if (attrs.defaultValue != null) {
@@ -14,4 +12,4 @@ export const Text = makeComponent((ctx) => {
   });
 
   return node;
-});
+}

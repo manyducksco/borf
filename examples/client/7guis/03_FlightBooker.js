@@ -1,15 +1,33 @@
-import {
-  makeComponent,
-  repeat,
-  bind,
-  makeState,
-  mergeStates,
-} from "@woofjs/client";
+import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
 
 const flightTypes = ["one-way flight", "return flight"];
 
-export default makeComponent((ctx) => {
-  ctx.debug.name = "7GUIs:FlightBooker";
+export default function FlightBooker() {
+  this.debug.name = "7GUIs:FlightBooker";
+
+  const formatDate = (date) => {
+    date = new Date();
+
+    const y = date.getFullYear();
+    const m = date.getMonth() + 1;
+    const d = date.getDate();
+
+    return `${d}.${m}.${y}`;
+  };
+
+  const validateDate = (str) => {
+    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(str)) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const parseDate = (str) => {
+    const [d, m, y] = str.split(".").map(Number);
+
+    return new Date(y, m - 1, d);
+  };
 
   const $flightType = makeState(flightTypes[0]);
   const $startDate = makeState(formatDate(new Date()));
@@ -31,30 +49,6 @@ export default makeComponent((ctx) => {
     }
   );
 
-  function formatDate(date) {
-    date = new Date();
-
-    const y = date.getFullYear();
-    const m = date.getMonth() + 1;
-    const d = date.getDate();
-
-    return `${d}.${m}.${y}`;
-  }
-
-  function validateDate(str) {
-    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(str)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  function parseDate(str) {
-    const [d, m, y] = str.split(".").map(Number);
-
-    return new Date(y, m - 1, d);
-  }
-
   return (
     <div class="example">
       <header>
@@ -73,8 +67,8 @@ export default makeComponent((ctx) => {
               $flightType.set(e.target.value);
             }}
           >
-            {repeat(flightTypes, ({ $attrs }) => {
-              const $value = $attrs.map((a) => a.value);
+            {repeat(flightTypes, function FlightType() {
+              const $value = this.$attrs.map((a) => a.value);
               const $selected = mergeStates($value, $flightType).into(
                 (value, current) => {
                   return value === current;
@@ -119,4 +113,4 @@ export default makeComponent((ctx) => {
       </form>
     </div>
   );
-});
+}

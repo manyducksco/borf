@@ -1,14 +1,13 @@
-import { makeComponent } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle";
 
-export const AppLayout = makeComponent((ctx) => {
-  ctx.debug.name = "🐕";
-  ctx.debug.log("hi");
+export function AppLayout() {
+  this.debug.name = "🐕";
+  this.debug.log("hi");
 
-  logLifecycle(ctx);
+  logLifecycle(this);
 
-  const page = ctx.getService("page");
-  const mouse = ctx.getService("mouse");
+  const page = this.getService("page");
+  const mouse = this.getService("mouse");
 
   // this.loadRoute(({ show, done }) => {
   //   // When the done() function is called, this content is removed and the real component is connected.
@@ -34,7 +33,7 @@ export const AppLayout = makeComponent((ctx) => {
   // });
 
   // Display current mouse coordinates as tab title
-  ctx.subscribeTo(mouse.$position, (pos) => {
+  this.subscribeTo(mouse.$position, (pos) => {
     page.$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
   });
 
@@ -63,7 +62,7 @@ export const AppLayout = makeComponent((ctx) => {
         </ul>
       </nav>
 
-      {ctx.children}
+      {this.children}
     </div>
   );
-});
+}

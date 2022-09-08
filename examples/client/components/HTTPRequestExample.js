@@ -1,12 +1,12 @@
-import { makeComponent, makeState, mergeStates } from "@woofjs/client";
+import { makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const HTTPRequestExample = makeComponent((ctx) => {
-  const http = ctx.getService("http");
+export function HTTPRequestExample() {
+  const http = this.getService("http");
 
-  ctx.debug.name = "HTTPRequestExample";
+  this.debug.name = "HTTPRequestExample";
 
-  logLifecycle(ctx);
+  logLifecycle(this);
 
   const $loading = makeState(false);
   const $message = makeState("");
@@ -44,4 +44,4 @@ export const HTTPRequestExample = makeComponent((ctx) => {
       </div>
     </div>
   );
-});
+}

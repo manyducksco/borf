@@ -2,25 +2,24 @@ import { isFunction, isString, isNumber, isTemplate, isObservable } from "../hel
 import { $$appContext, $$elementContext } from "../keys.js";
 import { h } from "../h.js";
 import { Text } from "./Text.js";
-import { makeComponent } from "../makeComponent.js";
 
 /**
  * Recreates its contents each time its value changes.
  */
-export const Watch = makeComponent((ctx) => {
-  const appContext = ctx[$$appContext];
-  const elementContext = ctx[$$elementContext];
+export function Watch() {
+  const appContext = this[$$appContext];
+  const elementContext = this[$$elementContext];
 
-  ctx.debug.name = "woof:template:watch";
+  this.debug.name = "woof:template:watch";
 
   const node = document.createComment("watch");
 
-  const $value = ctx.$attrs.map((a) => a.value);
-  const render = ctx.$attrs.get((a) => a.render);
+  const $value = this.$attrs.map((a) => a.value);
+  const render = this.$attrs.get((a) => a.render);
 
   let current;
 
-  ctx.subscribeTo($value, (value) => {
+  this.subscribeTo($value, (value) => {
     let newItem = render(value);
 
     // Allow functions that return an element
@@ -49,7 +48,7 @@ export const Watch = makeComponent((ctx) => {
     }
   });
 
-  ctx.afterDisconnect(() => {
+  this.afterDisconnect(() => {
     if (current) {
       current.disconnect({ allowTransitionOut: true });
       current = null;
@@ -57,4 +56,4 @@ export const Watch = makeComponent((ctx) => {
   });
 
   return node;
-});
+}

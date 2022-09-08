@@ -1,15 +1,14 @@
 import { isArray, isObject, isString, isNumber, isFunction, isBinding, isObservable } from "../helpers/typeChecking.js";
-import { makeComponent } from "../makeComponent.js";
 import { $$elementContext } from "../keys.js";
 
 /**
  * Implements logic for HTML elements created with `h()`.
  */
-export const Element = makeComponent((ctx) => {
-  const elementContext = ctx[$$elementContext];
+export function Element() {
+  const elementContext = this[$$elementContext];
 
-  const tagname = ctx.$attrs.get((a) => a.tagname);
-  const attrs = ctx.$attrs.get((a) => a.attrs || {}); // attrs passed to the element itself
+  const tagname = this.$attrs.get((a) => a.tagname);
+  const attrs = this.$attrs.get((a) => a.attrs || {}); // attrs passed to the element itself
 
   let node;
 
@@ -31,8 +30,8 @@ export const Element = makeComponent((ctx) => {
 
   let subscriptions = [];
 
-  ctx.beforeConnect(() => {
-    for (const child of ctx.children) {
+  this.beforeConnect(() => {
+    for (const child of this.children) {
       child.connect(node);
     }
 
@@ -41,8 +40,8 @@ export const Element = makeComponent((ctx) => {
     if (attrs.class) applyClasses(node, attrs.class, subscriptions);
   });
 
-  ctx.afterDisconnect(async () => {
-    for (const child of ctx.children) {
+  this.afterDisconnect(async () => {
+    for (const child of this.children) {
       child.disconnect();
     }
 
@@ -53,7 +52,7 @@ export const Element = makeComponent((ctx) => {
   });
 
   return node;
-});
+}
 
 function applyAttrs(element, attrs, subscriptions) {
   for (const key in attrs) {

@@ -1,4 +1,4 @@
-import { makeService } from "./makeService.js";
+import { initService } from "./initService.js";
 
 /*========================*\
 ||         Utils          ||
@@ -21,14 +21,14 @@ test("lifecycle hooks", () => {
   const beforeConnect = jest.fn();
   const afterConnect = jest.fn();
 
-  const service = makeService((ctx) => {
-    ctx.beforeConnect(beforeConnect);
-    ctx.afterConnect(afterConnect);
+  const service = function () {
+    this.beforeConnect(beforeConnect);
+    this.afterConnect(afterConnect);
 
     return { works: true };
-  });
+  };
 
-  const exports = service.init({ appContext, name: "test" });
+  const exports = initService(service, { appContext, name: "test" });
 
   expect(exports).toStrictEqual({ works: true });
 
@@ -47,27 +47,27 @@ test("lifecycle hooks", () => {
 });
 
 test("throws if bootstrap doesn't return an object", () => {
-  const nullService = makeService(() => {
+  const nullService = function () {
     return null;
-  });
+  };
 
-  const stringService = makeService(() => {
+  const stringService = function () {
     return "nope";
-  });
+  };
 
-  const functionService = makeService(() => {
+  const functionService = function () {
     return function () {
       return {};
     };
-  });
+  };
 
-  const regularService = makeService(() => {
+  const regularService = function () {
     return { thisIsNormal: true };
-  });
+  };
 
-  expect(() => nullService.init({ appContext, name: "test" })).toThrow();
-  expect(() => stringService.init({ appContext, name: "test" })).toThrow();
-  expect(() => functionService.init({ appContext, name: "test" })).toThrow();
+  expect(() => initService(nullService, { appContext, name: "test" })).toThrow();
+  expect(() => initService(stringService, { appContext, name: "test" })).toThrow();
+  expect(() => initService(functionService, { appContext, name: "test" })).toThrow();
 
-  expect(() => regularService.init({ appContext, name: "test" })).not.toThrow();
+  expect(() => initService(regularService, { appContext, name: "test" })).not.toThrow();
 });

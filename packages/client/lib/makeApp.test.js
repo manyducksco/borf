@@ -1,6 +1,5 @@
 import { createMemoryHistory } from "history";
 import { makeApp } from "./makeApp.js";
-import { makeService } from "./makeService.js";
 
 test("lifecycle methods", async () => {
   const app = makeApp({
@@ -10,7 +9,7 @@ test("lifecycle methods", async () => {
   });
   const root = document.createElement("div");
 
-  app.service("http", {}); // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  app.service("http", () => ({})); // Override http, otherwise window.fetch isn't defined in the test so this fails.
 
   const beforeConnect = jest.fn();
   const afterConnect = jest.fn();
@@ -25,20 +24,20 @@ test("lifecycle methods", async () => {
 });
 
 test("throws helpful error when accessing services that haven't been created yet from other services", () => {
-  const one = makeService((ctx) => {
-    const two = ctx.getService("two");
+  const one = function () {
+    const two = this.getService("two");
 
     return {
       value: 1,
       total: two.value + 1,
     };
-  });
+  };
 
-  const two = makeService((ctx) => {
+  const two = function () {
     return {
       value: 2,
     };
-  });
+  };
 
   const app = makeApp({
     router: {
@@ -47,7 +46,7 @@ test("throws helpful error when accessing services that haven't been created yet
   });
   const root = document.createElement("div");
 
-  app.service("http", {}); // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  app.service("http", () => ({})); // Override http, otherwise window.fetch isn't defined in the test so this fails.
   app.service("one", one);
   app.service("two", two);
 
@@ -57,7 +56,9 @@ test("throws helpful error when accessing services that haven't been created yet
 });
 
 test("error doesn't occur if accessing outside of the main function scope", async () => {
-  const one = makeService((ctx) => {
+  const one = function () {
+    const ctx = this;
+
     return {
       value: 1,
 
@@ -66,13 +67,13 @@ test("error doesn't occur if accessing outside of the main function scope", asyn
         return ctx.getService("two").value + this.value;
       },
     };
-  });
+  };
 
-  const two = makeService(() => {
+  const two = function () {
     return {
       value: 2,
     };
-  });
+  };
 
   const app = makeApp({
     router: {
@@ -81,12 +82,12 @@ test("error doesn't occur if accessing outside of the main function scope", asyn
   });
   const root = document.createElement("div");
 
-  app.service("http", {}); // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  app.service("http", () => ({})); // Override http, otherwise window.fetch isn't defined in the test so this fails.
   app.service("one", one);
   app.service("two", two);
 
-  app.route("*", function (ctx) {
-    expect(ctx.getService("one").total).toBe(3);
+  app.route("*", function () {
+    expect(this.getService("one").total).toBe(3);
 
     return null;
   });

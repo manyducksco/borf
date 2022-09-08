@@ -9,17 +9,16 @@ import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
 import { initComponent } from "../helpers/initComponent.js";
-import { makeService } from "../makeService.js";
 
 import { Outlet } from "../components/Outlet.js";
 
 /**
  * Top level navigation service.
  */
-export default makeService((ctx) => {
-  ctx.debug.name = "woof:service:router";
+export function RouterService() {
+  this.debug.name = "woof:service:router";
 
-  const appContext = ctx[$$appContext];
+  const appContext = this[$$appContext];
   const options = appContext.options.router || {};
   const routes = appContext.routes;
 
@@ -60,7 +59,7 @@ export default makeService((ctx) => {
   let isRouteChange = false;
 
   // Update URL when $query changes
-  ctx.subscribeTo($query, (current) => {
+  this.subscribeTo($query, (current) => {
     // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
@@ -79,7 +78,7 @@ export default makeService((ctx) => {
     });
   });
 
-  ctx.afterConnect(() => {
+  this.afterConnect(() => {
     const root = appContext.rootElement;
 
     appOutlet = initComponent(Outlet, { appContext });
@@ -97,7 +96,7 @@ export default makeService((ctx) => {
 
       history.push(href);
 
-      ctx.debug.log(`Intercepted link to '${href}'`);
+      this.debug.log(`Intercepted link to '${href}'`);
     });
   });
 
@@ -105,7 +104,7 @@ export default makeService((ctx) => {
    * Run when the location changes. Diffs and mounts new routes and updates
    * the $path, $route, $params and $query states accordingly.
    */
-  async function onRouteChange({ location }) {
+  const onRouteChange = async ({ location }) => {
     const matched = matchRoute(routes, location.pathname);
 
     if (matched) {
@@ -175,7 +174,7 @@ export default makeService((ctx) => {
         }
       }
     } else {
-      ctx.debug.warn(`No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.`);
+      this.debug.warn(`No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.`);
     }
 
     // Update query params if they've changed.
@@ -190,7 +189,7 @@ export default makeService((ctx) => {
         })
       );
     }
-  }
+  };
 
   return {
     $route: $route.map(),
@@ -231,4 +230,4 @@ export default makeService((ctx) => {
       }
     },
   };
-});
+}

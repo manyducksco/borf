@@ -1,9 +1,9 @@
 import "./styles/demo.css";
 
-import { makeComponent, makeApp, makeState } from "@woofjs/client";
+import { makeApp, makeState } from "@woofjs/client";
 
-import CounterService from "./services/CounterService.js";
-import MouseService from "./services/MouseService.js";
+import { CounterService } from "./services/CounterService.js";
+import { MouseService } from "./services/MouseService.js";
 
 import { prop } from "ramda";
 
@@ -40,23 +40,23 @@ import Cells from "./7guis/07_Cells";
 /**
  * Component for testing transitionOut hook.
  */
-const TransitionPage = makeComponent((ctx) => {
-  ctx.debug.name = "TransitionPage";
+const TransitionPage = function () {
+  this.debug.name = "TransitionPage";
 
   const $ref = makeState();
   const $classes = makeState({
     transitionPage: true,
   });
 
-  ctx.afterConnect(() => {
+  this.afterConnect(() => {
     $classes.set((classes) => {
       classes.enter = true;
       classes.exit = false;
     });
   });
 
-  ctx.transitionOut(() => {
-    ctx.debug.log("transitionOut");
+  this.transitionOut(() => {
+    this.debug.log("transitionOut");
 
     $classes.set((classes) => {
       classes.enter = false;
@@ -72,10 +72,10 @@ const TransitionPage = makeComponent((ctx) => {
 
   return (
     <div $ref={$ref} class={$classes}>
-      {ctx.$attrs.map(prop("label"))}
+      {this.$attrs.map(prop("label"))}
     </div>
   );
-});
+};
 
 export const app = makeApp({
   debug: {
@@ -92,8 +92,8 @@ export const app = makeApp({
 app.service("counter", CounterService);
 app.service("mouse", MouseService);
 
-app.route("*", AppLayout, (sub) => {
-  sub.route("/examples", () => {
+app.route("*", AppLayout, function childRoutes() {
+  this.route("/examples", () => {
     return (
       <div>
         <ToggleExample />
@@ -109,9 +109,9 @@ app.route("*", AppLayout, (sub) => {
     );
   });
 
-  sub.route(
+  this.route(
     "/transitions",
-    (ctx) => {
+    function Transitions() {
       return (
         <div>
           <ul>
@@ -125,58 +125,62 @@ app.route("*", AppLayout, (sub) => {
               <a href="/transitions/three">Three</a>
             </li>
           </ul>
-          <div>{ctx.children}</div>
+          <div>{this.children}</div>
         </div>
       );
     },
-    function (sub) {
-      sub.route("/one", <TransitionPage label="One" />);
-      sub.route("/two", <TransitionPage label="Two" />);
-      sub.route("/three", <TransitionPage label="Three" />);
-      sub.redirect("*", "./one");
+    function childRoutes() {
+      this.route("/one", <TransitionPage label="One" />);
+      this.route("/two", <TransitionPage label="Two" />);
+      this.route("/three", <TransitionPage label="Three" />);
+      this.redirect("*", "./one");
     }
   );
 
-  sub.route("/7guis", SevenGUIs, function (sub) {
-    sub.route("/counter", Counter);
-    sub.route("/temp-converter", TempConverter);
-    sub.route("/flight-booker", FlightBooker);
-    sub.route("/timer", Timer);
-    sub.route("/crud", CRUD);
-    sub.route("/circle-drawer", CircleDrawer);
-    sub.route("/cells", Cells);
-    sub.redirect("*", "./counter");
+  this.route("/7guis", SevenGUIs, function childRoutes() {
+    this.route("/counter", Counter);
+    this.route("/temp-converter", TempConverter);
+    this.route("/flight-booker", FlightBooker);
+    this.route("/timer", Timer);
+    this.route("/crud", CRUD);
+    this.route("/circle-drawer", CircleDrawer);
+    this.route("/cells", Cells);
+    this.redirect("*", "./counter");
   });
 
-  sub.route("/router-test/one", () => {
+  this.route("/router-test/one", function () {
     return <h1>One</h1>;
   });
 
-  sub.route("/router-test/two", () => {
+  this.route("/router-test/two", function () {
     return <h1>Two</h1>;
   });
 
-  sub.redirect("/router-test/*", "/router-test/one");
+  this.redirect("/router-test/*", "/router-test/one");
 
-  sub.route(
+  this.route(
     "/nested",
-    function (ctx) {
+    function Nested() {
       return (
         <div>
           <h1>Nested Routes!</h1>
 
-          {ctx.children}
+          {this.children}
         </div>
       );
     },
-    function (sub) {
-      sub.route("/one", () => <h1>NESTED #1</h1>);
-      sub.route("/two", () => <h1>NESTED #2</h1>);
-      sub.redirect("*", "./one");
+    function () {
+      this.route("/one", function () {
+        <h1>NESTED #1</h1>;
+      });
+      this.route("/two", function () {
+        <h1>NESTED #2</h1>;
+      });
+      this.redirect("*", "./one");
     }
   );
 
-  sub.redirect("*", "./examples");
+  this.redirect("*", "./examples");
 });
 
 app.connect("#app");
