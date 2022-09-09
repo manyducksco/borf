@@ -159,11 +159,25 @@ export function makeApp(options = {}) {
     beforeConnect(fn) {
       onBeforeConnect = async () => {
         const ctx = {
-          services: appContext.services,
+          /**
+           * Returns the service registered under `name` or throws an error if it isn't registered.
+           */
+          getService(name) {
+            if (!isString(name)) {
+              throw new TypeError(`Expected a service name or array of service names.`);
+            }
+
+            if (appContext.services[name]) {
+              return appContext.services[name];
+            }
+
+            throw new Error(`Service '${name}' is not registered on this app.`);
+          },
+
           debug: appContext.debug.makeChannel("woof:app:beforeConnect"),
         };
 
-        return fn(ctx);
+        return fn.call(ctx);
       };
 
       return this;
@@ -176,11 +190,25 @@ export function makeApp(options = {}) {
     afterConnect(fn) {
       onAfterConnect = async () => {
         const ctx = {
-          services: appContext.services,
+          /**
+           * Returns the service registered under `name` or throws an error if it isn't registered.
+           */
+          getService(name) {
+            if (!isString(name)) {
+              throw new TypeError(`Expected a service name or array of service names.`);
+            }
+
+            if (appContext.services[name]) {
+              return appContext.services[name];
+            }
+
+            throw new Error(`Service '${name}' is not registered on this app.`);
+          },
+
           debug: appContext.debug.makeChannel("woof:app:afterConnect"),
         };
 
-        return fn(ctx);
+        return fn.call(ctx);
       };
 
       return this;

@@ -365,9 +365,9 @@ declare module "@woofjs/client" {
   type Element = Template | ToStringable | State<ToStringable>;
   type ElementFn = () => Element;
 
-  type ToStringable = {
+  interface ToStringable {
     toString(): string;
-  };
+  }
 
   type Template = {
     readonly isTemplate: true;
@@ -413,9 +413,15 @@ declare module "@woofjs/client" {
   ||             Component            ||
   \*==================================*/
 
-  export type Component<ServicesType = any, AttrsType = any, ChildrenType = any> = (
-    this: ComponentContext<ServicesType, AttrsType, ChildrenType>
+  export type Component<ServicesType = any, AttrsType = {}, ChildrenType = void> = (
+    this: ComponentContext<ServicesType, AttrsType, ChildrenType>,
+    _props: FakeJSXProps<AttrsType, ChildrenType>
   ) => Element | null;
+
+  /**
+   * Fake props attribute to satisfy the TypeScript type system. This argument is never passed.
+   */
+  export type FakeJSXProps<A, C> = ObservableAttrs<A> & { children?: C };
 
   // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
   // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
@@ -430,7 +436,7 @@ declare module "@woofjs/client" {
    * Attrs beginning with `$` are not unwrapped as these must be MutableStates according to Woof component logic.
    */
   export type UnwrappedAttrs<AttrsType> = {
-    [Name in keyof AttrsType]: Name extends `$${infer T}`
+    [Name in keyof AttrsType]: Name extends `$${infer Type}`
       ? AttrsType[Name]
       : AttrsType[Name] extends Observable<infer Type>
       ? Type
@@ -447,7 +453,7 @@ declare module "@woofjs/client" {
       : AttrsType[Name] | Observable<AttrsType[Name]>;
   };
 
-  export interface ComponentContext<ServicesType, AttrsType, ChildrenType> {
+  export interface ComponentContext<ServicesType = any, AttrsType = {}, ChildrenType = void> {
     /**
      * Attributes passed into to this component.
      *
@@ -602,13 +608,6 @@ declare module "@woofjs/client" {
     ): void;
   };
 
-  // export type Service<ExportsType> = {
-  //   exports: ExportsType;
-  //   init(): void;
-  //   beforeConnect: () => void;
-  //   afterConnect: () => void;
-  // };
-
   /*==================================*\
   ||              State               ||
   \*==================================*/
@@ -739,8 +738,12 @@ declare module "@woofjs/client/jsx-dev-runtime" {
 
 // TODO: Define all elements and the attributes they support.
 declare namespace JSX {
-  import { ObservableAttrs, Observable, MutableState, ToStringable } from "@woofjs/client";
+  import { ObservableAttrs, Observable, MutableState, ToStringable, Template } from "@woofjs/client";
   import * as CSS from "csstype";
+
+  interface ElementChildrenAttribute {
+    children: {}; // specify children name to use
+  }
 
   type MaybeObservable<T> = T | Observable<T>;
 
@@ -1500,6 +1503,11 @@ declare namespace JSX {
 
   interface ElementAttributes<T extends HTMLElement> extends GlobalAttributes, GlobalEvents {
     /**
+     * For TypeScript support; child elements passed through JSX.
+     */
+    children?: any;
+
+    /**
      * A state that receives a reference to the DOM element.
      */
     $ref?: MutableState<HTMLElement>;
@@ -1920,9 +1928,5 @@ declare namespace JSX {
   // Temp fallback while types are being worked on.
   interface IntrinsicElements {
     [tagname: string]: any;
-  }
-
-  interface ElementClass {
-    init: any;
   }
 }

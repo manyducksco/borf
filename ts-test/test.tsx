@@ -47,7 +47,11 @@ const Example1: Component<Services> = function () {
   const http = this.getService("http");
   const example = this.getService("example");
 
-  return <Example2 name={5} />;
+  return (
+    <div class="class">
+      <Example2 name={5} />
+    </div>
+  );
 };
 
 type Example2Attrs = {

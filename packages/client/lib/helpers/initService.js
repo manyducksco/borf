@@ -14,16 +14,15 @@ export function initService(serviceFn, { appContext, name }) {
     debug: appContext.debug.makeChannel(`service:${name}`),
 
     getService(name) {
-      if (isString(name)) {
-        if (appContext.services[name]) {
-          return appContext.services[name];
-        }
-        throw new Error(`Service '${name}' is not registered on this app.`);
-      } else if (isArrayOf(isString, name)) {
-        return name.map(ctx.getService);
-      } else {
+      if (!isString(name)) {
         throw new TypeError(`Expected a service name or array of service names.`);
       }
+
+      if (appContext.services[name]) {
+        return appContext.services[name];
+      }
+
+      throw new Error(`Service '${name}' is not registered on this app.`);
     },
     beforeConnect: (callback) => {
       onBeforeConnect.push(callback);

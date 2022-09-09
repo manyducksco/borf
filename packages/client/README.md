@@ -2,7 +2,7 @@
 
 Front end routing, components and state for dogs. 🐕
 
-`@woofjs/client` is a client-side JavaScript framework that borrows the best ideas from other frameworks; [React](https://reactjs.org/docs/introducing-jsx.html), [Angular](https://angular.io/guide/architecture-services) and [Choo](https://github.com/choojs/choo#routing) in particular. As we go through Woof's concepts in this readme, I'll point out some places you may have seen these ideas before.
+woof is a client-side JavaScript framework that shamelessly steals the best ideas from other frameworks; components from [React](https://reactjs.org/docs/introducing-jsx.html), services from [Angular](https://angular.io/guide/architecture-services), built-in routing inspired by [Choo](https://github.com/choojs/choo#routing) and observable state containers to tie all of that together.
 
 ## Table of Concepts
 
@@ -44,9 +44,9 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 - Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
 
 ```js
-app.route("users/:id", (ctx) => {
+app.route("users/:id", function () {
   // Get route params from router.
-  const { $params } = ctx.service("router");
+  const { $params } = this.getService("router");
 
   // Get the live value of :id with '.map()'.
   const $id = $params.map((p) => p.id);
@@ -65,7 +65,7 @@ Unlike many other frameworks Woof does _not_ use a virtual DOM. Instead, Woof us
 ```js
 import { makeComponent, makeState } from "@woofjs/client";
 
-const Timer = makeComponent((ctx) => {
+function Timer() {
   // Naming states with a $ is a convention to help point out that they are dynamic.
   // Anywhere you see $seconds used you know that value can change.
   const $seconds = makeState(0);
@@ -81,7 +81,7 @@ const Timer = makeComponent((ctx) => {
   }
 
   // Increment once per second after the component is connected to the DOM.
-  ctx.afterConnect(() => {
+  this.afterConnect(() => {
     setInterval(increment, 1000);
   });
 
@@ -103,14 +103,14 @@ Components are reusable modules with their own markup and logic. You can define 
 Components are ubiquitous in front-end frameworks, but Woof's take on them is very inspired by how [React](https://reactjs.org/docs/components-and-props.html) does things.
 
 ```js
-const Example = makeComponent((ctx) => {
-  const $title = ctx.$attrs.map(a => a.title);
+function Example() {
+  const $title = this.$attrs.map(a => a.title);
 
   return h("div", [
     h("h1", $title),
     h("p", "This is a reusable component.")
   ]);
-});
+};
 
 // Components can be mounted directly on a route.
 app.route("example", Example);
@@ -129,42 +129,42 @@ app.route("other", () => {
 
 ### Component Context
 
-Component functions receive a component context object as the first argument.
+Component functions have their component context bound to `this`.
 
 ```js
-const Example = makeComponent((ctx) => {
+function Example() {
   // Access services by the name they were registered under.
-  const service = ctx.service("name");
+  const service = this.getService("name");
 
   // Print debug messages
-  ctx.debug.name = "component:Example"; // Prefix messages in the console to make tracing easier at a glance.
-  ctx.debug.log("Something happened.");
-  ctx.debug.warn("Something happened!");
-  ctx.debug.error("SOMETHING HAPPENED!!!!");
+  this.debug.name = "component:Example"; // Prefix messages in the console to make tracing easier at a glance.
+  this.debug.log("Something happened.");
+  this.debug.warn("Something happened!");
+  this.debug.error("SOMETHING HAPPENED!!!!");
 
   /*=================================*\
   ||   Component Lifecycle Methods   ||
   \*=================================*/
 
-  ctx.isConnected; // true if component is connected
+  this.isConnected; // true if component is connected
 
-  ctx.beforeConnect(() => {
+  this.beforeConnect(() => {
     // Runs when the component is about to be (but is not yet) added to the page.
   });
 
-  ctx.afterConnect(() => {
+  this.afterConnect(() => {
     // Runs after the component is added to the page.
   });
 
-  ctx.beforeDisconnect(() => {
+  this.beforeDisconnect(() => {
     // Runs when the component is about to be (but is not yet) removed from the page.
   });
 
-  ctx.afterDisconnect(() => {
+  this.afterDisconnect(() => {
     // Runs after the component is removed from the page.
   });
 
-  ctx.transitionOut(() => {
+  this.transitionOut(() => {
     return new Promise((resolve) => {
       // Runs when the component is about to leave the DOM.
       // Delays disconnection and 'afterDisconnect' hook until the promise resolves.
@@ -175,7 +175,7 @@ const Example = makeComponent((ctx) => {
   });
 
   // Runs a callback function each time an observable emits a value while this component is connected.
-  ctx.subscribeTo($title, (title) => {
+  this.subscribeTo($title, (title) => {
     console.log("title attribute changed to " + title);
   });
 
@@ -185,8 +185,8 @@ const Example = makeComponent((ctx) => {
 
   // Access the component's children with `ctx.children`,
   // in this case to render them inside a <div>
-  return h("div", ctx.children);
-});
+  return h("div", this.children);
+}
 ```
 
 ### Templating
@@ -496,14 +496,14 @@ app.route("/counter", function () {
 
 // The view route displays the count but doesn't let the user change it.
 app.route("/counter/view", function () {
-  const { $current } = this.services.counter;
+  const { $current } = this.getService("counter");
 
   return <h1>The Count is Now {$current}</h1>;
 });
 
 // The controls route lets the user change the count but doesn't display it.
 app.route("/counter/controls", function () {
-  const { increment, decrement } = this.services.counter;
+  const { increment, decrement } = this.getService("counter");
 
   return (
     <div>
@@ -520,17 +520,13 @@ app.route("/counter/controls", function () {
 app.service("example", function () {
   // Access other services by the name they were registered under.
   // The service being accessed must have been registered before this one or the app will throw an error.
-  const service = this.services.name;
+  const service = this.getService("name");
 
   // Print debug messages
   this.debug.name = "service:example"; // Prefix messages in the console to make tracing easier at a glance.
   this.debug.log("Something happened.");
   this.debug.warn("Something happened!");
   this.debug.error("SOMETHING HAPPENED!!!!");
-
-  // Helpers are available on the service context as well as exported from `@woofjs/client`.
-  // Use these whenever you need to avoid import statements, such as when not using a build system.
-  const { makeState, mergeStates, makeProxyState } = this.helpers;
 
   /*=================================*\
   ||    Service Lifecycle Methods    ||

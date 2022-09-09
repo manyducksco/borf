@@ -1,13 +1,4 @@
-import {
-  isTemplate,
-  isDOM,
-  isFunction,
-  isComponent,
-  isObservable,
-  isState,
-  isString,
-  isArrayOf,
-} from "./typeChecking.js";
+import { isTemplate, isDOM, isFunction, isComponent, isObservable, isState, isString } from "./typeChecking.js";
 import { makeState } from "../state/makeState.js";
 
 import { $$appContext, $$elementContext } from "../keys.js";
@@ -110,22 +101,20 @@ export function initComponent(componentFn, config) {
     children,
 
     /**
-     * If `name` is a string, returns the service registered under that name.
-     * If `name` is an array of strings, returns an array of services registered under those names.
+     * Returns the service registered under `name` or throws an error if it isn't registered.
      *
      * TODO: Register on appContext which components and services are using which services.
      */
     getService(name) {
-      if (isString(name)) {
-        if (appContext.services[name]) {
-          return appContext.services[name];
-        }
-        throw new Error(`Service '${name}' is not registered on this app.`);
-      } else if (isArrayOf(isString, name)) {
-        return name.map(ctx.getService);
-      } else {
+      if (!isString(name)) {
         throw new TypeError(`Expected a service name or array of service names.`);
       }
+
+      if (appContext.services[name]) {
+        return appContext.services[name];
+      }
+
+      throw new Error(`Service '${name}' is not registered on this app.`);
     },
 
     get isConnected() {
