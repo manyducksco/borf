@@ -2,7 +2,7 @@ import { makeState, mergeStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export function HTTPRequestExample() {
-  const http = this.getService("http");
+  const http = this.service("http");
 
   this.debug.name = "HTTPRequestExample";
 

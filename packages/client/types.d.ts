@@ -128,7 +128,7 @@ declare module "@woofjs/client" {
     /**
      * Returns the service registered under `name` or throws an error if the service isn't registered.
      */
-    getService<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
+    service<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
 
     debug: DebugChannel;
   };
@@ -495,7 +495,7 @@ declare module "@woofjs/client" {
     /**
      * Returns the service registered under `name` or throws an error if the service isn't registered.
      */
-    getService<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
+    service<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
 
     /**
      * Registers a callback to run before the component is connected to the DOM.
@@ -568,7 +568,7 @@ declare module "@woofjs/client" {
     /**
      * Returns the service registered under `name` or throws an error if the service isn't registered.
      */
-    getService<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
+    service<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
 
     /**
      * Registers a callback to run before the app is connected.

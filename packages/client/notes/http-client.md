@@ -1,7 +1,7 @@
 # HTTP Client Notes
 
 ```js
-const http = this.getService("@http");
+const http = this.service("http");
 
 const res = await http.post("/some/url")
   .query("test", "example")

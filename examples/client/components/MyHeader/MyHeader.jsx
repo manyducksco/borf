@@ -7,7 +7,7 @@ import { prop } from "ramda";
 export function MyHeader() {
   const { $attrs } = this;
 
-  const http = this.getService("http");
+  const http = this.service("http");
 
   const onclick = $attrs.get("onclick");
   const $greeting = $attrs.map(prop("greeting"));

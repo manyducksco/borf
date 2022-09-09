@@ -8,7 +8,7 @@ export function CounterExample() {
 
   logLifecycle(this);
 
-  const counter = this.getService("counter");
+  const counter = this.service("counter");
   const $label = counter.$current.map((n) => ` the number is: ${n}`);
 
   return (
@@ -27,7 +27,7 @@ export function CounterExample() {
  * Second component with a view only. Displays the same information from the same service.
  */
 function CounterViewLabel() {
-  const { $current } = this.getService("counter");
+  const { $current } = this.service("counter");
 
   return <h1>{$current}</h1>;
 }

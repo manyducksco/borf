@@ -162,7 +162,7 @@ export function makeApp(options = {}) {
           /**
            * Returns the service registered under `name` or throws an error if it isn't registered.
            */
-          getService(name) {
+          service(name) {
             if (!isString(name)) {
               throw new TypeError(`Expected a service name or array of service names.`);
             }
@@ -193,7 +193,7 @@ export function makeApp(options = {}) {
           /**
            * Returns the service registered under `name` or throws an error if it isn't registered.
            */
-          getService(name) {
+          service(name) {
             if (!isString(name)) {
               throw new TypeError(`Expected a service name or array of service names.`);
             }

@@ -28,19 +28,21 @@ test("lifecycle hooks", () => {
     return { works: true };
   };
 
-  const exports = initService(service, { appContext, name: "test" });
+  const svc = initService(service, { appContext, name: "test" });
 
-  expect(exports).toStrictEqual({ works: true });
+  expect(svc.exports).toStrictEqual({ works: true });
+  expect(typeof svc.beforeConnect).toBe("function");
+  expect(typeof svc.afterConnect).toBe("function");
 
   expect(beforeConnect).toHaveBeenCalledTimes(0);
   expect(afterConnect).toHaveBeenCalledTimes(0);
 
-  service.beforeConnect();
+  svc.beforeConnect();
 
   expect(beforeConnect).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(0);
 
-  service.afterConnect();
+  svc.afterConnect();
 
   expect(beforeConnect).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(1);

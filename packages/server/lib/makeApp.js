@@ -45,8 +45,7 @@ export function makeApp(options = {}) {
     },
 
     /**
-     * Registers a service on the app. Services can be referenced in
-     * Services and Components using `self.getService(name)`.
+     * Registers a service on the app. Services can be referenced in components and other services.
      *
      * @param name - Unique string to name this service.
      * @param service - A service to create and register under the name.

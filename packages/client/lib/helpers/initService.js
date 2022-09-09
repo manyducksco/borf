@@ -13,7 +13,7 @@ export function initService(serviceFn, { appContext, name }) {
     [$$appContext]: appContext,
     debug: appContext.debug.makeChannel(`service:${name}`),
 
-    getService(name) {
+    service(name) {
       if (!isString(name)) {
         throw new TypeError(`Expected a service name or array of service names.`);
       }

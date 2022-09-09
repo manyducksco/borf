@@ -6,8 +6,8 @@ export function AppLayout() {
 
   logLifecycle(this);
 
-  const page = this.getService("page");
-  const mouse = this.getService("mouse");
+  const page = this.service("page");
+  const mouse = this.service("mouse");
 
   // this.loadRoute(({ show, done }) => {
   //   // When the done() function is called, this content is removed and the real component is connected.

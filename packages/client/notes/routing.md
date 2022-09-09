@@ -107,7 +107,7 @@ import { makeState, v, when, repeat, bind } from "@woofjs/client";
 
 // Component is called with `self` as this, so you can do this?
 function Component($attrs) {
-  const { $route, $params } = this.getService("@router");
+  const { $route, $params } = this.service("router");
 
   const someValue = $attrs.get("someValue");
   const $inputValue = makeState("");

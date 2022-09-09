@@ -1,56 +1,57 @@
-import { isObject, isFunction, isService } from "../helpers/typeChecking.js";
+import { isFunction } from "../helpers/typeChecking.js";
 import { makeDebug } from "../makeDebug.js";
-import { makeService } from "../makeService.js";
+import { initService } from "../helpers/initService.js";
 
-import MockHTTPService from "./mocks/MockHTTPService.js";
-import MockPageService from "./mocks/MockPageService.js";
-import MockRouterService from "./mocks/MockRouterService.js";
+import { MockHTTPService } from "./mocks/MockHTTPService.js";
+import { MockPageService } from "./mocks/MockPageService.js";
+import { MockRouterService } from "./mocks/MockRouterService.js";
 
 /**
  * Creates a service in a mock container for testing purposes.
  */
-export function wrapService(service, configFn) {
-  if (isFunction(service)) {
-    service = makeService(service);
-  }
-
-  if (!isService(service)) {
-    throw new Error(`Expected a service or service function as the first argument.`);
+export function wrapService(serviceFn, configFn) {
+  if (!isFunction(serviceFn)) {
+    throw new Error(`Expected a service function as the first argument.`);
   }
 
   const appContext = {
-    services: {
-      router: MockRouterService,
-      page: MockPageService,
-      http: MockHTTPService,
-    },
+    services: {},
     options: {},
     debug: makeDebug({ filter: "*,-woof:*" }),
   };
 
-  const configContext = {
+  const onBeforeConnect = [];
+  const onAfterConnect = [];
+
+  const ctx = {
     service(name, service) {
-      if (isObject(service) && !isService(service)) {
-        service = () => service;
+      if (!isFunction(service)) {
+        throw new Error(`Expected a service function for '${name}'`);
       }
 
-      if (isFunction(service)) {
-        service = makeService(service);
-      }
+      const svc = initService(service, { appContext, name });
+      appContext.services[name] = svc.exports;
 
-      if (!isService(service)) {
-        throw new Error(`Expected a service, service function or plain object for service '${name}'`);
-      }
+      onBeforeConnect.push(svc.beforeConnect);
+      onAfterConnect.push(svc.afterConnect);
 
-      appContext.services[name] = service.init({ appContext, name });
+      return ctx;
     },
   };
 
-  configFn(configContext);
+  ctx.service("router", MockRouterService);
+  ctx.service("page", MockPageService);
+  ctx.service("http", MockHTTPService);
 
-  return {
-    exports: service.init({ appContext, name: "wrapped" }),
-    beforeConnect: service.beforeConnect,
-    afterConnect: service.afterConnect,
-  };
+  for (const callback of onBeforeConnect) {
+    callback();
+  }
+
+  configFn.call(ctx);
+
+  for (const callback of onAfterConnect) {
+    callback();
+  }
+
+  return initService(serviceFn, { appContext, name: "wrapped" });
 }

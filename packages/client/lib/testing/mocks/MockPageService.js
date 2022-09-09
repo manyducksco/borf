@@ -1,10 +1,9 @@
-import { makeComponent } from "../../makeComponent.js";
 import { makeState } from "../../state/makeState.js";
 
-export default makeComponent(function mockPageService() {
+export function MockPageService() {
   const $title = makeState("Test");
 
   return {
     $title,
   };
-});
+}

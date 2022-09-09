@@ -1,20 +1,21 @@
 import { makeDebug } from "../makeDebug.js";
 import { makeMockFetch } from "./makeMockFetch.js";
-import http from "../services/http.js";
+import { HTTPService } from "../services/http.js";
+import { initService } from "../helpers/initService.js";
 
 /**
  * @example
  * import { makeMockHTTP, wrapComponent } from "@woofjs/client/testing";
  *
  * // Create a mock HTTP instance
- * const http = makeMockHTTP((self) => {
- *   self.get("/example/route", (ctx) => {
+ * const http = makeMockHTTP(function () {
+ *   this.get("/example/route", (ctx) => {
  *     return {
  *       message: "success"
  *     };
  *   });
  *
- *   self.post("/users/:id", (ctx) => {
+ *   this.post("/users/:id", (ctx) => {
  *     ctx.response.status = 200;
  *
  *     return {
@@ -23,10 +24,8 @@ import http from "../services/http.js";
  *   });
  * });
  *
- * const createComponent = wrapComponent(TestComponent, {
- *   services: {
- *     http
- *   }
+ * const createComponent = wrapComponent(TestComponent, function () {
+ *   this.service("http", http);
  * });
  */
 export function makeMockHTTP(fn) {
@@ -43,6 +42,6 @@ export function makeMockHTTP(fn) {
       debug: makeDebug({ filter: "-woof:*" }),
     };
 
-    return http.init({ appContext, name: "http" });
+    return initService(HTTPService, { appContext, name: "http" }).exports;
   };
 }

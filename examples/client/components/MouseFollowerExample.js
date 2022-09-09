@@ -6,7 +6,7 @@ export function MouseFollowerExample() {
 
   logLifecycle(this);
 
-  const { $position } = this.getService("mouse");
+  const { $position } = this.service("mouse");
   const bestColor = "#ff0088";
 
   const $isEnabled = makeState(false);

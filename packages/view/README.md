@@ -38,7 +38,7 @@ export function MyHeader($attrs, self) {
 
   self.beforeConnect(() => {
     self
-      .getService("@http")
+      .service("@http")
       .get("/users/me")
       .then((res) => {
         $name.set(res.body.name);

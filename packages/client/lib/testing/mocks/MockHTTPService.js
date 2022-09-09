@@ -1,6 +1,4 @@
-import { makeComponent } from "../../makeComponent.js";
-
-export default makeComponent(function mockHttpService() {
+export function MockHTTPService() {
   function explode() {
     throw new Error("Pass a mock 'http' service to use 'http' in a wrapper.");
   }
@@ -15,4 +13,4 @@ export default makeComponent(function mockHttpService() {
     delete: explode,
     head: explode,
   };
-});
+}

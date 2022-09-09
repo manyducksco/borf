@@ -7,9 +7,9 @@
 ```js
 import { wrapService, makeMockHTTP } from "@woofjs/client/testing";
 
-const mockHTTP = makeMockHTTP((on) => {
+const mockHTTP = makeMockHTTP(function () {
   // Define a mock responder for requests matching 'POST /users/create'
-  on.post("/users/create", (ctx) => {
+  this.post("/users/create", (ctx) => {
     ctx.response.status = 200;
 
     return {
@@ -21,14 +21,14 @@ const mockHTTP = makeMockHTTP((on) => {
     };
   });
 
-  on.delete("/users/:id", (ctx) => {
+  this.delete("/users/:id", (ctx) => {
     ctx.response.status = 204;
   });
 });
 
 // A service that makes HTTP calls:
-const UserService = (ctx) => {
-  const http = ctx.getService("http");
+const UserService = function () {
+  const http = this.service("http");
 
   function createUser(name) {
     return http.post("/users/create").body({ name });
@@ -49,10 +49,8 @@ And to test (pictured in Jest):
 
 ```js
 test("API calls return expected response", async () => {
-  const userService = wrapService(UserService, {
-    services: {
-      http: mockHTTP,
-    },
+  const userService = wrapService(UserService, function () {
+    this.service("http", mockHTTP);
   });
 
   // Run lifecycle hooks

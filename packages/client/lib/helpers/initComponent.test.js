@@ -108,11 +108,11 @@ test("connect, disconnect and lifecycle hooks", () => {
   let beforeDisconnect = jest.fn();
   let afterDisconnect = jest.fn();
 
-  function Component(ctx) {
-    ctx.beforeConnect(beforeConnect);
-    ctx.afterConnect(afterConnect);
-    ctx.beforeDisconnect(beforeDisconnect);
-    ctx.afterDisconnect(afterDisconnect);
+  function Component() {
+    this.beforeConnect(beforeConnect);
+    this.afterConnect(afterConnect);
+    this.beforeDisconnect(beforeDisconnect);
+    this.afterDisconnect(afterDisconnect);
 
     return makeDOMNode();
     // return h("p", "This is just a test.");
@@ -174,8 +174,8 @@ test(".node returns the root DOM node", () => {
     return h(DOMComponent);
   }
 
-  function ChildrenComponent(ctx) {
-    return ctx.children;
+  function ChildrenComponent() {
+    return this.children;
   }
 
   const nullResult = initComponent(NullComponent, { appContext });
@@ -192,8 +192,8 @@ test(".node returns the root DOM node", () => {
 test("attributes have correct initial values", () => {
   const initialized = jest.fn();
 
-  function Component(ctx) {
-    const attrs = ctx.$attrs.get();
+  function Component() {
+    const attrs = this.$attrs.get();
 
     expect(isState(attrs.$stateAsState)).toBe(true);
     expect(attrs.$stateAsState.get()).toBe(5);
@@ -204,7 +204,7 @@ test("attributes have correct initial values", () => {
     expect(attrs.normalAttr).toStrictEqual({ cool: "yeah" });
 
     expect(() => {
-      ctx.$attrs.set({ nope: "you can't do this." });
+      this.$attrs.set({ nope: "you can't do this." });
     }).toThrow();
 
     // Call mock function to prove this ran.
@@ -230,8 +230,8 @@ test("attributes have correct initial values", () => {
 });
 
 test("two-way state attributes can be changed from inside the component", () => {
-  function Component(ctx) {
-    const { $twoWay } = ctx.$attrs.get();
+  function Component() {
+    const { $twoWay } = this.$attrs.get();
 
     $twoWay.set(2);
 
@@ -249,12 +249,12 @@ test("state attributes mapped in the component update when the state changes whi
   const twoWayChanged = jest.fn();
   const oneWayChanged = jest.fn();
 
-  function Component(ctx) {
-    const $twoWay = ctx.$attrs.get((a) => a.$twoWay);
-    const $oneWay = ctx.$attrs.map((a) => a.oneWay);
+  function Component() {
+    const $twoWay = this.$attrs.get((a) => a.$twoWay);
+    const $oneWay = this.$attrs.map((a) => a.oneWay);
 
-    ctx.subscribeTo($twoWay, twoWayChanged);
-    ctx.subscribeTo($oneWay, oneWayChanged);
+    this.subscribeTo($twoWay, twoWayChanged);
+    this.subscribeTo($oneWay, oneWayChanged);
 
     return null;
   }
@@ -317,25 +317,25 @@ test("throws when setting a two way attr that isn't a state", () => {
 test("self.isConnected reflects the current state", () => {
   const hookCalled = jest.fn();
 
-  function Component(ctx) {
-    ctx.beforeConnect(() => {
+  function Component() {
+    this.beforeConnect(() => {
       hookCalled();
-      expect(ctx.isConnected).toBe(false);
+      expect(this.isConnected).toBe(false);
     });
 
-    ctx.afterConnect(() => {
+    this.afterConnect(() => {
       hookCalled();
-      expect(ctx.isConnected).toBe(true);
+      expect(this.isConnected).toBe(true);
     });
 
-    ctx.beforeDisconnect(() => {
+    this.beforeDisconnect(() => {
       hookCalled();
-      expect(ctx.isConnected).toBe(true);
+      expect(this.isConnected).toBe(true);
     });
 
-    ctx.afterDisconnect(() => {
+    this.afterDisconnect(() => {
       hookCalled();
-      expect(ctx.isConnected).toBe(false);
+      expect(this.isConnected).toBe(false);
     });
 
     return null;
@@ -378,8 +378,8 @@ test("routePreload takes element to show() and resolves when done() is called", 
   const loader = h("div", h("h1", "Loading..."));
   const mount = jest.fn();
 
-  function Component(ctx) {
-    ctx.loadRoute(({ show, done }) => {
+  function Component() {
+    this.loadRoute(({ show, done }) => {
       show(loader);
 
       setTimeout(done, 100);
@@ -403,8 +403,8 @@ test("routePreload takes element to show() and resolves when done() is called", 
 test("routePreload show() throws if value isn't an element", async () => {
   const mount = jest.fn();
 
-  function Component(ctx) {
-    ctx.loadRoute(({ show, done }) => {
+  function Component() {
+    this.loadRoute(({ show, done }) => {
       show("potato");
       done();
     });
@@ -430,8 +430,8 @@ test("routePreload show() throws if value isn't an element", async () => {
 test("routePreload finishes with promise resolution if loadRoute returns one", async () => {
   const mount = jest.fn();
 
-  function Component(ctx) {
-    ctx.loadRoute(() => {
+  function Component() {
+    this.loadRoute(() => {
       return new Promise((resolve) => {
         setTimeout(resolve, 100);
       });

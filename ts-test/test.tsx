@@ -1,6 +1,10 @@
-import type { Component, ServiceContext } from "@woofjs/client";
-
-import { makeApp, makeState, mergeStates } from "@woofjs/client";
+import {
+  makeApp,
+  makeState,
+  mergeStates,
+  Component,
+  ServiceContext,
+} from "@woofjs/client";
 
 const $label = makeState("asdf");
 const $label2 = makeState(12345);
@@ -13,7 +17,7 @@ const $message = mergeStates($label, $label2)
   });
 
 const ExampleService = function (this: ServiceContext<Services>) {
-  const router = this.getService("router");
+  const router = this.service("router");
 
   return {
     /**
@@ -44,8 +48,8 @@ app.service("users", UserService);
 app.service("fn", () => ({ isFunction: true }));
 
 const Example1: Component<Services> = function () {
-  const http = this.getService("http");
-  const example = this.getService("example");
+  const http = this.service("http");
+  const example = this.service("example");
 
   return (
     <div class="class">

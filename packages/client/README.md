@@ -46,7 +46,7 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 ```js
 app.route("users/:id", function () {
   // Get route params from router.
-  const { $params } = this.getService("router");
+  const { $params } = this.service("router");
 
   // Get the live value of :id with '.map()'.
   const $id = $params.map((p) => p.id);
@@ -134,7 +134,7 @@ Component functions have their component context bound to `this`.
 ```js
 function Example() {
   // Access services by the name they were registered under.
-  const service = this.getService("name");
+  const service = this.service("name");
 
   // Print debug messages
   this.debug.name = "component:Example"; // Prefix messages in the console to make tracing easier at a glance.
@@ -462,7 +462,7 @@ Services are also a central feature of [Angular](https://angular.io/guide/archit
 
 Services are a great way to share state and logic between multiple components. Usually, parent components can pass state down to children in the form of attributes. Sometimes you have components in different heirarchies that don't easily support this, such as when you need to access the same data from different pages.
 
-Services are singletons, meaning only one copy of the service exists per app, and all `.getService(name)` calls get the same instance of `name`.
+Services are singletons, meaning only one copy of the service exists per app, and all `.service(name)` calls get the same instance of `name`.
 
 The following example shows a counter with one page to display the number and another to modify it. Both routes share data through a `counter` service.
 
@@ -496,14 +496,14 @@ app.route("/counter", function () {
 
 // The view route displays the count but doesn't let the user change it.
 app.route("/counter/view", function () {
-  const { $current } = this.getService("counter");
+  const { $current } = this.service("counter");
 
   return <h1>The Count is Now {$current}</h1>;
 });
 
 // The controls route lets the user change the count but doesn't display it.
 app.route("/counter/controls", function () {
-  const { increment, decrement } = this.getService("counter");
+  const { increment, decrement } = this.service("counter");
 
   return (
     <div>
@@ -520,7 +520,7 @@ app.route("/counter/controls", function () {
 app.service("example", function () {
   // Access other services by the name they were registered under.
   // The service being accessed must have been registered before this one or the app will throw an error.
-  const service = this.getService("name");
+  const service = this.service("name");
 
   // Print debug messages
   this.debug.name = "service:example"; // Prefix messages in the console to make tracing easier at a glance.

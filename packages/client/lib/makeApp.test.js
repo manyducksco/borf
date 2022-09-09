@@ -25,7 +25,7 @@ test("lifecycle methods", async () => {
 
 test("throws helpful error when accessing services that haven't been created yet from other services", () => {
   const one = function () {
-    const two = this.getService("two");
+    const two = this.service("two");
 
     return {
       value: 1,
@@ -64,7 +64,7 @@ test("error doesn't occur if accessing outside of the main function scope", asyn
 
       // Two is accessible because this function is not called until after it is initialized.
       get total() {
-        return ctx.getService("two").value + this.value;
+        return ctx.service("two").value + this.value;
       },
     };
   };
@@ -87,7 +87,7 @@ test("error doesn't occur if accessing outside of the main function scope", asyn
   app.service("two", two);
 
   app.route("*", function () {
-    expect(this.getService("one").total).toBe(3);
+    expect(this.service("one").total).toBe(3);
 
     return null;
   });

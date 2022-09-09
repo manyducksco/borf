@@ -9,7 +9,7 @@ import { $$appContext, $$elementContext } from "../keys.js";
  * @param componentFn - The component function.
  * @param config - Config object
  *
- * @param config.appContext - App resources such as getService()
+ * @param config.appContext - App-level resources and config
  * @param config.attrs - Attributes passed to the function.
  * @param config.children - Children passed to the function.
  * @param config.elementContext - Context information for the creation of elements.
@@ -105,7 +105,7 @@ export function initComponent(componentFn, config) {
      *
      * TODO: Register on appContext which components and services are using which services.
      */
-    getService(name) {
+    service(name) {
       if (!isString(name)) {
         throw new TypeError(`Expected a service name or array of service names.`);
       }
