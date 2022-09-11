@@ -8,13 +8,13 @@ import {
   isObservable,
 } from "./helpers/typeChecking.js";
 import { flatten } from "./helpers/flatten.js";
-import { initComponent } from "./helpers/initComponent.js";
+import { initView } from "./helpers/initView.js";
 
-import { Text } from "./components/Text.js";
-import { Watch } from "./components/Watch.js";
-import { Repeat } from "./components/Repeat.js";
-import { Element } from "./components/Element.js";
-import { Fragment } from "./components/Fragment.js";
+import { Text } from "./views/Text.js";
+import { Watch } from "./views/Watch.js";
+import { Repeat } from "./views/Repeat.js";
+import { Element } from "./views/Element.js";
+import { Fragment } from "./views/Fragment.js";
 
 /**
  * Template function. Used in components to render content.
@@ -67,7 +67,7 @@ export class Template {
         if (isTemplate(child)) {
           child = child.init({ appContext, elementContext });
         } else if (isString(child) || isNumber(child) || isObservable(child)) {
-          child = initComponent(Text, {
+          child = initView(Text, {
             attrs: {
               value: child,
             },
@@ -82,13 +82,13 @@ export class Template {
         return child;
       });
 
-    let { element, attrs } = this;
+    const { element, attrs } = this;
 
     if (isString(element)) {
       if (element === "" || element === "<>") {
-        return initComponent(Fragment, { children, appContext, elementContext });
+        return initView(Fragment, { children, appContext, elementContext });
       } else {
-        return initComponent(Element, {
+        return initView(Element, {
           attrs: {
             tagname: element,
             attrs,
@@ -99,7 +99,7 @@ export class Template {
         });
       }
     } else if (isFunction(element)) {
-      return initComponent(element, { attrs, children, appContext, elementContext });
+      return initView(element, { attrs, children, appContext, elementContext });
     } else {
       console.error("Element", element);
       throw new TypeError(`Expected a tagname or component function. Got ${typeof element}`);

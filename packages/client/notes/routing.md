@@ -100,54 +100,54 @@ The code above defines these routes:
 - `/example/*` -> ExampleLayout > PageNotFound
 - `/*` -> (redirect to `/example/users`)
 
-All routes are defined at the top level of the app. This way one global $route state could be provided by the @router service. Only one route can match at a time, and routes are always defined in only one place.
+All routes are defined at the top level of the app. This way one global \$route state could be provided by the @router service. Only one route can match at a time, and routes are always defined in only one place.
 
 ```js
-import { makeState, v, when, repeat, bind } from "@woofjs/client";
+import { makeState, v, when, repeat, bind } from '@woofjs/client'
 
 // Component is called with `self` as this, so you can do this?
-function Component($attrs) {
-  const { $route, $params } = this.service("router");
+function Component ($attrs) {
+  const { $route, $params } = this.service('router')
 
-  const someValue = $attrs.get("someValue");
-  const $inputValue = makeState("");
+  const someValue = $attrs.get('someValue')
+  const $inputValue = makeState('')
 
   this.beforeConnect(() => {
     // Do callback.
-  });
+  })
 
-  v("input", { type: "text", value: bind($inputValue) });
+  v('input', { type: 'text', value: bind($inputValue) })
 
-  <input type="text" value={bind($inputValue)} />;
+  ;<input type='text' value={bind($inputValue)} />
 
-  return when($condition, v("h1", "Yo!"));
+  return when($condition, v('h1', 'Yo!'))
 
-  return v("div", [
-    repeat($items, function Item($attrs) {
-      return v("h1", $attrs.map("value"));
-    }),
-  ]);
+  return v('div', [
+    repeat($items, function Item ($attrs) {
+      return v('h1', $attrs.map('value'))
+    })
+  ])
 }
 
 // The whole app is rendered as children of an AppLayout
-app.route("*", AppLayout, function () {
-  this.route("/users", UsersList); // Display UsersList at '/users'
-  this.route("/users/:id", UserDetails); // Display UserDetails at '/users/:id/
-  this.route("/users/:id/edit", UserEdit); // Display UserEdit at '/users/:id/edit'
+app.route('*', AppLayout, function () {
+  this.route('/users', UsersList) // Display UsersList at '/users'
+  this.route('/users/:id', UserDetails) // Display UserDetails at '/users/:id/
+  this.route('/users/:id/edit', UserEdit) // Display UserEdit at '/users/:id/edit'
 
-  this.route("/nested", NestedLayout, function () {
-    this.route("/route", NestedRoute);
-  });
+  this.route('/nested', NestedLayout, function () {
+    this.route('/route', NestedRoute)
+  })
 
   // Redirect to '/users' if no other sibling routes match
-  this.redirect("*", "/users");
-});
+  this.redirect('*', '/users')
+})
 
 // This would generate the following routes object:
 const routes = [
   // These routes are handled by the app's top level Outlet
   {
-    path: "*",
+    path: '*',
     component: AppLayout,
     // These routes are handled by an Outlet that is the child of AppLayout
     // <AppLayout>
@@ -156,44 +156,44 @@ const routes = [
     // The question is how to get the outlets to respond to changes at the top level.
     routes: [
       {
-        path: "/users",
-        component: UsersList,
+        path: '/users',
+        component: UsersList
       },
       {
-        path: "/users/:id",
-        component: UserDetails,
+        path: '/users/:id',
+        component: UserDetails
       },
       {
-        path: "/users/:id/edit",
-        component: UserEdit,
+        path: '/users/:id/edit',
+        component: UserEdit
       },
       {
-        path: "/nested",
+        path: '/nested',
         component: NestedLayout,
         routes: [
           {
-            path: "/route",
-            component: NestedRoute,
-          },
-        ],
+            path: '/route',
+            component: NestedRoute
+          }
+        ]
       },
       {
-        path: "*",
-        redirect: "/users",
-      },
-    ],
-  },
-];
+        path: '*',
+        redirect: '/users'
+      }
+    ]
+  }
+]
 ```
 
 ```ts
 // Each object in the array has this schema:
 type Route = {
-  path: string;
-  component: Function | Object;
-  routes?: Route[];
-  redirect?: string;
-};
+  path: string
+  component: Function | Object
+  routes?: Route[]
+  redirect?: string
+}
 ```
 
 The Outlet component takes an array of these route objects and renders them, creating a new Outlet for each `children` array.
@@ -204,40 +204,40 @@ The Outlet component takes an array of these route objects and renders them, cre
 Then components can access the current route info and navigation on the `@router` service.
 
 ```js
-function ExampleComponent($attrs, self) {
-  const { $route, $path, $params, $query, navigate, back, forward } = self.getService("@router");
+function ExampleComponent ($attrs, self) {
+  const { $route, $path, $params, $query, navigate, back, forward } = self.getService('@router')
 
   // Route path with param placeholders (like '/users/:userId/edit')
-  $route.get();
+  $route.get()
 
   // Full path as it appears in the URL (like '/users/12/edit')
-  $path.get();
+  $path.get()
 
   // Work with URL params
-  $params.get("userId"); // Access URL params by :name
-  $params.get("wildcard"); // Access matched content for '/*' fragment of route
+  $params.get('userId') // Access URL params by :name
+  $params.get('wildcard') // Access matched content for '/*' fragment of route
 
   // Set params to change URL? Alternative way to redirect.
-  $params.set((params) => {
-    params.userId = 12;
-  });
+  $params.set(params => {
+    params.userId = 12
+  })
 
   // Update query params in URL: ?selected=some-tab&r=/users/5
-  $query.set((query) => {
-    query.selected = "some-tab";
-    query.r = "/users/5";
-  });
+  $query.set(query => {
+    query.selected = 'some-tab'
+    query.r = '/users/5'
+  })
 
   // TODO: Support this syntax if state's value is an object?
-  $query.set("selected", "some-tab");
+  $query.set('selected', 'some-tab')
 
   // Back and forward, just like clicking the buttons
-  back();
-  forward();
+  back()
+  forward()
 
   // Navigate to another URL:
-  navigate("/some/path");
-  navigate($path.get(), "../edit"); // Supports multiple fragments with relative paths
+  navigate('/some/path')
+  navigate($path.get(), '../edit') // Supports multiple fragments with relative paths
 }
 ```
 
@@ -246,18 +246,18 @@ function ExampleComponent($attrs, self) {
 The `v` function is used in components to render DOM elements and other components. Once the component function has been called to set up the component, the views need to be given the getService() function so their components can access it. How does this happen?
 
 ```js
-function Component() {
-  return v("div", [
-    repeat($items, function Item($attrs) {
-      return v("h1", $attrs.map("value"));
-    }),
-  ]);
+function Component () {
+  return v('div', [
+    repeat($items, function Item ($attrs) {
+      return v('h1', $attrs.map('value'))
+    })
+  ])
 }
 
-const view = Component();
+const view = Component()
 
 // Init the returned view, which will in turn init each child view.
-view.init({ getService });
+view.init({ getService })
 ```
 
 A component is a function that returns `null`, a DOM node, or a view. If it's a view, the view is initialized immediately after the component function is called. Views, when initialized, initialize their children.

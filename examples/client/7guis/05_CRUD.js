@@ -1,36 +1,36 @@
-import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
+import { repeat } from "@woofjs/client";
 
 export default function CRUD() {
-  this.debug.name = "7GUIs:CRUD";
+  this.name = "7GUIs:CRUD";
+  this.defaultState = {
+    people: [
+      {
+        id: 1,
+        name: "Hans",
+        surname: "Emil",
+      },
+      {
+        id: 2,
+        name: "Max",
+        surname: "Mustermann",
+      },
+      {
+        id: 3,
+        name: "Roman",
+        surname: "Tisch",
+      },
+    ],
+    nextId: 4,
+    selectedId: 1,
 
-  const $people = makeState([
-    {
-      id: 1,
-      name: "Hans",
-      surname: "Emil",
-    },
-    {
-      id: 2,
-      name: "Max",
-      surname: "Mustermann",
-    },
-    {
-      id: 3,
-      name: "Roman",
-      surname: "Tisch",
-    },
-  ]);
-  const $nextId = makeState(4);
-  const $selectedId = makeState(1);
+    nameInput: "",
+    surnameInput: "",
 
-  const $nameInput = makeState("");
-  const $surnameInput = makeState("");
+    filterPrefix: "",
+  };
 
-  const $filterPrefix = makeState("");
-
-  // TODO: Concert to State.merge
-  const $filteredPeople = mergeStates($people, $filterPrefix).into(
-    (people, prefix) => {
+  const $filteredPeople = this.concat("people", "filterPrefix").to(
+    ([people, prefix]) => {
       if (prefix.trim() === "") {
         return people;
       }
@@ -41,46 +41,67 @@ export default function CRUD() {
     }
   );
 
+  // const $filteredPeople2 = this.merge(
+  //   "people",
+  //   "filterPrefix",
+  //   (people, prefix) => {
+  //     if (prefix.trim() === "") {
+  //       return people;
+  //     }
+
+  //     return people.filter((person) =>
+  //       person.surname.toLowerCase().startsWith(prefix.toLowerCase())
+  //     );
+  //   }
+  // );
+
   // Creates a new person from the current input values.
   const create = () => {
-    $people.set((current) => {
-      // Get next ID and increment by 1.
-      const id = $nextId.get();
-      $nextId.set((current) => current + 1);
+    const id = this.get("nextId");
+    const nameInput = this.get("nameInput");
+    const surnameInput = this.get("surnameInput");
 
-      // Add the new person.
+    this.set("people", (current) => {
       current.push({
         id,
-        name: $nameInput.get(),
-        surname: $surnameInput.get(),
+        name: nameInput,
+        surname: surnameInput,
       });
     });
+
+    this.set("nextId", (current) => current + 1);
   };
 
   // Sets the selected person's name to the current input values.
   const update = () => {
-    $people.set((current) => {
-      const person = current.find((p) => p.id === $selectedId.get());
+    const selectedId = this.get("selectedId");
+    const nameInput = this.get("nameInput");
+    const surnameInput = this.get("surnameInput");
 
-      person.name = $nameInput.get();
-      person.surname = $surnameInput.get();
+    this.set("people", (current) => {
+      const person = current.find((p) => p.id === selectedId);
+
+      person.name = nameInput;
+      person.surname = surnameInput;
     });
   };
 
   // Deletes the selected person.
   const del = () => {
-    $people.set((current) => {
-      return current.filter((p) => p.id !== $selectedId.get());
+    const selectedId = this.get("selectedId");
+
+    this.set("people", (current) => {
+      return current.filter((p) => p.id !== selectedId);
     });
   };
 
   // Update fields when selection changes.
-  ctx.subscribeTo($selectedId, (id) => {
-    const person = $people.get().find((p) => p.id === id);
+  this.observe("selectedId", (id) => {
+    const person = this.get("people").find((p) => p.id === id);
 
     if (person) {
-      $nameInput.set(person.name);
-      $surnameInput.set(person.surname);
+      this.set("nameInput", person.name);
+      this.set("surnameInput", person.surname);
     }
   });
 
@@ -92,30 +113,30 @@ export default function CRUD() {
 
       <div>
         <div>
-          Filter prefix: <input value={bind($filterPrefix)} />
+          Filter prefix: <input value={this.readWrite("filterPrefix")} />
         </div>
         <div>
           <select
-            size={$filteredPeople.map((fp) => Math.max(fp.length, 2))}
-            value={$selectedId}
+            size={$filteredPeople.to((fp) => Math.max(fp.length, 2))}
+            value={this.read("selectedId")}
             onchange={(e) => {
-              $selectedId.set(Number(e.target.value));
+              this.set("selectedId", Number(e.target.value));
             }}
           >
             {repeat($filteredPeople, function FilterOption() {
-              const $person = this.$attrs.map((a) => a.value);
+              const $person = this.read("value");
 
               return (
-                <option value={$person.map((p) => p.id)}>
-                  {$person.map((p) => p.surname)}, {$person.map((p) => p.name)}
+                <option value={$person.to((p) => p.id)}>
+                  {$person.to((p) => p.surname)}, {$person.to((p) => p.name)}
                 </option>
               );
             })}
           </select>
         </div>
         <div>
-          <input type="text" value={bind($nameInput)} />
-          <input type="text" value={bind($surnameInput)} />
+          <input type="text" value={this.readWrite("nameInput")} />
+          <input type="text" value={this.readWrite("surnameInput")} />
         </div>
         <div>
           <button onclick={create}>Create</button>

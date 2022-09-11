@@ -1,9 +1,10 @@
-import { makeState } from "@woofjs/client";
-
 export default function Counter() {
-  this.debug.name = "7GUIs:Counter";
+  this.name = "7guis:Counter";
+  this.defaultState = {
+    count: 0,
+  };
 
-  const $count = makeState(0);
+  const $count = this.read("count");
 
   return (
     <div class="example">
@@ -15,7 +16,7 @@ export default function Counter() {
         <input type="text" value={$count} disabled />
         <button
           onclick={() => {
-            $count.set((n) => n + 1);
+            this.set("count", (n) => n + 1);
           }}
         >
           Increment

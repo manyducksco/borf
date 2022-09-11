@@ -1,10 +1,9 @@
-import { bind, makeState } from "@woofjs/client";
-
 export default function Timer() {
-  this.debug.name = "7GUIs:Timer";
-
-  const $duration = makeState(10); // duration in seconds
-  const $elapsed = makeState(0); // elapsed time in seconds
+  this.name = "7guis:Timer";
+  this.defaultState = {
+    duration: 10, // duration in seconds
+    elapsed: 0, // elapsed time in seconds
+  };
 
   let lastTick = null;
 
@@ -12,13 +11,16 @@ export default function Timer() {
     if (this.isConnected) {
       const now = Date.now();
 
+      const elapsed = this.get("elapsed");
+      const duration = this.get("duration");
+
       // Only update if $elapsed hasn't yet reached $duration
-      if ($elapsed.get() < $duration.get()) {
+      if (elapsed < duration) {
         const difference = (now - lastTick) / 1000;
 
-        $elapsed.set((current) =>
-          Math.min(current + difference, $duration.get())
-        );
+        this.set("elapsed", (current) => {
+          return Math.min(current + difference, duration);
+        });
       }
 
       lastTick = now;
@@ -40,9 +42,10 @@ export default function Timer() {
 
       <div>
         <div>
-          Elapsed Time: <progress max={$duration} value={$elapsed} />
+          Elapsed Time:{" "}
+          <progress max={this.read("duration")} value={this.read("elapsed")} />
         </div>
-        <div>{$elapsed.map((seconds) => seconds.toFixed(1))}</div>
+        <div>{this.read("elapsed").to((seconds) => seconds.toFixed(1))}</div>
         <div>
           Duration:{" "}
           <input
@@ -50,13 +53,13 @@ export default function Timer() {
             min={0}
             max={30}
             step={0.1}
-            value={bind($duration)}
+            value={this.readWrite("duration")}
           />
         </div>
         <div>
           <button
             onclick={() => {
-              $elapsed.set(0);
+              this.set("elapsed", 0);
             }}
           >
             Reset

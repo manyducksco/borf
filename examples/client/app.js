@@ -1,22 +1,20 @@
 import "./styles/demo.css";
 
-import { makeApp, makeState } from "@woofjs/client";
+import { woof } from "@woofjs/client";
 
-import { CounterService } from "./services/CounterService.js";
-import { MouseService } from "./services/MouseService.js";
+import counter from "./globals/counter.js";
+import mouse from "./globals/mouse.js";
 
-import { prop } from "ramda";
-
-import { AppLayout } from "./components/AppLayout";
-import { ComponentAttrsExample } from "./components/ComponentAttrsExample.js";
-import { ToggleExample } from "./components/ToggleExample.js";
-import { CounterExample } from "./components/CounterExample.js";
-import { ConditionalExample } from "./components/ConditionalExample.js";
-import { DynamicListExample } from "./components/DynamicListExample.js";
-import { TwoWayBindExample } from "./components/TwoWayBindExample.js";
-import { FormExample } from "./components/FormExample.js";
-import { MouseFollowerExample } from "./components/MouseFollowerExample.js";
-import { HTTPRequestExample } from "./components/HTTPRequestExample.js";
+import { AppLayout } from "./views/AppLayout";
+import { ComponentAttrsExample } from "./views/ComponentAttrsExample.js";
+import { ToggleExample } from "./views/ToggleExample.js";
+import { CounterExample } from "./views/CounterExample.js";
+import { ConditionalExample } from "./views/ConditionalExample.js";
+import { DynamicListExample } from "./views/DynamicListExample.js";
+import { TwoWayBindExample } from "./views/TwoWayBindExample.js";
+import { FormExample } from "./views/FormExample.js";
+import { MouseFollowerExample } from "./views/MouseFollowerExample.js";
+import { HTTPRequestExample } from "./views/HTTPRequestExample.js";
 
 import SevenGUIs from "./7guis";
 import Counter from "./7guis/01_Counter";
@@ -37,47 +35,7 @@ import Cells from "./7guis/07_Cells";
 //   console.log("message:", event.data);
 // });
 
-/**
- * Component for testing transitionOut hook.
- */
-const TransitionPage = function () {
-  this.debug.name = "TransitionPage";
-
-  const $ref = makeState();
-  const $classes = makeState({
-    transitionPage: true,
-  });
-
-  this.afterConnect(() => {
-    $classes.set((classes) => {
-      classes.enter = true;
-      classes.exit = false;
-    });
-  });
-
-  this.transitionOut(() => {
-    this.debug.log("transitionOut");
-
-    $classes.set((classes) => {
-      classes.enter = false;
-      classes.exit = true;
-    });
-
-    return new Promise((resolve) => {
-      $ref.get().addEventListener("transitionend", () => {
-        resolve();
-      });
-    });
-  });
-
-  return (
-    <div $ref={$ref} class={$classes}>
-      {this.$attrs.map(prop("label"))}
-    </div>
-  );
-};
-
-export const app = makeApp({
+export const app = woof({
   debug: {
     filter: "*",
     log: true,
@@ -89,10 +47,10 @@ export const app = makeApp({
   },
 });
 
-app.service("counter", CounterService);
-app.service("mouse", MouseService);
+app.global("counter", counter);
+app.global("mouse", mouse);
 
-app.route("*", AppLayout, function childRoutes() {
+app.route("*", AppLayout, function () {
   this.route("/examples", () => {
     return (
       <div>
@@ -109,35 +67,7 @@ app.route("*", AppLayout, function childRoutes() {
     );
   });
 
-  this.route(
-    "/transitions",
-    function Transitions() {
-      return (
-        <div>
-          <ul>
-            <li>
-              <a href="/transitions/one">One</a>
-            </li>
-            <li>
-              <a href="/transitions/two">Two</a>
-            </li>
-            <li>
-              <a href="/transitions/three">Three</a>
-            </li>
-          </ul>
-          <div>{this.children}</div>
-        </div>
-      );
-    },
-    function childRoutes() {
-      this.route("/one", <TransitionPage label="One" />);
-      this.route("/two", <TransitionPage label="Two" />);
-      this.route("/three", <TransitionPage label="Three" />);
-      this.redirect("*", "./one");
-    }
-  );
-
-  this.route("/7guis", SevenGUIs, function childRoutes() {
+  this.route("/7guis", SevenGUIs, function () {
     this.route("/counter", Counter);
     this.route("/temp-converter", TempConverter);
     this.route("/flight-booker", FlightBooker);
@@ -165,11 +95,11 @@ app.route("*", AppLayout, function childRoutes() {
         <div>
           <h1>Nested Routes!</h1>
 
-          {this.children}
+          {this.outlet()}
         </div>
       );
     },
-    function () {
+    function subroutes() {
       this.route("/one", function () {
         <h1>NESTED #1</h1>;
       });

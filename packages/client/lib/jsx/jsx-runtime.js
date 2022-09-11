@@ -1,7 +1,7 @@
 import { omit } from "../helpers/omit.js";
 import { Template } from "../h.js";
 
-export { Fragment } from "../components/Fragment.js";
+export { Fragment } from "../views/Fragment.js";
 
 /**
  * JSX function for elements with dynamic children.

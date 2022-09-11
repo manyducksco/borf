@@ -1,13 +1,15 @@
-declare module "@woofjs/client" {
-  import type { Concat } from "typescript-tuple";
-  import type { History } from "history";
+declare module '@woofjs/client' {
+  import { Concat } from 'typescript-tuple'
+  import { History } from 'history'
 
   /**
    * Creates a new woof app.
    *
    * @param options - Configuration options.
    */
-  export function makeApp<ServicesType = any>(options?: AppOptions): App<ServicesType>;
+  export function woof<Globals = any> (options?: AppOptions): App<Globals>
+
+  export default woof
 
   /*==================================*\
   ||               App                ||
@@ -24,23 +26,23 @@ declare module "@woofjs/client" {
        *
        * @example "service:*,-service:test" // matches everything starting with "service" except "service:test"
        */
-      filter?: string | RegExp;
+      filter?: string | RegExp
 
       /**
        * Print log messages when true. Default: true for development builds, false for production builds.
        */
-      log?: boolean;
+      log?: boolean
 
       /**
        * Print warn messages when true. Default: true for development builds, false for production builds.
        */
-      warn?: boolean;
+      warn?: boolean
 
       /**
        * Print error messages when true. Default: true.
        */
-      error?: boolean;
-    };
+      error?: boolean
+    }
 
     /**
      * Options to configure how routing works.
@@ -49,31 +51,31 @@ declare module "@woofjs/client" {
       /**
        * Use hash-based routing if true.
        */
-      hash?: boolean;
+      hash?: boolean
 
       /**
        * A history object from the `history` package.
        *
        * @see https://www.npmjs.com/package/history
        */
-      history?: History;
-    };
+      history?: History
+    }
   }
 
   /**
    * An app is the central object of a Woof app. It handles mounting and unmounting of routes
    * based on the current URL and providing services to components rendered under those routes.
    */
-  interface App<ServicesType> {
+  interface App<Globals> {
     /**
      * Registers a service on this app. Services have only one instance created per app.
      * Any component rendered under one of this app's routes, as well as any other services
      * registered on this app will be able to access this new service.
      *
      * @param name - Name the service is accessed by.
-     * @param service - The service. Can be a service from `makeService`, a function or a plain object.
+     * @param fn - The global constructor. Must be a function that returns an object.
      */
-    service<Name extends keyof ServicesType>(name: Name, service: ServicesType[Name]): this;
+    global<Name extends keyof Globals>(name: Name, fn: Globals[Name]): this
 
     /**
      * Registers a new route that will render `component` when `path` matches the current URL.
@@ -85,7 +87,7 @@ declare module "@woofjs/client" {
      * @param defineRoutes - Optional function to define nested routes.
      */
     // TODO: Infer child type by defineRoutes
-    route(path: string, component: Component | Template, defineRoutes?: DefineRoutesFn): this;
+    route(path: string, component: Component | Template, defineRoutes?: DefineRoutesFn): this
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -93,100 +95,382 @@ declare module "@woofjs/client" {
      * @param path - Path to match.
      * @param to - Path to redirect location.
      */
-    redirect(path: string, to: string): this;
+    redirect(path: string, to: string): this
 
     /**
      * Runs a callback function after services are created but before any components have been connected.
      *
      * @param callback - Setup function.
      */
-    beforeConnect(callback: AppLifecycleCallback<ServicesType>): this;
+    beforeConnect(callback: AppLifecycleCallback<Globals>): this
 
     /**
      * Runs a callback function just after the initial route is connected.
      *
      * @param callback - Setup function.
      */
-    afterConnect(callback: AppLifecycleCallback<ServicesType>): this;
+    afterConnect(callback: AppLifecycleCallback<Globals>): this
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
      *
      * @param root - DOM node or a selector string.
      */
-    connect(root: string | Node): Promise<void>;
+    connect(root: string | Node): Promise<void>
   }
 
-  type DebugChannel = {
-    name: string;
-    log(...args: any): void;
-    warn(...args: any): void;
-    error(...args: any): void;
-  };
+  type DebugContext = {
+    name: string
 
-  export type AppContext<ServicesType> = {
     /**
-     * Returns the service registered under `name` or throws an error if the service isn't registered.
+     * Log the arguments to the console.
      */
-    service<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
+    log(...args: any): void
 
-    debug: DebugChannel;
-  };
+    /**
+     * Log the arguments to the console as a warning.
+     */
+    warn(...args: any): void
 
-  export type AppLifecycleCallback<ServicesType> = (this: AppContext<ServicesType>) => void | Promise<void>;
+    /**
+     * Log the arguments to the console as an error.
+     */
+    error(...args: any): void
+  }
 
-  export type DefaultServices = {
-    router: ReturnType<RouterService>;
-    http: ReturnType<HTTPService>;
-    page: ReturnType<PageService>;
-  };
+  export interface AppContext<Globals> extends DebugContext {
+    /**
+     * Returns the global registered under `name` or throws an error if the global isn't registered.
+     */
+    global<K extends keyof AppGlobals<Globals>>(name: K): AppGlobals<Globals>[K]
+  }
 
-  export type Services<T extends Record<string, Service>> = DefaultServices & { [K in keyof T]: ReturnType<T[K]> };
+  export type AppLifecycleCallback<Globals> = (this: AppContext<Globals>) => void | Promise<void>
 
-  export type RouterService = Service<{
-    $route: State<string>;
-    $path: State<string>;
-    $params: State<{ [name: string]: unknown }>;
-    $query: MutableState<{ [name: string]: unknown }>;
+  export type DefaultGlobals = {
+    router: ReturnType<GlobalRouter>
+    http: ReturnType<GlobalHTTP>
+    page: ReturnType<GlobalPage>
+  }
 
-    back: (steps?: number) => void;
-    forward: (steps?: number) => void;
-    navigate: (path: string, options?: { replace?: boolean }) => void;
-  }>;
-
-  export type PageService = Service<{
-    $title: MutableState<string>;
-  }>;
+  export type AppGlobals<T extends Record<string, Global>> = DefaultGlobals & { [K in keyof T]: ReturnType<T[K]> }
 
   /*==================================*\
-  ||            Observable            ||
+  ||             Routing              ||
+  \*==================================*/
+
+  type NestedRouteContext = {
+    route: (path: string, component: Component | Template, defineRoutes?: DefineRoutesFn) => NestedRouteContext
+    redirect: (path: string, to: string) => NestedRouteContext
+  }
+
+  type DefineRoutesFn = (this: NestedRouteContext) => void
+
+  /*==================================*\
+  ||            Templating            ||
+  \*==================================*/
+
+  type Element = Template | ToStringable | Binding<ToStringable>
+  type ElementFn = () => Element
+
+  interface ToStringable {
+    toString(): string
+  }
+
+  type Template = {
+    readonly isTemplate: true
+    init(appContext: AppContext<any>): Component
+  }
+
+  type StateBinding<T> = {
+    readonly isBinding: true
+    $value: TwoWayBinding<T>
+    event: string
+  }
+
+  export function h (element: string | Component, attrs: Object, ...children: Template[]): Template
+  export function h (element: string | Component, ...children: Template[]): Template
+
+  /**
+   * Displays the result of `render` each time `value` changes.
+   */
+  export function watch<T> (value: Observable<T>, render: (value: T) => Element): Template
+
+  /**
+   * Displays `element` when `condition` is truthy.
+   */
+  export function when (condition: Observable<any>, element: Element): Template
+
+  /**
+   * Displays `element` when `condition` is falsy.
+   */
+  export function unless (condition: Observable<any>, element: Element): Template
+
+  /**
+   * Repeats a component for each item in `values`.
+   */
+  export function repeat<T> (
+    values: T[] | Observable<T[]>,
+    component: Component<any, { index: number; value: T }, void>,
+    getKey?: (value: T) => any
+  ): Template
+
+  /*==================================*\
+  ||           State Context          ||
+  \*==================================*/
+
+  /**
+   * State types wrapped in `Private` cannot be passed as attributes.
+   *
+   * @example
+   * type ExampleState = {
+   *   publicString: string;
+   *   privateString: Private<string>;
+   * }
+   */
+  export type Private<Value> = Value
+
+  /**
+   * State types wrapped in `Bindable` may be a plain value or a bound state.
+   *
+   * @example
+   * type ExampleState = {
+   *   plainNumber: number;
+   *   bindableNumber: Bindable<number>;
+   * }
+   */
+  export type Bindable<Value> = Value | ReadBinding<Value> | ReadWriteBinding<Value>
+
+  /**
+   * Unwrap state binding into its plain value.
+   */
+  type Unwrap<Bound> = Bound extends ReadBinding<infer Value>
+    ? Value
+    : Bound extends Bindable<infer Value>
+    ? Value
+    : Bound extends Private<infer Value>
+    ? Value
+    : Bound
+
+  type Unwrapped<State> = {
+    [Key in keyof State]: Unwrap<State[Key]>
+  }
+
+  /**
+   * Context for stateful objects like views and globals.
+   */
+  interface StateContext<State> {
+    defaultState?: State
+
+    get(): State
+    get<Key extends keyof State>(key: Key): State[Key]
+
+    set<Key extends keyof State>(key: Key, value: State[Key]): void
+    set<Key extends keyof State>(key: Key, value: ReadBinding<State[Key]>): void
+    set<Key extends keyof State>(key: Key, callback: (value: State[Key]) => void | State[Key]): void
+    set<Key extends keyof State>(values: { [key: Key]: State[Key] }): void
+
+    // TODO: Type annotations
+    concat<Key extends keyof State>(...observables: Key | Observable<State[Key]>): ReadBinding<any>
+
+    observe<Value>(observer: Observer<Value>): void
+    observe<Value>(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): void
+
+    observe<Key extends keyof State>(key: Key, observer: Observer<State[Key]>): void
+    observe<Key extends keyof State>(
+      key: Key,
+      next?: (value: State[Key]) => void,
+      error?: (err: Error) => void,
+      complete?: () => void
+    ): void
+
+    /**
+     * Subscribes to an observable while this view is connected.
+     *
+     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
+     * @param observer - An observer object with `next`, `error` and `complete` methods.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
+    observe<Value>(observable: Observable<Value>, observer: Observer<Value>): void
+
+    /**
+     * Subscribes to an observable while this view is connected.
+     *
+     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a state binding or an observable from another library like RxJS.
+     * @param next - Callback to receive `next` values from the observable.
+     * @param error - Callback to receive `error` values from the observable.
+     * @param complete - Callback to receive the `complete` signal from the observable.
+     *
+     * @see https://github.com/tc39/proposal-observable
+     */
+    observe<Value>(
+      observable: Observable<Value>,
+      next?: (value: Value) => void,
+      error?: (err: Error) => void,
+      complete?: () => void
+    ): void
+
+    read<Key extends keyof State>(key: Key): ReadBinding<State[Key]>
+    readWrite<Key extends keyof State>(key: Key): ReadWriteBinding<State[Key]>
+  }
+
+  /*==================================*\
+  ||            Observables            ||
   \*==================================*/
 
   interface Observable<T> {
-    subscribe(observer: Observer<T>): Subscription;
-    subscribe(next: (value: T) => void): Subscription;
+    subscribe(observer: Observer<T>): Subscription
+    subscribe(next: (value: T) => void): Subscription
   }
 
   interface Observer<T> {
-    next(value: T): void;
+    next(value: T): void
   }
 
   interface Subscription {
-    unsubscribe(): void;
+    unsubscribe(): void
   }
 
   /*==================================*\
-  ||               HTTP               ||
+  ||             Bindings             ||
   \*==================================*/
 
-  export type HTTPService = Service<{
+  interface ReadBinding<Value> extends Observable<Value> {
+    /**
+     * Returns the current value.
+     */
+    get(): Value
+
+    /**
+     * Returns a new state that takes the return value of `callbackFn` when called with the value of this state.
+     *
+     * @param callbackFn - Function to map the current state's value to the new state's value.
+     */
+    to<NewValue>(callbackFn: (value: Value) => NewValue): ReadBinding<NewValue>
+  }
+
+  interface ReadWriteBinding<Value> extends ReadBinding<Value> {
+    /**
+     * Assigns a new value to the bound state.
+     *
+     * @param value - New value.
+     */
+    set(value: Value | ReadBinding<Value>): void
+
+    /**
+     * Assigns a new value to the bound state through a callback function that takes the current value and returns a new one.
+     */
+    set(callback: (value: Value) => Value): void
+
+    /**
+     * Assigns a new value to the bound state through a callback function that takes the current value and mutates it to the desired value.
+     */
+    set(callback: (value: Value) => void): void
+  }
+
+  /*==================================*\
+  ||               View               ||
+  \*==================================*/
+
+  export type View<State = any, Globals = any, Children = void> = (
+    this: ViewContext<State, Globals, Children>,
+    _props: FakeJSXProps<State> & { children?: Children }
+  ) => Element | null
+
+  type FakeJSXProps<State> = {
+    [Key in keyof State]: State[Key] extends Private<any> ? void : State[Key]
+  }
+
+  export interface ViewContext<State = any, Globals = any, Children = void>
+    extends StateContext<Unwrapped<State>>,
+      DebugContext {
+    /**
+     * True while this view is connected to the DOM.
+     */
+    readonly isConnected: boolean
+
+    /**
+     * Returns the global registered under `name` or throws an error if the global isn't registered.
+     */
+    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name]
+
+    /**
+     * Returns a view that displays children or nested routes.
+     */
+    outlet(): Element
+
+    /**
+     * Registers a callback to run before the component is connected to the DOM.
+     */
+    beforeConnect(callback: () => void): void
+
+    /**
+     * Registers a callback to run after the component is connected to the DOM.
+     */
+    afterConnect(callback: () => void): void
+
+    /**
+     * Registers a callback to run before the component is removed from the DOM.
+     */
+    beforeDisconnect(callback: () => void): void
+
+    /**
+     * Registers a callback to run after the component is removed from the DOM.
+     */
+    afterDisconnect(callback: () => void): void
+  }
+
+  /*==================================*\
+  ||             Service              ||
+  \*==================================*/
+
+  export type Global<E> = (this: GlobalContext<any, any>) => E
+
+  export interface GlobalContext<State, Globals> extends StateContext<Unwrapped<State>>, DebugContext {
+    /**
+     * Returns the global registered under `name` or throws an error if the global isn't registered.
+     */
+    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name]
+
+    /**
+     * Registers a callback to run before the app is connected.
+     */
+    beforeConnect: (callback: () => void) => void
+
+    /**
+     * Registers a callback to run after the app is connected and the first route match has taken place.
+     */
+    afterConnect: (callback: () => void) => void
+  }
+
+  /*==================================*\
+  ||         Built In Globals         ||
+  \*==================================*/
+
+  export type GlobalRouter = Global<{
+    $route: ReadBinding<string>
+    $path: ReadBinding<string>
+    $params: ReadBinding<{ [name: string]: unknown }>
+    $$query: ReadWriteBinding<{ [name: string]: unknown }>
+
+    back: (steps?: number) => void
+    forward: (steps?: number) => void
+    navigate: (path: string, options?: { replace?: boolean }) => void
+  }>
+
+  export type GlobalPage = Global<{
+    $$title: ReadWriteBinding<string>
+  }>
+
+  export type GlobalHTTP = Global<{
     /**
      * Add middleware to the HTTP service for all requests.
      * Middleware can intercept outgoing requests and modify incoming responses.
      *
      * @param middleware - Async middleware function.
      */
-    use(middleware: HTTPMiddleware): this;
+    use(middleware: HTTPMiddleware): this
 
     /**
      * Make an HTTP request to `url` with any `method`.
@@ -194,558 +478,199 @@ declare module "@woofjs/client" {
      * @param method - HTTP method.
      * @param url - Request endpoint.
      */
-    request<T>(method: string, url: string): HTTPRequest<T>;
+    request<T>(method: string, url: string): HTTPRequest<T>
 
     /**
      * Make an HTTP `GET` request to `url`.
      *
      * @param url - Request endpoint.
      */
-    get<T = any>(url: string): HTTPRequest<T>;
+    get<T = any>(url: string): HTTPRequest<T>
 
     /**
      * Make an HTTP `PUT` request to `url`.
      *
      * @param url - Request endpoint.
      */
-    put<T = any>(url: string): HTTPRequest<T>;
+    put<T = any>(url: string): HTTPRequest<T>
 
     /**
      * Make an HTTP `PATCH` request to `url`.
      *
      * @param url - Request endpoint.
      */
-    patch<T = any>(url: string): HTTPRequest<T>;
+    patch<T = any>(url: string): HTTPRequest<T>
 
     /**
      * Make an HTTP `POST` request to `url`.
      *
      * @param url - Request endpoint.
      */
-    post<T = any>(url: string): HTTPRequest<T>;
+    post<T = any>(url: string): HTTPRequest<T>
 
     /**
      * Make an HTTP `DELETE` request to `url`.
      *
      * @param url - Request endpoint.
      */
-    delete<T = any>(url: string): HTTPRequest<T>;
+    delete<T = any>(url: string): HTTPRequest<T>
 
     /**
      * Make an HTTP `HEAD` request to `url`.
      *
      * @param url - Request endpoint.
      */
-    head(url: string): HTTPRequest<void>;
-  }>;
+    head(url: string): HTTPRequest<void>
+  }>
 
   type HTTPRequestContext = {
-    method: string;
-    headers: Headers;
-    body: any;
-  };
+    method: string
+    headers: Headers
+    body: any
+  }
 
-  type HTTPRequestOptions = {};
+  type HTTPRequestOptions = {}
 
   type HTTPResponse<BodyType> = {
-    status: number;
-    statusText: string;
+    status: number
+    statusText: string
     headers: {
-      [name: string]: string;
-    };
-    body: BodyType;
-  };
+      [name: string]: string
+    }
+    body: BodyType
+  }
 
-  type HTTPMiddleware = <T>(req: HTTPRequest<T>, next: () => Promise<void>) => Promise<void>;
+  type HTTPMiddleware = <T>(req: HTTPRequest<T>, next: () => Promise<void>) => Promise<void>
 
   interface HTTPRequest<T> extends Promise<HTTPResponse<T>> {
     /**
      * True if this request is to a URL relative to the current page.
      */
-    readonly isRelative: boolean;
+    readonly isRelative: boolean
 
     /**
      * Gets the current request URL.
      */
-    url(): string;
+    url(): string
 
     /**
      * Sets the request URL.
      */
-    url(value: string): void;
+    url(value: string): void
 
     /**
      * Gets the current header value by name.
      */
-    header(name: string): string | undefined;
+    header(name: string): string | undefined
 
     /**
      * Sets the value of the header with name `name` to `value`.
      * If `value` is null the header is removed.
      */
-    header(name: string, value: ToStringable | null): this;
+    header(name: string, value: ToStringable | null): this
 
     /**
      * Clears the value of the header with name `name`.
      */
-    header(name: string, value: null): this;
+    header(name: string, value: null): this
 
     /**
      * Sets multiple headers at once using an object.
      * Merges values with existing headers.
      */
-    header(headers: { [name: string]: string }): this;
+    header(headers: { [name: string]: string }): this
 
     /**
      * Returns the current value of the header with name `name`.
      */
-    headers(name: string): string | undefined;
+    headers(name: string): string | undefined
 
     /**
      * Sets the value of the header with name `name` to `value`.
      * If `value` is null the header is removed.
      */
-    headers(name: string, value: ToStringable | null): this;
+    headers(name: string, value: ToStringable | null): this
 
     /**
      * Sets multiple headers at once using an object.
      * New values are merged with existing headers.
      */
-    headers(headers: { [name: string]: ToStringable | null }): this;
+    headers(headers: { [name: string]: ToStringable | null }): this
 
     /**
      * Returns the value of the query param with name `name`.
      */
-    query(name: string): string | undefined;
+    query(name: string): string | undefined
 
     /**
      * Sets the value of the query param with name `name` to `value`.
      * If `value` is null the query param is removed.
      */
-    query(name: string, value: ToStringable | null): this;
+    query(name: string, value: ToStringable | null): this
 
     /**
      * Sets multiple query params at once using an object.
      * New values are merged with existing params.
      */
-    query(params: { [name: string]: ToStringable | null }): this;
+    query(params: { [name: string]: ToStringable | null }): this
 
     /**
      * Sets the request body to `value`.
      */
-    body(value: any): this;
+    body(value: any): this
 
     /**
      * Defines a check for whether the response code indicates an error or success.
      * If this function returns false for a status code, it will be thrown as an error.
      */
-    ok(check: (status: number) => boolean): this;
+    ok(check: (status: number) => boolean): this
 
     /**
      * Returns the response object (if there is one).
      */
-    response(): HTTPResponse<T> | undefined;
+    response(): HTTPResponse<T> | undefined
   }
-
-  /*==================================*\
-  ||             Routing              ||
-  \*==================================*/
-
-  type NestedRouteContext = {
-    route: (path: string, component: Component | Template, defineRoutes?: DefineRoutesFn) => NestedRouteContext;
-    redirect: (path: string, to: string) => NestedRouteContext;
-  };
-
-  type DefineRoutesFn = (this: NestedRouteContext) => void;
-
-  /*==================================*\
-  ||            Templating            ||
-  \*==================================*/
-
-  type Element = Template | ToStringable | State<ToStringable>;
-  type ElementFn = () => Element;
-
-  interface ToStringable {
-    toString(): string;
-  }
-
-  type Template = {
-    readonly isTemplate: true;
-    init(appContext: AppContext<any>): Component;
-  };
-
-  type StateBinding<T> = {
-    readonly isBinding: true;
-    $value: MutableState<T>;
-    event: string;
-  };
-
-  export function h(element: string | Component, attrs: Object, ...children: Template[]): Template;
-  export function h(element: string | Component, ...children: Template[]): Template;
-
-  /**
-   * Displays the result of `render` each time `value` changes.
-   */
-  export function watch<T>(value: Observable<T>, render: (value: T) => Element): Template;
-
-  /**
-   * Displays `element` when `condition` is truthy.
-   */
-  export function when(condition: Observable<any>, element: Element): Template;
-
-  /**
-   * Displays `element` when `condition` is falsy.
-   */
-  export function unless(condition: Observable<any>, element: Element): Template;
-
-  /**
-   * Repeats a component for each item in `values`.
-   */
-  export function repeat<T>(
-    values: T[] | Observable<T[]>,
-    component: Component<any, { index: number; value: T }, void>,
-    getKey?: (value: T) => any
-  ): Template;
-
-  export function bind<T>(value: MutableState<T>, event?: string): StateBinding<T>;
-
-  /*==================================*\
-  ||             Component            ||
-  \*==================================*/
-
-  export type Component<ServicesType = any, AttrsType = {}, ChildrenType = void> = (
-    this: ComponentContext<ServicesType, AttrsType, ChildrenType>,
-    _props: FakeJSXProps<AttrsType, ChildrenType>
-  ) => Element | null;
-
-  /**
-   * Fake props attribute to satisfy the TypeScript type system. This argument is never passed.
-   */
-  export type FakeJSXProps<A, C> = ObservableAttrs<A> & { children?: C };
-
-  // A convenient fiction for TypeScript's JSX checker. This does not actually resemble how components are implemented,
-  // but it does resemble a factory function that returns a JSX element, which is a form that TS understands.
-  // export type Component<AttrsType, ChildrenType> = (props: ObservableAttrs<AttrsType>) => {
-  //   init: ComponentFn<any, ObservableAttrs<AttrsType>, ChildrenType>;
-  // };
-
-  /**
-   * Components can take observables of the same type as attributes for any value.
-   * This utility unwraps the values in the observables to their value type.
-   *
-   * Attrs beginning with `$` are not unwrapped as these must be MutableStates according to Woof component logic.
-   */
-  export type UnwrappedAttrs<AttrsType> = {
-    [Name in keyof AttrsType]: Name extends `$${infer Type}`
-      ? AttrsType[Name]
-      : AttrsType[Name] extends Observable<infer Type>
-      ? Type
-      : AttrsType[Name];
-  };
-
-  /**
-   * Allows attributes that aren't Observable type to be passed as an observable or the raw value.
-   * Components unwrap observable attributes into their raw values by the time they're accessed.
-   */
-  export type ObservableAttrs<AttrsType> = {
-    [Name in keyof AttrsType]: AttrsType[Name] extends Observable<any>
-      ? AttrsType[Name]
-      : AttrsType[Name] | Observable<AttrsType[Name]>;
-  };
-
-  export interface ComponentContext<ServicesType = any, AttrsType = {}, ChildrenType = void> {
-    /**
-     * Attributes passed into to this component.
-     *
-     * @example
-     * <User name="Bob" age={42} />
-     *
-     * // Inside the component ctx.$attrs.get() returns:
-     * {
-     *   name: "Bob",
-     *   age: 42
-     * }
-     */
-    $attrs: State<UnwrappedAttrs<AttrsType>>;
-
-    /**
-     * A unique debug channel for this component. Has `log`, `warn` and `error` methods like `console`.
-     * You can also set a prefix by changing `debug.name`.
-     *
-     * Messages printed to a debug channel can be filtered based on settings passed to your app.
-     * This is a good alternative to `console.log` because you can simply filter messages out in production
-     * instead of removing all your `console.log` calls.
-     */
-    debug: DebugChannel;
-
-    /**
-     * Other elements passed between the opening and closing tags of this component.
-     *
-     * @example
-     * ```jsx
-     * <Container>
-     *   <h1>These are children.</h1>
-     *   <p>Use `ctx.children` in this component's template to render these elements.</p>
-     *   <OtherComponent />
-     * </Container>
-     * ```
-     */
-    children: ChildrenType;
-
-    /**
-     * Returns the service registered under `name` or throws an error if the service isn't registered.
-     */
-    service<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
-
-    /**
-     * Registers a callback to run before the component is connected to the DOM.
-     */
-    beforeConnect(callback: () => void): void;
-
-    /**
-     * Registers a callback to run after the component is connected to the DOM.
-     */
-    afterConnect(callback: () => void): void;
-
-    /**
-     * Registers a callback to run before the component is removed from the DOM.
-     */
-    beforeDisconnect(callback: () => void): void;
-
-    /**
-     * Registers a callback to run after the component is removed from the DOM.
-     */
-    afterDisconnect(callback: () => void): void;
-
-    /**
-     * Subscribes to an observable while this component is connected.
-     *
-     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
-     * @param observer - An observer object with `next`, `error` and `complete` methods.
-     *
-     * @see https://github.com/tc39/proposal-observable
-     */
-    subscribeTo<Type>(observable: Observable<Type>, observer: Observer<Type>): void;
-
-    /**
-     * Subscribes to an observable while this component is connected.
-     *
-     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
-     * @param next - Callback to receive `next` values from the observable.
-     * @param error - Callback to receive `error` values from the observable.
-     * @param complete - Callback to receive the `complete` signal from the observable.
-     *
-     * @see https://github.com/tc39/proposal-observable
-     */
-    subscribeTo<Type>(
-      observable: Observable<Type>,
-      next?: (value: Type) => void,
-      error?: (err: Error) => void,
-      complete?: () => void
-    ): void;
-
-    transitionOut(callback: () => Promise<void>): void;
-    loadRoute: (callbackFn: (helpers: { show: (element: Element) => void }) => Promise<void>) => void;
-  }
-
-  /*==================================*\
-  ||             Service              ||
-  \*==================================*/
-
-  export type Service<E> = (this: ServiceContext<any>) => E;
-
-  export type ServiceContext<ServicesType> = {
-    /**
-     * A unique debug channel for this component. Has `log`, `warn` and `error` methods like `console`.
-     * You can also set a prefix by changing `debug.name`.
-     *
-     * Messages printed to a debug channel can be filtered based on settings passed to your app.
-     * This is a good alternative to `console.log` because you can simply filter messages out in production
-     * instead of removing all your `console.log` calls.
-     */
-    debug: DebugChannel;
-
-    /**
-     * Returns the service registered under `name` or throws an error if the service isn't registered.
-     */
-    service<K extends keyof Services<ServicesType>>(name: K): Services<ServicesType>[K];
-
-    /**
-     * Registers a callback to run before the app is connected.
-     */
-    beforeConnect: (callback: () => void) => void;
-
-    /**
-     * Registers a callback to run after the app is connected and the first route match has taken place.
-     */
-    afterConnect: (callback: () => void) => void;
-
-    /**
-     * Subscribes to an observable while this service is connected.
-     *
-     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
-     * @param observer - An observer object with `next`, `error` and `complete` methods.
-     *
-     * @see https://github.com/tc39/proposal-observable
-     */
-    subscribeTo<Type>(observable: Observable<Type>, observer: Observer<Type>): void;
-
-    /**
-     * Subscribes to an observable while this service is connected.
-     *
-     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
-     * @param next - Callback to receive `next` values from the observable.
-     * @param error - Callback to receive `error` values from the observable.
-     * @param complete - Callback to receive the `complete` signal from the observable.
-     *
-     * @see https://github.com/tc39/proposal-observable
-     */
-    subscribeTo<Type>(
-      observable: Observable<Type>,
-      next?: (value: Type) => void,
-      error?: (err: Error) => void,
-      complete?: () => void
-    ): void;
-  };
-
-  /*==================================*\
-  ||              State               ||
-  \*==================================*/
-
-  export type StateOptions = {
-    /**
-     * Runs after each `.set()` call, before the new value is applied.
-     * Returns an error message if the value doesn't pass validation.
-     */
-    validate: (value: unknown) => string | void;
-  };
-
-  export function makeState<Type>(initialValue?: Type, options?: StateOptions): MutableState<Type>;
-
-  interface State<Type> {
-    /**
-     * Returns the current value.
-     */
-    get(): Type;
-
-    /**
-     * Passes the current value to a mapping function and returns the result of that function.
-     *
-     * @param callbackFn - Function to map the current value to the value you want.
-     */
-    get<V>(callbackFn: (current: Type) => V): V;
-
-    /**
-     * Returns a read only copy of this state.
-     */
-    map(): State<Type>;
-
-    /**
-     * Returns a new state that takes the return value of `callbackFn` when called with the value of this state.
-     *
-     * @param callbackFn - Function to map the current state's value to the new state's value.
-     */
-    map<V>(callbackFn: (current: Type) => V): State<V>;
-
-    subscribe(observer: Observer<Type>): Subscription;
-    subscribe(next: (value: Type) => void): Subscription;
-  }
-
-  /**
-   * A state that can be updated using a `.set()` method.
-   * This is the type of state you get from calling `makeState()`.
-   */
-  interface MutableState<Type> extends State<Type> {
-    /**
-     * Replaces the state's value with `newValue`.
-     *
-     * @param newValue - New value.
-     */
-    set(newValue: Type): void;
-
-    /**
-     * Produces a new value using a function. Can either mutate `current` or return a new value.
-     * Mutations are applied on a cloned version of `current` that replaces the old one.
-     */
-    set(fn: (current: Type) => Type | void): void;
-  }
-
-  // Infers the type of the value of a state.
-  type UnwrapState<T> = T extends State<infer V> ? V : T;
-
-  // Extract an array of T for an array of State<T>
-  type StateValues<ArgsType extends State<any>[]> = {
-    [Index in keyof ArgsType]: UnwrapState<ArgsType[Index]>;
-  } & ArgsType["length"];
-
-  /**
-   * Takes multiple states to merge into one through a function.
-   * Each time any of the states' values change, the function receives all state values in the same order to calculate a new value.
-   * Similar to `.map` but with several states being collapsed down to one.
-   */
-  export function mergeStates<States extends [...State<any>[]]>(...states: States): MergeState<States>;
-
-  /**
-   * A new state that holds an array of values of the states passed to `mergeStates`. Can be refined further with methods.
-   */
-  interface MergeState<States extends [...State<any>[]]> extends State<StateValues<States>> {
-    /**
-     * Create a new merge with all existing states plus any new states passed to `with`.
-     */
-    with<MoreStates extends [...State<any>[]]>(...states: MoreStates): MergeState<Concat<States, MoreStates>>;
-
-    /**
-     * Takes a merge function. Each time any of the states in this merge receive a new value, this function is called with the values of
-     * all the merged states in the order they were passed. Whatever this function returns becomes the new value of a derived state.
-     */
-    into<Result>(merge: (...values: StateValues<States>) => Result): State<Result>;
-  }
-
-  /**
-   * Determines whether or not an object is a state.
-   */
-  export function isState(value: unknown): boolean is State<unknown>;
 }
 
-declare module "@woofjs/client/jsx-runtime" {
-  import type { Template, Component, ToStringable } from "@woofjs/client";
+declare module '@woofjs/client/jsx-runtime' {
+  import { Template, Component, ToStringable } from '@woofjs/client'
 
-  export function jsx(
+  export function jsx (
     element: string | Component,
     props: { [name: string]: any; children: Template },
     key: any
-  ): Template;
+  ): Template
 
-  export function jsxs(
+  export function jsxs (
     element: string | Component,
     props: { [name: string]: any; children: Template[] },
     key: any
-  ): Template;
+  ): Template
 }
 
-declare module "@woofjs/client/jsx-dev-runtime" {
-  import type { Template, Component } from "@woofjs/client";
+declare module '@woofjs/client/jsx-dev-runtime' {
+  import { Template, Component } from '@woofjs/client'
 
-  export function jsxDEV(
+  export function jsxDEV (
     element: string | Component,
     props: { [name: string]: any; children: Template | Template[] },
     key: any,
     isStaticChildren: boolean,
     source: any,
     self: any
-  ): Template;
+  ): Template
 }
 
 // TODO: Define all elements and the attributes they support.
 declare namespace JSX {
-  import { ObservableAttrs, Observable, MutableState, ToStringable, Template } from "@woofjs/client";
-  import * as CSS from "csstype";
+  import { ObservableAttrs, Observable, MutableState, ToStringable, Template } from '@woofjs/client'
+  import * as CSS from 'csstype'
 
   interface ElementChildrenAttribute {
-    children: {}; // specify children name to use
+    children: {} // specify children name to use
   }
 
-  type MaybeObservable<T> = T | Observable<T>;
+  type MaybeObservable<T> = T | Observable<T>
 
   /**
    * The set of HTML attributes supported by all HTML elements.
@@ -758,7 +683,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/accesskey
      */
-    accesskey: string;
+    accesskey: string
 
     /**
      * The autocapitalize global attribute is an enumerated attribute that controls whether and
@@ -772,7 +697,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize
      */
-    autocapitalize: "off" | "on" | "none" | "sentences" | "words" | "characters";
+    autocapitalize: 'off' | 'on' | 'none' | 'sentences' | 'words' | 'characters'
 
     /**
      * The `autofocus` attribute allows the author to indicate that an element
@@ -782,7 +707,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autofocus
      */
-    autofocus: boolean;
+    autofocus: boolean
 
     /**
      * CSS classes to be applied to this element. In addition to the standard space-separated list of class names,
@@ -805,28 +730,28 @@ declare namespace JSX {
      * @example
      * <div class={["class", "class2", { "conditional": $value }]} />
      */
-    class: string | ClassMap | Array<string | ClassMap | (string | ClassMap)[]>;
+    class: string | ClassMap | Array<string | ClassMap | (string | ClassMap)[]>
 
     /**
      * Specifies whether the element's content can be edited.
      *
      * @see https://html.spec.whatwg.org/multipage/interaction.html#attr-contenteditable
      */
-    contenteditable: "" | "true" | "false";
+    contenteditable: '' | 'true' | 'false'
 
     /**
      * Specifies the element's text directionality.
      *
      * @see https://html.spec.whatwg.org/multipage/dom.html#attr-dir
      */
-    dir: "ltr" | "rtl" | "auto";
+    dir: 'ltr' | 'rtl' | 'auto'
 
     /**
      * Specifies whether the element is draggable for use with the [HTML Drag and Drop API](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API).
      *
      * @see https://html.spec.whatwg.org/multipage/dnd.html#attr-draggable
      */
-    draggable: "true" | "false";
+    draggable: 'true' | 'false'
 
     /**
      * The `enterkeyhint` attribute defines what action label (or icon) to present for the enter key on virtual keyboards.
@@ -834,7 +759,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/interaction.html#attr-enterkeyhint
      */
-    enterkeyhint: "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
+    enterkeyhint: 'enter' | 'done' | 'go' | 'next' | 'previous' | 'search' | 'send'
 
     /**
      * The `hidden` global attribute is a Boolean attribute indicating that the element is not yet,
@@ -843,7 +768,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/interaction.html#attr-hidden
      */
-    hidden: boolean;
+    hidden: boolean
 
     /**
      * The `id` defines an identifier (ID) which must be unique in the whole document. Its purpose is
@@ -851,47 +776,47 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/id
      */
-    id: ToStringable;
+    id: ToStringable
 
     /**
      * @see https://html.spec.whatwg.org/multipage/interaction.html#the-inert-attribute
      */
-    inert;
+    inert
 
     /**
      * The `inputmode` content attribute is an enumerated attribute that specifies what kind of input mechanism would be most helpful for users entering content.
      */
-    inputmode: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
+    inputmode: 'none' | 'text' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search'
 
     /**
      * @see https://html.spec.whatwg.org/multipage/custom-elements.html#attr-is
      */
-    is: string;
+    is: string
 
     /**
      * @see https://html.spec.whatwg.org/multipage/microdata.html#encoding-microdata
      */
-    itemid: string;
+    itemid: string
 
     /**
      * @see https://html.spec.whatwg.org/multipage/microdata.html#encoding-microdata
      */
-    itemprop: string;
+    itemprop: string
 
     /**
      * @see https://html.spec.whatwg.org/multipage/microdata.html#encoding-microdata
      */
-    itemref: string;
+    itemref: string
 
     /**
      * @see https://html.spec.whatwg.org/multipage/microdata.html#encoding-microdata
      */
-    itemscope: boolean;
+    itemscope: boolean
 
     /**
      * @see https://html.spec.whatwg.org/multipage/microdata.html#encoding-microdata
      */
-    itemtype: string;
+    itemtype: string
 
     /**
      * The `lang` global attribute helps define the language of an element: the language that non-editable elements are written in,
@@ -905,30 +830,30 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/lang
      */
-    lang: string;
+    lang: string
 
     /**
      * @see https://html.spec.whatwg.org/multipage/urls-and-fetching.html#attr-nonce
      */
-    nonce: string;
+    nonce: string
 
     /**
      * Specifies if the element is to have its spelling and grammar checked.
      *
      * @see https://html.spec.whatwg.org/multipage/interaction.html#attr-spellcheck
      */
-    spellcheck: "" | "true" | "false";
+    spellcheck: '' | 'true' | 'false'
 
     /**
      * Inline CSS styles.
      */
-    style: Styles;
+    style: Styles
 
     /**
      * @see https://html.spec.whatwg.org/multipage/interaction.html#attr-tabindex
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex
      */
-    tabindex: number;
+    tabindex: number
 
     /**
      * The `title` attribute represents advisory information for the element, such as would be appropriate for a tooltip.
@@ -939,7 +864,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/dom.html#attr-title
      */
-    title: string;
+    title: string
 
     /**
      * The `translate` global attribute is an enumerated attribute that is used to specify whether an element's _translatable attribute_
@@ -948,16 +873,16 @@ declare namespace JSX {
      * @see https://html.spec.whatwg.org/multipage/dom.html#attr-translate
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/translate
      */
-    translate: "" | "yes" | "no";
+    translate: '' | 'yes' | 'no'
   }
 
   interface Styles extends CSS.Properties, CSS.PropertiesHyphen {}
 
   interface ClassMap {
-    [className: string]: boolean | Observable<boolean>;
+    [className: string]: boolean | Observable<boolean>
   }
 
-  type EventHandler<E> = (event: E) => void;
+  type EventHandler<E> = (event: E) => void
 
   interface HTMLGlobalEvents {
     /**
@@ -967,7 +892,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event
      */
-    onauxclick: EventHandler<PointerEvent>;
+    onauxclick: EventHandler<PointerEvent>
     /**
      * The `beforeinput` event fires when the value of an `<input>` or `<textarea>` element is about to be modified.
      * The event also applies to elements with `contenteditable` enabled, and to any element when `designMode` is turned on.
@@ -977,9 +902,9 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/beforeinput_event
      */
-    onbeforeinput: EventHandler<InputEvent>;
+    onbeforeinput: EventHandler<InputEvent>
 
-    onbeforematch: EventHandler<Event>;
+    onbeforematch: EventHandler<Event>
     /**
      * The `blur` event fires when an element has lost focus.
      *
@@ -987,14 +912,14 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event
      */
-    onblur: EventHandler<Event>;
+    onblur: EventHandler<Event>
     /**
      * The `cancel` event fires on a `<dialog>` when the user instructs the browser that they wish to dismiss the current open dialog.
      * For example, the browser might fire this event when the user presses the `Esc` key or clicks a "Close dialog" button which is part of the browser's UI.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/cancel_event
      */
-    oncancel: EventHandler<Event>;
+    oncancel: EventHandler<Event>
 
     /**
      * The `change` event is fired for `<input>`, `<select>`, and `<textarea>` elements when the user modifies the element's value.
@@ -1002,7 +927,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event
      */
-    onchange: EventHandler<Event>;
+    onchange: EventHandler<Event>
     /**
      * An element receives a `click` event when a pointing device button (such as a mouse's primary mouse button) is both pressed
      * and released while the pointer is located inside the element.
@@ -1011,7 +936,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event
      */
-    onclick: EventHandler<PointerEvent>;
+    onclick: EventHandler<PointerEvent>
     /**
      * The `close` event is fired on an `HTMLDialogElement` object when the dialog it represents has been closed.
      *
@@ -1019,25 +944,25 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/close_event
      */
-    onclose: EventHandler<Event>;
+    onclose: EventHandler<Event>
 
-    oncontextlost: EventHandler<Event>;
+    oncontextlost: EventHandler<Event>
     /**
      * The `contextmenu` event fires when the user attempts to open a context menu.
      * This event is typically triggered by clicking the right mouse button, or by pressing the context menu key.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/contextmenu_event
      */
-    oncontextmenu: EventHandler<PointerEvent>;
+    oncontextmenu: EventHandler<PointerEvent>
 
-    oncontextrestored: EventHandler<Event>;
+    oncontextrestored: EventHandler<Event>
     /**
      * The `cuechange` event fires when a `TextTrack` has changed the currently displaying cues.
      * The event is fired on both the `TextTrack` and the `HTMLTrackElement` in which it's being presented, if any.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLTrackElement/cuechange_event
      */
-    oncuechange: EventHandler<Event>;
+    oncuechange: EventHandler<Event>
     /**
      * The `dblclick` event fires when a pointing device button (such as a mouse's primary button) is double-clicked;
      * that is, when it's rapidly clicked twice on a single element within a very short span of time.
@@ -1046,25 +971,25 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event
      */
-    ondblclick: EventHandler<MouseEvent>;
+    ondblclick: EventHandler<MouseEvent>
     /**
      * The `drag` event is fired every few hundred milliseconds as an element or text selection is being dragged by the user.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drag_event
      */
-    ondrag: EventHandler<DragEvent>;
+    ondrag: EventHandler<DragEvent>
     /**
      * The `dragend` event is fired when a drag operation is being ended (by releasing a mouse button or hitting the escape key).
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragend_event
      */
-    ondragend: EventHandler<DragEvent>;
+    ondragend: EventHandler<DragEvent>
     /**
      * The `dragenter` event is fired when a dragged element or text selection enters a valid drop target.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragenter_event
      */
-    ondragenter: EventHandler<DragEvent>;
+    ondragenter: EventHandler<DragEvent>
     /**
      * The `dragleave` event is fired when a dragged element or text selection leaves a valid drop target.
      *
@@ -1072,7 +997,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragleave_event
      */
-    ondragleave: EventHandler<DragEvent>;
+    ondragleave: EventHandler<DragEvent>
     /**
      * The `dragover` event is fired when an element or text selection is being dragged over a valid drop target (every few hundred milliseconds).
      *
@@ -1080,25 +1005,25 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragover_event
      */
-    ondragover: EventHandler<Event>;
+    ondragover: EventHandler<Event>
     /**
      * The `dragstart` event is fired when the user starts dragging an element or text selection.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragstart_event
      */
-    ondragstart: EventHandler<Event>;
+    ondragstart: EventHandler<Event>
     /**
      * The drop event is fired when an element or text selection is dropped on a valid drop target.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drop_event
      */
-    ondrop: EventHandler<PointerEvent>;
+    ondrop: EventHandler<PointerEvent>
     /**
      * The `durationchange` event is fired when the `duration` attribute of a media element (`<audio>`, `<video>`) has been updated.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/durationchange_event
      */
-    ondurationchange: EventHandler<Event>;
+    ondurationchange: EventHandler<Event>
     /**
      * The `error` event is fired on an `Element` object when a resource failed to load, or can't be used.
      * For example, if a script has an execution error or an image can't be found or is invalid.
@@ -1107,7 +1032,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/error_event
      */
-    onerror: EventHandler<ErrorEvent>;
+    onerror: EventHandler<ErrorEvent>
     /**
      * The `focus` event fires when an element has received focus.
      *
@@ -1115,7 +1040,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event
      */
-    onfocus: EventHandler<Event>;
+    onfocus: EventHandler<Event>
     /**
      * The `formdata` event fires after the entry list representing the form's data is constructed.
      * This happens when the form is submitted, but can also be triggered by the invocation of a `FormData()` constructor.
@@ -1124,19 +1049,19 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/formdata_event
      */
-    onformdata: EventHandler<FormDataEvent>;
+    onformdata: EventHandler<FormDataEvent>
     /**
      * The `input` event fires when the value of an `<input>`, `<select>`, or `<textarea>` element has been changed.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/input_event
      */
-    oninput: EventHandler<InputEvent>;
+    oninput: EventHandler<InputEvent>
     /**
      * The `invalid` event fires when a submittable element has been checked for validity and doesn't satisfy its constraints.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event
      */
-    oninvalid: EventHandler<Event>;
+    oninvalid: EventHandler<Event>
     /**
      * The` keydown` event is fired when a key is pressed.
      *
@@ -1144,53 +1069,53 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
      */
-    onkeydown: EventHandler<KeyboardEvent>;
+    onkeydown: EventHandler<KeyboardEvent>
     /**
      * The `keypress` event is fired when a key that produces a character value is pressed down.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keypress_event
      * @deprecated
      */
-    onkeypress: EventHandler<KeyboardEvent>;
+    onkeypress: EventHandler<KeyboardEvent>
     /**
      * The `keyup` event is fired when a key is released.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keyup_event
      */
-    onkeyup: EventHandler<KeyboardEvent>;
+    onkeyup: EventHandler<KeyboardEvent>
 
-    onload: EventHandler<Event>;
+    onload: EventHandler<Event>
     /**
      * The `loadeddata` event is fired when the frame at the current playback position of the media has finished loading; often the first frame.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event
      */
-    onloadeddata: EventHandler<Event>;
+    onloadeddata: EventHandler<Event>
     /**
      * The `loadedmetadata` event is fired when the metadata has been loaded.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event
      */
-    onloadedmetadata: EventHandler<Event>;
+    onloadedmetadata: EventHandler<Event>
     /**
      * The `loadstart` event is fired when the browser has started to load a resource.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadstart_event
      */
-    onloadstart: EventHandler<Event>;
+    onloadstart: EventHandler<Event>
     /**
      * The `mousedown` event is fired at an element when a pointing device button is pressed while the pointer is inside the element.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
      */
-    onmousedown: EventHandler<MouseEvent>;
+    onmousedown: EventHandler<MouseEvent>
     /**
      * The `mouseenter` event is fired at an element when a pointing device (usually a mouse) is initially moved
      * so that its hotspot is within the element at which the event was fired.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseenter_event
      */
-    onmouseenter: EventHandler<MouseEvent>;
+    onmouseenter: EventHandler<MouseEvent>
     /**
      * The `mouseleave` event is fired at an element when the cursor of a pointing device (usually a mouse) is moved out of it.
      *
@@ -1201,13 +1126,13 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseleave_event
      */
-    onmouseleave: EventHandler<MouseEvent>;
+    onmouseleave: EventHandler<MouseEvent>
     /**
      * The `mousemove` event is fired at an element when a pointing device (usually a mouse) is moved while the cursor's hotspot is inside it.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
      */
-    onmousemove: EventHandler<MouseEvent>;
+    onmousemove: EventHandler<MouseEvent>
     /**
      * The `mouseout` event is fired at an element when a pointing device (usually a mouse) is used to move the cursor
      * so that it is no longer contained within the element or one of its children.
@@ -1216,14 +1141,14 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
      */
-    onmouseout: EventHandler<MouseEvent>;
+    onmouseout: EventHandler<MouseEvent>
     /**
      * The `mouseover` event is fired at an element when a pointing device (such as a mouse or trackpad) is used
      * to move the cursor onto the element or one of its child elements.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseover_event
      */
-    onmouseover: EventHandler<MouseEvent>;
+    onmouseover: EventHandler<MouseEvent>
     /**
      * The `mouseup` event is fired at an element when a button on a pointing device (such as a mouse or trackpad) is released while the pointer is located inside it.
      *
@@ -1231,13 +1156,13 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
      */
-    onmouseup: EventHandler<MouseEvent>;
+    onmouseup: EventHandler<MouseEvent>
     /**
      * The `reset` event fires when a `<form>` is reset.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reset_event
      */
-    onreset: EventHandler<Event>;
+    onreset: EventHandler<Event>
     /**
      * The `scroll` event fires when an element has been scrolled.
      *
@@ -1245,25 +1170,25 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scroll_event
      */
-    onscroll: EventHandler<Event>;
+    onscroll: EventHandler<Event>
     /**
      * The `select` event fires when some text has been selected.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/select_event
      */
-    onselect: EventHandler<Event>;
+    onselect: EventHandler<Event>
     /**
      * The `slotchange` event is fired on a `<slot>` element when the node(s) contained in that slot change.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLSlotElement/slotchange_event
      */
-    onslotchange: EventHandler<Event>;
+    onslotchange: EventHandler<Event>
     /**
      * The `submit` event fires when a `<form>` is submitted.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/submit_event
      */
-    onsubmit: EventHandler<SubmitEvent>;
+    onsubmit: EventHandler<SubmitEvent>
     /**
      * The `toggle` event fires when the open/closed state of a `<details>` element is toggled.
      *
@@ -1271,14 +1196,14 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDetailsElement/toggle_event
      */
-    ontoggle: EventHandler<Event>;
+    ontoggle: EventHandler<Event>
     /**
      * The `animationend` event is fired when a CSS Animation has completed. If the animation aborts before reaching completion,
      * such as if the element is removed from the DOM or the animation is removed from the element, the `animationend` event is not fired.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event
      */
-    onanimationend: EventHandler<Event>;
+    onanimationend: EventHandler<Event>
     /**
      * The `animationiteration` event is fired when an iteration of a CSS Animation ends, and another one begins.
      * This event does not occur at the same time as the `animationend` event, and therefore does not occur for animations
@@ -1286,7 +1211,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationiteration_event
      */
-    onanimationiteration: EventHandler<Event>;
+    onanimationiteration: EventHandler<Event>
     /**
      * The `animationstart` event is fired when a CSS Animation has started. If there is an `animation-delay`, this event will fire
      * once the delay period has expired. A negative delay will cause the event to fire with an `elapsedTime` equal to the absolute value
@@ -1294,7 +1219,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationstart_event
      */
-    onanimationstart: EventHandler<Event>;
+    onanimationstart: EventHandler<Event>
     /**
      * The `transitionend` event is fired when a CSS transition has completed. In the case where a transition is removed before completion,
      * such as if the `transition-property` is removed or `display` is set to `none`, then the event will not be generated.
@@ -1308,13 +1233,13 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionend_event
      */
-    ontransitionend: EventHandler<Event>;
+    ontransitionend: EventHandler<Event>
     /**
      * The `wheel` event fires when the user rotates a wheel button on a pointing device (typically a mouse).
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
      */
-    onwheel: EventHandler<WheelEvent>;
+    onwheel: EventHandler<WheelEvent>
   }
 
   // TODO: Move media events that don't bubble into this interface
@@ -1326,7 +1251,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/abort_event
      */
-    onabort: EventHandler<Event>;
+    onabort: EventHandler<Event>
     /**
      * The `canplay` event is fired when the user agent can play the media, but estimates that not enough data has been loaded
      * to play the media up to its end without having to stop for further buffering of content.
@@ -1335,7 +1260,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event
      */
-    oncanplay: EventHandler<Event>;
+    oncanplay: EventHandler<Event>
     /**
      * The `canplaythrough` event is fired when the user agent can play the media, and estimates that enough data has been loaded
      * to play the media up to its end without having to stop for further buffering of content.
@@ -1344,7 +1269,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
      */
-    oncanplaythrough: EventHandler<Event>;
+    oncanplaythrough: EventHandler<Event>
     /**
      * The `emptied` event is fired when the media has become empty; for example, this event is sent if the media has already been loaded
      * (or partially loaded), and the `load()` method is called to reload it.
@@ -1353,7 +1278,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event
      */
-    onemptied: EventHandler<Event>;
+    onemptied: EventHandler<Event>
     /**
      * The `ended` event is fired when playback or streaming has stopped because the end of the media was reached or because no further data is available.
      *
@@ -1361,7 +1286,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ended_event
      */
-    onended: EventHandler<Event>;
+    onended: EventHandler<Event>
     /**
      * The `pause` event is sent when a request to pause an activity is handled and the activity has entered its paused state,
      * most commonly after the media has been paused through a call to the element's `pause()` method.
@@ -1372,7 +1297,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
      */
-    onpause: EventHandler<Event>;
+    onpause: EventHandler<Event>
     /**
      * The `play` event is fired when the `paused` property is changed from `true` to `false`, as a result of the `play` method, or the `autoplay` attribute.
      *
@@ -1380,7 +1305,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
      */
-    onplay: EventHandler<Event>;
+    onplay: EventHandler<Event>
     /**
      * The `playing` event is fired after playback is first started, and whenever it is restarted.
      * For example it is fired when playback resumes after having been paused or delayed due to lack of data.
@@ -1389,7 +1314,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playing_event
      */
-    onplaying: EventHandler<Event>;
+    onplaying: EventHandler<Event>
     /**
      * The `progress` event is fired periodically as the browser loads a resource.
      *
@@ -1397,7 +1322,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
      */
-    onprogress: EventHandler<Event>;
+    onprogress: EventHandler<Event>
     /**
      * The `ratechange` event is fired when the playback rate has changed.
      *
@@ -1405,7 +1330,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ratechange_event
      */
-    onratechange: EventHandler<Event>;
+    onratechange: EventHandler<Event>
     /**
      * The `seeked` event is fired when a seek operation completed, the current playback position has changed, and the Boolean `seeking` attribute is changed to `false`.
      *
@@ -1413,7 +1338,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeked_event
      */
-    onseeked: EventHandler<Event>;
+    onseeked: EventHandler<Event>
     /**
      * The `seeking` event is fired when a seek operation starts, meaning the Boolean `seeking` attribute has changed to `true` and the media is seeking a new position.
      *
@@ -1421,7 +1346,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeking_event
      */
-    onseeking: EventHandler<Event>;
+    onseeking: EventHandler<Event>
     /**
      * The `stalled` event is fired when the user agent is trying to fetch media data, but data is unexpectedly not forthcoming.
      *
@@ -1429,7 +1354,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/stalled_event
      */
-    onstalled: EventHandler<Event>;
+    onstalled: EventHandler<Event>
     /**
      * The `suspend` event is fired when media data loading has been suspended.
      *
@@ -1437,7 +1362,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/suspend_event
      */
-    onsuspend: EventHandler<Event>;
+    onsuspend: EventHandler<Event>
     /**
      * The `timeupdate` event is fired when the time indicated by the `currentTime` attribute has been updated.
      *
@@ -1449,7 +1374,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/timeupdate_event
      */
-    ontimeupdate: EventHandler<Event>;
+    ontimeupdate: EventHandler<Event>
     /**
      * The `volumechange` event is fired when the volume has changed.
      *
@@ -1457,7 +1382,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volumechange_event
      */
-    onvolumechange: EventHandler<Event>;
+    onvolumechange: EventHandler<Event>
     /**
      * The `waiting` event is fired when playback has stopped because of a temporary lack of data.
      *
@@ -1465,7 +1390,7 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waiting_event
      */
-    onwaiting: EventHandler<Event>;
+    onwaiting: EventHandler<Event>
   }
 
   interface HTMLDocumentAndElementEvents {
@@ -1474,43 +1399,43 @@ declare namespace JSX {
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/copy_event
      */
-    oncopy: EventHandler<ClipboardEvent>;
+    oncopy: EventHandler<ClipboardEvent>
     /**
      * The `cut` event is fired when the user has initiated a "cut" action through the browser's user interface.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/cut_event
      */
-    oncut: EventHandler<Event>;
+    oncut: EventHandler<Event>
     /**
      * The `paste` event is fired when the user has initiated a "paste" action through the browser's user interface.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event
      */
-    onpaste: EventHandler<Event>;
+    onpaste: EventHandler<Event>
   }
 
-  type PartialGlobals = Partial<HTMLGlobalAttributes>;
+  type PartialGlobals = Partial<HTMLGlobalAttributes>
 
   type GlobalAttributes = {
-    [K in keyof PartialGlobals]: MaybeObservable<PartialGlobals[K]>;
-  };
+    [K in keyof PartialGlobals]: MaybeObservable<PartialGlobals[K]>
+  }
 
-  type PartialEvents = Partial<HTMLGlobalEvents> & Partial<HTMLDocumentAndElementEvents>;
+  type PartialEvents = Partial<HTMLGlobalEvents> & Partial<HTMLDocumentAndElementEvents>
 
   type GlobalEvents = {
-    [K in keyof PartialEvents]: MaybeObservable<PartialEvents[K]>;
-  };
+    [K in keyof PartialEvents]: MaybeObservable<PartialEvents[K]>
+  }
 
   interface ElementAttributes<T extends HTMLElement> extends GlobalAttributes, GlobalEvents {
     /**
      * For TypeScript support; child elements passed through JSX.
      */
-    children?: any;
+    children?: any
 
     /**
      * A state that receives a reference to the DOM element.
      */
-    $ref?: MutableState<HTMLElement>;
+    $ref?: MutableState<HTMLElement>
   }
 
   /**
@@ -1550,7 +1475,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-article-element
      */
-    article: ArticleElementAttributes;
+    article: ArticleElementAttributes
 
     /**
      * The `section` element represents a generic section of a document or application. A section, in this context,
@@ -1558,14 +1483,14 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-section-element
      */
-    section: SectionElementAttributes;
+    section: SectionElementAttributes
 
     /**
      * The `nav` element represents a section of a page that links to other pages or to parts within the page: a section with navigation links.
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-nav-element
      */
-    nav: NavElementAttributes;
+    nav: NavElementAttributes
 
     /**
      * The `aside` element represents a section of a page that consists of content that is tangentially related
@@ -1577,49 +1502,49 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-aside-element
      */
-    aside: AsideElementAttributes;
+    aside: AsideElementAttributes
 
     /**
      * A heading for a top-level section.
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
      */
-    h1: H1ElementAttributes;
+    h1: H1ElementAttributes
 
     /**
      * A heading for a subsection.
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
      */
-    h2: H2ElementAttributes;
+    h2: H2ElementAttributes
 
     /**
      * A heading for a sub-subsection.
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
      */
-    h3: H3ElementAttributes;
+    h3: H3ElementAttributes
 
     /**
      * A heading for a sub-sub-subsection.
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
      */
-    h4: H4ElementAttributes;
+    h4: H4ElementAttributes
 
     /**
      * A heading for a sub-sub-sub-subsection.
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
      */
-    h5: H5ElementAttributes;
+    h5: H5ElementAttributes
 
     /**
      * A heading for a sub-sub-sub-subsection.
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
      */
-    h6: H6ElementAttributes;
+    h6: H6ElementAttributes
 
     /**
      * The `hgroup` element represents a heading and related content. The element may be used to group an
@@ -1636,14 +1561,14 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-hgroup-element
      */
-    hgroup: HgroupElementAttributes;
+    hgroup: HgroupElementAttributes
 
     /**
      * The `header` element represents a group of introductory or navigational aids.
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-header-element
      */
-    header: HeaderElementAttributes;
+    header: HeaderElementAttributes
 
     /**
      * The `footer` element represents a footer for its nearest ancestor `article`, `aside`, `nav`, or `section`,
@@ -1655,7 +1580,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-footer-element
      */
-    footer: FooterElementAttributes;
+    footer: FooterElementAttributes
 
     /**
      * The `address` element represents the contact information for its nearest `article` or `body` element ancestor.
@@ -1663,7 +1588,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/sections.html#the-address-element
      */
-    address: AddressElementAttributes;
+    address: AddressElementAttributes
   }
 
   /*====================================*\
@@ -1679,7 +1604,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-blockquote-cite
      */
-    cite?: MaybeObservable<string | undefined>;
+    cite?: MaybeObservable<string | undefined>
   }
   interface OlElementAttributes extends ElementAttributes<HTMLOListElement> {
     /**
@@ -1688,14 +1613,14 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-ol-reversed
      */
-    reversed?: MaybeObservable<boolean | undefined>;
+    reversed?: MaybeObservable<boolean | undefined>
 
     /**
      * Starting value of the list.
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-ol-start
      */
-    start?: MaybeObservable<number | undefined>;
+    start?: MaybeObservable<number | undefined>
 
     /**
      * The `type` attribute can be used to specify the kind of marker to use in the list,
@@ -1703,7 +1628,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-ol-type
      */
-    type?: MaybeObservable<"l" | "a" | "A" | "i" | "I" | undefined>;
+    type?: MaybeObservable<'l' | 'a' | 'A' | 'i' | 'I' | undefined>
   }
   interface UlElementAttributes extends ElementAttributes<HTMLUListElement> {}
   interface MenuElementAttributes extends ElementAttributes<HTMLMenuElement> {}
@@ -1722,7 +1647,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
      */
-    p: PElementAttributes;
+    p: PElementAttributes
 
     /**
      * The `hr` element represents a paragraph-level thematic break, e.g. a scene change in a story,
@@ -1730,7 +1655,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-hr-element
      */
-    hr: HrElementAttributes;
+    hr: HrElementAttributes
 
     /**
      * The `pre` element represents a block of preformatted text, in which structure is represented
@@ -1738,14 +1663,14 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
      */
-    pre: PreElementAttributes;
+    pre: PreElementAttributes
 
     /**
      * The `blockquote` element represents a section that is quoted from another source.
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element
      */
-    blockquote: BlockquoteElementAttributes;
+    blockquote: BlockquoteElementAttributes
 
     /**
      * The `ol` element represents a list of items, where the items have been intentionally ordered,
@@ -1753,7 +1678,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element
      */
-    ol: OlElementAttributes;
+    ol: OlElementAttributes
 
     /**
      * The `ul` element represents a list of items, where the order of the items is not important —
@@ -1761,7 +1686,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
      */
-    ul: UlElementAttributes;
+    ul: UlElementAttributes
 
     /**
      * The `menu` element represents a toolbar consisting of its contents, in the form of
@@ -1770,7 +1695,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-menu-element
      */
-    menu: MenuElementAttributes;
+    menu: MenuElementAttributes
 
     /**
      * The `li` element represents a list item. If its parent element is an `ol`, `ul`, or `menu` element,
@@ -1778,7 +1703,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
      */
-    li: LiElementAttributes;
+    li: LiElementAttributes
 
     /**
      * The `dl` element represents an association list consisting of zero or more name-value groups
@@ -1787,21 +1712,21 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element
      */
-    dl: DlElementAttributes;
+    dl: DlElementAttributes
 
     /**
      * The `dt` element represents the term, or name, part of a term-description group in a description list (`dl` element).
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-dt-element
      */
-    dt: DtElementAttributes;
+    dt: DtElementAttributes
 
     /**
      * The `dd` element represents the description, definition, or value, part of a term-description group in a description list (`dl` element).
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-dd-element
      */
-    dd: DdElementAttributes;
+    dd: DdElementAttributes
 
     /**
      * The `figure` element represents some [flow content](https://html.spec.whatwg.org/multipage/dom.html#flow-content-2),
@@ -1810,7 +1735,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-figure-element
      */
-    figure: FigureElementAttributes;
+    figure: FigureElementAttributes
 
     /**
      * The `figcaption` element represents a caption or legend for the rest of the contents of the
@@ -1818,7 +1743,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-figcaption-element
      */
-    figcaption: FigcaptionElementAttributes;
+    figcaption: FigcaptionElementAttributes
 
     /**
      * The `main` element represents the dominant contents of the document. A document must not
@@ -1826,7 +1751,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-main-element
      */
-    main: MainElementAttributes;
+    main: MainElementAttributes
 
     /**
      * The `div` element has no special meaning at all. It represents its children.
@@ -1837,7 +1762,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-div-element
      */
-    div: DivElementAttributes;
+    div: DivElementAttributes
   }
 
   /*====================================*\
@@ -1855,7 +1780,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
      */
-    href?: MaybeObservable<string | undefined>;
+    href?: MaybeObservable<string | undefined>
 
     /**
      * The `target` attribute, if present, must be a valid browsing context name or keyword.
@@ -1866,7 +1791,7 @@ declare namespace JSX {
      * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-target
      * @see https://html.spec.whatwg.org/multipage/browsers.html#valid-browsing-context-name-or-keyword
      */
-    target?: MaybeObservable<string | undefined>;
+    target?: MaybeObservable<string | undefined>
 
     /**
      * The `download` attribute is a string indicating that the linked resource is intended to be downloaded rather than displayed in the browser.
@@ -1875,7 +1800,7 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-download
      */
-    download?: MaybeObservable<string | undefined>;
+    download?: MaybeObservable<string | undefined>
 
     /**
      * A space-separated list of URLs. When the link is followed, the browser will send `POST` requests with the body PING to the URLs.
@@ -1883,18 +1808,18 @@ declare namespace JSX {
      *
      * @see https://html.spec.whatwg.org/multipage/links.html#ping
      */
-    ping?: MaybeObservable<string | undefined>;
+    ping?: MaybeObservable<string | undefined>
 
     /**xs
      *
      *
      * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-rel
      */
-    rel?: MaybeObservable<string | undefined>;
+    rel?: MaybeObservable<string | undefined>
   }
 
   interface IntrinsicElements {
-    a: AnchorElementAttributes;
+    a: AnchorElementAttributes
   }
 
   /*====================================*\
@@ -1927,6 +1852,6 @@ declare namespace JSX {
 
   // Temp fallback while types are being worked on.
   interface IntrinsicElements {
-    [tagname: string]: any;
+    [tagname: string]: any
   }
 }

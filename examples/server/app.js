@@ -5,16 +5,18 @@ const PORT = process.env.PORT || 4000;
 
 app.cors();
 
-const exampleService = (self) => {
+const exampleService = function () {
+  let timesCalled = 0;
+
   return {
     call: () => {
-      self.options.timesCalled++;
-      return self.options.timesCalled;
+      timesCalled++;
+      return timesCalled;
     },
   };
 };
 
-const asyncService = async (self) => {
+const asyncService = async function () {
   let waitFor = 50 + Math.random() * 100;
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -27,12 +29,7 @@ const asyncService = async (self) => {
   });
 };
 
-app.service("example", exampleService, {
-  options: {
-    timesCalled: 0,
-  },
-});
-
+app.service("example", exampleService);
 app.service("async", asyncService);
 
 app.use(async (ctx, next) => {

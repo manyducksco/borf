@@ -1,9 +1,17 @@
-import { repeat, bind, makeState, mergeStates } from "@woofjs/client";
+import { repeat } from "@woofjs/client";
 
 const flightTypes = ["one-way flight", "return flight"];
+const flipped = (value) => !value; // Boolean flipping function.
 
 export default function FlightBooker() {
-  this.debug.name = "7GUIs:FlightBooker";
+  this.name = "7guis:FlightBooker";
+  this.defaultState = {
+    flightType: flightTypes[0],
+    startDate: formatDate(new Date()),
+    returnDate: formatDate(new Date()),
+    startDateIsValid: true,
+    returnDateIsValid: true,
+  };
 
   const formatDate = (date) => {
     date = new Date();
@@ -29,25 +37,19 @@ export default function FlightBooker() {
     return new Date(y, m - 1, d);
   };
 
-  const $flightType = makeState(flightTypes[0]);
-  const $startDate = makeState(formatDate(new Date()));
-  const $returnDate = makeState(formatDate(new Date()));
+  const $$flightType = this.readWrite("flightType");
+  const $$startDate = this.readWrite("startDate");
+  const $$returnDate = this.readWrite("returnDate");
 
-  const $startDateIsValid = makeState(true);
-  const $returnDateIsValid = makeState(true);
-
-  // TODO: Convert to State.merge
-  // const $formIsValid = State.merge($startDateIsValid, $returnDateIsValid).into(
-  //   (startIsValid, returnIsValid) => {
-  //     return startIsValid && returnIsValid;
-  //   }
-  // );
-
-  const $formIsValid = mergeStates($startDateIsValid, $returnDateIsValid).into(
-    (d1, d2) => {
+  // Concatenate date states and convert through a function into a new state.
+  const $formIsValid = this.concat("startDateIsValid", "returnDateIsValid").to(
+    ([d1, d2]) => {
       return d1 && d2;
     }
   );
+
+  // is("this").javascriptCase?.it.is("English").dressed["up"][2].lookLike("JavaScript").code
+  // I.should["_make"].a.textConverter("for", this).
 
   return (
     <div class="example">
@@ -64,13 +66,13 @@ export default function FlightBooker() {
         <div>
           <select
             onchange={(e) => {
-              $flightType.set(e.target.value);
+              $$flightType.set(e.target.value);
             }}
           >
             {repeat(flightTypes, function FlightType() {
-              const $value = this.$attrs.map((a) => a.value);
-              const $selected = mergeStates($value, $flightType).into(
-                (value, current) => {
+              const $value = this.read("value");
+              const $selected = this.concat($value, $$flightType).to(
+                ([value, current]) => {
                   return value === current;
                 }
               );
@@ -87,10 +89,10 @@ export default function FlightBooker() {
         <div>
           <input
             type="text"
-            value={bind($startDate)}
+            value={$$startDate}
             pattern={"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$"}
             oninput={(e) => {
-              $startDateIsValid.set(!e.target.validity.patternMismatch);
+              this.set("startDateIsValid", !e.target.validity.patternMismatch);
             }}
           />
         </div>
@@ -98,17 +100,17 @@ export default function FlightBooker() {
         <div>
           <input
             type="text"
-            value={bind($returnDate)}
-            disabled={$flightType.map((t) => t === "one-way flight")}
+            value={$$returnDate}
+            disabled={$$flightType.to((t) => t === "one-way flight")}
             pattern={/^\d{2}\.\d{2}\.\d{4}$/}
             oninput={(e) => {
-              $returnDateIsValid.set(!e.target.validity.patternMismatch);
+              this.set("returnDateIsValid", !e.target.validity.patternMismatch);
             }}
           />
         </div>
 
         <div>
-          <button disabled={$formIsValid.map((valid) => !valid)}>Book</button>
+          <button disabled={$formIsValid.to(flipped)}>Book</button>
         </div>
       </form>
     </div>

@@ -23,11 +23,11 @@ I'm thinking of moving this to a `preload` hook on the route definition itself.
 The current route definition syntax looks like this: (path, component, subroutes)
 
 ```jsx
-app.route("/some/path", SomeComponent, (sub) => {
-  sub.route("/foo", FooComponent);
-  sub.route("/bar", BarComponent);
-  sub.redirect("*", "./foo");
-});
+app.route('/some/path', SomeComponent, sub => {
+  sub.route('/foo', FooComponent)
+  sub.route('/bar', BarComponent)
+  sub.redirect('*', './foo')
+})
 ```
 
 The new route definition syntax would support passing an object with additional options and callbacks in place of the subroutes function. This allows for handling preload at the route level. Route preloading only works at the route level anyway, so it doesn't make very much sense to have it be a lifecycle hook in a component. The new `preload` hook can resolve an object in order to pass preloaded data to the component as attributes.

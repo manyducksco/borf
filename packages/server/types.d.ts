@@ -36,9 +36,7 @@ declare module "@woofjs/server" {
     cache: {
       [key: string]: any;
     };
-    services: {
-      [name: string]: any;
-    };
+    service(name: string): any;
     request: Request;
     response: Response;
     redirect(to: string, statusCode?: number): void;

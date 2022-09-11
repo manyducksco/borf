@@ -2,24 +2,23 @@ import { isFunction, isObject, isString, isTemplate } from "./helpers/typeChecki
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
-import { initService } from "./helpers/initService.js";
+import { initGlobal } from "./helpers/initGlobal.js";
+import { makeDebug } from "./helpers/makeDebug.js";
 
-import { HTTPService } from "./services/http.js";
-import { PageService } from "./services/page.js";
-import { RouterService } from "./services/router.js";
-
-import { makeDebug } from "./makeDebug.js";
+import { http } from "./globals/http.js";
+import { page } from "./globals/page.js";
+import { router } from "./globals/router.js";
 
 export function makeApp(options = {}) {
-  const services = {
-    router: RouterService, // Access to matched route and query params.
-    page: PageService, // Access to document settings like title and favicon.
-    http: HTTPService, // HTTP client with middleware support.
+  const globals = {
+    router, // Access to matched route and query params.
+    page, // Access to document settings like title and favicon.
+    http, // HTTP client with middleware support.
   };
 
   const appContext = {
-    services: {},
-    options: options,
+    globals: {},
+    options,
     routes: [],
     debug: makeDebug(options.debug),
     rootElement: null,
@@ -84,7 +83,7 @@ export function makeApp(options = {}) {
           routes.push({
             path: from,
             redirect: to,
-            fragments: fragments,
+            fragments,
           });
         },
       };
@@ -101,19 +100,19 @@ export function makeApp(options = {}) {
     return routes;
   }
 
-  ////
+  /// /
   // Public
-  ////
+  /// /
 
   return {
     /**
-     * Registers a new service accessible by services and components in this app.
+     * Registers a new global accessible throughout the app.
      *
      * @param name - Name of the service.
-     * @param service - The service function.
+     * @param fn - The global function.
      */
-    service(name, service) {
-      services[name] = service;
+    global(name, fn) {
+      globals[name] = fn;
 
       return this;
     },
@@ -140,7 +139,7 @@ export function makeApp(options = {}) {
     redirect(path, to) {
       if (isString(to)) {
         appContext.routes.push({
-          path: path,
+          path,
           redirect: to,
         });
       } else {
@@ -160,18 +159,18 @@ export function makeApp(options = {}) {
       onBeforeConnect = async () => {
         const ctx = {
           /**
-           * Returns the service registered under `name` or throws an error if it isn't registered.
+           * Returns the global registered under `name` or throws an error if it isn't registered.
            */
-          service(name) {
+          global(name) {
             if (!isString(name)) {
-              throw new TypeError(`Expected a service name or array of service names.`);
+              throw new TypeError("Expected a string.");
             }
 
-            if (appContext.services[name]) {
-              return appContext.services[name];
+            if (appContext.globals[name]) {
+              return appContext.globals[name].exports;
             }
 
-            throw new Error(`Service '${name}' is not registered on this app.`);
+            throw new Error(`Global '${name}' is not registered on this app.`);
           },
 
           debug: appContext.debug.makeChannel("woof:app:beforeConnect"),
@@ -191,18 +190,18 @@ export function makeApp(options = {}) {
       onAfterConnect = async () => {
         const ctx = {
           /**
-           * Returns the service registered under `name` or throws an error if it isn't registered.
+           * Returns the global registered under `name` or throws an error if it isn't registered.
            */
-          service(name) {
+          global(name) {
             if (!isString(name)) {
-              throw new TypeError(`Expected a service name or array of service names.`);
+              throw new TypeError("Expected a string.");
             }
 
-            if (appContext.services[name]) {
-              return appContext.services[name];
+            if (appContext.globals[name]) {
+              return appContext.globals[name].exports;
             }
 
-            throw new Error(`Service '${name}' is not registered on this app.`);
+            throw new Error(`Global '${name}' is not registered on this app.`);
           },
 
           debug: appContext.debug.makeChannel("woof:app:afterConnect"),
@@ -231,48 +230,48 @@ export function makeApp(options = {}) {
       appContext.rootElement = element;
 
       // Set up crashing getters to handle services being accessed by other services.
-      for (const name in services) {
-        Object.defineProperty(appContext.services, name, {
+      for (const name in globals) {
+        Object.defineProperty(appContext.globals, name, {
           get() {
             throw new Error(
-              `Service '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other services that access it.`
+              `Global '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other globals that access it.`
             );
           },
           configurable: true,
         });
       }
 
-      for (const name in services) {
-        let service = services[name];
+      for (const name in globals) {
+        const fn = globals[name];
 
-        if (!isFunction(service)) {
-          throw new Error(`Service '${name}' must be a function that returns an object. Got ${typeof services[name]}`);
+        if (!isFunction(fn)) {
+          throw new Error(`Service '${name}' must be a function that returns an object. Got ${typeof globals[name]}`);
         }
 
-        services[name] = initService(service, { appContext, name });
+        const global = initGlobal(fn, { appContext, name });
 
-        if (!isObject(services[name].exports)) {
-          throw new TypeError(`Service function for '${name}' did not return an object.`);
+        if (!isObject(global.exports)) {
+          throw new TypeError(`Global function for '${name}' did not return an object.`);
         }
 
         // Add to appContext.services
-        Object.defineProperty(appContext.services, name, {
-          value: services[name].exports,
+        Object.defineProperty(appContext.globals, name, {
+          value: global,
           writable: false,
           enumerable: true,
           configurable: false,
         });
       }
 
-      // beforeConnect is the first opportunity to configure services before anything else happens.
-      for (const service of Object.values(services)) {
-        service.beforeConnect();
+      // beforeConnect is the first opportunity to configure globals before anything else happens.
+      for (const global of Object.values(appContext.globals)) {
+        global.beforeConnect();
       }
 
       return onBeforeConnect().then(async () => {
-        // Send connected signal to all services.
-        for (const service of Object.values(services)) {
-          service.afterConnect();
+        // Send connected signal to all globals.
+        for (const global of Object.values(appContext.globals)) {
+          global.afterConnect();
         }
 
         return onAfterConnect();

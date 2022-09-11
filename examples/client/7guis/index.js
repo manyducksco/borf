@@ -31,7 +31,7 @@ export default function SevenGUIs() {
         </li>
       </ul>
 
-      <div>{this.children}</div>
+      <div>{this.outlet()}</div>
     </div>
   );
 }

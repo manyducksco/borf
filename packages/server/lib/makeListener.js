@@ -91,7 +91,17 @@ export function makeListener(appContext) {
 
       const ctx = {
         cache: {},
-        services,
+        service(name) {
+          if (!isString(name)) {
+            throw new Error(`Expected a string for service name. Got: ${name}`);
+          }
+
+          if (services[name]) {
+            return services[name];
+          }
+
+          throw new Error(`Service '${name}' is not registered on this app.`);
+        },
         request,
         response,
         redirect(to, statusCode = 301) {

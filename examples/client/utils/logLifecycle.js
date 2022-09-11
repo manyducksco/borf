@@ -5,18 +5,18 @@
  */
 export default function logLifecycle(ctx) {
   ctx.beforeConnect(() => {
-    ctx.debug.log("lifecycle: beforeConnect");
+    ctx.log("lifecycle: beforeConnect");
   });
 
   ctx.afterConnect(() => {
-    ctx.debug.log("lifecycle: afterConnect");
+    ctx.log("lifecycle: afterConnect");
   });
 
   ctx.beforeDisconnect(() => {
-    ctx.debug.log("lifecycle: beforeDisconnect");
+    ctx.log("lifecycle: beforeDisconnect");
   });
 
   ctx.afterDisconnect(() => {
-    ctx.debug.log("lifecycle: afterDisconnect");
+    ctx.log("lifecycle: afterDisconnect");
   });
 }

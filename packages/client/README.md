@@ -14,17 +14,17 @@ woof is a client-side JavaScript framework that shamelessly steals the best idea
 ## Hello World
 
 ```js
-import { makeApp, h } from "@woofjs/client";
+import { makeApp, h } from '@woofjs/client'
 
-const app = makeApp();
+const app = makeApp()
 
 // Render <h1>Hello World</h1> regardless of the URL
-app.route("*", function () {
-  return h("h1", "Hello World");
-});
+app.route('*', function () {
+  return h('h1', 'Hello World')
+})
 
 // Render the matched route in an element with an id of `#app`
-app.connect("#app");
+app.connect('#app')
 ```
 
 ## Routing
@@ -44,16 +44,16 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 - Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
 
 ```js
-app.route("users/:id", function () {
+app.route('users/:id', function () {
   // Get route params from router.
-  const { $params } = this.service("router");
+  const { $params } = this.service('router')
 
   // Get the live value of :id with '.map()'.
-  const $id = $params.map((p) => p.id);
+  const $id = $params.map(p => p.id)
 
   // Render it into a <p> tag. The ID portion will update if the URL changes.
-  return h("p", "User's ID is ", $id);
-});
+  return h('p', "User's ID is ", $id)
+})
 ```
 
 > TODO: Describe nested routing
@@ -132,52 +132,52 @@ app.route("other", () => {
 Component functions have their component context bound to `this`.
 
 ```js
-function Example() {
+function Example () {
   // Access services by the name they were registered under.
-  const service = this.service("name");
+  const service = this.service('name')
 
   // Print debug messages
-  this.debug.name = "component:Example"; // Prefix messages in the console to make tracing easier at a glance.
-  this.debug.log("Something happened.");
-  this.debug.warn("Something happened!");
-  this.debug.error("SOMETHING HAPPENED!!!!");
+  this.debug.name = 'component:Example' // Prefix messages in the console to make tracing easier at a glance.
+  this.debug.log('Something happened.')
+  this.debug.warn('Something happened!')
+  this.debug.error('SOMETHING HAPPENED!!!!')
 
   /*=================================*\
   ||   Component Lifecycle Methods   ||
   \*=================================*/
 
-  this.isConnected; // true if component is connected
+  this.isConnected // true if component is connected
 
   this.beforeConnect(() => {
     // Runs when the component is about to be (but is not yet) added to the page.
-  });
+  })
 
   this.afterConnect(() => {
     // Runs after the component is added to the page.
-  });
+  })
 
   this.beforeDisconnect(() => {
     // Runs when the component is about to be (but is not yet) removed from the page.
-  });
+  })
 
   this.afterDisconnect(() => {
     // Runs after the component is removed from the page.
-  });
+  })
 
   this.transitionOut(() => {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       // Runs when the component is about to leave the DOM.
       // Delays disconnection and 'afterDisconnect' hook until the promise resolves.
       // Use this to set up an exit animation.
 
-      setTimeout(resolve, 500);
-    });
-  });
+      setTimeout(resolve, 500)
+    })
+  })
 
   // Runs a callback function each time an observable emits a value while this component is connected.
-  this.subscribeTo($title, (title) => {
-    console.log("title attribute changed to " + title);
-  });
+  this.subscribeTo($title, title => {
+    console.log('title attribute changed to ' + title)
+  })
 
   /*=================================*\
   ||            Children             ||
@@ -185,7 +185,7 @@ function Example() {
 
   // Access the component's children with `ctx.children`,
   // in this case to render them inside a <div>
-  return h("div", this.children);
+  return h('div', this.children)
 }
 ```
 
@@ -236,21 +236,21 @@ Woof supports JSX, so if you want to write your components as HTML to begin with
 > Note that Woof uses a `class` attribute like HTML rather than `className` like React.
 
 ```jsx
-function Example() {
+function Example () {
   return (
     <section>
       <h1>Item List</h1>
-      <p style="color: red">Below is a list of items.</p>
+      <p style='color: red'>Below is a list of items.</p>
       <ul>
         <li>Item 1</li>
-        <li class="active">Item 2</li>
+        <li class='active'>Item 2</li>
         <li>Item 3</li>
         <li>Item 4</li>
         <li>Item 5</li>
         <li>Item 6</li>
       </ul>
     </section>
-  );
+  )
 }
 ```
 
@@ -306,7 +306,7 @@ The `h` function supports creating elements and binding data to them. Helpers su
 >
 > `unless($condition, element)`
 
-The `when` helper displays the element only when the condition is truthy while `unless` displays the element only when the condition is falsy. The condition can be a plain value or a $state.
+The `when` helper displays the element only when the condition is truthy while `unless` displays the element only when the condition is falsy. The condition can be a plain value or a \$state.
 
 ```js
 import { makeState, when, unless } from "@woofjs/client";
@@ -334,22 +334,22 @@ function Example() {
 Renders a component once for each item in an array. If the array is stored inside a $state the list will update whenever that $state is updated.
 
 ```js
-import { makeState, repeat } from "@woofjs/client";
+import { makeState, repeat } from '@woofjs/client'
 
-function Example() {
-  const $list = makeState(["one", "two", "three"]);
+function Example () {
+  const $list = makeState(['one', 'two', 'three'])
 
   return h(
-    "ul",
+    'ul',
 
     // Render once for each item in $list. Updates when $list changes.
     repeat($list, function () {
-      const $value = this.$attrs.map((attrs) => attrs.value);
+      const $value = this.$attrs.map(attrs => attrs.value)
 
       // Return an <li> that contains the current value of this $list item.
-      return h("li", $value);
+      return h('li', $value)
     })
-  );
+  )
 }
 ```
 
@@ -359,7 +359,7 @@ If you'd like to specify the key you can pass a function as the third argument:
 
 ```js
 // Use the list item's `id` field as the key.
-repeat($list, Component, (item, index) => item.id);
+repeat($list, Component, (item, index) => item.id)
 ```
 
 #### watch
@@ -369,51 +369,51 @@ repeat($list, Component, (item, index) => item.id);
 Calls a render function whenever the state changes and displays the return value.
 
 ```js
-import { makeState, watch } from "@woofjs/client";
+import { makeState, watch } from '@woofjs/client'
 
-function Example() {
-  const $value = makeState("one");
+function Example () {
+  const $value = makeState('one')
 
   return h(
-    "div",
+    'div',
 
     // Displays the return value of the function each time the value changes.
-    watch($value, (value) => {
-      return <span>{value}!!!</span>;
+    watch($value, value => {
+      return <span>{value}!!!</span>
     })
-  );
+  )
 }
 ```
 
 #### Two Way Binding (`bind`)
 
-> bind($state[, event])
+> bind(\$state[, event])
 
 Creates a two-way binding to a state. When this bound state is passed to the `value` attribute on an input element, the state will be updated whenever the input's value changes.
 
 ```js
-import { makeState, bind } from "@woofjs/client";
+import { makeState, bind } from '@woofjs/client'
 
-function Example() {
-  const $value = makeState("");
+function Example () {
+  const $value = makeState('')
 
   // Displays what the user typed above the text input.
   return (
     <div>
       <p>You typed: {$value}</p>
 
-      <input type="text" value={bind($value)} />
+      <input type='text' value={bind($value)} />
     </div>
-  );
+  )
 }
 ```
 
 ## Dynamic Classes
 
-Components also support dynamic classes. Pass an object where the keys are the class names, and the classes are added to the element while the values are truthy. The values can be $states if you want to toggle classes dynamically.
+Components also support dynamic classes. Pass an object where the keys are the class names, and the classes are added to the element while the values are truthy. The values can be \$states if you want to toggle classes dynamically.
 
 ```jsx
-function Example() {
+function Example () {
   return (
     <div
       class={{
@@ -421,20 +421,20 @@ function Example() {
         container: true,
 
         // Includes "active" class when 'isActive' attribute is truthy
-        active: this.$attrs.map((a) => a.isActive),
+        active: this.$attrs.map(a => a.isActive)
       }}
     >
       {this.children}
     </div>
-  );
+  )
 }
 ```
 
 Multiple classes:
 
 ```jsx
-function Example() {
-  return <div class={["one", "two"]}>{this.children}</div>;
+function Example () {
+  return <div class={['one', 'two']}>{this.children}</div>
 }
 ```
 
@@ -468,65 +468,65 @@ The following example shows a counter with one page to display the number and an
 
 ```js
 // The `counter` service holds the current count and provides methods for incrementing and decrementing.
-app.service("counter", function () {
-  const $count = makeState(0);
+app.service('counter', function () {
+  const $count = makeState(0)
 
   return {
     $current: $count.map(), // Makes a read only version. Components can only change this through the methods.
 
-    increment() {
-      $count.set((current) => current + 1);
+    increment () {
+      $count.set(current => current + 1)
     },
 
-    decrement() {
-      $count.set((current) => current - 1);
-    },
-  };
-});
+    decrement () {
+      $count.set(current => current - 1)
+    }
+  }
+})
 
-app.route("/counter", function () {
+app.route('/counter', function () {
   return (
     <div>
       <h1>World's Most Inconvenient Counter Demo</h1>
-      <a href="/counter/view">See the number</a>
-      <a href="/counter/controls">Change the number</a>
+      <a href='/counter/view'>See the number</a>
+      <a href='/counter/controls'>Change the number</a>
     </div>
-  );
-});
+  )
+})
 
 // The view route displays the count but doesn't let the user change it.
-app.route("/counter/view", function () {
-  const { $current } = this.service("counter");
+app.route('/counter/view', function () {
+  const { $current } = this.service('counter')
 
-  return <h1>The Count is Now {$current}</h1>;
-});
+  return <h1>The Count is Now {$current}</h1>
+})
 
 // The controls route lets the user change the count but doesn't display it.
-app.route("/counter/controls", function () {
-  const { increment, decrement } = this.service("counter");
+app.route('/counter/controls', function () {
+  const { increment, decrement } = this.service('counter')
 
   return (
     <div>
       <button onclick={increment}>Increment</button>
       <button onclick={decrement}>Decrement</button>
     </div>
-  );
-});
+  )
+})
 ```
 
 ### Service Context
 
 ```js
-app.service("example", function () {
+app.service('example', function () {
   // Access other services by the name they were registered under.
   // The service being accessed must have been registered before this one or the app will throw an error.
-  const service = this.service("name");
+  const service = this.service('name')
 
   // Print debug messages
-  this.debug.name = "service:example"; // Prefix messages in the console to make tracing easier at a glance.
-  this.debug.log("Something happened.");
-  this.debug.warn("Something happened!");
-  this.debug.error("SOMETHING HAPPENED!!!!");
+  this.debug.name = 'service:example' // Prefix messages in the console to make tracing easier at a glance.
+  this.debug.log('Something happened.')
+  this.debug.warn('Something happened!')
+  this.debug.error('SOMETHING HAPPENED!!!!')
 
   /*=================================*\
   ||    Service Lifecycle Methods    ||
@@ -534,22 +534,22 @@ app.service("example", function () {
 
   this.beforeConnect(() => {
     // Runs when the service is about to be (but is not yet) initialized, before any routing occurs.
-  });
+  })
 
   this.afterConnect(() => {
     // Runs after the app is connected, initial route has been matched, and the first component is added to the page.
-  });
+  })
 
   // Services live for the lifetime of the app, so they have no disconnect hooks.
 
   // Runs a callback function each time a state changes (or any observable emits a value).
-  this.subscribeTo($title, (title) => {
-    console.log("title attribute changed to " + title);
-  });
+  this.subscribeTo($title, title => {
+    console.log('title attribute changed to ' + title)
+  })
 
   // All services must return an object.
-  return {};
-});
+  return {}
+})
 ```
 
 ## Testing

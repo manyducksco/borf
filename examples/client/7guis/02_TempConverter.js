@@ -1,18 +1,19 @@
-import { makeState } from "@woofjs/client";
-
 export default function TempConverter() {
-  this.debug.name = "7GUIs:TempConverter";
+  this.debug.name = "7guis:TempConverter";
+  this.defaultState = {
+    celsius: 10,
+  };
 
-  const $celsius = makeState(10);
-  const $fahrenheit = $celsius.map((c) => c * (9 / 5) + 32);
+  const setFahrenheit = (f) => {
+    this.set("celsius", (f - 32) * (5 / 9));
+  };
 
-  function setFahrenheit(f) {
-    $celsius.set((f - 32) * (5 / 9));
-  }
+  const setCelsius = (c) => {
+    this.set("celsius", c);
+  };
 
-  function setCelsius(c) {
-    $celsius.set(c);
-  }
+  const $celsius = this.read("celsius");
+  const $fahrenheit = $celsius.to((c) => c * (9 / 5) + 32);
 
   return (
     <div class="example">

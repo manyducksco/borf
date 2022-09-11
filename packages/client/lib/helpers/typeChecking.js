@@ -28,3 +28,9 @@ export const isService = (value) => isObject(value) && value.isService === true;
 export const isState = (value) => isObject(value) && value.isState === true;
 
 export const isObservable = (value) => (value && value[$$observable] && value === value[$$observable]()) || false;
+
+export const isObserver = (value) =>
+  isObject(value) &&
+  (value.next == null || isFunction(value.next)) &&
+  (value.error == null || isFunction(value.error)) &&
+  (value.complete == null || isFunction(value.complete));
