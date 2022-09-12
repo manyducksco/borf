@@ -1,9 +1,9 @@
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
-import { __appContext } from "../keys.js";
+import { APP_CONTEXT } from "../keys.js";
 
-export function http() {
+export default function http() {
   const _middleware = [];
-  const fetch = this[__appContext].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
+  const fetch = this[APP_CONTEXT].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
   let requestId = 0;
 
   const request = (method, url) => {
@@ -48,6 +48,28 @@ export function http() {
 
     head(url) {
       return request("head", url);
+    },
+  };
+}
+
+function makeRequest({ id, debug, method, url, middleware, fetch }) {
+  const [path, _query] = url.split("?");
+  const query = new URLSearchParams(_query || "");
+
+  let isOk = (status) => status >= 200 && status < 300;
+
+  const ctx = {
+    method,
+    headers: new Headers(),
+    body: undefined,
+  };
+
+  return {
+    /**
+     * True if this request's URL is a relative path (same domain).
+     */
+    isRelative() {
+      return !/^https?:\/\//.test(url);
     },
   };
 }

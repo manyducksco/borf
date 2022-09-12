@@ -34,6 +34,9 @@ export default function Timer() {
     tick();
   });
 
+  const $duration = this.readable("duration");
+  const $elapsed = this.readable("elapsed");
+
   return (
     <div class="example">
       <header>
@@ -42,10 +45,9 @@ export default function Timer() {
 
       <div>
         <div>
-          Elapsed Time:{" "}
-          <progress max={this.read("duration")} value={this.read("elapsed")} />
+          Elapsed Time: <progress max={$duration} value={$elapsed} />
         </div>
-        <div>{this.read("elapsed").to((seconds) => seconds.toFixed(1))}</div>
+        <div>{$elapsed.to((seconds) => seconds.toFixed(1))}</div>
         <div>
           Duration:{" "}
           <input
@@ -53,7 +55,7 @@ export default function Timer() {
             min={0}
             max={30}
             step={0.1}
-            value={this.readWrite("duration")}
+            value={this.writable("duration")}
           />
         </div>
         <div>

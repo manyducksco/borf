@@ -1,6 +1,6 @@
 import "./styles/demo.css";
 
-import { woof } from "@woofjs/client";
+import woof from "@woofjs/client";
 
 import counter from "./globals/counter.js";
 import mouse from "./globals/mouse.js";
@@ -35,7 +35,7 @@ import Cells from "./7guis/07_Cells";
 //   console.log("message:", event.data);
 // });
 
-export const app = woof({
+const app = woof({
   debug: {
     filter: "*",
     log: true,
@@ -49,6 +49,10 @@ export const app = woof({
 
 app.global("counter", counter);
 app.global("mouse", mouse);
+
+app.route("/client-test", function () {
+  return <h1>Test</h1>;
+});
 
 app.route("*", AppLayout, function () {
   this.route("/examples", () => {
@@ -101,10 +105,10 @@ app.route("*", AppLayout, function () {
     },
     function subroutes() {
       this.route("/one", function () {
-        <h1>NESTED #1</h1>;
+        return <h1>NESTED #1</h1>;
       });
       this.route("/two", function () {
-        <h1>NESTED #2</h1>;
+        return <h1>NESTED #2</h1>;
       });
       this.redirect("*", "./one");
     }

@@ -1,7 +1,5 @@
-import { repeat } from "@woofjs/client";
-
 export default function CRUD() {
-  this.name = "7GUIs:CRUD";
+  this.name = "7guis:CRUD";
   this.defaultState = {
     people: [
       {
@@ -29,8 +27,10 @@ export default function CRUD() {
     filterPrefix: "",
   };
 
-  const $filteredPeople = this.concat("people", "filterPrefix").to(
-    ([people, prefix]) => {
+  const $filteredPeople = this.merge(
+    "people",
+    "filterPrefix",
+    (people, prefix) => {
       if (prefix.trim() === "") {
         return people;
       }
@@ -40,20 +40,6 @@ export default function CRUD() {
       );
     }
   );
-
-  // const $filteredPeople2 = this.merge(
-  //   "people",
-  //   "filterPrefix",
-  //   (people, prefix) => {
-  //     if (prefix.trim() === "") {
-  //       return people;
-  //     }
-
-  //     return people.filter((person) =>
-  //       person.surname.toLowerCase().startsWith(prefix.toLowerCase())
-  //     );
-  //   }
-  // );
 
   // Creates a new person from the current input values.
   const create = () => {
@@ -113,18 +99,18 @@ export default function CRUD() {
 
       <div>
         <div>
-          Filter prefix: <input value={this.readWrite("filterPrefix")} />
+          Filter prefix: <input value={this.writable("filterPrefix")} />
         </div>
         <div>
           <select
             size={$filteredPeople.to((fp) => Math.max(fp.length, 2))}
-            value={this.read("selectedId")}
+            value={this.readable("selectedId")}
             onchange={(e) => {
               this.set("selectedId", Number(e.target.value));
             }}
           >
-            {repeat($filteredPeople, function FilterOption() {
-              const $person = this.read("value");
+            {this.repeat($filteredPeople, function FilterOption() {
+              const $person = this.readable("value");
 
               return (
                 <option value={$person.to((p) => p.id)}>
@@ -135,8 +121,8 @@ export default function CRUD() {
           </select>
         </div>
         <div>
-          <input type="text" value={this.readWrite("nameInput")} />
-          <input type="text" value={this.readWrite("surnameInput")} />
+          <input type="text" value={this.writable("nameInput")} />
+          <input type="text" value={this.writable("surnameInput")} />
         </div>
         <div>
           <button onclick={create}>Create</button>

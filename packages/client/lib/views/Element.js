@@ -1,11 +1,11 @@
 import { isArray, isObject, isString, isNumber, isFunction, isBinding, isObservable } from "../helpers/typeChecking.js";
-import { __elementContext } from "../keys.js";
+import { ELEMENT_CONTEXT } from "../keys.js";
 
 /**
  * Implements logic for HTML elements created with `h()`.
  */
 export function Element() {
-  const elementContext = this[__elementContext];
+  const elementContext = this[ELEMENT_CONTEXT];
 
   const tagname = this.get("tagname");
   const attrs = this.get("attrs") || {};
@@ -60,31 +60,33 @@ function applyAttrs(element, attrs, subscriptions) {
 
     // Bind or set value depending on its type.
     if (key === "value") {
-      if (isObservable(value)) {
+      if (isBinding(value)) {
         subscriptions.push(
           value.subscribe((current) => {
             element.value = String(current);
           })
         );
-      } else if (isBinding(value)) {
+
+        if (value.isWritable) {
+          const listener = (e) => {
+            const updated = toTypeOf(value.get(), e.target.value);
+            value.set(updated);
+          };
+
+          element.addEventListener("input", listener);
+
+          subscriptions.push({
+            unsubscribe: () => {
+              element.removeEventListener("input", listener);
+            },
+          });
+        }
+      } else if (isObservable(value)) {
         subscriptions.push(
-          value.$value.subscribe((current) => {
+          value.subscribe((current) => {
             element.value = String(current);
           })
         );
-
-        const listener = (e) => {
-          const updated = toSameType(value.$value.get(), e.target.value);
-          value.$value.set(updated);
-        };
-
-        element.addEventListener(value.event, listener);
-
-        subscriptions.push({
-          unsubscribe: () => {
-            element.removeEventListener(value.event, listener);
-          },
-        });
       } else {
         element.value = String(value);
       }
@@ -252,7 +254,7 @@ function getClassMap(classes) {
  * Attempts to convert `source` to the same type as `target`.
  * Returns `source` as-is if conversion is not possible.
  */
-function toSameType(target, source) {
+function toTypeOf(target, source) {
   const type = typeof target;
 
   if (type === "string") {

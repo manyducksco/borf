@@ -1,28 +1,27 @@
-import { initView } from "../helpers/initView.js";
+import { makeView } from "../makers/makeView.js";
 import { isArray } from "../helpers/typeChecking.js";
-import { __appContext } from "../keys.js";
+import { APP_CONTEXT } from "../keys.js";
 
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
  */
 export function Repeat() {
-  this.name = "woof:view:Repeat";
-
+  this.name = "repeat";
   this.defaultState = {
-    list: [],
+    value: [],
     view: null,
-    getKey: (value) => value,
+    getKey: null,
   };
 
-  const appContext = this[__appContext];
-  const viewFn = this.get("view");
-  const getKey = this.get("getKey");
+  const node = document.createComment("woof:repeat");
 
-  const node = document.createComment("Repeat");
+  const appContext = this[APP_CONTEXT];
+  const viewFn = this.get("view");
+  const getKey = this.get("getKey") || ((v) => v);
 
   let connectedItems = [];
 
-  this.observe("list", (newValues) => {
+  this.observe("value", (newValues) => {
     if (!isArray(newValues)) {
       throw new TypeError(`Repeat expects an array. Got: ${typeof newValues}`);
     }
@@ -63,12 +62,12 @@ export function Repeat() {
       const existing = connectedItems.find((item) => item.key === key.value);
 
       if (existing) {
-        existing.view.set(key.attrs);
+        existing.view.state.set(key.attrs);
         newItems[key.index] = existing;
       } else {
         newItems[key.index] = {
           key: key.value,
-          view: initView(viewFn, { attrs: key.attrs, appContext }),
+          view: makeView(viewFn, { attrs: key.attrs, appContext }),
         };
       }
     }

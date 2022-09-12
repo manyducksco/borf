@@ -12,18 +12,18 @@ export function TwoWayBindExample() {
   return (
     <div class="example">
       <h3>
-        Two way data binding with <code>.readWrite()</code>
+        Two way data binding with <code>.writable()</code>
       </h3>
       <div>
-        <input value={this.readWrite("text")} />
-        <input value={this.readWrite("size")} type="number" />{" "}
+        <input value={this.writable("text")} />
+        <input value={this.writable("size")} type="number" />{" "}
         {/* number value gets converted back to number */}
         <p
           style={{
-            fontSize: this.read("size").to((s) => s + "px"),
+            fontSize: this.readable("size").to((s) => s + "px"),
           }}
         >
-          {this.read("text")}
+          {this.readable("text")}
         </p>
       </div>
     </div>

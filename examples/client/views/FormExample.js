@@ -1,4 +1,3 @@
-import { when, repeat } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export function FormExample() {
@@ -11,8 +10,7 @@ export function FormExample() {
 
   logLifecycle(this);
 
-  const $state = this.read();
-  const $errors = $state.to((state) => {
+  const $errors = this.merge((state) => {
     let errors = [];
 
     if (state.firstName.trim() == "") {
@@ -31,6 +29,14 @@ export function FormExample() {
   });
   const $hasErrors = $errors.to((e) => e.length > 0);
 
+  this.observe($errors, (value) => {
+    this.log("errors", value);
+  });
+
+  this.observe($hasErrors, (value) => {
+    this.log("hasErrors?", value);
+  });
+
   const onsubmit = (e) => {
     e.preventDefault();
     alert("Thank you for your submission.");
@@ -42,21 +48,27 @@ export function FormExample() {
       <form onsubmit={onsubmit}>
         <input
           type="text"
-          value={this.readWrite("firstName")}
+          value={this.writable("firstName")}
           placeholder="First Name"
         />
         <input
           type="text"
-          value={this.readWrite("lastName")}
+          value={this.writable("lastName")}
           placeholder="Last Name"
         />
-        <input type="number" value={this.readWrite("age")} placeholder="Age" />
+        <input type="number" value={this.writable("age")} placeholder="Age" />
 
         <button disabled={$hasErrors}>Submit</button>
 
-        {when($hasErrors, () =>
-          repeat($errors, function Error() {
-            return <div style="color:red">{this.read("value")}</div>;
+        {this.when(
+          $hasErrors,
+          this.repeat($errors, function Error() {
+            const $value = this.readable("value");
+            this.observe($value, (value) => {
+              this.log("value", value);
+            });
+
+            return <div style="color:red">{$value}</div>;
           })
         )}
       </form>

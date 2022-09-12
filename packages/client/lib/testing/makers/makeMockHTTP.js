@@ -1,7 +1,7 @@
-import { makeDebug } from "../makeDebug.js";
 import { makeMockFetch } from "./makeMockFetch.js";
-import { HTTPService } from "../services/http.js";
-import { initService } from "../helpers/initService.js";
+import { makeGlobal } from "../../makers/makeGlobal.js";
+
+import http from "../../globals/http.js";
 
 /**
  * @example
@@ -39,9 +39,8 @@ export function makeMockHTTP(fn) {
           _fetch: fetch,
         },
       },
-      debug: makeDebug({ filter: "-woof:*" }),
     };
 
-    return initService(HTTPService, { appContext, name: "http" }).exports;
+    return makeGlobal(http, { appContext, channelPrefix: "mock:global", name: "http" }).exports;
   };
 }

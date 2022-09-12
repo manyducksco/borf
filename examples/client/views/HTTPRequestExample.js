@@ -11,8 +11,7 @@ export function HTTPRequestExample() {
 
   logLifecycle(this);
 
-  const $state = this.read();
-  const $label = $state.to((state) => {
+  const $label = this.merge((state) => {
     if (state.loading) {
       return "LOADING...";
     } else {

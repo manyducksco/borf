@@ -1,7 +1,29 @@
-import { repeat } from "@woofjs/client";
-
 const flightTypes = ["one-way flight", "return flight"];
 const flipped = (value) => !value; // Boolean flipping function.
+
+function formatDate(date) {
+  date = new Date();
+
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+
+  return `${d}.${m}.${y}`;
+}
+
+function validateDate(str) {
+  if (!/^\d{2}\.\d{2}\.\d{4}$/.test(str)) {
+    return false;
+  }
+
+  return true;
+}
+
+function parseDate(str) {
+  const [d, m, y] = str.split(".").map(Number);
+
+  return new Date(y, m - 1, d);
+}
 
 export default function FlightBooker() {
   this.name = "7guis:FlightBooker";
@@ -13,39 +35,15 @@ export default function FlightBooker() {
     returnDateIsValid: true,
   };
 
-  const formatDate = (date) => {
-    date = new Date();
-
-    const y = date.getFullYear();
-    const m = date.getMonth() + 1;
-    const d = date.getDate();
-
-    return `${d}.${m}.${y}`;
-  };
-
-  const validateDate = (str) => {
-    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(str)) {
-      return false;
-    }
-
-    return true;
-  };
-
-  const parseDate = (str) => {
-    const [d, m, y] = str.split(".").map(Number);
-
-    return new Date(y, m - 1, d);
-  };
-
-  const $$flightType = this.readWrite("flightType");
-  const $$startDate = this.readWrite("startDate");
-  const $$returnDate = this.readWrite("returnDate");
+  const $$flightType = this.writable("flightType");
+  const $$startDate = this.writable("startDate");
+  const $$returnDate = this.writable("returnDate");
 
   // Concatenate date states and convert through a function into a new state.
-  const $formIsValid = this.concat("startDateIsValid", "returnDateIsValid").to(
-    ([d1, d2]) => {
-      return d1 && d2;
-    }
+  const $formIsValid = this.merge(
+    "startDateIsValid",
+    "returnDateIsValid",
+    (x, y) => x && y
   );
 
   // is("this").javascriptCase?.it.is("English").dressed["up"][2].lookLike("JavaScript").code
@@ -69,12 +67,12 @@ export default function FlightBooker() {
               $$flightType.set(e.target.value);
             }}
           >
-            {repeat(flightTypes, function FlightType() {
-              const $value = this.read("value");
-              const $selected = this.concat($value, $$flightType).to(
-                ([value, current]) => {
-                  return value === current;
-                }
+            {this.repeat(flightTypes, function FlightType() {
+              const $value = this.readable("value");
+              const $selected = this.merge(
+                $value,
+                $$flightType,
+                (x, y) => x === y
               );
 
               return (

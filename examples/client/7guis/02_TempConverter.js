@@ -1,5 +1,5 @@
 export default function TempConverter() {
-  this.debug.name = "7guis:TempConverter";
+  this.name = "7guis:TempConverter";
   this.defaultState = {
     celsius: 10,
   };
@@ -12,7 +12,7 @@ export default function TempConverter() {
     this.set("celsius", c);
   };
 
-  const $celsius = this.read("celsius");
+  const $celsius = this.readable("celsius");
   const $fahrenheit = $celsius.to((c) => c * (9 / 5) + 32);
 
   return (

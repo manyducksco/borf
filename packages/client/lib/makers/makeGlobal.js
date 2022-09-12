@@ -1,8 +1,12 @@
-import { isObject, isString } from "./typeChecking.js";
-import { __appContext } from "../keys.js";
-import { makeStateContext } from "../state/makeStateContext.js";
+import { isObject, isString } from "../helpers/typeChecking.js";
+import { APP_CONTEXT } from "../keys.js";
+import { makeState } from "./makeState.js";
 
-export function initGlobal(globalFn, { appContext, name, debugTag }) {
+import debug from "../globals/debug.js";
+
+export function makeGlobal(fn, { appContext, name, channelPrefix }) {
+  channelPrefix = channelPrefix || "global";
+
   // Lifecycle hook callbacks
   const onBeforeConnect = [];
   const onAfterConnect = [];
@@ -10,17 +14,31 @@ export function initGlobal(globalFn, { appContext, name, debugTag }) {
   // Subscriptions for observables observed through subscribeTo
   const subscriptions = [];
 
-  const debug = appContext.debug.makeChannel(debugTag || `global:${name}`);
-  const state = makeStateContext();
+  // Exception because debug global doesn't exist yet when initializing the debug global.
+  const channel = fn === debug ? {} : appContext.globals.debug.exports.channel(`${channelPrefix}:${name}`);
+  const [state] = makeState({ debug: channel });
 
   const ctx = {
-    [__appContext]: appContext,
+    [APP_CONTEXT]: appContext,
+
+    ...channel,
+    ...state,
 
     set defaultState(values) {
-      state.set(values);
+      // Set defaults only if they haven't been set already.
+      for (const key in values) {
+        if (state.get(key) === undefined) {
+          state.set(key, values[key]);
+        }
+      }
     },
 
-    ...state,
+    get name() {
+      return channel.name;
+    },
+    set name(value) {
+      channel.name = `${channelPrefix}:${value}`;
+    },
 
     global(name) {
       if (!isString(name)) {
@@ -48,43 +66,24 @@ export function initGlobal(globalFn, { appContext, name, debugTag }) {
     },
   };
 
-  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debug));
-
-  const exports = globalFn.call(ctx);
+  const exports = fn.call(ctx);
 
   if (!isObject(exports)) {
     throw new TypeError(`A global must return an object. Got: ${exports}`);
   }
 
-  const service = {
+  return {
     state,
     exports,
-
-    /**
-     * Called by the App to fire lifecycle callbacks as the app is initialized.
-     */
     beforeConnect() {
       for (const callback of onBeforeConnect) {
         callback();
       }
     },
-
-    /**
-     * Called by the App to fire lifecycle callbacks as the app is initialized.
-     */
     afterConnect() {
       for (const callback of onAfterConnect) {
         callback();
       }
     },
   };
-
-  Object.defineProperty(service, "isService", {
-    value: true,
-    writable: false,
-    enumerable: true,
-    configurable: false,
-  });
-
-  return service;
 }

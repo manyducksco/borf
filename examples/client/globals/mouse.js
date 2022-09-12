@@ -15,6 +15,6 @@ export default function mouse() {
   });
 
   return {
-    $position: this.read("position"),
+    $position: this.readable("position"),
   };
 }

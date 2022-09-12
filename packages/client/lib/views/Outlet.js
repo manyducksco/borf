@@ -1,11 +1,11 @@
 import { isTemplate } from "../helpers/typeChecking.js";
-import { __appContext, __elementContext } from "../keys.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
 export function Outlet() {
   const node = document.createComment("Outlet");
 
-  const appContext = this[__appContext];
-  const elementContext = this[__elementContext];
+  const appContext = this[APP_CONTEXT];
+  const elementContext = this[ELEMENT_CONTEXT];
 
   let connected = null;
 

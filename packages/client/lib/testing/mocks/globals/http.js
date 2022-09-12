@@ -1,4 +1,4 @@
-export function MockHTTPService() {
+export default function mockHttp() {
   function explode() {
     throw new Error("Pass a mock 'http' service to use 'http' in a wrapper.");
   }

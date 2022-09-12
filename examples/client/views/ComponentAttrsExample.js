@@ -3,13 +3,15 @@ export function ComponentAttrsExample() {
     message: "test",
   };
 
+  const $$message = this.writable("message");
+
   return (
     <div class="example">
       <h3>Component Attributes</h3>
       <div>
-        <input type="text" value={this.readWrite("message")} />
+        <input type="text" value={$$message} />
         <hr />
-        <SubComponent message={this.readWrite("message")} />
+        <SubComponent message={$$message} />
       </div>
     </div>
   );
@@ -20,7 +22,7 @@ function SubComponent() {
 
   return (
     <div>
-      <p>Message: {this.read("message")}</p>
+      <p>Message: {this.readable("message")}</p>
       <button
         onclick={() => {
           // Sets the value which should set the parent component's message as well because it's two-way bound.

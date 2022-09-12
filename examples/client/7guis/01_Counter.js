@@ -4,7 +4,7 @@ export default function Counter() {
     count: 0,
   };
 
-  const $count = this.read("count");
+  const $count = this.readable("count");
 
   return (
     <div class="example">

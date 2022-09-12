@@ -1,4 +1,3 @@
-import { when } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export function ConditionalExample() {
@@ -9,8 +8,8 @@ export function ConditionalExample() {
 
   logLifecycle(this);
 
-  const $$show = this.readWrite("show");
-  const $label = $$show.to((t) => (t ? "Hide Text" : "Show Text"));
+  // TODO: Merge might need a name that makes sense with one key.
+  const $label = this.merge("show", (t) => (t ? "Hide Text" : "Show Text"));
 
   return (
     <div class="example">
@@ -20,12 +19,12 @@ export function ConditionalExample() {
       <div>
         <button
           onclick={() => {
-            $$show.set((current) => !current);
+            this.set("show", (t) => !t);
           }}
         >
           {$label}
         </button>
-        {when($$show, <span>Hello there!</span>)}
+        {this.when("show", <span>Hello there!</span>)}
       </div>
     </div>
   );

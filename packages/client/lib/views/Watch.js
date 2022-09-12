@@ -1,5 +1,5 @@
 import { isFunction, isString, isNumber, isTemplate, isObservable } from "../helpers/typeChecking.js";
-import { __appContext, __elementContext } from "../keys.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 import { h } from "../h.js";
 import { Text } from "./Text.js";
 
@@ -9,8 +9,8 @@ import { Text } from "./Text.js";
 export function Watch() {
   this.name = "woof:template:Watch";
 
-  const appContext = this[__appContext];
-  const elementContext = this[__elementContext];
+  const appContext = this[APP_CONTEXT];
+  const elementContext = this[ELEMENT_CONTEXT];
 
   const node = document.createComment("Watch");
   const render = this.get("render");

@@ -1,21 +1,21 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
 
-import { __appContext } from "../keys.js";
+import { APP_CONTEXT } from "../keys.js";
 import { matchRoute } from "../helpers/routing.js";
 import { isObject } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { initView } from "../helpers/initView.js";
+import { makeView } from "../makers/makeView.js";
 
 import { Outlet } from "../views/Outlet.js";
 
 /**
  * Top level navigation service.
  */
-export function router() {
-  const appContext = this[__appContext];
+export default function router() {
+  const appContext = this[APP_CONTEXT];
   const options = appContext.options.router || {};
   const routes = appContext.routes;
 
@@ -80,7 +80,7 @@ export function router() {
   this.afterConnect(() => {
     const root = appContext.rootElement;
 
-    appOutlet = initView(Outlet, { appContext });
+    appOutlet = makeView(Outlet, { appContext });
     appOutlet.connect(root);
 
     history.listen(onRouteChange);
@@ -132,41 +132,38 @@ export function router() {
             if (activeLayer?.id !== matchedLayer.id) {
               activeLayers = activeLayers.slice(0, i);
 
-              const outlet = initView(Outlet, { appContext });
-              const component = initView(matchedLayer.component, { children: [outlet], appContext });
+              this.log({ activeLayer, matchedLayer });
+
+              const outlet = makeView(Outlet, { appContext });
+              const view = makeView(matchedLayer.view, { children: [outlet], appContext });
 
               const parentLayer = activeLayers[activeLayers.length - 1];
 
-              const mount = (component) => {
+              const mount = (view) => {
                 requestAnimationFrame(() => {
-                  if (activeLayer && activeLayer.component.isConnected) {
+                  if (activeLayer && activeLayer.view.isConnected) {
                     // Disconnect first mismatched active and remove remaining layers.
-                    activeLayer.component.disconnect({ allowTransitionOut: true });
+                    activeLayer.view.disconnect({ allowTransitionOut: true });
                   }
 
-                  // TODO: $attrs and children API is going to change.
                   if (parentLayer) {
-                    parentLayer.outlet.$attrs.set({
-                      element: component,
-                    });
+                    parentLayer.outlet.state.set("element", view);
                   } else {
-                    appOutlet.$attrs.set({
-                      element: component,
-                    });
+                    appOutlet.state.set("element", view);
                   }
                 });
               };
 
-              if (component.hasRoutePreload) {
-                await component.routePreload(mount);
+              if (view.hasRoutePreload) {
+                await view.routePreload(mount);
               }
 
-              mount(component);
+              mount(view);
 
               // Push and connect new active layer.
               activeLayers.push({
                 id: matchedLayer.id,
-                component,
+                view,
                 outlet,
               });
             }
@@ -193,10 +190,10 @@ export function router() {
   };
 
   return {
-    $route: this.read("route"),
-    $path: this.read("path"),
-    $params: this.read("params"),
-    $$query: this.readWrite("query"),
+    $route: this.readable("route"),
+    $path: this.readable("path"),
+    $params: this.readable("params"),
+    $$query: this.writable("query"),
 
     back(steps = 1) {
       history.go(-steps);

@@ -1,4 +1,4 @@
-import { initGlobal } from "./initGlobal.js";
+import { makeGlobal } from "./makeGlobal.js";
 
 /*========================*\
 ||         Utils          ||
@@ -21,55 +21,55 @@ test("lifecycle hooks", () => {
   const beforeConnect = jest.fn();
   const afterConnect = jest.fn();
 
-  const service = function () {
+  const fn = function () {
     this.beforeConnect(beforeConnect);
     this.afterConnect(afterConnect);
 
     return { works: true };
   };
 
-  const svc = initGlobal(service, { appContext, name: "test" });
+  const instance = makeGlobal(fn, { appContext, name: "test" });
 
-  expect(svc.exports).toStrictEqual({ works: true });
-  expect(typeof svc.beforeConnect).toBe("function");
-  expect(typeof svc.afterConnect).toBe("function");
+  expect(instance.exports).toStrictEqual({ works: true });
+  expect(typeof instance.beforeConnect).toBe("function");
+  expect(typeof instance.afterConnect).toBe("function");
 
   expect(beforeConnect).toHaveBeenCalledTimes(0);
   expect(afterConnect).toHaveBeenCalledTimes(0);
 
-  svc.beforeConnect();
+  instance.beforeConnect();
 
   expect(beforeConnect).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(0);
 
-  svc.afterConnect();
+  instance.afterConnect();
 
   expect(beforeConnect).toHaveBeenCalledTimes(1);
   expect(afterConnect).toHaveBeenCalledTimes(1);
 });
 
 test("throws if bootstrap doesn't return an object", () => {
-  const nullService = function () {
+  const nullFn = function () {
     return null;
   };
 
-  const stringService = function () {
+  const stringFn = function () {
     return "nope";
   };
 
-  const functionService = function () {
+  const fnFn = function () {
     return function () {
       return {};
     };
   };
 
-  const regularService = function () {
+  const regularFn = function () {
     return { thisIsNormal: true };
   };
 
-  expect(() => initGlobal(nullService, { appContext, name: "test" })).toThrow();
-  expect(() => initGlobal(stringService, { appContext, name: "test" })).toThrow();
-  expect(() => initGlobal(functionService, { appContext, name: "test" })).toThrow();
+  expect(() => makeGlobal(nullFn, { appContext, name: "test" })).toThrow();
+  expect(() => makeGlobal(stringFn, { appContext, name: "test" })).toThrow();
+  expect(() => makeGlobal(fnFn, { appContext, name: "test" })).toThrow();
 
-  expect(() => initGlobal(regularService, { appContext, name: "test" })).not.toThrow();
+  expect(() => makeGlobal(regularFn, { appContext, name: "test" })).not.toThrow();
 });

@@ -1,5 +1,5 @@
-import { matchRoute, parseRoute, sortRoutes } from "../helpers/routing.js";
-import { isFunction, isObject } from "../helpers/typeChecking.js";
+import { matchRoute, parseRoute, sortRoutes } from "../../helpers/routing.js";
+import { isFunction, isObject } from "../../helpers/typeChecking.js";
 
 const { Response } = require("fetch-ponyfill")();
 

@@ -11,8 +11,6 @@ export function AppLayout() {
 
   // Display current mouse coordinates as tab title
   this.observe(mouse.$position, (pos) => {
-    this.log("observing pos", pos);
-
     page.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
   });
 

@@ -8,13 +8,15 @@ import {
   isObservable,
 } from "./helpers/typeChecking.js";
 import { flatten } from "./helpers/flatten.js";
-import { initView } from "./helpers/initView.js";
+import { makeView } from "./makers/makeView.js";
 
 import { Text } from "./views/Text.js";
-import { Watch } from "./views/Watch.js";
-import { Repeat } from "./views/Repeat.js";
 import { Element } from "./views/Element.js";
 import { Fragment } from "./views/Fragment.js";
+
+// Parse IDs and classes passed as part of the "element" string to h()
+// for example: 'div #something .class1.class2'
+function parseSelectors() {}
 
 /**
  * Template function. Used in components to render content.
@@ -67,7 +69,7 @@ export class Template {
         if (isTemplate(child)) {
           child = child.init({ appContext, elementContext });
         } else if (isString(child) || isNumber(child) || isObservable(child)) {
-          child = initView(Text, {
+          child = makeView(Text, {
             attrs: {
               value: child,
             },
@@ -86,9 +88,9 @@ export class Template {
 
     if (isString(element)) {
       if (element === "" || element === "<>") {
-        return initView(Fragment, { children, appContext, elementContext });
+        return makeView(Fragment, { children, appContext, elementContext });
       } else {
-        return initView(Element, {
+        return makeView(Element, {
           attrs: {
             tagname: element,
             attrs,
@@ -99,93 +101,10 @@ export class Template {
         });
       }
     } else if (isFunction(element)) {
-      return initView(element, { attrs, children, appContext, elementContext });
+      return makeView(element, { attrs, children, appContext, elementContext });
     } else {
       console.error("Element", element);
       throw new TypeError(`Expected a tagname or component function. Got ${typeof element}`);
     }
   }
-}
-
-/**
- * Displays an element when `$condition` is truthy.
- *
- * @example
- * when($value, h("h1", "If you can read this the value is truthy."))
- *
- * @param $condition - State or variable with a truthy or falsy value.
- * @param element - Element to display when $condition is truthy.
- */
-export function when($condition, element) {
-  return new Template(Watch, {
-    value: $condition,
-    render: (value) => {
-      if (value) {
-        return element;
-      } else {
-        return null;
-      }
-    },
-  });
-}
-
-/**
- * Displays an element when `$condition` is falsy.
- *
- * @example
- * unless($value, h("h1", "If you can read this the value is falsy."))
- *
- * @param $condition - State or variable with a truthy or falsy value.
- * @param element - Element to display when $condition is falsy.
- */
-export function unless($condition, element) {
-  return new Template(Watch, {
-    value: $condition,
-    render: (value) => {
-      if (value) {
-        return null;
-      } else {
-        return element;
-      }
-    },
-  });
-}
-
-/**
- * Repeats a component once for each item in `$values`.
- *
- * @param $values - An array or state containing an array.
- * @param component - Component to repeat for each item.
- * @param getKey - Takes an array item and returns a unique key. If not provided then the array index will be used.
- */
-export function repeat($values, component, getKey = null) {
-  return new Template(Repeat, { value: $values, component, getKey });
-}
-
-/**
- * Displays the result of the `render` function whenever `$value` changes.
- *
- * @param $value - A state containing a value to watch.
- * @param render - Function that takes the latest value and returns an element to display.
- */
-export function watch($value, render) {
-  return new Template(Watch, { value: $value, render });
-}
-
-/**
- * Creates a two-way binding on a state. When used as the value of an `<input>`
- * element, the input's value will propagate back to `$value` whenever it changes.
- *
- * @example
- * <input type="text" value={bind($value)} />
- *
- * @param $value - A state to two-way bind.
- * @param event - The event that triggers an update to `$value`. Defaults to "input".
- */
-export function bind($value, event = "input") {
-  return {
-    $value,
-    event,
-    isBinding: true,
-  };
 }

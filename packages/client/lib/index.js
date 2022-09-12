@@ -1,13 +1,7 @@
-import { makeApp } from "./makeApp.js";
+import { makeApp } from "./makers/makeApp.js";
 
-export function woof(options) {
-  return makeApp(options);
-}
+export const woof = makeApp;
+export default makeApp;
 
-export default woof;
-
-// export { makeState } from "./state/makeState.js";
-// export { mergeStates } from "./state/mergeStates.js";
-
-export { h, when, unless, repeat, watch, bind } from "./h.js";
+export { h } from "./h.js";
 export { Fragment } from "./views/Fragment.js";

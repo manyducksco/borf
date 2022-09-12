@@ -11,7 +11,7 @@ export function ToggleExample() {
 
   logLifecycle(this);
 
-  const $active = this.read("active");
+  const $active = this.readable("active");
   const $status = $active.to((t) => (t ? "ON" : "OFF"));
 
   return (

@@ -1,14 +1,27 @@
-import { isTemplate, isDOM, isFunction, isComponent, isObservable, isState, isString } from "./typeChecking.js";
-import { makeState } from "../state/makeState.js";
-import { makeStateContext } from "../state/makeStateContext.js";
+import { isTemplate, isDOM, isFunction, isComponent, isString, isBinding } from "../helpers/typeChecking.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
-import { __appContext, __elementContext } from "../keys.js";
+import { makeState } from "./makeState.js";
+import { makeViewHelpers } from "./makeViewHelpers.js";
 
-export function initView(viewFn, config) {
-  let { attrs, children, appContext, elementContext } = config;
+/**
+ * State binding for views:
+ *
+ * - Values are passed as attributes
+ * - defaultState is applied
+ * - attribute values are applied
+ * - bindings are configured;
+ *   - readable bindings are observed
+ *   - writable bindings are observed and state is observed to write values back
+ */
+
+export function makeView(fn, config) {
+  let { attrs, children, appContext, elementContext, channelPrefix } = config;
 
   attrs = attrs || {};
   children = children || [];
+
+  channelPrefix = channelPrefix || "view";
 
   // Lifecycle hook callbacks
   const onBeforeConnect = [];
@@ -24,75 +37,56 @@ export function initView(viewFn, config) {
   let routePreload;
   let isConnected = false;
 
-  /* =============================*\
+  /*=============================*\
   ||         Parse attrs         ||
-  \*============================= */
+  \*=============================*/
 
-  // Attributes are separated into those that change and those that don't.
-  const staticAttrs = [];
-  const observableAttrs = [];
+  const initialState = [];
+  const bindings = {};
 
-  for (const name in attrs) {
-    if (name.startsWith("$")) {
-      if (isState(attrs[name])) {
-        // Pass states through as-is when named with $.
-        // Allows subcomponents to directly modify states through an explicit naming convention.
-        staticAttrs.push({
-          name,
-          value: attrs[name],
-        });
-      } else {
-        throw new TypeError(`Attributes beginning with $ must be states. Got: ${typeof attrs[name]}`);
-      }
-    } else if (isObservable(attrs[name])) {
-      observableAttrs.push({
-        name,
-        value: attrs[name],
-      });
+  for (const key in attrs) {
+    if (isBinding(attrs[key])) {
+      bindings[key] = attrs[key];
+      initialState.push([key, attrs[key].get()]);
     } else {
-      staticAttrs.push({
-        name,
-        value: attrs[name],
-      });
+      initialState.push([key, attrs[key]]);
     }
   }
 
-  /* =============================*\
-  ||    Set up initial $attrs    ||
-  \*============================= */
+  const debug = appContext.globals.debug.exports.channel(`${channelPrefix}:${fn.name || "unnamed"}`);
+  const [state, setBoundValue] = makeState({ initialState, bindings, debug });
+  const helpers = makeViewHelpers(state);
 
-  const initialAttrs = {};
-
-  staticAttrs.forEach(({ name, value }) => {
-    initialAttrs[name] = value;
-  });
-
-  observableAttrs.forEach(({ name, value }) => {
-    if (isState(value)) {
-      initialAttrs[name] = value.get();
-    }
-  });
-
-  const $attrs = makeState(initialAttrs);
-
-  /* =============================*\
+  /*=============================*\
   ||    Define context object    ||
-  \*============================= */
-
-  const debug = appContext.debug.makeChannel(`component:${viewFn.name || "anonymous"}`);
-  const state = makeStateContext();
+  \*=============================*/
 
   // This is the object the setup function uses to interface with the component.
   const ctx = {
-    [__appContext]: appContext,
-    [__elementContext]: elementContext,
+    [APP_CONTEXT]: appContext,
+    [ELEMENT_CONTEXT]: elementContext,
+
+    ...debug,
+    ...state,
+    ...helpers,
 
     set defaultState(values) {
-      state.set(values);
+      // Set defaults only if they haven't been set already.
+      for (const key in values) {
+        if (state.get(key) === undefined) {
+          state.set(key, values[key]);
+        }
+      }
     },
 
-    ...state,
-    // children,
+    get name() {
+      return debug.name;
+    },
+    set name(value) {
+      debug.name = `${channelPrefix}:${value}`;
+    },
+
+    children,
 
     outlet() {
       // TODO: Rework this to use an actual Outlet view that renders children.
@@ -155,26 +149,22 @@ export function initView(viewFn, config) {
     },
   };
 
-  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debug));
-
-  /* =============================*\
+  /*=============================*\
   ||     Watch dynamic attrs     ||
-  \*============================= */
+  \*=============================*/
 
-  // Update $attrs when state attrs change.
-  observableAttrs.forEach(({ name, value }) => {
-    ctx.observe(value, (next) => {
-      $attrs.set((attrs) => {
-        attrs[name] = next;
-      });
+  // Update state when bound values change.
+  for (const key in bindings) {
+    ctx.observe(bindings[key], (value) => {
+      setBoundValue(key, value);
     });
-  });
+  }
 
   /* =============================*\
   ||      Run setup function     ||
   \*============================= */
 
-  let element = viewFn.call(ctx);
+  let element = fn.call(ctx);
 
   if (isTemplate(element)) {
     element = element.init({ appContext, elementContext });
@@ -192,9 +182,7 @@ export function initView(viewFn, config) {
 
   // This is the object the framework will use to control the component.
   const component = {
-    $attrs,
-
-    // TODO: Mixin state container methods
+    state,
 
     /**
      * Returns the component's root DOM node, or null if there is none.

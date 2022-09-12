@@ -13,7 +13,7 @@ export default function counter() {
   });
 
   return {
-    $current: this.read("current"),
+    $current: this.readable("current"),
 
     reset: () => {
       this.set("current", 0);

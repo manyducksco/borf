@@ -1,6 +1,6 @@
 import { isString } from "../helpers/typeChecking.js";
 
-export function page() {
+export default function page() {
   this.defaultState = {
     title: document?.title,
   };
@@ -16,6 +16,6 @@ export function page() {
   });
 
   return {
-    $$title: this.readWrite("title"),
+    $$title: this.writable("title"),
   };
 }

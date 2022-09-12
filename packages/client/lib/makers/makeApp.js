@@ -1,26 +1,30 @@
-import { isFunction, isObject, isString, isTemplate } from "./helpers/typeChecking.js";
-import { parseRoute, splitRoute } from "./helpers/routing.js";
-import { joinPath } from "./helpers/joinPath.js";
-import { resolvePath } from "./helpers/resolvePath.js";
-import { initGlobal } from "./helpers/initGlobal.js";
-import { makeDebug } from "./helpers/makeDebug.js";
+import { isFunction, isObject, isString, isTemplate } from "../helpers/typeChecking.js";
+import { parseRoute, splitRoute } from "../helpers/routing.js";
+import { joinPath } from "../helpers/joinPath.js";
+import { resolvePath } from "../helpers/resolvePath.js";
 
-import { http } from "./globals/http.js";
-import { page } from "./globals/page.js";
-import { router } from "./globals/router.js";
+import debug from "../globals/debug.js";
+import http from "../globals/http.js";
+import page from "../globals/page.js";
+import router from "../globals/router.js";
 
+import { makeGlobal } from "./makeGlobal.js";
+
+/**
+ * Creates a woof application.
+ */
 export function makeApp(options = {}) {
   const globals = {
-    router, // Access to matched route and query params.
-    page, // Access to document settings like title and favicon.
-    http, // HTTP client with middleware support.
+    debug,
+    router,
+    page,
+    http,
   };
 
   const appContext = {
-    globals: {},
     options,
+    globals: {},
     routes: [],
-    debug: makeDebug(options.debug),
     rootElement: null,
   };
 
@@ -33,18 +37,18 @@ export function makeApp(options = {}) {
    * Parses routes into a flat data structure appropriate for handling by the router service.
    *
    * @param path - Path to match before calling handlers.
-   * @param component - Component to display when route matches.
-   * @param defineRoutes - Function that defines routes to be displayed as children of `component`.
+   * @param view - View to display when route matches.
+   * @param defineRoutes - Function that defines routes to be displayed as children of `view`.
    * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
    */
-  function prepareRoutes(path, component, defineRoutes = null, layers = []) {
-    if (isTemplate(component)) {
-      const c = component;
-      component = () => c;
+  function prepareRoutes(path, view, defineRoutes = null, layers = []) {
+    if (isTemplate(view)) {
+      const c = view;
+      view = () => c;
     }
 
-    if (!isFunction(component)) {
-      throw new TypeError(`Route needs a path and a component function. Got: ${path} and ${component}`);
+    if (!isFunction(view)) {
+      throw new TypeError(`Route needs a path and a view function. Got: ${path} and ${view}`);
     }
 
     const routes = [];
@@ -52,7 +56,7 @@ export function makeApp(options = {}) {
     // Parse nested routes if they exist.
     if (defineRoutes != null) {
       const parts = splitRoute(path);
-      const layer = { id: layerId++, component };
+      const layer = { id: layerId++, view };
 
       // Remove trailing wildcard for joining with nested routes.
       if (parts[parts.length - 1] === "*") {
@@ -63,10 +67,10 @@ export function makeApp(options = {}) {
         /**
          * Registers a new nested route with a path relative to the current route.
          */
-        route: (path, component, defineRoutes) => {
+        route: (path, view, defineRoutes) => {
           const fullPath = joinPath(...parts, path);
 
-          routes.push(...prepareRoutes(fullPath, component, defineRoutes, [...layers, layer]));
+          routes.push(...prepareRoutes(fullPath, view, defineRoutes, [...layers, layer]));
         },
         /**
          * Registers a new nested redirect with a path relative to the current route.
@@ -93,7 +97,7 @@ export function makeApp(options = {}) {
       routes.push({
         path,
         fragments: parseRoute(path).fragments,
-        layers: [...layers, { id: layerId++, component }],
+        layers: [...layers, { id: layerId++, view }],
       });
     }
 
@@ -121,11 +125,11 @@ export function makeApp(options = {}) {
      * Adds a route to the list for matching when the URL changes.
      *
      * @param path - Path to match before calling handlers.
-     * @param component - Component to display when route matches.
-     * @param defineRoutes - Function that defines routes to be displayed as children of `component`.
+     * @param view - View to display when route matches.
+     * @param defineRoutes - Function that defines routes to be displayed as children of `view`.
      */
-    route(path, component, defineRoutes = null) {
-      appContext.routes.push(...prepareRoutes(path, component, defineRoutes));
+    route(path, view, defineRoutes = null) {
+      appContext.routes.push(...prepareRoutes(path, view, defineRoutes));
 
       return this;
     },
@@ -157,10 +161,11 @@ export function makeApp(options = {}) {
      */
     beforeConnect(fn) {
       onBeforeConnect = async () => {
+        const channel = appContext.globals.debug.exports.channel("woof:app:beforeConnect");
+
         const ctx = {
-          /**
-           * Returns the global registered under `name` or throws an error if it isn't registered.
-           */
+          ...channel,
+
           global(name) {
             if (!isString(name)) {
               throw new TypeError("Expected a string.");
@@ -172,8 +177,6 @@ export function makeApp(options = {}) {
 
             throw new Error(`Global '${name}' is not registered on this app.`);
           },
-
-          debug: appContext.debug.makeChannel("woof:app:beforeConnect"),
         };
 
         return fn.call(ctx);
@@ -188,10 +191,11 @@ export function makeApp(options = {}) {
      */
     afterConnect(fn) {
       onAfterConnect = async () => {
+        const channel = appContext.globals.debug.exports.channel("woof:app:afterConnect");
+
         const ctx = {
-          /**
-           * Returns the global registered under `name` or throws an error if it isn't registered.
-           */
+          ...channel,
+
           global(name) {
             if (!isString(name)) {
               throw new TypeError("Expected a string.");
@@ -203,8 +207,6 @@ export function makeApp(options = {}) {
 
             throw new Error(`Global '${name}' is not registered on this app.`);
           },
-
-          debug: appContext.debug.makeChannel("woof:app:afterConnect"),
         };
 
         return fn.call(ctx);
@@ -248,7 +250,7 @@ export function makeApp(options = {}) {
           throw new Error(`Service '${name}' must be a function that returns an object. Got ${typeof globals[name]}`);
         }
 
-        const global = initGlobal(fn, { appContext, name });
+        const global = makeGlobal(fn, { appContext, name });
 
         if (!isObject(global.exports)) {
           throw new TypeError(`Global function for '${name}' did not return an object.`);

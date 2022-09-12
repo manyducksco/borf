@@ -1,6 +1,6 @@
 import { h } from "../h.js";
-import { makeState } from "../state/makeState.js";
-import { initComponent } from "./initComponent.js";
+// import { makeState } from "../_state/makeState.js";
+import { makeView } from "./makeView.js";
 import { isComponent, isState } from "./typeChecking.js";
 
 /*========================*\
@@ -69,7 +69,7 @@ test("returns a component", () => {
     return h("p", "This is just a test.");
   }
 
-  const result = initComponent(Component, { appContext });
+  const result = makeView(Component, { appContext });
 
   expect(isComponent(result)).toBe(true);
 });
@@ -89,12 +89,12 @@ test("throws if component doesn't return an element or null", () => {
     return h("p", "This is expected.");
   }
 
-  expect(() => initComponent(InvalidOne, { appContext })).toThrow();
-  expect(() => initComponent(InvalidTwo, { appContext })).toThrow();
-  expect(() => initComponent(InvalidThree, { appContext })).toThrow();
+  expect(() => makeView(InvalidOne, { appContext })).toThrow();
+  expect(() => makeView(InvalidTwo, { appContext })).toThrow();
+  expect(() => makeView(InvalidThree, { appContext })).toThrow();
 
-  expect(() => initComponent(Valid, { appContext })).not.toThrow();
-  expect(() => initComponent(AlsoValid, { appContext })).not.toThrow();
+  expect(() => makeView(Valid, { appContext })).not.toThrow();
+  expect(() => makeView(AlsoValid, { appContext })).not.toThrow();
 });
 
 test("connect, disconnect and lifecycle hooks", () => {
@@ -118,7 +118,7 @@ test("connect, disconnect and lifecycle hooks", () => {
     // return h("p", "This is just a test.");
   }
 
-  const result = initComponent(Component, { appContext });
+  const result = makeView(Component, { appContext });
 
   expect(parent.children.length).toBe(1);
   expect(result.isConnected).toBe(false);
@@ -178,10 +178,10 @@ test(".node returns the root DOM node", () => {
     return this.children;
   }
 
-  const nullResult = initComponent(NullComponent, { appContext });
-  const domResult = initComponent(DOMComponent, { appContext });
-  const nestedResult = initComponent(NestedComponent, { appContext });
-  const childrenResult = initComponent(ChildrenComponent, { appContext, children: root });
+  const nullResult = makeView(NullComponent, { appContext });
+  const domResult = makeView(DOMComponent, { appContext });
+  const nestedResult = makeView(NestedComponent, { appContext });
+  const childrenResult = makeView(ChildrenComponent, { appContext, children: root });
 
   expect(nullResult.node).toBe(null);
   expect(domResult.node).toBe(root);
@@ -189,128 +189,128 @@ test(".node returns the root DOM node", () => {
   expect(childrenResult.node).toBe(root);
 });
 
-test("attributes have correct initial values", () => {
-  const initialized = jest.fn();
+// test("attributes have correct initial values", () => {
+//   const initialized = jest.fn();
 
-  function Component() {
-    const attrs = this.$attrs.get();
+//   function Component() {
+//     const attrs = this.$attrs.get();
 
-    expect(isState(attrs.$stateAsState)).toBe(true);
-    expect(attrs.$stateAsState.get()).toBe(5);
+//     expect(isState(attrs.$stateAsState)).toBe(true);
+//     expect(attrs.$stateAsState.get()).toBe(5);
 
-    expect(isState(attrs.stateAsValue)).toBe(false);
-    expect(attrs.stateAsValue).toBe("yo");
+//     expect(isState(attrs.stateAsValue)).toBe(false);
+//     expect(attrs.stateAsValue).toBe("yo");
 
-    expect(attrs.normalAttr).toStrictEqual({ cool: "yeah" });
+//     expect(attrs.normalAttr).toStrictEqual({ cool: "yeah" });
 
-    expect(() => {
-      this.$attrs.set({ nope: "you can't do this." });
-    }).toThrow();
+//     expect(() => {
+//       this.$attrs.set({ nope: "you can't do this." });
+//     }).toThrow();
 
-    // Call mock function to prove this ran.
-    initialized();
+//     // Call mock function to prove this ran.
+//     initialized();
 
-    return null;
-  }
+//     return null;
+//   }
 
-  const $stateAsState = makeState(5);
-  const $stateAsValue = makeState("yo");
-  const normalAttr = { cool: "yeah" };
+//   const $stateAsState = makeState(5);
+//   const $stateAsValue = makeState("yo");
+//   const normalAttr = { cool: "yeah" };
 
-  initComponent(Component, {
-    attrs: {
-      $stateAsState,
-      stateAsValue: $stateAsValue,
-      normalAttr,
-    },
-    appContext,
-  });
+//   makeView(Component, {
+//     attrs: {
+//       $stateAsState,
+//       stateAsValue: $stateAsValue,
+//       normalAttr,
+//     },
+//     appContext,
+//   });
 
-  expect(initialized).toHaveBeenCalledTimes(1);
-});
+//   expect(initialized).toHaveBeenCalledTimes(1);
+// });
 
-test("two-way state attributes can be changed from inside the component", () => {
-  function Component() {
-    const { $twoWay } = this.$attrs.get();
+// test("two-way state attributes can be changed from inside the component", () => {
+//   function Component() {
+//     const { $twoWay } = this.$attrs.get();
 
-    $twoWay.set(2);
+//     $twoWay.set(2);
 
-    return null;
-  }
+//     return null;
+//   }
 
-  const $twoWay = makeState(1);
+//   const $twoWay = makeState(1);
 
-  initComponent(Component, { attrs: { $twoWay }, appContext });
+//   makeView(Component, { attrs: { $twoWay }, appContext });
 
-  expect($twoWay.get()).toBe(2);
-});
+//   expect($twoWay.get()).toBe(2);
+// });
 
-test("state attributes mapped in the component update when the state changes while connected", () => {
-  const twoWayChanged = jest.fn();
-  const oneWayChanged = jest.fn();
+// test("state attributes mapped in the component update when the state changes while connected", () => {
+//   const twoWayChanged = jest.fn();
+//   const oneWayChanged = jest.fn();
 
-  function Component() {
-    const $twoWay = this.$attrs.get((a) => a.$twoWay);
-    const $oneWay = this.$attrs.map((a) => a.oneWay);
+//   function Component() {
+//     const $twoWay = this.$attrs.get((a) => a.$twoWay);
+//     const $oneWay = this.$attrs.map((a) => a.oneWay);
 
-    this.subscribeTo($twoWay, twoWayChanged);
-    this.subscribeTo($oneWay, oneWayChanged);
+//     this.subscribeTo($twoWay, twoWayChanged);
+//     this.subscribeTo($oneWay, oneWayChanged);
 
-    return null;
-  }
+//     return null;
+//   }
 
-  const $twoWay = makeState(1);
-  const $oneWay = makeState("hello");
+//   const $twoWay = makeState(1);
+//   const $oneWay = makeState("hello");
 
-  const result = initComponent(Component, {
-    attrs: {
-      $twoWay,
-      oneWay: $oneWay,
-    },
-    appContext,
-  });
-  const parent = makeDOMNode();
+//   const result = makeView(Component, {
+//     attrs: {
+//       $twoWay,
+//       oneWay: $oneWay,
+//     },
+//     appContext,
+//   });
+//   const parent = makeDOMNode();
 
-  // Not connected yet. No calls expected.
+//   // Not connected yet. No calls expected.
 
-  $twoWay.set(2);
-  $oneWay.set("there");
+//   $twoWay.set(2);
+//   $oneWay.set("there");
 
-  expect(twoWayChanged).toHaveBeenCalledTimes(0);
-  expect(oneWayChanged).toHaveBeenCalledTimes(0);
+//   expect(twoWayChanged).toHaveBeenCalledTimes(0);
+//   expect(oneWayChanged).toHaveBeenCalledTimes(0);
 
-  result.connect(parent);
+//   result.connect(parent);
 
-  // Now connected. State watchers should have received initial values.
+//   // Now connected. State watchers should have received initial values.
 
-  expect(twoWayChanged).toHaveBeenCalledTimes(1);
-  expect(oneWayChanged).toHaveBeenCalledTimes(1);
+//   expect(twoWayChanged).toHaveBeenCalledTimes(1);
+//   expect(oneWayChanged).toHaveBeenCalledTimes(1);
 
-  $twoWay.set(3);
-  $oneWay.set("world");
+//   $twoWay.set(3);
+//   $oneWay.set("world");
 
-  expect(twoWayChanged).toHaveBeenCalledTimes(2);
-  expect(oneWayChanged).toHaveBeenCalledTimes(2);
+//   expect(twoWayChanged).toHaveBeenCalledTimes(2);
+//   expect(oneWayChanged).toHaveBeenCalledTimes(2);
 
-  expect(twoWayChanged).toHaveBeenCalledWith(3);
-  expect(oneWayChanged).toHaveBeenCalledWith("world");
+//   expect(twoWayChanged).toHaveBeenCalledWith(3);
+//   expect(oneWayChanged).toHaveBeenCalledWith("world");
 
-  result.disconnect();
+//   result.disconnect();
 
-  // Disconnected again. No changes.
+//   // Disconnected again. No changes.
 
-  $twoWay.set(4);
-  $oneWay.set("!");
+//   $twoWay.set(4);
+//   $oneWay.set("!");
 
-  expect(twoWayChanged).toHaveBeenCalledTimes(2);
-  expect(oneWayChanged).toHaveBeenCalledTimes(2);
-});
+//   expect(twoWayChanged).toHaveBeenCalledTimes(2);
+//   expect(oneWayChanged).toHaveBeenCalledTimes(2);
+// });
 
 test("throws when setting a two way attr that isn't a state", () => {
   function Component() {}
 
   expect(() => {
-    initComponent(Component, { attrs: { $state: "not state" }, appContext });
+    makeView(Component, { attrs: { $state: "not state" }, appContext });
   }).toThrow();
 });
 
@@ -341,7 +341,7 @@ test("self.isConnected reflects the current state", () => {
     return null;
   }
 
-  const result = initComponent(Component, { appContext });
+  const result = makeView(Component, { appContext });
   const parent = makeDOMNode();
 
   result.connect(parent);
@@ -361,7 +361,7 @@ test("supports returning subcomponents", () => {
     return h(Subcomponent);
   }
 
-  const result = initComponent(Component, { appContext });
+  const result = makeView(Component, { appContext });
   const parent = makeDOMNode();
 
   result.connect(parent);
@@ -388,7 +388,7 @@ test("routePreload takes element to show() and resolves when done() is called", 
     return null;
   }
 
-  const result = initComponent(Component, { appContext });
+  const result = makeView(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(true);
 
@@ -412,7 +412,7 @@ test("routePreload show() throws if value isn't an element", async () => {
     return null;
   }
 
-  const result = initComponent(Component, { appContext });
+  const result = makeView(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(true);
 
@@ -440,7 +440,7 @@ test("routePreload finishes with promise resolution if loadRoute returns one", a
     return null;
   }
 
-  const result = initComponent(Component, { appContext });
+  const result = makeView(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(true);
 
@@ -459,7 +459,7 @@ test("routePreload resolves immediately if no loadRoute callback is defined", as
     return null;
   }
 
-  const result = initComponent(Component, { appContext });
+  const result = makeView(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(false);
   expect(result.routePreload(mount)).resolves.not.toThrow();

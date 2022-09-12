@@ -1,4 +1,3 @@
-import { when } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const bestColor = "#ff0088";
@@ -15,8 +14,8 @@ export function MouseFollowerExample() {
   const { $position } = this.global("mouse");
   const $transform = $position.to((pos) => `translate(${pos.x}px, ${pos.y}px)`);
 
-  const $enabled = this.read("enabled");
-  const $color = this.read("color");
+  const $enabled = this.readable("enabled");
+  const $color = this.readable("color");
   const $disabled = $enabled.to((t) => !t);
   const $isNotBestColor = $color.to((hex) => hex.toLowerCase() !== bestColor);
 
@@ -37,8 +36,8 @@ export function MouseFollowerExample() {
     <div class="example">
       <h3>More complex state management</h3>
       <div>
-        {when(
-          $enabled,
+        {this.when(
+          "enabled",
           <div
             class="follower"
             style={{
@@ -52,7 +51,7 @@ export function MouseFollowerExample() {
           Change Follower Color
         </button>
 
-        {when(
+        {this.when(
           $isNotBestColor,
           <button onclick={resetColor} disabled={$disabled}>
             Reset to Best Color

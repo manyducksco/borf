@@ -1,5 +1,5 @@
-import { wrapService } from "./wrapService.js";
-import { makeMockHTTP } from "./makeMockHTTP.js";
+import { wrapGlobal } from "./wrapGlobal.js";
+import { makeMockHTTP } from "../makers/makeMockHTTP.js";
 
 /**
  * A service that makes HTTP requests through the @http service.
@@ -29,11 +29,11 @@ const mockHTTP = makeMockHTTP(function () {
 });
 
 test("provides mock services to wrapped service", async () => {
-  const service = wrapService(UserService, function () {
-    this.service("http", mockHTTP);
+  const global = wrapGlobal(UserService, function () {
+    this.global("http", mockHTTP);
   });
 
-  const users = await service.exports.getUsers();
+  const users = await global.exports.getUsers();
 
   expect(users).toStrictEqual([
     { id: 1, user: "Jimbo Jones" },
