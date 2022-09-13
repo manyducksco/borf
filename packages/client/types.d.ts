@@ -170,7 +170,7 @@ declare module "@woofjs/client" {
   ||            Templating            ||
   \*==================================*/
 
-  type Element = Template | ToStringable | Binding<ToStringable>;
+  type Element = Template | ToStringable | Readable<ToStringable>;
   type ElementFn = () => Element;
 
   interface ToStringable {
@@ -180,12 +180,6 @@ declare module "@woofjs/client" {
   type Template = {
     readonly isTemplate: true;
     init(appContext: AppContext<any>): Component;
-  };
-
-  type StateBinding<T> = {
-    readonly isBinding: true;
-    $value: TwoWayBinding<T>;
-    event: string;
   };
 
   export function h(element: string | Component, attrs: Object, ...children: Template[]): Template;
@@ -259,7 +253,26 @@ declare module "@woofjs/client" {
     nuke<Key extends keyof DeletableKeys<State>>(key: Key): void;
 
     // TODO: Type annotations
-    merge<Key extends keyof State>(...observables: Key | Observable<State[Key]>): Readable<any>;
+    merge<V>(merge: (value: State) => V): Readable<V>;
+    merge<T1, V>(source1: T1, merge: (value1: T1 extends keyof State ? State[T1] : Unwrap<T1>) => V): Readable<V>;
+    merge<T1, T2, V>(
+      source1: T1,
+      source2: T2,
+      merge: (
+        value1: T1 extends keyof State ? State[T1] : Unwrap<T1>,
+        value2: T2 extends keyof State ? State[T2] : Unwrap<T2>
+      ) => V
+    ): Readable<V>;
+    merge<T1, T2, T3, V>(
+      source1: T1,
+      source2: T2,
+      source3: T3,
+      merge: (
+        value1: T1 extends keyof State ? State[T1] : Unwrap<T1>,
+        value2: T2 extends keyof State ? State[T2] : Unwrap<T2>,
+        value3: T3 extends keyof State ? State[T3] : Unwrap<T3>
+      ) => V
+    ): Readable<V>;
 
     observe<Value>(observer: Observer<Value>): void;
     observe<Value>(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): void;
@@ -435,13 +448,13 @@ declare module "@woofjs/client" {
      */
     repeat<T>(
       value: T[] | Observable<T[]>,
-      view: View<{ index: number; value: T }, any, void>,
+      view: View<{ index: number; value: T }, Globals, void>,
       getKey?: (value: T) => any
     ): Template;
 
     repeat<Key extends keyof State>(
       key: Key,
-      view: View<{ index: number; value: Unwrapped<State>[Key] extends Iterable<infer T> ? T : never }, any, void>
+      view: View<{ index: number; value: Unwrapped<State>[Key] extends Iterable<infer T> ? T : never }, Globals, void>
     );
   }
 
@@ -687,7 +700,7 @@ declare module "@woofjs/client/jsx-dev-runtime" {
 
 // TODO: Define all elements and the attributes they support.
 declare namespace JSX {
-  import { ObservableAttrs, Observable, MutableState, ToStringable, Template } from "@woofjs/client";
+  import { ObservableAttrs, Observable, Writable, ToStringable, Template } from "@woofjs/client";
   import * as CSS from "csstype";
 
   interface ElementChildrenAttribute {
@@ -1457,9 +1470,9 @@ declare namespace JSX {
     children?: any;
 
     /**
-     * A state that receives a reference to the DOM element.
+     * A binding that receives a reference to the DOM element.
      */
-    $ref?: MutableState<HTMLElement>;
+    ref?: Writable<any>;
   }
 
   /**

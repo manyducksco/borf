@@ -18,8 +18,12 @@ export function Element() {
     node = document.createElement(tagname);
   }
 
-  if (attrs.$$ref) {
-    attrs.$$ref.set(node);
+  if (attrs.ref) {
+    if (isBinding(attrs.ref) && attrs.ref.isWritable) {
+      attrs.ref.set(node);
+    } else {
+      throw new Error("Ref is not a writable binding. Got: " + attrs.ref);
+    }
   }
 
   // Alias React-style 'className' attributes to 'class'.

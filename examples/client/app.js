@@ -2,8 +2,8 @@ import "./styles/demo.css";
 
 import woof from "@woofjs/client";
 
-import counter from "./globals/counter.js";
-import mouse from "./globals/mouse.js";
+import counter from "./globals/counter";
+import mouse from "./globals/mouse";
 
 import { AppLayout } from "./views/AppLayout";
 import { ComponentAttrsExample } from "./views/ComponentAttrsExample.js";
@@ -16,14 +16,14 @@ import { FormExample } from "./views/FormExample.js";
 import { MouseFollowerExample } from "./views/MouseFollowerExample.js";
 import { HTTPRequestExample } from "./views/HTTPRequestExample.js";
 
-import SevenGUIs from "./7guis";
-import Counter from "./7guis/01_Counter";
-import TempConverter from "./7guis/02_TempConverter";
-import FlightBooker from "./7guis/03_FlightBooker";
-import Timer from "./7guis/04_Timer";
-import CRUD from "./7guis/05_CRUD";
-import CircleDrawer from "./7guis/06_CircleDrawer";
-import Cells from "./7guis/07_Cells";
+import SevenGUIs from "./views/7guis";
+import Counter from "./views/7guis/01_Counter";
+import TempConverter from "./views/7guis/02_TempConverter";
+import FlightBooker from "./views/7guis/03_FlightBooker";
+import Timer from "./views/7guis/04_Timer";
+import CRUD from "./views/7guis/05_CRUD";
+import CircleDrawer from "./views/7guis/06_CircleDrawer";
+import Cells from "./views/7guis/07_Cells";
 
 // const timer = new EventSource("/timer");
 

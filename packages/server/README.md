@@ -10,7 +10,7 @@ Support your client-side app with an API or create a dynamic server-rendered app
 
 ```js
 import { makeApp } from "@woofjs/server";
-import ExampleService from "./services/example";
+import example from "./globals/example";
 
 const app = makeApp();
 
@@ -36,16 +36,14 @@ app.static("/static/path", "/path/to/file/dir/on/this/machine"); // Specify a cu
 // Share logic and state between handlers with services.
 // Each service is created once per request.
 // Two API calls will use two different instances, but all middleware in the same API call will use one instance.
-app.service("example", ExampleService, {
-  // lifecylce is: one instance is created when the app starts.
-  options: {
-    /* service options object */
-  },
-});
+app.global("example", example);
 
 // Create API routes with functions named after HTTP methods (`get`, `post`, `delete`, etc.)
-app.get("/some-route", (ctx) => {
-  const service = ctx.getService("example");
+app.get("/some-route", function (req, res) {
+  const example = this.global("example");
+
+  res.headers.set("name", "value");
+  res.statusCode = 200;
 
   // An object returned from a route becomes a JSON body automatically.
   return {
@@ -57,21 +55,21 @@ app.get("/some-route", (ctx) => {
 // This connection is initiated client-side with EventSource.
 // see: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
 app.get("/events", (ctx) => {
-  const source = ctx.makeEventSource();
+  return makeEventSource((source) => {
+    // Send a message with content 'whatever'.
+    source.send("whatever");
 
-  // Send a message with content 'whatever'.
-  source.send("whatever");
+    // Send a 'ping' event.
+    source.emit("ping");
 
-  // Send a 'ping' event.
-  source.emit("ping");
+    // Send a 'usermessage' event with some data. JS objects will be serialized to JSON automatically.
+    source.emit("usermessage", {
+      userId: 1,
+      text: "Hello!",
+    });
 
-  // Send a 'usermessage' event with some data. JS objects will be serialized to JSON automatically.
-  source.emit("usermessage", {
-    userId: 1,
-    text: "Hello!",
+    source.close();
   });
-
-  source.close();
 });
 
 // Listen for HTTP requests on localhost at specified port number.
@@ -84,11 +82,11 @@ app.listen(4000).then((info) => {
 
 ```js
 // Mount middleware to run for every request.
-app.use((ctx) => {
-  const timer = ctx.getService("timing").createTimer(ctx.req.path);
+app.use(async (ctx, next) => {
+  const timer = ctx.global("timing").createTimer(ctx.req.path);
 
   timer.start();
-  await ctx.next();
+  await next();
   timer.stop();
 
   timer.save();
@@ -127,8 +125,7 @@ app.use((ctx) => {
         },
       },
     },
-    getService(name) {},
-    async next() {},
+    global(name) {},
     redirect(to) {},
   };
 

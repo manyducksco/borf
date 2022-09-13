@@ -11,19 +11,38 @@ woof is a client-side JavaScript framework that shamelessly steals the best idea
 3. [Components](#components)
 4. [Services](#services)
 
+Outline for future guide:
+
+- Creating an app
+- Routing
+  - Route matching
+  - Nested routes
+  - Preloading data for routes
+- State
+  - State methods (get, set, merge, nuke, observe)
+  - Bindings (readable, writable)
+- Views
+  - State overview
+  - Accessing globals
+  - JSX / h
+  - Binding data to DOM elements
+  - Binding data to nested components
+  - Template helpers (when, unless, repeat, watch)
+- Globals
+  - State overview
+
 ## Hello World
 
 ```js
-import { woof, h } from "@woofjs/client";
+import woof from "@woofjs/client";
 
 const app = woof();
 
-// Render <h1>Hello World</h1> regardless of the URL
-app.route("*", function () {
-  return h("h1", "Hello World");
+app.route("/", function () {
+  return <h1>Hello World</h1>;
 });
+app.redirect("*", "/");
 
-// Render the matched route in an element with an id of `#app`
 app.connect("#app");
 ```
 
@@ -114,11 +133,11 @@ function Example() {
   ]);
 };
 
-// Components can be mounted directly on a route.
+// Views can be mounted directly on a route.
 app.route("example", Example);
 
-// They can also be used in the body of another component.
-app.route("other", () => {
+// They can also be used inside another view.
+app.route("other", function () {
   return h("div", [
     // Pass attributes in an object just like regular HTML elements
     h(Example, { title: "In Another Component" })
