@@ -8,11 +8,37 @@ Views and globals are said to have a _state_, which is an internal key-value sto
 import { View, ReadBinding, ReadWriteBinding, Bindable, Private } from "@woofjs/client";
 
 type ExampleState = {
-  name: string | ReadBinding<string> | ReadWriteBinding<string>; // Use types to specify if things can be bound or not.
+  name: string | Readable<string> | Writable<string>; // Use types to specify if things can be bound or not.
   name: Bindable<string>; // Bindable is shorthand for the above.
 
   initialized: Private<boolean>; // Private state cannot be passed as attributes.
+
+  // Children are defined in state
+  children: string;
 };
+
+// Outlet renders elements stored in state.
+// By default this is "children". The two calls below are equivalent.
+this.outlet();
+this.outlet("children");
+
+// Renders an element stored at "someRef".
+this.outlet("someRef");
+
+<Parent tabs={[<span>one</span>, <span>two</span>, <span>three</span>]} />;
+
+function Parent() {
+  return (
+    <div>
+      // Render an array of elements
+      {this.repeat("tabs", function () {
+        return this.outlet("@"); // Repeat views receive @ and # (item and index)
+      })}
+      // Equivalent
+      {this.outlet("tabs")}
+    </div>
+  );
+}
 
 // The binding types above only take effect when passing attributes. All bindings are unwrapped to their base types internally.
 
@@ -101,8 +127,8 @@ const Example: View<ExampleState, AppGlobals> = function () {
 
           return <li onclick={onclick}>{$item}</li>;
         })}
-        {this.watch("variable", (value) => {
-          return <span>{value}</span>;
+        {this.outlet("variable", (value) => {
+          return <span>{value()}</span>;
         })}
       </section>
 
@@ -131,8 +157,12 @@ const Example: View<ExampleState, AppGlobals> = function () {
   ]);
 };
 
+type LayoutState = {
+  userName: string;
+};
+
 // Attributes passed through JSX describe initial state or bindings to the component's state.
-const Layout: View<{ userName: string }, AppGlobals> = function () {
+const Layout: View<LayoutState, AppGlobals> = function () {
   this.defaultState = {
     userName: "Default",
   };
@@ -163,6 +193,177 @@ const Layout: View<{ userName: string }, AppGlobals> = function () {
     </ul>
   );
 };
+
+// Considering a class-based approach like this.
+// Benefits:
+//   - Cleaner looking type annotations in my opinion.
+//   - Autocomplete works in plain JS.
+//   - Can extract name from the class for debug prefix.
+//   - May be lighter on memory since classes are defined once and instantiated many times.
+//     - View function render and lifecycle logic has to be recreated again for each instance.
+// Downsides:
+//   - Actual rendering code is nested one level deeper.
+class Layout extends View<LayoutState, AppGlobals> {
+  static defaultState = {
+    userName: "Default",
+  };
+
+  create() {
+    // Read bindings are named with a single $
+    const $name = this.readable("userName");
+
+    // Read-write bindings are named with two $$
+    const $$name = this.writable("userName");
+
+    return (
+      <ul>
+        <li>
+          {/* The 'name' state key receives an initial value of "John". */}
+          <Example name="John" />
+        </li>
+        <li>
+          {/* Value can change from here but <Example> can only read it. Setting 'name' internally will have no effect. */}
+          <Example name={$name} />
+        </li>
+        <li>
+          {/* Setting 'name' inside <Example> will update the value of $$name. */}
+          <Example name={$$name} />
+        </li>
+        <li>
+          <Example name={$$name}>
+            Children passed to a view will be rendered wherever `this.outlet()` is called.
+          </Example>
+        </li>
+      </ul>
+    );
+  }
+
+  beforeConnect() {
+    this.log("lifecycle: beforeConnect");
+  }
+
+  afterConnect() {
+    this.log("lifecycle: afterConnect");
+  }
+
+  beforeDisconnect() {
+    this.log("lifecycle: beforeDisconnect");
+  }
+
+  afterDisconnect() {
+    this.log("lifecycle: afterDisconnect");
+  }
+}
+
+class State<T> {
+  get() {}
+  set() {}
+  observe() {}
+  merge() {}
+  readable() {}
+  writable() {}
+}
+
+class View<S, G> extends State<S> {
+  create() {}
+
+  beforeConnect() {}
+  afterConnect() {}
+  beforeDisconnect() {}
+  afterDisconnect() {}
+
+  when() {}
+  unless() {}
+  repeat() {}
+  outlet() {}
+}
+
+class Global<S, G> extends State<S> {
+  create() {}
+
+  beforeConnect() {}
+  afterConnect() {}
+}
+
+// makeView and makeGlobal internally work the same way.
+// The view doesn't have any logic internally to actually connect itself.
+// This is done inside the framework, so private methods will never be accessible on the classes.
+
+class Example extends View {
+  static defaultState = {
+    count: 0,
+    items: ["one", "two", "three"],
+  };
+
+  create() {
+    // Read-only bindings (one way binding).
+    const $count = this.readable("count");
+
+    // Read-write bindings (two way binding).
+    const $$count = this.writable("count");
+
+    return (
+      <section>
+        <header>
+          <h1>The Count</h1>
+        </header>
+
+        <p>It is: {$count}</p>
+
+        {/* Display only when the value is truthy. */}
+        {this.when(
+          $count.to((x) => x > 5), // Transform into a new state with `.to`
+          <span>Count is greater than 5.</span>
+        )}
+
+        {/* Display only when the value is falsy. */}
+        {this.unless(
+          $count.to((x) => x > 0),
+          <span>Count is 0.</span>
+        )}
+
+        {/* Render once for each item in an iterable. */}
+        {this.repeat("items", ($value, $index) => {
+          return (
+            <li>
+              ({$index}) {$value}
+            </li>
+          );
+        })}
+
+        {/* Render an element or value from state into the DOM. Defaults to "children" unless a different key is passed. */}
+        {this.outlet()}
+        {this.outlet("someKey")}
+        {this.outlet("someKey", (value) => {
+          return <span>{value}</span>;
+        })}
+      </section>
+    );
+  }
+
+  /*=======================*\
+  ||       Lifecycle       ||
+  \*=======================*/
+
+  beforeConnect() {
+    this.log("lifecycle: beforeConnect");
+  }
+
+  afterConnect() {
+    this.log("lifecycle: afterConnect");
+  }
+
+  beforeDisconnect() {
+    this.log("lifecycle: beforeDisconnect");
+  }
+
+  afterDisconnect() {
+    // Console logging methods
+    this.log("lifecycle: afterDisconnect");
+    this.warn("lifecycle: afterDisconnect");
+    this.error(new Error("lifecycle: afterDisconnect"));
+  }
+}
 ```
 
 So the view has a key-value store where it stores all its data. Initial values for that store are passed as attributes.
@@ -195,6 +396,110 @@ app.global("counter", function (this: GlobalContext<CounterState>) {
     decrement: () => this.set("count", (count) => count - 1),
   };
 });
+
+class Counter extends Global {
+  static defaultState = {
+    count: 0,
+  };
+
+  create() {
+    return {
+      $count: this.readable("count"),
+      increment: () => {
+        this.set("count", (x) => x + 1);
+      },
+      decrement: () => {
+        this.set("count", (x) => x - 1);
+      },
+      reset: () => {
+        this.set("count", 0);
+      },
+    };
+  }
+}
+app.global("counter", Counter);
+
+// Okay, I think my final verdict is the bound function is less cognitively demanding.
+// I'm feeling like navigating the structure of the class is getting in the way of thinking through the logic.
+// This could be because I'm more familiar with writing functions instead of classes.
+app.global("counter", function () {
+  this.defaultState = {
+    count: 0,
+  };
+
+  const increment = () => {
+    this.set("count", (x) => x + 1);
+  };
+
+  const decrement = () => {
+    this.set("count", (x) => x - 1);
+  };
+
+  const reset = () => {
+    this.set("count", 0);
+  };
+
+  return {
+    $count: this.readable("count"),
+    increment,
+    decrement,
+    reset,
+  };
+});
+
+class App extends View {
+  create() {
+    const { $count, increment, decrement, reset } = this.global("counter");
+
+    return (
+      <div>
+        <div class="count">
+          <h1>{$count}</h1>
+        </div>
+        <div class="buttons">
+          <button onclick={increment}>+1</button>
+          <button onclick={decrement}>-1</button>
+          <button onclick={reset}>Reset</button>
+        </div>
+      </div>
+    );
+  }
+}
+
+class Counter extends View {
+  static defaultState = {
+    count: 0,
+  };
+
+  create() {
+    const $count = this.readable("count");
+
+    return (
+      <div>
+        <div class="count">
+          <h1>{$count}</h1>
+        </div>
+        <div class="buttons">
+          <button onclick={() => this.increment()}>+1</button>
+          <button onclick={() => this.decrement()}>-1</button>
+          <button onclick={() => this.reset()}>Reset</button>
+        </div>
+      </div>
+    );
+  }
+
+  increment() {
+    this.set("count", (x) => x + 1);
+  }
+
+  decrement() {
+    this.set("count", (x) => x - 1);
+  }
+
+  reset() {
+    this.set("count", 0);
+  }
+}
 
 app.route("*", function () {
   const { $count, increment, decrement } = this.global("counter");

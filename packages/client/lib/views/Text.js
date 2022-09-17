@@ -1,7 +1,9 @@
-export function Text() {
+import { makeView } from "../makers/makeView.js";
+
+export const Text = makeView((ctx) => {
   const node = document.createTextNode("");
 
-  this.observe((state) => {
+  ctx.observe((state) => {
     if (state.value != null) {
       node.textContent = String(state.value);
     } else if (state.defaultValue != null) {
@@ -12,4 +14,4 @@ export function Text() {
   });
 
   return node;
-}
+});

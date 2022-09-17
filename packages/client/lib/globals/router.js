@@ -1,5 +1,6 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
+import { makeGlobal } from "../makers/makeGlobal.js";
 
 import { APP_CONTEXT } from "../keys.js";
 import { matchRoute } from "../helpers/routing.js";
@@ -7,15 +8,15 @@ import { isObject } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { makeView } from "../makers/makeView.js";
+import { initView } from "../makers/initView.js";
 
 import { Outlet } from "../views/Outlet.js";
 
 /**
  * Top level navigation service.
  */
-export default function router() {
-  const appContext = this[APP_CONTEXT];
+export default makeGlobal((ctx) => {
+  const appContext = ctx[APP_CONTEXT];
   const options = appContext.options.router || {};
   const routes = appContext.routes;
 
@@ -43,7 +44,7 @@ export default function router() {
     }
   }
 
-  this.defaultState = {
+  ctx.defaultState = {
     route: "",
     path: "",
     params: {},
@@ -54,7 +55,7 @@ export default function router() {
   let isRouteChange = false;
 
   // Update URL when query changes
-  this.observe("query", (current) => {
+  ctx.observe("query", (current) => {
     // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
@@ -77,10 +78,10 @@ export default function router() {
   let activeLayers = [];
   let lastQuery;
 
-  this.afterConnect(() => {
+  ctx.afterConnect(() => {
     const root = appContext.rootElement;
 
-    appOutlet = makeView(Outlet, { appContext });
+    appOutlet = initView(Outlet, { appContext });
     appOutlet.connect(root);
 
     history.listen(onRouteChange);
@@ -95,7 +96,7 @@ export default function router() {
 
       history.push(href);
 
-      this.log(`Intercepted link to '${href}'`);
+      ctx.log(`Intercepted link to '${href}'`);
     });
   });
 
@@ -103,7 +104,7 @@ export default function router() {
    * Run when the location changes. Diffs and mounts new routes and updates
    * the $path, $route, $params and $query states accordingly.
    */
-  const onRouteChange = async ({ location }) => {
+  async function onRouteChange({ location }) {
     const matched = matchRoute(routes, location.pathname);
 
     if (matched) {
@@ -116,11 +117,11 @@ export default function router() {
 
         history.replace(path);
       } else {
-        this.set("path", matched.path);
-        this.set("params", matched.params);
+        ctx.set("path", matched.path);
+        ctx.set("params", matched.params);
 
-        if (matched.route !== this.get("route")) {
-          this.set("route", matched.route);
+        if (matched.route !== ctx.get("route")) {
+          ctx.set("route", matched.route);
 
           const { layers } = matched.data;
 
@@ -132,10 +133,7 @@ export default function router() {
             if (activeLayer?.id !== matchedLayer.id) {
               activeLayers = activeLayers.slice(0, i);
 
-              this.log({ activeLayer, matchedLayer });
-
-              const outlet = makeView(Outlet, { appContext });
-              const view = makeView(matchedLayer.view, { children: [outlet], appContext });
+              const view = initView(matchedLayer.view, { appContext });
 
               const parentLayer = activeLayers[activeLayers.length - 1];
 
@@ -147,9 +145,9 @@ export default function router() {
                   }
 
                   if (parentLayer) {
-                    parentLayer.outlet.state.set("element", view);
+                    parentLayer.view.setChildren(view);
                   } else {
-                    appOutlet.state.set("element", view);
+                    appOutlet.state.set("value", view);
                   }
                 });
               };
@@ -161,17 +159,13 @@ export default function router() {
               mount(view);
 
               // Push and connect new active layer.
-              activeLayers.push({
-                id: matchedLayer.id,
-                view,
-                outlet,
-              });
+              activeLayers.push({ id: matchedLayer.id, view });
             }
           }
         }
       }
     } else {
-      this.warn('No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.');
+      ctx.warn('No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.');
     }
 
     // Update query params if they've changed.
@@ -179,7 +173,7 @@ export default function router() {
       lastQuery = location.search;
 
       isRouteChange = true;
-      this.set(
+      ctx.set(
         "query",
         queryString.parse(location.search, {
           parseBooleans: true,
@@ -187,13 +181,13 @@ export default function router() {
         })
       );
     }
-  };
+  }
 
   return {
-    $route: this.readable("route"),
-    $path: this.readable("path"),
-    $params: this.readable("params"),
-    $$query: this.writable("query"),
+    $route: ctx.readable("route"),
+    $path: ctx.readable("path"),
+    $params: ctx.readable("params"),
+    $$query: ctx.writable("query"),
 
     back(steps = 1) {
       history.go(-steps);
@@ -228,4 +222,4 @@ export default function router() {
       }
     },
   };
-}
+});

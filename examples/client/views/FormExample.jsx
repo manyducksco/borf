@@ -1,16 +1,17 @@
+import { makeView } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export function FormExample() {
-  this.name = "FormExample";
-  this.defaultState = {
+export const FormExample = makeView((ctx) => {
+  ctx.name = "FormExample";
+  ctx.defaultState = {
     firstName: "",
     lastName: "",
     age: 18,
   };
 
-  logLifecycle(this);
+  logLifecycle(ctx);
 
-  const $errors = this.merge((state) => {
+  const $errors = ctx.readable().to((state) => {
     let errors = [];
 
     if (state.firstName.trim() == "") {
@@ -29,12 +30,12 @@ export function FormExample() {
   });
   const $hasErrors = $errors.to((e) => e.length > 0);
 
-  this.observe($errors, (value) => {
-    this.log("errors", value);
+  ctx.observe($errors, (value) => {
+    ctx.log("errors", value);
   });
 
-  this.observe($hasErrors, (value) => {
-    this.log("hasErrors?", value);
+  ctx.observe($hasErrors, (value) => {
+    ctx.log("hasErrors?", value);
   });
 
   const onsubmit = (e) => {
@@ -48,30 +49,25 @@ export function FormExample() {
       <form onsubmit={onsubmit}>
         <input
           type="text"
-          value={this.writable("firstName")}
+          value={ctx.writable("firstName")}
           placeholder="First Name"
         />
         <input
           type="text"
-          value={this.writable("lastName")}
+          value={ctx.writable("lastName")}
           placeholder="Last Name"
         />
-        <input type="number" value={this.writable("age")} placeholder="Age" />
+        <input type="number" value={ctx.writable("age")} placeholder="Age" />
 
         <button disabled={$hasErrors}>Submit</button>
 
-        {this.when(
+        {ctx.when(
           $hasErrors,
-          this.repeat($errors, function Error() {
-            const $value = this.readable("value");
-            this.observe($value, (value) => {
-              this.log("value", value);
-            });
-
-            return <div style="color:red">{$value}</div>;
+          ctx.repeat($errors, ($error) => {
+            return <div style="color:red">{$error}</div>;
           })
         )}
       </form>
     </div>
   );
-}
+});

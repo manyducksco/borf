@@ -16,6 +16,14 @@ Prepare for v1.0
   - They are used in Quack to point a single state to multiple other states over time as route params change.
   - Recreating a route component whenever the router matches anything (even the same route) would help prevent the need for this.
 
+## Class style vs bound function style
+
+Decide on bound function style vs class style for views and globals.
+
+> Okay, I think my final verdict is that the bound function is less cognitively demanding.
+> I'm feeling like navigating the structure of the class is getting in the way of thinking through the logic.
+> This could be because I'm more familiar with writing functions instead of classes.
+
 ## Move `loadRoute` to router
 
 I'm thinking of moving this to a `preload` hook on the route definition itself.
@@ -23,11 +31,11 @@ I'm thinking of moving this to a `preload` hook on the route definition itself.
 The current route definition syntax looks like this: (path, component, subroutes)
 
 ```jsx
-app.route('/some/path', SomeComponent, sub => {
-  sub.route('/foo', FooComponent)
-  sub.route('/bar', BarComponent)
-  sub.redirect('*', './foo')
-})
+app.route("/some/path", SomeComponent, (sub) => {
+  sub.route("/foo", FooComponent);
+  sub.route("/bar", BarComponent);
+  sub.redirect("*", "./foo");
+});
 ```
 
 The new route definition syntax would support passing an object with additional options and callbacks in place of the subroutes function. This allows for handling preload at the route level. Route preloading only works at the route level anyway, so it doesn't make very much sense to have it be a lifecycle hook in a component. The new `preload` hook can resolve an object in order to pass preloaded data to the component as attributes.

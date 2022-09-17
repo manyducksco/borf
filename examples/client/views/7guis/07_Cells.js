@@ -1,5 +1,7 @@
-export default function Cells() {
-  this.name = "7guis:Cells";
+import { makeView } from "@woofjs/client";
+
+export default makeView((ctx) => {
+  ctx.name = "7guis:Cells";
 
   return (
     <div class="example">
@@ -10,4 +12,4 @@ export default function Cells() {
       <div></div>
     </div>
   );
-}
+});

@@ -19,11 +19,9 @@ export const isDOM = (value) => value != null && (value instanceof Node || value
 
 export const isBinding = (value) => isObject(value) && value.isBinding === true;
 
-export const isComponent = (value) => isObject(value) && value.isComponent === true;
+export const isView = (value) => isObject(value) && value.isView === true;
 
 export const isTemplate = (value) => isObject(value) && value.isTemplate === true;
-
-export const isService = (value) => isObject(value) && value.isService === true;
 
 export const isState = (value) => isObject(value) && value.isState === true;
 

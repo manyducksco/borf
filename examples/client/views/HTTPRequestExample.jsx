@@ -1,17 +1,18 @@
+import { makeView } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export function HTTPRequestExample() {
-  const http = this.global("http");
-
-  this.name = "HTTPRequestExample";
-  this.defaultState = {
+export const HTTPRequestExample = makeView((ctx) => {
+  ctx.name = "HTTPRequestExample";
+  ctx.defaultState = {
     loading: false,
     message: "",
   };
 
-  logLifecycle(this);
+  const http = ctx.global("http");
 
-  const $label = this.merge((state) => {
+  logLifecycle(ctx);
+
+  const $label = ctx.merge((state) => {
     if (state.loading) {
       return "LOADING...";
     } else {
@@ -27,16 +28,16 @@ export function HTTPRequestExample() {
       <div>
         <button
           onclick={() => {
-            this.set("loading", true);
+            ctx.set("loading", true);
 
             http
               .get("/hello-json")
               .header("accept", "application/json")
               .then((res) => {
-                this.set("message", res.body.message);
+                ctx.set("message", res.body.message);
               })
               .finally(() => {
-                this.set("loading", false);
+                ctx.set("loading", false);
               });
           }}
         >
@@ -47,4 +48,4 @@ export function HTTPRequestExample() {
       </div>
     </div>
   );
-}
+});

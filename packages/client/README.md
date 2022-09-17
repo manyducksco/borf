@@ -46,6 +46,136 @@ app.redirect("*", "/");
 app.connect("#app");
 ```
 
+```js
+import woof, { View, Global } from "@woofjs/client";
+
+class Counter extends Global {
+  static defaultState = {
+    count: 0,
+  };
+
+  increment() {
+    this.set("count", (count) => count + 1);
+  }
+
+  decrement() {
+    this.set("count", (count) => count - 1);
+  }
+
+  reset() {
+    this.set("count", 0);
+  }
+
+  afterConnect() {
+    setInterval(() => {
+      this.increment();
+    }, 1000);
+  }
+
+  create() {
+    return {
+      $count: this.readable("count"),
+      increment: () => this.increment(),
+      decrement: () => this.decrement(),
+      reset: () => this.reset(),
+    };
+  }
+}
+
+function Counter() {
+  this.defaultState = {
+    count: 0,
+  };
+
+  const increment = () => {
+    this.set("count", (count) => count + 1);
+  };
+
+  const decrement = () => {
+    this.set("count", (count) => count - 1);
+  };
+
+  const reset = () => {
+    this.set("count", 0);
+  };
+
+  this.afterConnect(() => {
+    setInterval(increment, 1000);
+  });
+
+  return {
+    $count: this.readable("count"),
+    increment,
+    decrement,
+    reset,
+  };
+}
+
+class List extends View {
+  static defaultState = {
+    items: ["one", "two", "three"],
+  };
+
+  create() {
+    return (
+      <ul>
+        {this.repeat("items", ($item) => {
+          return <li>{$item}</li>;
+        })}
+      </ul>
+    );
+  }
+
+  beforeConnect() {
+    this.log("list will connect");
+  }
+
+  afterConnect() {
+    this.log("list has connected");
+  }
+}
+
+function List() {
+  this.defaultState = {
+    items: ["one", "two", "three"],
+  };
+
+  return (
+    <ul>
+      {this.repeat("list", ($item, $index) => {
+        // What if repeat function is not a view? It just takes bindings to the list item and index and returns a template.
+        return <li>{$item}</li>;
+      })}
+    </ul>
+  );
+}
+
+class HelloWorld extends View {
+  static defaultState = {
+    color: "red",
+  };
+
+  // css helper function
+  static styles = css`
+    h1 {
+      color: ${this.readable("color")};
+    }
+  `;
+
+  create() {
+    return <h1>Hello World</h1>;
+  }
+}
+
+const app = woof();
+
+// Fallback method to automatically add a redirect from "*"?
+app.route("/hello", HelloWorld).fallback();
+// app.redirect("*", "/hello");
+
+app.connect("#app");
+```
+
 ## Routing
 
 At the top level, woof determines what component to display using routes. Routes "match" when the pathname of the current URL fits a pattern. When a route matches, that route's component is displayed.

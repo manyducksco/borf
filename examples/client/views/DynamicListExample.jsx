@@ -1,24 +1,26 @@
+import { makeView } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];
 
-export function DynamicListExample() {
-  this.name = "DynamicListExample";
-  this.defaultState = {
+export const DynamicListExample = makeView((ctx) => {
+  ctx.name = "DynamicListExample";
+  ctx.defaultState = {
     shoppingList: initialList,
     inputValue: "",
   };
 
-  logLifecycle(this);
+  logLifecycle(ctx);
 
   const getSorted = () => {
-    return this.get("shoppingList")
+    return ctx
+      .get("shoppingList")
       .map((x) => x)
       .sort();
   };
 
   const reset = () => {
-    this.set("shoppingList", initialList);
+    ctx.set("shoppingList", initialList);
   };
 
   return (
@@ -30,29 +32,29 @@ export function DynamicListExample() {
       <div>
         <button
           onclick={() => {
-            this.set("shoppingList", getSorted());
+            ctx.set("shoppingList", getSorted());
           }}
         >
           Sort A to Z
         </button>
         <button
           onclick={() => {
-            this.set("shoppingList", getSorted().reverse());
+            ctx.set("shoppingList", getSorted().reverse());
           }}
         >
           Sort Z to A
         </button>
         <div class="flex-center">
-          <input type="text" value={this.writable("inputValue")} />
+          <input type="text" value={ctx.writable("inputValue")} />
           <button
-            disabled={this.readable("inputValue").to((v) => v.trim() == "")}
+            disabled={ctx.readable("inputValue").to((v) => v.trim() == "")}
             onclick={() => {
               // Add the current input value to the list and clear it.
-              const inputValue = this.get("inputValue");
-              this.set("shoppingList", (current) => {
+              const inputValue = ctx.get("inputValue");
+              ctx.set("shoppingList", (current) => {
                 current.push(inputValue);
               });
-              this.set("inputValue", "");
+              ctx.set("inputValue", "");
             }}
           >
             Add Item
@@ -60,9 +62,7 @@ export function DynamicListExample() {
           <button onclick={reset}>Reset List</button>
         </div>
 
-        {this.repeat("shoppingList", function ListItem() {
-          // TODO: Look into passing a $value binding as the first argument. $index as second.
-          const $item = this.readable("value");
+        {ctx.repeat("shoppingList", ($item) => {
           const onclick = () => {
             alert($item.get());
           };
@@ -72,4 +72,4 @@ export function DynamicListExample() {
       </div>
     </div>
   );
-}
+});

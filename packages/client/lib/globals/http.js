@@ -1,29 +1,29 @@
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
 import { APP_CONTEXT } from "../keys.js";
+import { makeGlobal } from "../makers/makeGlobal.js";
 
-export default function http() {
+export default makeGlobal((ctx) => {
   const _middleware = [];
-  const fetch = this[APP_CONTEXT].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
+  const fetch = ctx[APP_CONTEXT].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
   let requestId = 0;
 
   const request = (method, url) => {
-    return new HTTPRequest({
+    return makeRequest({
       id: ++requestId,
       method,
       url,
       fetch,
-      debug: this.debug,
+      log: ctx.log,
       middleware: _middleware,
     });
   };
 
-  return {
+  const methods = {
     request,
 
     use(...middleware) {
       _middleware.push(...middleware);
-
-      return this;
+      return methods;
     },
 
     get(url) {
@@ -50,13 +50,13 @@ export default function http() {
       return request("head", url);
     },
   };
-}
 
-function makeRequest({ id, debug, method, url, middleware, fetch }) {
-  const [path, _query] = url.split("?");
-  const query = new URLSearchParams(_query || "");
+  return methods;
+});
 
-  let isOk = (status) => status >= 200 && status < 300;
+function makeRequest({ id, log, method, url, middleware, fetch }) {
+  const [path, query] = url.split("?");
+  const queryParams = new URLSearchParams(query || "");
 
   const ctx = {
     method,
@@ -64,236 +64,29 @@ function makeRequest({ id, debug, method, url, middleware, fetch }) {
     body: undefined,
   };
 
-  return {
-    /**
-     * True if this request's URL is a relative path (same domain).
-     */
-    isRelative() {
-      return !/^https?:\/\//.test(url);
-    },
-  };
-}
+  let isOk = (status) => status >= 200 && status < 300;
+  let parse;
+  let contentTypeAuto = true;
+  let promise;
 
-export class HTTPRequest {
-  #id;
-  #debug;
-  #url;
-  #query;
-  #ctx;
-  #res;
-  #middleware;
-  #fetch;
-  #parse;
-  #promise;
-  #isOk;
+  let res;
 
-  #contentTypeAuto = true; // disabled when header is explicitly set
-
-  constructor({ id, debug, method, url, middleware, fetch }) {
-    const [path, query] = url.split("?");
-
-    this.#id = id;
-    this.#debug = debug;
-    this.#url = path;
-    this.#middleware = middleware;
-    this.#fetch = fetch;
-    this.#query = new URLSearchParams(query || "");
-    this.#ctx = {
-      method,
-      headers: new Headers(),
-      body: undefined,
-    };
-    this.#isOk = (status) => status >= 200 && status < 300;
-  }
-
-  /**
-   * True if this request's URL is a relative path (same domain).
-   */
-  get isRelative() {
-    return !/^https?:\/\//.test(this.#url);
-  }
-
-  /**
-   * Gets or sets the URL for this request.
-   */
-  url(value) {
-    if (value === undefined) {
-      return this.#url;
-    } else if (isString(value)) {
-      this.#url = value;
-    } else {
-      throw new TypeError(`Expected a string. Received: ${value}`);
-    }
-  }
-
-  /**
-   * Sets headers to send with the request.
-   *
-   * @example
-   * // Set a single header
-   * .header("content-type", "application/json")
-   *
-   * // Remove a header
-   * .header("content-type", null)
-   *
-   * // Get a header's current value
-   * .header("content-type")
-   *
-   * // Set multiple headers
-   * .header({
-   *   "content-type": "application/json",
-   *   "authorization": "bearer acbdef"
-   * })
-   *
-   * @param header - Header name or object with multiple headers.
-   * @param value - Value to set if passing header name, otherwise undefined.
-   */
-  header(header, value) {
-    if (isString(header)) {
-      // Return header's current value
-      if (value === undefined) {
-        return this.#ctx.headers.get(header);
-      }
-
-      if (header.toLowerCase() === "content-type") {
-        this.#contentTypeAuto = false;
-      }
-
-      // Remove header
-      if (value === null) {
-        this.#ctx.headers.delete(header);
-        return this;
-      }
-
-      // Set header to value
-      this.#ctx.headers.set(header, value.toString());
-
-      return this;
-    } else if (isObject(header) && value == null) {
-      // Set an object full of keys and values
-      for (const key in header) {
-        this.header(key, header[key]);
-      }
-      return this;
-    }
-
-    throw new Error(`Expected a key and value, an object, or a header name only. Received: ${header} and ${value}`);
-  }
-
-  /**
-   * Sets headers to be sent with the request. Alias for `.header(header, value)`.
-   */
-  headers(header, value) {
-    this.header(header, value);
-    return this;
-  }
-
-  query(query, value) {
-    if (isString(query)) {
-      // Return query param's current value
-      if (value === undefined) {
-        return this.#query.get(query);
-      }
-
-      // Remove query param
-      if (value === null) {
-        this.#query.delete(query);
-        return this;
-      }
-
-      // Set query param to value
-      this.#query.set(query, value.toString());
-
-      return this;
-    } else if (isObject(query) && value == null) {
-      // Set an object full of keys and values
-      for (const key in query) {
-        this.query(key, query[key]);
-      }
-      return this;
-    }
-
-    throw new Error(`Expected a key and value, an object, or a parameter name only. Received: ${query} and ${value}`);
-  }
-
-  body(value) {
-    if (value instanceof FormData) {
-      if (this.#contentTypeAuto) {
-        this.header("content-type", "application/x-www-form-urlencoded");
-      }
-      this.#ctx.body = value;
-    } else if (isObject(value)) {
-      if (this.#contentTypeAuto) {
-        this.header("content-type", "application/json");
-      }
-      this.#ctx.body = JSON.stringify(value);
-    } else {
-      this.#ctx.body = value;
-    }
-
-    return this;
-  }
-
-  /**
-   * Takes a function to determine whether a response is a success or an error.
-   *
-   * @param fn - Takes the status code and returns true if response is successful or false if it should be treated as an error.
-   */
-  ok(fn) {
-    this.#isOk = fn;
-
-    return this;
-  }
-
-  response() {
-    return this.#res;
-  }
-
-  /**
-   * Sends the request.
-   */
-  then(...args) {
-    if (!this.#promise) {
-      this.#promise = this.#send();
-    }
-
-    return this.#promise.then(...args);
-  }
-
-  catch(...args) {
-    if (!this.#promise) {
-      this.#promise = this.#send();
-    }
-
-    return this.#promise.catch(...args);
-  }
-
-  finally(...args) {
-    if (!this.#promise) {
-      this.#promise = this.#send();
-    }
-
-    return this.#promise.finally(...args);
-  }
-
-  async #send() {
-    const res = {
+  async function send() {
+    res = {
       status: 200,
       statusText: "OK",
       headers: {},
       body: undefined,
     };
 
-    this.#res = res;
-
     const handler = async () => {
-      this.#debug.log(`[#${this.#id}] sent ${this.#ctx.method.toUpperCase()} request to '${this.#url}'`);
+      log(`[#${id}] sent ${ctx.method.toUpperCase()} request to '${url}'`);
       const start = Date.now();
 
-      const query = this.#query.toString();
-      const url = query.length > 0 ? this.#url + "?" + query : this.#url;
+      const query = queryParams.toString();
+      const fullUrl = queryParams.length > 0 ? url + "?" + query : url;
 
-      const fetched = await this.#fetch(url, this.#ctx);
+      const fetched = await fetch(fullUrl, ctx);
 
       res.status = fetched.status;
       res.statusText = fetched.statusText;
@@ -303,8 +96,8 @@ export class HTTPRequest {
 
       const contentType = res.headers["content-type"];
 
-      if (isFunction(this.#parse)) {
-        res.body = await this.#parse(fetched);
+      if (isFunction(parse)) {
+        res.body = await parse(fetched);
       } else if (contentType?.includes("application/json")) {
         res.body = await fetched.json();
       } else if (contentType?.includes("application/x-www-form-urlencoded")) {
@@ -313,21 +106,21 @@ export class HTTPRequest {
         res.body = await fetched.text();
       }
 
-      this.#debug.log(
-        `[#${this.#id}] got response from ${this.#ctx.method.toUpperCase()} '${this.#url}'`,
+      log(
+        `[#${id}] got response from ${ctx.method.toUpperCase()} '${fullUrl}'`,
         `(took ${Math.round(Date.now() - start)}ms)`,
         res
       );
     };
 
     const mount = (index = 0) => {
-      const current = this.#middleware[index];
-      const next = this.#middleware[index + 1] ? mount(index + 1) : handler;
+      const current = middleware[index];
+      const next = middleware[index + 1] ? mount(index + 1) : handler;
 
-      return async () => current(this, next);
+      return async () => current(methods, next);
     };
 
-    if (this.#middleware.length > 0) {
+    if (middleware.length > 0) {
       await mount()();
     } else {
       await handler();
@@ -337,12 +130,10 @@ export class HTTPRequest {
     // With fetch's req.ok way there are two error handling paths; response errors (then) and network errors (catch).
     // In most cases, a 404 or 500 is the same as a network error from the app's point of view.
     // If needed, the .ok() function can control what is thrown as an error.
-    if (!this.#isOk(res.status)) {
-      const err = new HTTPError(
-        `${res.status} ${res.statusText}: Request failed (${this.#ctx.method.toUpperCase()} ${this.#url})`
-      );
-      err.method = this.#ctx.method;
-      err.url = this.#url;
+    if (!isOk(res.status)) {
+      const err = new HTTPError(`${res.status} ${res.statusText}: Request failed (${ctx.method.toUpperCase()} ${url})`);
+      err.method = ctx.method;
+      err.url = url;
       err.status = res.status;
       err.statusText = res.statusText;
       err.headers = res.headers;
@@ -353,6 +144,179 @@ export class HTTPRequest {
 
     return res;
   }
+
+  const methods = {
+    /**
+     * True if this request's URL is a relative path (same domain).
+     */
+    isRelative() {
+      return !/^https?:\/\//.test(url);
+    },
+
+    /**
+     * Gets or sets the URL for this request.
+     */
+    url(value) {
+      if (value === undefined) {
+        return url;
+      } else if (isString(value)) {
+        url = value;
+      } else {
+        throw new TypeError(`Expected a string. Received: ${value}`);
+      }
+    },
+
+    /**
+     * Sets headers to send with the request.
+     *
+     * @example
+     * // Set a single header
+     * .header("content-type", "application/json")
+     *
+     * // Remove a header
+     * .header("content-type", null)
+     *
+     * // Get a header's current value
+     * .header("content-type")
+     *
+     * // Set multiple headers
+     * .header({
+     *   "content-type": "application/json",
+     *   "authorization": "bearer acbdef"
+     * })
+     *
+     * @param header - Header name or object with multiple headers.
+     * @param value - Value to set if passing header name, otherwise undefined.
+     */
+    header(header, value) {
+      if (isString(header)) {
+        // Return header's current value
+        if (value === undefined) {
+          return ctx.headers.get(header);
+        }
+
+        if (header.toLowerCase() === "content-type") {
+          contentTypeAuto = false;
+        }
+
+        // Remove header
+        if (value === null) {
+          ctx.headers.delete(header);
+          return methods;
+        }
+
+        // Set header to value
+        ctx.headers.set(header, value.toString());
+
+        return methods;
+      } else if (isObject(header) && value == null) {
+        // Set an object full of keys and values
+        for (const key in header) {
+          methods.header(key, header[key]);
+        }
+        return methods;
+      }
+
+      throw new Error(`Expected a key and value, an object, or a header name only. Received: ${header} and ${value}`);
+    },
+
+    /**
+     * Sets headers to be sent with the request. Alias for `.header(header, value)`.
+     */
+    headers(header, value) {
+      methods.header(header, value);
+      return methods;
+    },
+
+    query(query, value) {
+      if (isString(query)) {
+        // Return query param's current value
+        if (value === undefined) {
+          return queryParams.get(query);
+        }
+
+        // Remove query param
+        if (value === null) {
+          queryParams.delete(query);
+          return methods;
+        }
+
+        // Set query param to value
+        queryParams.set(query, value.toString());
+
+        return methods;
+      } else if (isObject(query) && value == null) {
+        // Set an object full of keys and values
+        for (const key in query) {
+          methods.query(key, query[key]);
+        }
+        return methods;
+      }
+
+      throw new Error(`Expected a key and value, an object, or a parameter name only. Received: ${query} and ${value}`);
+    },
+
+    body(value) {
+      if (value instanceof FormData) {
+        if (contentTypeAuto) {
+          methods.header("content-type", "application/x-www-form-urlencoded");
+        }
+        ctx.body = value;
+      } else if (isObject(value)) {
+        if (contentTypeAuto) {
+          methods.header("content-type", "application/json");
+        }
+        ctx.body = JSON.stringify(value);
+      } else {
+        ctx.body = value;
+      }
+
+      return methods;
+    },
+
+    /**
+     * Takes a function to determine whether a response is a success or an error.
+     *
+     * @param fn - Takes the status code and returns true if response is successful or false if it should be treated as an error.
+     */
+    ok(fn) {
+      isOk = fn;
+      return methods;
+    },
+
+    response() {
+      return res;
+    },
+
+    /**
+     * Sends the request.
+     */
+    then(...args) {
+      if (!promise) {
+        promise = send();
+      }
+
+      return promise.then(...args);
+    },
+
+    catch(...args) {
+      if (!promise) {
+        promise = send();
+      }
+
+      return promise.catch(...args);
+    },
+
+    finally(...args) {
+      if (!promise) {
+        promise = send();
+      }
+
+      return promise.finally(...args);
+    },
+  };
+
+  return methods;
 }
 
 class HTTPError extends Error {

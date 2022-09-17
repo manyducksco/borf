@@ -1,13 +1,15 @@
-export default function mouse() {
-  this.defaultState = {
+import { makeGlobal } from "@woofjs/client";
+
+export default makeGlobal((ctx) => {
+  ctx.defaultState = {
     position: { x: 0, y: 0 },
   };
 
-  this.afterConnect(() => {
-    this.log("listening for mousemove events");
+  ctx.afterConnect(() => {
+    ctx.log("listening for mousemove events");
 
     window.addEventListener("mousemove", (e) => {
-      this.set("position", {
+      ctx.set("position", {
         x: e.clientX,
         y: e.clientY,
       });
@@ -15,6 +17,6 @@ export default function mouse() {
   });
 
   return {
-    $position: this.readable("position"),
+    $position: ctx.readable("position"),
   };
-}
+});

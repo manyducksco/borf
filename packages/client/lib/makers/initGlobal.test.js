@@ -1,4 +1,4 @@
-import { makeGlobal } from "./makeGlobal.js";
+import { initGlobal } from "./initGlobal.js";
 
 /*========================*\
 ||         Utils          ||
@@ -28,7 +28,7 @@ test("lifecycle hooks", () => {
     return { works: true };
   };
 
-  const instance = makeGlobal(fn, { appContext, name: "test" });
+  const instance = initGlobal(fn, { appContext, name: "test" });
 
   expect(instance.exports).toStrictEqual({ works: true });
   expect(typeof instance.beforeConnect).toBe("function");
@@ -67,9 +67,9 @@ test("throws if bootstrap doesn't return an object", () => {
     return { thisIsNormal: true };
   };
 
-  expect(() => makeGlobal(nullFn, { appContext, name: "test" })).toThrow();
-  expect(() => makeGlobal(stringFn, { appContext, name: "test" })).toThrow();
-  expect(() => makeGlobal(fnFn, { appContext, name: "test" })).toThrow();
+  expect(() => initGlobal(nullFn, { appContext, name: "test" })).toThrow();
+  expect(() => initGlobal(stringFn, { appContext, name: "test" })).toThrow();
+  expect(() => initGlobal(fnFn, { appContext, name: "test" })).toThrow();
 
-  expect(() => makeGlobal(regularFn, { appContext, name: "test" })).not.toThrow();
+  expect(() => initGlobal(regularFn, { appContext, name: "test" })).not.toThrow();
 });

@@ -1,6 +1,8 @@
-export default function Timer() {
-  this.name = "7guis:Timer";
-  this.defaultState = {
+import { makeView } from "@woofjs/client";
+
+export default makeView((ctx) => {
+  ctx.name = "7guis:Timer";
+  ctx.defaultState = {
     duration: 10, // duration in seconds
     elapsed: 0, // elapsed time in seconds
   };
@@ -8,17 +10,17 @@ export default function Timer() {
   let lastTick = null;
 
   const tick = () => {
-    if (this.isConnected) {
+    if (ctx.isConnected) {
       const now = Date.now();
 
-      const elapsed = this.get("elapsed");
-      const duration = this.get("duration");
+      const elapsed = ctx.get("elapsed");
+      const duration = ctx.get("duration");
 
       // Only update if $elapsed hasn't yet reached $duration
       if (elapsed < duration) {
         const difference = (now - lastTick) / 1000;
 
-        this.set("elapsed", (current) => {
+        ctx.set("elapsed", (current) => {
           return Math.min(current + difference, duration);
         });
       }
@@ -28,14 +30,14 @@ export default function Timer() {
     }
   };
 
-  this.afterConnect(() => {
+  ctx.afterConnect(() => {
     lastTick = Date.now();
 
     tick();
   });
 
-  const $duration = this.readable("duration");
-  const $elapsed = this.readable("elapsed");
+  const $duration = ctx.readable("duration");
+  const $elapsed = ctx.readable("elapsed");
 
   return (
     <div class="example">
@@ -55,13 +57,13 @@ export default function Timer() {
             min={0}
             max={30}
             step={0.1}
-            value={this.writable("duration")}
+            value={ctx.writable("duration")}
           />
         </div>
         <div>
           <button
             onclick={() => {
-              this.set("elapsed", 0);
+              ctx.set("elapsed", 0);
             }}
           >
             Reset
@@ -70,4 +72,4 @@ export default function Timer() {
       </div>
     </div>
   );
-}
+});

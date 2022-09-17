@@ -1,9 +1,12 @@
-export function ComponentAttrsExample() {
-  this.defaultState = {
+import { makeView } from "@woofjs/client";
+
+export const ComponentAttrsExample = makeView((ctx) => {
+  ctx.name = "ComponentAttrsExample";
+  ctx.defaultState = {
     message: "test",
   };
 
-  const $$message = this.writable("message");
+  const $$message = ctx.writable("message");
 
   return (
     <div class="example">
@@ -15,22 +18,22 @@ export function ComponentAttrsExample() {
       </div>
     </div>
   );
-}
+});
 
-function SubComponent() {
-  this.name = "SubComponent";
+const SubComponent = makeView((ctx) => {
+  ctx.name = "SubComponent";
 
   return (
     <div>
-      <p>Message: {this.readable("message")}</p>
+      <p>Message: {ctx.readable("message")}</p>
       <button
         onclick={() => {
           // Sets the value which should set the parent component's message as well because it's two-way bound.
-          this.set("message", "test");
+          ctx.set("message", "test");
         }}
       >
         Reset State
       </button>
     </div>
   );
-}
+});

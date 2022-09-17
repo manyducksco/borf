@@ -1,4 +1,6 @@
-export default function SevenGUIs() {
+import { makeView } from "@woofjs/client";
+
+export default makeView((ctx) => {
   return (
     <div>
       <p>
@@ -31,7 +33,7 @@ export default function SevenGUIs() {
         </li>
       </ul>
 
-      <div>{this.outlet()}</div>
+      <div>{ctx.outlet()}</div>
     </div>
   );
-}
+});

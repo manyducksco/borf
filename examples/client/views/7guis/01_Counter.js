@@ -1,10 +1,12 @@
-export default function Counter() {
-  this.name = "7guis:Counter";
-  this.defaultState = {
+import { makeView } from "@woofjs/client";
+
+export default makeView((ctx) => {
+  ctx.name = "7guis:Counter";
+  ctx.defaultState = {
     count: 0,
   };
 
-  const $count = this.readable("count");
+  const $count = ctx.readable("count");
 
   return (
     <div class="example">
@@ -16,7 +18,7 @@ export default function Counter() {
         <input type="text" value={$count} disabled />
         <button
           onclick={() => {
-            this.set("count", (n) => n + 1);
+            ctx.set("count", (n) => n + 1);
           }}
         >
           Increment
@@ -24,4 +26,4 @@ export default function Counter() {
       </div>
     </div>
   );
-}
+});

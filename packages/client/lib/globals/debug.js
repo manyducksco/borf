@@ -1,21 +1,22 @@
 import colorHash from "simple-color-hash";
 import { APP_CONTEXT } from "../keys.js";
+import { makeGlobal } from "../makers/makeGlobal.js";
 
-export default function debug() {
-  const options = this[APP_CONTEXT].options.debug || {};
+export default makeGlobal((ctx) => {
+  const options = ctx[APP_CONTEXT].options.debug || {};
   const console = options._console || window?.console || global?.console;
 
-  this.defaultState = {
+  ctx.defaultState = {
     filter: options.filter || "*,-woof:*",
   };
 
   let match;
-  this.observe("filter", (filter) => {
+  ctx.observe("filter", (filter) => {
     match = makeMatch(filter);
   });
 
   return {
-    $$filter: this.writable("filter"),
+    $$filter: ctx.writable("filter"),
 
     channel: (name) => {
       assertNameFormat(name);
@@ -26,7 +27,7 @@ export default function debug() {
         },
 
         set name(value) {
-          assertNameFormat(name);
+          assertNameFormat(value);
           name = value;
         },
 
@@ -50,7 +51,7 @@ export default function debug() {
       };
     },
   };
-}
+});
 
 function hash(value) {
   return colorHash({

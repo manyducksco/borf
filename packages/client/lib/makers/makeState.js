@@ -61,7 +61,7 @@ export function makeState({ initialState, bindings, debug }) {
       }
 
       for (const key in values) {
-        if (bindings[key] && !bindings[key].isWritable) {
+        if (key === "children" || (bindings[key] && !bindings[key].isWritable)) {
           debug.warn(`Tried to set value for read-only binding '${key}'. This change will not apply.`);
           continue;
         }
@@ -223,6 +223,10 @@ function makeBinding(ctx, key, writable = false) {
 
     binding.nuke = (key) => {
       ctx.nuke(key);
+    };
+
+    binding.readable = () => {
+      return ctx.readable(key);
     };
   }
 

@@ -1,7 +1,8 @@
 import woof, {
-  View,
-  ReadBinding,
-  ReadWriteBinding,
+  makeView,
+  makeGlobal,
+  Readable,
+  Writable,
   Bindable,
   Private,
   GlobalContext,
@@ -9,10 +10,8 @@ import woof, {
 
 type ExampleGlobalState = {};
 
-const ExampleGlobal = function (
-  this: GlobalContext<ExampleGlobalState, AppGlobals>
-) {
-  const router = this.global("router");
+const ExampleGlobal = makeGlobal<ExampleGlobalState, AppGlobals>((ctx) => {
+  const router = ctx.global("router");
 
   return {
     /**
@@ -20,19 +19,17 @@ const ExampleGlobal = function (
      */
     message: "hello",
   };
-};
+});
 
 type UsersGlobalState = {};
 
-const UsersGlobal = function (
-  this: GlobalContext<UsersGlobalState, AppGlobals>
-) {
+const UsersGlobal = makeGlobal<UsersGlobalState, AppGlobals>((ctx) => {
   return {
     async getUsers() {
       return [];
     },
   };
-};
+});
 
 export type AppGlobals = {
   example: typeof ExampleGlobal;
@@ -46,79 +43,81 @@ app.global("example", ExampleGlobal);
 app.global("users", UsersGlobal);
 app.global("fn", () => ({ isFunction: true }));
 
-app.route("/", Layout);
-app.redirect("*", "/");
-
 type ExampleState = {
   // name: string | ReadBinding<string> | ReadWriteBinding<string>; // Use types to specify if things can be bound or not.
   name: Bindable<string>; // Bindable is shorthand for the above.
+  children: string;
 
   initialized: Private<boolean>; // Private state cannot be passed as attributes.
 };
 
 // The binding types above only take effect when passing attributes. All bindings are unwrapped to their base types internally.
 
-const Example: View<ExampleState, AppGlobals> = function () {
-  this.name = "Example"; // debug tag will become `[view:Example]`
+const Example = makeView<ExampleState, AppGlobals>((ctx) => {
+  ctx.name = "Example"; // debug tag will become `[view:Example]`
 
   // Define initial values for state unless overridden by attributes.
-  this.defaultState = {
+  ctx.defaultState = {
     name: "Bob",
     initialized: false,
   };
 
-  const state = this.get(); // Snapshot of the whole state.
-  const name = this.get("name"); // Snapshot of the value of 'name'
+  const state = ctx.get(); // Snapshot of the whole state.
+  const name = ctx.get("name"); // Snapshot of the value of 'name'
 
-  const $name = this.read("name"); // One-way binding to 'name'
-  const $$name = this.readWrite("name"); // Two-way (settable) binding to 'name'
+  const $name = ctx.readable("name"); // One-way binding to 'name'
+  const $$name = ctx.writable("name"); // Two-way (settable) binding to 'name'
 
   // Update the value stored under 'name' in view state.
-  this.set("name", "Bob");
+  ctx.set("name", "Bob");
 
   // Set the value from the binding, not the binding itself. Bindings cannot be stored in state.
-  this.set("name", $name);
+  ctx.set("name", $name);
 
   // Observe the whole view state.
-  this.observe((state) => {
-    this.log("state changed to", state);
+  ctx.observe((state) => {
+    ctx.log("state changed to", state);
   });
 
   // Observe a specific key.
-  this.observe("name", (name) => {
-    this.log("name changed to", name);
+  ctx.observe("name", (name) => {
+    ctx.log("name changed to", name);
   });
 
   // Observe a binding or other observable.
-  this.observe($name, (name) => {
-    this.log("$name changed to", name);
+  ctx.observe($name, (name) => {
+    ctx.log("$name changed to", name);
   });
 
-  const { message } = this.global("example");
+  const { message } = ctx.global("example");
 
   // mergeStates creates a new state with an array of values from all passed states.
   // Reuse standard map method to transform it from there.
-  const $multiplied = this.concat($name, message).to(([name, message]) => {
+  const $multiplied = ctx.merge($name, message, (name, message) => {
     return `Hey ${name}, ${message}`;
   });
 
   // Can reference own state keys with strings or pass existing bindings.
-  const $values = this.concat("key1", "key2", $binding3);
-  const $added = $values.to(([one, two, three]) => one + two + three);
+  const $values = ctx.merge(
+    "key1",
+    "key2",
+    $multiplied,
+    (one, two, three) => one + two + three
+  );
 
   // Possibility of simplifying debug methods.
-  this.name = "Component name?";
-  this.log("hello there");
-  this.warn("warning!");
-  this.error(new Error("error!"));
+  ctx.name = "Component name?";
+  ctx.log("hello there");
+  ctx.warn("warning!");
+  ctx.error(new Error("error!"));
 
   // Same lifecycle methods
-  this.beforeConnect(() => {
-    this.set("initialized", true);
+  ctx.beforeConnect(() => {
+    ctx.set("initialized", true);
   });
-  this.afterConnect(() => {});
-  this.beforeDisconnect(() => {});
-  this.afterDisconnect(() => {});
+  ctx.afterConnect(() => {});
+  ctx.beforeDisconnect(() => {});
+  ctx.afterDisconnect(() => {});
 
   return (
     <div>
@@ -127,22 +126,26 @@ const Example: View<ExampleState, AppGlobals> = function () {
       </header>
 
       {/* Creates an Outlet view that renders children or nested routes */}
-      <p>{this.outlet()}</p>
+      <p>{ctx.outlet()}</p>
     </div>
   );
+});
+
+type LayoutState = {
+  userName: string;
 };
 
 // Attributes passed through JSX describe initial state or bindings to the component's state.
-const Layout: View<{ userName: string }, AppGlobals> = function () {
-  this.defaultState = {
+const Layout = makeView<LayoutState, AppGlobals>((ctx) => {
+  ctx.defaultState = {
     userName: "Default",
   };
 
   // One-way bindings are named with a single $
-  const $name = this.read("userName");
+  const $name = ctx.readable("userName");
 
   // Two-way bindings are named with two $$
-  const $$name = this.readWrite("userName");
+  const $$name = ctx.writable("userName");
 
   return (
     <ul>
@@ -158,12 +161,9 @@ const Layout: View<{ userName: string }, AppGlobals> = function () {
         {/* Setting 'name' inside <Example> will update the value of $$name. */}
         <Example name={$$name} />
       </li>
-      <li>
-        <Example name={$$name}>
-          Children passed to a view will be rendered wherever `this.outlet()` is
-          called.
-        </Example>
-      </li>
     </ul>
   );
-};
+});
+
+app.route("/", Layout);
+app.redirect("*", "/");

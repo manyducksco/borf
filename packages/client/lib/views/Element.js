@@ -1,14 +1,16 @@
 import { isArray, isObject, isString, isNumber, isFunction, isBinding, isObservable } from "../helpers/typeChecking.js";
-import { ELEMENT_CONTEXT } from "../keys.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
+import { makeView } from "../makers/makeView.js";
 
 /**
  * Implements logic for HTML elements created with `h()`.
  */
-export function Element() {
-  const elementContext = this[ELEMENT_CONTEXT];
+export const Element = makeView((ctx) => {
+  const appContext = ctx[APP_CONTEXT];
+  const elementContext = ctx[ELEMENT_CONTEXT];
 
-  const tagname = this.get("tagname");
-  const attrs = this.get("attrs") || {};
+  const tagname = ctx.get("tagname");
+  const attrs = ctx.get("attrs") || {};
 
   let node;
 
@@ -19,35 +21,29 @@ export function Element() {
   }
 
   if (attrs.ref) {
-    if (isBinding(attrs.ref) && attrs.ref.isWritable) {
-      attrs.ref.set(node);
+    if (isFunction(attrs.ref)) {
+      attrs.ref(node);
     } else {
-      throw new Error("Ref is not a writable binding. Got: " + attrs.ref);
+      throw new Error("Ref is not a function. Got: " + attrs.ref);
     }
-  }
-
-  // Alias React-style 'className' attributes to 'class'.
-  if (attrs.className) {
-    attrs.class = attrs.className;
-    delete attrs.className;
   }
 
   let subscriptions = [];
+  const children = ctx.outlet().init({ appContext, elementContext });
 
-  this.beforeConnect(() => {
-    for (const child of this.children) {
-      child.connect(node);
-    }
+  ctx.beforeConnect(() => {
+    children.connect(node);
+    // for (const child of ctx.get("children")) {
+    //   child.connect(node);
+    // }
 
     applyAttrs(node, attrs, subscriptions);
     if (attrs.style) applyStyles(node, attrs.style, subscriptions);
     if (attrs.class) applyClasses(node, attrs.class, subscriptions);
   });
 
-  this.afterDisconnect(async () => {
-    for (const child of this.children) {
-      child.disconnect();
-    }
+  ctx.afterDisconnect(async () => {
+    children.disconnect();
 
     for (const subscription of subscriptions) {
       subscription.unsubscribe();
@@ -56,7 +52,7 @@ export function Element() {
   });
 
   return node;
-}
+});
 
 function applyAttrs(element, attrs, subscriptions) {
   for (const key in attrs) {

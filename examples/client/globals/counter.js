@@ -1,22 +1,23 @@
+import { makeGlobal } from "@woofjs/client";
+
 /**
  * Exposes a $current value and increments it by one each second.
  */
-export default function counter() {
-  this.defaultState = {
+export default makeGlobal((ctx) => {
+  ctx.defaultState = {
     current: 0,
   };
 
-  this.afterConnect(() => {
+  ctx.afterConnect(() => {
     setInterval(() => {
-      this.set("current", (x) => x + 1);
+      ctx.set("current", (x) => x + 1);
     }, 1000);
   });
 
   return {
-    $current: this.readable("current"),
-
-    reset: () => {
-      this.set("current", 0);
+    $current: ctx.readable("current"),
+    reset() {
+      ctx.set("current", 0);
     },
   };
-}
+});

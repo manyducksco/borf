@@ -1,17 +1,18 @@
+import { makeView } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 /**
  * Displays a div that toggles a class when clicked and a label based on the current status.
  */
-export function ToggleExample() {
-  this.name = "ToggleExample";
-  this.defaultState = {
+export const ToggleExample = makeView((ctx) => {
+  ctx.name = "ToggleExample";
+  ctx.defaultState = {
     active: false,
   };
 
-  logLifecycle(this);
+  logLifecycle(ctx);
 
-  const $active = this.readable("active");
+  const $active = ctx.readable("active");
   const $status = $active.to((t) => (t ? "ON" : "OFF"));
 
   return (
@@ -22,7 +23,7 @@ export function ToggleExample() {
       <div
         class={{ active: $active }} // class "active" is applied while binding holds a truthy value
         onclick={() => {
-          this.set("active", (t) => !t);
+          ctx.set("active", (t) => !t);
         }}
       >
         {$status}
@@ -30,4 +31,4 @@ export function ToggleExample() {
       </div>
     </div>
   );
-}
+});

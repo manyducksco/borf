@@ -1,18 +1,20 @@
-export default function TempConverter() {
-  this.name = "7guis:TempConverter";
-  this.defaultState = {
+import { makeView } from "@woofjs/client";
+
+export default makeView((ctx) => {
+  ctx.name = "7guis:TempConverter";
+  ctx.defaultState = {
     celsius: 10,
   };
 
-  const setFahrenheit = (f) => {
-    this.set("celsius", (f - 32) * (5 / 9));
-  };
-
   const setCelsius = (c) => {
-    this.set("celsius", c);
+    ctx.set("celsius", c);
   };
 
-  const $celsius = this.readable("celsius");
+  const setFahrenheit = (f) => {
+    ctx.set("celsius", (f - 32) * (5 / 9));
+  };
+
+  const $celsius = ctx.readable("celsius");
   const $fahrenheit = $celsius.to((c) => c * (9 / 5) + 32);
 
   return (
@@ -40,4 +42,4 @@ export default function TempConverter() {
       Fahrenheit
     </div>
   );
-}
+});

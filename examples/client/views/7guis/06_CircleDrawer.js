@@ -1,5 +1,7 @@
-export default function CircleDrawer() {
-  this.name = "7guis:CircleDrawer";
+import { makeView } from "@woofjs/client";
+
+export default makeView((ctx) => {
+  ctx.name = "7guis:CircleDrawer";
 
   return (
     <div class="example">
@@ -10,4 +12,4 @@ export default function CircleDrawer() {
       <div></div>
     </div>
   );
-}
+});

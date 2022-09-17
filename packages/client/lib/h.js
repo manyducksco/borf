@@ -1,14 +1,6 @@
-import {
-  isFunction,
-  isObject,
-  isString,
-  isNumber,
-  isTemplate,
-  isComponent,
-  isObservable,
-} from "./helpers/typeChecking.js";
+import { isFunction, isObject, isString, isNumber, isTemplate, isView, isObservable } from "./helpers/typeChecking.js";
 import { flatten } from "./helpers/flatten.js";
-import { makeView } from "./makers/makeView.js";
+import { initView } from "./makers/initView.js";
 
 import { Text } from "./views/Text.js";
 import { Element } from "./views/Element.js";
@@ -63,34 +55,33 @@ export class Template {
     }
 
     // Filter falsy children and convert to component instances.
-    const children = flatten(this.children)
-      .filter((x) => x !== null && x !== undefined && x !== false)
-      .map((child) => {
-        if (isTemplate(child)) {
-          child = child.init({ appContext, elementContext });
-        } else if (isString(child) || isNumber(child) || isObservable(child)) {
-          child = makeView(Text, {
-            attrs: {
-              value: child,
-            },
-            appContext,
-          });
-        }
+    const children = flatten(this.children).filter((x) => x !== null && x !== undefined && x !== false);
+    // .map((child) => {
+    //   if (isTemplate(child)) {
+    //     child = child.init({ appContext, elementContext });
+    //   } else if (isString(child) || isNumber(child) || isObservable(child)) {
+    //     child = initView(Text, {
+    //       attrs: {
+    //         value: child,
+    //       },
+    //       appContext,
+    //     });
+    //   }
 
-        if (!isComponent(child)) {
-          throw new TypeError(`Children must be components, strings, numbers or observables. Got: ${child}`);
-        }
+    //   if (!isComponent(child)) {
+    //     throw new TypeError(`Children must be components, strings, numbers or observables. Got: ${child}`);
+    //   }
 
-        return child;
-      });
+    //   return child;
+    // });
 
     const { element, attrs } = this;
 
     if (isString(element)) {
       if (element === "" || element === "<>") {
-        return makeView(Fragment, { children, appContext, elementContext });
+        return initView(Fragment, { children, appContext, elementContext });
       } else {
-        return makeView(Element, {
+        return initView(Element, {
           attrs: {
             tagname: element,
             attrs,
@@ -101,7 +92,7 @@ export class Template {
         });
       }
     } else if (isFunction(element)) {
-      return makeView(element, { attrs, children, appContext, elementContext });
+      return initView(element, { attrs, children, appContext, elementContext });
     } else {
       console.error("Element", element);
       throw new TypeError(`Expected a tagname or component function. Got ${typeof element}`);

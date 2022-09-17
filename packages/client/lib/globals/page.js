@@ -1,13 +1,14 @@
 import { isString } from "../helpers/typeChecking.js";
+import { makeGlobal } from "../makers/makeGlobal.js";
 
-export default function page() {
-  this.defaultState = {
+export default makeGlobal((ctx) => {
+  ctx.defaultState = {
     title: document?.title,
   };
 
-  this.afterConnect(() => {
+  ctx.afterConnect(() => {
     if (document) {
-      this.observe("title", (current) => {
+      ctx.observe("title", (current) => {
         if (isString(current)) {
           document.title = current;
         }
@@ -16,6 +17,6 @@ export default function page() {
   });
 
   return {
-    $$title: this.writable("title"),
+    $$title: ctx.writable("title"),
   };
-}
+});

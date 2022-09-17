@@ -1,16 +1,16 @@
 import { makeMockHTTP } from "@woofjs/client/testing";
 import { HTTPRequestExample } from "./HTTPRequestExample.js";
 
-export default (view) => {
-  view.name = "Mock HTTP example";
-  view.description = "Test";
+export default makeFixture((fix) => {
+  fix.name = "Mock HTTP example";
+  fix.description = "Test";
 
-  view.service(
+  fix.global(
     "http",
-    makeMockHTTP((on) => {
-      on.get("/hello-json", (ctx) => {
+    makeMockHTTP((handle) => {
+      handle.get("/hello-json", (ctx) => {
         // fireAction fires an action when called without needing to be passed as a component attribute.
-        view.fireAction("made request");
+        fix.fireAction("made request");
 
         return {
           message: "Hello from mock HTTP!",
@@ -19,5 +19,5 @@ export default (view) => {
     })
   );
 
-  view.render(HTTPRequestExample);
-};
+  return <HTTPRequestExample />;
+});

@@ -1,6 +1,8 @@
-export default function CRUD() {
-  this.name = "7guis:CRUD";
-  this.defaultState = {
+import { makeView } from "@woofjs/client";
+
+export default makeView((ctx) => {
+  ctx.name = "7guis:CRUD";
+  ctx.defaultState = {
     people: [
       {
         id: 1,
@@ -27,7 +29,7 @@ export default function CRUD() {
     filterPrefix: "",
   };
 
-  const $filteredPeople = this.merge(
+  const $filteredPeople = ctx.merge(
     "people",
     "filterPrefix",
     (people, prefix) => {
@@ -42,12 +44,12 @@ export default function CRUD() {
   );
 
   // Creates a new person from the current input values.
-  const create = () => {
-    const id = this.get("nextId");
-    const nameInput = this.get("nameInput");
-    const surnameInput = this.get("surnameInput");
+  function create() {
+    const id = ctx.get("nextId");
+    const nameInput = ctx.get("nameInput");
+    const surnameInput = ctx.get("surnameInput");
 
-    this.set("people", (current) => {
+    ctx.set("people", (current) => {
       current.push({
         id,
         name: nameInput,
@@ -55,39 +57,39 @@ export default function CRUD() {
       });
     });
 
-    this.set("nextId", (current) => current + 1);
-  };
+    ctx.set("nextId", (current) => current + 1);
+  }
 
   // Sets the selected person's name to the current input values.
-  const update = () => {
-    const selectedId = this.get("selectedId");
-    const nameInput = this.get("nameInput");
-    const surnameInput = this.get("surnameInput");
+  function update() {
+    const selectedId = ctx.get("selectedId");
+    const nameInput = ctx.get("nameInput");
+    const surnameInput = ctx.get("surnameInput");
 
-    this.set("people", (current) => {
+    ctx.set("people", (current) => {
       const person = current.find((p) => p.id === selectedId);
 
       person.name = nameInput;
       person.surname = surnameInput;
     });
-  };
+  }
 
   // Deletes the selected person.
-  const del = () => {
-    const selectedId = this.get("selectedId");
+  function del() {
+    const selectedId = ctx.get("selectedId");
 
-    this.set("people", (current) => {
+    ctx.set("people", (current) => {
       return current.filter((p) => p.id !== selectedId);
     });
-  };
+  }
 
   // Update fields when selection changes.
-  this.observe("selectedId", (id) => {
-    const person = this.get("people").find((p) => p.id === id);
+  ctx.observe("selectedId", (id) => {
+    const person = ctx.get("people").find((p) => p.id === id);
 
     if (person) {
-      this.set("nameInput", person.name);
-      this.set("surnameInput", person.surname);
+      ctx.set("nameInput", person.name);
+      ctx.set("surnameInput", person.surname);
     }
   });
 
@@ -99,30 +101,32 @@ export default function CRUD() {
 
       <div>
         <div>
-          Filter prefix: <input value={this.writable("filterPrefix")} />
+          Filter prefix: <input value={ctx.writable("filterPrefix")} />
         </div>
         <div>
           <select
             size={$filteredPeople.to((fp) => Math.max(fp.length, 2))}
-            value={this.readable("selectedId")}
+            value={ctx.readable("selectedId")}
             onchange={(e) => {
-              this.set("selectedId", Number(e.target.value));
+              ctx.set("selectedId", Number(e.target.value));
             }}
           >
-            {this.repeat($filteredPeople, function FilterOption() {
-              const $person = this.readable("value");
+            {ctx.repeat($filteredPeople, ($person) => {
+              const $id = $person.to((p) => p.id);
+              const $name = $person.to((p) => p.name);
+              const $surname = $person.to((p) => p.surname);
 
               return (
-                <option value={$person.to((p) => p.id)}>
-                  {$person.to((p) => p.surname)}, {$person.to((p) => p.name)}
+                <option value={$id}>
+                  {$surname}, {$name}
                 </option>
               );
             })}
           </select>
         </div>
         <div>
-          <input type="text" value={this.writable("nameInput")} />
-          <input type="text" value={this.writable("surnameInput")} />
+          <input type="text" value={ctx.writable("nameInput")} />
+          <input type="text" value={ctx.writable("surnameInput")} />
         </div>
         <div>
           <button onclick={create}>Create</button>
@@ -132,4 +136,4 @@ export default function CRUD() {
       </div>
     </div>
   );
-}
+});

@@ -119,25 +119,6 @@ declare module "@woofjs/client" {
     connect(root: string | Node): Promise<void>;
   }
 
-  type DebugChannel = {
-    name: string;
-
-    /**
-     * Log the arguments to the console.
-     */
-    log(...args: any): void;
-
-    /**
-     * Log the arguments to the console as a warning.
-     */
-    warn(...args: any): void;
-
-    /**
-     * Log the arguments to the console as an error.
-     */
-    error(...args: any): void;
-  };
-
   export interface AppContext<Globals> extends DebugChannel {
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
@@ -182,8 +163,31 @@ declare module "@woofjs/client" {
     init(appContext: AppContext<any>): Component;
   };
 
-  export function h(element: string | Component, attrs: Object, ...children: Template[]): Template;
-  export function h(element: string | Component, ...children: Template[]): Template;
+  export function h(element: string | View, attrs: Object, ...children: Template[]): Template;
+  export function h(element: string | View, ...children: Template[]): Template;
+
+  /*==================================*\
+  ||           Debug Context          ||
+  \*==================================*/
+
+  type DebugChannel = {
+    name: string;
+
+    /**
+     * Log the arguments to the console.
+     */
+    log(...args: any): void;
+
+    /**
+     * Log the arguments to the console as a warning.
+     */
+    warn(...args: any): void;
+
+    /**
+     * Log the arguments to the console as an error.
+     */
+    error(...args: any): void;
+  };
 
   /*==================================*\
   ||           State Context          ||
@@ -201,7 +205,7 @@ declare module "@woofjs/client" {
   export type Private<Value> = Value;
 
   /**
-   * State types wrapped in `Bindable` may be a plain value or a bound state.
+   * State types wrapped in `Bindable` may be a plain value or either type of binding.
    *
    * @example
    * type ExampleState = {
@@ -237,7 +241,7 @@ declare module "@woofjs/client" {
    * Context for stateful objects like views and globals.
    */
   interface StateContext<State> {
-    defaultState?: State;
+    defaultState?: Omit<State, "children">;
 
     get(): State;
     get<Key extends keyof State>(key: Key): State[Key];
@@ -312,7 +316,10 @@ declare module "@woofjs/client" {
       complete?: () => void
     ): void;
 
+    readable(): Readable<State>;
     readable<Key extends keyof State>(key: Key): Readable<State[Key]>;
+
+    writable(): Writable<State>;
     writable<Key extends keyof State>(key: Key): Writable<State[Key]>;
   }
 
@@ -320,16 +327,16 @@ declare module "@woofjs/client" {
   ||            Observables            ||
   \*==================================*/
 
-  interface Observable<T> {
+  export interface Observable<T> {
     subscribe(observer: Observer<T>): Subscription;
     subscribe(next: (value: T) => void): Subscription;
   }
 
-  interface Observer<T> {
+  export interface Observer<T> {
     next(value: T): void;
   }
 
-  interface Subscription {
+  export interface Subscription {
     unsubscribe(): void;
   }
 
@@ -348,7 +355,7 @@ declare module "@woofjs/client" {
      *
      * @param callbackFn - Function to map the current state's value to the new state's value.
      */
-    to<NewValue>(callbackFn: (value: Value) => NewValue): Readable<NewValue>;
+    to<NewValue>(callback: (value: Value) => NewValue): Readable<NewValue>;
   }
 
   export interface Writable<Value> extends Readable<Value> {
@@ -373,24 +380,43 @@ declare module "@woofjs/client" {
      * Deletes this key from its bound state, returning the value to `undefined`.
      */
     nuke(): void;
+
+    /**
+     * Creates a new read-only binding to this value.
+     */
+    readable(): Readable<Value>;
   }
 
   /*==================================*\
   ||               View               ||
   \*==================================*/
 
-  export type View<State = any, Globals = any, Children = void> = (
-    this: ViewContext<State, Globals, Children>,
-    _props: FakeJSXProps<State> & { children?: Children }
-  ) => Element | null;
+  export interface Ref<T> {
+    /**
+     * Returns the most recent value this ref was called with.
+     */
+    (): T;
 
-  type FakeJSXProps<State> = {
-    [Key in keyof State]: State[Key] extends Private<any> ? void : State[Key];
+    /**
+     * Saves a new value into this ref.
+     */
+    (value: T): void;
+  }
+
+  export function makeView<S, G>(fn: ViewFunction<S, G>): View<S, G>;
+
+  export type ViewFunction<S, G> = (ctx: ViewContext<S, G>) => Template | null;
+
+  export type View<S, G> = (props: FakeJSXProps<Partial<S>>) => {
+    create(): Template;
   };
 
-  export interface ViewContext<State = any, Globals = any, Children = void>
-    extends StateContext<Unwrapped<State>>,
-      DebugChannel {
+  // TODO: Figure out how to filter out keys wrapped in Private.
+  type FakeJSXProps<State> = {
+    [Key in keyof State]: State[Key];
+  };
+
+  export interface ViewContext<S, G> extends StateContext<Unwrapped<S>>, DebugChannel {
     /**
      * True while this view is connected to the DOM.
      */
@@ -399,12 +425,7 @@ declare module "@woofjs/client" {
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
      */
-    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name];
-
-    /**
-     * Returns a view that displays children or nested routes.
-     */
-    outlet(): Element;
+    global<Name extends keyof AppGlobals<G>>(name: Name): AppGlobals<G>[Name];
 
     /**
      * Registers a callback to run before the component is connected to the DOM.
@@ -427,48 +448,82 @@ declare module "@woofjs/client" {
     afterDisconnect(callback: () => void): void;
 
     /**
-     * Displays the result of `render` each time `value` changes.
+     * Returns a function that, when called with no arguments, returns the most recent value it was called with.
+     * Useful for retrieving references to DOM nodes when passed to elements as `ref`.
      */
-    watch<T>(value: Observable<T>, render: (value: T) => Element): Template;
+    ref<T>(initialValue?: T): Ref<T>;
+
+    /**
+     * Displays the result of `children` each time its value changes.
+     */
+    outlet(): Element;
+
+    /**
+     * Displays the result of `key` each time its value changes. Value should be an Element.
+     */
+    outlet<Key extends keyof S>(key: Key): Element;
+
+    /**
+     * Displays the result of `key` each time its value changes. The `callback` function converts `key` into an Element. TODO: Define these.
+     */
+    outlet<Key extends keyof S>(key: Key, callback: (value: S[Key]) => Element): Element;
+
+    /**
+     * Displays the value of `binding` each time its value changes. Value should be an element.
+     */
+    outlet(binding: Readable<Element>): Element;
+
+    /**
+     * Displays the value of `binding` each time its value changes. The `callback` function converts the value into an Element.
+     */
+    outlet<T>(binding: Readable<T>, callback: (value: T) => Element): Element;
 
     /**
      * Displays `element` when `value` is truthy.
      */
     when(value: Observable<any>, element: Element): Template;
-    when<Key extends keyof State>(key: Key, element: Element): Template;
+    when<Key extends keyof S>(key: Key, element: Element): Template;
 
     /**
      * Displays `element` when `value` is falsy.
      */
     unless(value: Observable<any>, element: Element): Template;
-    unless<Key extends keyof State>(key: Key, element: Element): Template;
+    unless<Key extends keyof S>(key: Key, element: Element): Template;
 
     /**
      * Repeats a component for each item in `value`. Value must be iterable.
      */
     repeat<T>(
       value: T[] | Observable<T[]>,
-      view: View<{ index: number; value: T }, Globals, void>,
+      render: ($value: Readable<T>, $index: Readable<number>) => Element,
       getKey?: (value: T) => any
     ): Template;
 
-    repeat<Key extends keyof State>(
+    repeat<Key extends keyof S>(
       key: Key,
-      view: View<{ index: number; value: Unwrapped<State>[Key] extends Iterable<infer T> ? T : never }, Globals, void>
-    );
+      render: (
+        $value: Readable<Unwrapped<S>[Key] extends Iterable<infer T> ? T : never>,
+        $index: Readable<number>
+      ) => Element,
+      getKey?: (value: T) => any
+    ): Template;
   }
 
   /*==================================*\
   ||             Global              ||
   \*==================================*/
 
+  export type GlobalFunction<S, G> = (ctx: GlobalContext<S, G>) => any;
+
+  export function makeGlobal<S, G>(fn: GlobalFunction<S, G>): Global<any>;
+
   export type Global<E> = (this: GlobalContext<any, any>) => E;
 
-  export interface GlobalContext<State, Globals> extends StateContext<Unwrapped<State>>, DebugChannel {
+  export interface GlobalContext<S, G> extends StateContext<Unwrapped<S>>, DebugChannel {
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
      */
-    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name];
+    global<Name extends keyof AppGlobals<G>>(name: Name): AppGlobals<G>[Name];
 
     /**
      * Registers a callback to run before the app is connected.
@@ -482,7 +537,7 @@ declare module "@woofjs/client" {
   }
 
   /*==================================*\
-  ||         Built In Globals         ||
+  ||         Built-in Globals         ||
   \*==================================*/
 
   export type GlobalRouter = Global<{
@@ -670,26 +725,22 @@ declare module "@woofjs/client" {
 }
 
 declare module "@woofjs/client/jsx-runtime" {
-  import { Template, Component, ToStringable } from "@woofjs/client";
+  import { Template, View } from "@woofjs/client";
 
-  export function jsx(
-    element: string | Component,
-    props: { [name: string]: any; children: Template },
-    key: any
-  ): Template;
+  export function jsx(element: string | View, props: { [name: string]: any; children: Template }, key: any): Template;
 
   export function jsxs(
-    element: string | Component,
+    element: string | View,
     props: { [name: string]: any; children: Template[] },
     key: any
   ): Template;
 }
 
 declare module "@woofjs/client/jsx-dev-runtime" {
-  import { Template, Component } from "@woofjs/client";
+  import { Template, View } from "@woofjs/client";
 
   export function jsxDEV(
-    element: string | Component,
+    element: string | View,
     props: { [name: string]: any; children: Template | Template[] },
     key: any,
     isStaticChildren: boolean,
@@ -700,7 +751,7 @@ declare module "@woofjs/client/jsx-dev-runtime" {
 
 // TODO: Define all elements and the attributes they support.
 declare namespace JSX {
-  import { ObservableAttrs, Observable, Writable, ToStringable, Template } from "@woofjs/client";
+  import { Observable, Writable, Ref, ToStringable, Template } from "@woofjs/client";
   import * as CSS from "csstype";
 
   interface ElementChildrenAttribute {
@@ -1472,7 +1523,7 @@ declare namespace JSX {
     /**
      * A binding that receives a reference to the DOM element.
      */
-    ref?: Writable<any>;
+    ref?: Ref<T>;
   }
 
   /**

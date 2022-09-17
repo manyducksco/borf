@@ -1,91 +1,106 @@
 import { makeView } from "../makers/makeView.js";
-import { isArray } from "../helpers/typeChecking.js";
-import { APP_CONTEXT } from "../keys.js";
+import { makeState } from "../makers/makeState.js";
+import { isArray, isTemplate } from "../helpers/typeChecking.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
  */
-export function Repeat() {
-  this.name = "repeat";
-  this.defaultState = {
+export const Repeat = makeView((ctx) => {
+  ctx.name = "repeat";
+  ctx.defaultState = {
     value: [],
-    view: null,
+    render: null,
     getKey: null,
   };
 
   const node = document.createComment("woof:repeat");
 
-  const appContext = this[APP_CONTEXT];
-  const viewFn = this.get("view");
-  const getKey = this.get("getKey") || ((v) => v);
+  const appContext = ctx[APP_CONTEXT];
+  const elementContext = ctx[ELEMENT_CONTEXT];
+  const renderFn = ctx.get("render");
+  const getKey = ctx.get("getKey") || ((v) => v);
+
+  /**
+   * Refactor steps:
+   * - Expect a function that takes $value and $index instead of a full on view
+   */
 
   let connectedItems = [];
 
-  this.observe("value", (newValues) => {
+  ctx.observe("value", (newValues) => {
     if (!isArray(newValues)) {
       throw new TypeError(`Repeat expects an array. Got: ${typeof newValues}`);
     }
 
     // Disconnect all if updated with empty values.
     if (newValues == null) {
-      for (const item of connectedItems) {
-        item.view.disconnect({ allowTransitionOut: true });
+      for (const connected of connectedItems) {
+        connected.element.disconnect({ allowTransitionOut: true });
       }
       connectedItems = [];
 
       return;
     }
 
-    const newKeys = newValues.map((value, index) => {
-      return {
-        value: getKey(value, index),
-        index,
-        attrs: {
-          value,
-          index,
-        },
-      };
+    const potentialItems = newValues.map((value, index) => {
+      return { key: getKey(value, index), value, index };
     });
     const newItems = [];
 
     // Disconnect views for items that no longer exist.
-    for (const item of connectedItems) {
-      const stillPresent = !!newKeys.find((key) => key.value === item.key);
+    for (const connected of connectedItems) {
+      const stillPresent = !!potentialItems.find((p) => p.key === connected.key);
 
       if (!stillPresent) {
-        item.view.disconnect({ allowTransitionOut: true });
+        connected.element.disconnect({ allowTransitionOut: true });
       }
     }
 
     // Add new views and update state for existing ones.
-    for (const key of newKeys) {
-      const existing = connectedItems.find((item) => item.key === key.value);
+    for (const potential of potentialItems) {
+      const connected = connectedItems.find((item) => item.key === potential.key);
 
-      if (existing) {
-        existing.view.state.set(key.attrs);
-        newItems[key.index] = existing;
+      if (connected) {
+        connected.state.set({
+          value: potential.value,
+          index: potential.index,
+        });
+        newItems[potential.index] = connected;
       } else {
-        newItems[key.index] = {
-          key: key.value,
-          view: makeView(viewFn, { attrs: key.attrs, appContext }),
+        const [state] = makeState({});
+        state.set({
+          value: potential.value,
+          index: potential.index,
+        });
+        const element = renderFn(state.readable("value"), state.readable("index"));
+
+        if (!isTemplate(element)) {
+          throw new TypeError(`Repeat render function must return a template.`);
+        }
+
+        newItems[potential.index] = {
+          key: potential.key,
+          state,
+          element: element.init({ appContext, elementContext }),
         };
       }
     }
 
     // Reconnect to ensure order. Lifecycle hooks won't be run again if the view is already connected.
     for (const item of newItems) {
-      item.view.connect(node.parentNode);
+      item.element.connect(node.parentNode);
     }
 
     connectedItems = newItems;
   });
 
-  this.afterDisconnect(() => {
-    for (const item of connectedItems) {
-      item.view.disconnect();
+  ctx.afterDisconnect(() => {
+    for (const connected of connectedItems) {
+      connected.element.disconnect();
     }
     connectedItems = [];
   });
 
   return node;
-}
+});

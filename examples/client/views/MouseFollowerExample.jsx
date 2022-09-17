@@ -1,42 +1,43 @@
+import { makeView } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const bestColor = "#ff0088";
 
-export function MouseFollowerExample() {
-  this.name = "MouseFollowerExample";
-  this.defaultState = {
+export const MouseFollowerExample = makeView((ctx) => {
+  ctx.name = "MouseFollowerExample";
+  ctx.defaultState = {
     enabled: false,
     color: bestColor,
   };
 
-  logLifecycle(this);
+  logLifecycle(ctx);
 
-  const { $position } = this.global("mouse");
-  const $transform = $position.to((pos) => `translate(${pos.x}px, ${pos.y}px)`);
+  const { $position } = ctx.global("mouse");
+  const $transform = $position.to((p) => `translate(${p.x}px, ${p.y}px)`);
 
-  const $enabled = this.readable("enabled");
-  const $color = this.readable("color");
+  const $enabled = ctx.readable("enabled");
+  const $color = ctx.readable("color");
   const $disabled = $enabled.to((t) => !t);
   const $isNotBestColor = $color.to((hex) => hex.toLowerCase() !== bestColor);
 
-  const resetColor = () => {
-    this.set("color", bestColor);
-  };
+  function resetColor() {
+    ctx.set("color", bestColor);
+  }
 
-  const randomizeColor = () => {
+  function randomizeColor() {
     const hex = [Math.random() * 256, Math.random() * 256, Math.random() * 256]
       .map(Math.floor)
       .map((n) => n.toString(16))
       .join("");
 
-    this.set("color", "#" + hex);
-  };
+    ctx.set("color", "#" + hex);
+  }
 
   return (
     <div class="example">
       <h3>More complex state management</h3>
       <div>
-        {this.when(
+        {ctx.when(
           "enabled",
           <div
             class="follower"
@@ -51,17 +52,17 @@ export function MouseFollowerExample() {
           Change Follower Color
         </button>
 
-        {this.when(
+        {ctx.when(
           $isNotBestColor,
           <button onclick={resetColor} disabled={$disabled}>
             Reset to Best Color
           </button>
         )}
 
-        <button onclick={() => this.set("enabled", (t) => !t)}>
+        <button onclick={() => ctx.set("enabled", (t) => !t)}>
           {$enabled.to((t) => (t ? "Turn Off Follower" : "Turn On Follower"))}
         </button>
       </div>
     </div>
   );
-}
+});

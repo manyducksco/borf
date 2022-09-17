@@ -1,24 +1,26 @@
+import { makeView } from "@woofjs/client";
+
 /**
  * A really contrived header that makes an HTTP call to get the user's name.
  */
-export function MyHeader() {
-  this.defaultState = {
+export const MyHeader = makeView((ctx) => {
+  ctx.defaultState = {
     greeting: "Hello",
     name: "Friend",
   };
 
-  const http = this.global("http");
-  const onclick = this.get("onclick");
+  const http = ctx.global("http");
+  const onclick = ctx.get("onclick");
 
-  this.beforeConnect(() => {
+  ctx.beforeConnect(() => {
     http.get("/users/me").then((res) => {
-      this.set("name", res.body.name);
+      ctx.set("name", res.body.name);
     });
   });
 
   return (
     <h1 onclick={onclick}>
-      {this.map("greeting")}, {this.map("name")}
+      {ctx.readable("greeting")}, {ctx.readable("name")}
     </h1>
   );
-}
+});

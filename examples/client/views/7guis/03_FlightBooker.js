@@ -1,3 +1,5 @@
+import { makeView } from "@woofjs/client";
+
 const flightTypes = ["one-way flight", "return flight"];
 const flipped = (value) => !value; // Boolean flipping function.
 
@@ -25,9 +27,9 @@ function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
-export default function FlightBooker() {
-  this.name = "7guis:FlightBooker";
-  this.defaultState = {
+export default makeView((ctx) => {
+  ctx.name = "7guis:FlightBooker";
+  ctx.defaultState = {
     flightType: flightTypes[0],
     startDate: formatDate(new Date()),
     returnDate: formatDate(new Date()),
@@ -35,12 +37,12 @@ export default function FlightBooker() {
     returnDateIsValid: true,
   };
 
-  const $$flightType = this.writable("flightType");
-  const $$startDate = this.writable("startDate");
-  const $$returnDate = this.writable("returnDate");
+  const $$flightType = ctx.writable("flightType");
+  const $$startDate = ctx.writable("startDate");
+  const $$returnDate = ctx.writable("returnDate");
 
   // Concatenate date states and convert through a function into a new state.
-  const $formIsValid = this.merge(
+  const $formIsValid = ctx.merge(
     "startDateIsValid",
     "returnDateIsValid",
     (x, y) => x && y
@@ -67,9 +69,8 @@ export default function FlightBooker() {
               $$flightType.set(e.target.value);
             }}
           >
-            {this.repeat(flightTypes, function FlightType() {
-              const $value = this.readable("value");
-              const $selected = this.merge(
+            {ctx.repeat(flightTypes, ($value) => {
+              const $selected = ctx.merge(
                 $value,
                 $$flightType,
                 (x, y) => x === y
@@ -90,7 +91,7 @@ export default function FlightBooker() {
             value={$$startDate}
             pattern={"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$"}
             oninput={(e) => {
-              this.set("startDateIsValid", !e.target.validity.patternMismatch);
+              ctx.set("startDateIsValid", !e.target.validity.patternMismatch);
             }}
           />
         </div>
@@ -102,7 +103,7 @@ export default function FlightBooker() {
             disabled={$$flightType.to((t) => t === "one-way flight")}
             pattern={/^\d{2}\.\d{2}\.\d{4}$/}
             oninput={(e) => {
-              this.set("returnDateIsValid", !e.target.validity.patternMismatch);
+              ctx.set("returnDateIsValid", !e.target.validity.patternMismatch);
             }}
           />
         </div>
@@ -113,4 +114,4 @@ export default function FlightBooker() {
       </form>
     </div>
   );
-}
+});

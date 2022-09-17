@@ -1,20 +1,21 @@
+import { makeView } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle";
 
-export function AppLayout() {
-  this.name = "🐕";
-  this.log("hi");
+export const AppLayout = makeView((ctx) => {
+  ctx.name = "🐕";
+  ctx.log("hi");
 
-  logLifecycle(this);
+  logLifecycle(ctx);
 
-  const page = this.global("page");
-  const mouse = this.global("mouse");
+  const page = ctx.global("page");
+  const mouse = ctx.global("mouse");
 
   // Display current mouse coordinates as tab title
-  this.observe(mouse.$position, (pos) => {
+  ctx.observe(mouse.$position, (pos) => {
     page.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
   });
 
-  // this.loadRoute(({ show, done }) => {
+  // ctx.loadRoute(({ show, done }) => {
   //   // When the done() function is called, this content is removed and the real component is connected.
 
   //   return show(
@@ -62,7 +63,7 @@ export function AppLayout() {
         </ul>
       </nav>
 
-      {this.outlet()}
+      {ctx.outlet()}
     </div>
   );
-}
+});

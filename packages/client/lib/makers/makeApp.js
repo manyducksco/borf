@@ -8,7 +8,9 @@ import http from "../globals/http.js";
 import page from "../globals/page.js";
 import router from "../globals/router.js";
 
-import { makeGlobal } from "./makeGlobal.js";
+import { initGlobal } from "./initGlobal.js";
+
+const builtInGlobals = [debug, router, page, http];
 
 /**
  * Creates a woof application.
@@ -250,7 +252,12 @@ export function makeApp(options = {}) {
           throw new Error(`Service '${name}' must be a function that returns an object. Got ${typeof globals[name]}`);
         }
 
-        const global = makeGlobal(fn, { appContext, name });
+        let channelPrefix;
+        if (builtInGlobals.includes(fn)) {
+          channelPrefix = "woof:global";
+        }
+
+        const global = initGlobal(fn, { appContext, channelPrefix, name });
 
         if (!isObject(global.exports)) {
           throw new TypeError(`Global function for '${name}' did not return an object.`);

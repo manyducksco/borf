@@ -1,7 +1,6 @@
 import { h } from "../h.js";
-// import { makeState } from "../_state/makeState.js";
-import { makeView } from "./makeView.js";
-import { isComponent, isState } from "./typeChecking.js";
+import { initView } from "./initView.js";
+import { isComponent } from "./typeChecking.js";
 
 /*========================*\
 ||         Utils          ||
@@ -69,7 +68,7 @@ test("returns a component", () => {
     return h("p", "This is just a test.");
   }
 
-  const result = makeView(Component, { appContext });
+  const result = initView(Component, { appContext });
 
   expect(isComponent(result)).toBe(true);
 });
@@ -89,12 +88,12 @@ test("throws if component doesn't return an element or null", () => {
     return h("p", "This is expected.");
   }
 
-  expect(() => makeView(InvalidOne, { appContext })).toThrow();
-  expect(() => makeView(InvalidTwo, { appContext })).toThrow();
-  expect(() => makeView(InvalidThree, { appContext })).toThrow();
+  expect(() => initView(InvalidOne, { appContext })).toThrow();
+  expect(() => initView(InvalidTwo, { appContext })).toThrow();
+  expect(() => initView(InvalidThree, { appContext })).toThrow();
 
-  expect(() => makeView(Valid, { appContext })).not.toThrow();
-  expect(() => makeView(AlsoValid, { appContext })).not.toThrow();
+  expect(() => initView(Valid, { appContext })).not.toThrow();
+  expect(() => initView(AlsoValid, { appContext })).not.toThrow();
 });
 
 test("connect, disconnect and lifecycle hooks", () => {
@@ -118,7 +117,7 @@ test("connect, disconnect and lifecycle hooks", () => {
     // return h("p", "This is just a test.");
   }
 
-  const result = makeView(Component, { appContext });
+  const result = initView(Component, { appContext });
 
   expect(parent.children.length).toBe(1);
   expect(result.isConnected).toBe(false);
@@ -175,13 +174,13 @@ test(".node returns the root DOM node", () => {
   }
 
   function ChildrenComponent() {
-    return this.children;
+    return this.outlet();
   }
 
-  const nullResult = makeView(NullComponent, { appContext });
-  const domResult = makeView(DOMComponent, { appContext });
-  const nestedResult = makeView(NestedComponent, { appContext });
-  const childrenResult = makeView(ChildrenComponent, { appContext, children: root });
+  const nullResult = initView(NullComponent, { appContext });
+  const domResult = initView(DOMComponent, { appContext });
+  const nestedResult = initView(NestedComponent, { appContext });
+  const childrenResult = initView(ChildrenComponent, { appContext, children: root });
 
   expect(nullResult.node).toBe(null);
   expect(domResult.node).toBe(root);
@@ -310,7 +309,7 @@ test("throws when setting a two way attr that isn't a state", () => {
   function Component() {}
 
   expect(() => {
-    makeView(Component, { attrs: { $state: "not state" }, appContext });
+    initView(Component, { attrs: { $state: "not state" }, appContext });
   }).toThrow();
 });
 
@@ -341,7 +340,7 @@ test("self.isConnected reflects the current state", () => {
     return null;
   }
 
-  const result = makeView(Component, { appContext });
+  const result = initView(Component, { appContext });
   const parent = makeDOMNode();
 
   result.connect(parent);
@@ -361,7 +360,7 @@ test("supports returning subcomponents", () => {
     return h(Subcomponent);
   }
 
-  const result = makeView(Component, { appContext });
+  const result = initView(Component, { appContext });
   const parent = makeDOMNode();
 
   result.connect(parent);
@@ -388,7 +387,7 @@ test("routePreload takes element to show() and resolves when done() is called", 
     return null;
   }
 
-  const result = makeView(Component, { appContext });
+  const result = initView(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(true);
 
@@ -412,7 +411,7 @@ test("routePreload show() throws if value isn't an element", async () => {
     return null;
   }
 
-  const result = makeView(Component, { appContext });
+  const result = initView(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(true);
 
@@ -440,7 +439,7 @@ test("routePreload finishes with promise resolution if loadRoute returns one", a
     return null;
   }
 
-  const result = makeView(Component, { appContext });
+  const result = initView(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(true);
 
@@ -459,7 +458,7 @@ test("routePreload resolves immediately if no loadRoute callback is defined", as
     return null;
   }
 
-  const result = makeView(Component, { appContext });
+  const result = initView(Component, { appContext });
 
   expect(result.hasRoutePreload).toBe(false);
   expect(result.routePreload(mount)).resolves.not.toThrow();

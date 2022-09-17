@@ -6,15 +6,15 @@ import counter from "./globals/counter";
 import mouse from "./globals/mouse";
 
 import { AppLayout } from "./views/AppLayout";
-import { ComponentAttrsExample } from "./views/ComponentAttrsExample.js";
-import { ToggleExample } from "./views/ToggleExample.js";
-import { CounterExample } from "./views/CounterExample.js";
-import { ConditionalExample } from "./views/ConditionalExample.js";
-import { DynamicListExample } from "./views/DynamicListExample.js";
-import { TwoWayBindExample } from "./views/TwoWayBindExample.js";
-import { FormExample } from "./views/FormExample.js";
-import { MouseFollowerExample } from "./views/MouseFollowerExample.js";
-import { HTTPRequestExample } from "./views/HTTPRequestExample.js";
+import { ComponentAttrsExample } from "./views/ComponentAttrsExample";
+import { ToggleExample } from "./views/ToggleExample";
+import { CounterExample } from "./views/CounterExample";
+import { ConditionalExample } from "./views/ConditionalExample";
+import { DynamicListExample } from "./views/DynamicListExample";
+import { TwoWayBindExample } from "./views/TwoWayBindExample";
+import { FormExample } from "./views/FormExample";
+import { MouseFollowerExample } from "./views/MouseFollowerExample";
+import { HTTPRequestExample } from "./views/HTTPRequestExample";
 
 import SevenGUIs from "./views/7guis";
 import Counter from "./views/7guis/01_Counter";
@@ -46,6 +46,17 @@ const app = woof({
     hash: false,
   },
 });
+
+// Make separate modules with their own globals and routes. Modules can be mounted on any route.
+// Modules do have access to app-level globals, though ones of the same name on their module will override.
+// const mod = makeModule();
+
+// mod.global("counter", counter);
+// mod.route("/test", function () {
+//   return <div>Welcome to a module.</div>;
+// });
+
+// app.route("/module", mod);
 
 app.global("counter", counter);
 app.global("mouse", mouse);
@@ -94,12 +105,12 @@ app.route("*", AppLayout, function () {
 
   this.route(
     "/nested",
-    function Nested() {
+    (ctx) => {
       return (
         <div>
           <h1>Nested Routes!</h1>
 
-          {this.outlet()}
+          {ctx.outlet()}
         </div>
       );
     },
