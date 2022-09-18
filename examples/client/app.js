@@ -5,7 +5,7 @@ import woof from "@woofjs/client";
 import counter from "./globals/counter";
 import mouse from "./globals/mouse";
 
-import { AppLayout } from "./views/AppLayout";
+import { AppLayout, preloadAppLayout } from "./views/AppLayout";
 import { ComponentAttrsExample } from "./views/ComponentAttrsExample";
 import { ToggleExample } from "./views/ToggleExample";
 import { CounterExample } from "./views/CounterExample";
@@ -65,67 +65,70 @@ app.route("/client-test", function () {
   return <h1>Test</h1>;
 });
 
-app.route("*", AppLayout, function () {
-  this.route("/examples", () => {
-    return (
-      <div>
-        <ToggleExample />
-        <CounterExample />
-        <ConditionalExample />
-        <DynamicListExample />
-        <TwoWayBindExample />
-        <FormExample />
-        <MouseFollowerExample />
-        <HTTPRequestExample />
-        <ComponentAttrsExample />
-      </div>
-    );
-  });
-
-  this.route("/7guis", SevenGUIs, function () {
-    this.route("/counter", Counter);
-    this.route("/temp-converter", TempConverter);
-    this.route("/flight-booker", FlightBooker);
-    this.route("/timer", Timer);
-    this.route("/crud", CRUD);
-    this.route("/circle-drawer", CircleDrawer);
-    this.route("/cells", Cells);
-    this.redirect("*", "./counter");
-  });
-
-  this.route("/router-test/one", function () {
-    return <h1>One</h1>;
-  });
-
-  this.route("/router-test/two", function () {
-    return <h1>Two</h1>;
-  });
-
-  this.redirect("/router-test/*", "/router-test/one");
-
-  this.route(
-    "/nested",
-    (ctx) => {
+app.route("*", {
+  view: AppLayout,
+  preload: preloadAppLayout,
+  subroutes: function (sub) {
+    sub.route("/examples", function () {
       return (
         <div>
-          <h1>Nested Routes!</h1>
-
-          {ctx.outlet()}
+          <ToggleExample />
+          <CounterExample />
+          <ConditionalExample />
+          <DynamicListExample />
+          <TwoWayBindExample />
+          <FormExample />
+          <MouseFollowerExample />
+          <HTTPRequestExample />
+          <ComponentAttrsExample />
         </div>
       );
-    },
-    function subroutes() {
-      this.route("/one", function () {
-        return <h1>NESTED #1</h1>;
-      });
-      this.route("/two", function () {
-        return <h1>NESTED #2</h1>;
-      });
-      this.redirect("*", "./one");
-    }
-  );
+    });
 
-  this.redirect("*", "./examples");
+    sub.route("/7guis", SevenGUIs, function (sub) {
+      sub.route("/counter", Counter);
+      sub.route("/temp-converter", TempConverter);
+      sub.route("/flight-booker", FlightBooker);
+      sub.route("/timer", Timer);
+      sub.route("/crud", CRUD);
+      sub.route("/circle-drawer", CircleDrawer);
+      sub.route("/cells", Cells);
+      sub.redirect("*", "./counter");
+    });
+
+    sub.route("/router-test/one", function () {
+      return <h1>One</h1>;
+    });
+
+    sub.route("/router-test/two", function () {
+      return <h1>Two</h1>;
+    });
+
+    sub.redirect("/router-test/*", "/router-test/one");
+
+    sub.route("/nested", {
+      view: function (ctx) {
+        return (
+          <div>
+            <h1>Nested Routes!</h1>
+
+            {ctx.outlet()}
+          </div>
+        );
+      },
+      subroutes: function (sub) {
+        sub.route("/one", function () {
+          return <h1>NESTED #1</h1>;
+        });
+        sub.route("/two", function () {
+          return <h1>NESTED #2</h1>;
+        });
+        sub.redirect("*", "./one");
+      },
+    });
+
+    sub.redirect("*", "./examples");
+  },
 });
 
 app.connect("#app");

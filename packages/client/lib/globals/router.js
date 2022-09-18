@@ -4,7 +4,7 @@ import { makeGlobal } from "../makers/makeGlobal.js";
 
 import { APP_CONTEXT } from "../keys.js";
 import { matchRoute } from "../helpers/routing.js";
-import { isObject } from "../helpers/typeChecking.js";
+import { isObject, isTemplate, isFunction } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
@@ -141,7 +141,7 @@ export default makeGlobal((ctx) => {
                 requestAnimationFrame(() => {
                   if (activeLayer && activeLayer.view.isConnected) {
                     // Disconnect first mismatched active and remove remaining layers.
-                    activeLayer.view.disconnect({ allowTransitionOut: true });
+                    activeLayer.view.disconnect();
                   }
 
                   if (parentLayer) {
@@ -152,8 +152,11 @@ export default makeGlobal((ctx) => {
                 });
               };
 
-              if (view.hasRoutePreload) {
-                await view.routePreload(mount);
+              if (matchedLayer.preload) {
+                await preloadRoute(matchedLayer.preload, mount, {
+                  appContext,
+                  elementContext: {},
+                });
               }
 
               mount(view);
@@ -223,3 +226,34 @@ export default makeGlobal((ctx) => {
     },
   };
 });
+
+/**
+ * Perform preload with route's preload function. Called only when this component is mounted on a route.
+ *
+ * @param preload - Function that defines preload loading for a route.
+ * @param mount - Function that takes a component instance and connects it to the DOM.
+ */
+async function preloadRoute(preload, mount, { appContext, elementContext }) {
+  return new Promise((resolve, reject) => {
+    const ctx = {
+      show: (element) => {
+        if (isTemplate(element)) {
+          element = element.init({ appContext, elementContext });
+        } else {
+          return reject(new TypeError(`Expected an element to display. Got: ${element} (${typeof element})`));
+        }
+
+        mount(element);
+      },
+      done: () => {
+        resolve();
+      },
+    };
+
+    const result = preload(ctx);
+
+    if (result && isFunction(result.then)) {
+      result.then(() => ctx.done());
+    }
+  });
+}

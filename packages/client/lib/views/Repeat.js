@@ -21,14 +21,20 @@ export const Repeat = makeView((ctx) => {
   const renderFn = ctx.get("render");
   const getKey = ctx.get("getKey") || ((v) => v);
 
-  /**
-   * Refactor steps:
-   * - Expect a function that takes $value and $index instead of a full on view
-   */
-
   let connectedItems = [];
 
+  function cleanup() {
+    for (const connected of connectedItems) {
+      connected.element.disconnect();
+    }
+    connectedItems = [];
+  }
+
   ctx.observe("value", (newValues) => {
+    if (newValues == null) {
+      return cleanup();
+    }
+
     if (!isArray(newValues)) {
       throw new TypeError(`Repeat expects an array. Got: ${typeof newValues}`);
     }
@@ -36,7 +42,7 @@ export const Repeat = makeView((ctx) => {
     // Disconnect all if updated with empty values.
     if (newValues == null) {
       for (const connected of connectedItems) {
-        connected.element.disconnect({ allowTransitionOut: true });
+        connected.element.disconnect();
       }
       connectedItems = [];
 
@@ -53,7 +59,7 @@ export const Repeat = makeView((ctx) => {
       const stillPresent = !!potentialItems.find((p) => p.key === connected.key);
 
       if (!stillPresent) {
-        connected.element.disconnect({ allowTransitionOut: true });
+        connected.element.disconnect();
       }
     }
 
@@ -95,12 +101,7 @@ export const Repeat = makeView((ctx) => {
     connectedItems = newItems;
   });
 
-  ctx.afterDisconnect(() => {
-    for (const connected of connectedItems) {
-      connected.element.disconnect();
-    }
-    connectedItems = [];
-  });
+  ctx.afterDisconnect(cleanup);
 
   return node;
 });

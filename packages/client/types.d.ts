@@ -66,7 +66,7 @@ declare module "@woofjs/client" {
    * An app is the central object of a Woof app. It handles mounting and unmounting of routes
    * based on the current URL and providing services to components rendered under those routes.
    */
-  interface App<Globals> {
+  interface App<G> {
     /**
      * Registers a service on this app. Services have only one instance created per app.
      * Any component rendered under one of this app's routes, as well as any other services
@@ -75,19 +75,22 @@ declare module "@woofjs/client" {
      * @param name - Name the service is accessed by.
      * @param fn - The global constructor. Must be a function that returns an object.
      */
-    global<Name extends keyof Globals>(name: Name, fn: Globals[Name]): this;
+    global<Name extends keyof G>(name: Name, fn: G[Name]): this;
 
+    route<S = {}>(path: string, options: RouteOptions<G, S>): this;
     /**
      * Registers a new route that will render `component` when `path` matches the current URL.
      * Register nested routes by passing a function as the third argument. Nested route components
      * will be rendered as this `component`'s children.
      *
      * @param path - Path to match.
-     * @param component - Component to render when path matches URL.
+     * @param view - View to render when path matches URL.
      * @param defineRoutes - Optional function to define nested routes.
      */
     // TODO: Infer child type by defineRoutes
-    route(path: string, component: Component | Template, defineRoutes?: DefineRoutesFn): this;
+    route<S = {}>(path: string, view: View<S, G>, defineRoutes?: SubroutesFunction<G>): this;
+    route<S = {}>(path: string, view: ViewFunction<S, G>, defineRoutes?: SubroutesFunction<G>): this;
+    route(path: string, view: Template, defineRoutes?: SubroutesFunction<G>): this;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -102,14 +105,14 @@ declare module "@woofjs/client" {
      *
      * @param callback - Setup function.
      */
-    beforeConnect(callback: AppLifecycleCallback<Globals>): this;
+    beforeConnect(callback: AppLifecycleCallback<G>): this;
 
     /**
      * Runs a callback function just after the initial route is connected.
      *
      * @param callback - Setup function.
      */
-    afterConnect(callback: AppLifecycleCallback<Globals>): this;
+    afterConnect(callback: AppLifecycleCallback<G>): this;
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -119,14 +122,14 @@ declare module "@woofjs/client" {
     connect(root: string | Node): Promise<void>;
   }
 
-  export interface AppContext<Globals> extends DebugChannel {
+  export interface AppContext<G> extends DebugChannel {
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
      */
-    global<K extends keyof AppGlobals<Globals>>(name: K): AppGlobals<Globals>[K];
+    global<K extends keyof AppGlobals<G>>(name: K): AppGlobals<G>[K];
   }
 
-  export type AppLifecycleCallback<Globals> = (this: AppContext<Globals>) => void | Promise<void>;
+  export type AppLifecycleCallback<G> = (this: AppContext<G>) => void | Promise<void>;
 
   export type DefaultGlobals = {
     router: ReturnType<GlobalRouter>;
@@ -134,25 +137,68 @@ declare module "@woofjs/client" {
     page: ReturnType<GlobalPage>;
   };
 
-  export type AppGlobals<T extends Record<string, Global>> = DefaultGlobals & { [K in keyof T]: ReturnType<T[K]> };
+  export type AppGlobals<T> = DefaultGlobals & { [K in keyof T]: ReturnType<T[K]> };
 
   /*==================================*\
   ||             Routing              ||
   \*==================================*/
 
-  type NestedRouteContext = {
-    route: (path: string, component: Component | Template, defineRoutes?: DefineRoutesFn) => NestedRouteContext;
-    redirect: (path: string, to: string) => NestedRouteContext;
+  type PreloadContext<S, G> = {
+    /**
+     * Returns the global registered under `name` or throws an error if the global isn't registered.
+     */
+    global<K extends keyof AppGlobals<G>>(name: K): AppGlobals<G>[K];
+
+    /**
+     * Show content while this route is preloading.
+     */
+    show(element: Element): void;
+
+    // get(): S;
+    // get<Key extends keyof S>(key: Key): S[Key];
+
+    // set<Key extends keyof S>(key: Key, value: S[Key]): void;
+    // set<Key extends keyof S>(key: Key, value: Readable<S[Key]>): void;
+    // set<Key extends keyof S>(key: Key, callback: (value: S[Key]) => void | S[Key]): void;
+    // set<Key extends keyof S>(values: { [key: Key]: S[Key] }): void;
+
+    // /**
+    //  * Deletes a key from state.
+    //  */
+    // nuke<Key extends keyof DeletableKeys<S>>(key: Key): void;
+  } & Pick<StateContext<Unwrapped<S>>, "get" | "set" | "nuke">;
+
+  type RouteOptions<G, S = any> = {
+    /**
+     * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
+     */
+    preload?: (ctx: PreloadContext<S, G>) => Promise<void> | void;
+    /**
+     * The view to display when this route matches.
+     */
+    view?: ViewFunction<S, G>;
+    /**
+     * Function to define subroutes that will be displayed as children of `view` when their routes match.
+     */
+    subroutes?: SubroutesFunction<G>;
   };
 
-  type DefineRoutesFn = (this: NestedRouteContext) => void;
+  type SubroutesContext<G> = {
+    route<S = {}>(path: string, options: RouteOptions<G, S>): this;
+    route<S = {}>(path: string, view: ViewFunction<S, G>, defineRoutes?: SubroutesFunction<G>): this;
+    route<S = {}>(path: string, view: View<S, G>, defineRoutes?: SubroutesFunction<G>): this;
+    route(path: string, view: Template, defineRoutes?: SubroutesFunction<G>): this;
+
+    redirect: (path: string, to: string) => SubroutesContext<G>;
+  };
+
+  type SubroutesFunction<G> = (ctx: SubroutesContext<G>) => void;
 
   /*==================================*\
   ||            Templating            ||
   \*==================================*/
 
   type Element = Template | ToStringable | Readable<ToStringable>;
-  type ElementFn = () => Element;
 
   interface ToStringable {
     toString(): string;
@@ -160,11 +206,11 @@ declare module "@woofjs/client" {
 
   type Template = {
     readonly isTemplate: true;
-    init(appContext: AppContext<any>): Component;
+    init(appContext: AppContext<any>): View<unknown, unknown>;
   };
 
-  export function h(element: string | View, attrs: Object, ...children: Template[]): Template;
-  export function h(element: string | View, ...children: Template[]): Template;
+  export function h(element: string | View<any, any>, attrs: Object, ...children: Template[]): Template;
+  export function h(element: string | View<any, any>, ...children: Template[]): Template;
 
   /*==================================*\
   ||           Debug Context          ||
@@ -491,7 +537,8 @@ declare module "@woofjs/client" {
     unless<Key extends keyof S>(key: Key, element: Element): Template;
 
     /**
-     * Repeats a component for each item in `value`. Value must be iterable.
+     * Repeats an element for each item in `value`. Value must be iterable.
+     * The `render` function takes bindings to the item and index and returns an element to render.
      */
     repeat<T>(
       value: T[] | Observable<T[]>,
@@ -499,6 +546,10 @@ declare module "@woofjs/client" {
       getKey?: (value: T) => any
     ): Template;
 
+    /**
+     * Repeats an element for each item in `value`. Value must be iterable.
+     * The `render` function takes bindings to the item and index and returns an element to render.
+     */
     repeat<Key extends keyof S>(
       key: Key,
       render: (
@@ -513,9 +564,10 @@ declare module "@woofjs/client" {
   ||             Global              ||
   \*==================================*/
 
-  export type GlobalFunction<S, G> = (ctx: GlobalContext<S, G>) => any;
-
+  // TODO: Find out how to infer return type of `fn` while S and G are passed.
   export function makeGlobal<S, G>(fn: GlobalFunction<S, G>): Global<any>;
+
+  export type GlobalFunction<S, G> = (ctx: GlobalContext<S, G>) => any;
 
   export type Global<E> = (this: GlobalContext<any, any>) => E;
 
@@ -534,6 +586,12 @@ declare module "@woofjs/client" {
      * Registers a callback to run after the app is connected and the first route match has taken place.
      */
     afterConnect: (callback: () => void) => void;
+
+    /**
+     * Returns a function that, when called with no arguments, returns the most recent value it was called with.
+     * Useful for retrieving references to DOM nodes when passed to elements as `ref`.
+     */
+    ref<T>(initialValue?: T): Ref<T>;
   }
 
   /*==================================*\
@@ -614,14 +672,6 @@ declare module "@woofjs/client" {
      */
     head(url: string): HTTPRequest<void>;
   }>;
-
-  type HTTPRequestContext = {
-    method: string;
-    headers: Headers;
-    body: any;
-  };
-
-  type HTTPRequestOptions = {};
 
   type HTTPResponse<BodyType> = {
     status: number;
@@ -1523,7 +1573,7 @@ declare namespace JSX {
     /**
      * A binding that receives a reference to the DOM element.
      */
-    ref?: Ref<T>;
+    ref?: Ref<T> | Ref<HTMLElement> | Ref<Element>;
   }
 
   /**

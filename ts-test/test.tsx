@@ -1,11 +1,13 @@
 import woof, {
   makeView,
   makeGlobal,
+  ViewContext,
   Readable,
   Writable,
   Bindable,
   Private,
   GlobalContext,
+  View,
 } from "@woofjs/client";
 
 type ExampleGlobalState = {};
@@ -167,3 +169,43 @@ const Layout = makeView<LayoutState, AppGlobals>((ctx) => {
 
 app.route("/", Layout);
 app.redirect("*", "/");
+
+type ViewState = {
+  title: string;
+};
+
+// Options object style
+app.route<ViewState>("/some", {
+  preload: async function (ctx) {
+    // PreloadContext has
+    // - .global()
+    // - .get()
+    // - .set()
+    // - .show()
+
+    ctx.show(<h1>Loading...</h1>);
+
+    const http = ctx.global("http");
+    const res = await http.get<ViewState>("/some/url");
+
+    ctx.set({
+      title: res.body.title,
+      another: 8,
+    });
+  },
+  view: function (ctx) {
+    const $title = ctx.readable("title");
+
+    return (
+      <div>
+        <h1>{$title}</h1>
+        <section>{ctx.outlet()}</section>
+      </div>
+    );
+  },
+  subroutes: function (sub) {
+    sub.route("/other", function (ctx) {
+      return <div>OTHER</div>;
+    });
+  },
+});

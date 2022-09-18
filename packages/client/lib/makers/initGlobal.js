@@ -40,6 +40,24 @@ export function initGlobal(fn, { appContext, name, channelPrefix }) {
       channel.name = `${channelPrefix}:${value}`;
     },
 
+    /**
+     * Creates a function that takes a new value when called with one.
+     * Returns the last value it was called with when called without a value.
+     *
+     * Used for getting quick references to HTML elements or other values in custom views.
+     */
+    ref(initialValue) {
+      let currentValue = initialValue;
+
+      return function (newValue) {
+        if (newValue === undefined) {
+          return currentValue;
+        }
+
+        currentValue = newValue;
+      };
+    },
+
     global(name) {
       if (!isString(name)) {
         throw new TypeError("Expected a string.");

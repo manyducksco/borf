@@ -44,6 +44,16 @@ export function makeApp(options = {}) {
    * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
    */
   function prepareRoutes(path, view, defineRoutes = null, layers = []) {
+    let preload;
+    let subroutes = defineRoutes;
+
+    // Config object
+    if (isObject(view) && typeof view.view === "function") {
+      subroutes = view.subroutes;
+      preload = view.preload;
+      view = view.view;
+    }
+
     if (isTemplate(view)) {
       const c = view;
       view = () => c;
@@ -54,11 +64,11 @@ export function makeApp(options = {}) {
     }
 
     const routes = [];
+    const layer = { id: layerId++, view, preload };
 
     // Parse nested routes if they exist.
-    if (defineRoutes != null) {
+    if (subroutes != null) {
       const parts = splitRoute(path);
-      const layer = { id: layerId++, view };
 
       // Remove trailing wildcard for joining with nested routes.
       if (parts[parts.length - 1] === "*") {
@@ -94,12 +104,12 @@ export function makeApp(options = {}) {
         },
       };
 
-      defineRoutes.call(helpers);
+      subroutes(helpers);
     } else {
       routes.push({
         path,
         fragments: parseRoute(path).fragments,
-        layers: [...layers, { id: layerId++, view }],
+        layers: [...layers, layer],
       });
     }
 

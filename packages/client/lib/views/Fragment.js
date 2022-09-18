@@ -17,7 +17,7 @@ export const Fragment = makeView((ctx) => {
 
   ctx.observe("children", (children) => {
     for (const child of connectedViews) {
-      child.disconnect({ allowTransitionOut: true });
+      child.disconnect();
     }
     connectedViews = [];
 
@@ -48,7 +48,7 @@ export const Fragment = makeView((ctx) => {
 
   ctx.afterDisconnect(() => {
     for (const child of connectedViews) {
-      child.disconnect({ allowTransitionOut: true });
+      child.disconnect();
     }
     connectedViews = [];
   });

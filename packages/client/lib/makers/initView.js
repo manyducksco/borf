@@ -31,9 +31,6 @@ export function initView(fn, config) {
   // Track currently active subscriptions.
   // All observers are unsubscribed when the component is disconnected.
   let subscriptions = [];
-
-  let transitionOutCallback;
-  let routePreload;
   let isConnected = false;
 
   /*=============================*\
@@ -119,9 +116,7 @@ export function initView(fn, config) {
     get isConnected() {
       return isConnected;
     },
-    loadRoute(func) {
-      routePreload = func;
-    },
+
     beforeConnect(callback) {
       beforeConnectCallbacks.push(callback);
     },
@@ -133,9 +128,6 @@ export function initView(fn, config) {
     },
     afterDisconnect(callback) {
       afterDisconnectCallbacks.push(callback);
-    },
-    transitionOut(callback) {
-      transitionOutCallback = callback;
     },
 
     observe(...args) {
@@ -155,6 +147,7 @@ export function initView(fn, config) {
     },
   };
 
+  // Add debug methods.
   Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debug));
   Object.defineProperties(ctx, {
     name: {
@@ -231,44 +224,6 @@ export function initView(fn, config) {
     },
 
     /**
-     * True if the component defines a preload function with `self.preloadRoute(fn)`.
-     */
-    get hasRoutePreload() {
-      return isFunction(routePreload);
-    },
-
-    /**
-     * Perform preload with route's preload function. Called only when this component is mounted on a route.
-     *
-     * @param mount - Function that takes a component instance and connects it to the DOM.
-     */
-    async routePreload(mount) {
-      if (!isFunction(routePreload)) return;
-
-      return new Promise((resolve, reject) => {
-        const show = (element) => {
-          if (isTemplate(element)) {
-            element = element.init({ appContext, elementContext });
-          } else {
-            return reject(new TypeError(`Expected an element to display. Got: ${element} (${typeof element})`));
-          }
-
-          mount(element);
-        };
-
-        const done = () => {
-          resolve();
-        };
-
-        const result = routePreload({ show, done });
-
-        if (result && isFunction(result.then)) {
-          result.then(() => done());
-        }
-      });
-    },
-
-    /**
      * Connects this component to the DOM, running lifecycle hooks if it wasn't already connected.
      * Calling this on a component that is already connected can reorder it or move it to a different
      * place in the DOM without retriggering lifecycle hooks.
@@ -302,63 +257,29 @@ export function initView(fn, config) {
 
     /**
      * Disconnects this component from the DOM and runs lifecycle hooks.
-     * The `allowTransitionOut` property should be `true` when this component is directly
-     * being disconnected. It won't be passed on to children to avoid all transitions
-     * triggering when a router changes. Only the top level component should animate out.
      */
-    disconnect({ allowTransitionOut = false } = {}) {
+    disconnect() {
       if (component.isConnected) {
-        if (allowTransitionOut && transitionOutCallback) {
-          const promise = transitionOutCallback();
-
-          if (!(promise instanceof Promise)) {
-            throw new TypeError("transitionOut callback must return a promise.");
-          }
-
-          for (const callback of beforeDisconnectCallbacks) {
-            callback();
-          }
-
-          promise.then(() => {
-            if (isView(element)) {
-              element.disconnect();
-            } else if (isDOM(element)) {
-              element.parentNode.removeChild(element);
-            }
-
-            isConnected = false;
-
-            for (const callback of afterDisconnectCallbacks) {
-              callback();
-            }
-
-            for (const subscription of subscriptions) {
-              subscription.unsubscribe();
-            }
-            subscriptions = [];
-          });
-        } else {
-          for (const callback of beforeDisconnectCallbacks) {
-            callback();
-          }
-
-          if (isView(element)) {
-            element.disconnect();
-          } else if (isDOM(element)) {
-            element.parentNode.removeChild(element);
-          }
-
-          isConnected = false;
-
-          for (const callback of afterDisconnectCallbacks) {
-            callback();
-          }
-
-          for (const subscription of subscriptions) {
-            subscription.unsubscribe();
-          }
-          subscriptions = [];
+        for (const callback of beforeDisconnectCallbacks) {
+          callback();
         }
+
+        if (isView(element)) {
+          element.disconnect();
+        } else if (isDOM(element)) {
+          element.parentNode?.removeChild(element);
+        }
+
+        isConnected = false;
+
+        for (const callback of afterDisconnectCallbacks) {
+          callback();
+        }
+
+        for (const subscription of subscriptions) {
+          subscription.unsubscribe();
+        }
+        subscriptions = [];
       }
     },
   };
