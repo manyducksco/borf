@@ -6,8 +6,8 @@ import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 /**
  * Displays a dynamic list based on an array stored in a `value` attribute.
  */
-export const Repeat = makeView((ctx) => {
-  ctx.name = "repeat";
+export const Repeater = makeView((ctx) => {
+  ctx.name = "Repeater";
   ctx.defaultState = {
     value: [],
     render: null,

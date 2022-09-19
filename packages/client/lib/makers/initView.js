@@ -16,11 +16,10 @@ import { makeViewHelpers } from "./makeViewHelpers.js";
  */
 
 export function initView(fn, config) {
-  let { attrs, children, appContext, elementContext, channelPrefix } = config;
+  let { appContext, elementContext, attrs, children, channelPrefix } = config;
 
   attrs = attrs || {};
   children = children || [];
-
   channelPrefix = channelPrefix || "view";
 
   const beforeConnectCallbacks = [];
@@ -188,19 +187,15 @@ export function initView(fn, config) {
   }
 
   /*=============================*\
-  ||   Define component object   ||
+  ||     Define view object      ||
   \*=============================*/
 
-  // This is the object the framework will use to control the component.
-  const component = {
+  // This is the object the framework will use to control the view.
+  const view = {
     state,
 
-    setChildren(children) {
-      setBoundValue("children", children);
-    },
-
     /**
-     * Returns the component's root DOM node, or null if there is none.
+     * Returns the view's root DOM node, or null if there is none.
      */
     get node() {
       if (element) {
@@ -223,16 +218,20 @@ export function initView(fn, config) {
       return isConnected;
     },
 
+    setChildren(children) {
+      setBoundValue("children", children);
+    },
+
     /**
-     * Connects this component to the DOM, running lifecycle hooks if it wasn't already connected.
-     * Calling this on a component that is already connected can reorder it or move it to a different
+     * Connects this view to the DOM, running lifecycle hooks if it wasn't already connected.
+     * Calling this on a view that is already connected can reorder it or move it to a different
      * place in the DOM without retriggering lifecycle hooks.
      *
-     * @param parent - DOM node under which this component should be connected as a child.
-     * @param after - A child node under `parent` after which this component should be connected.
+     * @param parent - DOM node under which this view should be connected as a child.
+     * @param after - A child node under `parent` after which this view should be connected.
      */
     connect(parent, after = null) {
-      const wasConnected = component.isConnected;
+      const wasConnected = view.isConnected;
 
       if (!wasConnected) {
         for (const callback of beforeConnectCallbacks) {
@@ -256,10 +255,10 @@ export function initView(fn, config) {
     },
 
     /**
-     * Disconnects this component from the DOM and runs lifecycle hooks.
+     * Disconnects this view from the DOM and runs lifecycle hooks.
      */
     disconnect() {
-      if (component.isConnected) {
+      if (view.isConnected) {
         for (const callback of beforeDisconnectCallbacks) {
           callback();
         }
@@ -284,12 +283,12 @@ export function initView(fn, config) {
     },
   };
 
-  Object.defineProperty(component, "isView", {
+  Object.defineProperty(view, "isView", {
     value: true,
     writable: false,
     enumerable: true,
     configurable: false,
   });
 
-  return component;
+  return view;
 }

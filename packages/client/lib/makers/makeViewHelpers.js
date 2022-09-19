@@ -1,7 +1,7 @@
 import { isString } from "../helpers/typeChecking.js";
 
 import { Template } from "../h.js";
-import { Repeat } from "../views/Repeat.js";
+import { Repeater } from "../views/Repeater.js";
 import { Outlet } from "../views/Outlet.js";
 
 export function makeViewHelpers(state) {
@@ -65,7 +65,7 @@ export function makeViewHelpers(state) {
    * @param getKey - Takes an item and returns a unique key. If not provided then the item identity (===) will be used.
    */
   function repeat(value, callback, getKey = null) {
-    return new Template(Repeat, { value: bound(value), render: callback, getKey });
+    return new Template(Repeater, { value: bound(value), render: callback, getKey });
   }
 
   /**

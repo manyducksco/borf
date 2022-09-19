@@ -6,10 +6,6 @@ import { Text } from "./views/Text.js";
 import { Element } from "./views/Element.js";
 import { Fragment } from "./views/Fragment.js";
 
-// Parse IDs and classes passed as part of the "element" string to h()
-// for example: 'div #something .class1.class2'
-function parseSelectors() {}
-
 /**
  * Template function. Used in components to render content.
  *

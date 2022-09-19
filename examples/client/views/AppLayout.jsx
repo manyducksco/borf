@@ -1,25 +1,44 @@
-import { makeView } from "@woofjs/client";
+import { makeView, makeTransitions } from "@woofjs/client";
+import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle";
+
+const animated = makeTransitions({
+  out: function (ctx) {
+    animate({
+      from: 0,
+      to: 100,
+      type: "spring",
+      onUpdate: function (latest) {
+        ctx.node.style.transform = `translateY(${latest}%)`;
+      },
+      onComplete: function () {
+        ctx.done();
+      },
+    });
+  },
+});
 
 export function preloadAppLayout(ctx) {
   // When the .done() function is called, this content is removed and the real view is connected.
   ctx.show(
-    <div>
-      <h1>WELCOME</h1>
-      <p>This page has examples of things woof can do.</p>
-      <p>
-        Click the button below to demonstrate calling <code>done()</code> in a
-        route component's loadRoute hook. When it's triggered by an event, you
-        can create disclaimer pages like this. Generally you would use this to
-        show temp content while making API calls.
-      </p>
-      <button
-        onclick={() => ctx.done()}
-        title="demonstrate calling done() in a component's preload hook"
-      >
-        Continue
-      </button>
-    </div>
+    animated(
+      <div>
+        <h1>WELCOME</h1>
+        <p>This page has examples of things woof can do.</p>
+        <p>
+          Click the button below to demonstrate calling <code>done()</code> in a
+          route component's loadRoute hook. When it's triggered by an event, you
+          can create disclaimer pages like this. Generally you would use this to
+          show temp content while making API calls.
+        </p>
+        <button
+          onclick={() => ctx.done()}
+          title="demonstrate calling done() in a component's preload hook"
+        >
+          Continue
+        </button>
+      </div>
+    )
   );
 }
 

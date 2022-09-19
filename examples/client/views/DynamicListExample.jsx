@@ -1,4 +1,5 @@
-import { makeView } from "@woofjs/client";
+import { makeView, makeTransitions } from "@woofjs/client";
+import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];
@@ -67,9 +68,40 @@ export const DynamicListExample = makeView((ctx) => {
             alert($item.get());
           };
 
-          return <li onclick={onclick}>{$item}</li>;
+          return animated(<li onclick={onclick}>{$item}</li>);
         })}
       </div>
     </div>
   );
+});
+
+const animated = makeTransitions({
+  in: function (ctx) {
+    animate({
+      from: { opacity: 0, x: -10 },
+      to: { opacity: 1, x: 0 },
+      duration: 300,
+      onUpdate: function (latest) {
+        ctx.node.style.opacity = latest.opacity;
+        ctx.node.style.transform = `translateX(${latest.x}px)`;
+      },
+      onComplete: function () {
+        ctx.done();
+      },
+    });
+  },
+  out: function (ctx) {
+    animate({
+      from: { opacity: 1, x: 0 },
+      to: { opacity: 0, x: 10 },
+      duration: 300,
+      onUpdate: function (latest) {
+        ctx.node.style.opacity = latest.opacity;
+        ctx.node.style.transform = `translateX(${latest.x}px)`;
+      },
+      onComplete: function () {
+        ctx.done();
+      },
+    });
+  },
 });

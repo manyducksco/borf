@@ -1,4 +1,5 @@
-import { makeView } from "@woofjs/client";
+import { makeView, makeTransitions } from "@woofjs/client";
+import { animate, bounceOut } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const bestColor = "#ff0088";
@@ -13,10 +14,9 @@ export const MouseFollowerExample = makeView((ctx) => {
   logLifecycle(ctx);
 
   const { $position } = ctx.global("mouse");
-  const $transform = $position.to((p) => `translate(${p.x}px, ${p.y}px)`);
 
-  const $enabled = ctx.readable("enabled");
   const $color = ctx.readable("color");
+  const $enabled = ctx.readable("enabled");
   const $disabled = $enabled.to((t) => !t);
   const $isNotBestColor = $color.to((hex) => hex.toLowerCase() !== bestColor);
 
@@ -28,9 +28,21 @@ export const MouseFollowerExample = makeView((ctx) => {
     const hex = [Math.random() * 256, Math.random() * 256, Math.random() * 256]
       .map(Math.floor)
       .map((n) => n.toString(16))
+      .map((n) => (n.length < 2 ? "0" + n : n))
       .join("");
+    const newColor = "#" + hex;
 
-    ctx.set("color", "#" + hex);
+    animate({
+      from: ctx.get("color"),
+      to: newColor,
+      duration: 100,
+      onUpdate: (latest) => {
+        ctx.set("color", latest);
+      },
+      onComplete: () => {
+        ctx.set("color", newColor);
+      },
+    });
   }
 
   return (
@@ -39,13 +51,26 @@ export const MouseFollowerExample = makeView((ctx) => {
       <div>
         {ctx.when(
           "enabled",
-          <div
-            class="follower"
-            style={{
-              transform: $transform,
-              backgroundColor: $color,
-            }}
-          />
+          // Transitions can set view state, so this kind of composition is possible.
+          animated((ctx) => {
+            const $scale = ctx.readable("scale");
+
+            return (
+              <div
+                class="follower"
+                style={{
+                  backgroundColor: $color,
+
+                  // Composite transform based on mouse position and animated scale.
+                  transform: ctx.merge(
+                    $position,
+                    $scale,
+                    (p, s) => `translate(${p.x}px, ${p.y}px) scale(${s})`
+                  ),
+                }}
+              />
+            );
+          })
         )}
 
         <button onclick={randomizeColor} disabled={$disabled}>
@@ -65,4 +90,35 @@ export const MouseFollowerExample = makeView((ctx) => {
       </div>
     </div>
   );
+});
+
+const animated = makeTransitions({
+  in: function (ctx) {
+    animate({
+      from: 0,
+      to: 1,
+      duration: 500,
+      ease: bounceOut,
+      onUpdate: function (latest) {
+        // Can animate by setting state which is picked up by the view.
+        ctx.set({ scale: latest });
+      },
+      onComplete: function () {
+        ctx.done();
+      },
+    });
+  },
+  out: function (ctx) {
+    animate({
+      from: 1,
+      to: 0,
+      duration: 200,
+      onUpdate: function (latest) {
+        ctx.set({ scale: latest });
+      },
+      onComplete: function () {
+        ctx.done();
+      },
+    });
+  },
 });
