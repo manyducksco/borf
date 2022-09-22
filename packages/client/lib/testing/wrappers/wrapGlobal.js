@@ -1,5 +1,5 @@
 import { isFunction } from "../../helpers/typeChecking.js";
-import { makeGlobal } from "../../makers/makeGlobal.js";
+import { initGlobal } from "../../makers/initGlobal.js";
 
 import debug from "../../globals/debug.js";
 import http from "../mocks/globals/http.js";
@@ -28,7 +28,7 @@ export function wrapGlobal(globalFn, configFn) {
         throw new Error(`Expected a global function for '${name}'`);
       }
 
-      const global = makeGlobal(fn, { appContext, name });
+      const global = initGlobal(fn, { appContext, name });
       appContext.globals[name] = global;
 
       onBeforeConnect.push(global.beforeConnect);
@@ -47,11 +47,11 @@ export function wrapGlobal(globalFn, configFn) {
     callback();
   }
 
-  configFn.call(ctx);
+  configFn(ctx);
 
   for (const callback of onAfterConnect) {
     callback();
   }
 
-  return makeGlobal(globalFn, { appContext, name: "wrapped" });
+  return initGlobal(globalFn, { appContext, name: "wrapped" });
 }

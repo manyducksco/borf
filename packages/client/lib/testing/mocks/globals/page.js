@@ -1,9 +1,9 @@
-export default function mockPage() {
-  this.defaultState = {
+export default function mockPage(ctx) {
+  ctx.defaultState = {
     title: "Test",
   };
 
   return {
-    $$title: this.writable("title"),
+    $$title: ctx.writable("title"),
   };
 }

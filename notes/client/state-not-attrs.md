@@ -5,7 +5,13 @@ Components are renamed to 'views' and services to 'globals'. This breaks the ass
 Views and globals are said to have a _state_, which is an internal key-value store accessed by `get`, `set`, `map`, `bind` and `observe` methods. The `map` method gives you a one-way binding to values in state, while `bind` gives you a two-way binding. What used to be called states (`$value` and `$$value`) are now referred to as bindings.
 
 ```tsx
-import { View, ReadBinding, ReadWriteBinding, Bindable, Private } from "@woofjs/client";
+import {
+  makeView,
+  Readable,
+  Writable,
+  Bindable,
+  Private,
+} from "@woofjs/client";
 
 type ExampleState = {
   name: string | Readable<string> | Writable<string>; // Use types to specify if things can be bound or not.
@@ -19,20 +25,22 @@ type ExampleState = {
 
 // Outlet renders elements stored in state.
 // By default this is "children". The two calls below are equivalent.
-this.outlet();
-this.outlet("children");
+ctx.outlet();
+ctx.outlet("children");
 
 // Renders an element stored at "someRef".
-this.outlet("someRef");
+ctx.outlet("someRef");
 
 <Parent tabs={[<span>one</span>, <span>two</span>, <span>three</span>]} />;
 
-function Parent() {
+function Parent(ctx) {
   return (
     <div>
       // Render an array of elements
-      {this.repeat("tabs", function () {
-        return this.outlet("@"); // Repeat views receive @ and # (item and index)
+      {ctx.repeat("tabs", function ($tab) {
+        return this.outlet($tab, (tab) => {
+          return <div>{tab}</div>;
+        });
       })}
       // Equivalent
       {this.outlet("tabs")}
@@ -188,7 +196,10 @@ const Layout: View<LayoutState, AppGlobals> = function () {
         <Example name={$$name} />
       </li>
       <li>
-        <Example name={$$name}>Children passed to a view will be rendered wherever `this.outlet()` is called.</Example>
+        <Example name={$$name}>
+          Children passed to a view will be rendered wherever `this.outlet()` is
+          called.
+        </Example>
       </li>
     </ul>
   );
@@ -231,7 +242,8 @@ class Layout extends View<LayoutState, AppGlobals> {
         </li>
         <li>
           <Example name={$$name}>
-            Children passed to a view will be rendered wherever `this.outlet()` is called.
+            Children passed to a view will be rendered wherever `this.outlet()`
+            is called.
           </Example>
         </li>
       </ul>

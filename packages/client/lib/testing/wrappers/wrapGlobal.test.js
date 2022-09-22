@@ -4,8 +4,8 @@ import { makeMockHTTP } from "../makers/makeMockHTTP.js";
 /**
  * A service that makes HTTP requests through the @http service.
  */
-function UserService() {
-  const http = this.service("http");
+function UserGlobal(ctx) {
+  const http = ctx.global("http");
 
   async function getUsers() {
     return http.get("/users").then((res) => res.body);
@@ -19,8 +19,8 @@ function UserService() {
 /**
  * A mock HTTP service that responds to HTTP requests.
  */
-const mockHTTP = makeMockHTTP(function () {
-  this.get("/users", (ctx) => {
+const mockHTTP = makeMockHTTP((ctx) => {
+  ctx.get("/users", () => {
     return [
       { id: 1, user: "Jimbo Jones" },
       { id: 2, user: "Snorlax" },
@@ -29,8 +29,8 @@ const mockHTTP = makeMockHTTP(function () {
 });
 
 test("provides mock services to wrapped service", async () => {
-  const global = wrapGlobal(UserService, function () {
-    this.global("http", mockHTTP);
+  const global = wrapGlobal(UserGlobal, (ctx) => {
+    ctx.global("http", mockHTTP);
   });
 
   const users = await global.exports.getUsers();

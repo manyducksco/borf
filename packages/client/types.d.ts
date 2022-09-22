@@ -66,7 +66,7 @@ declare module "@woofjs/client" {
    * An app is the central object of a Woof app. It handles mounting and unmounting of routes
    * based on the current URL and providing services to components rendered under those routes.
    */
-  interface App<G> {
+  interface App<G> extends RouterContext<G> {
     /**
      * Registers a service on this app. Services have only one instance created per app.
      * Any component rendered under one of this app's routes, as well as any other services
@@ -76,29 +76,6 @@ declare module "@woofjs/client" {
      * @param fn - The global constructor. Must be a function that returns an object.
      */
     global<Name extends keyof G>(name: Name, fn: G[Name]): this;
-
-    route<S = {}>(path: string, options: RouteOptions<G, S>): this;
-    /**
-     * Registers a new route that will render `component` when `path` matches the current URL.
-     * Register nested routes by passing a function as the third argument. Nested route components
-     * will be rendered as this `component`'s children.
-     *
-     * @param path - Path to match.
-     * @param view - View to render when path matches URL.
-     * @param defineRoutes - Optional function to define nested routes.
-     */
-    // TODO: Infer child type by defineRoutes
-    route<S = {}>(path: string, view: View<S, G>, defineRoutes?: SubroutesFunction<G>): this;
-    route<S = {}>(path: string, view: ViewFunction<S, G>, defineRoutes?: SubroutesFunction<G>): this;
-    route(path: string, view: Template, defineRoutes?: SubroutesFunction<G>): this;
-
-    /**
-     * Register a route that will redirect to another when the `path` matches the current URL.
-     *
-     * @param path - Path to match.
-     * @param to - Path to redirect location.
-     */
-    redirect(path: string, to: string): this;
 
     /**
      * Runs a callback function after services are created but before any components have been connected.
@@ -129,7 +106,7 @@ declare module "@woofjs/client" {
     global<K extends keyof AppGlobals<G>>(name: K): AppGlobals<G>[K];
   }
 
-  export type AppLifecycleCallback<G> = (this: AppContext<G>) => void | Promise<void>;
+  export type AppLifecycleCallback<G> = (ctx: AppContext<G>) => void | Promise<void>;
 
   export type DefaultGlobals = {
     router: ReturnType<GlobalRouter>;
@@ -152,23 +129,12 @@ declare module "@woofjs/client" {
     /**
      * Show content while this route is preloading.
      */
-    show(element: Element): void;
-
-    // get(): S;
-    // get<Key extends keyof S>(key: Key): S[Key];
-
-    // set<Key extends keyof S>(key: Key, value: S[Key]): void;
-    // set<Key extends keyof S>(key: Key, value: Readable<S[Key]>): void;
-    // set<Key extends keyof S>(key: Key, callback: (value: S[Key]) => void | S[Key]): void;
-    // set<Key extends keyof S>(values: { [key: Key]: S[Key] }): void;
-
-    // /**
-    //  * Deletes a key from state.
-    //  */
-    // nuke<Key extends keyof DeletableKeys<S>>(key: Key): void;
+    show(element: WoofElement): void;
   } & Pick<StateContext<Unwrapped<S>>, "get" | "set" | "nuke">;
 
-  type RouteOptions<G, S = any> = {
+  // These two options objects need to be defined separately or the context
+  // type can't be inferred when you pass a view function directly.
+  interface RouteViewFnOptions<G, S = any> {
     /**
      * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
      */
@@ -181,30 +147,74 @@ declare module "@woofjs/client" {
      * Function to define subroutes that will be displayed as children of `view` when their routes match.
      */
     subroutes?: SubroutesFunction<G>;
-  };
+  }
 
-  type SubroutesContext<G> = {
-    route<S = {}>(path: string, options: RouteOptions<G, S>): this;
+  interface RouteViewOptions<G, S = any> {
+    /**
+     * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
+     */
+    preload?: (ctx: PreloadContext<S, G>) => Promise<void> | void;
+    /**
+     * The view to display when this route matches.
+     */
+    view?: View<S, G>;
+    /**
+     * Function to define subroutes that will be displayed as children of `view` when their routes match.
+     */
+    subroutes?: SubroutesFunction<G>;
+  }
+
+  interface RouterContext<G> {
+    route<S = {}>(path: string, options: RouteViewFnOptions<G, S>): this;
+    route<S = {}>(path: string, options: RouteViewOptions<G, S>): this;
+
+    /**
+     * Registers a new route that will render `view` when `path` matches the current URL.
+     * Register nested routes by passing a function as the third argument. Nested route components
+     * will be rendered as this `view`'s children.
+     *
+     * @param path - Path to match.
+     * @param view - View to render when path matches URL.
+     * @param defineRoutes - Optional function to define nested routes.
+     */
+    // TODO: Infer child type by defineRoutes
     route<S = {}>(path: string, view: ViewFunction<S, G>, defineRoutes?: SubroutesFunction<G>): this;
+
+    /**
+     * Display `view` when `path` matches the current URL. Nested routes defined in `defineRoutes` are
+     * passed as children to `view` when `path` + nested `path` matches the current URL.
+     *
+     * @param path - Path to match.
+     * @param view - View to render when path matches URL.
+     * @param defineRoutes - Optional function to define nested routes.
+     */
+    // TODO: Infer child type by defineRoutes
     route<S = {}>(path: string, view: View<S, G>, defineRoutes?: SubroutesFunction<G>): this;
+
     route(path: string, view: Template, defineRoutes?: SubroutesFunction<G>): this;
 
-    redirect: (path: string, to: string) => SubroutesContext<G>;
-  };
+    /**
+     * Register a route that will redirect to another when the `path` matches the current URL.
+     *
+     * @param path - Path to match.
+     * @param to - Path to redirect location.
+     */
+    redirect: (path: string, to: string) => RouterContext<G>;
+  }
 
-  type SubroutesFunction<G> = (ctx: SubroutesContext<G>) => void;
+  type SubroutesFunction<G> = (ctx: RouterContext<G>) => void;
 
   /*==================================*\
   ||            Templating            ||
   \*==================================*/
 
-  type Element = Template | ToStringable | Readable<ToStringable>;
+  export type WoofElement = Template | ToStringable | Readable<ToStringable>;
 
   interface ToStringable {
     toString(): string;
   }
 
-  type Template = {
+  export type Template = {
     readonly isTemplate: true;
     init(appContext: AppContext<any>): View<unknown, unknown>;
   };
@@ -295,7 +305,7 @@ declare module "@woofjs/client" {
     set<Key extends keyof State>(key: Key, value: State[Key]): void;
     set<Key extends keyof State>(key: Key, value: Readable<State[Key]>): void;
     set<Key extends keyof State>(key: Key, callback: (value: State[Key]) => void | State[Key]): void;
-    set<Key extends keyof State>(values: { [key: Key]: State[Key] }): void;
+    set(values: { [Key in keyof State]: State[Key] }): void;
 
     /**
      * Deletes a key from state.
@@ -375,7 +385,7 @@ declare module "@woofjs/client" {
 
   export interface Observable<T> {
     subscribe(observer: Observer<T>): Subscription;
-    subscribe(next: (value: T) => void): Subscription;
+    subscribe(next?: (value: T) => void, error?: (err: Error) => void, complete?: () => void): Subscription;
   }
 
   export interface Observer<T> {
@@ -399,7 +409,7 @@ declare module "@woofjs/client" {
     /**
      * Returns a new state that takes the return value of `callbackFn` when called with the value of this state.
      *
-     * @param callbackFn - Function to map the current state's value to the new state's value.
+     * @param callback - Function to map the current state's value to the new state's value.
      */
     to<NewValue>(callback: (value: Value) => NewValue): Readable<NewValue>;
   }
@@ -502,39 +512,39 @@ declare module "@woofjs/client" {
     /**
      * Displays the result of `children` each time its value changes.
      */
-    outlet(): Element;
+    outlet(): WoofElement;
 
     /**
      * Displays the result of `key` each time its value changes. Value should be an Element.
      */
-    outlet<Key extends keyof S>(key: Key): Element;
+    outlet<Key extends keyof S>(key: Key): WoofElement;
 
     /**
      * Displays the result of `key` each time its value changes. The `callback` function converts `key` into an Element. TODO: Define these.
      */
-    outlet<Key extends keyof S>(key: Key, callback: (value: S[Key]) => Element): Element;
+    outlet<Key extends keyof S>(key: Key, callback: (value: S[Key]) => WoofElement): WoofElement;
 
     /**
      * Displays the value of `binding` each time its value changes. Value should be an element.
      */
-    outlet(binding: Readable<Element>): Element;
+    outlet(binding: Readable<WoofElement>): WoofElement;
 
     /**
      * Displays the value of `binding` each time its value changes. The `callback` function converts the value into an Element.
      */
-    outlet<T>(binding: Readable<T>, callback: (value: T) => Element): Element;
+    outlet<T>(binding: Readable<T>, callback: (value: T) => WoofElement): WoofElement;
 
     /**
      * Displays `element` when `value` is truthy.
      */
-    when(value: Observable<any>, element: Element): Template;
-    when<Key extends keyof S>(key: Key, element: Element): Template;
+    when(value: Observable<any>, element: WoofElement): Template;
+    when<Key extends keyof S>(key: Key, element: WoofElement): Template;
 
     /**
      * Displays `element` when `value` is falsy.
      */
-    unless(value: Observable<any>, element: Element): Template;
-    unless<Key extends keyof S>(key: Key, element: Element): Template;
+    unless(value: Observable<any>, element: WoofElement): Template;
+    unless<Key extends keyof S>(key: Key, element: WoofElement): Template;
 
     /**
      * Repeats an element for each item in `value`. Value must be iterable.
@@ -542,7 +552,7 @@ declare module "@woofjs/client" {
      */
     repeat<T>(
       value: T[] | Observable<T[]>,
-      render: ($value: Readable<T>, $index: Readable<number>) => Element,
+      render: ($value: Readable<T>, $index: Readable<number>) => WoofElement,
       getKey?: (value: T) => any
     ): Template;
 
@@ -555,8 +565,8 @@ declare module "@woofjs/client" {
       render: (
         $value: Readable<Unwrapped<S>[Key] extends Iterable<infer T> ? T : never>,
         $index: Readable<number>
-      ) => Element,
-      getKey?: (value: T) => any
+      ) => WoofElement,
+      getKey?: (value: S[Key]) => any
     ): Template;
   }
 
@@ -620,7 +630,7 @@ declare module "@woofjs/client" {
      *
      * @param middleware - Async middleware function.
      */
-    use(middleware: HTTPMiddleware): this;
+    use(middleware: HTTPMiddleware): GlobalHTTP;
 
     /**
      * Make an HTTP request to `url` with any `method`.
@@ -777,10 +787,14 @@ declare module "@woofjs/client" {
 declare module "@woofjs/client/jsx-runtime" {
   import { Template, View } from "@woofjs/client";
 
-  export function jsx(element: string | View, props: { [name: string]: any; children: Template }, key: any): Template;
+  export function jsx(
+    element: string | View<any, any>,
+    props: { [name: string]: any; children: Template },
+    key: any
+  ): Template;
 
   export function jsxs(
-    element: string | View,
+    element: string | View<any, any>,
     props: { [name: string]: any; children: Template[] },
     key: any
   ): Template;
@@ -790,7 +804,7 @@ declare module "@woofjs/client/jsx-dev-runtime" {
   import { Template, View } from "@woofjs/client";
 
   export function jsxDEV(
-    element: string | View,
+    element: string | View<any, any>,
     props: { [name: string]: any; children: Template | Template[] },
     key: any,
     isStaticChildren: boolean,
@@ -801,7 +815,7 @@ declare module "@woofjs/client/jsx-dev-runtime" {
 
 // TODO: Define all elements and the attributes they support.
 declare namespace JSX {
-  import { Observable, Writable, Ref, ToStringable, Template } from "@woofjs/client";
+  import { Observable, Ref, ToStringable } from "@woofjs/client";
   import * as CSS from "csstype";
 
   interface ElementChildrenAttribute {
@@ -1907,11 +1921,6 @@ declare namespace JSX {
   || 4.5           Text-level semantics ||
   \*====================================*/
 
-  /**
-   * Attributes for an HTML `<a>` element.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a
-   */
   interface AnchorElementAttributes extends ElementAttributes<HTMLAnchorElement> {
     /**
      * A hyperlink address. Must be a valid URL potentially surrounded by spaces.
@@ -1921,22 +1930,18 @@ declare namespace JSX {
     href?: MaybeObservable<string | undefined>;
 
     /**
-     * The `target` attribute, if present, must be a valid browsing context name or keyword.
-     * It gives the name of the browsing context that will be used. User agents use this name when following hyperlinks.
+     * Where to display the linked URL, as the name for a browsing context (a tab, window, or `<iframe>`)
      *
      * A common usage is `target: "_blank"` to cause a link to open in a new tab.
      *
-     * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-target
-     * @see https://html.spec.whatwg.org/multipage/browsers.html#valid-browsing-context-name-or-keyword
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-target
      */
-    target?: MaybeObservable<string | undefined>;
+    target?: MaybeObservable<"_self" | "_blank" | "parent" | "_top" | undefined>;
 
     /**
-     * The `download` attribute is a string indicating that the linked resource is intended to be downloaded rather than displayed in the browser.
-     * The value, if any, specifies the default file name for use in labeling the resource in a local file system.
-     * If the name is not a valid file name in the underlying OS, the browser will adjust it.
+     * Causes the browser to treat the linked URL as a download. Can be used with or without a value.
      *
-     * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-download
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-download
      */
     download?: MaybeObservable<string | undefined>;
 
@@ -1944,20 +1949,260 @@ declare namespace JSX {
      * A space-separated list of URLs. When the link is followed, the browser will send `POST` requests with the body PING to the URLs.
      * Typically for tracking.
      *
-     * @see https://html.spec.whatwg.org/multipage/links.html#ping
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-ping
      */
     ping?: MaybeObservable<string | undefined>;
 
-    /**xs
+    /**
+     * The relationship of the linked URL as space-separated [link types](https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types).
      *
-     *
-     * @see https://html.spec.whatwg.org/multipage/links.html#attr-hyperlink-rel
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-hreflang
      */
     rel?: MaybeObservable<string | undefined>;
+
+    /**
+     * Hints at the human language of the linked URL. No built-in functionality.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-hreflang
+     */
+    hreflang?: MaybeObservable<string | undefined>;
+
+    /**
+     * Hints at the linked URL's format with a [MIME type](https://developer.mozilla.org/en-US/docs/Glossary/MIME_type). No built-in functionality.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-type
+     */
+    type?: MaybeObservable<string | undefined>;
+
+    /**
+     * How much of the [referrer](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer)
+     * to send when following the link.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-referrerpolicy
+     */
+    referrerpolicy?: MaybeObservable<
+      | "no-referrer"
+      | "no-referrer-when-downgrade"
+      | "origin"
+      | "origin-when-cross-origin"
+      | "same-origin"
+      | "strict-origin"
+      | "strict-origin-when-cross-origin"
+      | "unsafe-url"
+      | undefined
+    >;
   }
+  interface EmElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface StrongElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface SmallElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface SElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface CiteElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface QElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface DfnElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface AbbrElementAttributes extends ElementAttributes<HTMLElement> {
+    /**
+     * Provides an expansion for the abbreviation or acronym when a full expansion is not present.
+     * This provides a hint to user agents on how to announce/display the content while informing all users what the abbreviation means.
+     * If present, `title` must contain this full description and nothing else.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/abbr
+     */
+    title?: MaybeObservable<string | undefined>;
+  }
+  interface RubyElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface RtElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface RpElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface DataElementAttributes extends ElementAttributes<HTMLDataElement> {
+    /**
+     * Specifies the machine-readable translation of the content of the element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/data
+     */
+    value?: MaybeObservable<any>;
+  }
+  interface TimeElementAttributes extends ElementAttributes<HTMLTimeElement> {
+    /**
+     * Indicates the time and/or date of the element. Must be in one of the formats below:
+     *
+     *
+     * a valid year string
+     * ```
+     * 2011
+     * ```
+     *
+     * a valid month string
+     * ```
+     * 2011-11
+     * ```
+     *
+     * a valid date string
+     * ```
+     * 2011-11-18
+     * ```
+     *
+     * a valid yearless date string
+     * ```
+     * 11-18
+     * ```
+     *
+     * a valid week string
+     * ```
+     * 2011-W47
+     * ```
+     *
+     * a valid time string
+     * ```
+     * 14:54
+     * 14:54:39
+     * 14:54:39.929
+     * ```
+     *
+     * a valid local date and time string
+     * ```
+     * 2011-11-18T14:54:39.929
+     * 2011-11-18 14:54:39.929
+     * ```
+     *
+     * a valid global date and time string
+     * ```
+     * 2011-11-18T14:54:39.929Z
+     * 2011-11-18T14:54:39.929-0400
+     * 2011-11-18T14:54:39.929-04:00
+     * 2011-11-18 14:54:39.929Z
+     * 2011-11-18 14:54:39.929-0400
+     * 2011-11-18 14:54:39.929-04:00
+     * ```
+     *
+     * a valid duration string
+     * ```
+     * PT4H18M3S
+     * ```
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
+     */
+    datetime?: MaybeObservable<string | undefined>;
+  }
+  interface CodeElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface VarElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface SampElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface KbdElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface SubElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface SupElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface IElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface BElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface UElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface MarkElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface BdiElementAttributes extends ElementAttributes<HTMLElement> {
+    /**
+     * Directionality of the text inside the `<bdi>` element. Can be `rtl` for languages read right-to-left and `ltr` for languages read left-to-right. Defaults to `auto`.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdi
+     */
+    dir?: MaybeObservable<"auto" | "rtl" | "ltr" | undefined>;
+  }
+  interface BdoElementAttributes extends ElementAttributes<HTMLElement> {
+    /**
+     * Directionality of the text inside the `<bdo>` element. Can be `rtl` for languages read right-to-left and `ltr` for languages read left-to-right. Defaults to `auto`.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdo
+     */
+    dir?: MaybeObservable<"auto" | "rtl" | "ltr" | undefined>;
+  }
+  interface SpanElementAttributes extends ElementAttributes<HTMLSpanElement> {}
+  interface BrElementAttributes extends ElementAttributes<HTMLBRElement> {}
+  interface WbrElementAttributes extends ElementAttributes<HTMLElement> {}
 
   interface IntrinsicElements {
+    /**
+     * Creates a hyperlink to web pages, files, email addresses, locations in the same page, or anything else a URL can address.
+     *
+     * Content within each `<a>` should indicate the link's destination.
+     * If the `href` attribute is present, pressing the enter key while focused on the `<a>` element will activate it.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a
+     */
     a: AnchorElementAttributes;
+
+    /**
+     * Marks text that has stress emphasis. The `<em>` element can be nested, each level of nesting indicating a greater degree of emphasis.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/em
+     */
+    em: EmElementAttributes;
+
+    /**
+     * Indicates that its contents have strong importance, seriousness, or urgency. Browsers typically render the contents in bold type.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/strong
+     */
+    strong: StrongElementAttributes;
+
+    /**
+     * Represents side-comments and small print, like copyright and legal text.
+     * Renders text within it one font-size smaller, such as from `small` to `x-small`.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/small
+     */
+    small: SmallElementAttributes;
+
+    /**
+     * Renders text with a strikethrough, or a line through it. Use the `<s>` element to represent things that are no longer relevant or no longer accurate.
+     * However, `<s>` is not appropriate when indicating document edits; for that, use the `<del>` and `<ins>` elements.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/s
+     */
+    s: SElementAttributes;
+
+    /**
+     * Used to describe a reference to a cited creative work, and must include the title of that work.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/cite
+     */
+    cite: CiteElementAttributes;
+
+    /**
+     * indicates that the enclosed text is a short inline quotation. Most modern browsers implement this by surrounding the text in quotation marks.
+     * For long quotations with paragraph breaks use the `<blockquote>` element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/q
+     */
+    q: QElementAttributes;
+
+    /**
+     * Used to indicate the term being defined within the context of a definition phrase or sentence.
+     * The `<p>` element, the `<dt>`/`<dd>` pairing, or the `<section>` element which is the nearest ancestor of the `<dfn>` is considered to be the definition of the term.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dfn
+     */
+    dfn: DfnElementAttributes;
+
+    /**
+     *
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/abbr
+     */
+    abbr: AbbrElementAttributes;
+
+    ruby: RubyElementAttributes;
+    rt: RtElementAttributes;
+    rp: RpElementAttributes;
+    data: DataElementAttributes;
+    time: TimeElementAttributes;
+    code: CodeElementAttributes;
+    var: VarElementAttributes;
+    samp: SampElementAttributes;
+    kbd: KbdElementAttributes;
+    sup: SupElementAttributes;
+    sub: SubElementAttributes;
+    i: IElementAttributes;
+    b: BElementAttributes;
+    u: UElementAttributes;
+    mark: MarkElementAttributes;
+    bdi: BdiElementAttributes;
+    bdo: BdoElementAttributes;
+    span: SpanElementAttributes;
+    br: BrElementAttributes;
+    wbr: WbrElementAttributes;
   }
 
   /*====================================*\
@@ -1967,6 +2212,18 @@ declare namespace JSX {
   /*====================================*\
   || 4.7                          Edits ||
   \*====================================*/
+
+  interface ModElementAttributes extends ElementAttributes<ModElementAttributes> {
+    cite?: MaybeObservable<string | undefined>;
+    datetime?: MaybeObservable<string | undefined>;
+  }
+  interface InsElementAttributes extends ModElementAttributes {}
+  interface DelElementAttributes extends ModElementAttributes {}
+
+  interface IntrinsicElements {
+    ins: InsElementAttributes;
+    del: DelElementAttributes;
+  }
 
   /*====================================*\
   || 4.8               Embedded Content ||

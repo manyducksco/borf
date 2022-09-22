@@ -1,6 +1,4 @@
 import { makeApp } from "./makers/makeApp.js";
-
-export const woof = makeApp;
 export default makeApp;
 
 export { makeView } from "./makers/makeView.js";

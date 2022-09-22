@@ -5,25 +5,41 @@ import { initGlobal } from "./initGlobal.js";
 \*======================== */
 
 const appContext = {
-  services: {},
+  globals: {
+    debug: {
+      exports: {
+        channel() {
+          return {
+            log: () => {},
+            warn: () => {},
+            error: () => {}
+          }
+        }
+      }
+    },
+  },
   debug: {
-    makeChannel(name) {
-      return {};
+    makeChannel() {
+      return {
+        log: console.log.bind(console),
+        warn: console.warn.bind(console),
+        error: console.error.bind(console),
+      };
     },
   },
 };
 
 /*========================*\
 ||         Tests          ||
-\*======================== */
+\*========================*/
 
 test("lifecycle hooks", () => {
   const beforeConnect = jest.fn();
   const afterConnect = jest.fn();
 
-  const fn = function () {
-    this.beforeConnect(beforeConnect);
-    this.afterConnect(afterConnect);
+  const fn = function (ctx) {
+    ctx.beforeConnect(beforeConnect);
+    ctx.afterConnect(afterConnect);
 
     return { works: true };
   };

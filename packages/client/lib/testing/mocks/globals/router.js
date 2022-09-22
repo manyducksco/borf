@@ -1,5 +1,5 @@
-export default function mockRouter() {
-  this.defaultState = {
+export default function mockRouter(ctx) {
+  ctx.defaultState = {
     path: "/test",
     route: "/test",
     params: {},
@@ -7,10 +7,10 @@ export default function mockRouter() {
   };
 
   return {
-    $path: this.readable("path"),
-    $route: this.readable("route"),
-    $params: this.readable("params"),
-    $$query: this.writable("query"),
+    $path: ctx.readable("path"),
+    $route: ctx.readable("route"),
+    $params: ctx.readable("params"),
+    $$query: ctx.writable("query"),
 
     back() {},
     forward() {},

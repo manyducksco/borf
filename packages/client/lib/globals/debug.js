@@ -2,6 +2,8 @@ import colorHash from "simple-color-hash";
 import { APP_CONTEXT } from "../keys.js";
 import { makeGlobal } from "../makers/makeGlobal.js";
 
+const noop = () => {};
+
 export default makeGlobal((ctx) => {
   const options = ctx[APP_CONTEXT].options.debug || {};
   const console = options._console || window?.console || global?.console;

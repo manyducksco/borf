@@ -1,14 +1,4 @@
-import woof, {
-  makeView,
-  makeGlobal,
-  ViewContext,
-  Readable,
-  Writable,
-  Bindable,
-  Private,
-  GlobalContext,
-  View,
-} from "@woofjs/client";
+import woof, { makeView, makeGlobal, Bindable, Private } from "@woofjs/client";
 
 type ExampleGlobalState = {};
 
@@ -163,6 +153,10 @@ const Layout = makeView<LayoutState, AppGlobals>((ctx) => {
         {/* Setting 'name' inside <Example> will update the value of $$name. */}
         <Example name={$$name} />
       </li>
+
+      <a>
+        Text <em>Text</em> Text
+      </a>
     </ul>
   );
 });

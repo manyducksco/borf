@@ -80,7 +80,7 @@ function makeRequest({ id, log, method, url, middleware, fetch }) {
     };
 
     const handler = async () => {
-      log(`[#${id}] sent ${ctx.method.toUpperCase()} request to '${url}'`);
+      log(`[#${id}] sent request to ${ctx.method.toUpperCase()} '${url}'`);
       const start = Date.now();
 
       const query = queryParams.toString();

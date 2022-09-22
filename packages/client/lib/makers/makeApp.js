@@ -191,7 +191,7 @@ export function makeApp(options = {}) {
           },
         };
 
-        return fn.call(ctx);
+        return fn(ctx);
       };
 
       return this;
@@ -221,7 +221,7 @@ export function makeApp(options = {}) {
           },
         };
 
-        return fn.call(ctx);
+        return fn(ctx);
       };
 
       return this;

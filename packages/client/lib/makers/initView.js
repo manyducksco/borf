@@ -134,7 +134,7 @@ export function initView(fn, config) {
 
       if (isConnected) {
         // If called when the view is connected, we assume this code is in a lifecycle hook
-        // where it will be retriggered at some point again after the view is reconnected.
+        // where it will be triggered at some point again after the view is reconnected.
         subscriptions.push(observer.start());
       } else {
         // This should only happen if called in the body of the view.

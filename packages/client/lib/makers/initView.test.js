@@ -1,17 +1,27 @@
 import { h } from "../h.js";
 import { initView } from "./initView.js";
-import { isComponent } from "./typeChecking.js";
+import { isView } from "./../helpers/typeChecking.js";
 
 /*========================*\
 ||         Utils          ||
 \*======================== */
 
 const appContext = {
-  services: {
-    app: null,
+  globals: {
+    debug: {
+      exports: {
+        channel() {
+          return {
+            log: () => {},
+            warn: () => {},
+            error: () => {}
+          }
+        }
+      }
+    },
   },
   debug: {
-    makeChannel(name) {
+    makeChannel() {
       return {
         log: console.log.bind(console),
         warn: console.warn.bind(console),
@@ -21,7 +31,7 @@ const appContext = {
   },
 };
 
-appContext.services.app = appContext;
+appContext.globals.app = appContext;
 
 /**
  * Creates a mock DOM node for testing.
@@ -38,7 +48,7 @@ function makeDOMNode() {
         self.children.splice(childIndex, 1);
       }
 
-      const siblingIndex = sibling ? node.children.indexOf(sibling) : -1;
+      const siblingIndex = sibling ? self.children.indexOf(sibling) : -1;
 
       // Insert after sibling
       self.children.splice(siblingIndex, 0, child);
@@ -63,17 +73,17 @@ function makeDOMNode() {
 ||         Tests          ||
 \*======================== */
 
-test("returns a component", () => {
+test("returns a view", () => {
   function Component() {
     return h("p", "This is just a test.");
   }
 
   const result = initView(Component, { appContext });
 
-  expect(isComponent(result)).toBe(true);
+  expect(isView(result)).toBe(true);
 });
 
-test("throws if component doesn't return an element or null", () => {
+test("throws if view doesn't return an element or null", () => {
   function InvalidOne() {}
   function InvalidTwo() {
     return ["what is this"];
@@ -107,17 +117,17 @@ test("connect, disconnect and lifecycle hooks", () => {
   const beforeDisconnect = jest.fn();
   const afterDisconnect = jest.fn();
 
-  function Component() {
-    this.beforeConnect(beforeConnect);
-    this.afterConnect(afterConnect);
-    this.beforeDisconnect(beforeDisconnect);
-    this.afterDisconnect(afterDisconnect);
+  function View(ctx) {
+    ctx.beforeConnect(beforeConnect);
+    ctx.afterConnect(afterConnect);
+    ctx.beforeDisconnect(beforeDisconnect);
+    ctx.afterDisconnect(afterDisconnect);
 
     return makeDOMNode();
     // return h("p", "This is just a test.");
   }
 
-  const result = initView(Component, { appContext });
+  const result = initView(View, { appContext });
 
   expect(parent.children.length).toBe(1);
   expect(result.isConnected).toBe(false);
@@ -173,8 +183,8 @@ test(".node returns the root DOM node", () => {
     return h(DOMComponent);
   }
 
-  function ChildrenComponent() {
-    return this.outlet();
+  function ChildrenComponent(ctx) {
+    return ctx.outlet();
   }
 
   const nullResult = initView(NullComponent, { appContext });
@@ -313,28 +323,28 @@ test("throws when setting a two way attr that isn't a state", () => {
   }).toThrow();
 });
 
-test("self.isConnected reflects the current state", () => {
+test("ctx.isConnected reflects the current state", () => {
   const hookCalled = jest.fn();
 
-  function Component() {
-    this.beforeConnect(() => {
+  function Component(ctx) {
+    ctx.beforeConnect(() => {
       hookCalled();
-      expect(this.isConnected).toBe(false);
+      expect(ctx.isConnected).toBe(false);
     });
 
-    this.afterConnect(() => {
+    ctx.afterConnect(() => {
       hookCalled();
-      expect(this.isConnected).toBe(true);
+      expect(ctx.isConnected).toBe(true);
     });
 
-    this.beforeDisconnect(() => {
+    ctx.beforeDisconnect(() => {
       hookCalled();
-      expect(this.isConnected).toBe(true);
+      expect(ctx.isConnected).toBe(true);
     });
 
-    this.afterDisconnect(() => {
+    ctx.afterDisconnect(() => {
       hookCalled();
-      expect(this.isConnected).toBe(false);
+      expect(ctx.isConnected).toBe(false);
     });
 
     return null;
@@ -373,93 +383,69 @@ test("supports returning subcomponents", () => {
   expect(parent.children.length).toBe(0);
 });
 
-test("routePreload takes element to show() and resolves when done() is called", async () => {
-  const loader = h("div", h("h1", "Loading..."));
-  const mount = jest.fn();
 
-  function Component() {
-    this.loadRoute(({ show, done }) => {
-      show(loader);
 
-      setTimeout(done, 100);
-    });
-
-    return null;
-  }
-
-  const result = initView(Component, { appContext });
-
-  expect(result.hasRoutePreload).toBe(true);
-
-  const start = Date.now();
-  await result.routePreload(mount);
-  const waitTime = Date.now() - start;
-
-  expect(mount).toHaveBeenCalledTimes(1);
-  expect(waitTime >= 100).toBe(true);
-});
-
-test("routePreload show() throws if value isn't an element", async () => {
-  const mount = jest.fn();
-
-  function Component() {
-    this.loadRoute(({ show, done }) => {
-      show("potato");
-      done();
-    });
-
-    return null;
-  }
-
-  const result = initView(Component, { appContext });
-
-  expect(result.hasRoutePreload).toBe(true);
-
-  let error = null;
-
-  try {
-    await result.routePreload(mount);
-  } catch (err) {
-    error = err;
-  }
-
-  expect(error).not.toBe(null);
-});
-
-test("routePreload finishes with promise resolution if loadRoute returns one", async () => {
-  const mount = jest.fn();
-
-  function Component() {
-    this.loadRoute(() => {
-      return new Promise((resolve) => {
-        setTimeout(resolve, 100);
-      });
-    });
-
-    return null;
-  }
-
-  const result = initView(Component, { appContext });
-
-  expect(result.hasRoutePreload).toBe(true);
-
-  const start = Date.now();
-  await result.routePreload(mount);
-  const waitTime = Date.now() - start;
-
-  expect(mount).toHaveBeenCalledTimes(0); // show() was not called
-  expect(waitTime >= 100).toBe(true);
-});
-
-test("routePreload resolves immediately if no loadRoute callback is defined", async () => {
-  const mount = jest.fn();
-
-  function Component() {
-    return null;
-  }
-
-  const result = initView(Component, { appContext });
-
-  expect(result.hasRoutePreload).toBe(false);
-  expect(result.routePreload(mount)).resolves.not.toThrow();
-});
+// test("routePreload show() throws if value isn't an element", async () => {
+//   const mount = jest.fn();
+//
+//   function Component(ctx) {
+//     ctx.loadRoute(({ show, done }) => {
+//       show("potato");
+//       done();
+//     });
+//
+//     return null;
+//   }
+//
+//   const result = initView(Component, { appContext });
+//
+//   expect(result.hasRoutePreload).toBe(true);
+//
+//   let error = null;
+//
+//   try {
+//     await result.routePreload(mount);
+//   } catch (err) {
+//     error = err;
+//   }
+//
+//   expect(error).not.toBe(null);
+// });
+//
+// test("routePreload finishes with promise resolution if loadRoute returns one", async () => {
+//   const mount = jest.fn();
+//
+//   function Component() {
+//     this.loadRoute(() => {
+//       return new Promise((resolve) => {
+//         setTimeout(resolve, 100);
+//       });
+//     });
+//
+//     return null;
+//   }
+//
+//   const result = initView(Component, { appContext });
+//
+//   expect(result.hasRoutePreload).toBe(true);
+//
+//   const start = Date.now();
+//   await result.routePreload(mount);
+//   const waitTime = Date.now() - start;
+//
+//   expect(mount).toHaveBeenCalledTimes(0); // show() was not called
+//   expect(waitTime >= 100).toBe(true);
+// });
+//
+// test("routePreload resolves immediately if no loadRoute callback is defined", async () => {
+//   const mount = jest.fn();
+//
+//   function Component() {
+//     return null;
+//   }
+//
+//   const result = initView(Component, { appContext });
+//
+//   expect(result.hasRoutePreload).toBe(false);
+//   expect(result.routePreload(mount)).resolves.not.toThrow();
+// });

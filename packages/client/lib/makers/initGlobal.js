@@ -4,7 +4,9 @@ import { makeState } from "./makeState.js";
 
 import debug from "../globals/debug.js";
 
-export function initGlobal(fn, { appContext, name, channelPrefix }) {
+export function initGlobal(fn, config) {
+  let { appContext, name, channelPrefix } = config;
+
   channelPrefix = channelPrefix || "global";
 
   // Lifecycle hook callbacks

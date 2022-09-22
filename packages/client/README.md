@@ -46,136 +46,6 @@ app.redirect("*", "/");
 app.connect("#app");
 ```
 
-```js
-import woof, { View, Global } from "@woofjs/client";
-
-class Counter extends Global {
-  static defaultState = {
-    count: 0,
-  };
-
-  increment() {
-    this.set("count", (count) => count + 1);
-  }
-
-  decrement() {
-    this.set("count", (count) => count - 1);
-  }
-
-  reset() {
-    this.set("count", 0);
-  }
-
-  afterConnect() {
-    setInterval(() => {
-      this.increment();
-    }, 1000);
-  }
-
-  create() {
-    return {
-      $count: this.readable("count"),
-      increment: () => this.increment(),
-      decrement: () => this.decrement(),
-      reset: () => this.reset(),
-    };
-  }
-}
-
-function Counter() {
-  this.defaultState = {
-    count: 0,
-  };
-
-  const increment = () => {
-    this.set("count", (count) => count + 1);
-  };
-
-  const decrement = () => {
-    this.set("count", (count) => count - 1);
-  };
-
-  const reset = () => {
-    this.set("count", 0);
-  };
-
-  this.afterConnect(() => {
-    setInterval(increment, 1000);
-  });
-
-  return {
-    $count: this.readable("count"),
-    increment,
-    decrement,
-    reset,
-  };
-}
-
-class List extends View {
-  static defaultState = {
-    items: ["one", "two", "three"],
-  };
-
-  create() {
-    return (
-      <ul>
-        {this.repeat("items", ($item) => {
-          return <li>{$item}</li>;
-        })}
-      </ul>
-    );
-  }
-
-  beforeConnect() {
-    this.log("list will connect");
-  }
-
-  afterConnect() {
-    this.log("list has connected");
-  }
-}
-
-function List() {
-  this.defaultState = {
-    items: ["one", "two", "three"],
-  };
-
-  return (
-    <ul>
-      {this.repeat("list", ($item, $index) => {
-        // What if repeat function is not a view? It just takes bindings to the list item and index and returns a template.
-        return <li>{$item}</li>;
-      })}
-    </ul>
-  );
-}
-
-class HelloWorld extends View {
-  static defaultState = {
-    color: "red",
-  };
-
-  // css helper function
-  static styles = css`
-    h1 {
-      color: ${this.readable("color")};
-    }
-  `;
-
-  create() {
-    return <h1>Hello World</h1>;
-  }
-}
-
-const app = woof();
-
-// Fallback method to automatically add a redirect from "*"?
-app.route("/hello", HelloWorld).fallback();
-// app.redirect("*", "/hello");
-
-app.connect("#app");
-```
-
 ## Routing
 
 At the top level, woof determines what component to display using routes. Routes "match" when the pathname of the current URL fits a pattern. When a route matches, that route's component is displayed.
@@ -193,9 +63,9 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
 - Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
 
 ```js
-app.route("users/:id", function () {
+app.route("users/:id", function (ctx) {
   // Get route params from router.
-  const { $params } = this.global("router");
+  const { $params } = ctx.global("router");
 
   // Get the live value of :id with '.map()'.
   const $id = $params.to((p) => p.id);
@@ -212,31 +82,31 @@ app.route("users/:id", function () {
 Unlike many other frameworks Woof does _not_ use a virtual DOM. Instead, Woof uses objects called States to hold data which needs to change. States are sprinkled into your components, binding their data to the elements where that data is needed. When the value of a State gets updated, any DOM nodes bound to that state are immediately updated to match. No other processing is needed.
 
 ```js
+import { makeView } from "@woofjs/client";
 
-
-function Timer() {
-  this.defaultState = {
+const Timer = makeView(function (ctx) {
+  ctx.defaultState = {
     seconds: 0
+  };
+
+  function increment() {
+    ctx.set("seconds", value => value + 1);
   }
 
-  const increment = () => {
-    this.set("seconds", value => value + 1);
-  }
-
-  const reset = () => {
-    this.set("seconds", 0);
+  function reset() {
+    ctx.set("seconds", 0);
   }
 
   // Increment once per second after the component is connected to the DOM.
-  this.afterConnect(() => {
+  ctx.afterConnect(function () {
     setInterval(increment, 1000);
   });
 
-  const $seconds = this.readable("seconds");
+  const $seconds = ctx.readable("seconds");
 
   return (
     <div>
-      <input type="text" value={$seconds} disabled>
+      <input type="text" value={$seconds} disabled />
       <button onclick={reset}>Reset Counter</button>
     </div>
   );
@@ -250,17 +120,17 @@ Components are reusable modules with their own markup and logic. You can define 
 Components are ubiquitous in front-end frameworks, but Woof's take on them is very inspired by how [React](https://reactjs.org/docs/components-and-props.html) does things.
 
 ```js
-function Example() {
-  this.defaultState = {
+function Example(ctx) {
+  ctx.defaultState = {
     title: "Default Title"
   }
 
-  const $title = this.readable("title");
-
-  return h("div", [
-    h("h1", $title),
-    h("p", "This is a reusable component.")
-  ]);
+  const $title = ctx.readable("title");
+ 
+  return <div>
+    <h1>{$title}</h1>
+    <p>This is a reusable component.</p>
+    </div>
 };
 
 // Views can be mounted directly on a route.

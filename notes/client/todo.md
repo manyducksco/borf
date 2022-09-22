@@ -1,12 +1,15 @@
 # TODO
 
-Prepare for v1.0
+Prepare for client v1.0
 
 - [x] Remove `transitionOut` hook.
 - [x] Move `loadRoute` to the router.
-- [ ] Implement `makeTransitions` helper.
+- [x] Implement `makeTransitions` helper.
 - [ ] Add option to remount all layers when routes match.
-- [ ] Figure out types for `makeGlobal` (return type inference)
+- [ ] Figure out types for `makeGlobal` (inference of return type)
+- [ ] Complete JSX element type definitions
+- [ ] Add full doc comments to type definitions
+- [ ] Refactor core views to put less between user code and the DOM
 
 ## Move `loadRoute` to router
 
@@ -97,3 +100,51 @@ const Example = makeView((ctx) => {
   );
 });
 ```
+
+## Make web components with woof
+
+Register a woof view as a web component. This might be better as a separate library since it wouldn't see much use in a traditional woof app.
+
+```jsx
+import { registerGlobal, registerWebComponent } from "@woofjs/web-components";
+
+// register globals that are accessible to all woof web components on the page
+registerGlobal("example", (ctx) => {
+  return {
+    value: 5,
+  };
+});
+
+// register a view by specifying a tag name
+registerWebComponent("tag-name", (ctx) => {
+  const title = ctx.get("title");
+  const { value } = ctx.global("example");
+
+  return (
+    <section>
+      <header>
+        <h1>{title}</h1>
+      </header>
+
+      <p>Value is: {value}</p>
+
+      {ctx.outlet()}
+    </section>
+  );
+});
+
+// or
+registerWebComponent("tag-name", ExistingView);
+```
+
+This will register the view as a web component that can be used on any HTML page where the script is included.
+
+```html
+<body>
+  <tag-name title="Hello">Takes children just like a normal view.</tag-name>
+
+  <script src="./components/tag-name.js"></script>
+</body>
+```
+
+One downside is that the JSX is still going to require transpiling, so this script would require a build step.

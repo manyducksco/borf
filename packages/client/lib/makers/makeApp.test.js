@@ -9,7 +9,7 @@ test("lifecycle methods", async () => {
   });
   const root = document.createElement("div");
 
-  app.service("http", () => ({})); // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  app.global("http", () => ({})); // Override http, otherwise window.fetch isn't defined in the test so this fails.
 
   const beforeConnect = jest.fn();
   const afterConnect = jest.fn();
@@ -23,9 +23,9 @@ test("lifecycle methods", async () => {
   expect(afterConnect).toHaveBeenCalledTimes(1);
 });
 
-test("throws helpful error when accessing services that haven't been created yet from other services", () => {
-  const one = function () {
-    const two = this.service("two");
+test("throws helpful error when accessing globals that haven't been created yet from other globals", () => {
+  const one = function (ctx) {
+    const two = ctx.service("two");
 
     return {
       value: 1,
@@ -33,7 +33,7 @@ test("throws helpful error when accessing services that haven't been created yet
     };
   };
 
-  const two = function () {
+  const two = function (ctx) {
     return {
       value: 2,
     };
@@ -46,9 +46,9 @@ test("throws helpful error when accessing services that haven't been created yet
   });
   const root = document.createElement("div");
 
-  app.service("http", () => ({})); // Override http, otherwise window.fetch isn't defined in the test so this fails.
-  app.service("one", one);
-  app.service("two", two);
+  app.global("http", () => ({})); // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  app.global("one", one);
+  app.global("two", two);
 
   expect(app.connect(root)).rejects.toThrow(
     "Service 'two' was accessed before it was initialized. Make sure 'two' is registered before other services that access it."
@@ -56,15 +56,13 @@ test("throws helpful error when accessing services that haven't been created yet
 });
 
 test("error doesn't occur if accessing outside of the main function scope", async () => {
-  const one = function () {
-    const ctx = this;
-
+  const one = function (ctx) {
     return {
       value: 1,
 
       // Two is accessible because this function is not called until after it is initialized.
       get total() {
-        return ctx.service("two").value + this.value;
+        return ctx.global("two").value + this.value;
       },
     };
   };
@@ -82,12 +80,12 @@ test("error doesn't occur if accessing outside of the main function scope", asyn
   });
   const root = document.createElement("div");
 
-  app.service("http", () => ({})); // Override http, otherwise window.fetch isn't defined in the test so this fails.
-  app.service("one", one);
-  app.service("two", two);
+  app.global("http", () => ({})); // Override http, otherwise window.fetch isn't defined in the test so this fails.
+  app.global("one", one);
+  app.global("two", two);
 
-  app.route("*", function () {
-    expect(this.service("one").total).toBe(3);
+  app.route("*", function (ctx) {
+    expect(ctx.global("one").total).toBe(3);
 
     return null;
   });

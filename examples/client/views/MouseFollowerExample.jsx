@@ -92,6 +92,10 @@ export const MouseFollowerExample = makeView((ctx) => {
   );
 });
 
+/**
+ * Scales the element up from `0` on enter and down to `0` on exit.
+ * Animates the `scale` value in view's context.
+ */
 const animated = makeTransitions({
   in: function (ctx) {
     animate({
@@ -100,10 +104,10 @@ const animated = makeTransitions({
       duration: 500,
       ease: bounceOut,
       onUpdate: function (latest) {
-        // Can animate by setting state which is picked up by the view.
         ctx.set({ scale: latest });
       },
       onComplete: function () {
+        ctx.set({ scale: 1 });
         ctx.done();
       },
     });
@@ -117,6 +121,7 @@ const animated = makeTransitions({
         ctx.set({ scale: latest });
       },
       onComplete: function () {
+        ctx.set({ scale: 0 });
         ctx.done();
       },
     });

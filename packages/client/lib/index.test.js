@@ -1,13 +1,9 @@
-import { makeApp, makeState, mergeStates, h, when, unless, repeat, watch, bind } from "./index.js";
+import woof, {makeView, makeGlobal, h, makeTransitions} from "./index.js";
 
 test("exports expected things", () => {
-  expect(typeof makeApp).toBe("function");
-  expect(typeof makeState).toBe("function");
-  expect(typeof mergeStates).toBe("function");
+  expect(typeof woof).toBe("function");
+  expect(typeof makeView).toBe("function");
+  expect(typeof makeGlobal).toBe("function");
+  expect(typeof makeTransitions).toBe("function");
   expect(typeof h).toBe("function");
-  expect(typeof when).toBe("function");
-  expect(typeof unless).toBe("function");
-  expect(typeof repeat).toBe("function");
-  expect(typeof watch).toBe("function");
-  expect(typeof bind).toBe("function");
 });

@@ -7,8 +7,8 @@ test("returning data from a handler sends it as a JSON body", async () => {
     { id: 3, name: "Snorlax" },
   ];
 
-  const fetch = makeMockFetch(function () {
-    this.get("/users", () => {
+  const fetch = makeMockFetch((ctx) => {
+    ctx.get("/users", () => {
       return users;
     });
   });
@@ -25,8 +25,8 @@ test("return a promise from a handler sends the resolved value as a JSON body", 
     { id: 3, name: "Snorlax" },
   ];
 
-  const fetch = makeMockFetch(function () {
-    this.get("/users", () => {
+  const fetch = makeMockFetch((ctx) => {
+    ctx.get("/users", () => {
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve(users);
@@ -41,8 +41,8 @@ test("return a promise from a handler sends the resolved value as a JSON body", 
 });
 
 test("handler can read params and body from context object", async () => {
-  const fetch = makeMockFetch(function () {
-    this.put("/users/:id", (ctx) => {
+  const fetch = makeMockFetch((ctx) => {
+    ctx.put("/users/:id", (ctx) => {
       ctx.response.status = 201;
 
       expect(ctx.request.body).toStrictEqual({
