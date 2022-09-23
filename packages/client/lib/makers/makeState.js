@@ -85,7 +85,7 @@ export function makeState({ initialState, bindings, debug }) {
       }
     },
 
-    nuke(key) {
+    unset(key) {
       if (state.has(key)) {
         state.delete(key);
         broadcast(key, undefined);
@@ -221,8 +221,8 @@ function makeBinding(ctx, key, writable = false) {
       ctx.set(key, ...args);
     };
 
-    binding.nuke = (key) => {
-      ctx.nuke(key);
+    binding.unset = (key) => {
+      ctx.unset(key);
     };
 
     binding.readable = () => {

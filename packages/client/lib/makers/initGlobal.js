@@ -9,12 +9,8 @@ export function initGlobal(fn, config) {
 
   channelPrefix = channelPrefix || "global";
 
-  // Lifecycle hook callbacks
   const beforeConnectCallbacks = [];
   const afterConnectCallbacks = [];
-
-  // Subscriptions for observables observed through subscribeTo
-  const subscriptions = [];
 
   // Exception because debug global doesn't exist yet when initializing the debug global.
   const channel = fn === debug ? {} : appContext.globals.debug.exports.channel(`${channelPrefix}:${name}`);
@@ -38,6 +34,7 @@ export function initGlobal(fn, config) {
     get name() {
       return channel.name;
     },
+
     set name(value) {
       channel.name = `${channelPrefix}:${value}`;
     },
@@ -81,8 +78,7 @@ export function initGlobal(fn, config) {
     },
 
     observe(...args) {
-      const observer = state.observe(...args);
-      subscriptions.push(observer.start());
+      state.observe(...args).start();
     },
   };
 

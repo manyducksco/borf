@@ -1,4 +1,10 @@
-import woof, { makeView, makeGlobal, Bindable, Private } from "@woofjs/client";
+import woof, {
+  h,
+  makeView,
+  makeGlobal,
+  Bindable,
+  Private,
+} from "@woofjs/client";
 
 type ExampleGlobalState = {};
 
@@ -38,9 +44,9 @@ app.global("fn", () => ({ isFunction: true }));
 type ExampleState = {
   // name: string | ReadBinding<string> | ReadWriteBinding<string>; // Use types to specify if things can be bound or not.
   name: Bindable<string>; // Bindable is shorthand for the above.
-  children: string;
+  children?: string;
 
-  initialized: Private<boolean>; // Private state cannot be passed as attributes.
+  initialized?: Private<boolean>; // Private state cannot be passed as attributes.
 };
 
 // The binding types above only take effect when passing attributes. All bindings are unwrapped to their base types internally.

@@ -20,7 +20,7 @@ export default makeView((ctx) => {
   return (
     <div class="example">
       <header>
-        <h3>Temperator Converter</h3>
+        <h3>Temperature Converter</h3>
       </header>
       <input
         type="text"

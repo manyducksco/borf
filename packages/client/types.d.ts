@@ -129,7 +129,7 @@ declare module "@woofjs/client" {
      * Show content while this route is preloading.
      */
     show(element: WoofElement): void;
-  } & Pick<StateContext<Unwrapped<S>>, "get" | "set" | "nuke">;
+  } & Pick<StateContext<Unwrapped<S>>, "get" | "set" | "unset">;
 
   // These two options objects need to be defined separately or the context
   // type can't be inferred when you pass a view function directly.
@@ -174,10 +174,9 @@ declare module "@woofjs/client" {
      *
      * @param path - Path to match.
      * @param view - View to render when path matches URL.
-     * @param defineRoutes - Optional function to define nested routes.
+     * @param subroutes - Optional function to define nested routes.
      */
-    // TODO: Infer child type by defineRoutes
-    route<S = {}>(path: string, view: ViewFunction<S, G>, defineRoutes?: SubroutesFunction<G>): this;
+    route<S = {}>(path: string, view: ViewFunction<S, G>, subroutes?: SubroutesFunction<G>): this;
 
     /**
      * Display `view` when `path` matches the current URL. Nested routes defined in `defineRoutes` are
@@ -185,12 +184,11 @@ declare module "@woofjs/client" {
      *
      * @param path - Path to match.
      * @param view - View to render when path matches URL.
-     * @param defineRoutes - Optional function to define nested routes.
+     * @param subroutes - Optional function to define nested routes.
      */
-    // TODO: Infer child type by defineRoutes
-    route<S = {}>(path: string, view: View<S, G>, defineRoutes?: SubroutesFunction<G>): this;
+    route<S = {}>(path: string, view: View<S, G>, subroutes?: SubroutesFunction<G>): this;
 
-    route(path: string, view: Template, defineRoutes?: SubroutesFunction<G>): this;
+    route(path: string, view: Template, subroutes?: SubroutesFunction<G>): this;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -213,13 +211,21 @@ declare module "@woofjs/client" {
     toString(): string;
   }
 
-  export type Template = {
+  export interface Template {
     readonly isTemplate: true;
     init(appContext: AppContext<any>): View<unknown, unknown>;
-  };
+  }
 
-  export function h(element: string | View<any, any>, attrs: Object, ...children: Template[]): Template;
-  export function h(element: string | View<any, any>, ...children: Template[]): Template;
+  export function h<Tag extends keyof JSX.IntrinsicElements>(
+    tag: Tag,
+    attributes: JSX.IntrinsicElements[Tag],
+    ...children: WoofElement[]
+  ): Template;
+  export function h(tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Template;
+  export function h(tag: string, ...children: WoofElement[]): Template;
+
+  export function h(view: View<any, any>, ...children: WoofElement[]): Template;
+  export function h<State>(view: View<State, any>, state: State, ...children: WoofElement[]): Template;
 
   /*==================================*\
   ||           Debug Context          ||
@@ -285,12 +291,11 @@ declare module "@woofjs/client" {
     [Key in keyof State]: Unwrap<State[Key]>;
   };
 
+  // A type consisting of all properties that can be deleted.
+  type DeletableKeys<State> = Required<ExcludeRequiredProps<State>>;
   type KeysOfType<T, U> = { [K in keyof T]: T[K] extends U ? K : never }[keyof T];
   type RequiredKeys<T> = Exclude<KeysOfType<T, Exclude<T[keyof T], undefined>>, undefined>;
   type ExcludeRequiredProps<T> = Omit<T, RequiredKeys<T>>;
-
-  // A type consisting of all properties that can be deleted.
-  type DeletableKeys<State> = Required<ExcludeRequiredProps<State>>;
 
   /**
    * Context for stateful objects like views and globals.
@@ -298,18 +303,28 @@ declare module "@woofjs/client" {
   interface StateContext<State> {
     defaultState?: Omit<State, "children">;
 
+    /**
+     * Returns the whole state.
+     */
     get(): State;
+
+    /**
+     * Returns the current value of `key`.
+     *
+     * @param key - State key.
+     */
     get<Key extends keyof State>(key: Key): State[Key];
 
     set<Key extends keyof State>(key: Key, value: State[Key]): void;
     set<Key extends keyof State>(key: Key, value: Readable<State[Key]>): void;
     set<Key extends keyof State>(key: Key, callback: (value: State[Key]) => void | State[Key]): void;
+
     set(values: { [Key in keyof State]: State[Key] }): void;
 
     /**
-     * Deletes a key from state.
+     * Resets value of `key` to `undefined`, deleting it.
      */
-    nuke<Key extends keyof DeletableKeys<State>>(key: Key): void;
+    unset<Key extends keyof DeletableKeys<State>>(key: Key): void;
 
     // TODO: Type annotations
     merge<V>(merge: (value: State) => V): Readable<V>;
@@ -332,17 +347,6 @@ declare module "@woofjs/client" {
         value3: T3 extends keyof State ? State[T3] : Unwrap<T3>
       ) => V
     ): Readable<V>;
-
-    observe<Value>(observer: Observer<Value>): void;
-    observe<Value>(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): void;
-
-    observe<Key extends keyof State>(key: Key, observer: Observer<State[Key]>): void;
-    observe<Key extends keyof State>(
-      key: Key,
-      next?: (value: State[Key]) => void,
-      error?: (err: Error) => void,
-      complete?: () => void
-    ): void;
 
     /**
      * Subscribes to an observable while this view is connected.
@@ -367,6 +371,17 @@ declare module "@woofjs/client" {
     observe<Value>(
       observable: Observable<Value>,
       next?: (value: Value) => void,
+      error?: (err: Error) => void,
+      complete?: () => void
+    ): void;
+
+    observe<Value>(observer: Observer<Value>): void;
+    observe<Value>(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): void;
+
+    observe<Key extends keyof State>(key: Key, observer: Observer<State[Key]>): void;
+    observe<Key extends keyof State>(
+      key: Key,
+      next?: (value: State[Key]) => void,
       error?: (err: Error) => void,
       complete?: () => void
     ): void;
@@ -434,7 +449,7 @@ declare module "@woofjs/client" {
     /**
      * Deletes this key from its bound state, returning the value to `undefined`.
      */
-    nuke(): void;
+    unset(): void;
 
     /**
      * Creates a new read-only binding to this value.
@@ -446,6 +461,9 @@ declare module "@woofjs/client" {
   ||               View               ||
   \*==================================*/
 
+  /**
+   * Stores a value when called with one and returns the most recent when called with none.
+   */
   export interface Ref<T> {
     /**
      * Returns the most recent value this ref was called with.
@@ -458,9 +476,9 @@ declare module "@woofjs/client" {
     (value: T): void;
   }
 
-  export function makeView<S, G>(fn: ViewFunction<S, G>): View<S, G>;
+  export function makeView<S = any, G = any>(fn: ViewFunction<S, G>): View<S, G>;
 
-  export type ViewFunction<S, G> = (ctx: ViewContext<S, G>) => Template | null;
+  export type ViewFunction<S = any, G = any> = (ctx: ViewContext<S, G>) => Template | null;
 
   export type View<S, G> = (props: FakeJSXProps<Partial<S>>) => {
     create(): Template;
@@ -471,11 +489,13 @@ declare module "@woofjs/client" {
     [Key in keyof State]: State[Key];
   };
 
-  export interface ViewContext<S, G> extends StateContext<Unwrapped<S>>, DebugChannel {
+  export interface ViewContext<S = any, G = any> extends StateContext<Unwrapped<S>>, DebugChannel {
     /**
      * True while this view is connected to the DOM.
      */
     readonly isConnected: boolean;
+
+    // observe<>()
 
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
@@ -727,7 +747,7 @@ declare module "@woofjs/client" {
 
     /**
      * Sets multiple headers at once using an object.
-     * Merges values with existing headers.
+     * Merge values with existing headers.
      */
     header(headers: { [name: string]: string }): this;
 
@@ -1459,7 +1479,7 @@ declare namespace JSX {
     onplay: EventHandler<Event>;
     /**
      * The `playing` event is fired after playback is first started, and whenever it is restarted.
-     * For example it is fired when playback resumes after having been paused or delayed due to lack of data.
+     * For example, it is fired when playback resumes after having been paused or delayed due to lack of data.
      *
      * This event is not cancelable and does not bubble.
      *
@@ -2344,7 +2364,7 @@ declare namespace JSX {
     /**
      * The _Line Break_ element.
      *
-     * Produces a line break (carriage-return) in text. HTML does not preserve line breaks outside of a `<pre>` or element
+     * Produces a line break (carriage-return) in text. HTML does not preserve line breaks outside a `<pre>` or element
      * with similar CSS, but they can be explicitly represented with a `<br>` element.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/br
