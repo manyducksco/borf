@@ -1,5 +1,4 @@
 declare module "@woofjs/client" {
-  import { Concat } from "typescript-tuple";
   import { History } from "history";
 
   /**
@@ -2177,31 +2176,189 @@ declare namespace JSX {
     dfn: DfnElementAttributes;
 
     /**
-     *
+     * Indicates an abbreviation or acronym. Provide a full expansion of the term in plain text on first use, along with the `<abbr>` to mark up the abbreviation.
+     * This informs the user what the abbreviation or acronym means.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/abbr
      */
     abbr: AbbrElementAttributes;
 
+    /**
+     * Represents small annotations that are rendered above, below, or next to base text, usually used for showing the pronunciation of East Asian characters.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ruby
+     */
     ruby: RubyElementAttributes;
+
+    /**
+     * Specifies the ruby text component of a ruby annotation, which is used to provide pronunciation, translation,
+     * or transliteration information for East Asian typography. The `<rt>` element must always be contained within a `<ruby>` element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/rt
+     */
     rt: RtElementAttributes;
+
+    /**
+     * Provide a fall-back parentheses for browsers that do not support display of ruby annotations using the `<ruby>` element.
+     * One `<rp>` element should contain the `<rt>` element that contains the annotation's text.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/rp
+     */
     rp: RpElementAttributes;
+
+    /**
+     * Wraps a piece of content, providing an additional machine-readable version in a `value` attribute.
+     * For date or time related data, a `<time>` element is preferred.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/data
+     */
     data: DataElementAttributes;
+
+    /**
+     * Represents a specific period in time. It may include the `datetime` attribute to translate dates into machine-readable format,
+     * allowing for better search engine results or custom features such as reminders.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
+     */
     time: TimeElementAttributes;
+
+    /**
+     * Displays its contents styled in a fashion intended to indicate that the text is a short fragment of computer code.
+     * By default, the content text is displayed using a monospace font.
+     *
+     * You can display larger, multi-line `<code>` snippets by wrapping them with `<pre>` tags to keep the original line breaks.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/code
+     */
     code: CodeElementAttributes;
+
+    /**
+     * Represents the name of a variable in a mathematical expression or a programming context.
+     * Represented in italics by default in most browsers.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/var
+     */
     var: VarElementAttributes;
+
+    /**
+     * Represents `<samp>`le output from a computer program. Displayed with a monospace font by default.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/samp
+     */
     samp: SampElementAttributes;
+
+    /**
+     * Represents text a user would input with keyboard, voice, or another text entry device.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/kbd
+     */
     kbd: KbdElementAttributes;
+
+    /**
+     * Represents a superscript (like the 2 in E=mc2).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sup
+     */
     sup: SupElementAttributes;
+
+    /**
+     * Represents a subscript (like the 2 in H2O).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sub
+     */
     sub: SubElementAttributes;
+
+    /**
+     * The _idiomatic text_ element.
+     *
+     * Represents a range of text that is set off from the normal text for some reason, such as idiomatic text,
+     * technical terms, taxonomical designations, among others. Historically, these have been presented using italicized type,
+     * which is the original source of the `<i>` naming of this element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/i
+     */
     i: IElementAttributes;
+
+    /**
+     * The _Bring Attention To_ element.
+     *
+     * Draws the reader's attention to the element's contents, which are not otherwise granted special importance.
+     * This was formerly known as the Boldface element, and most browsers still draw the text in boldface.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/b
+     */
     b: BElementAttributes;
+
+    /**
+     * The _Unarticulated Annotation_ (Underline) element.
+     *
+     * Represents a span of inline text which should be rendered in a way that indicates that it has a non-textual annotation.
+     * This is rendered by default as a simple solid underline.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/u
+     */
     u: UElementAttributes;
+
+    /**
+     * The _Mark Text_ element.
+     *
+     * Represents text which is marked or highlighted for reference or notation purposes,
+     * due to the marked passage's relevance or importance in the enclosing context.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/mark
+     */
     mark: MarkElementAttributes;
+
+    /**
+     * The _Bidirectional Isolate__ element.
+     *
+     * Tells the browser's bidirectional algorithm to treat the text it contains in isolation from its surrounding text.
+     * It's particularly useful when a website dynamically inserts some text and doesn't know the directionality of the text being inserted.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdi
+     */
     bdi: BdiElementAttributes;
+
+    /**
+     * The _Bidirectional Text Override_ element.
+     *
+     * Overrides the current directionality of text, so that the text within is rendered in a different direction.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdo
+     */
     bdo: BdoElementAttributes;
+
+    /**
+     * The _Content Span_ element.
+     *
+     * A generic inline container for phrasing content, which does not inherently represent anything.
+     * It can be used to group elements for styling purposes (using the `class` or `id` attributes),
+     * or because they share attribute values, such as `lang`. It should be used only when no other semantic element
+     * is appropriate. `<span>` is very much like a `<div>` element, but `<div>` is a block-level element
+     * whereas `<span>` is an inline element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/span
+     */
     span: SpanElementAttributes;
+
+    /**
+     * The _Line Break_ element.
+     *
+     * Produces a line break (carriage-return) in text. HTML does not preserve line breaks outside of a `<pre>` or element
+     * with similar CSS, but they can be explicitly represented with a `<br>` element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/br
+     */
     br: BrElementAttributes;
+
+    /**
+     * The _Line Break Opportunity_ element.
+     *
+     * Represents a word break opportunity—a position within text where the browser may optionally break a line,
+     * though its line-breaking rules would not otherwise create a break at that location.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/wbr
+     */
     wbr: WbrElementAttributes;
   }
 
@@ -2209,19 +2366,43 @@ declare namespace JSX {
   || 4.6                          Links ||
   \*====================================*/
 
+  // --- This is just about <a> and <area> attributes in the spec.
+
   /*====================================*\
   || 4.7                          Edits ||
   \*====================================*/
 
-  interface ModElementAttributes extends ElementAttributes<ModElementAttributes> {
+  interface ModElementAttributes extends ElementAttributes<ModElementAttributes>, TimeElementAttributes {
+    /**
+     * A URL pointing to content that explains this change.
+     * User agents may allow users to follow such citation links, but they are primarily intended for private use
+     * (e.g., by server-side scripts collecting statistics about a site's edits), not for readers.
+     */
     cite?: MaybeObservable<string | undefined>;
-    datetime?: MaybeObservable<string | undefined>;
   }
   interface InsElementAttributes extends ModElementAttributes {}
   interface DelElementAttributes extends ModElementAttributes {}
 
   interface IntrinsicElements {
+    /**
+     * The _Inserted Text_ element.
+     *
+     * Represents a range of text that has been added to a document. You can use the `<del>` element to similarly
+     * represent a range of text that has been deleted from the document.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ins
+     */
     ins: InsElementAttributes;
+
+    /**
+     * The _Deleted Text_ element.
+     *
+     * Represents a range of text that has been deleted from a document. This can be used when rendering "track changes"
+     * or source code diff information, for example. The `<ins>` element can be used for the opposite purpose: to indicate
+     * text that has been added to the document.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/del
+     */
     del: DelElementAttributes;
   }
 
@@ -2229,24 +2410,103 @@ declare namespace JSX {
   || 4.8               Embedded Content ||
   \*====================================*/
 
+  // picture
+  // source
+  // img
+  // iframe
+  // embed
+  // object
+  // video
+  // audio
+  // track
+  // map
+  // area
+
   /*====================================*\
   || 4.9                   Tabular Data ||
   \*====================================*/
+
+  // table
+  // caption
+  // colgroup
+  // col
+  // tbody
+  // thead
+  // tfoot
+  // tr
+  // td
+  // th
 
   /*====================================*\
   || 4.10                         Forms ||
   \*====================================*/
 
+  // form
+  // label
+  // input
+  // button
+  // select
+  // datalist
+  // optgroup
+  // option
+  // textarea
+  // output
+  // progress
+  // meter
+  // fieldset
+  // legend
+
   /*====================================*\
   || 4.11          Interactive elements ||
   \*====================================*/
+
+  // details
+  // summary
+  // dialog
 
   /*====================================*\
   || 4.12                     Scripting ||
   \*====================================*/
 
-  // Temp fallback while types are being worked on.
+  // UNSUPPORTED script
+  // UNSUPPORTED noscript
+  // UNSUPPORTED template
+  // UNSUPPORTED slot
+
+  interface CanvasElementAttributes extends ElementAttributes<HTMLCanvasElement> {
+    /**
+     * The width of the coordinate space in CSS pixels. Defaults to 300.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#attributes
+     */
+    width?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * The height of the coordinate space in CSS pixels. Defaults to 150.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#attributes
+     */
+    height?: MaybeObservable<string | number | undefined>;
+  }
+
   interface IntrinsicElements {
-    [tagname: string]: any;
+    /**
+     * The _Graphics Canvas_ element.
+     *
+     * Use it with either the [canvas scripting API](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
+     * or the [WebGL API](https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API) to draw graphics and animations.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas
+     */
+    canvas: CanvasElementAttributes;
+  }
+
+  /*====================================*\
+  ||                           Catchall ||
+  \*====================================*/
+
+  // Catchall allows any other tag. Useful for custom elements or future additions to HTML.
+  interface IntrinsicElements {
+    [tag: string]: any;
   }
 }

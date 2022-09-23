@@ -2,14 +2,12 @@
 
 Front end routing, components and state for dogs. 🐕
 
-woof is a client-side JavaScript framework that shamelessly steals the best ideas from other frameworks; components from [React](https://reactjs.org/docs/introducing-jsx.html), services from [Angular](https://angular.io/guide/architecture-services), built-in routing inspired by [Choo](https://github.com/choojs/choo#routing) and observable state containers to tie all of that together.
-
 ## Table of Concepts
 
 1. [Routing](#routing)
-2. [States](#reactivity-with-states)
-3. [Components](#components)
-4. [Services](#services)
+2. [State](#state)
+3. [Views](#views)
+4. [Globals](#globals)
 
 Outline for future guide:
 
@@ -48,19 +46,26 @@ app.connect("#app");
 
 ## Routing
 
-At the top level, woof determines what component to display using routes. Routes "match" when the pathname of the current URL fits a pattern. When a route matches, that route's component is displayed.
+At the top level, woof determines what view to display using routes. Routes "match" when the pathname of the
+current URL fits a pattern. When a route matches, that route's view is displayed.
 
-You'll notice that even a simple Hello World requires us to set up a route. Routing is central to what the web is. By following this convention several things users expect from a web app will just work out of the box; back and forward buttons, sharable URLs, bookmarks, etc.
+You'll notice that even a simple Hello World requires us to set up a route. Routing is central to what the web is. By
+following this convention several things users expect from a web app will just work out of the box; back and forward
+buttons, sharable URLs, bookmarks, etc.
 
-Routing in Woof is heavily inspired by [choo.js](https://www.choo.io/docs/routing) and [@reach/router](https://reach.tech/router/).
+Routing in Woof is heavily inspired by [choo.js](https://www.choo.io/docs/routing)
+and [@reach/router](https://reach.tech/router/).
 
 ### Route Matching
 
 Route strings are a set of fragments separated by `/`. These fragments are of three types.
 
 - Static: `/this/is/static` and will match only when the route is exactly `/this/is/static`.
-- Dynamic: `/users/:id/edit` will match anything that fits the static parts of the route and stores the parts beginning with `:` as named params. This can be anything, like `/users/123/edit` or `/users/BobJones/edit`. You can access these values inside the component.
-- Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` param. Wildcards must be at the end of a route.
+- Dynamic: `/users/:id/edit` will match anything that fits the static parts of the route and stores the parts beginning
+  with `:` as named params. This can be anything, like `/users/123/edit` or `/users/BobJones/edit`. You can access these
+  values inside the view.
+- Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard`
+  param. Wildcards must be at the end of a route.
 
 ```js
 app.route("users/:id", function (ctx) {
@@ -77,27 +82,31 @@ app.route("users/:id", function (ctx) {
 
 > TODO: Describe nested routing
 
-## Reactivity with States
+## State
 
-Unlike many other frameworks Woof does _not_ use a virtual DOM. Instead, Woof uses objects called States to hold data which needs to change. States are sprinkled into your components, binding their data to the elements where that data is needed. When the value of a State gets updated, any DOM nodes bound to that state are immediately updated to match. No other processing is needed.
+In a woof app, there are two types of stateful objects; [views](#views) and [globals](#globals). These two share some common methods for storing
+variables in _state_ and creating observable bindings. Views wire up those bindings to DOM nodes. Globals can keep shared
+state by exporting bindings of their own for use in many views.
+
+When the values stored in state change, anything observing those bindings is immediately notified and updated to match.
 
 ```js
 import { makeView } from "@woofjs/client";
 
 const Timer = makeView(function (ctx) {
   ctx.defaultState = {
-    seconds: 0
+    seconds: 0,
   };
 
   function increment() {
-    ctx.set("seconds", value => value + 1);
+    ctx.set("seconds", (value) => value + 1);
   }
 
   function reset() {
     ctx.set("seconds", 0);
   }
 
-  // Increment once per second after the component is connected to the DOM.
+  // Increment once per second after the view is connected to the DOM.
   ctx.afterConnect(function () {
     setInterval(increment, 1000);
   });
@@ -113,25 +122,26 @@ const Timer = makeView(function (ctx) {
 });
 ```
 
-## Components
+## Views
 
-Components are reusable modules with their own markup and logic. You can define a component once and reuse it as many times as you need. Components can take inputs called attributes that can be accessed inside the component to change how they behave or what they display.
+Views are reusable modules with their own markup and logic. You can define a view once and reuse it as many
+times as you need. Views can take attributes that set their default state and establish data bindings.
 
-Components are ubiquitous in front-end frameworks, but Woof's take on them is very inspired by how [React](https://reactjs.org/docs/components-and-props.html) does things.
-
-```js
+```jsx
 function Example(ctx) {
   ctx.defaultState = {
-    title: "Default Title"
-  }
+    title: "Default Title",
+  };
 
   const $title = ctx.readable("title");
- 
-  return <div>
-    <h1>{$title}</h1>
-    <p>This is a reusable component.</p>
+
+  return (
+    <div>
+      <h1>{$title}</h1>
+      <p>This is a reusable view.</p>
     </div>
-};
+  );
+}
 
 // Views can be mounted directly on a route.
 app.route("example", Example);
@@ -139,82 +149,91 @@ app.route("example", Example);
 // They can also be used inside another view.
 app.route("other", function () {
   return h("div", [
-    // Pass attributes in an object just like regular HTML elements
-    h(Example, { title: "In Another Component" })
-
-    // You can also use components with JSX like so:
-    <Example title="In Another Component">
+    // Pass state as attributes.
+    h(Example, { title: "In Another View" }),
   ]);
 });
 ```
 
-### Component Context
+### View Context
 
-Component functions have their component context bound to `this`.
+Views receive a context object they may use to translate state and lifecycle into DOM nodes.
 
 ```js
-function Example() {
-  // Access services by the name they were registered under.
-  const service = this.service("name");
-
-  // Print debug messages
-  this.debug.name = "component:Example"; // Prefix messages in the console to make tracing easier at a glance.
-  this.debug.log("Something happened.");
-  this.debug.warn("Something happened!");
-  this.debug.error("SOMETHING HAPPENED!!!!");
+function Example(ctx) {
+  // Access globals by the name they were registered under.
+  const global = ctx.global("name");
 
   /*=================================*\
-  ||   Component Lifecycle Methods   ||
+  ||             Logging             ||
   \*=================================*/
 
-  this.isConnected; // true if component is connected
+  ctx.name = "Example"; // Prefix messages in the console to make tracing easier at a glance.
+  ctx.log("Something happened.");
+  ctx.warn("Something happened!");
+  ctx.error("SOMETHING HAPPENED!!!!");
 
-  this.beforeConnect(() => {
-    // Runs when the component is about to be (but is not yet) added to the page.
+  /*=================================*\
+  ||              State              ||
+  \*=================================*/
+
+  // Set the default values for this view's state.
+  ctx.defaultState = {
+    title: "The Default Title",
+  };
+
+  const title = ctx.get("title");
+  const $title = ctx.readable("title");
+  const $$title = ctx.writable("title");
+
+  ctx.set("title", "New Title");
+  ctx.set({
+    title: "Newer Title",
   });
 
-  this.afterConnect(() => {
-    // Runs after the component is added to the page.
-  });
-
-  this.beforeDisconnect(() => {
-    // Runs when the component is about to be (but is not yet) removed from the page.
-  });
-
-  this.afterDisconnect(() => {
-    // Runs after the component is removed from the page.
-  });
-
-  this.transitionOut(() => {
-    return new Promise((resolve) => {
-      // Runs when the component is about to leave the DOM.
-      // Delays disconnection and 'afterDisconnect' hook until the promise resolves.
-      // Use this to set up an exit animation.
-
-      setTimeout(resolve, 500);
-    });
-  });
-
-  // Runs a callback function each time an observable emits a value while this component is connected.
-  this.subscribeTo($title, (title) => {
+  // Runs a callback function each time a state changes (or any observable emits a value).
+  ctx.observe($title, (title) => {
     console.log("title attribute changed to " + title);
   });
 
   /*=================================*\
-  ||            Children             ||
+  ||            Lifecycle            ||
   \*=================================*/
 
-  // Access the component's children with `ctx.children`,
-  // in this case to render them inside a <div>
-  return h("div", this.children);
+  ctx.isConnected; // true if view is connected
+
+  ctx.beforeConnect(() => {
+    // Runs when the view is about to be (but is not yet) added to the page.
+  });
+
+  ctx.afterConnect(() => {
+    // Runs after the view is added to the page.
+  });
+
+  ctx.beforeDisconnect(() => {
+    // Runs when the view is about to be (but is not yet) removed from the page.
+  });
+
+  ctx.afterDisconnect(() => {
+    // Runs after the view is removed from the page.
+  });
+
+  /*=================================*\
+  ||      Rendering & Children       ||
+  \*=================================*/
+
+  // Render children inside a `<div>`
+  return h("div", ctx.outlet());
 }
 ```
 
 ### Templating
 
-To create elements in woof, you import the `h` function. The `h` function is heavily based on [hyperscript](https://github.com/hyperhype/hyperscript). There are also helpful utility functions for conditionals, loops and more.
+To create elements in woof, you import the `h` function. The `h` function is heavily based
+on [hyperscript](https://github.com/hyperhype/hyperscript). There are also helpful utility functions for conditionals,
+loops and more.
 
-```js
+```jsx
 import { h } from "@woofjs/client";
 
 function Example() {
@@ -228,12 +247,12 @@ function Example() {
       h("li", "Item 4"),
       h("li", "Item 5"),
       h("li", "Item 6"),
-    ]);
-  ])
-};
+    ]),
+  ]);
+}
 ```
 
-That component renders the following HTML.
+That view renders the following HTML.
 
 ```html
 <section>
@@ -252,7 +271,9 @@ That component renders the following HTML.
 
 #### Using JSX
 
-Woof supports JSX, so if you want to write your components as HTML to begin with you totally can. However, it's important to understand how `h` works because that's ultimately what the JSX compiles down to. JSX is simply an alternate syntax for `h`.
+Woof supports JSX, so if you want to write your views as HTML to begin with you totally can. However, it's
+important to understand how `h` works because that's ultimately what the JSX compiles down to. JSX is simply an
+alternate syntax for `h`.
 
 > Note that Woof uses a `class` attribute like HTML rather than `className` like React.
 
@@ -275,166 +296,158 @@ function Example() {
 }
 ```
 
-### Using components
-
-Using a component is the same as creating an HTML element, but you call `$` with the component instead of a tag name.
+### Using views
 
 ```js
 function Example() {
-  return h(Subcomponent);
-});
+  return h(Subview);
+}
 
-function Subcomponent() {
-  return h("h1", "Hello from inside another component!");
-};
+function Subview() {
+  return h("h1", "Hello from inside another view!");
+}
 ```
 
-When using subcomponents, you can pass them attributes just like you can with HTML elements. The Example component in the following code will display `<h1>Hello world!</h1>`.
+When using subviews, you can pass them attributes just like you can with HTML elements. The Example views in
+the following code will display `<h1>Hello world!</h1>`.
 
 ```js
 function Example() {
-  return h(Subcomponent, { name: "world" });
-});
+  return h(Subview, { name: "world" });
+}
 
-function Subcomponent() {
-  const name = this.$attrs.get("name");
+function Subview(ctx) {
+  const name = ctx.get("name");
 
   return h("h1", "Hello ", name, "!");
-};
+}
 ```
 
 The same thing with JSX:
 
 ```js
 function Example() {
-  return <Subcomponent name="world" />
-});
+  return <Subview name="world" />;
+}
 
-function Subcomponent() {
-  const name = this.$attrs.get("name");
+function Subview(ctx) {
+  const name = ctx.get("name");
 
-  return <h1>Hello {name}!</h1>
-};
+  return <h1>Hello {name}!</h1>;
+}
 ```
 
 ### Helpers
 
-The `h` function supports creating elements and binding data to them. Helpers supply the control flow you would expect like conditionals and loops.
+Helpers supply the control flow you would expect when creating dynamic views, like conditionals and loops.
 
 #### Conditionals (`when` and `unless`)
 
-> `when($condition, element)`
->
-> `unless($condition, element)`
+- `ctx.when($binding, element)`
+- `ctx.when("key", element)`
 
-The `when` helper displays the element only when the condition is truthy while `unless` displays the element only when the condition is falsy. The condition can be a plain value or a \$state.
+- `ctx.unless($binding, element)`
+- `ctx.unless("key", element)`
+
+The `when` helper displays the element only when the bound value is truthy, while `unless` displays the element only when
+the bound value is falsy. The condition can be a plain value, a $binding, or the name of a view state key to bind to.
 
 ```js
-import { makeState, when, unless } from "@woofjs/client";
-
-function Example() {
-  const $on = makeState(false);
+function Example(ctx) {
+  ctx.defaultState = {
+    on: false,
+  };
 
   function toggle() {
-    $on.set(on => !on);
+    ctx.set("on", (on) => !on);
   }
 
   return h("div", [
-    when($on, h("h1", "Is On")),
-    unless($on, h("h1", "Is Off")),
+    ctx.when("on", h("h1", "Is On")),
+    ctx.unless("on", h("h1", "Is Off")),
 
-    h("button", { onclick: toggle }, "Toggle")
+    h("button", { onclick: toggle }, "Toggle"),
   ]);
-});
+}
 ```
 
-#### Looping (`repeat`)
+#### Looping
 
-> `repeat($list, component)`
+- `ctx.repeat($binding, callback)`
+- `ctx.repeat("key", callback)`
 
-Renders a component once for each item in an array. If the array is stored inside a $state the list will update whenever that $state is updated.
+Repeats a render callback once for each item in an array.
 
 ```js
 import { makeState, repeat } from "@woofjs/client";
 
-function Example() {
-  const $list = makeState(["one", "two", "three"]);
+function Example(ctx) {
+  ctx.defaultState = {
+    list: ["one", "two", "three"],
+  };
 
   return h(
     "ul",
 
     // Render once for each item in $list. Updates when $list changes.
-    repeat($list, function () {
-      const $value = this.$attrs.map((attrs) => attrs.value);
-
-      // Return an <li> that contains the current value of this $list item.
-      return h("li", $value);
+    ctx.repeat("list", function ($item) {
+      // Return an <li> that contains the current value of this list item.
+      return h("li", $item);
     })
   );
 }
 ```
 
-The `repeat` function uses keys to identify which items have been changed, added or removed. By default, `repeat` uses the value itself as a key. You must specify a key yourself if your array might have two or more identical values. If you're looping through an array of objects with unique IDs, you will usually want to use the object's ID as the key.
+The `repeat` function uses keys to identify which items have been changed, added or removed. By default, `repeat` uses
+the value itself as a key. You must specify a key yourself if your array might have two or more identical values. If
+you're looping through an array of objects with unique IDs, you will usually want to use the object's ID as the key.
 
 If you'd like to specify the key you can pass a function as the third argument:
 
 ```js
 // Use the list item's `id` field as the key.
-repeat($list, Component, (item, index) => item.id);
+ctx.repeat($list, View, (item, index) => item.id);
 ```
 
-#### watch
+#### Children &amp; Other Elements
 
-> `watch($state, renderFn)`
+- `ctx.outlet()`
+- `ctx.outlet($binding)`
+- `ctx.outlet("key")`
+- `ctx.outlet($binding, callback)`
+- `ctx.outlet("key", callback)`
 
-Calls a render function whenever the state changes and displays the return value.
+Renders elements from state to DOM, optionally through the use of a render callback to convert the value into something
+renderable. Called anew every time the value changes.
+
+Renders `children` if called without any arguments.
 
 ```js
 import { makeState, watch } from "@woofjs/client";
 
-function Example() {
-  const $value = makeState("one");
+function Example(ctx) {
+  ctx.defaultState = {
+    value: "one",
+  };
 
   return h(
     "div",
 
     // Displays the return value of the function each time the value changes.
-    watch($value, (value) => {
-      return <span>{value}!!!</span>;
+    ctx.outlet("value", ($value) => {
+      return <span>{$value}!!!</span>;
     })
-  );
-}
-```
-
-#### Two Way Binding (`bind`)
-
-> bind(\$state[, event])
-
-Creates a two-way binding to a state. When this bound state is passed to the `value` attribute on an input element, the state will be updated whenever the input's value changes.
-
-```js
-import { makeState, bind } from "@woofjs/client";
-
-function Example() {
-  const $value = makeState("");
-
-  // Displays what the user typed above the text input.
-  return (
-    <div>
-      <p>You typed: {$value}</p>
-
-      <input type="text" value={bind($value)} />
-    </div>
   );
 }
 ```
 
 ## Dynamic Classes
 
-Components also support dynamic classes. Pass an object where the keys are the class names, and the classes are added to the element while the values are truthy. The values can be \$states if you want to toggle classes dynamically.
+Components also support dynamic classes. Pass an object where the keys are the class names, and the classes are added to
+the element while the values are truthy. The values can be \$states if you want to toggle classes dynamically.
 
 ```jsx
-function Example() {
+function Example(ctx) {
   return (
     <div
       class={{
@@ -442,10 +455,10 @@ function Example() {
         container: true,
 
         // Includes "active" class when 'isActive' attribute is truthy
-        active: this.$attrs.map((a) => a.isActive),
+        active: ctx.readable("isActive"),
       }}
     >
-      {this.children}
+      {ctx.outlet()}
     </div>
   );
 }
@@ -454,53 +467,60 @@ function Example() {
 Multiple classes:
 
 ```jsx
-function Example() {
-  return <div class={["one", "two"]}>{this.children}</div>;
+function Example(ctx) {
+  return <div class={["one", "two"]}>{ctx.outlet()}</div>;
 }
 ```
 
 A combination:
 
 ```jsx
-function Example() {
+function Example(ctx) {
   // The 'container' class is always included while the ones
   // inside the object are shown if their value is truthy.
   return (
     <div
-      class={["container", {
-        active: this.$attrs.map(a => a.isActive),
-      }}
+      class={[
+        "container",
+        {
+          active: ctx.readable("isActive"),
+        },
+      ]}
     >
-      {this.children}
+      {ctx.outlet()}
     </div>
   );
-};
+}
 ```
 
-## Services
+## Globals
 
-Services are also a central feature of [Angular](https://angular.io/guide/architecture-services).
+Globals are a great way to share state and logic between multiple views. Sometimes you have components in different
+heirarchies that don't easily support typical data binding, such as when you need to access the same data from multiple
+routes.
 
-Services are a great way to share state and logic between multiple components. Usually, parent components can pass state down to children in the form of attributes. Sometimes you have components in different heirarchies that don't easily support this, such as when you need to access the same data from different pages.
+Globals are singletons, meaning only one copy of that global exists per app, and all `.global(name)` calls get the
+same instance of `name`.
 
-Services are singletons, meaning only one copy of the service exists per app, and all `.service(name)` calls get the same instance of `name`.
-
-The following example shows a counter with one page to display the number and another to modify it. Both routes share data through a `counter` service.
+The following example shows a counter with one page to display the number and another to modify it. Both routes share
+data through a `counter` global.
 
 ```js
-// The `counter` service holds the current count and provides methods for incrementing and decrementing.
-app.service("counter", function () {
-  const $count = makeState(0);
+// The `counter` global holds the current count and provides methods for incrementing and decrementing.
+app.global("counter", function (ctx) {
+  ctx.defaultState = {
+    count: 0,
+  };
 
   return {
-    $current: $count.map(), // Makes a read only version. Components can only change this through the methods.
+    $current: ctx.readable("count"), // Exports a read only version that views can only change through the methods.
 
     increment() {
-      $count.set((current) => current + 1);
+      ctx.set("count", (current) => current + 1);
     },
 
     decrement() {
-      $count.set((current) => current - 1);
+      ctx.set("count", (current) => current - 1);
     },
   };
 });
@@ -516,15 +536,15 @@ app.route("/counter", function () {
 });
 
 // The view route displays the count but doesn't let the user change it.
-app.route("/counter/view", function () {
-  const { $current } = this.service("counter");
+app.route("/counter/view", function (ctx) {
+  const { $current } = ctx.global("counter");
 
   return <h1>The Count is Now {$current}</h1>;
 });
 
 // The controls route lets the user change the count but doesn't display it.
-app.route("/counter/controls", function () {
-  const { increment, decrement } = this.service("counter");
+app.route("/counter/controls", function (ctx) {
+  const { increment, decrement } = ctx.global("counter");
 
   return (
     <div>
@@ -535,47 +555,52 @@ app.route("/counter/controls", function () {
 });
 ```
 
-### Service Context
+### Global Context
 
 ```js
-app.service("example", function () {
-  // Access other services by the name they were registered under.
-  // The service being accessed must have been registered before this one or the app will throw an error.
-  const service = this.service("name");
+app.global("example", function (ctx) {
+  // Access other globals by the name they were registered under.
+  // The globals being accessed must have been registered before this one or the app will throw an error.
+  const global = ctx.global("name");
 
-  // Print debug messages
-  this.debug.name = "service:example"; // Prefix messages in the console to make tracing easier at a glance.
-  this.debug.log("Something happened.");
-  this.debug.warn("Something happened!");
-  this.debug.error("SOMETHING HAPPENED!!!!");
+  ctx.defaultState = {
+    title: "THE TITLE",
+  };
 
-  /*=================================*\
-  ||    Service Lifecycle Methods    ||
-  \*=================================*/
+  const title = ctx.get("title");
+  const $title = ctx.readable("title");
+  const $$title = ctx.writable("title");
 
-  this.beforeConnect(() => {
-    // Runs when the service is about to be (but is not yet) initialized, before any routing occurs.
-  });
-
-  this.afterConnect(() => {
-    // Runs after the app is connected, initial route has been matched, and the first component is added to the page.
-  });
-
-  // Services live for the lifetime of the app, so they have no disconnect hooks.
+  ctx.set("title", "New Title");
 
   // Runs a callback function each time a state changes (or any observable emits a value).
-  this.subscribeTo($title, (title) => {
+  ctx.observe($title, (title) => {
     console.log("title attribute changed to " + title);
   });
 
-  // All services must return an object.
+  // Print debug messages
+  ctx.name = "example"; // Prefix messages in the console to make tracing easier at a glance.
+  ctx.log("Something happened.");
+  ctx.warn("Something happened!");
+  ctx.error("SOMETHING HAPPENED!!!!");
+
+  ctx.beforeConnect(() => {
+    // Runs when the global is about to be (but is not yet) initialized, before any routing occurs.
+  });
+
+  ctx.afterConnect(() => {
+    // Runs after the app is connected, initial route has been matched, and the first view is added to the page.
+  });
+  // Globals live for the lifetime of the app, so they have no disconnect hooks.
+
+  // All globals must return an object.
   return {};
 });
 ```
 
 ## Testing
 
-See [the testing README](./src/testing/README.md).
+See [the testing README](./lib/testing/README.md).
 
 ---
 
