@@ -1,6 +1,6 @@
 {
-  "name": "@woofjs/view",
-  "version": "0.6.3",
+  "name": "@woofjs/window",
+  "version": "0.1.0",
   "description": "Isolated component development for dogs. 🐕",
   "main": "cli.js",
   "type": "module",

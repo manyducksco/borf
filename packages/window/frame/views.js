@@ -1,5 +1,5 @@
 /**
- * This file runs inside the view iframe. It exposes methods on the window so the main runner app can control it.
+ * This file runs inside the window iframe. It exposes methods on the window so the main runner app can control it.
  */
 // views-index.js is generated from the views in the project
 import views from "./views-index.js";
@@ -184,7 +184,7 @@ for (const view of views) {
   collections.push(formatCollection(view));
 }
 
-const root = document.querySelector("#view");
+const root = document.querySelector("#window");
 
 let handlers = {};
 let mounted;
@@ -264,7 +264,7 @@ const api = {
 
       const appContext = { services, debug };
 
-      // Define built in services.
+      // Define built in globals.
       Object.defineProperties(services, {
         router: {
           value: registeredServices.router.exports,

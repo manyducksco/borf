@@ -14,10 +14,10 @@ const appContext = {
           return {
             log: () => {},
             warn: () => {},
-            error: () => {}
-          }
-        }
-      }
+            error: () => {},
+          };
+        },
+      },
     },
   },
   debug: {
@@ -73,7 +73,7 @@ function makeDOMNode() {
 ||         Tests          ||
 \*======================== */
 
-test("returns a view", () => {
+test("returns a window", () => {
   function Component() {
     return h("p", "This is just a test.");
   }
@@ -83,7 +83,7 @@ test("returns a view", () => {
   expect(isView(result)).toBe(true);
 });
 
-test("throws if view doesn't return an element or null", () => {
+test("throws if window doesn't return an element or null", () => {
   function InvalidOne() {}
   function InvalidTwo() {
     return ["what is this"];
@@ -382,8 +382,6 @@ test("supports returning subcomponents", () => {
 
   expect(parent.children.length).toBe(0);
 });
-
-
 
 // test("routePreload show() throws if value isn't an element", async () => {
 //   const mount = jest.fn();

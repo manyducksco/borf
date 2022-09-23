@@ -23,7 +23,7 @@ export const FormExample = makeView((ctx) => {
     }
 
     if (state.age < 18) {
-      errors.push("You must be 18 or older to view this content. 👀");
+      errors.push("You must be 18 or older to window this content. 👀");
     }
 
     return errors;

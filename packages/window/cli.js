@@ -48,7 +48,7 @@ program
         ...(woofConfig?.build || {}),
         clientRoot: path.resolve(args.path),
         buildRoot: path.join(process.cwd(), "temp", "views"),
-        projectViewStaticRoot: path.join(process.cwd(), ".view", "static"), // Replace the view index.html.mustache and/or include extra files for your project.
+        projectViewStaticRoot: path.join(process.cwd(), ".window", "static"), // Replace the window index.html.mustache and/or include extra files for your project.
         include: {
           styles: includeStyles,
         },

@@ -40,7 +40,7 @@ export function makeApp(options = {}) {
    *
    * @param path - Path to match before calling handlers.
    * @param view - View to display when route matches.
-   * @param defineRoutes - Function that defines routes to be displayed as children of `view`.
+   * @param defineRoutes - Function that defines routes to be displayed as children of `window`.
    * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
    */
   function prepareRoutes(path, view, defineRoutes = null, layers = []) {
@@ -138,7 +138,7 @@ export function makeApp(options = {}) {
      *
      * @param path - Path to match before calling handlers.
      * @param view - View to display when route matches.
-     * @param defineRoutes - Function that defines routes to be displayed as children of `view`.
+     * @param defineRoutes - Function that defines routes to be displayed as children of `window`.
      */
     route(path, view, defineRoutes = null) {
       appContext.routes.push(...prepareRoutes(path, view, defineRoutes));
@@ -167,7 +167,7 @@ export function makeApp(options = {}) {
 
     /**
      * Takes a function that configures the app before it is connected.
-     * This function is called after services have been created, before the first route match.
+     * This function is called after globals have been created, before the first route match.
      *
      * If the function returns a Promise, the app will not be connected until the Promise resolves.
      */
@@ -243,7 +243,7 @@ export function makeApp(options = {}) {
 
       appContext.rootElement = element;
 
-      // Set up crashing getters to handle services being accessed by other services.
+      // Set up crashing getters to handle globals being accessed by other globals.
       for (const name in globals) {
         Object.defineProperty(appContext.globals, name, {
           get() {
@@ -273,7 +273,7 @@ export function makeApp(options = {}) {
           throw new TypeError(`Global function for '${name}' did not return an object.`);
         }
 
-        // Add to appContext.services
+        // Add to appContext.globals
         Object.defineProperty(appContext.globals, name, {
           value: global,
           writable: false,

@@ -128,7 +128,7 @@ function makeRequest({ id, log, method, url, middleware, fetch }) {
 
     // Throw non-OK response codes as errors to force explicit handling.
     // With fetch's req.ok way there are two error handling paths; response errors (then) and network errors (catch).
-    // In most cases, a 404 or 500 is the same as a network error from the app's point of view.
+    // In most cases, a 404 or 500 is the same as a network error from the app's point of window.
     // If needed, the .ok() function can control what is thrown as an error.
     if (!isOk(res.status)) {
       const err = new HTTPError(`${res.status} ${res.statusText}: Request failed (${ctx.method.toUpperCase()} ${url})`);

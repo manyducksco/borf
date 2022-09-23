@@ -1,16 +1,20 @@
-import { makeState, mergeStates } from "@woofjs/client";
-import { makeProxyState } from "@woofjs/client";
+import { makeGlobal } from "@woofjs/client";
 
-export default function () {
+export default makeGlobal((ctx) => {
   let API;
   let frameLoaded = false;
 
-  const { router, page } = this.services;
+  const router = ctx.global("router");
+  const page = ctx.global("page");
 
-  const $frameRef = makeState();
-  const $collections = makeState([]);
+  ctx.defaultState = {
+    collections: [],
+  };
 
-  const $currentView = mergeStates(
+  const frameRef = ctx.ref();
+  const $collections = ctx.readable("collections");
+
+  const $currentView = ctx.merge(
     $collections,
     router.$params,
     (collections, params) => {
@@ -20,7 +24,7 @@ export default function () {
         for (const view of collection.views) {
           if (view.path === params.wildcard) {
             matched = view;
-            page.$title.set(collection.name);
+            page.$$title.set(collection.name);
             break outer;
           }
         }
@@ -30,10 +34,8 @@ export default function () {
     }
   );
 
-  const $currentAttrs = makeProxyState({});
-
-  this.afterConnect(() => {
-    const frame = $frameRef.get();
+  ctx.afterConnect(() => {
+    const frame = frameRef();
 
     frame.addEventListener("load", () => {
       API = frame.contentWindow.WOOF_VIEW;
@@ -78,11 +80,11 @@ export default function () {
           }
         }
 
-        this.debug.log("reloaded views");
+        ctx.log("reloaded views");
       }
 
-      $collections.set(newCollections);
-      API.setActiveView($currentView.get("id"));
+      ctx.set("collections", newCollections);
+      API.setActiveView($currentView.get()?.id);
 
       frameLoaded = true;
     });
@@ -95,9 +97,9 @@ export default function () {
   });
 
   return {
-    $frameRef,
+    frameRef,
     $collections,
     $currentView,
     $currentAttrs,
   };
-}
+});

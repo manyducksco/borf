@@ -1,4 +1,4 @@
-# @woofjs/client
+# (🐕🖥) @woofjs/client
 
 Front end routing, components and state for dogs. 🐕
 
@@ -106,7 +106,7 @@ const Timer = makeView(function (ctx) {
     ctx.set("seconds", 0);
   }
 
-  // Increment once per second after the view is connected to the DOM.
+  // Increment once per second after the window is connected to the DOM.
   ctx.afterConnect(function () {
     setInterval(increment, 1000);
   });
@@ -146,7 +146,7 @@ function Example(ctx) {
 // Views can be mounted directly on a route.
 app.route("example", Example);
 
-// They can also be used inside another view.
+// They can also be used inside another window.
 app.route("other", function () {
   return h("div", [
     // Pass state as attributes.
@@ -177,7 +177,7 @@ function Example(ctx) {
   ||              State              ||
   \*=================================*/
 
-  // Set the default values for this view's state.
+  // Set the default values for this window's state.
   ctx.defaultState = {
     title: "The Default Title",
   };
@@ -200,22 +200,22 @@ function Example(ctx) {
   ||            Lifecycle            ||
   \*=================================*/
 
-  ctx.isConnected; // true if view is connected
+  ctx.isConnected; // true if window is connected
 
   ctx.beforeConnect(() => {
-    // Runs when the view is about to be (but is not yet) added to the page.
+    // Runs when the window is about to be (but is not yet) added to the page.
   });
 
   ctx.afterConnect(() => {
-    // Runs after the view is added to the page.
+    // Runs after the window is added to the page.
   });
 
   ctx.beforeDisconnect(() => {
-    // Runs when the view is about to be (but is not yet) removed from the page.
+    // Runs when the window is about to be (but is not yet) removed from the page.
   });
 
   ctx.afterDisconnect(() => {
-    // Runs after the view is removed from the page.
+    // Runs after the window is removed from the page.
   });
 
   /*=================================*\
@@ -304,7 +304,7 @@ function Example() {
 }
 
 function Subview() {
-  return h("h1", "Hello from inside another view!");
+  return h("h1", "Hello from inside another window!");
 }
 ```
 
@@ -535,8 +535,8 @@ app.route("/counter", function () {
   );
 });
 
-// The view route displays the count but doesn't let the user change it.
-app.route("/counter/view", function (ctx) {
+// The window route displays the count but doesn't let the user change it.
+app.route("/counter/window", function (ctx) {
   const { $current } = ctx.global("counter");
 
   return <h1>The Count is Now {$current}</h1>;
@@ -589,7 +589,7 @@ app.global("example", function (ctx) {
   });
 
   ctx.afterConnect(() => {
-    // Runs after the app is connected, initial route has been matched, and the first view is added to the page.
+    // Runs after the app is connected, initial route has been matched, and the first window is added to the page.
   });
   // Globals live for the lifetime of the app, so they have no disconnect hooks.
 

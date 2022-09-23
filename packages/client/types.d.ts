@@ -63,12 +63,12 @@ declare module "@woofjs/client" {
 
   /**
    * An app is the central object of a Woof app. It handles mounting and unmounting of routes
-   * based on the current URL and providing services to components rendered under those routes.
+   * based on the current URL and providing globals to views rendered under those routes.
    */
   interface App<G> extends RouterContext<G> {
     /**
      * Registers a service on this app. Services have only one instance created per app.
-     * Any component rendered under one of this app's routes, as well as any other services
+     * Any component rendered under one of this app's routes, as well as any other globals
      * registered on this app will be able to access this new service.
      *
      * @param name - Name the service is accessed by.
@@ -77,7 +77,7 @@ declare module "@woofjs/client" {
     global<Name extends keyof G>(name: Name, fn: G[Name]): this;
 
     /**
-     * Runs a callback function after services are created but before any components have been connected.
+     * Runs a callback function after globals are created but before any views have been connected.
      *
      * @param callback - Setup function.
      */
@@ -132,33 +132,33 @@ declare module "@woofjs/client" {
   } & Pick<StateContext<Unwrapped<S>>, "get" | "set" | "unset">;
 
   // These two options objects need to be defined separately or the context
-  // type can't be inferred when you pass a view function directly.
+  // type can't be inferred when you pass a window function directly.
   interface RouteViewFnOptions<G, S = any> {
     /**
-     * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
+     * Resolves before `window` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
      */
     preload?: (ctx: PreloadContext<S, G>) => Promise<void> | void;
     /**
-     * The view to display when this route matches.
+     * The window to display when this route matches.
      */
     view?: ViewFunction<S, G>;
     /**
-     * Function to define subroutes that will be displayed as children of `view` when their routes match.
+     * Function to define subroutes that will be displayed as children of `window` when their routes match.
      */
     subroutes?: SubroutesFunction<G>;
   }
 
   interface RouteViewOptions<G, S = any> {
     /**
-     * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
+     * Resolves before `window` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
      */
     preload?: (ctx: PreloadContext<S, G>) => Promise<void> | void;
     /**
-     * The view to display when this route matches.
+     * The window to display when this route matches.
      */
     view?: View<S, G>;
     /**
-     * Function to define subroutes that will be displayed as children of `view` when their routes match.
+     * Function to define subroutes that will be displayed as children of `window` when their routes match.
      */
     subroutes?: SubroutesFunction<G>;
   }
@@ -168,9 +168,9 @@ declare module "@woofjs/client" {
     route<S = {}>(path: string, options: RouteViewOptions<G, S>): this;
 
     /**
-     * Registers a new route that will render `view` when `path` matches the current URL.
-     * Register nested routes by passing a function as the third argument. Nested route components
-     * will be rendered as this `view`'s children.
+     * Registers a new route that will render `window` when `path` matches the current URL.
+     * Register nested routes by passing a function as the third argument. Nested route views
+     * will be rendered as this `window`'s children.
      *
      * @param path - Path to match.
      * @param view - View to render when path matches URL.
@@ -179,8 +179,8 @@ declare module "@woofjs/client" {
     route<S = {}>(path: string, view: ViewFunction<S, G>, subroutes?: SubroutesFunction<G>): this;
 
     /**
-     * Display `view` when `path` matches the current URL. Nested routes defined in `defineRoutes` are
-     * passed as children to `view` when `path` + nested `path` matches the current URL.
+     * Display `window` when `path` matches the current URL. Nested routes defined in `defineRoutes` are
+     * passed as children to `window` when `path` + nested `path` matches the current URL.
      *
      * @param path - Path to match.
      * @param view - View to render when path matches URL.
@@ -349,7 +349,7 @@ declare module "@woofjs/client" {
     ): Readable<V>;
 
     /**
-     * Subscribes to an observable while this view is connected.
+     * Subscribes to an observable while this window is connected.
      *
      * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
      * @param observer - An observer object with `next`, `error` and `complete` methods.
@@ -359,7 +359,7 @@ declare module "@woofjs/client" {
     observe<Value>(observable: Observable<Value>, observer: Observer<Value>): void;
 
     /**
-     * Subscribes to an observable while this view is connected.
+     * Subscribes to an observable while this window is connected.
      *
      * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a state binding or an observable from another library like RxJS.
      * @param next - Callback to receive `next` values from the observable.
@@ -491,7 +491,7 @@ declare module "@woofjs/client" {
 
   export interface ViewContext<S = any, G = any> extends StateContext<Unwrapped<S>>, DebugChannel {
     /**
-     * True while this view is connected to the DOM.
+     * True while this window is connected to the DOM.
      */
     readonly isConnected: boolean;
 
@@ -1927,7 +1927,7 @@ declare namespace JSX {
     /**
      * The `div` element has no special meaning at all. It represents its children.
      *
-     * Authors are strongly encouraged to view the `div` element as an element of last resort,
+     * Authors are strongly encouraged to window the `div` element as an element of last resort,
      * for when no other element is suitable. Use of more appropriate elements instead of the `div`
      * element leads to better accessibility for readers and easier maintainability for authors.
      *

@@ -7,7 +7,7 @@ import { Element } from "./views/Element.js";
 import { Fragment } from "./views/Fragment.js";
 
 /**
- * Template function. Used in components to render content.
+ * Template function. Used in views to render content.
  *
  * @example
  * h("div", { class: "active" }, "Text Content");
@@ -65,7 +65,7 @@ export class Template {
     //   }
 
     //   if (!isComponent(child)) {
-    //     throw new TypeError(`Children must be components, strings, numbers or observables. Got: ${child}`);
+    //     throw new TypeError(`Children must be views, strings, numbers or observables. Got: ${child}`);
     //   }
 
     //   return child;

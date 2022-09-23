@@ -51,7 +51,7 @@ test("throws helpful error when accessing globals that haven't been created yet 
   app.global("two", two);
 
   expect(app.connect(root)).rejects.toThrow(
-    "Service 'two' was accessed before it was initialized. Make sure 'two' is registered before other services that access it."
+    "Service 'two' was accessed before it was initialized. Make sure 'two' is registered before other globals that access it."
   );
 });
 

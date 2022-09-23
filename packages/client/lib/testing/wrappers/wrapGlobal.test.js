@@ -28,7 +28,7 @@ const mockHTTP = makeMockHTTP((ctx) => {
   });
 });
 
-test("provides mock services to wrapped service", async () => {
+test("provides mock globals to wrapped service", async () => {
   const global = wrapGlobal(UserGlobal, (ctx) => {
     ctx.global("http", mockHTTP);
   });

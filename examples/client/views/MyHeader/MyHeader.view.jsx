@@ -2,8 +2,8 @@ import { MyHeader } from "./MyHeader.jsx";
 import { makeMockHTTP } from "@woofjs/client/testing";
 
 /**
- * Views are defined by an exported function. This function receives a `view` object with variables
- * and methods to configure the view. You can also export an object with view names as keys and
+ * Views are defined by an exported function. This function receives a `window` object with variables
+ * and methods to configure the window. You can also export an object with window names as keys and
  * functions as values if you want to create multiple views for a single component.
  **/
 export default (view) => {
@@ -11,7 +11,7 @@ export default (view) => {
   // If you don't like this conversion, you can override it to any string you want:
   view.name = "Custom name here";
 
-  // The description will be shown alongside the view. Use this space to explain what the purpose of the view is
+  // The description will be shown alongside the window. Use this space to explain what the purpose of the window is
   // and what unfamiliar users need to know. Supports Markdown formatting.
   view.description = `
     # Personalized Header
@@ -20,17 +20,17 @@ export default (view) => {
     You can select a few example greetings from a list in this view.
   `;
 
-  // Provide mock versions of any services used by your component.
+  // Provide mock versions of any globals used by your component.
   view.service(
     "http",
     /**
      * We are using makeMockHTTP from the testing tools to create an `@http` service
-     * that returns mock data. This prevents the view from touching a real API.
+     * that returns mock data. This prevents the window from touching a real API.
      **/
     makeMockHTTP((self) => {
       self.get("/users/me", () => {
         // Log this event to the action log whenever the component makes a call to this mock API route.
-        // This validates that the expected API calls are actually being made within the view.
+        // This validates that the expected API calls are actually being made within the window.
         view.fireAction("requested user from API");
 
         return { id: 1, name: "Jimbo Jones" };
@@ -56,7 +56,7 @@ export default (view) => {
     }),
 
     // Actions are no-op functions that log when they are called.
-    // Useful as dummy functions to test that callbacks are working as you interact with components.
+    // Useful as dummy functions to test that callbacks are working as you interact with views.
     onclick: view.action("header clicked"),
   });
 };

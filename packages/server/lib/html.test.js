@@ -7,7 +7,7 @@ test("works", async () => {
   expect(result).toBe("<p>This is some text</p>");
 });
 
-test("function components", async () => {
+test("function views", async () => {
   function Header(text) {
     return html`<h1>${text}</h1>`;
   }

@@ -19,7 +19,7 @@ const animated = makeTransitions({
 });
 
 export function preloadAppLayout(ctx) {
-  // When the .done() function is called, this content is removed and the real view is connected.
+  // When the .done() function is called, this content is removed and the real window is connected.
   ctx.show(
     animated(
       <div>

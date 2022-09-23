@@ -15,7 +15,7 @@ This is a monorepo for the Woof JS framework. It is managed using [lerna](https:
 ## Utility Packages
 
 - [`@woofjs/build`](./packages/build/README.md): Build-system-in-a-box for Woof projects.
-- [`@woofjs/view`](./packages/view/README.md): Visual testing and development environment for `@woofjs/client` components.
+- [`@woofjs/view`](packages/window/README.md): Visual testing and development environment for `@woofjs/client` components.
 
 ## Resources
 

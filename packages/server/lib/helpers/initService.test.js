@@ -39,7 +39,7 @@ test("returns an object with the service's exports", async () => {
   expect(result.exports).toStrictEqual({ works: true });
 });
 
-test("handles async services", async () => {
+test("handles async globals", async () => {
   async function Service(self) {
     return new Promise((resolve) => {
       setTimeout(() => {

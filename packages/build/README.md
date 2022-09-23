@@ -1,4 +1,4 @@
-# `@woofjs/build`
+# 🐕🏗️ @woofjs/build
 
 Build system in a box for Woof projects.
 

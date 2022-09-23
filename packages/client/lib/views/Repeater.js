@@ -93,7 +93,7 @@ export const Repeater = makeView((ctx) => {
       }
     }
 
-    // Reconnect to ensure order. Lifecycle hooks won't be run again if the view is already connected.
+    // Reconnect to ensure order. Lifecycle hooks won't be run again if the window is already connected.
     for (const item of newItems) {
       item.element.connect(node.parentNode);
     }

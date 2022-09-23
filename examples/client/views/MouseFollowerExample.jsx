@@ -51,7 +51,7 @@ export const MouseFollowerExample = makeView((ctx) => {
       <div>
         {ctx.when(
           "enabled",
-          // Transitions can set view state, so this kind of composition is possible.
+          // Transitions can set window state, so this kind of composition is possible.
           animated((ctx) => {
             const $scale = ctx.readable("scale");
 
@@ -94,7 +94,7 @@ export const MouseFollowerExample = makeView((ctx) => {
 
 /**
  * Scales the element up from `0` on enter and down to `0` on exit.
- * Animates the `scale` value in view's context.
+ * Animates the `scale` value in window's context.
  */
 const animated = makeTransitions({
   in: function (ctx) {

@@ -133,12 +133,12 @@ export function initView(fn, config) {
       const observer = state.observe(...args);
 
       if (isConnected) {
-        // If called when the view is connected, we assume this code is in a lifecycle hook
-        // where it will be triggered at some point again after the view is reconnected.
+        // If called when the window is connected, we assume this code is in a lifecycle hook
+        // where it will be triggered at some point again after the window is reconnected.
         subscriptions.push(observer.start());
       } else {
-        // This should only happen if called in the body of the view.
-        // This code is not always re-run between when a view is disconnected and reconnected.
+        // This should only happen if called in the body of the window.
+        // This code is not always re-run between when a window is disconnected and reconnected.
         afterConnectCallbacks.push(() => {
           subscriptions.push(observer.start());
         });
@@ -187,15 +187,15 @@ export function initView(fn, config) {
   }
 
   /*=============================*\
-  ||     Define view object      ||
+  ||     Define window object      ||
   \*=============================*/
 
-  // This is the object the framework will use to control the view.
+  // This is the object the framework will use to control the window.
   const view = {
     state,
 
     /**
-     * Returns the view's root DOM node, or null if there is none.
+     * Returns the window's root DOM node, or null if there is none.
      */
     get node() {
       if (element) {
@@ -223,12 +223,12 @@ export function initView(fn, config) {
     },
 
     /**
-     * Connects this view to the DOM, running lifecycle hooks if it wasn't already connected.
-     * Calling this on a view that is already connected can reorder it or move it to a different
+     * Connects this window to the DOM, running lifecycle hooks if it wasn't already connected.
+     * Calling this on a window that is already connected can reorder it or move it to a different
      * place in the DOM without retriggering lifecycle hooks.
      *
-     * @param parent - DOM node under which this view should be connected as a child.
-     * @param after - A child node under `parent` after which this view should be connected.
+     * @param parent - DOM node under which this window should be connected as a child.
+     * @param after - A child node under `parent` after which this window should be connected.
      */
     connect(parent, after = null) {
       const wasConnected = view.isConnected;
@@ -255,7 +255,7 @@ export function initView(fn, config) {
     },
 
     /**
-     * Disconnects this view from the DOM and runs lifecycle hooks.
+     * Disconnects this window from the DOM and runs lifecycle hooks.
      */
     disconnect() {
       if (view.isConnected) {

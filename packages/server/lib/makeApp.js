@@ -45,7 +45,7 @@ export function makeApp(options = {}) {
     },
 
     /**
-     * Registers a service on the app. Services can be referenced in components and other services.
+     * Registers a service on the app. Services can be referenced in views and other globals.
      *
      * @param name - Unique string to name this service.
      * @param service - A service to create and register under the name.
@@ -138,7 +138,7 @@ export function makeApp(options = {}) {
       appContext.routes = sortRoutes(appContext.routes);
 
       return new Promise(async (resolve) => {
-        // init services
+        // init globals
         for (const name in registeredServices) {
           const service = registeredServices[name];
 

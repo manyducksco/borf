@@ -1,4 +1,4 @@
-# @woofjs/server
+# 🐕☁️ @woofjs/server
 
 > CAUTION: This package is extremely early in development. Breaking changes are expected and not all documented features are implemented yet.
 
@@ -33,7 +33,7 @@ app.cors(corsOptions); // Use specified options.
 // Serve static files (tries static files after matching routes)
 app.static("/static/path", "/path/to/file/dir/on/this/machine"); // Specify a custom path for static files.
 
-// Share logic and state between handlers with services.
+// Share logic and state between handlers with globals.
 // Each service is created once per request.
 // Two API calls will use two different instances, but all middleware in the same API call will use one instance.
 app.global("example", example);
@@ -231,7 +231,7 @@ export function Header(attrs, self) {
 And then use it in a page:
 
 ```js
-import { Header } from "./components/Header";
+import { Header } from "./views/Header";
 
 app.get("/home", (ctx) => {
   return (
@@ -264,8 +264,8 @@ export async function UserCard(attrs, self) {
 These can be used in exactly the same way as non-async components, but the server will wait to respond until all async components have resolved. Async components can keep data fetching closer to where the data is needed, though too many async components can slow down response time. Data can also be fetched at the top level of a route and passed down to components as attributes.
 
 ```js
-import { Header } from "./components/Header";
-import { UserCard } from "./components/UserCard";
+import { Header } from "./views/Header";
+import { UserCard } from "./views/UserCard";
 
 app.get("/users/:userId", (ctx) => {
   const { userId } = ctx.request.params;

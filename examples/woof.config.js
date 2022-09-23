@@ -7,7 +7,7 @@ export default {
   },
 
   // client: {
-  //   view: {
+  //   window: {
   //     include: {
   //       styles: ["client/styles/demo.css"],
   //     },

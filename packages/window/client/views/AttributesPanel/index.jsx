@@ -15,7 +15,7 @@ import InputText from "./InputText";
 import InputToggle from "./InputToggle";
 
 /**
- * Displays the current view's attributes and provides inputs for editing them.
+ * Displays the current window's attributes and provides inputs for editing them.
  */
 export default function AttributesPanel() {
   this.debug.name = "AttributesPanel";

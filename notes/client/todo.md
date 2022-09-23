@@ -106,16 +106,16 @@ const Example = makeView((ctx) => {
 Register a woof view as a web component. This might be better as a separate library since it wouldn't see much use in a traditional woof app.
 
 ```jsx
-import { registerGlobal, registerWebComponent } from "@woofjs/web-components";
+import { registerGlobal, registerWebComponent } from "@woofjs/web-views";
 
-// register globals that are accessible to all woof web components on the page
+// register globals that are accessible to all woof web views on the page
 registerGlobal("example", (ctx) => {
   return {
     value: 5,
   };
 });
 
-// register a view by specifying a tag name
+// register a window by specifying a tag name
 registerWebComponent("tag-name", (ctx) => {
   const title = ctx.get("title");
   const { value } = ctx.global("example");

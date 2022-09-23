@@ -1,5 +1,5 @@
 // 1. Get project root
-// 2. Recurse to find all .view.* files
+// 2. Recurse to find all .window.* files
 // 3. Build an index file importing all views and exposing an object on `window`
 
 import { println } from "@ratwizard/cli";
@@ -168,7 +168,7 @@ async function buildViews(options) {
   // Copy /files to /src
   await fs.copy(frameRoot, bundleSrcRoot);
 
-  // Copy project's `.view/static` files.
+  // Copy project's `.window/static` files.
   if (
     options.projectViewStaticRoot &&
     fs.existsSync(options.projectViewStaticRoot)
