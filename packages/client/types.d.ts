@@ -3303,6 +3303,63 @@ declare namespace JSX {
   // summary
   // dialog
 
+  interface DetailsElementAttributes extends HTMLElementAttributes<HTMLDetailsElement> {
+    /**
+     * Indicates whether the contents of the <details> element are currently visible.
+     * The details are shown when this attribute is true, hidden when false.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/details
+     */
+    open?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * The `toggle` event is fired when the `open`/`closed` state of a `<details>` element is toggled.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDetailsElement/toggle_event
+     */
+    ontoggle?: EventHandler<Event>;
+  }
+  interface SummaryElementAttributes extends HTMLElementAttributes<HTMLElement> {}
+  interface DialogElementAttributes extends HTMLElementAttributes<HTMLDialogElement> {
+    /**
+     * Indicates that the dialog is active and can be interacted with. When the `open` attribute is not set, the dialog
+     * shouldn't be shown to the user. It is recommended to use the `.show()` or `.showModal()` methods to render dialogs,
+     * rather than the `open` attribute.
+     */
+    open?: MaybeObservable<boolean | undefined>;
+  }
+
+  interface IntrinsicElements {
+    /**
+     * The _Details disclosure_ element.
+     *
+     * Creates a disclosure widget in which information is visible only when the widget is toggled into an "open" state.
+     * A summary or label must be provided using the `<summary>` element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/details
+     */
+    details: DetailsElementAttributes;
+
+    /**
+     * The _Disclosure Summary_ element.
+     *
+     * Specifies a summary, caption, or legend for a `<details>` element's disclosure box.
+     * Clicking the `<summary>` element toggles the state of the parent `<details>` element open and closed.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/summary
+     */
+    summary: SummaryElementAttributes;
+
+    /**
+     * The _Dialog_ element.
+     *
+     * Represents a dialog box or other interactive component, such as a dismissible alert, inspector, or subwindow.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog
+     */
+    dialog: DialogElementAttributes;
+  }
+
   /*====================================*\
   || 4.12                     Scripting ||
   \*====================================*/
