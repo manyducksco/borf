@@ -1,5 +1,5 @@
 import { makeMockFetch } from "./makeMockFetch.js";
-import { initGlobal } from "../../makers/initGlobal.js";
+import { initGlobal } from "../../helpers/initGlobal.js";
 
 import http from "../../globals/http.js";
 
@@ -40,11 +40,11 @@ export function makeMockHTTP(fn) {
               return {
                 log() {},
                 warn() {},
-                error() {}
-              }
-            }
-          }
-        }
+                error() {},
+              };
+            },
+          },
+        },
       },
       options: {
         http: {

@@ -1,6 +1,6 @@
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
 import { APP_CONTEXT } from "../keys.js";
-import { makeGlobal } from "../makers/makeGlobal.js";
+import { makeGlobal } from "../makeGlobal.js";
 
 export default makeGlobal((ctx) => {
   const _middleware = [];

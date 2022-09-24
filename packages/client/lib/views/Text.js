@@ -1,4 +1,4 @@
-import { makeView } from "../makers/makeView.js";
+import { makeView } from "../makeView.js";
 
 export const Text = makeView((ctx) => {
   const node = document.createTextNode("");

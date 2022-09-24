@@ -1,7 +1,7 @@
 import { isView, isString, isNumber, isObservable, isTemplate } from "../helpers/typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
-import { initView } from "../makers/initView.js";
-import { makeView } from "../makers/makeView.js";
+import { initView } from "../helpers/initView.js";
+import { makeView } from "../makeView.js";
 
 import { Text } from "./Text.js";
 

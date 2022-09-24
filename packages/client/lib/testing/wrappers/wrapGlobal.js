@@ -1,5 +1,5 @@
 import { isFunction } from "../../helpers/typeChecking.js";
-import { initGlobal } from "../../makers/initGlobal.js";
+import { initGlobal } from "../../helpers/initGlobal.js";
 
 import debug from "../../globals/debug.js";
 import http from "../mocks/globals/http.js";

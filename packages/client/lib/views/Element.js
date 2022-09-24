@@ -1,6 +1,6 @@
 import { isArray, isObject, isString, isNumber, isFunction, isBinding, isObservable } from "../helpers/typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
-import { makeView } from "../makers/makeView.js";
+import { makeView } from "../makeView.js";
 
 /**
  * Implements logic for HTML elements created with `h()`.

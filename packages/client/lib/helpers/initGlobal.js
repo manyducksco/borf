@@ -1,4 +1,4 @@
-import { isObject, isString } from "../helpers/typeChecking.js";
+import { isObject, isString } from "./typeChecking.js";
 import { APP_CONTEXT } from "../keys.js";
 import { makeState } from "./makeState.js";
 

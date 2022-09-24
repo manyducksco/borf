@@ -1,6 +1,6 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
-import { makeGlobal } from "../makers/makeGlobal.js";
+import { makeGlobal } from "../makeGlobal.js";
 
 import { APP_CONTEXT } from "../keys.js";
 import { matchRoute } from "../helpers/routing.js";
@@ -8,7 +8,7 @@ import { isObject, isTemplate, isFunction } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { initView } from "../makers/initView.js";
+import { initView } from "../helpers/initView.js";
 
 import { Outlet } from "../views/Outlet.js";
 

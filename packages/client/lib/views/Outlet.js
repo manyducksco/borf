@@ -1,7 +1,7 @@
 import { isTemplate, isFunction, isString, isNumber, isObservable, isArray } from "../helpers/typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 import { Template } from "../h.js";
-import { makeView } from "../makers/makeView.js";
+import { makeView } from "../makeView.js";
 import { Fragment } from "./Fragment.js";
 
 /**

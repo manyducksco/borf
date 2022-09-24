@@ -1,5 +1,5 @@
-import { makeView } from "../makers/makeView.js";
-import { makeState } from "../makers/makeState.js";
+import { makeView } from "../makeView.js";
+import { makeState } from "../helpers/makeState.js";
 import { isArray, isTemplate } from "../helpers/typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 

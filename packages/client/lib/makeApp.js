@@ -1,14 +1,14 @@
-import { isFunction, isObject, isString, isTemplate } from "../helpers/typeChecking.js";
-import { parseRoute, splitRoute } from "../helpers/routing.js";
-import { joinPath } from "../helpers/joinPath.js";
-import { resolvePath } from "../helpers/resolvePath.js";
+import { isFunction, isObject, isString, isTemplate } from "./helpers/typeChecking.js";
+import { parseRoute, splitRoute } from "./helpers/routing.js";
+import { joinPath } from "./helpers/joinPath.js";
+import { resolvePath } from "./helpers/resolvePath.js";
 
-import debug from "../globals/debug.js";
-import http from "../globals/http.js";
-import page from "../globals/page.js";
-import router from "../globals/router.js";
+import debug from "./globals/debug.js";
+import http from "./globals/http.js";
+import page from "./globals/page.js";
+import router from "./globals/router.js";
 
-import { initGlobal } from "./initGlobal.js";
+import { initGlobal } from "./helpers/initGlobal.js";
 
 const builtInGlobals = [debug, router, page, http];
 

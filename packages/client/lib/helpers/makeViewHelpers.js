@@ -1,4 +1,4 @@
-import { isString } from "../helpers/typeChecking.js";
+import { isString } from "./typeChecking.js";
 
 import { Template } from "../h.js";
 import { Repeater } from "../views/Repeater.js";

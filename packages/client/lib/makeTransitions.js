@@ -1,5 +1,5 @@
-import { isFunction, isTemplate, isView } from "../helpers/typeChecking";
-import { initView } from "./initView";
+import { isFunction, isTemplate, isView } from "./helpers/typeChecking.js";
+import { initView } from "./helpers/initView.js";
 
 export function makeTransitions(options) {
   // Returns a function that wraps an element with these transitions.

@@ -1,4 +1,4 @@
-import { isTemplate, isDOM, isFunction, isView, isString, isBinding } from "../helpers/typeChecking.js";
+import { isTemplate, isDOM, isView, isString, isBinding } from "./typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
 import { makeState } from "./makeState.js";

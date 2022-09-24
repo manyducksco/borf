@@ -1,6 +1,6 @@
 import { isFunction, isObject, isString, isNumber, isTemplate, isView, isObservable } from "./helpers/typeChecking.js";
 import { flatten } from "./helpers/flatten.js";
-import { initView } from "./makers/initView.js";
+import { initView } from "./helpers/initView.js";
 
 import { Text } from "./views/Text.js";
 import { Element } from "./views/Element.js";

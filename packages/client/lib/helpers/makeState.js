@@ -1,7 +1,7 @@
 import produce from "immer";
 import OBSERVABLE from "symbol-observable";
-import { deepEqual } from "../helpers/deepEqual.js";
-import { isBinding, isFunction, isObject, isObservable, isObserver, isString } from "../helpers/typeChecking.js";
+import { deepEqual } from "./deepEqual.js";
+import { isBinding, isFunction, isObject, isObservable, isObserver, isString } from "./typeChecking.js";
 
 export function makeState({ initialState, bindings, debug }) {
   const state = new Map(initialState || []);
