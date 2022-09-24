@@ -832,7 +832,6 @@ declare module "@woofjs/client/jsx-dev-runtime" {
   ): Template;
 }
 
-// TODO: Define all elements and the attributes they support.
 declare namespace JSX {
   import { Observable, Ref, ToStringable } from "@woofjs/client";
   import * as CSS from "csstype";
@@ -1411,157 +1410,6 @@ declare namespace JSX {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
      */
     onwheel: EventHandler<WheelEvent>;
-  }
-
-  // TODO: Move media events that don't bubble into this interface
-  interface HTMLMediaElementEvents {
-    /**
-     * The `abort` event is fired when the resource was not fully loaded, but not as the result of an error.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/abort_event
-     */
-    onabort: EventHandler<Event>;
-    /**
-     * The `canplay` event is fired when the user agent can play the media, but estimates that not enough data has been loaded
-     * to play the media up to its end without having to stop for further buffering of content.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event
-     */
-    oncanplay: EventHandler<Event>;
-    /**
-     * The `canplaythrough` event is fired when the user agent can play the media, and estimates that enough data has been loaded
-     * to play the media up to its end without having to stop for further buffering of content.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
-     */
-    oncanplaythrough: EventHandler<Event>;
-    /**
-     * The `emptied` event is fired when the media has become empty; for example, this event is sent if the media has already been loaded
-     * (or partially loaded), and the `load()` method is called to reload it.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event
-     */
-    onemptied: EventHandler<Event>;
-    /**
-     * The `ended` event is fired when playback or streaming has stopped because the end of the media was reached or because no further data is available.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ended_event
-     */
-    onended: EventHandler<Event>;
-    /**
-     * The `pause` event is sent when a request to pause an activity is handled and the activity has entered its paused state,
-     * most commonly after the media has been paused through a call to the element's `pause()` method.
-     *
-     * The event is sent once the `pause()` method returns and after the media element's `paused` property has been changed to `true`.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
-     */
-    onpause: EventHandler<Event>;
-    /**
-     * The `play` event is fired when the `paused` property is changed from `true` to `false`, as a result of the `play` method, or the `autoplay` attribute.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
-     */
-    onplay: EventHandler<Event>;
-    /**
-     * The `playing` event is fired after playback is first started, and whenever it is restarted.
-     * For example, it is fired when playback resumes after having been paused or delayed due to lack of data.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playing_event
-     */
-    onplaying: EventHandler<Event>;
-    /**
-     * The `progress` event is fired periodically as the browser loads a resource.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
-     */
-    onprogress: EventHandler<Event>;
-    /**
-     * The `ratechange` event is fired when the playback rate has changed.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ratechange_event
-     */
-    onratechange: EventHandler<Event>;
-    /**
-     * The `seeked` event is fired when a seek operation completed, the current playback position has changed, and the Boolean `seeking` attribute is changed to `false`.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeked_event
-     */
-    onseeked: EventHandler<Event>;
-    /**
-     * The `seeking` event is fired when a seek operation starts, meaning the Boolean `seeking` attribute has changed to `true` and the media is seeking a new position.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeking_event
-     */
-    onseeking: EventHandler<Event>;
-    /**
-     * The `stalled` event is fired when the user agent is trying to fetch media data, but data is unexpectedly not forthcoming.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/stalled_event
-     */
-    onstalled: EventHandler<Event>;
-    /**
-     * The `suspend` event is fired when media data loading has been suspended.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/suspend_event
-     */
-    onsuspend: EventHandler<Event>;
-    /**
-     * The `timeupdate` event is fired when the time indicated by the `currentTime` attribute has been updated.
-     *
-     * The event frequency is dependent on the system load, but will be thrown between about 4Hz and 66Hz(assuming the event handlers don't take longer than 250ms to run).
-     * User agents are encouraged to vary the frequency of the event based on the system load and the average cost of processing the event each time,
-     * so that the UI updates are not any more frequent than the user agent can comfortably handle while decoding the video.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/timeupdate_event
-     */
-    ontimeupdate: EventHandler<Event>;
-    /**
-     * The `volumechange` event is fired when the volume has changed.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volumechange_event
-     */
-    onvolumechange: EventHandler<Event>;
-    /**
-     * The `waiting` event is fired when playback has stopped because of a temporary lack of data.
-     *
-     * This event is not cancelable and does not bubble.
-     *
-     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waiting_event
-     */
-    onwaiting: EventHandler<Event>;
   }
 
   interface HTMLDocumentAndElementEvents {
@@ -2441,6 +2289,818 @@ declare namespace JSX {
   // track
   // map
   // area
+
+  interface HTMLMediaElementEvents {
+    /**
+     * The `abort` event is fired when the resource was not fully loaded, but not as the result of an error.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/abort_event
+     */
+    onabort: EventHandler<Event>;
+    /**
+     * The `canplay` event is fired when the user agent can play the media, but estimates that not enough data has been loaded
+     * to play the media up to its end without having to stop for further buffering of content.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event
+     */
+    oncanplay: EventHandler<Event>;
+    /**
+     * The `canplaythrough` event is fired when the user agent can play the media, and estimates that enough data has been loaded
+     * to play the media up to its end without having to stop for further buffering of content.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
+     */
+    oncanplaythrough: EventHandler<Event>;
+    /**
+     * The `emptied` event is fired when the media has become empty; for example, this event is sent if the media has already been loaded
+     * (or partially loaded), and the `load()` method is called to reload it.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event
+     */
+    onemptied: EventHandler<Event>;
+    /**
+     * The `ended` event is fired when playback or streaming has stopped because the end of the media was reached or because no further data is available.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ended_event
+     */
+    onended: EventHandler<Event>;
+    /**
+     * The `pause` event is sent when a request to pause an activity is handled and the activity has entered its paused state,
+     * most commonly after the media has been paused through a call to the element's `pause()` method.
+     *
+     * The event is sent once the `pause()` method returns and after the media element's `paused` property has been changed to `true`.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
+     */
+    onpause: EventHandler<Event>;
+    /**
+     * The `play` event is fired when the `paused` property is changed from `true` to `false`, as a result of the `play` method, or the `autoplay` attribute.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
+     */
+    onplay: EventHandler<Event>;
+    /**
+     * The `playing` event is fired after playback is first started, and whenever it is restarted.
+     * For example, it is fired when playback resumes after having been paused or delayed due to lack of data.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playing_event
+     */
+    onplaying: EventHandler<Event>;
+    /**
+     * The `progress` event is fired periodically as the browser loads a resource.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
+     */
+    onprogress: EventHandler<Event>;
+    /**
+     * The `ratechange` event is fired when the playback rate has changed.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ratechange_event
+     */
+    onratechange: EventHandler<Event>;
+    /**
+     * The `seeked` event is fired when a seek operation completed, the current playback position has changed, and the Boolean `seeking` attribute is changed to `false`.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeked_event
+     */
+    onseeked: EventHandler<Event>;
+    /**
+     * The `seeking` event is fired when a seek operation starts, meaning the Boolean `seeking` attribute has changed to `true` and the media is seeking a new position.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeking_event
+     */
+    onseeking: EventHandler<Event>;
+    /**
+     * The `stalled` event is fired when the user agent is trying to fetch media data, but data is unexpectedly not forthcoming.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/stalled_event
+     */
+    onstalled: EventHandler<Event>;
+    /**
+     * The `suspend` event is fired when media data loading has been suspended.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/suspend_event
+     */
+    onsuspend: EventHandler<Event>;
+    /**
+     * The `timeupdate` event is fired when the time indicated by the `currentTime` attribute has been updated.
+     *
+     * The event frequency is dependent on the system load, but will be thrown between about 4Hz and 66Hz(assuming the event handlers don't take longer than 250ms to run).
+     * User agents are encouraged to vary the frequency of the event based on the system load and the average cost of processing the event each time,
+     * so that the UI updates are not any more frequent than the user agent can comfortably handle while decoding the video.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/timeupdate_event
+     */
+    ontimeupdate: EventHandler<Event>;
+    /**
+     * The `volumechange` event is fired when the volume has changed.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volumechange_event
+     */
+    onvolumechange: EventHandler<Event>;
+    /**
+     * The `waiting` event is fired when playback has stopped because of a temporary lack of data.
+     *
+     * This event is not cancelable and does not bubble.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waiting_event
+     */
+    onwaiting: EventHandler<Event>;
+  }
+
+  interface HTMLMediaElementAttributes<T> extends HTMLElementAttributes<T>, HTMLMediaElementEvents {}
+
+  interface PictureElementAttributes extends HTMLElementAttributes<HTMLPictureElement> {}
+  interface SourceElementAttributes extends HTMLElementAttributes<HTMLSourceElement> {
+    /**
+     * The [MIME type](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types) of the resource,
+     * optionally with a [`codecs` parameter](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter).
+     */
+    type?: MaybeObservable<string | undefined>;
+
+    /**
+     * URL of the media resource.
+     *
+     * Required if the source element's parent is an `<audio>` or `<video>` element, not allowed for `<picture>` elements.
+     */
+    src?: MaybeObservable<string | undefined>;
+
+    /**
+     * A list of one or more strings, separated by commas, indicating a set of possible images represented by the source for the browser to use.
+     *
+     * Required if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-srcset
+     */
+    srcset?: MaybeObservable<string | undefined>;
+
+    /**
+     * A list of source sizes that describes the final width of the image. Each source size consists of a comma-separated
+     * list of media condition-length pairs. This information is used by the browser to determine, before laying the page out,
+     * which image defined in `srcset` to use. Please note that `sizes` will have its effect only if width dimension
+     * descriptors are provided with `srcset` instead of pixel ratio values (`200w` instead of `2x` for example).
+     *
+     * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-sizes
+     */
+    sizes?: MaybeObservable<string | undefined>;
+
+    /**
+     * Media query of the resource's intended media.
+     *
+     * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-media
+     */
+    media?: MaybeObservable<string | undefined>;
+
+    /**
+     * The intrinsic height of the image, in pixels. Must be an integer without a unit.
+     *
+     * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-height
+     */
+    height?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * The intrinsic width of the image, in pixels. Must be an integer without a unit.
+     *
+     * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-width
+     */
+    width?: MaybeObservable<string | number | undefined>;
+  }
+  interface ImgElementAttributes extends HTMLElementAttributes<HTMLImageElement> {
+    /**
+     * Defines an alternative text description of the image.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-alt
+     */
+    alt?: MaybeObservable<string | undefined>;
+
+    /**
+     * Indicates if the fetching of the image must be done using a CORS request.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-crossorigin
+     */
+    crossorigin?: MaybeObservable<"anonymous" | "use-credentials" | undefined>;
+
+    /**
+     * Provides an image decoding hint to the browser.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-decoding
+     */
+    decoding?: MaybeObservable<"sync" | "async" | "auto" | undefined>;
+
+    /**
+     * Provides a hint of the relative priority to use when fetching the image.
+     *
+     * @experimental
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-fetchpriority
+     */
+    fetchpriority?: MaybeObservable<"high" | "low" | "auto" | undefined>;
+
+    /**
+     * The intrinsic height of the image, in pixels. Must be an integer without a unit.
+     */
+    height?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * The intrinsic width of the image, in pixels. Must be an integer without a unit.
+     */
+    width?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * Indicates that the image is part of a [server-side map](https://en.wikipedia.org/wiki/Image_map#Server-side).
+     * If so, the coordinates where the user clicked on the image are sent to the server.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-ismap
+     */
+    ismap?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * Indicates how the browser should load the image.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-loading
+     */
+    loading?: MaybeObservable<"eager" | "lazy" | undefined>;
+
+    /**
+     * A string indicating which referrer to use when fetching the resource.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-referrerpolicy
+     */
+    referrerpolicy?: MaybeObservable<
+      | "no-referrer"
+      | "no-referrer-when-downgrade"
+      | "origin"
+      | "origin-when-cross-origin"
+      | "same-origin"
+      | "strict-origin"
+      | "strict-origin-when-cross-origin"
+      | "unsafe-url"
+      | undefined
+    >;
+
+    /**
+     * One or more strings separated by commas, indicating a set of source sizes.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-sizes
+     */
+    sizes?: MaybeObservable<string | undefined>;
+
+    /**
+     * The image URL. Required.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-src
+     */
+    src: MaybeObservable<string>;
+
+    /**
+     * One or more strings separated by commas, indicating possible image sources for the user agent to use.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-srcset
+     */
+    srcset?: MaybeObservable<string | undefined>;
+
+    /**
+     * The partial URL (starting with #) of an [image map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map)
+     * associated with the element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-usemap
+     */
+    usemap?: MaybeObservable<string | undefined>;
+  }
+  interface IframeElementAttributes extends HTMLElementAttributes<HTMLIFrameElement> {
+    /**
+     * Specifies a [feature policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Feature_Policy) for the `<iframe>`.
+     * The policy defines what features are available to the `<iframe>` based on the origin of the request
+     * (e.g. access to the microphone, camera, battery, web-share API, etc.).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Feature_Policy/Using_Feature_Policy#the_iframe_allow_attribute
+     */
+    allow?: MaybeObservable<string | undefined>;
+
+    /**
+     * A [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) enforced for the embedded resource.
+     * See [HTMLIFrameElement.csp](https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/csp) for details.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-csp
+     */
+    csp?: MaybeObservable<string | undefined>;
+
+    /**
+     * Provides a hint of the relative priority to use when fetching the iframe document.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-fetchpriority
+     */
+    fetchpriority?: MaybeObservable<"high" | "low" | "auto" | undefined>;
+
+    /**
+     * The height of the frame in CSS pixels. Default is `150`.
+     */
+    height?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * The width of the frame in CSS pixels. Default is `300`.
+     */
+    width?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * Indicates how the browser should load the iframe.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-loading
+     */
+    loading?: MaybeObservable<"eager" | "lazy" | undefined>;
+
+    /**
+     * A targetable name for the embedded browsing context. This can be used in the `target` attribute of the
+     * `<a>`, `<form>`, or `<base>` elements; the `formtarget` attribute of the `<input>` or `<button>` elements;
+     * or the `windowName` parameter in the [`window.open()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/open) method.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-name
+     */
+    name?: MaybeObservable<string | undefined>;
+
+    /**
+     * A string indicating which referrer to use when fetching the resource.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-referrerpolicy
+     */
+    referrerpolicy?: MaybeObservable<
+      | "no-referrer"
+      | "no-referrer-when-downgrade"
+      | "origin"
+      | "origin-when-cross-origin"
+      | "same-origin"
+      | "strict-origin"
+      | "strict-origin-when-cross-origin"
+      | "unsafe-url"
+      | undefined
+    >;
+
+    /**
+     * Applies extra restrictions to the content in the frame. The value of the attribute can either be empty to apply
+     * all restrictions, or [space-separated tokens to lift particular restrictions](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-sandbox).
+     */
+    sandbox?: MaybeObservable<string | undefined>;
+
+    /**
+     * The URL of the page to embed.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-src
+     */
+    src?: MaybeObservable<string | undefined>;
+
+    /**
+     * Inline HTML to embed, overriding the `src` attribute. If a browser does not support the `srcdoc` attribute,
+     * it will fall back to the URL in the `src` attribute.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-srcdoc
+     */
+    srcdoc?: MaybeObservable<string | undefined>;
+  }
+  interface EmbedElementAttributes extends HTMLElementAttributes<HTMLEmbedElement> {
+    /**
+     * The displayed height of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
+     */
+    height?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * The displayed width of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
+     */
+    width?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * The URL of the resource being embedded.
+     */
+    src?: MaybeObservable<string | undefined>;
+
+    /**
+     * The [MIME type](https://developer.mozilla.org/en-US/docs/Glossary/MIME_type) to use to select the plug-in to instantiate.
+     */
+    type?: MaybeObservable<string | undefined>;
+  }
+  interface ObjectElementAttributes extends HTMLElementAttributes<HTMLObjectElement> {
+    /**
+     * The displayed height of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
+     */
+    height?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * The displayed width of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
+     */
+    width?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * The address of the resource as a valid URL. At least one of `data` and `type` must be defined.
+     */
+    data?: MaybeObservable<string | undefined>;
+
+    /**
+     * The [MIME type](https://developer.mozilla.org/en-US/docs/Glossary/MIME_type) of the resource specified by data.
+     * At least one of `data` and `type` must be defined.
+     */
+    type?: MaybeObservable<string | undefined>;
+
+    /**
+     * The form element, if any, that the object element is associated with (its form owner).
+     * The value of the attribute must be an ID of a `<form>` element in the same document.
+     */
+    form?: MaybeObservable<string | undefined>;
+
+    /**
+     * The name of valid browsing context (HTML5), or the name of the control (HTML 4).
+     */
+    name?: MaybeObservable<string | undefined>;
+
+    /**
+     * A hash-name reference to a `<map>` element; that is a '#' followed by the value of a name of a map element.
+     */
+    usemap?: MaybeObservable<string | undefined>;
+  }
+
+  interface VideoElementAttributes extends HTMLMediaElementAttributes<HTMLVideoElement> {
+    /**
+     * If specified, the video automatically begins to play back as soon as it can do so without stopping to finish loading the data.
+     *
+     * In some browsers (e.g. Chrome 70.0) autoplay doesn't work if no `muted` attribute is present.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-autoplay
+     */
+    autoplay?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * If this attribute is present, the browser will offer controls to allow the user to control video playback,
+     * including volume, seeking, and pause/resume playback.
+     */
+    controls?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * Indicates whether to use CORS to fetch the related video. If not present, the resource is fetched without
+     * a CORS request.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-crossorigin
+     */
+    crossorigin?: MaybeObservable<"anonymous" | "use-credentials" | undefined>;
+
+    /**
+     * The height of the video's display area, in CSS pixels. This must be an absolute value; percentages are not allowed.
+     */
+    height?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * The width of the video's display area, in CSS pixels. This must be an absolute value; percentages are not allowed.
+     */
+    width?: MaybeObservable<string | number | undefined>;
+
+    /**
+     * If true, the browser will automatically seek back to the start upon reaching the end of the video.
+     */
+    loop?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * Indicates whether the audio will be initially silenced. Its default value is `false`.
+     */
+    muted?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * Indicates that the video is to be played "inline", that is within the element's playback area.
+     * Note that the absence of this attribute does not imply that the video will always be played in fullscreen.
+     */
+    playsinline?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * A URL for an image to be shown while the video is downloading. If this attribute isn't specified, nothing is
+     * displayed until the first frame is available, then the first frame is shown as the poster frame.
+     */
+    poster?: MaybeObservable<string | undefined>;
+
+    /**
+     * Provides a hint to the browser about what the author thinks will lead to the best user experience regarding
+     * what content is loaded before the video is played.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-preload
+     */
+    preload?: MaybeObservable<"none" | "metadata" | "auto" | "" | undefined>;
+
+    /**
+     * The URL of the content to embed. This is optional; you may instead use the `<source>` element within the
+     * `<video>` element to specify the video to embed.
+     */
+    src?: MaybeObservable<string | undefined>;
+  }
+  interface AudioElementAttributes extends HTMLMediaElementAttributes<HTMLAudioElement> {
+    /**
+     * If specified, the audio will automatically begin playback as soon as it can do so, without waiting for the
+     * entire audio file to finish downloading.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio#attr-autoplay
+     */
+    autoplay?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * If this attribute is present, the browser will offer controls to allow the user to control audio playback,
+     * including volume, seeking, and pause/resume playback.
+     */
+    controls?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * Indicates whether to use CORS to fetch the related audio file. If not present, the resource is fetched without
+     * a CORS request.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-crossorigin
+     */
+    crossorigin?: MaybeObservable<"anonymous" | "use-credentials" | undefined>;
+
+    /**
+     * If true, the audio player will automatically seek back to the start upon reaching the end of the audio.
+     */
+    loop?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * Indicates whether the audio will be initially silenced. Its default value is `false`.
+     */
+    muted?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * Provides a hint to the browser about what the author thinks will lead to the best user experience regarding
+     * what content is loaded before the audio is played.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-preload
+     */
+    preload?: MaybeObservable<"none" | "metadata" | "auto" | "" | undefined>;
+
+    /**
+     * The URL of the audio to embed. This is optional; you may instead use the `<source>` element within the
+     * `<audio>` element to specify the video to embed.
+     */
+    src?: MaybeObservable<string | undefined>;
+  }
+  interface TrackElementAttributes extends HTMLElementAttributes<HTMLTrackElement> {
+    /**
+     * Indicates that the track should be enabled unless the user's preferences indicate that another track
+     * is more appropriate. This may only be used on one track element per media element.
+     */
+    default?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * How the text track is meant to be used. If omitted the default kind is `subtitles`.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track#attr-kind
+     */
+    kind?: MaybeObservable<"subtitles" | "captions" | "descriptions" | "chapters" | "metadata" | undefined>;
+
+    /**
+     * A user-readable title of the text track which is used by the browser when listing available text tracks.
+     */
+    label?: MaybeObservable<string | undefined>;
+
+    /**
+     * Address of the track (`.vtt` file). Must be a valid URL. This attribute must be specified and its URL value
+     * must have the same origin as the document — unless the `<audio>` or `<video>` parent element of the track
+     * element has a `crossorigin` attribute.
+     */
+    src: MaybeObservable<string>;
+
+    /**
+     * Language of the track text data. It must be a valid [BCP 47 language tag](https://r12a.github.io/app-subtags/).
+     * If the `kind` attribute is set to `subtitles`, then `srclang` must be defined.
+     */
+    srclang: MaybeObservable<string | undefined>;
+  }
+  interface MapElementAttributes extends HTMLElementAttributes<HTMLMapElement> {
+    /**
+     * Gives the map a name so that it can be referenced. The attribute must be present and must have a non-empty value
+     * with no space characters. The value of the name attribute must not be equal to the value of the name attribute
+     * of another `<map>` element in the same document. If the `id` attribute is also specified, both attributes must
+     * have the same value.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map#attr-name
+     */
+    name: MaybeObservable<string>;
+  }
+  interface AreaElementAttributes extends HTMLElementAttributes<HTMLAreaElement> {
+    /**
+     * A text string alternative to display on browsers that do not display images. The text should be phrased
+     * so that it presents the user with the same kind of choice as the image would offer when displayed without
+     * the alternative text. This attribute is required only if the `href` attribute is used.
+     */
+    alt?: MaybeObservable<string | undefined>;
+
+    /**
+     * The shape of the associated hot spot.
+     */
+    shape?: MaybeObservable<"rect" | "circle" | "poly" | "default" | undefined>;
+
+    /**
+     * Details the coordinates of the `shape` attribute in size, shape, and placement of an `<area>`.
+     * This attribute must not be used if `shape` is set to `default`.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area#attr-coords
+     */
+    coords?: MaybeObservable<string | undefined>;
+
+    /**
+     * If present, indicates that the author intends the hyperlink to be used for downloading a resource.
+     * See `<a>` for [a full description of the `download` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-download).
+     */
+    download?: MaybeObservable<string | undefined>;
+
+    /**
+     * The hyperlink target for the area. Its value is a valid URL. This attribute may be omitted; if so,
+     * the `<area>` element does not represent a hyperlink.
+     */
+    href?: MaybeObservable<string | undefined>;
+
+    /**
+     * Contains a space-separated list of URLs to which, when the hyperlink is followed, `POST` requests with the body
+     * `PING` will be sent by the browser (in the background). Typically used for tracking.
+     */
+    ping?: MaybeObservable<string | undefined>;
+
+    /**
+     * A string indicating which referrer to use when fetching the resource.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area#attr-referrerpolicy
+     */
+    referrerpolicy?: MaybeObservable<
+      | "no-referrer"
+      | "no-referrer-when-downgrade"
+      | "origin"
+      | "origin-when-cross-origin"
+      | "same-origin"
+      | "strict-origin"
+      | "strict-origin-when-cross-origin"
+      | "unsafe-url"
+      | undefined
+    >;
+
+    /**
+     * For anchors containing the `href` attribute, this attribute specifies the relationship of the target object
+     * to the link object. The value is a space-separated list of [link types values](https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types).
+     * The values and their semantics will be registered by some authority that might have meaning to the document author.
+     * The default relationship, if no other is given, is void. Use this attribute only if the `href` attribute is present.
+     */
+    rel?: MaybeObservable<string | undefined>;
+
+    /**
+     * Where to display the linked URL, as the name for a browsing context (a tab, window, or `<iframe>`)
+     *
+     * A common usage is `target: "_blank"` to cause a link to open in a new tab.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area#attr-target
+     */
+    target?: MaybeObservable<"_self" | "_blank" | "parent" | "_top" | undefined>;
+  }
+
+  interface IntrinsicElements {
+    /**
+     * The _Picture_ element.
+     *
+     * Contains zero or more `<source>` elements and one `<img>` element to offer alternative versions of an image
+     * for different display/device scenarios.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/picture
+     */
+    picture: PictureElementAttributes;
+
+    /**
+     * The _Media or Image Source_ element.
+     *
+     * Specifies multiple media resources for a `<picture>`, `<audio>` or `<video>` element. Commonly used to offer
+     * the same media content in multiple file formats in order to provide compatibility with a broad range of browsers.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source
+     */
+    source: SourceElementAttributes;
+
+    /**
+     * The _Image Embed_ element.
+     *
+     * Embeds an image into the document.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img
+     */
+    img: ImgElementAttributes;
+
+    /**
+     * The _Inline Frame_ element.
+     *
+     * Represents a nested [browsing context](https://developer.mozilla.org/en-US/docs/Glossary/Browsing_context),
+     * embedding another HTML page into the current one.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe
+     */
+    iframe: IframeElementAttributes;
+
+    /**
+     * The _Embed External Content_ element.
+     *
+     * Embeds external content at the specified point in the document. This content is provided by an external
+     * application or other source of interactive content such as a browser plug-in.
+     *
+     * Most modern browsers have deprecated and removed support for browser plug-ins, so relying upon `<embed>`
+     * is generally not wise if you want your site to be operable on the average user's browser.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/embed
+     */
+    embed: EmbedElementAttributes;
+
+    /**
+     * The _External Object_ element.
+     *
+     * Represents an external resource, which can be treated as an image, a nested browsing context,
+     * or a resource to be handled by a plugin.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/object
+     */
+    object: ObjectElementAttributes;
+
+    /**
+     * The _Video Embed_ element.
+     *
+     * Embeds a video player. You can use `<video>` for audio content as well,
+     * but the `<audio>` element may provide a more appropriate user experience.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video
+     */
+    video: VideoElementAttributes;
+
+    /**
+     * The _Embed Audio_ element.
+     *
+     * Embeds an audio player. It may contain one or more audio sources, represented using the `src` attribute or the
+     * `<source>` element: the browser will choose the most suitable one.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio
+     */
+    audio: AudioElementAttributes;
+
+    /**
+     * The _Embed Text Track_ element.
+     *
+     * Provides subtitles or other time-based data to a parent `<video>` or `<audio>` element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track
+     */
+    track: TrackElementAttributes;
+
+    /**
+     * The _Image Map_ element.
+     *
+     * Used with `<area>` elements to define an image map. An image map allows geometric areas on an image to be
+     * associated with links.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map
+     */
+    map: MapElementAttributes;
+
+    /**
+     * The _Image Map Area_ element.
+     *
+     * Defines an area inside an image map that has predefined clickable areas. An image map allows geometric areas
+     * on an image to be associated with links.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area
+     */
+    area: AreaElementAttributes;
+  }
 
   /*====================================*\
   || 4.9                   Tabular Data ||
