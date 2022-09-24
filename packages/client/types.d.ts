@@ -3117,6 +3117,165 @@ declare namespace JSX {
   // td
   // th
 
+  interface TableElementAttributes extends HTMLElementAttributes<HTMLTableElement> {}
+  interface TableCaptionElementAttributes extends HTMLElementAttributes<HTMLTableCaptionElement> {}
+  interface TableColgroupElementAttributes extends HTMLElementAttributes<HTMLTableColElement> {
+    /**
+     * A positive integer indicating the number of consecutive columns the `<colgroup>` element spans.
+     * If not present, its default value is `1`.
+     *
+     * The `span` attribute is not permitted if there are one or more `<col>` elements within the `<colgroup>`.
+     */
+    span?: MaybeObservable<number | undefined>;
+  }
+  interface TableColElementAttributes extends HTMLElementAttributes<HTMLTableColElement> {
+    /**
+     * A positive integer indicating the number of consecutive columns the `<col>` element spans.
+     * If not present, its default value is `1`.
+     */
+    span?: MaybeObservable<number | undefined>;
+  }
+  interface TableBodyElementAttributes extends HTMLElementAttributes<HTMLTableSectionElement> {}
+  interface TableHeadElementAttributes extends HTMLElementAttributes<HTMLTableSectionElement> {}
+  interface TableFootElementAttributes extends HTMLElementAttributes<HTMLTableSectionElement> {}
+  interface TableRowElementAttributes extends HTMLElementAttributes<HTMLTableRowElement> {}
+  interface TableCellElementAttributes extends HTMLElementAttributes<HTMLTableCellElement> {
+    /**
+     * A positive integer value that indicates for how many columns the cell extends. Its default value is `1`.
+     * Values higher than 1000 will be considered as incorrect and will be set to the default value.
+     */
+    colspan?: MaybeObservable<number | undefined>;
+
+    /**
+     * A non-negative integer value that indicates for how many rows the cell extends. Its default value is `1`;
+     * if its value is set to `0`, it extends until the end of the table section (`<thead>`, `<tbody>`, `<tfoot>`,
+     * even if implicitly defined), that the cell belongs to.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td#attr-rowspan
+     */
+    rowspan?: MaybeObservable<number | undefined>;
+
+    /**
+     * A list of space-separated strings, each corresponding to the `id` attribute of the `<th>` elements that apply to this element.
+     */
+    headers?: MaybeObservable<string | undefined>;
+  }
+  interface TableHeaderElementAttributes extends TableCellElementAttributes {
+    /**
+     * A short abbreviated description of the cell's content. Some user-agents, such as speech readers, may present this description before the content itself.
+     */
+    abbr?: MaybeObservable<string | undefined>;
+
+    /**
+     * Defines the cells that the `<th>` element relates to.
+     *
+     * - `row`: The header relates to all cells of the row it belongs to.
+     * - `col`: The header relates to all cells of the column it belongs to.
+     * - `rowgroup`: The header belongs to a rowgroup and relates to all of its cells. These cells can be placed to the
+     *    right or the left of the header, depending on the value of the `dir` attribute in the `<table>` element.
+     * - `colgroup`: The header belongs to a colgroup and relates to all of its cells.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/th#attr-scope
+     */
+    scope?: MaybeObservable<"row" | "col" | "rowgroup" | "colgroup" | undefined>;
+  }
+
+  interface IntrinsicElements {
+    /**
+     * The _Table_ element.
+     *
+     * Represents tabular data — that is, information presented in a two-dimensional table comprised of rows and columns
+     * of cells containing data.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
+     */
+    table: TableElementAttributes;
+
+    /**
+     * The _Table Caption_ element.
+     *
+     * Specifies the caption (or title) of a table.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/caption
+     */
+    caption: TableCaptionElementAttributes;
+
+    /**
+     * The _Table Column Group_ element.
+     *
+     * Defines a group of columns within a table.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/colgroup
+     */
+    colgroup: TableColgroupElementAttributes;
+
+    /**
+     * The _Table Column_ element.
+     *
+     * Defines a column within a table and is used for defining common semantics on all common cells.
+     * It is generally found within a `<colgroup>` element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/col
+     */
+    col: TableColElementAttributes;
+
+    /**
+     * The _Table Body_ element.
+     *
+     * Encapsulates a set of table rows (`<tr>` elements), indicating that they comprise the body of the table (`<table>`).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody
+     */
+    tbody: TableBodyElementAttributes;
+
+    /**
+     * The _Table Head_ element.
+     *
+     * Defines a set of rows defining the head of the columns of the table.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
+     */
+    thead: TableHeadElementAttributes;
+
+    /**
+     * The _Table Foot_ element.
+     *
+     * Defines a set of rows summarizing the columns of the table.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tfoot
+     */
+    tfoot: TableFootElementAttributes;
+
+    /**
+     * The _Table Row_ element.
+     *
+     * Defines a row of cells in a table. The row's cells can then be established using a mix of `<td>` (data cell)
+     * and `<th>` (header cell) elements.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tr
+     */
+    tr: TableRowElementAttributes;
+
+    /**
+     * The _Table Data Cell_ element.
+     *
+     * Defines a cell of a table that contains data.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td
+     */
+    td: TableCellElementAttributes;
+
+    /**
+     * The _Table Header_ element.
+     *
+     * Defines a cell as header of a group of table cells. The exact nature of this group is defined by the
+     * `scope` and `headers` attributes.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/th
+     */
+    th: TableHeaderElementAttributes;
+  }
+
   /*====================================*\
   || 4.10                         Forms ||
   \*====================================*/
