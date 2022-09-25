@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
-import send from "send";
-import { isObject, isString, isTemplate } from "./helpers/typeChecking.js";
+import { isString, isTemplate } from "./helpers/typeChecking.js";
 import { matchRoute } from "./helpers/routing.js";
 import { parseFormBody } from "./helpers/parseFormBody.js";
 import { EventSource } from "./objects/EventSource.js";
@@ -9,14 +8,12 @@ import { Request } from "./objects/Request.js";
 import { Response } from "./objects/Response.js";
 import { Headers } from "./objects/Headers.js";
 
-const mime = send.mime;
-
 /**
  * Returns a request handler callback for a node `http` server.
  */
 export function makeListener(appContext) {
   return async function requestListener(req, res) {
-    const { routes, services, middlewares, cors } = appContext;
+    const { routes, globals, middlewares, cors } = appContext;
     const headers = new Headers();
 
     if (cors) {
@@ -68,26 +65,11 @@ export function makeListener(appContext) {
     });
 
     if (matched) {
-      if (matched.data.staticDirectory) {
-        console.log("static", matched, { url: req.url });
-
-        const stream = send(req, matched.params.wildcard, {
-          root: matched.data.staticDirectory,
-          maxage: 0,
-        });
-
-        stream.on("error", function onError(err) {
-          res.writeHead(err.status);
-          res.end();
-        });
-
-        stream.pipe(res);
-        return;
-      }
-
       const request = new Request(req, matched);
       const response = new Response();
       response.headers = headers;
+
+      let eventSourceCallback;
 
       const ctx = {
         cache: {},
@@ -107,6 +89,9 @@ export function makeListener(appContext) {
         redirect(to, statusCode = 301) {
           response.status = statusCode;
           response.headers.set("Location", to);
+        },
+        eventSource(fn) {
+          eventSourceCallback = fn;
         },
       };
 
@@ -140,8 +125,8 @@ export function makeListener(appContext) {
         index++;
         let current = handlers[index];
 
-        const next = index === handlers.length - 1 ? undefined : nextFunc;
-        ctx.response.body = (await current(ctx, next)) || ctx.response.body;
+        ctx.next = index === handlers.length - 1 ? undefined : nextFunc;
+        ctx.response.body = (await current(ctx)) || ctx.response.body;
       };
 
       try {
@@ -158,8 +143,9 @@ export function makeListener(appContext) {
         console.error(err);
       }
 
-      if (ctx.response.body && ctx.response.body instanceof EventSource) {
-        ctx.response.body.start(res);
+      if (eventSourceCallback) {
+        const source = new EventSource(eventSourceCallback);
+        source.start(res);
         return;
       }
 
@@ -183,58 +169,59 @@ export function makeListener(appContext) {
       }
 
       res.end();
+    } else if (!canStatic(req)) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ message: "Route not found." }));
     } else {
-      // Try serving static files, otherwise return 404.
-      if (req.method === "GET" || req.method === "HEAD") {
-        // TODO: Probably avoid reading from disk to check for fallback.
-        const staticPath = fs.existsSync(appContext.staticPath) ? path.resolve(appContext.staticPath) : null;
-        const hasIndexHTML = staticPath && fs.existsSync(path.join(staticPath, "index.html"));
+      req.url = normalizePath(req.url);
 
-        if (hasIndexHTML && canFallBackToIndexHTML(req)) {
-          req.url = "/index.html";
-        } else if (staticPath != null) {
-          const acceptEncoding = req.headers["accept-encoding"] || "";
+      let fallback = appContext.fallback ? normalizePath(appContext.fallback) : null;
+      let match = appContext.staticCache[req.url];
 
-          // Check if .gz version of asset exists and serve it.
-          if (acceptEncoding.includes("gzip") && fs.existsSync(path.join(staticPath, req.url + ".gz"))) {
-            const type = mime.lookup(req.url);
-            const charset = mime.charsets.lookup(type);
+      if (fallback && canFallback(req)) {
+        match = appContext.staticCache[fallback];
+      }
 
-            res.setHeader("Content-Type", type + (charset ? "; charset=" + charset : ""));
-            res.setHeader("Content-Encoding", "gzip");
-            res.setHeader("Vary", "Accept-Encoding");
-
-            req.url += ".gz";
-            console.log("serving gzip version: " + req.url);
-          }
-        }
-
-        const stream = send(req, req.url, {
-          root: staticPath,
-          maxage: 0,
-        });
-
-        stream.on("error", function onError(err) {
-          res.writeHead(err.status);
-          res.end();
-        });
-
-        stream.pipe(res);
-      } else {
+      if (!match) {
         res.writeHead(404, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ message: "Route not found." }));
+        return;
       }
+
+      let filePath = path.join(match.source, match.path);
+
+      const acceptEncoding = req.headers["accept-encoding"] || "";
+
+      if (match.gz && acceptEncoding.includes("gzip")) {
+        const { type, charset } = match;
+
+        res.setHeader("Content-Type", type + (charset ? "; charset=" + charset : ""));
+        res.setHeader("Content-Encoding", "gzip");
+        res.setHeader("Vary", "Accept-Encoding");
+
+        filePath = path.join(match.source, match.gz);
+      }
+
+      const stream = fs.createReadStream(filePath);
+
+      stream.on("error", function onError(err) {
+        console.error(err);
+        res.writeHead(500);
+        res.end();
+      });
+
+      stream.pipe(res);
     }
   };
 }
 
-function canFallBackToIndexHTML(req) {
+function canFallback(req) {
   const { method, headers, url } = req;
 
   // Method is not GET or HEAD.
-  // if (method !== "GET" && method !== "HEAD") {
-  //   return false;
-  // }
+  if (method !== "GET" && method !== "HEAD") {
+    return false;
+  }
 
   // Accept header is not sent.
   if (!isString(headers.accept)) {
@@ -257,4 +244,23 @@ function canFallBackToIndexHTML(req) {
   }
 
   return true;
+}
+
+function canStatic(req) {
+  const { method } = req;
+
+  // Method is not GET or HEAD.
+  if (method !== "GET" && method !== "HEAD") {
+    return false;
+  }
+
+  return true;
+}
+
+function normalizePath(p) {
+  if (!p.startsWith("/")) {
+    return "/" + p;
+  }
+
+  return p;
 }

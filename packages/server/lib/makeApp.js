@@ -1,23 +1,28 @@
-import http from "http";
-import path from "path";
-import fs from "fs";
-import { isFunction } from "./helpers/typeChecking.js";
-import { initService } from "./helpers/initService.js";
+import http from "node:http";
+import path from "node:path";
+
+import { isFunction, isString } from "./helpers/typeChecking.js";
+import { initGlobal } from "./helpers/initGlobal.js";
 import { parseRoute, sortRoutes } from "./helpers/routing.js";
 import { makeDebug } from "./helpers/makeDebug.js";
+import { makeStaticFileCache } from "./helpers/makeStaticFileCache.js";
 
 import { makeListener } from "./makeListener.js";
+
+const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), process.env.WOOF_STATIC_PATH || "build/static");
 
 export function makeApp(options = {}) {
   const debug = makeDebug(options.debug);
 
-  const registeredServices = {};
+  const statics = [];
+  const globals = {};
   const appContext = {
     routes: [],
     middlewares: [],
-    services: {},
+    globals: {},
+    staticCache: {},
+    fallback: null,
     debug,
-    staticPath: path.join(process.cwd(), process.env.WOOF_STATIC_PATH || "build/static"),
     cors: null,
   };
 
@@ -32,92 +37,121 @@ export function makeApp(options = {}) {
     server,
 
     /**
-     * Add a directory to serve static files from.
-     */
-    static(prefix, directory) {
-      appContext.routes.push({
-        ...parseRoute(`${prefix}/*`),
-        method: "GET",
-        staticDirectory: directory,
-      });
-
-      return methods;
-    },
-
-    /**
-     * Registers a service on the app. Services can be referenced in views and other globals.
+     * Registers middleware that runs for every request.
      *
-     * @param name - Unique string to name this service.
-     * @param service - A service to create and register under the name.
-     * @param config - Configuration options for the service. Can contain an `options` object that is passed to the service.
+     * @param handler - Middleware handler functions.
      */
-    service(name, service, config = {}) {
-      if (!isFunction(service)) {
-        throw new TypeError(`Expected a service function. Got: ${service} (${typeof service})`);
-      }
-
-      if (!registeredServices[name]) {
-        registeredServices[name] = {
-          fn: service,
-          instance: null,
-          options: null,
-        };
-      }
-
-      Object.defineProperty(appContext.services, name, {
-        get() {
-          throw new Error(
-            `Service '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other services that access it.`
-          );
-        },
-        configurable: true,
-      });
-
-      // Merge with existing fields if overwriting.
-      registeredServices[name].fn = service;
-
-      if (config.options !== undefined) {
-        registeredServices[name].options = config.options;
-      }
-
-      return methods;
-    },
-    /**
-     * Registers function at route with method GET.
-     *
-     * @param url - API path.
-     * @param func - Logic.
-     */
-    get: (url, ...handlers) => {
-      return addRoute("GET", url, handlers);
-    },
-    post: (url, ...handlers) => {
-      return addRoute("POST", url, handlers);
-    },
-    put: (url, ...handlers) => {
-      return addRoute("PUT", url, handlers);
-    },
-    patch: (url, ...handlers) => {
-      return addRoute("PATCH", url, handlers);
-    },
-    delete: (url, ...handlers) => {
-      return addRoute("DELETE", url, handlers);
-    },
-    head: (url, ...handlers) => {
-      return addRoute("HEAD", url, handlers);
-    },
-    use: (handler) => {
+    use(handler) {
       appContext.middlewares.push(handler);
       return methods;
     },
-    cors: (options = {}) => {
+
+    /**
+     * Configures CORS headers for this app.
+     */
+    cors(options = {}) {
       appContext.cors = {
         allowOrigin: ["*"],
         allowMethods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
         ...options,
       };
     },
-    mount: (...args) => {
+
+    /**
+     * Add a directory to serve static files from.
+     */
+    static(path, source) {
+      if (path == null && source == null) {
+        statics.push({ path: "/", source: DEFAULT_STATIC_SOURCE });
+        return methods;
+      }
+
+      if (!isString(path)) {
+        throw new TypeError(`Expected a 'path' string. Got: ${path} (${typeof path})`);
+      }
+
+      if (!isString(source)) {
+        throw new TypeError(`Expected a 'source' string. Got: ${source} (${typeof source})`);
+      }
+
+      statics.push({ path, source });
+
+      return methods;
+    },
+
+    /**
+     * Responds with an HTML file when eligible GET and HEAD requests are made.
+     * Allows a client app to handle these routes with client side routing.
+     *
+     * @param index - Default HTML file.
+     */
+    fallback(index = "index.html") {
+      if (appContext.fallback) {
+        console.warn(`app.fallback() has already been called. Only the most recent fallback will apply.`);
+      }
+
+      appContext.fallback = index;
+
+      return methods;
+    },
+
+    /**
+     * Registers a global on the app. Globals can be referenced in views and other globals.
+     *
+     * @param name - Unique string to name this global.
+     * @param fn - A function to create the global registered under this `name`.
+     */
+    global(name, fn) {
+      if (!isFunction(fn)) {
+        throw new TypeError(`Expected a global function. Got: ${fn} (${typeof fn})`);
+      }
+
+      if (!globals[name]) {
+        globals[name] = fn;
+      }
+
+      Object.defineProperty(appContext.globals, name, {
+        get() {
+          throw new Error(
+            `Global '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other globals that access it.`
+          );
+        },
+        configurable: true,
+      });
+
+      return methods;
+    },
+
+    get(url, ...handlers) {
+      return addRoute("GET", url, handlers);
+    },
+
+    post(url, ...handlers) {
+      return addRoute("POST", url, handlers);
+    },
+
+    put(url, ...handlers) {
+      return addRoute("PUT", url, handlers);
+    },
+
+    patch(url, ...handlers) {
+      return addRoute("PATCH", url, handlers);
+    },
+
+    delete(url, ...handlers) {
+      return addRoute("DELETE", url, handlers);
+    },
+
+    head(url, ...handlers) {
+      return addRoute("HEAD", url, handlers);
+    },
+
+    /**
+     * Mounts a router on this app.
+     *
+     * @param args - Either (prefix, router) or just (router) to mount at the root.
+     */
+    mount(...args) {
       let prefix = "";
 
       if (typeof args[0] === "string") {
@@ -134,21 +168,30 @@ export function makeApp(options = {}) {
      * Starts an HTTP server on the specified port and begins listening for requests.
      */
     async listen(port) {
+      // Serve from a static file cache.
+      // This prevents disk reads under high load, however, files added or removed
+      // while the server is running will not be picked up.
+
+      // TODO: Watch directories and regenerate on changes in development mode.
+      const files = makeStaticFileCache(statics);
+      for (const file of files) {
+        appContext.staticCache[file.path] = file;
+      }
+
       // Sort routes by specificity before any matches are attempted.
       appContext.routes = sortRoutes(appContext.routes);
 
       return new Promise(async (resolve) => {
         // init globals
-        for (const name in registeredServices) {
-          const service = registeredServices[name];
-
-          service.instance = await initService(appContext, service.fn, debug.makeChannel(`service:${name}`), {
+        for (const name in globals) {
+          const fn = globals[name];
+          const global = await initGlobal(fn, {
+            appContext,
             name,
-            options: service.options,
           });
 
-          Object.defineProperty(appContext.services, name, {
-            value: service.instance.exports,
+          Object.defineProperty(appContext.globals, name, {
+            value: global.exports,
             writable: false,
             configurable: false,
           });

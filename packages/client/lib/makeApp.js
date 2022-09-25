@@ -116,9 +116,9 @@ export function makeApp(options = {}) {
     return routes;
   }
 
-  /// /
+  ////
   // Public
-  /// /
+  ////
 
   return {
     /**

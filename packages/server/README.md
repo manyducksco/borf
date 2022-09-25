@@ -33,17 +33,20 @@ app.cors(corsOptions); // Use specified options.
 // Serve static files (tries static files after matching routes)
 app.static("/static/path", "/path/to/file/dir/on/this/machine"); // Specify a custom path for static files.
 
+app.static(); // Add default static directory (client bundle output)
+app.static("/static/path", "/path/to/actual/dir"); // Add custom static directory
+
 // Share logic and state between handlers with globals.
 // Each service is created once per request.
 // Two API calls will use two different instances, but all middleware in the same API call will use one instance.
 app.global("example", example);
 
 // Create API routes with functions named after HTTP methods (`get`, `post`, `delete`, etc.)
-app.get("/some-route", function (req, res) {
-  const example = this.global("example");
+app.get("/some-route", function (ctx) {
+  const example = ctx.global("example");
 
-  res.headers.set("name", "value");
-  res.statusCode = 200;
+  ctx.response.headers.set("name", "value");
+  ctx.response.statusCode = 200;
 
   // An object returned from a route becomes a JSON body automatically.
   return {
@@ -86,7 +89,7 @@ app.use(async (ctx, next) => {
   const timer = ctx.global("timing").createTimer(ctx.req.path);
 
   timer.start();
-  await next();
+  await ctx.next();
   timer.stop();
 
   timer.save();
@@ -136,29 +139,30 @@ app.use(async (ctx, next) => {
 // Express-style verb methods to handle routes. Pictured with multiple middleware functions.
 app.get(
   "/some/url",
-  ({ auth, redirect }) => {
+  (ctx) => {
+    const auth = ctx.global("auth");
     // Admin check. Presume `auth` is added by an auth middleware that runs before this.
     if (!auth.isAdmin) {
-      return redirect("/other/path");
+      return ctx.redirect("/other/path");
     }
-  }
-  ({ request, getService, next }) => {
-    // Analytics.
-    getService("analytics").pageView(request.location.pathname);
-    return next();
   },
-  ({ request, getService, next }) => {
+  (ctx) => {
+    // Analytics.
+    ctx.global("analytics").pageView(request.location.pathname);
+    return ctx.next();
+  },
+  (ctx) => {
     // Response time recorder.
-    const timer = getService("timing").createTimer(request.location.pathname);
+    const timer = ctx.global("timing").createTimer(request.location.pathname);
 
     timer.start();
-    await next();
+    await ctx.next();
     timer.stop();
 
     timer.save();
   },
-  ({ request, response }) => {
-    response.status = 200;
+  (ctx) => {
+    ctx.response.status = 200;
 
     return {
       message: "response"

@@ -1,12 +1,8 @@
 import EventEmitter from "events";
 
 export class EventSource {
-  /**
-   *
-   */
-  constructor(fn, options = {}) {
+  constructor(fn) {
     this.fn = fn;
-    this.options = options;
   }
 
   /**
@@ -20,22 +16,23 @@ export class EventSource {
       "Content-Type": "text/event-stream",
       Connection: "keep-alive",
     });
+    res.flushHeaders();
 
-    const connection = new EventSourceConnection(res);
+    const ctx = new EventSourceContext(res);
 
     // Tell the client to retry every 10 seconds (by default) if connectivity is lost.
-    // res.write(`retry: ${this.options.retryTimeout || 10000}\n\n`);
+    // res.write(`retry: ${10000}\n\n`);
 
     res.on("close", () => {
       res.end();
-      connection.emit("close");
+      ctx.emit("close");
     });
 
-    this.fn(connection);
+    this.fn(ctx);
   }
 }
 
-class EventSourceConnection extends EventEmitter {
+class EventSourceContext extends EventEmitter {
   #res = null;
 
   constructor(res) {
@@ -49,6 +46,7 @@ class EventSourceConnection extends EventEmitter {
 
   emit(event, data) {
     this.#res.write(`event: ${event}\ndata: ${data}\n\n`);
+    return true;
   }
 
   close() {

@@ -26,11 +26,11 @@ import CircleDrawer from "./views/7guis/06_CircleDrawer";
 import Cells from "./views/7guis/07_Cells";
 
 // const timer = new EventSource("/timer");
-
+//
 // timer.addEventListener("time", (event) => {
 //   console.log("time:", event.data + " seconds remaining");
 // });
-
+//
 // timer.addEventListener("message", (event) => {
 //   console.log("message:", event.data);
 // });

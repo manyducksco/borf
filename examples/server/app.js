@@ -1,9 +1,13 @@
-import { makeApp, makeRouter, html, EventSource } from "@woofjs/server";
+import { makeApp, makeRouter, html } from "@woofjs/server";
 
 const app = makeApp();
 const PORT = process.env.PORT || 4000;
 
 app.cors();
+app.static();
+// app.static("/files", "/path/to/files/dir");
+app.fallback();
+// app.fallback("/some/weird/place/index.html");
 
 const exampleService = function () {
   let timesCalled = 0;
@@ -118,20 +122,21 @@ async function AsyncHeader(...children) {
   return html`<div class="container">${children}</div>`;
 }
 
-app.get("/timer", function () {
-  return new EventSource((connection) => {
+app.get("/timer", function (ctx) {
+  // TODO: All events are emitted at once when the time ends.
+  ctx.eventSource((events) => {
     let seconds = 10;
 
-    connection.emit("time", seconds);
+    events.emit("time", seconds);
 
     setInterval(() => {
       --seconds;
 
       if (seconds === 0) {
-        connection.send("Timer is up!");
-        connection.close();
+        events.send("Timer is up!");
+        events.close();
       } else {
-        connection.emit("time", seconds);
+        events.emit("time", seconds);
       }
     }, 1000);
   });
