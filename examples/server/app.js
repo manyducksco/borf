@@ -9,7 +9,7 @@ app.static();
 app.fallback();
 // app.fallback("/some/weird/place/index.html");
 
-const exampleService = function () {
+const exampleGlobal = function () {
   let timesCalled = 0;
 
   return {
@@ -20,7 +20,7 @@ const exampleService = function () {
   };
 };
 
-const asyncService = async function () {
+const asyncGlobal = async function () {
   let waitFor = 50 + Math.random() * 100;
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -33,30 +33,30 @@ const asyncService = async function () {
   });
 };
 
-app.service("example", exampleService);
-app.service("async", asyncService);
+app.global("example", exampleGlobal);
+app.global("async", asyncGlobal);
 
-app.use(async (ctx, next) => {
+app.use(async (ctx) => {
   ctx.response.headers.set("X-MIDDLEWARE-OUTLINE", "mrrp");
   const start = performance.now();
-  await next();
+  await ctx.next();
   const end = performance.now();
   ctx.response.headers.set("X-TIMER", end - start + "ms");
 });
 
 app.post(
   "/full-test",
-  (ctx, next) => {
+  (ctx) => {
     ctx.response.headers.set("X-MIDDLEWARE-INLINE", "RUFF");
-    return next();
+    return ctx.next();
   },
   (ctx) => {
-    const service = ctx.services.example;
-    const asyncService = ctx.services.async;
+    const exampleGlobal = ctx.global("example");
+    const asyncGlobal = ctx.global("async");
 
     ctx.response.headers.set(
-      "X-SERVICE-CALLS",
-      `Example Service called ${service.call()} times.`
+      "X-GLOBAL-CALLS",
+      `Example Global called ${exampleGlobal.call()} times.`
     );
 
     ctx.response.headers.set(
@@ -70,8 +70,8 @@ app.post(
     );
 
     ctx.response.headers.set(
-      "X-SERVICE-ASYNC",
-      `Async Service waited ${asyncService.call()} ms.`
+      "X-GLOBAL-ASYNC",
+      `Async Global waited ${asyncGlobal.call()} ms.`
     );
 
     return new Promise((resolve) => {

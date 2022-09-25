@@ -73,16 +73,16 @@ export function makeListener(appContext) {
 
       const ctx = {
         cache: {},
-        service(name) {
+        global(name) {
           if (!isString(name)) {
-            throw new Error(`Expected a string for service name. Got: ${name}`);
+            throw new Error(`Expected a string for global name. Got: ${name}`);
           }
 
-          if (services[name]) {
-            return services[name];
+          if (globals[name]) {
+            return globals[name];
           }
 
-          throw new Error(`Service '${name}' is not registered on this app.`);
+          throw new Error(`Global '${name}' is not registered on this app.`);
         },
         request,
         response,

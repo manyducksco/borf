@@ -86,15 +86,12 @@ declare module "@woofjs/server" {
   ||           Globals           ||
   \*=============================*/
 
-  type ServiceFn = (this: ServiceContext, ctx: ServiceContext) => Object;
+  type GlobalFunction = (ctx: GlobalContext) => Object;
 
-  interface ServiceContext {
+  interface GlobalContext {
     debug: DebugChannel;
-    services: {
+    global: {
       [name: string]: any;
-    };
-    options: {
-      [key: string]: any;
     };
   }
 

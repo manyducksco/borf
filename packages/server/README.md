@@ -85,7 +85,7 @@ app.listen(4000).then((info) => {
 
 ```js
 // Mount middleware to run for every request.
-app.use(async (ctx, next) => {
+app.use(async (ctx) => {
   const timer = ctx.global("timing").createTimer(ctx.req.path);
 
   timer.start();
