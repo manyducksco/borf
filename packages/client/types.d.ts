@@ -854,6 +854,57 @@ declare module "@woofjs/client" {
     node: HTMLElement;
     done: () => void;
   }
+
+  /*==================================*\
+  ||             Debounce             ||
+  \*==================================*/
+
+  export interface makeDebounce {
+    /**
+     * Returns a function that takes a callback function and calls it after `timeout` milliseconds.
+     * If this function is called again before `timeout` elapses, the previously queued callback function
+     * is cancelled and the timeout is reset.
+     *
+     * @param timeout - Amount of milliseconds to wait before the callback function is called.
+     */
+    (timeout: number): (callback: () => any) => void;
+
+    /**
+     * Returns a function calls `callback` after `timeout` milliseconds.
+     * If this function is called again before `timeout` elapses, the previously queued callback function
+     * is cancelled and the timeout is reset.
+     *
+     * @param timeout - Amount of milliseconds to wait before the callback function is called.
+     * @param callback - Function to call after `timeout` milliseconds.
+     */
+    (timeout: number, callback: () => any): () => void;
+
+    /**
+     *
+     * @param options
+     */
+    (options: DebounceOptions): (callback: () => any) => void;
+    (options: DebounceCallbackOptions): () => void;
+  }
+
+  export interface DebounceOptions {
+    /**
+     * Amount of milliseconds to wait before the callback function is called.
+     */
+    timeout: number;
+
+    /**
+     * If debounce is triggered when no previous call is queued, execute immediately.
+     */
+    immediate?: boolean;
+  }
+
+  export interface DebounceCallbackOptions extends DebounceOptions {
+    /**
+     * Function to call after `timeout` milliseconds.
+     */
+    callback: () => any;
+  }
 }
 
 declare module "@woofjs/client/jsx-runtime" {
@@ -2293,13 +2344,74 @@ declare namespace JSX {
   || 4.7                          Edits ||
   \*====================================*/
 
-  interface ModElementAttributes extends ElementAttributes<HTMLModElement>, TimeElementAttributes {
+  interface ModElementAttributes extends ElementAttributes<HTMLModElement> {
     /**
      * A URL pointing to content that explains this change.
      * User agents may allow users to follow such citation links, but they are primarily intended for private use
      * (e.g., by server-side scripts collecting statistics about a site's edits), not for readers.
      */
     cite?: MaybeObservable<string | undefined>;
+
+    /**
+     * Indicates the time and/or date of the element. Must be in one of the formats below:
+     *
+     *
+     * a valid year string
+     * ```
+     * 2011
+     * ```
+     *
+     * a valid month string
+     * ```
+     * 2011-11
+     * ```
+     *
+     * a valid date string
+     * ```
+     * 2011-11-18
+     * ```
+     *
+     * a valid yearless date string
+     * ```
+     * 11-18
+     * ```
+     *
+     * a valid week string
+     * ```
+     * 2011-W47
+     * ```
+     *
+     * a valid time string
+     * ```
+     * 14:54
+     * 14:54:39
+     * 14:54:39.929
+     * ```
+     *
+     * a valid local date and time string
+     * ```
+     * 2011-11-18T14:54:39.929
+     * 2011-11-18 14:54:39.929
+     * ```
+     *
+     * a valid global date and time string
+     * ```
+     * 2011-11-18T14:54:39.929Z
+     * 2011-11-18T14:54:39.929-0400
+     * 2011-11-18T14:54:39.929-04:00
+     * 2011-11-18 14:54:39.929Z
+     * 2011-11-18 14:54:39.929-0400
+     * 2011-11-18 14:54:39.929-04:00
+     * ```
+     *
+     * a valid duration string
+     * ```
+     * PT4H18M3S
+     * ```
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
+     */
+    datetime?: MaybeObservable<string | undefined>;
   }
   interface InsElementAttributes extends ModElementAttributes {}
   interface DelElementAttributes extends ModElementAttributes {}
@@ -2493,7 +2605,7 @@ declare namespace JSX {
     onwaiting: EventHandler<Event>;
   }
 
-  interface HTMLMediaElementAttributes<T> extends ElementAttributes<T>, HTMLMediaElementEvents {}
+  interface HTMLMediaElementAttributes<T extends HTMLElement> extends ElementAttributes<T>, HTMLMediaElementEvents {}
 
   interface PictureElementAttributes extends ElementAttributes<HTMLPictureElement> {}
   interface SourceElementAttributes extends ElementAttributes<HTMLSourceElement> {

@@ -52,5 +52,5 @@
     "preset": "es-jest",
     "testEnvironment": "jsdom"
   },
-  "gitHead": "2efc7784364de098c788e5f3947f80f1e720236a"
+  "gitHead": "b6a5394b36f7019538f3d03d0d54a949ea9f31d6"
 }
