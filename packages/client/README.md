@@ -29,18 +29,30 @@ Outline for future guide:
 - Globals
   - State overview
 
+Exports four functions:
+
+- makeApp
+- makeGlobal
+- makeView
+- makeTransitions
+
 ## Hello World
 
 ```js
-import woof from "@woofjs/client";
+import { makeApp } from "@woofjs/client";
 
-const app = woof();
+// Create a new woof app.
+const app = makeApp();
 
-app.route("/", function () {
-  return <h1>Hello World</h1>;
+// Display a <h1>Hello World</h1> at the root.
+app.route("/", function (ctx, h) {
+  return h("h1", "Hello World");
 });
+
+// Redirect any other URL back to root.
 app.redirect("*", "/");
 
+// Display this app inside the element with an `id` of "app"
 app.connect("#app");
 ```
 
@@ -68,7 +80,7 @@ Route strings are a set of fragments separated by `/`. These fragments are of th
   param. Wildcards must be at the end of a route.
 
 ```js
-app.route("users/:id", function (ctx) {
+app.route("users/:id", function (ctx, h) {
   // Get route params from router.
   const { $params } = ctx.global("router");
 
@@ -93,7 +105,7 @@ When the values stored in state change, anything observing those bindings is imm
 ```js
 import { makeView } from "@woofjs/client";
 
-const Timer = makeView(function (ctx) {
+const Timer = makeView((ctx, h) => {
   ctx.defaultState = {
     seconds: 0,
   };
@@ -113,12 +125,10 @@ const Timer = makeView(function (ctx) {
 
   const $seconds = ctx.readable("seconds");
 
-  return (
-    <div>
-      <input type="text" value={$seconds} disabled />
-      <button onclick={reset}>Reset Counter</button>
-    </div>
-  );
+  return h("div", [
+    h("input", { type: "text", value: $sections, disabled: true }),
+    h("button", { onclick: reset }, "Reset Counter"),
+  ]);
 });
 ```
 
@@ -128,26 +138,25 @@ Views are reusable modules with their own markup and logic. You can define a vie
 times as you need. Views can take attributes that set their default state and establish data bindings.
 
 ```jsx
-function Example(ctx) {
+const Example = makeView((ctx, h) => {
   ctx.defaultState = {
     title: "Default Title",
   };
 
   const $title = ctx.readable("title");
 
-  return (
-    <div>
-      <h1>{$title}</h1>
-      <p>This is a reusable view.</p>
-    </div>
-  );
-}
+  return h("div", [
+    //
+    h("h1", $title),
+    h("p", "This is a reusable view."),
+  ]);
+});
 
 // Views can be mounted directly on a route.
 app.route("example", Example);
 
 // They can also be used inside another window.
-app.route("other", function () {
+app.route("other", (ctx, h) => {
   return h("div", [
     // Pass state as attributes.
     h(Example, { title: "In Another View" }),
@@ -160,7 +169,30 @@ app.route("other", function () {
 Views receive a context object they may use to translate state and lifecycle into DOM nodes.
 
 ```js
-function Example(ctx) {
+function htmlpers(h) {
+  return {
+    get a(...args) {
+      return h("a", ...args);
+    },
+    get h1(...args) {
+      return h("h1", ...args);
+    },
+    ...
+  };
+}
+
+// Hypothetical function to generate factory functions for each HTML tag.
+const { div, h1, p } = htmlpers(h);
+
+return div(
+  //
+  h1({ class: "heading" }, "Title"),
+  p("This is the paragraph."),
+  h(SomeView, { value: 5 })
+);
+
+
+const Example = makeView(function (ctx, h) {
   // Access globals by the name they were registered under.
   const global = ctx.global("name");
 
@@ -224,19 +256,13 @@ function Example(ctx) {
 
   // Render children inside a `<div>`
   return h("div", ctx.outlet());
-}
+});
 ```
 
 ### Templating
 
-To create elements in woof, you import the `h` function. The `h` function is heavily based
-on [hyperscript](https://github.com/hyperhype/hyperscript). There are also helpful utility functions for conditionals,
-loops and more.
-
 ```jsx
-import { h } from "@woofjs/client";
-
-function Example() {
+const Example = makeView(function (ctx, h) {
   return h("section", [
     h("h1", "Item List"),
     h("p", { style: "color: red" }, "Below is a list of items."),
@@ -249,7 +275,7 @@ function Example() {
       h("li", "Item 6"),
     ]),
   ]);
-}
+});
 ```
 
 That view renders the following HTML.
@@ -278,7 +304,7 @@ alternate syntax for `h`.
 > Note that Woof uses a `class` attribute like HTML rather than `className` like React.
 
 ```jsx
-function Example() {
+const Example = makeView(function (ctx) {
   return (
     <section>
       <h1>Item List</h1>
@@ -293,48 +319,48 @@ function Example() {
       </ul>
     </section>
   );
-}
+});
 ```
 
 ### Using views
 
 ```js
-function Example() {
+const Example = makeView((ctx, h) => {
   return h(Subview);
-}
+});
 
-function Subview() {
+const Subview = makeView((ctx, h) => {
   return h("h1", "Hello from inside another window!");
-}
+});
 ```
 
 When using subviews, you can pass them attributes just like you can with HTML elements. The Example views in
 the following code will display `<h1>Hello world!</h1>`.
 
 ```js
-function Example() {
+const Example = makeView((ctx, h) => {
   return h(Subview, { name: "world" });
-}
+});
 
-function Subview(ctx) {
+const Subview = makeView((ctx, h) => {
   const name = ctx.get("name");
 
   return h("h1", "Hello ", name, "!");
-}
+});
 ```
 
 The same thing with JSX:
 
 ```js
-function Example() {
+const Example = makeView((ctx) => {
   return <Subview name="world" />;
-}
+});
 
-function Subview(ctx) {
+const Subview = makeView((ctx) => {
   const name = ctx.get("name");
 
   return <h1>Hello {name}!</h1>;
-}
+});
 ```
 
 ### Helpers
@@ -353,7 +379,7 @@ The `when` helper displays the element only when the bound value is truthy, whil
 the bound value is falsy. The condition can be a plain value, a $binding, or the name of a view state key to bind to.
 
 ```js
-function Example(ctx) {
+const Example = makeView((ctx, h) => {
   ctx.defaultState = {
     on: false,
   };
@@ -368,7 +394,7 @@ function Example(ctx) {
 
     h("button", { onclick: toggle }, "Toggle"),
   ]);
-}
+});
 ```
 
 #### Looping
@@ -379,9 +405,7 @@ function Example(ctx) {
 Repeats a render callback once for each item in an array.
 
 ```js
-import { makeState, repeat } from "@woofjs/client";
-
-function Example(ctx) {
+const Example = makeView((ctx, h) => {
   ctx.defaultState = {
     list: ["one", "two", "three"],
   };
@@ -395,7 +419,7 @@ function Example(ctx) {
       return h("li", $item);
     })
   );
-}
+});
 ```
 
 The `repeat` function uses keys to identify which items have been changed, added or removed. By default, `repeat` uses
@@ -423,9 +447,7 @@ renderable. Called anew every time the value changes.
 Renders `children` if called without any arguments.
 
 ```js
-import { makeState, watch } from "@woofjs/client";
-
-function Example(ctx) {
+const Example = makeView((ctx, h) => {
   ctx.defaultState = {
     value: "one",
   };
@@ -435,10 +457,10 @@ function Example(ctx) {
 
     // Displays the return value of the function each time the value changes.
     ctx.outlet("value", ($value) => {
-      return <span>{$value}!!!</span>;
+      return h("span", $value, "!!!");
     })
   );
-}
+});
 ```
 
 ## Dynamic Classes
@@ -447,35 +469,41 @@ Components also support dynamic classes. Pass an object where the keys are the c
 the element while the values are truthy. The values can be \$states if you want to toggle classes dynamically.
 
 ```jsx
-function Example(ctx) {
-  return (
-    <div
-      class={{
+const Example = makeView((ctx, h) => {
+  return h(
+    "div",
+    {
+      class: {
         // Always includes "container" class
         container: true,
 
         // Includes "active" class when 'isActive' attribute is truthy
         active: ctx.readable("isActive"),
-      }}
-    >
-      {ctx.outlet()}
-    </div>
+      },
+    },
+    ctx.outlet()
   );
-}
+});
 ```
 
 Multiple classes:
 
 ```jsx
-function Example(ctx) {
-  return <div class={["one", "two"]}>{ctx.outlet()}</div>;
-}
+const Example = makeView((ctx, h) => {
+  return h(
+    "div",
+    {
+      class: ["one", "two"],
+    },
+    ctx.outlet()
+  );
+});
 ```
 
 A combination:
 
 ```jsx
-function Example(ctx) {
+const Example = makeView((ctx) => {
   // The 'container' class is always included while the ones
   // inside the object are shown if their value is truthy.
   return (
@@ -490,13 +518,13 @@ function Example(ctx) {
       {ctx.outlet()}
     </div>
   );
-}
+});
 ```
 
 ## Globals
 
 Globals are a great way to share state and logic between multiple views. Sometimes you have components in different
-heirarchies that don't easily support typical data binding, such as when you need to access the same data from multiple
+hierarchies that don't easily support typical data binding, such as when you need to access the same data from multiple
 routes.
 
 Globals are singletons, meaning only one copy of that global exists per app, and all `.global(name)` calls get the

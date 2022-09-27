@@ -73,7 +73,7 @@ function makeDOMNode() {
 ||         Tests          ||
 \*======================== */
 
-test("returns a window", () => {
+test("returns a view", () => {
   function Component() {
     return h("p", "This is just a test.");
   }
@@ -83,7 +83,7 @@ test("returns a window", () => {
   expect(isView(result)).toBe(true);
 });
 
-test("throws if window doesn't return an element or null", () => {
+test("throws if view doesn't return an element or null", () => {
   function InvalidOne() {}
   function InvalidTwo() {
     return ["what is this"];
@@ -315,7 +315,7 @@ test(".node returns the root DOM node", () => {
 //   expect(oneWayChanged).toHaveBeenCalledTimes(2);
 // });
 
-test("throws when setting a two way attr that isn't a state", () => {
+test("throws when setting a two way attr that isn't a binding", () => {
   function Component() {}
 
   expect(() => {

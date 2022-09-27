@@ -1,6 +1,6 @@
 import "./styles/demo.css";
 
-import woof from "@woofjs/client";
+import { makeApp } from "@woofjs/client";
 
 import counter from "./globals/counter";
 import mouse from "./globals/mouse";
@@ -35,7 +35,7 @@ import Cells from "./views/7guis/07_Cells";
 //   console.log("message:", event.data);
 // });
 
-const app = woof({
+const app = makeApp({
   debug: {
     filter: "*",
     log: true,

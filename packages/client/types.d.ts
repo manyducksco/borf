@@ -6,9 +6,7 @@ declare module "@woofjs/client" {
    *
    * @param options - Configuration options.
    */
-  export function woof<Globals = any>(options?: AppOptions): App<Globals>;
-
-  export default woof;
+  export function makeApp<Globals = any>(options?: AppOptions): App<Globals>;
 
   /*==================================*\
   ||               App                ||
@@ -113,7 +111,9 @@ declare module "@woofjs/client" {
     page: ReturnType<GlobalPage>;
   };
 
-  export type AppGlobals<T> = DefaultGlobals & { [K in keyof T]: ReturnType<T[K]> };
+  export type AppGlobals<T> = DefaultGlobals & {
+    [K in keyof T]: T[K] extends (...any) => any ? ReturnType<T[K]> : never;
+  };
 
   /*==================================*\
   ||             Routing              ||
@@ -200,32 +200,6 @@ declare module "@woofjs/client" {
   }
 
   type SubroutesFunction<G> = (ctx: RouterContext<G>) => void;
-
-  /*==================================*\
-  ||            Templating            ||
-  \*==================================*/
-
-  export type WoofElement = Template | ToStringable | Readable<ToStringable>;
-
-  interface ToStringable {
-    toString(): string;
-  }
-
-  export interface Template {
-    readonly isTemplate: true;
-    init(appContext: AppContext<any>): View<unknown, unknown>;
-  }
-
-  export function h<Tag extends keyof JSX.IntrinsicElements>(
-    tag: Tag,
-    attributes: JSX.IntrinsicElements[Tag],
-    ...children: WoofElement[]
-  ): Template;
-  export function h(tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Template;
-  export function h(tag: string, ...children: WoofElement[]): Template;
-
-  export function h(view: View<any, any>, ...children: WoofElement[]): Template;
-  export function h<State>(view: View<State, any>, state: State, ...children: WoofElement[]): Template;
 
   /*==================================*\
   ||           Debug Context          ||
@@ -327,12 +301,12 @@ declare module "@woofjs/client" {
     unset<Key extends keyof DeletableKeys<State>>(key: Key): void;
 
     // TODO: Type annotations
-    merge<V>(merge: (value: State) => V): Readable<V>;
-    merge<T1, V>(source1: T1, merge: (value1: T1 extends keyof State ? State[T1] : Unwrap<T1>) => V): Readable<V>;
+    merge<V>(fn: (value: State) => V): Readable<V>;
+    merge<T1, V>(source1: T1, fn: (value1: T1 extends keyof State ? State[T1] : Unwrap<T1>) => V): Readable<V>;
     merge<T1, T2, V>(
       source1: T1,
       source2: T2,
-      merge: (
+      fn: (
         value1: T1 extends keyof State ? State[T1] : Unwrap<T1>,
         value2: T2 extends keyof State ? State[T2] : Unwrap<T2>
       ) => V
@@ -341,7 +315,7 @@ declare module "@woofjs/client" {
       source1: T1,
       source2: T2,
       source3: T3,
-      merge: (
+      fn: (
         value1: T1 extends keyof State ? State[T1] : Unwrap<T1>,
         value2: T2 extends keyof State ? State[T2] : Unwrap<T2>,
         value3: T3 extends keyof State ? State[T3] : Unwrap<T3>
@@ -461,6 +435,47 @@ declare module "@woofjs/client" {
   ||               View               ||
   \*==================================*/
 
+  /* ----- Templating ----- */
+
+  export type WoofElement = Template | ToStringable | Readable<ToStringable>;
+
+  interface ToStringable {
+    toString(): string;
+  }
+
+  export interface Template {
+    readonly isTemplate: true;
+    init(appContext: AppContext<any>): View<unknown, unknown>;
+  }
+
+  export function h<Tag extends keyof JSX.IntrinsicElements>(
+    tag: Tag,
+    attributes: JSX.IntrinsicElements[Tag],
+    ...children: WoofElement[]
+  ): Template;
+  export function h(tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Template;
+  export function h(tag: string, ...children: WoofElement[]): Template;
+
+  export function h(view: View<any, any>, ...children: WoofElement[]): Template;
+  export function h<State>(view: View<State, any>, state: State, ...children: WoofElement[]): Template;
+
+  /**
+   * Creates an instance of an HTML element or view.
+   */
+  interface HypertextFunction {
+    <Tag extends keyof JSX.IntrinsicElements>(
+      tag: Tag,
+      attributes: JSX.IntrinsicElements[Tag],
+      ...children: WoofElement[]
+    ): Template;
+
+    (tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Template;
+    (tag: string, ...children: WoofElement[]): Template;
+
+    (view: View<any, any>, ...children: WoofElement[]): Template;
+    <State>(view: View<State, any>, state: State, ...children: WoofElement[]): Template;
+  }
+
   /**
    * Stores a value when called with one and returns the most recent when called with none.
    */
@@ -478,7 +493,7 @@ declare module "@woofjs/client" {
 
   export function makeView<S = any, G = any>(fn: ViewFunction<S, G>): View<S, G>;
 
-  export type ViewFunction<S = any, G = any> = (ctx: ViewContext<S, G>) => Template | null;
+  export type ViewFunction<S = any, G = any> = (ctx: ViewContext<S, G>, h: HypertextFunction) => Template | null;
 
   export type View<S, G> = (props: FakeJSXProps<Partial<S>>) => {
     create(): Template;
@@ -800,6 +815,44 @@ declare module "@woofjs/client" {
      * Returns the response object (if there is one).
      */
     response(): HTTPResponse<T> | undefined;
+  }
+
+  /*==================================*\
+  ||            Transitions           ||
+  \*==================================*/
+
+  /**
+   * Defines a set of standalone transitions that can be applied to any element.
+   *
+   * @param transitions - An object with functions that implement the transitions.
+   */
+  export function makeTransitions(transitions: Transitions): TransitionFactory;
+
+  /**
+   * Takes an element and returns a version of that element with these transitions applied.
+   *
+   * @param element - A view, a DOM node, or anything with a `.toString()` method.
+   */
+  export type TransitionFactory = (element: Element) => Template;
+
+  export interface Transitions {
+    /**
+     * Defines the transition that occurs when an element is added to the document.
+     */
+    in?: (ctx: TransitionContext) => void;
+
+    /**
+     * Defines the transition that occurs before the element is removed from the document.
+     */
+    out?: (ctx: TransitionContext) => void;
+  }
+
+  export interface TransitionContext {
+    /**
+     *
+     */
+    node: HTMLElement;
+    done: () => void;
   }
 }
 
@@ -2240,7 +2293,7 @@ declare namespace JSX {
   || 4.7                          Edits ||
   \*====================================*/
 
-  interface ModElementAttributes extends ElementAttributes<ModElementAttributes>, TimeElementAttributes {
+  interface ModElementAttributes extends ElementAttributes<HTMLModElement>, TimeElementAttributes {
     /**
      * A URL pointing to content that explains this change.
      * User agents may allow users to follow such citation links, but they are primarily intended for private use
@@ -2440,10 +2493,10 @@ declare namespace JSX {
     onwaiting: EventHandler<Event>;
   }
 
-  interface HTMLMediaElementAttributes<T> extends HTMLElementAttributes<T>, HTMLMediaElementEvents {}
+  interface HTMLMediaElementAttributes<T> extends ElementAttributes<T>, HTMLMediaElementEvents {}
 
-  interface PictureElementAttributes extends HTMLElementAttributes<HTMLPictureElement> {}
-  interface SourceElementAttributes extends HTMLElementAttributes<HTMLSourceElement> {
+  interface PictureElementAttributes extends ElementAttributes<HTMLPictureElement> {}
+  interface SourceElementAttributes extends ElementAttributes<HTMLSourceElement> {
     /**
      * The [MIME type](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types) of the resource,
      * optionally with a [`codecs` parameter](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter).
@@ -2505,7 +2558,7 @@ declare namespace JSX {
      */
     width?: MaybeObservable<string | number | undefined>;
   }
-  interface ImgElementAttributes extends HTMLElementAttributes<HTMLImageElement> {
+  interface ImgElementAttributes extends ElementAttributes<HTMLImageElement> {
     /**
      * Defines an alternative text description of the image.
      *
@@ -2606,7 +2659,7 @@ declare namespace JSX {
      */
     usemap?: MaybeObservable<string | undefined>;
   }
-  interface IframeElementAttributes extends HTMLElementAttributes<HTMLIFrameElement> {
+  interface IframeElementAttributes extends ElementAttributes<HTMLIFrameElement> {
     /**
      * Specifies a [feature policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Feature_Policy) for the `<iframe>`.
      * The policy defines what features are available to the `<iframe>` based on the origin of the request
@@ -2695,7 +2748,7 @@ declare namespace JSX {
      */
     srcdoc?: MaybeObservable<string | undefined>;
   }
-  interface EmbedElementAttributes extends HTMLElementAttributes<HTMLEmbedElement> {
+  interface EmbedElementAttributes extends ElementAttributes<HTMLEmbedElement> {
     /**
      * The displayed height of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
      */
@@ -2716,7 +2769,7 @@ declare namespace JSX {
      */
     type?: MaybeObservable<string | undefined>;
   }
-  interface ObjectElementAttributes extends HTMLElementAttributes<HTMLObjectElement> {
+  interface ObjectElementAttributes extends ElementAttributes<HTMLObjectElement> {
     /**
      * The displayed height of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
      */
@@ -2872,7 +2925,7 @@ declare namespace JSX {
      */
     src?: MaybeObservable<string | undefined>;
   }
-  interface TrackElementAttributes extends HTMLElementAttributes<HTMLTrackElement> {
+  interface TrackElementAttributes extends ElementAttributes<HTMLTrackElement> {
     /**
      * Indicates that the track should be enabled unless the user's preferences indicate that another track
      * is more appropriate. This may only be used on one track element per media element.
@@ -2904,7 +2957,7 @@ declare namespace JSX {
      */
     srclang: MaybeObservable<string | undefined>;
   }
-  interface MapElementAttributes extends HTMLElementAttributes<HTMLMapElement> {
+  interface MapElementAttributes extends ElementAttributes<HTMLMapElement> {
     /**
      * Gives the map a name so that it can be referenced. The attribute must be present and must have a non-empty value
      * with no space characters. The value of the name attribute must not be equal to the value of the name attribute
@@ -2915,7 +2968,7 @@ declare namespace JSX {
      */
     name: MaybeObservable<string>;
   }
-  interface AreaElementAttributes extends HTMLElementAttributes<HTMLAreaElement> {
+  interface AreaElementAttributes extends ElementAttributes<HTMLAreaElement> {
     /**
      * A text string alternative to display on browsers that do not display images. The text should be phrased
      * so that it presents the user with the same kind of choice as the image would offer when displayed without
@@ -3117,9 +3170,9 @@ declare namespace JSX {
   // td
   // th
 
-  interface TableElementAttributes extends HTMLElementAttributes<HTMLTableElement> {}
-  interface TableCaptionElementAttributes extends HTMLElementAttributes<HTMLTableCaptionElement> {}
-  interface TableColgroupElementAttributes extends HTMLElementAttributes<HTMLTableColElement> {
+  interface TableElementAttributes extends ElementAttributes<HTMLTableElement> {}
+  interface TableCaptionElementAttributes extends ElementAttributes<HTMLTableCaptionElement> {}
+  interface TableColgroupElementAttributes extends ElementAttributes<HTMLTableColElement> {
     /**
      * A positive integer indicating the number of consecutive columns the `<colgroup>` element spans.
      * If not present, its default value is `1`.
@@ -3128,18 +3181,18 @@ declare namespace JSX {
      */
     span?: MaybeObservable<number | undefined>;
   }
-  interface TableColElementAttributes extends HTMLElementAttributes<HTMLTableColElement> {
+  interface TableColElementAttributes extends ElementAttributes<HTMLTableColElement> {
     /**
      * A positive integer indicating the number of consecutive columns the `<col>` element spans.
      * If not present, its default value is `1`.
      */
     span?: MaybeObservable<number | undefined>;
   }
-  interface TableBodyElementAttributes extends HTMLElementAttributes<HTMLTableSectionElement> {}
-  interface TableHeadElementAttributes extends HTMLElementAttributes<HTMLTableSectionElement> {}
-  interface TableFootElementAttributes extends HTMLElementAttributes<HTMLTableSectionElement> {}
-  interface TableRowElementAttributes extends HTMLElementAttributes<HTMLTableRowElement> {}
-  interface TableCellElementAttributes extends HTMLElementAttributes<HTMLTableCellElement> {
+  interface TableBodyElementAttributes extends ElementAttributes<HTMLTableSectionElement> {}
+  interface TableHeadElementAttributes extends ElementAttributes<HTMLTableSectionElement> {}
+  interface TableFootElementAttributes extends ElementAttributes<HTMLTableSectionElement> {}
+  interface TableRowElementAttributes extends ElementAttributes<HTMLTableRowElement> {}
+  interface TableCellElementAttributes extends ElementAttributes<HTMLTableCellElement> {
     /**
      * A positive integer value that indicates for how many columns the cell extends. Its default value is `1`.
      * Values higher than 1000 will be considered as incorrect and will be set to the default value.
@@ -3295,6 +3348,48 @@ declare namespace JSX {
   // fieldset
   // legend
 
+  interface FormElementAttributes extends ElementAttributes<HTMLFormElement> {}
+  interface LabelElementAttributes extends ElementAttributes<HTMLLabelElement> {
+    /**
+     * A single `id` for a labelable form-related element in the same document as the `<label>` element.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label#attr-for
+     */
+    for?: MaybeObservable<string | undefined>;
+  }
+  interface InputElementAttributes extends ElementAttributes<HTMLInputElement> {}
+  interface ButtonElementAttributes extends ElementAttributes<HTMLButtonElement> {}
+  interface SelectElementAttributes extends ElementAttributes<HTMLSelectElement> {}
+  interface DatalistElementAttributes extends ElementAttributes<HTMLDataListElement> {}
+  interface OptgroupElementAttributes extends ElementAttributes<HTMLOptGroupElement> {}
+  interface OptionElementAttributes extends ElementAttributes<HTMLOptionElement> {}
+  interface TextareaElementAttributes extends ElementAttributes<HTMLTextAreaElement> {}
+  interface OutputElementAttributes extends ElementAttributes<HTMLOutputElement> {}
+  interface ProgressElementAttributes extends ElementAttributes<HTMLProgressElement> {}
+  interface MeterElementAttributes extends ElementAttributes<HTMLMeterElement> {}
+  interface FieldsetElementAttributes extends ElementAttributes<HTMLFieldSetElement> {}
+  interface LegendElementAttributes extends ElementAttributes<HTMLLegendElement> {}
+
+  interface IntrinsicElements {
+    /**
+     * The _Form_ element.
+     *
+     * Represents a document section containing interactive controls for submitting information.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form
+     */
+    form: FormElementAttributes;
+
+    /**
+     * The _Input Label_ element.
+     *
+     * Represents a caption for an item in a user interface.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label
+     */
+    label: LabelElementAttributes;
+  }
+
   /*====================================*\
   || 4.11          Interactive elements ||
   \*====================================*/
@@ -3303,7 +3398,7 @@ declare namespace JSX {
   // summary
   // dialog
 
-  interface DetailsElementAttributes extends HTMLElementAttributes<HTMLDetailsElement> {
+  interface DetailsElementAttributes extends ElementAttributes<HTMLDetailsElement> {
     /**
      * Indicates whether the contents of the <details> element are currently visible.
      * The details are shown when this attribute is true, hidden when false.
@@ -3319,8 +3414,8 @@ declare namespace JSX {
      */
     ontoggle?: EventHandler<Event>;
   }
-  interface SummaryElementAttributes extends HTMLElementAttributes<HTMLElement> {}
-  interface DialogElementAttributes extends HTMLElementAttributes<HTMLDialogElement> {
+  interface SummaryElementAttributes extends ElementAttributes<HTMLElement> {}
+  interface DialogElementAttributes extends ElementAttributes<HTMLDialogElement> {
     /**
      * Indicates that the dialog is active and can be interacted with. When the `open` attribute is not set, the dialog
      * shouldn't be shown to the user. It is recommended to use the `.show()` or `.showModal()` methods to render dialogs,

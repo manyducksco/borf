@@ -1,5 +1,6 @@
 import { isTemplate, isDOM, isView, isString, isBinding } from "./typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
+import { h } from "../h.js";
 
 import { makeState } from "./makeState.js";
 import { makeViewHelpers } from "./makeViewHelpers.js";
@@ -174,7 +175,7 @@ export function initView(fn, config) {
   ||      Run setup function     ||
   \*=============================*/
 
-  let element = fn(ctx);
+  let element = fn(ctx, h);
 
   if (isTemplate(element)) {
     element = element.init({ appContext, elementContext });
