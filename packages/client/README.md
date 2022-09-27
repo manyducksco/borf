@@ -1,4 +1,4 @@
-# (🐕🖥) @woofjs/client
+# 🐕🖥 @woofjs/client
 
 Front end routing, components and state for dogs. 🐕
 
@@ -629,7 +629,7 @@ app.global("example", function (ctx) {
 
 ## Debounce
 
-Frequently in UI programming, you have events coming in constantly but only want to perform an action when they are done. For example, a search input that which waits 300ms after the user has stopped typing before making an API call to fetch results to display.
+Frequently in UI programming, you have events coming in constantly but only want to perform an action when they are done. For example, a search input that which waits 300ms after the user has stopped typing before making an API call.
 
 Debouncing lets you call a function any number of times, but only the most recent call will actually execute when that time limit elapses.
 

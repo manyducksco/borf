@@ -1,3 +1,3 @@
-# Woof Examples
+# 🐕 例 Woof Examples
 
 Run this project with `woof start` to see examples.

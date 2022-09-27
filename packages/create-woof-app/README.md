@@ -1,4 +1,4 @@
-# `create-woof-app`
+# 🐕✨ `create-woof-app`
 
 > WARNING: This package is just a placeholder. Future versions will have an implementation once the framework is further along in development.
 

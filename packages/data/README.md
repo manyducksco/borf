@@ -1,4 +1,4 @@
-# `@woofjs/data`
+# 🐕💾 `@woofjs/data`
 
 Data models, collections and validation for dogs. 🐕
 

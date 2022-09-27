@@ -1,6 +1,6 @@
 # 🐕🪟 @woofjs/window
 
-Develop components in isolation and poke at their state while they run just to see what blows up. `@woofjs/window` is a
+Develop components in isolation and poke at their state while they run to see what blows up. `@woofjs/window` is a
 debugger and playground for `@woofjs/client` views.
 
 ## How to Use
