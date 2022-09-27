@@ -35,6 +35,7 @@ Exports four functions:
 - makeGlobal
 - makeView
 - makeTransitions
+- makeDebounce
 
 ## Hello World
 
@@ -626,6 +627,45 @@ app.global("example", function (ctx) {
 });
 ```
 
+## Debounce
+
+Frequently in UI programming, you have events coming in constantly but only want to perform an action when they are done. For example, a search input that which waits 300ms after the user has stopped typing before making an API call to fetch results to display.
+
+Debouncing lets you call a function any number of times, but only the most recent call will actually execute when that time limit elapses.
+
+```js
+const debounced = makeDebounce(300, (value) => {
+  console.log("debounced:", value);
+});
+
+debounced(1);
+debounced(2);
+debounced(3); // Only this one will fire, after 300 milliseconds
+
+// Or take config object to support additional advanced options:
+const debounced = makeDebounce({
+  timeout: 300,
+  immediate: true,
+  callback: (value) => {
+    console.log("debounced:", value);
+  },
+});
+
+// If no callback is passed, a function is returned that takes and queues another function.
+// Use this when you may have more than one function that should share a single queue.
+const debounce = makeDebounce(300);
+
+debounce(() => {
+  console.log("debounced: 1");
+});
+debounce(() => {
+  console.log("debounced: 2");
+});
+debounce(() => {
+  console.log("debounced: 3"); // Only this one will run.
+});
+```
+
 ## Testing
 
 See [the testing README](./lib/testing/README.md).
@@ -633,3 +673,7 @@ See [the testing README](./lib/testing/README.md).
 ---
 
 🦆
+
+```
+
+```
