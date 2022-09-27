@@ -6,13 +6,16 @@ import { initGlobal } from "./helpers/initGlobal.js";
 import { parseRoute, sortRoutes } from "./helpers/routing.js";
 import { makeDebug } from "./helpers/makeDebug.js";
 import { makeStaticFileCache } from "./helpers/makeStaticFileCache.js";
+import { makeDebouncer } from "./helpers/makeDebouncer.js";
 
 import { makeListener } from "./makeListener.js";
 
+const IS_DEV = process.env.NODE_ENV !== "production";
 const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), process.env.WOOF_STATIC_PATH || "build/static");
 
 export function makeApp(options = {}) {
   const debug = makeDebug(options.debug);
+  const channel = debug.makeChannel("woof:app");
 
   const statics = [];
   const globals = {};
@@ -25,6 +28,37 @@ export function makeApp(options = {}) {
     debug,
     cors: null,
   };
+
+  /**
+   * Watch files with chokidar and rebuild caches. Recommended for use while developing apps.
+   *
+   * @paths - Array of paths to watch.
+   */
+  async function watchFiles() {
+    const chokidar = await import("chokidar");
+
+    const paths = [];
+    for (const entry of statics) {
+      paths.push(path.join(entry.source, "**/*"));
+    }
+
+    const listener = chokidar.watch(paths);
+    const debouncer = makeDebouncer(30);
+
+    listener.on("all", () => {
+      debouncer.queue(() => {
+        const cache = {};
+
+        makeStaticFileCache(statics).forEach((file) => {
+          cache[file.path] = file;
+        });
+
+        appContext.staticCache = cache;
+
+        channel.log("rebuilt static file cache");
+      });
+    });
+  }
 
   function addRoute(method, url, handlers) {
     appContext.routes.push({ ...parseRoute(url), method, handlers });
@@ -87,7 +121,7 @@ export function makeApp(options = {}) {
      */
     fallback(index = "index.html") {
       if (appContext.fallback) {
-        console.warn(`app.fallback() has already been called. Only the most recent fallback will apply.`);
+        channel.warn(`app.fallback() has already been called. Only the most recent fallback will apply.`);
       }
 
       appContext.fallback = index;
@@ -176,6 +210,12 @@ export function makeApp(options = {}) {
       const files = makeStaticFileCache(statics);
       for (const file of files) {
         appContext.staticCache[file.path] = file;
+      }
+
+      if (IS_DEV) {
+        watchFiles().then(() => {
+          channel.log("watching files");
+        });
       }
 
       // Sort routes by specificity before any matches are attempted.

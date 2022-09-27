@@ -30,11 +30,11 @@ const corsOptions = {
 app.cors(); // Allow all methods on all origins.
 app.cors(corsOptions); // Use specified options.
 
-// Serve static files (tries static files after matching routes)
-app.static("/static/path", "/path/to/file/dir/on/this/machine"); // Specify a custom path for static files.
-
 app.static(); // Add default static directory (client bundle output)
 app.static("/static/path", "/path/to/actual/dir"); // Add custom static directory
+
+app.fallback(); // Fallback to index.html for capable requests to support client side routing.
+app.fallback("/some/weird/index.html"); // Specify your own index.html fallback path.
 
 // Share logic and state between handlers with globals.
 // Each service is created once per request.

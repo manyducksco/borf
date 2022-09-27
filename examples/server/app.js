@@ -1,6 +1,10 @@
 import { makeApp, makeRouter, html } from "@woofjs/server";
 
-const app = makeApp();
+const app = makeApp({
+  debug: {
+    filter: "*",
+  },
+});
 const PORT = process.env.PORT || 4000;
 
 app.cors();
