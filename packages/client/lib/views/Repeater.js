@@ -39,16 +39,6 @@ export const Repeater = makeView((ctx) => {
       throw new TypeError(`Repeat expects an array. Got: ${typeof newValues}`);
     }
 
-    // Disconnect all if updated with empty values.
-    if (newValues == null) {
-      for (const connected of connectedItems) {
-        connected.element.disconnect();
-      }
-      connectedItems = [];
-
-      return;
-    }
-
     const potentialItems = newValues.map((value, index) => {
       return { key: getKey(value, index), value, index };
     });

@@ -29,11 +29,11 @@ Outline for future guide:
 - Globals
   - State overview
 
-Exports four functions:
+Exports these functions:
 
 - makeApp
-- makeGlobal
 - makeView
+- makeGlobal
 - makeTransitions
 - makeDebounce
 

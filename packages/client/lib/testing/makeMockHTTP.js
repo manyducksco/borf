@@ -1,7 +1,7 @@
 import { makeMockFetch } from "./makeMockFetch.js";
-import { initGlobal } from "../../helpers/initGlobal.js";
+import { initGlobal } from "../helpers/initGlobal.js";
 
-import http from "../../globals/http.js";
+import http from "../globals/http.js";
 
 /**
  * @example

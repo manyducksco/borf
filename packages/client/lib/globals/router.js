@@ -10,7 +10,7 @@ import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
 import { initView } from "../helpers/initView.js";
 
-import { Outlet } from "../views/Outlet.js";
+import { Outlet } from "../helpers/Outlet.js";
 
 /**
  * Top level navigation service.
@@ -81,7 +81,7 @@ export default makeGlobal((ctx) => {
   ctx.afterConnect(() => {
     const root = appContext.rootElement;
 
-    appOutlet = initView(Outlet, { appContext });
+    appOutlet = new Outlet(ctx.readable("view")).init({ appContext });
     appOutlet.connect(root);
 
     history.listen(onRouteChange);
@@ -147,7 +147,7 @@ export default makeGlobal((ctx) => {
                   if (parentLayer) {
                     parentLayer.view.setChildren(view);
                   } else {
-                    appOutlet.state.set("value", view);
+                    ctx.set("view", view);
                   }
                 });
               };

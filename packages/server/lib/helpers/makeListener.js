@@ -1,12 +1,13 @@
 import fs from "fs";
 import path from "path";
-import { isString, isTemplate } from "./helpers/typeChecking.js";
-import { matchRoute } from "./helpers/routing.js";
-import { parseFormBody } from "./helpers/parseFormBody.js";
-import { EventSource } from "./objects/EventSource.js";
-import { Request } from "./objects/Request.js";
-import { Response } from "./objects/Response.js";
-import { Headers } from "./objects/Headers.js";
+import send from "send";
+import { isString, isTemplate } from "./typeChecking.js";
+import { matchRoute } from "./routing.js";
+import { parseFormBody } from "./parseFormBody.js";
+import { EventSource } from "../objects/EventSource.js";
+import { Request } from "../objects/Request.js";
+import { Response } from "../objects/Response.js";
+import { Headers } from "../objects/Headers.js";
 
 /**
  * Returns a request handler callback for a node `http` server.
@@ -79,7 +80,7 @@ export function makeListener(appContext) {
           }
 
           if (globals[name]) {
-            return globals[name];
+            return globals[name].exports;
           }
 
           throw new Error(`Global '${name}' is not registered on this app.`);
@@ -202,15 +203,7 @@ export function makeListener(appContext) {
         filePath = path.join(match.source, match.gz);
       }
 
-      const stream = fs.createReadStream(filePath);
-
-      stream.on("error", function onError(err) {
-        console.error(err);
-        res.writeHead(500);
-        res.end();
-      });
-
-      stream.pipe(res);
+      send(req, filePath).pipe(res);
     }
   };
 }

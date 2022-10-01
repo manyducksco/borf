@@ -1,5 +1,5 @@
 import { wrapGlobal } from "./wrapGlobal.js";
-import { makeMockHTTP } from "../makers/makeMockHTTP.js";
+import { makeMockHTTP } from "../makeMockHTTP.js";
 
 /**
  * A service that makes HTTP requests through the @http service.

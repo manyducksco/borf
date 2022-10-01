@@ -57,22 +57,20 @@ app.get("/some-route", function (ctx) {
 // Server-sent events. The connection stays open until the source is closed.
 // This connection is initiated client-side with EventSource.
 // see: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
-app.get("/events", (ctx) => {
-  return makeEventSource((source) => {
-    // Send a message with content 'whatever'.
-    source.send("whatever");
+app.eventSource("/events", (ctx) => {
+  // Send a message with content 'whatever'.
+  ctx.send("whatever");
 
-    // Send a 'ping' event.
-    source.emit("ping");
+  // Send a 'ping' event.
+  ctx.emit("ping");
 
-    // Send a 'usermessage' event with some data. JS objects will be serialized to JSON automatically.
-    source.emit("usermessage", {
-      userId: 1,
-      text: "Hello!",
-    });
-
-    source.close();
+  // Send a 'usermessage' event with some data. JS objects will be serialized to JSON automatically.
+  ctx.emit("usermessage", {
+    userId: 1,
+    text: "Hello!",
   });
+
+  ctx.close();
 });
 
 // Listen for HTTP requests on localhost at specified port number.

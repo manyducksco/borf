@@ -56,5 +56,6 @@
   "devDependencies": {
     "@woofjs/client": "^0.26.0",
     "@woofjs/server": "^0.7.0"
-  }
+  },
+  "gitHead": "b6a5394b36f7019538f3d03d0d54a949ea9f31d6"
 }

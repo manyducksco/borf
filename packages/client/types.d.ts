@@ -165,6 +165,7 @@ declare module "@woofjs/client" {
 
   interface RouterContext<G> {
     route<S = {}>(path: string, options: RouteViewFnOptions<G, S>): this;
+
     route<S = {}>(path: string, options: RouteViewOptions<G, S>): this;
 
     /**
@@ -193,10 +194,10 @@ declare module "@woofjs/client" {
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
      *
-     * @param path - Path to match.
+     * @param from - Path to match.
      * @param to - Path to redirect location.
      */
-    redirect: (path: string, to: string) => RouterContext<G>;
+    redirect: (from: string, to: string) => RouterContext<G>;
   }
 
   type SubroutesFunction<G> = (ctx: RouterContext<G>) => void;
@@ -290,10 +291,12 @@ declare module "@woofjs/client" {
     get<Key extends keyof State>(key: Key): State[Key];
 
     set<Key extends keyof State>(key: Key, value: State[Key]): void;
+
     set<Key extends keyof State>(key: Key, value: Readable<State[Key]>): void;
+
     set<Key extends keyof State>(key: Key, callback: (value: State[Key]) => void | State[Key]): void;
 
-    set(values: { [Key in keyof State]: State[Key] }): void;
+    set(values: { [Key in keyof Partial<State>]: State[Key] }): void;
 
     /**
      * Resets value of `key` to `undefined`, deleting it.
@@ -302,7 +305,9 @@ declare module "@woofjs/client" {
 
     // TODO: Type annotations
     merge<V>(fn: (value: State) => V): Readable<V>;
+
     merge<T1, V>(source1: T1, fn: (value1: T1 extends keyof State ? State[T1] : Unwrap<T1>) => V): Readable<V>;
+
     merge<T1, T2, V>(
       source1: T1,
       source2: T2,
@@ -311,6 +316,7 @@ declare module "@woofjs/client" {
         value2: T2 extends keyof State ? State[T2] : Unwrap<T2>
       ) => V
     ): Readable<V>;
+
     merge<T1, T2, T3, V>(
       source1: T1,
       source2: T2,
@@ -350,9 +356,11 @@ declare module "@woofjs/client" {
     ): void;
 
     observe<Value>(observer: Observer<Value>): void;
+
     observe<Value>(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): void;
 
     observe<Key extends keyof State>(key: Key, observer: Observer<State[Key]>): void;
+
     observe<Key extends keyof State>(
       key: Key,
       next?: (value: State[Key]) => void,
@@ -361,9 +369,11 @@ declare module "@woofjs/client" {
     ): void;
 
     readable(): Readable<State>;
+
     readable<Key extends keyof State>(key: Key): Readable<State[Key]>;
 
     writable(): Writable<State>;
+
     writable<Key extends keyof State>(key: Key): Writable<State[Key]>;
   }
 
@@ -373,6 +383,7 @@ declare module "@woofjs/client" {
 
   export interface Observable<T> {
     subscribe(observer: Observer<T>): Subscription;
+
     subscribe(next?: (value: T) => void, error?: (err: Error) => void, complete?: () => void): Subscription;
   }
 
@@ -397,9 +408,9 @@ declare module "@woofjs/client" {
     /**
      * Returns a new state that takes the return value of `callbackFn` when called with the value of this state.
      *
-     * @param callback - Function to map the current state's value to the new state's value.
+     * @param convert - Function to convert the value of the current state into the value of a new state.
      */
-    to<NewValue>(callback: (value: Value) => NewValue): Readable<NewValue>;
+    to<NewValue>(convert: (value: Value) => NewValue): Readable<NewValue>;
   }
 
   export interface Writable<Value> extends Readable<Value> {
@@ -445,6 +456,7 @@ declare module "@woofjs/client" {
 
   export interface Template {
     readonly isTemplate: true;
+
     init(appContext: AppContext<any>): View<unknown, unknown>;
   }
 
@@ -470,9 +482,11 @@ declare module "@woofjs/client" {
     ): Template;
 
     (tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Template;
+
     (tag: string, ...children: WoofElement[]): Template;
 
     (view: View<any, any>, ...children: WoofElement[]): Template;
+
     <State>(view: View<State, any>, state: State, ...children: WoofElement[]): Template;
   }
 
@@ -572,12 +586,14 @@ declare module "@woofjs/client" {
      * Displays `element` when `value` is truthy.
      */
     when(value: Observable<any>, element: WoofElement): Template;
+
     when<Key extends keyof S>(key: Key, element: WoofElement): Template;
 
     /**
      * Displays `element` when `value` is falsy.
      */
     unless(value: Observable<any>, element: WoofElement): Template;
+
     unless<Key extends keyof S>(key: Key, element: WoofElement): Template;
 
     /**
@@ -884,6 +900,7 @@ declare module "@woofjs/client" {
      * @param options
      */
     (options: DebounceOptions): (callback: () => any) => void;
+
     (options: DebounceCallbackOptions): () => void;
   }
 
@@ -1571,18 +1588,31 @@ declare namespace JSX {
   \*====================================*/
 
   interface ArticleElementAttributes extends ElementAttributes<HTMLAnchorElement> {}
+
   interface SectionElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface NavElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface AsideElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface H1ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+
   interface H2ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+
   interface H3ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+
   interface H4ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+
   interface H5ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+
   interface H6ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
+
   interface HgroupElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface HeaderElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface FooterElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface AddressElementAttributes extends ElementAttributes<HTMLElement> {}
 
   interface IntrinsicElements {
@@ -1719,8 +1749,11 @@ declare namespace JSX {
   \*====================================*/
 
   interface PElementAttributes extends ElementAttributes<HTMLParagraphElement> {}
+
   interface HrElementAttributes extends ElementAttributes<HTMLHRElement> {}
+
   interface PreElementAttributes extends ElementAttributes<HTMLPreElement> {}
+
   interface BlockquoteElementAttributes extends ElementAttributes<HTMLQuoteElement> {
     /**
      * Link to the source of the quotation. Must be a valid URL potentially surrounded by spaces.
@@ -1729,6 +1762,7 @@ declare namespace JSX {
      */
     cite?: MaybeObservable<string | undefined>;
   }
+
   interface OlElementAttributes extends ElementAttributes<HTMLOListElement> {
     /**
      * Indicates that the list is a descending list (..., 3, 2, 1).
@@ -1753,15 +1787,25 @@ declare namespace JSX {
      */
     type?: MaybeObservable<"l" | "a" | "A" | "i" | "I" | undefined>;
   }
+
   interface UlElementAttributes extends ElementAttributes<HTMLUListElement> {}
+
   interface MenuElementAttributes extends ElementAttributes<HTMLMenuElement> {}
+
   interface LiElementAttributes extends ElementAttributes<HTMLLIElement> {}
+
   interface DlElementAttributes extends ElementAttributes<HTMLDListElement> {}
+
   interface DtElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface DdElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface FigureElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface FigcaptionElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface MainElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface DivElementAttributes extends ElementAttributes<HTMLDivElement> {}
 
   interface IntrinsicElements {
@@ -1963,13 +2007,21 @@ declare namespace JSX {
       | undefined
     >;
   }
+
   interface EmElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface StrongElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface SmallElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface SElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface CiteElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface QElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface DfnElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface AbbrElementAttributes extends ElementAttributes<HTMLElement> {
     /**
      * Provides an expansion for the abbreviation or acronym when a full expansion is not present.
@@ -1980,9 +2032,13 @@ declare namespace JSX {
      */
     title?: MaybeObservable<string | undefined>;
   }
+
   interface RubyElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface RtElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface RpElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface DataElementAttributes extends ElementAttributes<HTMLDataElement> {
     /**
      * Specifies the machine-readable translation of the content of the element.
@@ -1991,6 +2047,7 @@ declare namespace JSX {
      */
     value?: MaybeObservable<any>;
   }
+
   interface TimeElementAttributes extends ElementAttributes<HTMLTimeElement> {
     /**
      * Indicates the time and/or date of the element. Must be in one of the formats below:
@@ -2053,16 +2110,27 @@ declare namespace JSX {
      */
     datetime?: MaybeObservable<string | undefined>;
   }
+
   interface CodeElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface VarElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface SampElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface KbdElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface SubElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface SupElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface IElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface BElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface UElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface MarkElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface BdiElementAttributes extends ElementAttributes<HTMLElement> {
     /**
      * Directionality of the text inside the `<bdi>` element. Can be `rtl` for languages read right-to-left and `ltr` for languages read left-to-right. Defaults to `auto`.
@@ -2071,6 +2139,7 @@ declare namespace JSX {
      */
     dir?: MaybeObservable<"auto" | "rtl" | "ltr" | undefined>;
   }
+
   interface BdoElementAttributes extends ElementAttributes<HTMLElement> {
     /**
      * Directionality of the text inside the `<bdo>` element. Can be `rtl` for languages read right-to-left and `ltr` for languages read left-to-right. Defaults to `auto`.
@@ -2079,8 +2148,11 @@ declare namespace JSX {
      */
     dir?: MaybeObservable<"auto" | "rtl" | "ltr" | undefined>;
   }
+
   interface SpanElementAttributes extends ElementAttributes<HTMLSpanElement> {}
+
   interface BrElementAttributes extends ElementAttributes<HTMLBRElement> {}
+
   interface WbrElementAttributes extends ElementAttributes<HTMLElement> {}
 
   interface IntrinsicElements {
@@ -2413,7 +2485,9 @@ declare namespace JSX {
      */
     datetime?: MaybeObservable<string | undefined>;
   }
+
   interface InsElementAttributes extends ModElementAttributes {}
+
   interface DelElementAttributes extends ModElementAttributes {}
 
   interface IntrinsicElements {
@@ -2608,6 +2682,7 @@ declare namespace JSX {
   interface HTMLMediaElementAttributes<T extends HTMLElement> extends ElementAttributes<T>, HTMLMediaElementEvents {}
 
   interface PictureElementAttributes extends ElementAttributes<HTMLPictureElement> {}
+
   interface SourceElementAttributes extends ElementAttributes<HTMLSourceElement> {
     /**
      * The [MIME type](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types) of the resource,
@@ -2670,6 +2745,7 @@ declare namespace JSX {
      */
     width?: MaybeObservable<string | number | undefined>;
   }
+
   interface ImgElementAttributes extends ElementAttributes<HTMLImageElement> {
     /**
      * Defines an alternative text description of the image.
@@ -2771,6 +2847,7 @@ declare namespace JSX {
      */
     usemap?: MaybeObservable<string | undefined>;
   }
+
   interface IframeElementAttributes extends ElementAttributes<HTMLIFrameElement> {
     /**
      * Specifies a [feature policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Feature_Policy) for the `<iframe>`.
@@ -2860,6 +2937,7 @@ declare namespace JSX {
      */
     srcdoc?: MaybeObservable<string | undefined>;
   }
+
   interface EmbedElementAttributes extends ElementAttributes<HTMLEmbedElement> {
     /**
      * The displayed height of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
@@ -2881,6 +2959,7 @@ declare namespace JSX {
      */
     type?: MaybeObservable<string | undefined>;
   }
+
   interface ObjectElementAttributes extends ElementAttributes<HTMLObjectElement> {
     /**
      * The displayed height of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
@@ -2990,6 +3069,7 @@ declare namespace JSX {
      */
     src?: MaybeObservable<string | undefined>;
   }
+
   interface AudioElementAttributes extends HTMLMediaElementAttributes<HTMLAudioElement> {
     /**
      * If specified, the audio will automatically begin playback as soon as it can do so, without waiting for the
@@ -3037,6 +3117,7 @@ declare namespace JSX {
      */
     src?: MaybeObservable<string | undefined>;
   }
+
   interface TrackElementAttributes extends ElementAttributes<HTMLTrackElement> {
     /**
      * Indicates that the track should be enabled unless the user's preferences indicate that another track
@@ -3069,6 +3150,7 @@ declare namespace JSX {
      */
     srclang: MaybeObservable<string | undefined>;
   }
+
   interface MapElementAttributes extends ElementAttributes<HTMLMapElement> {
     /**
      * Gives the map a name so that it can be referenced. The attribute must be present and must have a non-empty value
@@ -3080,6 +3162,7 @@ declare namespace JSX {
      */
     name: MaybeObservable<string>;
   }
+
   interface AreaElementAttributes extends ElementAttributes<HTMLAreaElement> {
     /**
      * A text string alternative to display on browsers that do not display images. The text should be phrased
@@ -3283,7 +3366,9 @@ declare namespace JSX {
   // th
 
   interface TableElementAttributes extends ElementAttributes<HTMLTableElement> {}
+
   interface TableCaptionElementAttributes extends ElementAttributes<HTMLTableCaptionElement> {}
+
   interface TableColgroupElementAttributes extends ElementAttributes<HTMLTableColElement> {
     /**
      * A positive integer indicating the number of consecutive columns the `<colgroup>` element spans.
@@ -3293,6 +3378,7 @@ declare namespace JSX {
      */
     span?: MaybeObservable<number | undefined>;
   }
+
   interface TableColElementAttributes extends ElementAttributes<HTMLTableColElement> {
     /**
      * A positive integer indicating the number of consecutive columns the `<col>` element spans.
@@ -3300,10 +3386,15 @@ declare namespace JSX {
      */
     span?: MaybeObservable<number | undefined>;
   }
+
   interface TableBodyElementAttributes extends ElementAttributes<HTMLTableSectionElement> {}
+
   interface TableHeadElementAttributes extends ElementAttributes<HTMLTableSectionElement> {}
+
   interface TableFootElementAttributes extends ElementAttributes<HTMLTableSectionElement> {}
+
   interface TableRowElementAttributes extends ElementAttributes<HTMLTableRowElement> {}
+
   interface TableCellElementAttributes extends ElementAttributes<HTMLTableCellElement> {
     /**
      * A positive integer value that indicates for how many columns the cell extends. Its default value is `1`.
@@ -3325,6 +3416,7 @@ declare namespace JSX {
      */
     headers?: MaybeObservable<string | undefined>;
   }
+
   interface TableHeaderElementAttributes extends TableCellElementAttributes {
     /**
      * A short abbreviated description of the cell's content. Some user-agents, such as speech readers, may present this description before the content itself.
@@ -3460,46 +3552,176 @@ declare namespace JSX {
   // fieldset
   // legend
 
-  interface FormElementAttributes extends ElementAttributes<HTMLFormElement> {}
+  interface FormElementAttributes extends ElementAttributes<HTMLFormElement> {
+    /**
+     * Indicates whether input elements can by default have their values automatically completed by the browser.
+     * `autocomplete` attributes on form elements override it on `<form>`.
+     *
+     * @see \https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#attr-autocomplete
+     */
+    autocomplete?: MaybeObservable<"off" | "on" | undefined>;
+
+    /**
+     * The `name` of the form. The value must not be the empty string, and must be unique among the form elements
+     * in the forms collection that it is in, if any.
+     */
+    name?: MaybeObservable<string | undefined>;
+
+    rel?: MaybeObservable<string | undefined>;
+
+    /**
+     * The URL that handles the form submission.
+     */
+    action?: MaybeObservable<string | undefined>;
+
+    /**
+     * The [MIME type](https://en.wikipedia.org/wiki/Media_type) of the form data, when the form has a `method` of `post`.
+     */
+    enctype?: MaybeObservable<"application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain" | undefined>;
+
+    /**
+     * The HTTP method to use when submitting the form. A value of `"dialog"` is valid when the form is inside a `<dialog`>
+     * element, where it will close the dialog and fire a `submit` event without sending data or clearing the form.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#attr-method
+     */
+    method?: MaybeObservable<"post" | "POST" | "get" | "GET" | "dialog" | undefined>;
+
+    /**
+     * If true, prevents the form from being validated when submitted.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#attr-novalidate
+     */
+    novalidate?: MaybeObservable<boolean | undefined>;
+
+    /**
+     * Name of the browsing context to display the response to the form's submission.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#attr-target
+     */
+    target?: MaybeObservable<"_self" | "_blank" | "_parent" | "_top" | string | undefined>;
+  }
+
   interface LabelElementAttributes extends ElementAttributes<HTMLLabelElement> {
     /**
-     * A single `id` for a labelable form-related element in the same document as the `<label>` element.
+     * An `id` for the element the `<label>` labels.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label#attr-for
      */
     for?: MaybeObservable<string | undefined>;
   }
+
   interface InputElementAttributes extends ElementAttributes<HTMLInputElement> {}
+
   interface ButtonElementAttributes extends ElementAttributes<HTMLButtonElement> {}
+
   interface SelectElementAttributes extends ElementAttributes<HTMLSelectElement> {}
+
   interface DatalistElementAttributes extends ElementAttributes<HTMLDataListElement> {}
+
   interface OptgroupElementAttributes extends ElementAttributes<HTMLOptGroupElement> {}
+
   interface OptionElementAttributes extends ElementAttributes<HTMLOptionElement> {}
+
   interface TextareaElementAttributes extends ElementAttributes<HTMLTextAreaElement> {}
+
   interface OutputElementAttributes extends ElementAttributes<HTMLOutputElement> {}
+
   interface ProgressElementAttributes extends ElementAttributes<HTMLProgressElement> {}
-  interface MeterElementAttributes extends ElementAttributes<HTMLMeterElement> {}
-  interface FieldsetElementAttributes extends ElementAttributes<HTMLFieldSetElement> {}
+
+  interface MeterElementAttributes extends ElementAttributes<HTMLMeterElement> {
+    /**
+     * The current value displayed by this meter. Must be between `min` and `max`, which default to 0 and 1 respectively.
+     */
+    value?: MaybeObservable<number | undefined>;
+
+    /**
+     * The minimum value this meter can display. Defaults to 0.
+     */
+    min?: MaybeObservable<number | undefined>;
+
+    /**
+     * The maximum value this meter can display. Defaults to 1.
+     */
+    max?: MaybeObservable<number | undefined>;
+
+    /**
+     * If `value` is between `min` and `low` it is considered "low". You would charge your phone
+     * if your battery meter was in this range. The browser may display values in this range in red.
+     */
+    low?: MaybeObservable<number | undefined>;
+
+    /**
+     * If `value` is between `high` and `max` it is considered "high". You just took your phone off the charger
+     * if your battery meter is in this range. The browser may display values in this range in green.
+     */
+    high?: MaybeObservable<number | undefined>;
+
+    /**
+     * The ideal `value`.
+     */
+    optimum?: MaybeObservable<number | undefined>;
+  }
+
+  interface FieldsetElementAttributes extends ElementAttributes<HTMLFieldSetElement> {
+    /**
+     * If true, all form controls inside this fieldset are disabled.
+     */
+    disabled?: MaybeObservable<boolean | undefined>;
+
+    // This may be the worst attribute I've ever heard of. Not sure it's worth adding.
+    // form?: MaybeObservable<string | undefined>;
+
+    /**
+     * The name of this group of inputs.
+     */
+    name?: MaybeObservable<string | undefined>;
+  }
+
   interface LegendElementAttributes extends ElementAttributes<HTMLLegendElement> {}
 
   interface IntrinsicElements {
     /**
-     * The _Form_ element.
-     *
-     * Represents a document section containing interactive controls for submitting information.
+     * Contains a group of interactive elements for taking input from a user.
+     * This can be anything from a chat box with a submit button to a full page tax form.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form
      */
     form: FormElementAttributes;
 
     /**
-     * The _Input Label_ element.
-     *
-     * Represents a caption for an item in a user interface.
+     * Provides a text label that describes another element.
      *
      * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label
      */
     label: LabelElementAttributes;
+
+    /**
+     * Displays
+     */
+    progress: ProgressElementAttributes;
+
+    /**
+     * Displays a value within a finite range. Think gas gauge or progress bar.
+     * Consider the simpler [`<progress>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) element for progress bars.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter
+     */
+    meter: MeterElementAttributes;
+
+    /**
+     * Contains and names a group of related form controls.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/fieldset
+     */
+    fieldset: FieldsetElementAttributes;
+
+    /**
+     * Provides a caption for a parent `<fieldset>`.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/legend
+     */
+    legend: LegendElementAttributes;
   }
 
   /*====================================*\
@@ -3526,7 +3748,9 @@ declare namespace JSX {
      */
     ontoggle?: EventHandler<Event>;
   }
+
   interface SummaryElementAttributes extends ElementAttributes<HTMLElement> {}
+
   interface DialogElementAttributes extends ElementAttributes<HTMLDialogElement> {
     /**
      * Indicates that the dialog is active and can be interacted with. When the `open` attribute is not set, the dialog

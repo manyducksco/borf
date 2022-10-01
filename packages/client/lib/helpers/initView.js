@@ -226,7 +226,7 @@ export function initView(fn, config) {
     /**
      * Connects this window to the DOM, running lifecycle hooks if it wasn't already connected.
      * Calling this on a window that is already connected can reorder it or move it to a different
-     * place in the DOM without retriggering lifecycle hooks.
+     * place in the DOM without re-triggering lifecycle hooks.
      *
      * @param parent - DOM node under which this window should be connected as a child.
      * @param after - A child node under `parent` after which this window should be connected.

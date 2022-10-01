@@ -6,9 +6,9 @@ import { initGlobal } from "./helpers/initGlobal.js";
 import { parseRoute, sortRoutes } from "./helpers/routing.js";
 import { makeDebug } from "./helpers/makeDebug.js";
 import { makeStaticFileCache } from "./helpers/makeStaticFileCache.js";
-import { makeDebouncer } from "./helpers/makeDebouncer.js";
+import { makeDebounce } from "./helpers/makeDebounce.js";
 
-import { makeListener } from "./makeListener.js";
+import { makeListener } from "./helpers/makeListener.js";
 
 const IS_DEV = process.env.NODE_ENV !== "production";
 const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), process.env.WOOF_STATIC_PATH || "build/static");
@@ -43,10 +43,10 @@ export function makeApp(options = {}) {
     }
 
     const listener = chokidar.watch(paths);
-    const debouncer = makeDebouncer(30);
+    const debounce = makeDebounce(30);
 
     listener.on("all", () => {
-      debouncer.queue(() => {
+      debounce(() => {
         const cache = {};
 
         makeStaticFileCache(statics).forEach((file) => {
@@ -202,20 +202,14 @@ export function makeApp(options = {}) {
      * Starts an HTTP server on the specified port and begins listening for requests.
      */
     async listen(port) {
-      // Serve from a static file cache.
-      // This prevents disk reads under high load, however, files added or removed
-      // while the server is running will not be picked up.
-
-      // TODO: Watch directories and regenerate on changes in development mode.
       const files = makeStaticFileCache(statics);
       for (const file of files) {
         appContext.staticCache[file.path] = file;
       }
 
       if (IS_DEV) {
-        watchFiles().then(() => {
-          channel.log("watching files");
-        });
+        await watchFiles();
+        channel.log("watching files");
       }
 
       // Sort routes by specificity before any matches are attempted.
@@ -231,7 +225,7 @@ export function makeApp(options = {}) {
           });
 
           Object.defineProperty(appContext.globals, name, {
-            value: global.exports,
+            value: global,
             writable: false,
             configurable: false,
           });

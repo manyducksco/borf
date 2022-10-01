@@ -2,7 +2,8 @@ import { isString } from "./typeChecking.js";
 
 import { Template } from "../h.js";
 import { Repeater } from "../views/Repeater.js";
-import { Outlet } from "../views/Outlet.js";
+
+import { Outlet } from "./Outlet.js";
 
 export function makeViewHelpers(state) {
   function bound(value) {
@@ -17,21 +18,18 @@ export function makeViewHelpers(state) {
    * Displays an element when `value` is truthy.
    *
    * @example
-   * when($value, h("h1", "If you can read this the value is truthy."))
+   * ctx.when($value, h("h1", "If you can read this the value is truthy."))
    *
    * @param value - Binding or variable name.
    * @param element - Element to display.
    */
   function when(value, element) {
-    return new Template(Outlet, {
-      value: bound(value),
-      render: (value) => {
-        if (value) {
-          return element;
-        } else {
-          return null;
-        }
-      },
+    return new Outlet(bound(value), (value) => {
+      if (value) {
+        return element;
+      }
+
+      return null;
     });
   }
 
@@ -39,21 +37,18 @@ export function makeViewHelpers(state) {
    * Displays an element when `value` is falsy.
    *
    * @example
-   * unless($value, h("h1", "If you can read this the value is falsy."))
+   * ctx.unless($value, h("h1", "If you can read this the value is falsy."))
    *
    * @param value - Binding or variable name.
    * @param element - Element to display.
    */
   function unless(value, element) {
-    return new Template(Outlet, {
-      value: bound(value),
-      render: (value) => {
-        if (value) {
-          return null;
-        } else {
-          return element;
-        }
-      },
+    return new Outlet(bound(value), (value) => {
+      if (!value) {
+        return element;
+      }
+
+      return null;
     });
   }
 
@@ -75,8 +70,7 @@ export function makeViewHelpers(state) {
    * @param callback - Function to transform `value` into a renderable element. Runs each time `value` changes.
    */
   function outlet(value = "children", callback = null) {
-    const render = callback || ((x) => x);
-    return new Template(Outlet, { value: bound(value), render });
+    return new Outlet(bound(value), callback);
   }
 
   return { when, unless, repeat, outlet };

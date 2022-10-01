@@ -1,4 +1,4 @@
-import { makeView, makeTransitions } from "@woofjs/client";
+import { makeTransitions, makeView } from "@woofjs/client";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 

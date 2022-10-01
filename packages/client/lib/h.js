@@ -2,7 +2,6 @@ import { isFunction, isObject, isString, isNumber, isTemplate, isView, isObserva
 import { flatten } from "./helpers/flatten.js";
 import { initView } from "./helpers/initView.js";
 
-import { Text } from "./views/Text.js";
 import { Element } from "./views/Element.js";
 import { Fragment } from "./views/Fragment.js";
 
@@ -15,7 +14,7 @@ import { Fragment } from "./views/Fragment.js";
  * h(Component, { attribute: "value" }, "Child one", "Child two");
  * h(Component, v("h1", "H1 as child of component"));
  *
- * @param element - A tagname or component function.
+ * @param element - A tag name or view function.
  * @param args - Optional attributes object and zero or more children.
  */
 export function h(element, ...args) {
@@ -50,26 +49,8 @@ export class Template {
       elementContext.isSVG = true;
     }
 
-    // Filter falsy children and convert to component instances.
+    // Filter falsy children.
     const children = flatten(this.children).filter((x) => x !== null && x !== undefined && x !== false);
-    // .map((child) => {
-    //   if (isTemplate(child)) {
-    //     child = child.init({ appContext, elementContext });
-    //   } else if (isString(child) || isNumber(child) || isObservable(child)) {
-    //     child = initView(Text, {
-    //       attrs: {
-    //         value: child,
-    //       },
-    //       appContext,
-    //     });
-    //   }
-
-    //   if (!isComponent(child)) {
-    //     throw new TypeError(`Children must be views, strings, numbers or observables. Got: ${child}`);
-    //   }
-
-    //   return child;
-    // });
 
     const { element, attrs } = this;
 

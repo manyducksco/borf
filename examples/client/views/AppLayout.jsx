@@ -1,4 +1,4 @@
-import { makeView, makeTransitions } from "@woofjs/client";
+import { makeTransitions, makeView } from "@woofjs/client";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle";
 
@@ -7,7 +7,7 @@ const animated = makeTransitions({
     animate({
       from: 0,
       to: 100,
-      type: "spring",
+      duration: 500,
       onUpdate: function (latest) {
         ctx.node.style.transform = `translateY(${latest}%)`;
       },
@@ -22,7 +22,18 @@ export function preloadAppLayout(ctx) {
   // When the .done() function is called, this content is removed and the real window is connected.
   ctx.show(
     animated(
-      <div>
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          left: 0,
+          backgroundColor: "white",
+          padding: "1rem",
+          zIndex: 200,
+        }}
+      >
         <h1>WELCOME</h1>
         <p>This page has examples of things woof can do.</p>
         <p>

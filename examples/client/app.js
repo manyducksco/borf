@@ -16,6 +16,8 @@ import { FormExample } from "./views/FormExample";
 import { MouseFollowerExample } from "./views/MouseFollowerExample";
 import { HTTPRequestExample } from "./views/HTTPRequestExample";
 
+import { RenderOrderTest } from "./views/RenderOrderTest.jsx";
+
 import SevenGUIs from "./views/7guis";
 import Counter from "./views/7guis/01_Counter";
 import TempConverter from "./views/7guis/02_TempConverter";
@@ -64,6 +66,8 @@ app.global("mouse", mouse);
 app.route("/client-test", function () {
   return <h1>Test</h1>;
 });
+
+app.route("/render-order", RenderOrderTest);
 
 app.route("*", {
   view: AppLayout,
