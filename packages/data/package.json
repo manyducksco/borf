@@ -1,6 +1,6 @@
 {
   "name": "@woofjs/data",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Data models, collections and validation for dogs. 🐕",
   "types": "types.d.ts",
   "main": "lib/index.js",

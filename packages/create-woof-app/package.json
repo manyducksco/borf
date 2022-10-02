@@ -1,6 +1,6 @@
 {
   "name": "create-woof-app",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Create new projects in the Woof full stack framework. 🐕",
   "main": "program.js",
   "scripts": {
