@@ -1,5 +1,5 @@
 import colorHash from "simple-color-hash";
-import { APP_CONTEXT } from "../keys.js";
+import { APP_CONTEXT } from "../../keys.js";
 import { makeGlobal } from "../makeGlobal.js";
 
 const noop = () => {};

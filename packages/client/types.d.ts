@@ -189,7 +189,7 @@ declare module "@woofjs/client" {
      */
     route<S = {}>(path: string, view: View<S, G>, subroutes?: SubroutesFunction<G>): this;
 
-    route(path: string, view: Template, subroutes?: SubroutesFunction<G>): this;
+    route(path: string, view: Blueprint, subroutes?: SubroutesFunction<G>): this;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -212,17 +212,17 @@ declare module "@woofjs/client" {
     /**
      * Log the arguments to the console.
      */
-    log(...args: any): void;
+    log(...args: any[]): void;
 
     /**
      * Log the arguments to the console as a warning.
      */
-    warn(...args: any): void;
+    warn(...args: any[]): void;
 
     /**
      * Log the arguments to the console as an error.
      */
-    error(...args: any): void;
+    error(...args: any[]): void;
   };
 
   /*==================================*\
@@ -448,28 +448,28 @@ declare module "@woofjs/client" {
 
   /* ----- Templating ----- */
 
-  export type WoofElement = Template | ToStringable | Readable<ToStringable>;
+  export type WoofElement = Blueprint | ToStringable | Readable<ToStringable>;
 
   interface ToStringable {
     toString(): string;
   }
 
-  export interface Template {
-    readonly isTemplate: true;
+  export interface Blueprint {
+    readonly isBlueprint: true;
 
-    init(appContext: AppContext<any>): View<unknown, unknown>;
+    build(appContext: AppContext<any>): View<unknown, unknown>;
   }
 
   export function h<Tag extends keyof JSX.IntrinsicElements>(
     tag: Tag,
     attributes: JSX.IntrinsicElements[Tag],
     ...children: WoofElement[]
-  ): Template;
-  export function h(tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Template;
-  export function h(tag: string, ...children: WoofElement[]): Template;
+  ): Blueprint;
+  export function h(tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Blueprint;
+  export function h(tag: string, ...children: WoofElement[]): Blueprint;
 
-  export function h(view: View<any, any>, ...children: WoofElement[]): Template;
-  export function h<State>(view: View<State, any>, state: State, ...children: WoofElement[]): Template;
+  export function h(view: View<any, any>, ...children: WoofElement[]): Blueprint;
+  export function h<State>(view: View<State, any>, state: State, ...children: WoofElement[]): Blueprint;
 
   /**
    * Creates an instance of an HTML element or view.
@@ -479,15 +479,15 @@ declare module "@woofjs/client" {
       tag: Tag,
       attributes: JSX.IntrinsicElements[Tag],
       ...children: WoofElement[]
-    ): Template;
+    ): Blueprint;
 
-    (tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Template;
+    (tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Blueprint;
 
-    (tag: string, ...children: WoofElement[]): Template;
+    (tag: string, ...children: WoofElement[]): Blueprint;
 
-    (view: View<any, any>, ...children: WoofElement[]): Template;
+    (view: View<any, any>, ...children: WoofElement[]): Blueprint;
 
-    <State>(view: View<State, any>, state: State, ...children: WoofElement[]): Template;
+    <State>(view: View<State, any>, state: State, ...children: WoofElement[]): Blueprint;
   }
 
   /**
@@ -507,10 +507,10 @@ declare module "@woofjs/client" {
 
   export function makeView<S = any, G = any>(fn: ViewFunction<S, G>): View<S, G>;
 
-  export type ViewFunction<S = any, G = any> = (ctx: ViewContext<S, G>, h: HypertextFunction) => Template | null;
+  export type ViewFunction<S = any, G = any> = (ctx: ViewContext<S, G>, h: HypertextFunction) => Blueprint | null;
 
   export type View<S, G> = (props: FakeJSXProps<Partial<S>>) => {
-    create(): Template;
+    create(): Blueprint;
   };
 
   // TODO: Figure out how to filter out keys wrapped in Private.
@@ -553,7 +553,7 @@ declare module "@woofjs/client" {
 
     /**
      * Returns a function that, when called with no arguments, returns the most recent value it was called with.
-     * Useful for retrieving references to DOM nodes when passed to elements as `ref`.
+     * Useful for retrieving references to DOM blueprints when passed to elements as `ref`.
      */
     ref<T>(initialValue?: T): Ref<T>;
 
@@ -585,16 +585,16 @@ declare module "@woofjs/client" {
     /**
      * Displays `element` when `value` is truthy.
      */
-    when(value: Observable<any>, element: WoofElement): Template;
+    when(value: Observable<any>, element: WoofElement): Blueprint;
 
-    when<Key extends keyof S>(key: Key, element: WoofElement): Template;
+    when<Key extends keyof S>(key: Key, element: WoofElement): Blueprint;
 
     /**
      * Displays `element` when `value` is falsy.
      */
-    unless(value: Observable<any>, element: WoofElement): Template;
+    unless(value: Observable<any>, element: WoofElement): Blueprint;
 
-    unless<Key extends keyof S>(key: Key, element: WoofElement): Template;
+    unless<Key extends keyof S>(key: Key, element: WoofElement): Blueprint;
 
     /**
      * Repeats an element for each item in `value`. Value must be iterable.
@@ -604,7 +604,7 @@ declare module "@woofjs/client" {
       value: T[] | Observable<T[]>,
       render: ($value: Readable<T>, $index: Readable<number>) => WoofElement,
       getKey?: (value: T) => any
-    ): Template;
+    ): Blueprint;
 
     /**
      * Repeats an element for each item in `value`. Value must be iterable.
@@ -617,11 +617,11 @@ declare module "@woofjs/client" {
         $index: Readable<number>
       ) => WoofElement,
       getKey?: (value: S[Key]) => any
-    ): Template;
+    ): Blueprint;
   }
 
   /*==================================*\
-  ||             Global              ||
+  ||              Global              ||
   \*==================================*/
 
   // TODO: Find out how to infer return type of `fn` while S and G are passed.
@@ -649,7 +649,7 @@ declare module "@woofjs/client" {
 
     /**
      * Returns a function that, when called with no arguments, returns the most recent value it was called with.
-     * Useful for retrieving references to DOM nodes when passed to elements as `ref`.
+     * Useful for retrieving references to DOM blueprints when passed to elements as `ref`.
      */
     ref<T>(initialValue?: T): Ref<T>;
   }
@@ -842,31 +842,32 @@ declare module "@woofjs/client" {
    *
    * @param transitions - An object with functions that implement the transitions.
    */
-  export function makeTransitions(transitions: Transitions): TransitionFactory;
+  export function makeTransitions<S = any>(transitions: Transitions<S>): TransitionFactory<S>;
 
   /**
    * Takes an element and returns a version of that element with these transitions applied.
    *
    * @param element - A view, a DOM node, or anything with a `.toString()` method.
    */
-  export type TransitionFactory = (element: Element) => Template;
+  export interface TransitionFactory<S> {
+    (fn: ViewFunction<S, any>): Blueprint;
+    (view: View<S, any>): Blueprint;
+    (element: WoofElement): Blueprint;
+  }
 
-  export interface Transitions {
+  export interface Transitions<S> {
     /**
      * Defines the transition that occurs when an element is added to the document.
      */
-    in?: (ctx: TransitionContext) => void;
+    in?: (ctx: TransitionContext<S>) => void;
 
     /**
      * Defines the transition that occurs before the element is removed from the document.
      */
-    out?: (ctx: TransitionContext) => void;
+    out?: (ctx: TransitionContext<S>) => void;
   }
 
-  export interface TransitionContext {
-    /**
-     *
-     */
+  export interface TransitionContext<S> extends Pick<StateContext<S>, "get" | "set"> {
     node: HTMLElement;
     done: () => void;
   }
@@ -925,32 +926,32 @@ declare module "@woofjs/client" {
 }
 
 declare module "@woofjs/client/jsx-runtime" {
-  import { Template, View } from "@woofjs/client";
+  import { Blueprint, View } from "@woofjs/client";
 
   export function jsx(
     element: string | View<any, any>,
-    props: { [name: string]: any; children: Template },
+    props: { [name: string]: any; children: Blueprint },
     key: any
-  ): Template;
+  ): Blueprint;
 
   export function jsxs(
     element: string | View<any, any>,
-    props: { [name: string]: any; children: Template[] },
+    props: { [name: string]: any; children: Blueprint[] },
     key: any
-  ): Template;
+  ): Blueprint;
 }
 
 declare module "@woofjs/client/jsx-dev-runtime" {
-  import { Template, View } from "@woofjs/client";
+  import { Blueprint, View } from "@woofjs/client";
 
   export function jsxDEV(
     element: string | View<any, any>,
-    props: { [name: string]: any; children: Template | Template[] },
+    props: { [name: string]: any; children: Blueprint | Blueprint[] },
     key: any,
     isStaticChildren: boolean,
     source: any,
     self: any
-  ): Template;
+  ): Blueprint;
 }
 
 declare namespace JSX {
@@ -2504,7 +2505,7 @@ declare namespace JSX {
     /**
      * The _Deleted Text_ element.
      *
-     * Represents a range of text that has been deleted from a document. This can be used when rendering "track changes"
+     * Represents a range of text that has been deleted from a document. This can be used when blueprints "track changes"
      * or source code diff information, for example. The `<ins>` element can be used for the opposite purpose: to indicate
      * text that has been added to the document.
      *

@@ -1,4 +1,4 @@
-import { isString } from "../helpers/typeChecking.js";
+import { isString } from "../../helpers/typeChecking.js";
 import { makeGlobal } from "../makeGlobal.js";
 
 export default makeGlobal((ctx) => {

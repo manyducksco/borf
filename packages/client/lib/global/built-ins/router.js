@@ -2,15 +2,15 @@ import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
 import { makeGlobal } from "../makeGlobal.js";
 
-import { APP_CONTEXT } from "../keys.js";
-import { matchRoute } from "../helpers/routing.js";
-import { isObject, isTemplate, isFunction } from "../helpers/typeChecking.js";
-import { joinPath } from "../helpers/joinPath.js";
-import { resolvePath } from "../helpers/resolvePath.js";
-import { catchLinks } from "../helpers/catchLinks.js";
-import { initView } from "../helpers/initView.js";
+import { APP_CONTEXT } from "../../keys.js";
+import { matchRoute } from "../../helpers/routing.js";
+import { isObject, isFunction } from "../../helpers/typeChecking.js";
+import { joinPath } from "../../helpers/joinPath.js";
+import { resolvePath } from "../../helpers/resolvePath.js";
+import { catchLinks } from "../../helpers/catchLinks.js";
+import { initView } from "../../view/helpers/initView.js";
 
-import { Outlet } from "../helpers/Outlet.js";
+import { OutletBlueprint } from "../../view/blueprints/Outlet.js";
 
 /**
  * Top level navigation service.
@@ -81,7 +81,7 @@ export default makeGlobal((ctx) => {
   ctx.afterConnect(() => {
     const root = appContext.rootElement;
 
-    appOutlet = new Outlet(ctx.readable("view")).init({ appContext });
+    appOutlet = new OutletBlueprint(ctx.readable("view")).build({ appContext });
     appOutlet.connect(root);
 
     history.listen(onRouteChange);
@@ -237,8 +237,8 @@ async function preloadRoute(preload, mount, { appContext, elementContext }) {
   return new Promise((resolve, reject) => {
     const ctx = {
       show: (element) => {
-        if (isTemplate(element)) {
-          element = element.init({ appContext, elementContext });
+        if (element?.isBlueprint) {
+          element = element.build({ appContext, elementContext });
         } else {
           return reject(new TypeError(`Expected an element to display. Got: ${element} (${typeof element})`));
         }

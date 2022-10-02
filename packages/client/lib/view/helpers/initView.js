@@ -1,8 +1,8 @@
-import { isTemplate, isDOM, isView, isString, isBinding } from "./typeChecking.js";
-import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
-import { h } from "../h.js";
+import { isDOM, isView, isString, isBinding } from "../../helpers/typeChecking.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT } from "../../keys.js";
+import { h } from "../../h.js";
 
-import { makeState } from "./makeState.js";
+import { makeState } from "../../helpers/makeState.js";
 import { makeViewHelpers } from "./makeViewHelpers.js";
 
 /**
@@ -17,9 +17,9 @@ import { makeViewHelpers } from "./makeViewHelpers.js";
  */
 
 export function initView(fn, config) {
-  let { appContext, elementContext, attrs, children, channelPrefix } = config;
+  let { appContext, elementContext, attributes, children, channelPrefix } = config;
 
-  attrs = attrs || {};
+  attributes = attributes || {};
   children = children || [];
   channelPrefix = channelPrefix || "view";
 
@@ -40,12 +40,12 @@ export function initView(fn, config) {
   const initialState = [];
   const bindings = {};
 
-  for (const key in attrs) {
-    if (isBinding(attrs[key])) {
-      bindings[key] = attrs[key];
-      initialState.push([key, attrs[key].get()]);
+  for (const key in attributes) {
+    if (isBinding(attributes[key])) {
+      bindings[key] = attributes[key];
+      initialState.push([key, attributes[key].get()]);
     } else {
-      initialState.push([key, attrs[key]]);
+      initialState.push([key, attributes[key]]);
     }
   }
 
@@ -177,8 +177,8 @@ export function initView(fn, config) {
 
   let element = fn(ctx, h);
 
-  if (isTemplate(element)) {
-    element = element.init({ appContext, elementContext });
+  if (element?.isBlueprint) {
+    element = element.build({ appContext, elementContext });
   } else {
     if (element !== null && !isDOM(element)) {
       const message = `Components must return an h() element, a DOM node or null. Got: ${element}`;

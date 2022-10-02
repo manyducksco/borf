@@ -3,12 +3,12 @@ import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
 
-import debug from "./globals/debug.js";
-import http from "./globals/http.js";
-import page from "./globals/page.js";
-import router from "./globals/router.js";
+import debug from "./global/built-ins/debug.js";
+import http from "./global/built-ins/http.js";
+import page from "./global/built-ins/page.js";
+import router from "./global/built-ins/router.js";
 
-import { initGlobal } from "./helpers/initGlobal.js";
+import { initGlobal } from "./global/helpers/initGlobal.js";
 
 const builtInGlobals = [debug, router, page, http];
 

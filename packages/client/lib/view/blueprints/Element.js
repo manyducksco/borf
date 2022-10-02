@@ -1,58 +1,100 @@
-import { isArray, isObject, isString, isNumber, isFunction, isBinding, isObservable } from "../helpers/typeChecking.js";
-import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
-import { makeView } from "../makeView.js";
+import {
+  isArray,
+  isObject,
+  isString,
+  isNumber,
+  isFunction,
+  isBinding,
+  isObservable,
+} from "../../helpers/typeChecking.js";
+import { omit } from "../../helpers/omit.js";
+import { toBlueprints } from "../helpers/toBlueprints.js";
+
+export class ElementBlueprint {
+  constructor(tag, attrs, children) {
+    this.tag = tag;
+    this.attrs = attrs;
+    this.children = toBlueprints(children);
+  }
+
+  get isBlueprint() {
+    return true;
+  }
+
+  build({ appContext, elementContext = {} }) {
+    return new ElementView({
+      tag: this.tag,
+      attrs: this.attrs,
+      children: this.children,
+      appContext,
+      elementContext,
+    });
+  }
+}
 
 /**
- * Implements logic for HTML elements created with `h()`.
+ * A woof node representing a native HTML element.
  */
-export const Element = makeView((ctx) => {
-  const appContext = ctx[APP_CONTEXT];
-  const elementContext = ctx[ELEMENT_CONTEXT];
+export class ElementView {
+  subscriptions = [];
 
-  const tagname = ctx.get("tagname");
-  const attrs = ctx.get("attrs") || {};
-
-  let node;
-
-  if (elementContext.isSVG) {
-    node = document.createElementNS("http://www.w3.org/2000/svg", tagname);
-  } else {
-    node = document.createElement(tagname);
-  }
-
-  if (attrs.ref) {
-    if (isFunction(attrs.ref)) {
-      attrs.ref(node);
+  constructor({ tag, attrs, children, appContext, elementContext }) {
+    // Create node.
+    if (elementContext.isSVG) {
+      this.node = document.createElementNS("http://www.w3.org/2000/svg", tag);
     } else {
-      throw new Error("Ref is not a function. Got: " + attrs.ref);
+      this.node = document.createElement(tag);
     }
+
+    // Call ref function, if present.
+    if (attrs.ref) {
+      if (isFunction(attrs.ref)) {
+        attrs.ref(this.node);
+      } else {
+        throw new Error("Ref is not a function. Got: " + attrs.ref);
+      }
+    }
+
+    this.attrs = omit(["ref"], attrs);
+    this.children = children.map((c) => c.build({ appContext, elementContext }));
   }
 
-  let subscriptions = [];
-  const children = ctx.outlet().init({ appContext, elementContext });
+  get isView() {
+    return true;
+  }
 
-  ctx.beforeConnect(() => {
-    children.connect(node);
-    // for (const child of ctx.get("children")) {
-    //   child.connect(node);
-    // }
+  get isConnected() {
+    return this.node.parentNode != null;
+  }
 
-    applyAttrs(node, attrs, subscriptions);
-    if (attrs.style) applyStyles(node, attrs.style, subscriptions);
-    if (attrs.class) applyClasses(node, attrs.class, subscriptions);
-  });
+  connect(parent, after = null) {
+    if (!this.isConnected) {
+      for (const child of this.children) {
+        child.connect(this.node);
+      }
 
-  ctx.afterDisconnect(async () => {
-    children.disconnect();
-
-    for (const subscription of subscriptions) {
-      subscription.unsubscribe();
+      applyAttrs(this.node, this.attrs, this.subscriptions);
+      if (this.attrs.style) applyStyles(this.node, this.attrs.style, this.subscriptions);
+      if (this.attrs.class) applyClasses(this.node, this.attrs.class, this.subscriptions);
     }
-    subscriptions = [];
-  });
 
-  return node;
-});
+    parent.insertBefore(this.node, after?.nextSibling);
+  }
+
+  disconnect() {
+    if (this.isConnected) {
+      for (const child of this.children) {
+        child.disconnect();
+      }
+
+      this.node.parentNode.removeChild(this.node);
+
+      while (this.subscriptions.length > 0) {
+        this.subscriptions.shift().unsubscribe();
+      }
+    }
+  }
+}
 
 function applyAttrs(element, attrs, subscriptions) {
   for (const key in attrs) {

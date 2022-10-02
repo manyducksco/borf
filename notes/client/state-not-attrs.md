@@ -213,7 +213,7 @@ const Layout: View<LayoutState, AppGlobals> = function () {
 //   - May be lighter on memory since classes are defined once and instantiated many times.
 //     - View function render and lifecycle logic has to be recreated again for each instance.
 // Downsides:
-//   - Actual rendering code is nested one level deeper.
+//   - Actual blueprints code is nested one level deeper.
 class Layout extends View<LayoutState, AppGlobals> {
   static defaultState = {
     userName: "Default",

@@ -1,8 +1,8 @@
-import { isObject, isString } from "./typeChecking.js";
-import { APP_CONTEXT } from "../keys.js";
-import { makeState } from "./makeState.js";
+import { isObject, isString } from "../../helpers/typeChecking.js";
+import { APP_CONTEXT } from "../../keys.js";
+import { makeState } from "../../helpers/makeState.js";
 
-import debug from "../globals/debug.js";
+import debug from "../built-ins/debug.js";
 
 export function initGlobal(fn, config) {
   let { appContext, name, channelPrefix } = config;

@@ -1,18 +1,24 @@
 import { omit } from "../helpers/omit.js";
-import { Template } from "../h.js";
+import { h } from "../h.js";
 
-export { Fragment } from "../views/Fragment.js";
+export { Fragment } from "../view/Fragment.js";
 
 /**
  * JSX function for elements with dynamic children.
  */
 export function jsx(element, props, key) {
-  return new Template(element, { ...omit(["children"], props), key }, [props.children]);
+  const attributes = { ...omit(["children"], props), key };
+  const children = [props.children];
+
+  return h(element, attributes, children);
 }
 
 /**
  * JSX function for elements with static children.
  */
 export function jsxs(element, props, key) {
-  return new Template(element, { ...omit(["children"], props), key }, props.children);
+  const attributes = { ...omit(["children"], props), key };
+  const children = props.children;
+
+  return h(element, attributes, children);
 }

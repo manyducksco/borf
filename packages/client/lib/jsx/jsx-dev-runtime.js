@@ -1,9 +1,11 @@
 import { omit } from "../helpers/omit.js";
-import { Template } from "../h.js";
+import { h } from "../h.js";
 
-export { Fragment } from "../views/Fragment.js";
+export { Fragment } from "../view/Fragment.js";
 
 export function jsxDEV(element, props, key, isStaticChildren, source, self) {
+  const attributes = { ...omit(["children"], props), key };
   const children = Array.isArray(props.children) ? props.children : [props.children];
-  return new Template(element, { ...omit(["children"], props), key }, children);
+
+  return h(element, attributes, children);
 }
