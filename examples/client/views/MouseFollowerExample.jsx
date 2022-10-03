@@ -53,16 +53,7 @@ export const MouseFollowerExample = makeView((ctx) => {
           "enabled",
           // Transitions can set window state, so this kind of composition is possible.
           animated((ctx) => {
-            ctx.name = "MouseFollower";
             const $scale = ctx.readable("scale");
-
-            // ctx.observe($scale, (value) => {
-            //   ctx.log(value);
-            // });
-
-            ctx.observe((value) => {
-              ctx.log(value);
-            });
 
             return (
               <div

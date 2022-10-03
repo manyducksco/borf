@@ -1,51 +1,72 @@
 # 🐕🖥 @woofjs/client
 
-Front end routing, components and state for dogs. 🐕
+![bundle size](https://img.shields.io/bundlephobia/minzip/@woofjs/client?style=flat&label=gzipped%20size)
 
-## Table of Concepts
+Woof is a front end framework that aims to cover the most common needs of modern web apps. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box.
 
-1. [Routing](#routing)
-2. [State](#state)
-3. [Views](#views)
-4. [Globals](#globals)
+## Installation
 
-Outline for future guide:
+### CDN
 
-- Creating an app
-- Routing
-  - Route matching
-  - Nested routes
-  - Preloading data for routes
-- State
-  - State methods (get, set, merge, nuke, observe)
-  - Bindings (readable, writable)
-- Views
-  - State overview
-  - Accessing globals
-  - JSX / h
-  - Binding data to DOM elements
-  - Binding data to nested components
-  - Template helpers (when, unless, repeat, watch)
-- Globals
-  - State overview
+Woof includes everything you need to make a fully functioning web app by importing the `@woofjs/client` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running without configuring a build step.
 
-Exports these functions:
+```js
+import { ... } from "https://cdn.skypack.dev/@woofjs/client";
+import { ... } from "https://unpkg.com/@woofjs/client"
+```
 
-- makeApp
-- makeView
-- makeGlobal
-- makeTransitions
-- makeDebounce
+### NPM
+
+You can also get `@woofjs/client` from npm. Best used in combination with `@woofjs/build` which adds support for JSX, a dev server with auto-reload, optimized production builds and more. Run this in your project directory:
+
+```
+$ npm i -D @woofjs/build @woofjs/client
+```
+
+And the imports will look like this:
+
+```js
+import { ... } from "@woofjs/client";
+```
+
+See the [@woofjs/build]() docs for configuration tips.
 
 ## Hello World
 
+Suppose you have two files on your web server:
+
+```
+index.html
+app.js
+```
+
+Inside `index.html`:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Woof Demo</title>
+  </head>
+  <body>
+    <main id="app">
+      <!-- app goes here -->
+    </main>
+
+    <script async src="./app.js"></script>
+  </body>
+</html>
+```
+
+Inside `app.js`:
+
 ```js
-import { makeApp } from "@woofjs/client";
+import { makeApp } from "https://cdn.skypack.dev/@woofjs/client";
 
 // Create a new woof app.
 const app = makeApp();
 
-// Display a <h1>Hello World</h1> at the root.
+// Display a <h1>Hello World</h1> at the root URL.
 app.route("/", function (ctx, h) {
   return h("h1", "Hello World");
 });
@@ -56,6 +77,26 @@ app.redirect("*", "/");
 // Display this app inside the element with an `id` of "app"
 app.connect("#app");
 ```
+
+Now when you visit the page the document should look something like this:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Woof Demo</title>
+  </head>
+  <body>
+    <main id="app">
+      <h1>Hello World</h1>
+    </main>
+
+    <script async src="./app.js"></script>
+  </body>
+</html>
+```
+
+> TODO: Summarize and link to sections to learn more about what was demonstrated: [views](#views), [routing](#routing), etc.
 
 ## Routing
 
@@ -170,29 +211,6 @@ app.route("other", (ctx, h) => {
 Views receive a context object they may use to translate state and lifecycle into DOM nodes.
 
 ```js
-function htmlpers(h) {
-  return {
-    get a(...args) {
-      return h("a", ...args);
-    },
-    get h1(...args) {
-      return h("h1", ...args);
-    },
-    ...
-  };
-}
-
-// Hypothetical function to generate factory functions for each HTML tag.
-const { div, h1, p } = htmlpers(h);
-
-return div(
-  //
-  h1({ class: "heading" }, "Title"),
-  p("This is the paragraph."),
-  h(SomeView, { value: 5 })
-);
-
-
 const Example = makeView(function (ctx, h) {
   // Access globals by the name they were registered under.
   const global = ctx.global("name");
@@ -233,22 +251,22 @@ const Example = makeView(function (ctx, h) {
   ||            Lifecycle            ||
   \*=================================*/
 
-  ctx.isConnected; // true if window is connected
+  ctx.isConnected; // true if view is connected
 
   ctx.beforeConnect(() => {
-    // Runs when the window is about to be (but is not yet) added to the page.
+    // Runs when the view is about to be (but is not yet) added to the page.
   });
 
   ctx.afterConnect(() => {
-    // Runs after the window is added to the page.
+    // Runs after the view is added to the page.
   });
 
   ctx.beforeDisconnect(() => {
-    // Runs when the window is about to be (but is not yet) removed from the page.
+    // Runs when the view is about to be (but is not yet) removed from the page.
   });
 
   ctx.afterDisconnect(() => {
-    // Runs after the window is removed from the page.
+    // Runs after the view is removed from the page.
   });
 
   /*=================================*\
@@ -298,9 +316,7 @@ That view renders the following HTML.
 
 #### Using JSX
 
-Woof supports JSX, so if you want to write your views as HTML to begin with you totally can. However, it's
-important to understand how `h` works because that's ultimately what the JSX compiles down to. JSX is simply an
-alternate syntax for `h`.
+Woof supports JSX with the help of `@woofjs/build`, so if you want to write your views as HTML to begin with you can do that. However, it's important to understand how `h` works because that's ultimately what the JSX compiles down to.
 
 > Note that Woof uses a `class` attribute like HTML rather than `className` like React.
 
@@ -331,7 +347,7 @@ const Example = makeView((ctx, h) => {
 });
 
 const Subview = makeView((ctx, h) => {
-  return h("h1", "Hello from inside another window!");
+  return h("h1", "Hello from inside another view!");
 });
 ```
 
@@ -457,8 +473,8 @@ const Example = makeView((ctx, h) => {
     "div",
 
     // Displays the return value of the function each time the value changes.
-    ctx.outlet("value", ($value) => {
-      return h("span", $value, "!!!");
+    ctx.outlet("value", (value) => {
+      return h("span", value, "!!!");
     })
   );
 });
@@ -466,7 +482,7 @@ const Example = makeView((ctx, h) => {
 
 ## Dynamic Classes
 
-Components also support dynamic classes. Pass an object where the keys are the class names, and the classes are added to
+Dynamic classes are also supported. Pass an object where the keys are the class names, and the classes are added to
 the element while the values are truthy. The values can be \$states if you want to toggle classes dynamically.
 
 ```jsx
@@ -542,7 +558,7 @@ app.global("counter", function (ctx) {
   };
 
   return {
-    $current: ctx.readable("count"), // Exports a read only version that views can only change through the methods.
+    $current: ctx.readable("count"), // Exports a read only version that can only be changed through the methods.
 
     increment() {
       ctx.set("count", (current) => current + 1);
@@ -627,6 +643,13 @@ app.global("example", function (ctx) {
 });
 ```
 
+# Utilities
+
+This library also includes some utilities to help with really common tasks in frontend development:
+
+- makeDebounce
+- makeTransitions
+
 ## Debounce
 
 Frequently in UI programming, you have events coming in constantly but only want to perform an action when they are done. For example, a search input that which waits 300ms after the user has stopped typing before making an API call.
@@ -666,14 +689,65 @@ debounce(() => {
 });
 ```
 
+## Transitions
+
+Defines a set of transitions for an element. Returns a function that applies these transitions to a given element.
+
+```jsx
+import { makeView, makeTransitions } from "@woofjs/client";
+import { animate } from "popmotion";
+
+// TODO: Change names to `enter` and `exit` since `in` causes weird syntax highlighting in some editors since it's a keyword.
+const animated = makeTransitions({
+  // Fade opacity from 0 to 1 when the element enters.
+  in: (ctx) => {
+    animate({
+      from: 0,
+      to: 1,
+      duration: 300,
+      onUpdate: (current) => {
+        ctx.node.style.opacity = current;
+      },
+      onComplete: () => {
+        ctx.node.style.opacity = 1;
+        ctx.done();
+      },
+    });
+  },
+
+  // Fade opacity from 1 to 0 when the element exits.
+  out: (ctx) => {
+    animate({
+      from: 1,
+      to: 0,
+      duration: 300,
+      onUpdate: (current) => {
+        ctx.node.style.opacity = current;
+      },
+      onComplete: () => {
+        ctx.node.style.opacity = 1;
+        ctx.done();
+      },
+    });
+  },
+});
+
+const ExampleView = makeView((ctx, h) => {
+  return h("section", [
+    h("header", h("h1", "Animated List Items")),
+
+    // Animate each list item as it enters and exits.
+    ctx.repeat("items", ($item) => {
+      return animated(h("li", $item));
+    }),
+  ]);
+});
+```
+
 ## Testing
 
 See [the testing README](./lib/testing/README.md).
 
 ---
 
-🦆
-
-```
-
-```
+[🦆](https://www.manyducks.co)

@@ -602,8 +602,8 @@ declare module "@woofjs/client" {
      */
     repeat<T>(
       value: T[] | Observable<T[]>,
-      render: ($value: Readable<T>, $index: Readable<number>) => WoofElement,
-      getKey?: (value: T) => any
+      renderFn: ($value: Readable<T>, $index: Readable<number>) => WoofElement,
+      keyFn?: (value: T) => any
     ): Blueprint;
 
     /**
@@ -612,11 +612,11 @@ declare module "@woofjs/client" {
      */
     repeat<Key extends keyof S>(
       key: Key,
-      render: (
+      renderFn: (
         $value: Readable<Unwrapped<S>[Key] extends Iterable<infer T> ? T : never>,
         $index: Readable<number>
       ) => WoofElement,
-      getKey?: (value: S[Key]) => any
+      keyFn?: (value: Unwrapped<S>[Key] extends Array<infer U> ? U : unknown) => any
     ): Blueprint;
   }
 

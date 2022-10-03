@@ -1,15 +1,16 @@
 # Testing Utils
 
-`@woofjs/client` includes tools for unit testing its own components and services as well as components and services created by users for their own apps.
+`@woofjs/client` includes tools for unit testing its own views and globals as well as views and globals created by users
+for their own apps.
 
-## Testing services (and HTTP calls)
+## Testing globals (and HTTP calls)
 
 ```js
-import { wrapService, makeMockHTTP } from "@woofjs/client/testing";
+import { wrapGlobal, makeMockHTTP } from "@woofjs/client/testing";
 
-const mockHTTP = makeMockHTTP(function () {
+const mockHTTP = makeMockHTTP((on) => {
   // Define a mock responder for requests matching 'POST /users/create'
-  this.post("/users/create", (ctx) => {
+  on.post("/users/create", (ctx) => {
     ctx.response.status = 200;
 
     return {
@@ -21,14 +22,14 @@ const mockHTTP = makeMockHTTP(function () {
     };
   });
 
-  this.delete("/users/:id", (ctx) => {
+  on.delete("/users/:id", (ctx) => {
     ctx.response.status = 204;
   });
 });
 
-// A service that makes HTTP calls:
-const UserService = function () {
-  const http = this.service("http");
+// A global that makes HTTP calls:
+function UserGlobal(ctx) {
+  const http = ctx.global("http");
 
   function createUser(name) {
     return http.post("/users/create").body({ name });
@@ -42,28 +43,28 @@ const UserService = function () {
     createUser,
     deleteUser,
   };
-};
+}
 ```
 
 And to test (pictured in Jest):
 
 ```js
 test("API calls return expected response", async () => {
-  const userService = wrapService(UserService, function () {
-    this.service("http", mockHTTP);
+  const userGlobal = wrapGlobal(UserGlobal, (ctx) => {
+    ctx.global("http", mockHTTP);
   });
 
   // Run lifecycle hooks
-  userService.beforeConnect();
-  userService.afterConnect();
+  userGlobal.beforeConnect();
+  userGlobal.afterConnect();
 
   // Access the exported object at 'exports'
-  const createRes = await userService.exports.createUser("Jimbo Jones");
+  const createRes = await userGlobal.exports.createUser("Jimbo Jones");
 
   expect(createRes.status).toBe(200);
   expect(createRes.body.name).toBe("Jimbo Jones");
 
-  const deleteRes = await userService.exports.deleteUser(createRes.body.user.id);
+  const deleteRes = await userGlobal.exports.deleteUser(createRes.body.user.id);
 
   expect(deleteRes.status).toBe(204);
 });
