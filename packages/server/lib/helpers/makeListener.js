@@ -177,10 +177,10 @@ export function makeListener(appContext) {
       req.url = normalizePath(req.url);
 
       let fallback = appContext.fallback ? normalizePath(appContext.fallback) : null;
-      let match = appContext.staticCache[req.url];
+      let match = appContext.staticCache.get(req.url);
 
       if (fallback && canFallback(req)) {
-        match = appContext.staticCache[fallback];
+        match = appContext.staticCache.get(fallback);
       }
 
       if (!match) {

@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 
@@ -6,12 +7,55 @@ import { initGlobal } from "./helpers/initGlobal.js";
 import { parseRoute, sortRoutes } from "./helpers/routing.js";
 import { makeDebug } from "./helpers/makeDebug.js";
 import { makeStaticFileCache } from "./helpers/makeStaticFileCache.js";
-import { makeDebounce } from "./helpers/makeDebounce.js";
 
 import { makeListener } from "./helpers/makeListener.js";
 
 const IS_DEV = process.env.NODE_ENV !== "production";
 const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), process.env.WOOF_STATIC_PATH || "build/static");
+
+/**
+ * Cache that serves from an in-memory list of static files.
+ */
+class StaticCache {
+  _values = new Map();
+
+  get(filePath) {
+    return this._values.get(filePath);
+  }
+
+  set(filePath, fileInfo) {
+    return this._values.set(filePath, fileInfo);
+  }
+}
+
+/**
+ * Reads from disk each time to check if files exist for a route.
+ */
+class NoCache {
+  _statics;
+
+  constructor(statics) {
+    this._statics = statics;
+  }
+
+  get(filePath) {
+    for (const loc of this._statics) {
+      const targetPath = path.join(loc.source, filePath);
+
+      if (fs.existsSync(targetPath)) {
+        const hasGZ = fs.existsSync(targetPath + ".gz");
+
+        return {
+          source: loc.source,
+          path: filePath,
+          gz: hasGZ ? filePath + ".gz" : null,
+        };
+      }
+    }
+  }
+
+  set(filePath, fileInfo) {}
+}
 
 export function makeApp(options = {}) {
   const debug = makeDebug(options.debug);
@@ -23,42 +67,11 @@ export function makeApp(options = {}) {
     routes: [],
     middlewares: [],
     globals: {},
-    staticCache: {},
+    staticCache: null,
     fallback: null,
     debug,
     cors: null,
   };
-
-  /**
-   * Watch files with chokidar and rebuild caches. Recommended for use while developing apps.
-   *
-   * @paths - Array of paths to watch.
-   */
-  async function watchFiles() {
-    const chokidar = await import("chokidar");
-
-    const paths = [];
-    for (const entry of statics) {
-      paths.push(path.join(entry.source, "**/*"));
-    }
-
-    const listener = chokidar.watch(paths);
-    const debounce = makeDebounce(30);
-
-    listener.on("all", () => {
-      debounce(() => {
-        const cache = {};
-
-        makeStaticFileCache(statics).forEach((file) => {
-          cache[file.path] = file;
-        });
-
-        appContext.staticCache = cache;
-
-        channel.log("rebuilt static file cache");
-      });
-    });
-  }
 
   function addRoute(method, url, handlers) {
     appContext.routes.push({ ...parseRoute(url), method, handlers });
@@ -202,14 +215,15 @@ export function makeApp(options = {}) {
      * Starts an HTTP server on the specified port and begins listening for requests.
      */
     async listen(port) {
-      const files = makeStaticFileCache(statics);
-      for (const file of files) {
-        appContext.staticCache[file.path] = file;
-      }
-
       if (IS_DEV) {
-        await watchFiles();
-        channel.log("watching files");
+        appContext.staticCache = new NoCache(statics);
+      } else {
+        appContext.staticCache = new StaticCache();
+
+        const files = makeStaticFileCache(statics);
+        for (const file of files) {
+          appContext.staticCache.set(file.path, file);
+        }
       }
 
       // Sort routes by specificity before any matches are attempted.
