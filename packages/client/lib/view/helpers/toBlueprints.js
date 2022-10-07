@@ -27,10 +27,7 @@ export function toBlueprints(elements) {
       item = new TextBlueprint(item);
     }
 
-    // TODO: Find out why views are being passed to this function and remove this.
     if (item.isView) {
-      console.trace(`view passed to toBlueprints`);
-      console.log(item);
       const view = item;
       item = {
         isBlueprint: true,

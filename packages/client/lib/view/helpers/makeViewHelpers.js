@@ -1,4 +1,4 @@
-import { isString } from "../../helpers/typeChecking.js";
+import { isArray, isString } from "../../helpers/typeChecking.js";
 
 import { OutletBlueprint } from "../blueprints/Outlet.js";
 import { RepeatBlueprint } from "../blueprints/Repeat.js";
@@ -18,10 +18,36 @@ export function makeViewHelpers(state) {
    * @example
    * ctx.when($value, h("h1", "If you can read this the value is truthy."))
    *
+   * // Switch-style case array.
+   * ctx.when($value, [
+   *   ["value1", <ThisView />],
+   *   ["value2", <ThatView />],
+   *   ["value3", <AnotherView />],
+   *   <FallbackView />
+   * ])
+   *
    * @param value - Binding or variable name.
-   * @param element - Element to display.
+   * @param element - Element to display or 2D switch-style case array.
    */
   function when(value, element) {
+    if (isArray(element)) {
+      const fallback = !isArray(element[element.length - 1]) ? element.pop() : null;
+
+      return new OutletBlueprint(bound(value), (value) => {
+        for (const entry of element) {
+          if (entry[0] === value) {
+            return entry[1];
+          }
+        }
+
+        if (fallback) {
+          return fallback;
+        }
+
+        return null;
+      });
+    }
+
     return new OutletBlueprint(bound(value), (value) => {
       if (value) {
         return element;
