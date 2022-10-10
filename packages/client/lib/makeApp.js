@@ -3,6 +3,7 @@ import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
 
+import dialog from "./global/built-ins/dialog.js";
 import debug from "./global/built-ins/debug.js";
 import http from "./global/built-ins/http.js";
 import page from "./global/built-ins/page.js";
@@ -10,7 +11,7 @@ import router from "./global/built-ins/router.js";
 
 import { initGlobal } from "./global/helpers/initGlobal.js";
 
-const builtInGlobals = [debug, router, page, http];
+const builtInGlobals = [debug, dialog, router, page, http];
 
 /**
  * Creates a woof application.
@@ -18,6 +19,7 @@ const builtInGlobals = [debug, router, page, http];
 export function makeApp(options = {}) {
   const globals = {
     debug,
+    dialog,
     router,
     page,
     http,
@@ -28,6 +30,7 @@ export function makeApp(options = {}) {
     globals: {},
     routes: [],
     rootElement: null,
+    // $dialogs - added by dialog global
   };
 
   let layerId = 0;
@@ -293,8 +296,67 @@ export function makeApp(options = {}) {
           global.afterConnect();
         }
 
+        connectDialogs(appContext);
+
         return onAfterConnect();
       });
     },
   };
+}
+
+/**
+ * Creates a dialog outlet element that gets added to the DOM to contain dialogs
+ * when there is at least one in the list.
+ */
+function connectDialogs(appContext) {
+  const { rootElement, $dialogs } = appContext;
+  const container = document.createElement("div");
+
+  container.style.position = "fixed";
+  container.style.top = "0";
+  container.style.right = "0";
+  container.style.bottom = "0";
+  container.style.left = "0";
+  container.style.zIndex = "99999";
+
+  let activeDialogs = [];
+
+  $dialogs.subscribe((dialogs) => {
+    requestAnimationFrame(() => {
+      let removed = [];
+      let added = [];
+
+      for (const dialog of activeDialogs) {
+        if (!dialogs.includes(dialog)) {
+          removed.push(dialog);
+        }
+      }
+
+      for (const dialog of dialogs) {
+        if (!activeDialogs.includes(dialog)) {
+          added.push(dialog);
+        }
+      }
+
+      for (const dialog of removed) {
+        dialog.disconnect();
+        activeDialogs.splice(activeDialogs.indexOf(dialog), 1);
+      }
+
+      for (const dialog of added) {
+        dialog.connect(container);
+        activeDialogs.push(dialog);
+      }
+
+      if (activeDialogs.length > 0) {
+        if (!container.parentNode) {
+          rootElement.appendChild(container);
+        }
+      } else {
+        if (container.parentNode) {
+          rootElement.removeChild(container);
+        }
+      }
+    });
+  });
 }

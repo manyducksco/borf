@@ -106,6 +106,7 @@ declare module "@woofjs/client" {
   export type AppLifecycleCallback<G> = (ctx: AppContext<G>) => void | Promise<void>;
 
   export type DefaultGlobals = {
+    dialog: ReturnType<GlobalDialog>;
     router: ReturnType<GlobalRouter>;
     http: ReturnType<GlobalHTTP>;
     page: ReturnType<GlobalPage>;
@@ -276,7 +277,7 @@ declare module "@woofjs/client" {
    * Context for stateful objects like views and globals.
    */
   interface StateContext<State> {
-    defaultState?: Omit<State, "children">;
+    defaultState?: Partial<Omit<State, "children">>;
 
     /**
      * Returns the whole state.
@@ -589,6 +590,8 @@ declare module "@woofjs/client" {
 
     when<Key extends keyof S>(key: Key, element: WoofElement): Blueprint;
 
+    when<Key extends keyof S>(key: Key, cases: [S[Key], Blueprint][]): Blueprint;
+
     /**
      * Displays `element` when `value` is falsy.
      */
@@ -657,6 +660,25 @@ declare module "@woofjs/client" {
   /*==================================*\
   ||         Built-in Globals         ||
   \*==================================*/
+
+  export type GlobalDialog = Global<{
+    make<S extends DialogViewState>(viewFn: ViewFunction<S, any>, options?: DialogOptions): Dialog<S>;
+    make<S extends DialogViewState>(view: View<S, any>, options?: DialogOptions): Dialog<S>;
+  }>;
+
+  export interface DialogViewState {
+    /**
+     * Controls the dialog's open state. When this is true the dialog is displayed. When false the dialog is hidden.
+     */
+    open: boolean;
+  }
+
+  export type DialogOptions = {};
+
+  export type Dialog<S> = {
+    open: (attributes?: Partial<Omit<S, "open">>) => void;
+    close: () => void;
+  };
 
   export type GlobalRouter = Global<{
     $route: Readable<string>;
