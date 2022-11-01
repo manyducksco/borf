@@ -2,23 +2,22 @@ import { isFunction, isObject, isString, isTemplate } from "./helpers/typeChecki
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
+import { makeDebug } from "./helpers/makeDebug.js";
 
 import dialog from "./global/built-ins/dialog.js";
-import debug from "./global/built-ins/debug.js";
 import http from "./global/built-ins/http.js";
 import page from "./global/built-ins/page.js";
 import router from "./global/built-ins/router.js";
 
 import { initGlobal } from "./global/helpers/initGlobal.js";
 
-const builtInGlobals = [debug, dialog, router, page, http];
+const builtInGlobals = [dialog, router, page, http];
 
 /**
  * Creates a woof application.
  */
 export function makeApp(options = {}) {
   const globals = {
-    debug,
     dialog,
     router,
     page,
@@ -27,6 +26,7 @@ export function makeApp(options = {}) {
 
   const appContext = {
     options,
+    debug: makeDebug(options.debug ?? {}),
     globals: {},
     routes: [],
     rootElement: null,
@@ -176,7 +176,7 @@ export function makeApp(options = {}) {
      */
     beforeConnect(fn) {
       onBeforeConnect = async () => {
-        const channel = appContext.globals.debug.exports.channel("woof:app:beforeConnect");
+        const channel = appContext.debug.makeChannel("woof:app:beforeConnect");
 
         const ctx = {
           ...channel,
@@ -206,7 +206,7 @@ export function makeApp(options = {}) {
      */
     afterConnect(fn) {
       onAfterConnect = async () => {
-        const channel = appContext.globals.debug.exports.channel("woof:app:afterConnect");
+        const channel = appContext.debug.makeChannel("woof:app:afterConnect");
 
         const ctx = {
           ...channel,
@@ -240,7 +240,7 @@ export function makeApp(options = {}) {
         element = document.querySelector(element);
       }
 
-      if (element instanceof Node === false) {
+      if (!(element instanceof Node)) {
         throw new TypeError(`Expected a DOM node. Got: ${element}`);
       }
 

@@ -53,7 +53,7 @@ export function initView(fn, config) {
     initialState.push(["children", children]);
   }
 
-  const debug = appContext.globals.debug.exports.channel(`${channelPrefix}:${fn.name || "unnamed"}`);
+  const debug = appContext.debug.makeChannel(`${channelPrefix}:${fn.name || "<anonymous>"}`);
   const [state, setBoundValue] = makeState({ initialState, bindings, debug });
   const helpers = makeViewHelpers(state);
 

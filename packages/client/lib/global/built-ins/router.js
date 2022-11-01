@@ -44,18 +44,18 @@ export default makeGlobal((ctx) => {
     }
   }
 
-  ctx.defaultState = {
-    route: "",
-    path: "",
-    params: {},
-    query: {},
-  };
+  const $$view = ctx.state();
+
+  const $$route = ctx.state("");
+  const $$path = ctx.state("");
+  const $$params = ctx.state({});
+  const $$query = ctx.state({});
 
   // Track and skip updating the URL when the change came from URL navigation
   let isRouteChange = false;
 
   // Update URL when query changes
-  ctx.observe("query", (current) => {
+  ctx.observe($$query, (current) => {
     // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
@@ -81,7 +81,7 @@ export default makeGlobal((ctx) => {
   ctx.afterConnect(() => {
     const root = appContext.rootElement;
 
-    appOutlet = new OutletBlueprint(ctx.readable("view")).build({ appContext });
+    appOutlet = new OutletBlueprint($$view.readable()).build({ appContext });
     appOutlet.connect(root);
 
     history.listen(onRouteChange);
@@ -117,11 +117,11 @@ export default makeGlobal((ctx) => {
 
         history.replace(path);
       } else {
-        ctx.set("path", matched.path);
-        ctx.set("params", matched.params);
+        $$path.set(matched.path);
+        $$params.set(matched.params);
 
-        if (matched.route !== ctx.get("route")) {
-          ctx.set("route", matched.route);
+        if (matched.route !== $$route.get()) {
+          $$route.set(matched.route);
 
           const { layers } = matched.data;
 
@@ -147,7 +147,7 @@ export default makeGlobal((ctx) => {
                   if (parentLayer) {
                     parentLayer.view.setChildren(view);
                   } else {
-                    ctx.set("view", view);
+                    $$view.set(view);
                   }
                 });
               };
@@ -176,8 +176,7 @@ export default makeGlobal((ctx) => {
       lastQuery = location.search;
 
       isRouteChange = true;
-      ctx.set(
-        "query",
+      $$query.set(
         queryString.parse(location.search, {
           parseBooleans: true,
           parseNumbers: true,
@@ -187,10 +186,10 @@ export default makeGlobal((ctx) => {
   }
 
   return {
-    $route: ctx.readable("route"),
-    $path: ctx.readable("path"),
-    $params: ctx.readable("params"),
-    $$query: ctx.writable("query"),
+    $route: $$route.readable(),
+    $path: $$path.readable(),
+    $params: $$params.readable(),
+    $$query,
 
     back(steps = 1) {
       history.go(-steps);

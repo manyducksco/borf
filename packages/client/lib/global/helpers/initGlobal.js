@@ -1,8 +1,7 @@
-import { isObject, isString } from "../../helpers/typeChecking.js";
+import { isObject, isObservable, isString } from "../../helpers/typeChecking.js";
 import { APP_CONTEXT } from "../../keys.js";
-import { makeState } from "../../helpers/makeState.js";
-
-import debug from "../built-ins/debug.js";
+import { makeWritable } from "../../state/makeWritable.js";
+import { makeMerged } from "../../state/makeMerged.js";
 
 export function initGlobal(fn, config) {
   let { appContext, name, channelPrefix } = config;
@@ -13,23 +12,12 @@ export function initGlobal(fn, config) {
   const afterConnectCallbacks = [];
 
   // Exception because debug global doesn't exist yet when initializing the debug global.
-  const channel = fn === debug ? {} : appContext.globals.debug.exports.channel(`${channelPrefix}:${name}`);
-  const [state] = makeState({ debug: channel });
+  const channel = appContext.debug.makeChannel(`${channelPrefix}:${name}`);
 
   const ctx = {
     [APP_CONTEXT]: appContext,
 
     ...channel,
-    ...state,
-
-    set defaultState(values) {
-      // Set defaults only if they haven't been set already.
-      for (const key in values) {
-        if (state.get(key) === undefined) {
-          state.set(key, values[key]);
-        }
-      }
-    },
 
     get name() {
       return channel.name;
@@ -39,22 +27,24 @@ export function initGlobal(fn, config) {
       channel.name = `${channelPrefix}:${value}`;
     },
 
-    /**
-     * Creates a function that takes a new value when called with one.
-     * Returns the last value it was called with when called without a value.
-     *
-     * Used for getting quick references to HTML elements or other values in custom views.
-     */
-    ref(initialValue) {
-      let currentValue = initialValue;
+    state(initialValue) {
+      return makeWritable(initialValue);
+    },
 
-      return function (newValue) {
-        if (newValue === undefined) {
-          return currentValue;
-        }
+    merge(...args) {
+      return makeMerged(...args);
+    },
 
-        currentValue = newValue;
-      };
+    observe(...args) {
+      let callback = args.pop();
+
+      if (isObservable(args.at(0))) {
+        const $merged = makeMerged(...args, callback);
+        $merged.subscribe();
+      } else {
+        const $merged = makeMerged(...args);
+        $merged.subscribe(callback);
+      }
     },
 
     global(name) {
@@ -76,10 +66,6 @@ export function initGlobal(fn, config) {
     afterConnect(callback) {
       afterConnectCallbacks.push(callback);
     },
-
-    observe(...args) {
-      state.observe(...args).start();
-    },
   };
 
   const exports = fn(ctx);
@@ -89,7 +75,6 @@ export function initGlobal(fn, config) {
   }
 
   return {
-    state,
     exports,
     beforeConnect() {
       for (const callback of beforeConnectCallbacks) {

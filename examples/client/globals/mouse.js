@@ -1,15 +1,13 @@
 import { makeGlobal } from "@woofjs/client";
 
 export default makeGlobal((ctx) => {
-  ctx.defaultState = {
-    position: { x: 0, y: 0 },
-  };
+  const $$position = ctx.state({ x: 0, y: 0 });
 
   ctx.afterConnect(() => {
     ctx.log("listening for mousemove events");
 
     window.addEventListener("mousemove", (e) => {
-      ctx.set("position", {
+      $$position.set({
         x: e.clientX,
         y: e.clientY,
       });
@@ -17,6 +15,6 @@ export default makeGlobal((ctx) => {
   });
 
   return {
-    $position: ctx.readable("position"),
+    $position: $$position.readable(),
   };
 });

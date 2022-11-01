@@ -7,16 +7,14 @@ import { ViewBlueprint } from "../../view/blueprints/View.js";
  * TODO: Describe this better.
  */
 export default makeGlobal((ctx) => {
-  ctx.defaultState = {
-    /**
-     * A first-in-last-out queue of dialogs. The last one appears on top.
-     * This way if a dialog opens a dialog the new dialog stacks.
-     */
-    dialogs: [],
-  };
+  /**
+   * A first-in-last-out queue of dialogs. The last one appears on top.
+   * This way if a dialog opens another dialog the new dialog stacks.
+   */
+  const $$dialogs = ctx.state([]);
 
   // Add $dialogs to app context so the app can display them.
-  ctx[APP_CONTEXT].$dialogs = ctx.readable("dialogs");
+  ctx[APP_CONTEXT].$dialogs = $$dialogs.readable();
 
   return {
     make: (view, options) => makeDialog(view, options, ctx),
@@ -29,14 +27,14 @@ function makeDialog(viewFn, options, ctx) {
     elementContext: ctx[ELEMENT_CONTEXT],
   });
 
-  const $$open = view.state.writable("open");
+  const $$open = ctx.state(true);
   let openSubscription;
 
   function open(attributes = {}) {
     view.state.set({ ...attributes, open: true });
 
-    ctx.set("dialogs", (current) => {
-      if (!current.includes(this.view)) {
+    ctx.update("dialogs", (current) => {
+      if (!current.includes(view)) {
         current.push(view);
       }
     });
@@ -49,7 +47,7 @@ function makeDialog(viewFn, options, ctx) {
   }
 
   function close() {
-    ctx.set("dialogs", (current) => {
+    ctx.update("dialogs", (current) => {
       current.splice(
         current.findIndex((v) => v === view),
         1

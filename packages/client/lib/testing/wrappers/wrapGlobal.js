@@ -1,7 +1,7 @@
 import { isFunction } from "../../helpers/typeChecking.js";
 import { initGlobal } from "../../global/helpers/initGlobal.js";
 
-import debug from "../../global/built-ins/debug.js";
+import debug from "../../helpers/makeDebug.js";
 import http from "../mocks/globals/http.js";
 import page from "../mocks/globals/page.js";
 import router from "../mocks/globals/router.js";

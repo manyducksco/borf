@@ -10,7 +10,7 @@ export const CounterExample = makeView((ctx) => {
   logLifecycle(ctx);
 
   const counter = ctx.global("counter");
-  const $label = counter.$current.to((n) => `the number is: ${n}`);
+  const $label = counter.$current.as((n) => `the number is: ${n}`);
 
   return (
     <div class="example">

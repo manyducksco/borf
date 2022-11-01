@@ -69,10 +69,6 @@ export function makeState({ initialState, bindings, debug }) {
         let value = values[key];
         let current = state.get(key);
 
-        if (isFunction(value)) {
-          value = produce(current, value);
-        }
-
         if (!deepEqual(current, value)) {
           state.set(key, value);
           broadcast(key, value);
@@ -89,6 +85,30 @@ export function makeState({ initialState, bindings, debug }) {
       if (state.has(key)) {
         state.delete(key);
         broadcast(key, undefined);
+      }
+    },
+
+    update(key, callback) {
+      if (!isFunction(callback)) {
+        throw new TypeError("Expected second argument to be an update callback function. Got: " + typeof callback);
+      }
+
+      if (key === "children" || (bindings[key] && !bindings[key].isWritable)) {
+        debug.warn(`Tried to set value for read-only binding '${key}'. This change will not apply.`);
+        return;
+      }
+
+      const current = state.get(key);
+      const value = produce(current, callback);
+
+      if (!deepEqual(current, value)) {
+        state.set(key, value);
+        broadcast(key, value);
+
+        // Update readWrite bindings.
+        if (bindings[key]?.isWritable) {
+          bindings[key].set(value);
+        }
       }
     },
 

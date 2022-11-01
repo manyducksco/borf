@@ -48,7 +48,7 @@ export const DynamicListExample = makeView((ctx) => {
         <div class="flex-center">
           <input type="text" value={ctx.writable("inputValue")} />
           <button
-            disabled={ctx.readable("inputValue").to((v) => v.trim() == "")}
+            disabled={ctx.readable("inputValue").as((v) => v.trim() === "")}
             onclick={() => {
               // Add the current input value to the list and clear it.
               const inputValue = ctx.get("inputValue");

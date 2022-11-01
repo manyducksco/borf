@@ -1,26 +1,22 @@
 import colorHash from "simple-color-hash";
-import { APP_CONTEXT } from "../../keys.js";
-import { makeGlobal } from "../makeGlobal.js";
 
 const noop = () => {};
 
-export default makeGlobal((ctx) => {
-  const options = ctx[APP_CONTEXT].options.debug || {};
-  const console = options._console || window?.console || global?.console;
-
-  ctx.defaultState = {
-    filter: options.filter || "*,-woof:*",
-  };
-
-  let match;
-  ctx.observe("filter", (filter) => {
-    match = makeMatch(filter);
-  });
+export function makeDebug(options = {}, _console = window?.console || global?.console) {
+  let filter = options.filter || "*,-woof:*";
+  let matchFn = makeMatch(filter);
 
   return {
-    $$filter: ctx.writable("filter"),
+    get filter() {
+      return filter;
+    },
 
-    channel: (name) => {
+    set filter(value) {
+      filter = value;
+      matchFn = makeMatch(filter);
+    },
+
+    makeChannel: (name) => {
       assertNameFormat(name);
 
       return {
@@ -34,26 +30,26 @@ export default makeGlobal((ctx) => {
         },
 
         get log() {
-          if (options.log === false || !match(name)) return noop;
+          if (options.log === false || !matchFn(name)) return noop;
 
-          return console.log.bind(console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
+          return _console.log.bind(_console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
         },
 
         get warn() {
-          if (options.warn === false || !match(name)) return noop;
+          if (options.warn === false || !matchFn(name)) return noop;
 
-          return console.warn.bind(console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
+          return _console.warn.bind(_console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
         },
 
         get error() {
-          if (options.error === false || !match(name)) return noop;
+          if (options.error === false || !matchFn(name)) return noop;
 
-          return console.error.bind(console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
+          return _console.error.bind(_console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
         },
       };
     },
   };
-});
+}
 
 function hash(value) {
   return colorHash({
@@ -98,7 +94,7 @@ export function makeMatch(filter) {
     }
 
     if (part === "*") {
-      matchers[section].push(function (value) {
+      matchers[section].push(function () {
         return true;
       });
     } else if (part.endsWith("*")) {

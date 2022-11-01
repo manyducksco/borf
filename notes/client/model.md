@@ -45,7 +45,7 @@ user.set((current) => {
 >
   <ul>
     {ctx.repeat(user.$errors, ($err) => (
-      <li>{$err.to((e) => e.message)}</li>
+      <li>{$err.as((e) => e.message)}</li>
     ))}
   </ul>
   <input
