@@ -1,5 +1,5 @@
-import { makeState } from "../../helpers/makeState.js";
 import { isArray, isFunction } from "../../helpers/typeChecking.js";
+import { makeWritable } from "../../state/makeWritable.js";
 
 /**
  * Displays a dynamic list of views based on items in an array.
@@ -74,20 +74,14 @@ class RepeatView {
       const connected = this.connectedItems.find((item) => item.key === potential.key);
 
       if (connected) {
-        connected.state.set({
-          value: potential.value,
-          index: potential.index,
-        });
+        connected.$$value.set(potential.value);
+        connected.$$index.set(potential.index);
         newItems[potential.index] = connected;
       } else {
-        const [state] = makeState({});
+        const $$value = makeWritable(potential.value);
+        const $$index = makeWritable(potential.index);
 
-        state.set({
-          value: potential.value,
-          index: potential.index,
-        });
-
-        const blueprint = this.renderFn(state.readable("value"), state.readable("index"));
+        const blueprint = this.renderFn($$value.readable(), $$index.readable());
 
         if (!blueprint.isBlueprint) {
           throw new TypeError(`Repeat function must return an element.`);
@@ -95,7 +89,8 @@ class RepeatView {
 
         newItems[potential.index] = {
           key: potential.key,
-          state,
+          $$value,
+          $$index,
           view: blueprint.build({ appContext: this.appContext, elementContext: this.elementContext }),
         };
       }

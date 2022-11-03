@@ -99,7 +99,7 @@ export default makeView((ctx) => {
           <input
             type="text"
             value={$$returnDate}
-            disabled={$$flightType.to((t) => t === "one-way flight")}
+            disabled={$$flightType.as((t) => t === "one-way flight")}
             pattern={/^\d{2}\.\d{2}\.\d{4}$/}
             oninput={(e) => {
               $$returnDateIsValid.set(!e.target.validity.patternMismatch);

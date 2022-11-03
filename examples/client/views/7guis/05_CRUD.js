@@ -81,7 +81,7 @@ export default makeView((ctx) => {
   }
 
   // Update fields when selection changes.
-  $$selectedId.update((id) => {
+  ctx.observe($$selectedId, (id) => {
     const person = $$people.get().find((p) => p.id === id);
 
     if (person) {
