@@ -1,5 +1,5 @@
-import { isObject, isObservable, isString } from "../../helpers/typeChecking.js";
 import { APP_CONTEXT } from "../../keys.js";
+import { isObject, isObservable, isString } from "../../helpers/typeChecking.js";
 import { makeWritable } from "../../state/makeWritable.js";
 import { makeMerged } from "../../state/makeMerged.js";
 
@@ -31,7 +31,7 @@ export function initGlobal(fn, config) {
         const $merged = makeMerged(...args, callback);
         $merged.subscribe();
       } else {
-        const $merged = makeMerged(...args);
+        const $merged = makeMerged(...args, () => undefined);
         $merged.subscribe(callback);
       }
     },

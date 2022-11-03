@@ -3,9 +3,7 @@ import { makeGlobal } from "../makeGlobal.js";
 
 export default makeGlobal((ctx) => {
   const $$title = ctx.state(document?.title);
-  // const $$visibility = ctx.state(false);
-
-  // TODO: Reimplement visibility from redesign branch.
+  const $$visibility = ctx.state(document.visibilityState);
 
   ctx.afterConnect(() => {
     if (document) {
@@ -14,10 +12,19 @@ export default makeGlobal((ctx) => {
           document.title = current;
         }
       });
+
+      document.addEventListener("visibilitychange", () => {
+        $$visibility.set(document.visibilityState);
+      });
+
+      window.addEventListener("focus", () => {
+        $$visibility.set("visible");
+      });
     }
   });
 
   return {
     $$title,
+    $visibility: $$visibility.readable(),
   };
 });

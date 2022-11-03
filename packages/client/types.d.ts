@@ -576,6 +576,7 @@ declare module "@woofjs/client" {
 
   export type GlobalPage = Global<{
     $$title: Writable<string>;
+    $visibility: Readable<"visible" | "hidden">;
   }>;
 
   export type GlobalHTTP = Global<{

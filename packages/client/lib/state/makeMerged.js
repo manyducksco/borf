@@ -1,36 +1,9 @@
-import { isArray, isBinding, isFunction, isObject } from "../helpers/typeChecking.js";
-import { deepEqual } from "../helpers/deepEqual.js";
 import OBSERVABLE from "symbol-observable";
+import { isFunction, isObject } from "../helpers/typeChecking.js";
+import { deepEqual } from "../helpers/deepEqual.js";
 import { transformed } from "../helpers/makeState.js";
 
 export function makeMerged(...args) {
-  // form 2. ({ name: binding }) -> { name: value }
-  if (isObject(args[0]) && !isBinding(args[0])) {
-    const keys = [];
-    const sources = [];
-
-    for (const [key, source] of Object.entries(args[0])) {
-      keys.push(key);
-      sources.push(source);
-    }
-
-    return merged(sources, (...values) => {
-      const result = {};
-
-      for (let i = 0; i < values.length; i++) {
-        result[keys[i]] = values[i];
-      }
-
-      return result;
-    });
-  }
-
-  // form 3. ([...bindings]) -> [...values]
-  if (isArray(args[0])) {
-    return merged(args[0], (...values) => [...values]);
-  }
-
-  // form 1. (...bindings, (...values) => result) -> result
   const callback = args.pop();
 
   if (!isFunction(callback)) {

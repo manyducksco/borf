@@ -72,7 +72,7 @@ export function initView(fn, config) {
           const $merged = makeMerged(...args, callback);
           return $merged.subscribe();
         } else {
-          const $merged = makeMerged(...args);
+          const $merged = makeMerged(...args, () => undefined);
           return $merged.subscribe(callback);
         }
       };

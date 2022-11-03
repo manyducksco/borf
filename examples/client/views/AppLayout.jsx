@@ -67,6 +67,10 @@ export const AppLayout = makeView((ctx) => {
     page.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
   });
 
+  ctx.observe(page.$visibility, (status) => {
+    ctx.log(`visibility: ${status}`);
+  });
+
   return (
     <div class="demo">
       <nav class="nav">

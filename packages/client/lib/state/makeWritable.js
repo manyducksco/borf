@@ -100,12 +100,13 @@ export function makeWritable(initialValue) {
 function makeReadable(ctx) {
   const readable = omit(["set", "unset", "update", "readable"], ctx);
 
-  readable[OBSERVABLE] = () => {
-    // Return readable to prevent leaking the original writable.
-    return readable;
-  };
-
   Object.defineProperties(readable, {
+    [OBSERVABLE]: {
+      value: () => readable,
+    },
+    isBinding: {
+      value: true,
+    },
     isWritable: {
       value: false,
     },
