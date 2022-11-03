@@ -51,7 +51,7 @@ function Parent(ctx) {
 // The binding types above only take effect when passing attributes. All bindings are unwrapped to their base types internally.
 
 const Example: View<ExampleState, AppGlobals> = function () {
-  this.name = "Example"; // debug tag will become `[window:Example]`
+  this.name = "Example"; // debug tag will become `[view:Example]`
 
   // Define initial values for state unless overridden by attributes.
   this.defaultState = {
@@ -62,7 +62,7 @@ const Example: View<ExampleState, AppGlobals> = function () {
   const state = this.get(); // Snapshot of the whole state.
   const name = this.get("name"); // Snapshot of the value of 'name'
 
-  this.set("name", "Bob"); // Update the value stored under 'name' in window state.
+  this.set("name", "Bob"); // Update the value stored under 'name' in view state.
   this.set("name", $name); // Set the value from the binding, not the binding itself. Bindings cannot be stored in state.
 
   const $name = this.readable("name"); // Read-only binding to 'name' (formerly map)
@@ -71,7 +71,7 @@ const Example: View<ExampleState, AppGlobals> = function () {
   // The genius part of this naming scheme is that 'read' is a lot shorter to type,
   // leading the lazy to reach for read-only bindings which are usually the best choice.
 
-  // Observe the whole window state.
+  // Observe the whole view state.
   this.observe((state) => {
     this.log("state changed to", state);
   });
@@ -140,7 +140,7 @@ const Example: View<ExampleState, AppGlobals> = function () {
         })}
       </section>
 
-      {/* Creates an Outlet window that renders children or nested routes */}
+      {/* Creates an Outlet view that renders children or nested routes */}
       <p>{this.outlet()}</p>
     </div>
   );
@@ -298,7 +298,7 @@ class Global<S, G> extends State<S> {
 }
 
 // makeView and makeGlobal internally work the same way.
-// The window doesn't have any logic internally to actually connect itself.
+// The view doesn't have any logic internally to actually connect itself.
 // This is done inside the framework, so private methods will never be accessible on the classes.
 
 class Example extends View {
@@ -542,8 +542,8 @@ app.route("*", function () {
 });
 
 app.route("*", {
-  // Resolves to an object that is given to the window as initial state.
-  // These values will be present when the window function first runs.
+  // Resolves to an object that is given to the view as initial state.
+  // These values will be present when the view function first runs.
   async preload() {
     const http = this.global("http");
 

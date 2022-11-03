@@ -1,61 +1,37 @@
 import { makeView } from "@woofjs/client";
 
-export const ComponentAttrsExample = makeView((ctx, h) => {
+export const ComponentAttrsExample = makeView((ctx) => {
   ctx.name = "ComponentAttrsExample";
-  ctx.defaultState = {
-    message: "test",
-  };
 
-  const $$message = ctx.writable("message");
+  const $$message = ctx.state("test");
 
-  return h("div", { class: "example" }, [
-    h("h3", "Component Attributes"),
-    h("div", [
-      h("input", { type: "text", value: $$message }),
-      h("hr"),
-      h(SubComponent, { message: $$message }),
-    ]),
-  ]);
-
-  // return (
-  //   <div class="example">
-  //     <h3>Component Attributes</h3>
-  //     <div>
-  //       <input type="text" value={$$message} />
-  //       <hr />
-  //       <SubComponent message={$$message} />
-  //     </div>
-  //   </div>
-  // );
+  return (
+    <div class="example">
+      <h3>Component Attributes</h3>
+      <div>
+        <input type="text" value={$$message} />
+        <hr />
+        <SubComponent $$message={$$message} />
+      </div>
+    </div>
+  );
 });
 
-const SubComponent = makeView((ctx, h) => {
+const SubComponent = makeView((ctx) => {
   ctx.name = "SubComponent";
 
-  return h("div", [
-    h("p", "Message: ", ctx.readable("message")),
-    h(
-      "button",
-      {
-        onclick: () => {
-          ctx.set("message", "test");
-        },
-      },
-      "Reset State"
-    ),
-  ]);
+  const { $$message } = ctx.attrs;
 
-  // return (
-  //   <div>
-  //     <p>Message: {ctx.readable("message")}</p>
-  //     <button
-  //       onclick={() => {
-  //         // Sets the value which should set the parent component's message as well because it's two-way bound.
-  //         ctx.set("message", "test");
-  //       }}
-  //     >
-  //       Reset State
-  //     </button>
-  //   </div>
-  // );
+  return (
+    <div>
+      <p>Message: {$$message}</p>
+      <button
+        onclick={() => {
+          $$message.set("test");
+        }}
+      >
+        Reset State
+      </button>
+    </div>
+  );
 });

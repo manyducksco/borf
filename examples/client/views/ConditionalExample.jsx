@@ -4,15 +4,12 @@ import logLifecycle from "../utils/logLifecycle.js";
 
 export const ConditionalExample = makeView((ctx) => {
   ctx.name = "ConditionalExample";
-  ctx.defaultState = {
-    show: false,
-  };
+
+  const $$show = ctx.state(false);
 
   logLifecycle(ctx);
 
-  const $label = ctx
-    .readable("show")
-    .to((t) => (t ? "Hide Text" : "Show Text"));
+  const $label = $$show.as((t) => (t ? "Hide Text" : "Show Text"));
 
   return (
     <div class="example">
@@ -25,13 +22,13 @@ export const ConditionalExample = makeView((ctx) => {
             width: 100,
           }}
           onclick={() => {
-            ctx.set("show", (t) => !t);
+            $$show.update((t) => !t);
           }}
         >
           {$label}
         </button>
         {ctx.when(
-          "show",
+          $$show,
           animated(
             <span style={{ display: "inline-block", paddingLeft: "0.5rem" }}>
               Hello there!

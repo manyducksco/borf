@@ -11,21 +11,10 @@ export function initGlobal(fn, config) {
   const beforeConnectCallbacks = [];
   const afterConnectCallbacks = [];
 
-  // Exception because debug global doesn't exist yet when initializing the debug global.
   const channel = appContext.debug.makeChannel(`${channelPrefix}:${name}`);
 
   const ctx = {
     [APP_CONTEXT]: appContext,
-
-    ...channel,
-
-    get name() {
-      return channel.name;
-    },
-
-    set name(value) {
-      channel.name = `${channelPrefix}:${value}`;
-    },
 
     state(initialValue) {
       return makeWritable(initialValue);
@@ -67,6 +56,19 @@ export function initGlobal(fn, config) {
       afterConnectCallbacks.push(callback);
     },
   };
+
+  // Add debug channel methods.
+  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(channel));
+  Object.defineProperties(ctx, {
+    name: {
+      get() {
+        return channel.name;
+      },
+      set(value) {
+        channel.name = `${channelPrefix}:${value}`;
+      },
+    },
+  });
 
   const exports = fn(ctx);
 

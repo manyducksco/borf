@@ -85,6 +85,7 @@ app.route("*", {
           <MouseFollowerExample />
           <HTTPRequestExample />
           <ComponentAttrsExample />
+          {/*<RenderOrderTest />*/}
         </div>
       );
     });

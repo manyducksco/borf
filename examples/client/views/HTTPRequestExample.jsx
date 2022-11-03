@@ -3,20 +3,19 @@ import logLifecycle from "../utils/logLifecycle.js";
 
 export const HTTPRequestExample = makeView((ctx) => {
   ctx.name = "HTTPRequestExample";
-  ctx.defaultState = {
-    loading: false,
-    message: "",
-  };
+
+  const $$loading = ctx.state(false);
+  const $$message = ctx.state("");
 
   const http = ctx.global("http");
 
   logLifecycle(ctx);
 
-  const $label = ctx.merge((state) => {
-    if (state.loading) {
+  const $label = ctx.merge($$loading, $$message, (loading, message) => {
+    if (loading) {
       return "LOADING...";
     } else {
-      return state.message;
+      return message;
     }
   });
 
@@ -28,16 +27,16 @@ export const HTTPRequestExample = makeView((ctx) => {
       <div>
         <button
           onclick={() => {
-            ctx.set("loading", true);
+            $$loading.set(true);
 
             http
               .get("/hello-json")
               .header("accept", "application/json")
               .then((res) => {
-                ctx.set("message", res.body.message);
+                $$message.set(res.body.message);
               })
               .finally(() => {
-                ctx.set("loading", false);
+                $$loading.set(false);
               });
           }}
         >

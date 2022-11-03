@@ -2,36 +2,33 @@ import { makeView } from "@woofjs/client";
 
 export default makeView((ctx) => {
   ctx.name = "7guis:CRUD";
-  ctx.defaultState = {
-    people: [
-      {
-        id: 1,
-        name: "Hans",
-        surname: "Emil",
-      },
-      {
-        id: 2,
-        name: "Max",
-        surname: "Mustermann",
-      },
-      {
-        id: 3,
-        name: "Roman",
-        surname: "Tisch",
-      },
-    ],
-    nextId: 4,
-    selectedId: 1,
 
-    nameInput: "",
-    surnameInput: "",
-
-    filterPrefix: "",
-  };
+  const $$people = ctx.state([
+    {
+      id: 1,
+      name: "Hans",
+      surname: "Emil",
+    },
+    {
+      id: 2,
+      name: "Max",
+      surname: "Mustermann",
+    },
+    {
+      id: 3,
+      name: "Roman",
+      surname: "Tisch",
+    },
+  ]);
+  const $$nextId = ctx.state(4);
+  const $$selectedId = ctx.state(1);
+  const $$nameInput = ctx.state("");
+  const $$surnameInput = ctx.state("");
+  const $$filterPrefix = ctx.state("");
 
   const $filteredPeople = ctx.merge(
-    "people",
-    "filterPrefix",
+    $$people,
+    $$filterPrefix,
     (people, prefix) => {
       if (prefix.trim() === "") {
         return people;
@@ -45,11 +42,11 @@ export default makeView((ctx) => {
 
   // Creates a new person from the current input values.
   function create() {
-    const id = ctx.get("nextId");
-    const nameInput = ctx.get("nameInput");
-    const surnameInput = ctx.get("surnameInput");
+    const id = $$nextId.get();
+    const nameInput = $$nameInput.get();
+    const surnameInput = $$surnameInput.get();
 
-    ctx.set("people", (current) => {
+    $$people.update((current) => {
       current.push({
         id,
         name: nameInput,
@@ -57,16 +54,16 @@ export default makeView((ctx) => {
       });
     });
 
-    ctx.set("nextId", (current) => current + 1);
+    $$nextId.update((current) => current + 1);
   }
 
   // Sets the selected person's name to the current input values.
   function update() {
-    const selectedId = ctx.get("selectedId");
-    const nameInput = ctx.get("nameInput");
-    const surnameInput = ctx.get("surnameInput");
+    const selectedId = $$selectedId.get();
+    const nameInput = $$nameInput.get();
+    const surnameInput = $$surnameInput.get();
 
-    ctx.set("people", (current) => {
+    $$people.update((current) => {
       const person = current.find((p) => p.id === selectedId);
 
       person.name = nameInput;
@@ -76,20 +73,20 @@ export default makeView((ctx) => {
 
   // Deletes the selected person.
   function del() {
-    const selectedId = ctx.get("selectedId");
+    const selectedId = $$selectedId.get();
 
-    ctx.set("people", (current) => {
+    $$people.update((current) => {
       return current.filter((p) => p.id !== selectedId);
     });
   }
 
   // Update fields when selection changes.
-  ctx.observe("selectedId", (id) => {
-    const person = ctx.get("people").find((p) => p.id === id);
+  $$selectedId.update((id) => {
+    const person = $$people.get().find((p) => p.id === id);
 
     if (person) {
-      ctx.set("nameInput", person.name);
-      ctx.set("surnameInput", person.surname);
+      $$nameInput.set(person.name);
+      $$surnameInput.set(person.surname);
     }
   });
 
@@ -101,20 +98,20 @@ export default makeView((ctx) => {
 
       <div>
         <div>
-          Filter prefix: <input value={ctx.writable("filterPrefix")} />
+          Filter prefix: <input value={$$filterPrefix} />
         </div>
         <div>
           <select
-            size={$filteredPeople.to((fp) => Math.max(fp.length, 2))}
-            value={ctx.readable("selectedId")}
+            size={$filteredPeople.as((fp) => Math.max(fp.length, 2))}
+            value={$$selectedId.readable()}
             onchange={(e) => {
-              ctx.set("selectedId", Number(e.target.value));
+              $$selectedId.set(Number(e.target.value));
             }}
           >
             {ctx.repeat($filteredPeople, ($person) => {
-              const $id = $person.to((p) => p.id);
-              const $name = $person.to((p) => p.name);
-              const $surname = $person.to((p) => p.surname);
+              const $id = $person.as((p) => p.id);
+              const $name = $person.as((p) => p.name);
+              const $surname = $person.as((p) => p.surname);
 
               return (
                 <option value={$id}>
@@ -125,8 +122,8 @@ export default makeView((ctx) => {
           </select>
         </div>
         <div>
-          <input type="text" value={ctx.writable("nameInput")} />
-          <input type="text" value={ctx.writable("surnameInput")} />
+          <input type="text" value={$$nameInput} />
+          <input type="text" value={$$surnameInput} />
         </div>
         <div>
           <button onclick={create}>Create</button>

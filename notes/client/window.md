@@ -1,4 +1,4 @@
-# Window
+# View
 
 The `@woofjs/view` library is no longer working and instead of upgrading it again I want to think about integrating the
 functionality directly into the main client library. It can include a bin to start it and a separate `@woofjs/client/window`

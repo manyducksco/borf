@@ -115,7 +115,7 @@ registerGlobal("example", (ctx) => {
   };
 });
 
-// register a window by specifying a tag name
+// register a view by specifying a tag name
 registerWebComponent("tag-name", (ctx) => {
   const title = ctx.get("title");
   const { value } = ctx.global("example");

@@ -63,7 +63,7 @@ declare module "@woofjs/client" {
    * An app is the central object of a Woof app. It handles mounting and unmounting of routes
    * based on the current URL and providing globals to views rendered under those routes.
    */
-  interface App<G> extends RouterContext<G> {
+  interface App<Globals> extends RouterContext<Globals> {
     /**
      * Registers a service on this app. Services have only one instance created per app.
      * Any component rendered under one of this app's routes, as well as any other globals
@@ -72,21 +72,21 @@ declare module "@woofjs/client" {
      * @param name - Name the service is accessed by.
      * @param fn - The global constructor. Must be a function that returns an object.
      */
-    global<Name extends keyof G>(name: Name, fn: G[Name]): this;
+    global<Name extends keyof Globals>(name: Name, fn: Globals[Name]): this;
 
     /**
      * Runs a callback function after globals are created but before any views have been connected.
      *
      * @param callback - Setup function.
      */
-    beforeConnect(callback: AppLifecycleCallback<G>): this;
+    beforeConnect(callback: AppLifecycleCallback<Globals>): this;
 
     /**
      * Runs a callback function just after the initial route is connected.
      *
      * @param callback - Setup function.
      */
-    afterConnect(callback: AppLifecycleCallback<G>): this;
+    afterConnect(callback: AppLifecycleCallback<Globals>): this;
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -96,14 +96,14 @@ declare module "@woofjs/client" {
     connect(root: string | Node): Promise<void>;
   }
 
-  export interface AppContext<G> extends DebugChannel {
+  export interface AppContext<Globals> extends DebugChannel {
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
      */
-    global<K extends keyof AppGlobals<G>>(name: K): AppGlobals<G>[K];
+    global<K extends keyof AppGlobals<Globals>>(name: K): AppGlobals<Globals>[K];
   }
 
-  export type AppLifecycleCallback<G> = (ctx: AppContext<G>) => void | Promise<void>;
+  export type AppLifecycleCallback<Globals> = (ctx: AppContext<Globals>) => void | Promise<void>;
 
   export type DefaultGlobals = {
     dialog: ReturnType<GlobalDialog>;
@@ -120,77 +120,77 @@ declare module "@woofjs/client" {
   ||             Routing              ||
   \*==================================*/
 
-  type PreloadContext<S, G> = {
+  type PreloadContext<Globals> = {
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
      */
-    global<K extends keyof AppGlobals<G>>(name: K): AppGlobals<G>[K];
+    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name];
 
     /**
      * Show content while this route is preloading.
      */
     show(element: WoofElement): void;
-  } & Pick<StateContext<Unwrapped<S>>, "get" | "set" | "unset">;
+  };
 
   // These two options objects need to be defined separately or the context
-  // type can't be inferred when you pass a window function directly.
-  interface RouteViewFnOptions<G, S = any> {
+  // type can't be inferred when you pass a view function directly.
+  interface RouteViewFnOptions<Globals, Attrs = any> {
     /**
-     * Resolves before `window` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
+     * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
      */
-    preload?: (ctx: PreloadContext<S, G>) => Promise<void> | void;
+    preload?: (ctx: PreloadContext<Globals>) => Promise<void> | void;
     /**
-     * The window to display when this route matches.
+     * The view to display when this route matches.
      */
-    view?: ViewFunction<S, G>;
+    view?: ViewFunction<Attrs, Globals>;
     /**
-     * Function to define subroutes that will be displayed as children of `window` when their routes match.
+     * Function to define subroutes that will be displayed as children of `view` when their routes match.
      */
-    subroutes?: SubroutesFunction<G>;
+    subroutes?: SubroutesFunction<Globals>;
   }
 
-  interface RouteViewOptions<G, S = any> {
+  interface RouteViewOptions<Globals, Attrs = any> {
     /**
-     * Resolves before `window` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
+     * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
      */
-    preload?: (ctx: PreloadContext<S, G>) => Promise<void> | void;
+    preload?: (ctx: PreloadContext<Globals>) => Promise<void> | void;
     /**
-     * The window to display when this route matches.
+     * The view to display when this route matches.
      */
-    view?: View<S, G>;
+    view?: View<Attrs, Globals>;
     /**
-     * Function to define subroutes that will be displayed as children of `window` when their routes match.
+     * Function to define subroutes that will be displayed as children of `view` when their routes match.
      */
-    subroutes?: SubroutesFunction<G>;
+    subroutes?: SubroutesFunction<Globals>;
   }
 
-  interface RouterContext<G> {
-    route<S = {}>(path: string, options: RouteViewFnOptions<G, S>): this;
+  interface RouterContext<Globals> {
+    route<Attrs = {}>(path: string, options: RouteViewFnOptions<Globals, Attrs>): this;
 
-    route<S = {}>(path: string, options: RouteViewOptions<G, S>): this;
+    route<Attrs = {}>(path: string, options: RouteViewOptions<Globals, Attrs>): this;
 
     /**
-     * Registers a new route that will render `window` when `path` matches the current URL.
+     * Registers a new route that will render `view` when `path` matches the current URL.
      * Register nested routes by passing a function as the third argument. Nested route views
-     * will be rendered as this `window`'s children.
+     * will be rendered as this `view`'s children.
      *
      * @param path - Path to match.
      * @param view - View to render when path matches URL.
      * @param subroutes - Optional function to define nested routes.
      */
-    route<S = {}>(path: string, view: ViewFunction<S, G>, subroutes?: SubroutesFunction<G>): this;
+    route<Attrs = {}>(path: string, view: ViewFunction<Attrs, Globals>, subroutes?: SubroutesFunction<Globals>): this;
 
     /**
-     * Display `window` when `path` matches the current URL. Nested routes defined in `defineRoutes` are
-     * passed as children to `window` when `path` + nested `path` matches the current URL.
+     * Display `view` when `path` matches the current URL. Nested routes defined in `defineRoutes` are
+     * passed as children to `view` when `path` + nested `path` matches the current URL.
      *
      * @param path - Path to match.
      * @param view - View to render when path matches URL.
      * @param subroutes - Optional function to define nested routes.
      */
-    route<S = {}>(path: string, view: View<S, G>, subroutes?: SubroutesFunction<G>): this;
+    route<Attrs = {}>(path: string, view: View<Attrs, Globals>, subroutes?: SubroutesFunction<Globals>): this;
 
-    route(path: string, view: Blueprint, subroutes?: SubroutesFunction<G>): this;
+    route(path: string, view: Blueprint, subroutes?: SubroutesFunction<Globals>): this;
 
     /**
      * Register a route that will redirect to another when the `path` matches the current URL.
@@ -198,10 +198,10 @@ declare module "@woofjs/client" {
      * @param from - Path to match.
      * @param to - Path to redirect location.
      */
-    redirect: (from: string, to: string) => RouterContext<G>;
+    redirect: (from: string, to: string) => RouterContext<Globals>;
   }
 
-  type SubroutesFunction<G> = (ctx: RouterContext<G>) => void;
+  type SubroutesFunction<Globals> = (ctx: RouterContext<Globals>) => void;
 
   /*==================================*\
   ||           Debug Context          ||
@@ -231,116 +231,49 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   /**
-   * State types wrapped in `Private` cannot be passed as attributes.
-   *
-   * @example
-   * type ExampleState = {
-   *   publicString: string;
-   *   privateString: Private<string>;
-   * }
-   */
-  export type Private<Value> = Value;
-
-  /**
-   * State types wrapped in `Bindable` may be a plain value or either type of binding.
-   *
-   * @example
-   * type ExampleState = {
-   *   plainNumber: number;
-   *   bindableNumber: Bindable<number>;
-   * }
-   */
-  export type Bindable<Value> = Value | Readable<Value> | Writable<Value>;
-
-  /**
-   * Unwrap state binding into its plain value.
-   */
-  type Unwrap<Bound> = Bound extends Readable<infer Value>
-    ? Value
-    : Bound extends Bindable<infer Value>
-    ? Value
-    : Bound extends Private<infer Value>
-    ? Value
-    : Bound;
-
-  type Unwrapped<State> = {
-    [Key in keyof State]: Unwrap<State[Key]>;
-  };
-
-  // A type consisting of all properties that can be deleted.
-  type DeletableKeys<State> = Required<ExcludeRequiredProps<State>>;
-  type KeysOfType<T, U> = { [K in keyof T]: T[K] extends U ? K : never }[keyof T];
-  type RequiredKeys<T> = Exclude<KeysOfType<T, Exclude<T[keyof T], undefined>>, undefined>;
-  type ExcludeRequiredProps<T> = Omit<T, RequiredKeys<T>>;
-
-  /**
    * Context for stateful objects like views and globals.
    */
-  interface StateContext<State> {
-    defaultState?: Partial<Omit<State, "children">>;
+  interface StateContext {
+    state<Value>(initialValue: Value): Writable<Value>;
 
-    /**
-     * Returns the whole state.
-     */
-    get(): State;
+    merge<ValueOne, ValueTwo, Result>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      fn: (valueOne: ValueOne, valueTwo: ValueTwo) => Result
+    ): Readable<Result>;
 
-    /**
-     * Returns the current value of `key`.
-     *
-     * @param key - State key.
-     */
-    get<Key extends keyof State>(key: Key): State[Key];
+    merge<ValueOne, ValueTwo, ValueThree, Result>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      fn: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => Result
+    ): Readable<Result>;
 
-    set<Key extends keyof State>(key: Key, value: State[Key]): void;
+    merge<ValueOne, ValueTwo, ValueThree, ValueFour, Result>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      observableFour: Observable<ValueFour>,
+      fn: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree, valueFour: ValueFour) => Result
+    ): Readable<Result>;
 
-    set<Key extends keyof State>(key: Key, value: Readable<State[Key]>): void;
-
-    set<Key extends keyof State>(key: Key, callback: (value: State[Key]) => void | State[Key]): void;
-
-    set(values: { [Key in keyof Partial<State>]: State[Key] }): void;
-
-    /**
-     * Resets value of `key` to `undefined`, deleting it.
-     */
-    unset<Key extends keyof DeletableKeys<State>>(key: Key): void;
-
-    // TODO: Type annotations
-    merge<V>(fn: (value: State) => V): Readable<V>;
-
-    merge<T1, V>(source1: T1, fn: (value1: T1 extends keyof State ? State[T1] : Unwrap<T1>) => V): Readable<V>;
-
-    merge<T1, T2, V>(
-      source1: T1,
-      source2: T2,
+    merge<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive, Result>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      observableFour: Observable<ValueFour>,
+      observableFive: Observable<ValueFive>,
       fn: (
-        value1: T1 extends keyof State ? State[T1] : Unwrap<T1>,
-        value2: T2 extends keyof State ? State[T2] : Unwrap<T2>
-      ) => V
-    ): Readable<V>;
-
-    merge<T1, T2, T3, V>(
-      source1: T1,
-      source2: T2,
-      source3: T3,
-      fn: (
-        value1: T1 extends keyof State ? State[T1] : Unwrap<T1>,
-        value2: T2 extends keyof State ? State[T2] : Unwrap<T2>,
-        value3: T3 extends keyof State ? State[T3] : Unwrap<T3>
-      ) => V
-    ): Readable<V>;
+        valueOne: ValueOne,
+        valueTwo: ValueTwo,
+        valueThree: ValueThree,
+        valueFour: ValueFour,
+        valueFive: ValueFive
+      ) => Result
+    ): Readable<Result>;
 
     /**
-     * Subscribes to an observable while this window is connected.
-     *
-     * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a `State` from `@woofjs/client` or an observable from another library like RxJS.
-     * @param observer - An observer object with `next`, `error` and `complete` methods.
-     *
-     * @see https://github.com/tc39/proposal-observable
-     */
-    observe<Value>(observable: Observable<Value>, observer: Observer<Value>): void;
-
-    /**
-     * Subscribes to an observable while this window is connected.
+     * Subscribes to an observable while this view is connected.
      *
      * @param observable - An Observable object compatible with the TC39 Observables spec. This can be a state binding or an observable from another library like RxJS.
      * @param next - Callback to receive `next` values from the observable.
@@ -356,40 +289,55 @@ declare module "@woofjs/client" {
       complete?: () => void
     ): void;
 
-    observe<Value>(observer: Observer<Value>): void;
-
-    observe<Value>(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): void;
-
-    observe<Key extends keyof State>(key: Key, observer: Observer<State[Key]>): void;
-
-    observe<Key extends keyof State>(
-      key: Key,
-      next?: (value: State[Key]) => void,
-      error?: (err: Error) => void,
-      complete?: () => void
+    observe<ValueOne, ValueTwo>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      callback: (valueOne: ValueOne, valueTwo: ValueTwo) => void
     ): void;
 
-    readable(): Readable<State>;
+    observe<ValueOne, ValueTwo, ValueThree>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      callback: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => void
+    ): void;
 
-    readable<Key extends keyof State>(key: Key): Readable<State[Key]>;
+    observe<ValueOne, ValueTwo, ValueThree, ValueFour>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      observableFour: Observable<ValueFour>,
+      callback: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree, valueFour: ValueFour) => void
+    ): void;
 
-    writable(): Writable<State>;
-
-    writable<Key extends keyof State>(key: Key): Writable<State[Key]>;
+    observe<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      observableFour: Observable<ValueFour>,
+      observableFive: Observable<ValueFive>,
+      callback: (
+        valueOne: ValueOne,
+        valueTwo: ValueTwo,
+        valueThree: ValueThree,
+        valueFour: ValueFour,
+        valueFive: ValueFive
+      ) => void
+    ): void;
   }
 
   /*==================================*\
   ||            Observables            ||
   \*==================================*/
 
-  export interface Observable<T> {
-    subscribe(observer: Observer<T>): Subscription;
+  export interface Observable<Value> {
+    subscribe(observer: Observer<Value>): Subscription;
 
-    subscribe(next?: (value: T) => void, error?: (err: Error) => void, complete?: () => void): Subscription;
+    subscribe(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): Subscription;
   }
 
-  export interface Observer<T> {
-    next(value: T): void;
+  export interface Observer<Value> {
+    next(value: Value): void;
   }
 
   export interface Subscription {
@@ -411,7 +359,7 @@ declare module "@woofjs/client" {
      *
      * @param convert - Function to convert the value of the current state into the value of a new state.
      */
-    to<NewValue>(convert: (value: Value) => NewValue): Readable<NewValue>;
+    as<NewValue>(convert: (value: Value) => NewValue): Readable<NewValue>;
   }
 
   export interface Writable<Value> extends Readable<Value> {
@@ -420,22 +368,22 @@ declare module "@woofjs/client" {
      *
      * @param value - New value.
      */
-    set(value: Value | Readable<Value>): void;
-
-    /**
-     * Assigns a new value to the bound state through a callback function that takes the current value and returns a new one.
-     */
-    set(callback: (value: Value) => Value): void;
-
-    /**
-     * Assigns a new value to the bound state through a callback function that takes the current value and mutates it to the desired value.
-     */
-    set(callback: (value: Value) => void): void;
+    set(value: Value): void;
 
     /**
      * Deletes this key from its bound state, returning the value to `undefined`.
      */
     unset(): void;
+
+    /**
+     * Assigns a new value to the bound state through a callback function that takes the current value and returns a new one.
+     */
+    update(callback: (value: Value) => Value): void;
+
+    /**
+     * Assigns a new value to the bound state through a callback function that takes the current value and mutates it to the desired value.
+     */
+    update(callback: (value: Value) => void): void;
 
     /**
      * Creates a new read-only binding to this value.
@@ -470,7 +418,7 @@ declare module "@woofjs/client" {
   export function h(tag: string, ...children: WoofElement[]): Blueprint;
 
   export function h(view: View<any, any>, ...children: WoofElement[]): Blueprint;
-  export function h<State>(view: View<State, any>, state: State, ...children: WoofElement[]): Blueprint;
+  export function h<Attrs>(view: View<Attrs, any>, attrs: Attrs, ...children: WoofElement[]): Blueprint;
 
   /**
    * Creates an instance of an HTML element or view.
@@ -488,49 +436,33 @@ declare module "@woofjs/client" {
 
     (view: View<any, any>, ...children: WoofElement[]): Blueprint;
 
-    <State>(view: View<State, any>, state: State, ...children: WoofElement[]): Blueprint;
+    <Attrs>(view: View<Attrs, any>, attrs: Attrs, ...children: WoofElement[]): Blueprint;
   }
 
-  /**
-   * Stores a value when called with one and returns the most recent when called with none.
-   */
-  export interface Ref<T> {
-    /**
-     * Returns the most recent value this ref was called with.
-     */
-    (): T;
+  export function makeView<Attrs = any, Globals = any>(fn: ViewFunction<Attrs, Globals>): View<Attrs, Globals>;
 
-    /**
-     * Saves a new value into this ref.
-     */
-    (value: T): void;
-  }
+  export type ViewFunction<Attrs = any, Globals = any> = (
+    ctx: ViewContext<Attrs, Globals>,
+    h: HypertextFunction
+  ) => Blueprint | null;
 
-  export function makeView<S = any, G = any>(fn: ViewFunction<S, G>): View<S, G>;
-
-  export type ViewFunction<S = any, G = any> = (ctx: ViewContext<S, G>, h: HypertextFunction) => Blueprint | null;
-
-  export type View<S, G> = (props: FakeJSXProps<Partial<S>>) => {
+  // Fake type to enable JSX attribute type checking.
+  export type View<Attrs, Globals> = (props: Attrs) => {
     create(): Blueprint;
   };
 
-  // TODO: Figure out how to filter out keys wrapped in Private.
-  type FakeJSXProps<State> = {
-    [Key in keyof State]: State[Key];
-  };
-
-  export interface ViewContext<S = any, G = any> extends StateContext<Unwrapped<S>>, DebugChannel {
+  export interface ViewContext<Attrs = any, Globals = any> extends StateContext, DebugChannel {
     /**
-     * True while this window is connected to the DOM.
+     * True while this view is connected to the DOM.
      */
     readonly isConnected: boolean;
 
-    // observe<>()
+    attrs: Attrs;
 
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
      */
-    global<Name extends keyof AppGlobals<G>>(name: Name): AppGlobals<G>[Name];
+    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name];
 
     /**
      * Registers a callback to run before the component is connected to the DOM.
@@ -553,73 +485,30 @@ declare module "@woofjs/client" {
     afterDisconnect(callback: () => void): void;
 
     /**
-     * Returns a function that, when called with no arguments, returns the most recent value it was called with.
-     * Useful for retrieving references to DOM blueprints when passed to elements as `ref`.
-     */
-    ref<T>(initialValue?: T): Ref<T>;
-
-    /**
-     * Displays the result of `children` each time its value changes.
+     * Displays nexted content where it is called.
      */
     outlet(): WoofElement;
-
-    /**
-     * Displays the result of `key` each time its value changes. Value should be an Element.
-     */
-    outlet<Key extends keyof S>(key: Key): WoofElement;
-
-    /**
-     * Displays the result of `key` each time its value changes. The `callback` function converts `key` into an Element. TODO: Define these.
-     */
-    outlet<Key extends keyof S>(key: Key, callback: (value: S[Key]) => WoofElement): WoofElement;
-
-    /**
-     * Displays the value of `binding` each time its value changes. Value should be an element.
-     */
-    outlet(binding: Readable<WoofElement>): WoofElement;
-
-    /**
-     * Displays the value of `binding` each time its value changes. The `callback` function converts the value into an Element.
-     */
-    outlet<T>(binding: Readable<T>, callback: (value: T) => WoofElement): WoofElement;
 
     /**
      * Displays `element` when `value` is truthy.
      */
     when(value: Observable<any>, element: WoofElement): Blueprint;
 
-    when<Key extends keyof S>(key: Key, element: WoofElement): Blueprint;
-
-    when<Key extends keyof S>(key: Key, cases: [S[Key], Blueprint][]): Blueprint;
-
     /**
      * Displays `element` when `value` is falsy.
      */
     unless(value: Observable<any>, element: WoofElement): Blueprint;
 
-    unless<Key extends keyof S>(key: Key, element: WoofElement): Blueprint;
+    match<Value>(value: Observable<Value>, cases: [Value, Blueprint][]): Blueprint;
 
     /**
      * Repeats an element for each item in `value`. Value must be iterable.
      * The `render` function takes bindings to the item and index and returns an element to render.
      */
-    repeat<T>(
-      value: T[] | Observable<T[]>,
-      renderFn: ($value: Readable<T>, $index: Readable<number>) => WoofElement,
-      keyFn?: (value: T) => any
-    ): Blueprint;
-
-    /**
-     * Repeats an element for each item in `value`. Value must be iterable.
-     * The `render` function takes bindings to the item and index and returns an element to render.
-     */
-    repeat<Key extends keyof S>(
-      key: Key,
-      renderFn: (
-        $value: Readable<Unwrapped<S>[Key] extends Iterable<infer T> ? T : never>,
-        $index: Readable<number>
-      ) => WoofElement,
-      keyFn?: (value: Unwrapped<S>[Key] extends Array<infer U> ? U : unknown) => any
+    repeat<Value>(
+      value: Value[] | Observable<Value[]>,
+      renderFn: ($value: Readable<Value>, $index: Readable<number>) => WoofElement,
+      keyFn?: (value: Value) => any
     ): Blueprint;
   }
 
@@ -627,18 +516,18 @@ declare module "@woofjs/client" {
   ||              Global              ||
   \*==================================*/
 
-  // TODO: Find out how to infer return type of `fn` while S and G are passed.
-  export function makeGlobal<S, G>(fn: GlobalFunction<S, G>): Global<any>;
+  // TODO: Find out how to infer return type of `fn` while Globals is passed.
+  export function makeGlobal<Globals>(fn: GlobalFunction<Globals>): Global<any>;
 
-  export type GlobalFunction<S, G> = (ctx: GlobalContext<S, G>) => any;
+  export type GlobalFunction<Globals> = (ctx: GlobalContext<Globals>) => any;
 
-  export type Global<E> = (this: GlobalContext<any, any>) => E;
+  export type Global<Exports> = (this: GlobalContext<any>) => Exports;
 
-  export interface GlobalContext<S, G> extends StateContext<Unwrapped<S>>, DebugChannel {
+  export interface GlobalContext<Globals> extends StateContext, DebugChannel {
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
      */
-    global<Name extends keyof AppGlobals<G>>(name: Name): AppGlobals<G>[Name];
+    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name];
 
     /**
      * Registers a callback to run before the app is connected.
@@ -649,12 +538,6 @@ declare module "@woofjs/client" {
      * Registers a callback to run after the app is connected and the first route match has taken place.
      */
     afterConnect: (callback: () => void) => void;
-
-    /**
-     * Returns a function that, when called with no arguments, returns the most recent value it was called with.
-     * Useful for retrieving references to DOM blueprints when passed to elements as `ref`.
-     */
-    ref<T>(initialValue?: T): Ref<T>;
   }
 
   /*==================================*\
@@ -662,21 +545,21 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   export type GlobalDialog = Global<{
-    make<S extends DialogViewState>(viewFn: ViewFunction<S, any>, options?: DialogOptions): Dialog<S>;
-    make<S extends DialogViewState>(view: View<S, any>, options?: DialogOptions): Dialog<S>;
+    make<Attrs extends DialogViewAttrs>(viewFn: ViewFunction<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
+    make<Attrs extends DialogViewAttrs>(view: View<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
   }>;
 
-  export interface DialogViewState {
+  export interface DialogViewAttrs {
     /**
      * Controls the dialog's open state. When this is true the dialog is displayed. When false the dialog is hidden.
      */
-    open: boolean;
+    $$open: Writable<boolean>;
   }
 
   export type DialogOptions = {};
 
-  export type Dialog<S> = {
-    open: (attributes?: Partial<Omit<S, "open">>) => void;
+  export type Dialog<Attrs> = {
+    open: (attrs?: Partial<Omit<Attrs, "$$open">>) => void;
     close: () => void;
   };
 
@@ -864,32 +747,33 @@ declare module "@woofjs/client" {
    *
    * @param transitions - An object with functions that implement the transitions.
    */
-  export function makeTransitions<S = any>(transitions: Transitions<S>): TransitionFactory<S>;
+  export function makeTransitions<Attrs = any>(transitions: Transitions<Attrs>): TransitionFactory<Attrs>;
 
   /**
    * Takes an element and returns a version of that element with these transitions applied.
    *
    * @param element - A view, a DOM node, or anything with a `.toString()` method.
    */
-  export interface TransitionFactory<S> {
-    (fn: ViewFunction<S, any>): Blueprint;
-    (view: View<S, any>): Blueprint;
+  export interface TransitionFactory<Attrs> {
+    (fn: ViewFunction): Blueprint;
+    (view: View<Attrs, any>): Blueprint;
+    (element: Blueprint): Blueprint;
     (element: WoofElement): Blueprint;
   }
 
-  export interface Transitions<S> {
+  export interface Transitions<Attrs> {
     /**
      * Defines the transition that occurs when an element is added to the document.
      */
-    in?: (ctx: TransitionContext<S>) => void;
+    in?: (ctx: TransitionContext) => void;
 
     /**
      * Defines the transition that occurs before the element is removed from the document.
      */
-    out?: (ctx: TransitionContext<S>) => void;
+    out?: (ctx: TransitionContext) => void;
   }
 
-  export interface TransitionContext<S> extends Pick<StateContext<S>, "get" | "set"> {
+  export interface TransitionContext {
     node: HTMLElement;
     done: () => void;
   }

@@ -160,7 +160,7 @@ const Timer = makeView((ctx, h) => {
     ctx.set("seconds", 0);
   }
 
-  // Increment once per second after the window is connected to the DOM.
+  // Increment once per second after the view is connected to the DOM.
   ctx.afterConnect(function () {
     setInterval(increment, 1000);
   });
@@ -197,7 +197,7 @@ const Example = makeView((ctx, h) => {
 // Views can be mounted directly on a route.
 app.route("example", Example);
 
-// They can also be used inside another window.
+// They can also be used inside another view.
 app.route("other", (ctx, h) => {
   return h("div", [
     // Pass state as attributes.
@@ -228,7 +228,7 @@ const Example = makeView(function (ctx, h) {
   ||              State              ||
   \*=================================*/
 
-  // Set the default values for this window's state.
+  // Set the default values for this view's state.
   ctx.defaultState = {
     title: "The Default Title",
   };

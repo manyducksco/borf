@@ -6,24 +6,21 @@ import logLifecycle from "../utils/logLifecycle.js";
  */
 export const ToggleExample = makeView((ctx) => {
   ctx.name = "ToggleExample";
-  ctx.defaultState = {
-    active: false,
-  };
 
   logLifecycle(ctx);
 
-  const $active = ctx.readable("active");
-  const $status = $active.to((t) => (t ? "ON" : "OFF"));
+  const $$active = ctx.state(false);
+  const $status = $$active.as((t) => (t ? "ON" : "OFF"));
 
   return (
     <div class="example">
       <h3>
-        Dynamic classes and <code>.to()</code>
+        Dynamic classes and <code>.as()</code>
       </h3>
       <div
-        class={{ active: $active }} // class "active" is applied while binding holds a truthy value
+        class={{ active: $$active }} // class "active" is applied while binding holds a truthy value
         onclick={() => {
-          ctx.set("active", (t) => !t);
+          $$active.update((t) => !t);
         }}
       >
         {$status}

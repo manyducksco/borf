@@ -37,19 +37,18 @@ export default makeView((ctx) => {
     returnDateIsValid: true,
   };
 
-  const $$flightType = ctx.writable("flightType");
-  const $$startDate = ctx.writable("startDate");
-  const $$returnDate = ctx.writable("returnDate");
+  const $$flightType = ctx.state(flightTypes[0]);
+  const $$startDate = ctx.state(formatDate(new Date()));
+  const $$returnDate = ctx.state(formatDate(new Date()));
+  const $$startDateIsValid = ctx.state(true);
+  const $$returnDateIsValid = ctx.state(true);
 
   // Concatenate date states and convert through a function into a new state.
   const $formIsValid = ctx.merge(
-    "startDateIsValid",
-    "returnDateIsValid",
+    $$startDateIsValid,
+    $$returnDateIsValid,
     (x, y) => x && y
   );
-
-  // is("this").javascriptCase?.it.is("English").dressed["up"][2].lookLike("JavaScript").code
-  // I.should["_make"].a.textConverter("for", this).
 
   return (
     <div class="example">
@@ -91,7 +90,7 @@ export default makeView((ctx) => {
             value={$$startDate}
             pattern={"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$"}
             oninput={(e) => {
-              ctx.set("startDateIsValid", !e.target.validity.patternMismatch);
+              $$startDateIsValid.set(!e.target.validity.patternMismatch);
             }}
           />
         </div>
@@ -103,13 +102,13 @@ export default makeView((ctx) => {
             disabled={$$flightType.to((t) => t === "one-way flight")}
             pattern={/^\d{2}\.\d{2}\.\d{4}$/}
             oninput={(e) => {
-              ctx.set("returnDateIsValid", !e.target.validity.patternMismatch);
+              $$returnDateIsValid.set(!e.target.validity.patternMismatch);
             }}
           />
         </div>
 
         <div>
-          <button disabled={$formIsValid.to(flipped)}>Book</button>
+          <button disabled={$formIsValid.as(flipped)}>Book</button>
         </div>
       </form>
     </div>

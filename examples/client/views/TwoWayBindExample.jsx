@@ -3,10 +3,9 @@ import logLifecycle from "../utils/logLifecycle.js";
 
 export const TwoWayBindExample = makeView((ctx) => {
   ctx.name = "TwoWayBindExample";
-  ctx.defaultState = {
-    text: "edit me",
-    size: 18,
-  };
+
+  const $$text = ctx.state("edit me");
+  const $$size = ctx.state(18);
 
   logLifecycle(ctx);
 
@@ -16,15 +15,15 @@ export const TwoWayBindExample = makeView((ctx) => {
         Two way data binding with <code>.writable()</code>
       </h3>
       <div>
-        <input value={ctx.writable("text")} />
-        <input value={ctx.writable("size")} type="number" />{" "}
+        <input value={$$text} />
+        <input value={$$size} type="number" />{" "}
         {/* number value gets converted back to number */}
         <p
           style={{
-            fontSize: ctx.readable("size").to((s) => s + "px"),
+            fontSize: $$size.as((s) => s + "px"),
           }}
         >
-          {ctx.readable("text")}
+          {$$text}
         </p>
       </div>
     </div>

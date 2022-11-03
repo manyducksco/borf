@@ -6,22 +6,21 @@ const initialList = ["apple", "banana", "potato", "fried chicken"];
 
 export const DynamicListExample = makeView((ctx) => {
   ctx.name = "DynamicListExample";
-  ctx.defaultState = {
-    shoppingList: initialList,
-    inputValue: "",
-  };
+
+  const $$shoppingList = ctx.state(initialList);
+  const $$inputValue = ctx.state("");
 
   logLifecycle(ctx);
 
   const getSorted = () => {
-    return ctx
-      .get("shoppingList")
+    return $$shoppingList
+      .get()
       .map((x) => x)
       .sort();
   };
 
   const reset = () => {
-    ctx.set("shoppingList", initialList);
+    $$shoppingList.set(initialList);
   };
 
   return (
@@ -33,29 +32,28 @@ export const DynamicListExample = makeView((ctx) => {
       <div>
         <button
           onclick={() => {
-            ctx.set("shoppingList", getSorted());
+            $$shoppingList.set(getSorted());
           }}
         >
           Sort A to Z
         </button>
         <button
           onclick={() => {
-            ctx.set("shoppingList", getSorted().reverse());
+            $$shoppingList.set(getSorted().reverse());
           }}
         >
           Sort Z to A
         </button>
         <div class="flex-center">
-          <input type="text" value={ctx.writable("inputValue")} />
+          <input type="text" value={$$inputValue} />
           <button
-            disabled={ctx.readable("inputValue").as((v) => v.trim() === "")}
+            disabled={$$inputValue.as((v) => v.trim() === "")}
             onclick={() => {
               // Add the current input value to the list and clear it.
-              const inputValue = ctx.get("inputValue");
-              ctx.set("shoppingList", (current) => {
-                current.push(inputValue);
+              $$shoppingList.update((current) => {
+                current.push($$inputValue.get());
               });
-              ctx.set("inputValue", "");
+              $$inputValue.set("");
             }}
           >
             Add Item
@@ -63,7 +61,7 @@ export const DynamicListExample = makeView((ctx) => {
           <button onclick={reset}>Reset List</button>
         </div>
 
-        {ctx.repeat("shoppingList", ($item) => {
+        {ctx.repeat($$shoppingList, ($item) => {
           const onclick = () => {
             alert($item.get());
           };

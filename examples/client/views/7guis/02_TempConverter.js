@@ -2,20 +2,19 @@ import { makeView } from "@woofjs/client";
 
 export default makeView((ctx) => {
   ctx.name = "7guis:TempConverter";
-  ctx.defaultState = {
-    celsius: 10,
-  };
+
+  const $$celsius = ctx.state(10);
 
   const setCelsius = (c) => {
-    ctx.set("celsius", c);
+    $$celsius.set(c);
   };
 
   const setFahrenheit = (f) => {
-    ctx.set("celsius", (f - 32) * (5 / 9));
+    $$celsius.set((f - 32) * (5 / 9));
   };
 
-  const $celsius = ctx.readable("celsius");
-  const $fahrenheit = $celsius.to((c) => c * (9 / 5) + 32);
+  const $celsius = $$celsius.readable();
+  const $fahrenheit = $celsius.as((c) => c * (9 / 5) + 32);
 
   return (
     <div class="example">

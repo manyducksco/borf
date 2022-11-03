@@ -1,9 +1,12 @@
-import { isDOM, isView, isString, isBinding } from "../../helpers/typeChecking.js";
+import { isDOM, isView, isString, isObservable, isArray } from "../../helpers/typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../../keys.js";
 import { h } from "../../h.js";
 
-import { makeState } from "../../helpers/makeState.js";
-import { makeViewHelpers } from "./makeViewHelpers.js";
+import { makeWritable } from "../../state/makeWritable.js";
+import { makeMerged } from "../../state/makeMerged.js";
+
+import { OutletBlueprint } from "../blueprints/Outlet.js";
+import { RepeatBlueprint } from "../blueprints/Repeat.js";
 
 /**
  * State binding for views:
@@ -19,9 +22,12 @@ import { makeViewHelpers } from "./makeViewHelpers.js";
 export function initView(fn, config) {
   let { appContext, elementContext, attributes, children, channelPrefix } = config;
 
-  attributes = attributes || {};
-  children = children || [];
+  attributes = Object.freeze(attributes ? { ...attributes } : {});
   channelPrefix = channelPrefix || "view";
+
+  // Children can be changed at runtime when a view is mounted on a route with subroutes.
+  // The outlet should update to reflect the latest children, hence the writable binding.
+  const $$children = makeWritable(children || []);
 
   const beforeConnectCallbacks = [];
   const afterConnectCallbacks = [];
@@ -37,25 +43,7 @@ export function initView(fn, config) {
   ||         Parse attrs         ||
   \*=============================*/
 
-  const initialState = [];
-  const bindings = {};
-
-  for (const key in attributes) {
-    if (isBinding(attributes[key])) {
-      bindings[key] = attributes[key];
-      initialState.push([key, attributes[key].get()]);
-    } else {
-      initialState.push([key, attributes[key]]);
-    }
-  }
-
-  if (children) {
-    initialState.push(["children", children]);
-  }
-
-  const debug = appContext.debug.makeChannel(`${channelPrefix}:${fn.name || "<anonymous>"}`);
-  const [state, setBoundValue] = makeState({ initialState, bindings, debug });
-  const helpers = makeViewHelpers(state);
+  const channel = appContext.debug.makeChannel(`${channelPrefix}:${fn.name || "<anonymous>"}`);
 
   /*=============================*\
   ||    Define context object    ||
@@ -66,34 +54,40 @@ export function initView(fn, config) {
     [APP_CONTEXT]: appContext,
     [ELEMENT_CONTEXT]: elementContext,
 
-    ...state,
-    ...helpers,
+    attrs: attributes,
 
-    set defaultState(values) {
-      // Set defaults only if they haven't been set already.
-      for (const key in values) {
-        if (state.get(key) === undefined) {
-          state.set(key, values[key]);
-        }
-      }
+    state(initialValue) {
+      return makeWritable(initialValue);
     },
 
-    /**
-     * Creates a function that takes a new value when called with one.
-     * Returns the last value it was called with when called without a value.
-     *
-     * Used for getting quick references to HTML elements or other values in custom views.
-     */
-    ref(initialValue) {
-      let currentValue = initialValue;
+    merge(...args) {
+      return makeMerged(...args);
+    },
 
-      return function (newValue) {
-        if (newValue === undefined) {
-          return currentValue;
+    observe(...args) {
+      let callback = args.pop();
+
+      const start = () => {
+        if (isObservable(args.at(0))) {
+          const $merged = makeMerged(...args, callback);
+          return $merged.subscribe();
+        } else {
+          const $merged = makeMerged(...args);
+          return $merged.subscribe(callback);
         }
-
-        currentValue = newValue;
       };
+
+      if (isConnected) {
+        // If called when the view is connected, we assume this code is in a lifecycle hook
+        // where it will be triggered at some point again after the view is reconnected.
+        subscriptions.push(start());
+      } else {
+        // This should only happen if called in the body of the view.
+        // This code is not always re-run between when a view is disconnected and reconnected.
+        afterConnectCallbacks.push(() => {
+          subscriptions.push(start());
+        });
+      }
     },
 
     /**
@@ -130,46 +124,121 @@ export function initView(fn, config) {
       afterDisconnectCallbacks.push(callback);
     },
 
-    observe(...args) {
-      const observer = state.observe(...args);
+    /**
+     * Displays an element when `value` is truthy.
+     *
+     * @example
+     * ctx.when($value, h("h1", "If you can read this the value is truthy."))
+     *
+     * // Switch-style case array.
+     * ctx.when($value, [
+     *   ["value1", <ThisView />],
+     *   ["value2", <ThatView />],
+     *   ["value3", <AnotherView />],
+     *   <FallbackView />
+     * ])
+     *
+     * @param $value - Binding to observe.
+     * @param element - Element to display when value is truthy.
+     */
+    when($value, element) {
+      return new OutletBlueprint($value, (value) => {
+        if (value) {
+          return element;
+        }
 
-      if (isConnected) {
-        // If called when the window is connected, we assume this code is in a lifecycle hook
-        // where it will be triggered at some point again after the window is reconnected.
-        subscriptions.push(observer.start());
-      } else {
-        // This should only happen if called in the body of the window.
-        // This code is not always re-run between when a window is disconnected and reconnected.
-        afterConnectCallbacks.push(() => {
-          subscriptions.push(observer.start());
-        });
+        return null;
+      });
+    },
+
+    /**
+     * Displays an element when `value` is falsy.
+     *
+     * @example
+     * ctx.unless($value, h("h1", "If you can read this the value is falsy."))
+     *
+     * @param $value - Binding to observe.
+     * @param element - Element to display.
+     */
+    unless($value, element) {
+      return new OutletBlueprint($value, (value) => {
+        if (!value) {
+          return element;
+        }
+
+        return null;
+      });
+    },
+
+    /**
+     * Matches a value against a set of cases, returning the matching result.
+     *
+     * @example
+     * ctx.match($value, [
+     *   ["value1", <ThisView />],
+     *   ["value2", <ThatView />],
+     *   ["value3", <AnotherView />],
+     *   <FallbackView />
+     * ]);
+     *
+     * @param $value - Binding to observe.
+     * @param cases - Array of cases with an optional fallback as a final element.
+     */
+    match($value, cases) {
+      if (!isArray(cases)) {
+        throw new TypeError(
+          `Expected an array of [value, result] cases to match as a second argument. Got: ${typeof cases}`
+        );
       }
+
+      const fallback = !isArray(element[element.length - 1]) ? element.pop() : null;
+
+      return new OutletBlueprint($value, (value) => {
+        for (const entry of element) {
+          if (entry[0] === value) {
+            return entry[1];
+          }
+        }
+
+        if (fallback) {
+          return fallback;
+        }
+
+        return null;
+      });
+    },
+
+    /**
+     * Repeats a component once for each item in `$values`.
+     *
+     * @param $value - Binding containing an array.
+     * @param renderFn - Function to repeat for each item. Takes $value and $index bindings and returns an element to render.
+     * @param keyFn - Takes an item and returns a unique key. If not provided then the item identity (===) will be used.
+     */
+    repeat($value, renderFn, keyFn = null) {
+      return new RepeatBlueprint($value, renderFn, keyFn);
+    },
+
+    /**
+     * Renders nested elements passed to this view.
+     */
+    outlet() {
+      return new OutletBlueprint($$children.readable());
     },
   };
 
   // Add debug methods.
-  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debug));
+  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(channel));
   Object.defineProperties(ctx, {
     name: {
       get() {
-        return debug.name;
+        return channel.name;
       },
       set(value) {
-        debug.name = `${channelPrefix}:${value}`;
+        channel.name = `${channelPrefix}:${value}`;
       },
     },
   });
-
-  /*=============================*\
-  ||     Watch dynamic attrs     ||
-  \*=============================*/
-
-  // Update state when bound values change.
-  for (const key in bindings) {
-    ctx.observe(bindings[key], (value) => {
-      setBoundValue(key, value);
-    });
-  }
 
   /*=============================*\
   ||      Run setup function     ||
@@ -188,15 +257,13 @@ export function initView(fn, config) {
   }
 
   /*=============================*\
-  ||     Define window object      ||
+  ||     Define view object      ||
   \*=============================*/
 
-  // This is the object the framework will use to control the window.
+  // This is the object the framework will use to control the view.
   const view = {
-    state,
-
     /**
-     * Returns the window's root DOM node, or null if there is none.
+     * Returns the view's root DOM node, or null if there is none.
      */
     get node() {
       if (element) {
@@ -220,16 +287,16 @@ export function initView(fn, config) {
     },
 
     setChildren(children) {
-      setBoundValue("children", children);
+      $$children.set(children);
     },
 
     /**
-     * Connects this window to the DOM, running lifecycle hooks if it wasn't already connected.
-     * Calling this on a window that is already connected can reorder it or move it to a different
+     * Connects this view to the DOM, running lifecycle hooks if it wasn't already connected.
+     * Calling this on a view that is already connected can reorder it or move it to a different
      * place in the DOM without re-triggering lifecycle hooks.
      *
-     * @param parent - DOM node under which this window should be connected as a child.
-     * @param after - A child node under `parent` after which this window should be connected.
+     * @param parent - DOM node under which this view should be connected as a child.
+     * @param after - A child node under `parent` after which this view should be connected.
      */
     connect(parent, after = null) {
       const wasConnected = view.isConnected;
@@ -256,7 +323,7 @@ export function initView(fn, config) {
     },
 
     /**
-     * Disconnects this window from the DOM and runs lifecycle hooks.
+     * Disconnects this view from the DOM and runs lifecycle hooks.
      */
     disconnect() {
       if (view.isConnected) {

@@ -2,11 +2,8 @@ import { makeView } from "@woofjs/client";
 
 export default makeView((ctx) => {
   ctx.name = "7guis:Counter";
-  ctx.defaultState = {
-    count: 0,
-  };
 
-  const $count = ctx.readable("count");
+  const $$count = ctx.state(0);
 
   return (
     <div class="example">
@@ -15,10 +12,10 @@ export default makeView((ctx) => {
       </header>
 
       <div>
-        <input type="text" value={$count} disabled />
+        <input type="text" value={$$count.readable()} disabled />
         <button
           onclick={() => {
-            ctx.set("count", (n) => n + 1);
+            $$count.update((n) => n + 1);
           }}
         >
           Increment

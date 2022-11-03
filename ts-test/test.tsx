@@ -52,7 +52,7 @@ type ExampleState = {
 // The binding types above only take effect when passing attributes. All bindings are unwrapped to their base types internally.
 
 const Example = makeView<ExampleState, AppGlobals>((ctx) => {
-  ctx.name = "Example"; // debug tag will become `[window:Example]`
+  ctx.name = "Example"; // debug tag will become `[view:Example]`
 
   // Define initial values for state unless overridden by attributes.
   ctx.defaultState = {
@@ -66,13 +66,13 @@ const Example = makeView<ExampleState, AppGlobals>((ctx) => {
   const $name = ctx.readable("name"); // One-way binding to 'name'
   const $$name = ctx.writable("name"); // Two-way (settable) binding to 'name'
 
-  // Update the value stored under 'name' in window state.
+  // Update the value stored under 'name' in view state.
   ctx.set("name", "Bob");
 
   // Set the value from the binding, not the binding itself. Bindings cannot be stored in state.
   ctx.set("name", $name);
 
-  // Observe the whole window state.
+  // Observe the whole view state.
   ctx.observe((state) => {
     ctx.log("state changed to", state);
   });
@@ -123,7 +123,7 @@ const Example = makeView<ExampleState, AppGlobals>((ctx) => {
         <h1>New State Idea</h1>
       </header>
 
-      {/* Creates an Outlet window that renders children or nested routes */}
+      {/* Creates an Outlet view that renders children or nested routes */}
       <p>{ctx.outlet()}</p>
     </div>
   );

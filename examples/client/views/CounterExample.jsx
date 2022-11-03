@@ -25,7 +25,7 @@ export const CounterExample = makeView((ctx) => {
 });
 
 /**
- * Second component with a window only. Displays the same information from the same service.
+ * Second component with a view only. Displays the same information from the same service.
  */
 const CounterViewLabel = makeView((ctx) => {
   const { $current } = ctx.global("counter");
