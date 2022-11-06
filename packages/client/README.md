@@ -37,7 +37,7 @@ Suppose you have two files on your web server:
 
 ```
 index.html
-app.js
+app.jsx
 ```
 
 Inside `index.html`:
@@ -53,12 +53,12 @@ Inside `index.html`:
       <!-- app goes here -->
     </main>
 
-    <script async src="./app.js"></script>
+    <script async src="./app.jsx"></script>
   </body>
 </html>
 ```
 
-Inside `app.js`:
+Inside `app.jsx`:
 
 ```js
 import { makeApp } from "https://cdn.skypack.dev/@woofjs/client";
@@ -91,7 +91,7 @@ Now when you visit the page the document should look something like this:
       <h1>Hello World</h1>
     </main>
 
-    <script async src="./app.js"></script>
+    <script async src="./app.jsx"></script>
   </body>
 </html>
 ```
@@ -126,8 +126,8 @@ app.route("users/:id", function (ctx, h) {
   // Get route params from router.
   const { $params } = ctx.global("router");
 
-  // Get the live value of :id with '.map()'.
-  const $id = $params.to((p) => p.id);
+  // Get the live value of :id
+  const $id = $params.as((p) => p.id);
 
   // Render it into a <p> tag. The ID portion will update if the URL changes.
   return h("p", "User's ID is ", $id);
@@ -145,19 +145,21 @@ state by exporting bindings of their own for use in many views.
 When the values stored in state change, anything observing those bindings is immediately notified and updated to match.
 
 ```js
-import { makeView } from "@woofjs/client";
+import {makeView} from "@woofjs/client";
 
-const Timer = makeView((ctx, h) => {
-  ctx.defaultState = {
-    seconds: 0,
-  };
+const Timer = makeView((ctx) => {
+  // Binding naming conventions.
+  // Prepend $$ for writable bindings and $ for readable ones.
+  // Consider: one $ for a one-way binding, two $ for a two-way binding
+  const $$seconds = ctx.state(0);
+  const $seconds = $$seconds.readable();
 
   function increment() {
-    ctx.set("seconds", (value) => value + 1);
+    $$seconds.update((value) => value + 1);
   }
 
   function reset() {
-    ctx.set("seconds", 0);
+    $$seconds.set(0);
   }
 
   // Increment once per second after the view is connected to the DOM.
@@ -165,12 +167,10 @@ const Timer = makeView((ctx, h) => {
     setInterval(increment, 1000);
   });
 
-  const $seconds = ctx.readable("seconds");
-
-  return h("div", [
-    h("input", { type: "text", value: $sections, disabled: true }),
-    h("button", { onclick: reset }, "Reset Counter"),
-  ]);
+  return <div>
+    <input type="text" value={$seconds} disabled />
+    <button onclick={reset}>Reset Counter</button>
+  </div>;
 });
 ```
 
@@ -180,29 +180,21 @@ Views are reusable modules with their own markup and logic. You can define a vie
 times as you need. Views can take attributes that set their default state and establish data bindings.
 
 ```jsx
-const Example = makeView((ctx, h) => {
-  ctx.defaultState = {
-    title: "Default Title",
-  };
-
-  const $title = ctx.readable("title");
-
-  return h("div", [
-    //
-    h("h1", $title),
-    h("p", "This is a reusable view."),
-  ]);
+const Example = makeView((ctx) => {
+  return <div>
+    <h1>{ctx.attrs.title}</h1>
+    <p>This is a reusable view.</p>
+  </div>
 });
 
 // Views can be mounted directly on a route.
 app.route("example", Example);
 
 // They can also be used inside another view.
-app.route("other", (ctx, h) => {
-  return h("div", [
-    // Pass state as attributes.
-    h(Example, { title: "In Another View" }),
-  ]);
+app.route("other", (ctx) => {
+  return <div>
+    <Example title="In Another View" />
+  </div>
 });
 ```
 
@@ -212,7 +204,7 @@ Views receive a context object they may use to translate state and lifecycle int
 
 ```js
 const Example = makeView(function (ctx, h) {
-  // Access globals by the name they were registered under.
+  // Access globals by name.
   const global = ctx.global("name");
 
   /*=================================*\
@@ -227,20 +219,11 @@ const Example = makeView(function (ctx, h) {
   /*=================================*\
   ||              State              ||
   \*=================================*/
+  
+  // Creates a writable (two-way) binding with a default value.
+  const $$title = ctx.state("The Default Title");
 
-  // Set the default values for this view's state.
-  ctx.defaultState = {
-    title: "The Default Title",
-  };
-
-  const title = ctx.get("title");
-  const $title = ctx.readable("title");
-  const $$title = ctx.writable("title");
-
-  ctx.set("title", "New Title");
-  ctx.set({
-    title: "Newer Title",
-  });
+  ctx.merge();
 
   // Runs a callback function each time a state changes (or any observable emits a value).
   ctx.observe($title, (title) => {
@@ -272,6 +255,11 @@ const Example = makeView(function (ctx, h) {
   /*=================================*\
   ||      Rendering & Children       ||
   \*=================================*/
+
+  ctx.when();
+  ctx.unless();
+  ctx.match();
+  ctx.repeat();
 
   // Render children inside a `<div>`
   return h("div", ctx.outlet());
@@ -397,20 +385,18 @@ the bound value is falsy. The condition can be a plain value, a $binding, or the
 
 ```js
 const Example = makeView((ctx, h) => {
-  ctx.defaultState = {
-    on: false,
-  };
+  const $$on = ctx.state(false);
 
   function toggle() {
-    ctx.set("on", (on) => !on);
+    $$on.update((on) => !on);
   }
 
-  return h("div", [
-    ctx.when("on", h("h1", "Is On")),
-    ctx.unless("on", h("h1", "Is Off")),
+  return <div>
+    {ctx.when($$on, <h1>Is On</h1>)}
+    {ctx.unless($$on, <h1>Is Off</h1>)}
 
-    h("button", { onclick: toggle }, "Toggle"),
-  ]);
+    <button onclick={toggle}>Toggle</button>
+  </div>
 });
 ```
 

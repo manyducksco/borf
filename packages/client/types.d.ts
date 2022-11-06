@@ -236,6 +236,8 @@ declare module "@woofjs/client" {
   interface StateContext {
     state<Value>(initialValue: Value): Writable<Value>;
 
+    state<Value = any>(): Writable<Value | undefined>;
+
     merge<ValueOne, ValueTwo, Result>(
       observableOne: Observable<ValueOne>,
       observableTwo: Observable<ValueTwo>,
@@ -447,9 +449,15 @@ declare module "@woofjs/client" {
   ) => Blueprint | null;
 
   // Fake type to enable JSX attribute type checking.
-  export type View<Attrs, Globals> = (props: Attrs) => {
+  export type View<Attrs, Globals> = (props: Attrs & { children?: any }) => {
     create(): Blueprint;
   };
+
+  type MatchCondCallback<Value> = (value: Value) => boolean;
+  type MatchResultCallback<Value> = (value: Value) => Blueprint;
+
+  type MatchCondition<Value> = Value | MatchCondCallback<Value>;
+  type MatchResult<Value> = WoofElement | MatchResultCallback<Value>;
 
   export interface ViewContext<Attrs = any, Globals = any> extends StateContext, DebugChannel {
     /**
@@ -485,7 +493,7 @@ declare module "@woofjs/client" {
     afterDisconnect(callback: () => void): void;
 
     /**
-     * Displays nexted content where it is called.
+     * Displays nested content where it is called.
      */
     outlet(): WoofElement;
 
@@ -499,7 +507,10 @@ declare module "@woofjs/client" {
      */
     unless(value: Observable<any>, element: WoofElement): Blueprint;
 
-    match<Value>(value: Observable<Value>, cases: [Value, Blueprint][]): Blueprint;
+    match<Value>(
+      value: Observable<Value>,
+      cases: ([MatchCondition<Value>, MatchResult<Value>] | MatchResult<Value>)[]
+    ): Blueprint;
 
     /**
      * Repeats an element for each item in `value`. Value must be iterable.
@@ -740,6 +751,21 @@ declare module "@woofjs/client" {
   }
 
   /*==================================*\
+  ||                Ref               ||
+  \*==================================*/
+
+  /**
+   * Stores a value when called with one; returns the stored value when called without.
+   */
+  export interface Ref<Value> {
+    (value: Value): void;
+
+    (): Value;
+  }
+
+  export function makeRef<Value>(initialValue?: Value): Ref<Value>;
+
+  /*==================================*\
   ||            Transitions           ||
   \*==================================*/
 
@@ -757,8 +783,11 @@ declare module "@woofjs/client" {
    */
   export interface TransitionFactory<Attrs> {
     (fn: ViewFunction): Blueprint;
+
     (view: View<Attrs, any>): Blueprint;
+
     (element: Blueprint): Blueprint;
+
     (element: WoofElement): Blueprint;
   }
 
@@ -1483,7 +1512,7 @@ declare namespace JSX {
     /**
      * A binding that receives a reference to the DOM element.
      */
-    ref?: Ref<T> | Ref<HTMLElement> | Ref<Element>;
+    ref?: Ref<any>;
   }
 
   /**

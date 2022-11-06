@@ -52,14 +52,14 @@ export function makeWritable(initialValue) {
       return makeReadable(ctx);
     },
 
-    as(transformFn) {
+    as(transformFn = null) {
       if (transformFn == null) {
         transformFn = (x) => x;
       } else if (!isFunction(transformFn)) {
         throw new TypeError(`Expected a transform function. Got: ${typeof transformFn}`);
       }
 
-      return transformed(ctx, transformFn);
+      return makeTransformed(ctx, transformFn);
     },
 
     subscribe(observer) {
@@ -115,7 +115,7 @@ function makeReadable(ctx) {
   return readable;
 }
 
-export function transformed(source, transformFn) {
+export function makeTransformed(source, transformFn) {
   const binding = {
     get() {
       let currentValue = source.get();
@@ -134,7 +134,7 @@ export function transformed(source, transformFn) {
         throw new TypeError(`Expected a transform function. Got: ${typeof transformFn}`);
       }
 
-      return transformed(binding, transformFn);
+      return makeTransformed(binding, transformFn);
     },
 
     subscribe(observer) {

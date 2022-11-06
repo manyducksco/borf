@@ -1,4 +1,4 @@
-import { isDOM, isView, isString, isObservable, isArray } from "../../helpers/typeChecking.js";
+import { isDOM, isView, isString, isObservable, isArray, isFunction } from "../../helpers/typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../../keys.js";
 import { h } from "../../h.js";
 
@@ -191,16 +191,32 @@ export function initView(fn, config) {
         );
       }
 
-      const fallback = !isArray(element[element.length - 1]) ? element.pop() : null;
+      const fallback = !isArray(cases[cases.length - 1]) ? cases.pop() : null;
 
       return new OutletBlueprint($value, (value) => {
-        for (const entry of element) {
-          if (entry[0] === value) {
-            return entry[1];
+        for (const [cond, result] of cases) {
+          let matches = false;
+
+          if (isFunction(cond) && cond(value)) {
+            matches = true;
+          } else if (cond === value) {
+            matches = true;
+          }
+
+          if (matches) {
+            if (isFunction(result)) {
+              return result(value)
+            }
+
+            return result;
           }
         }
 
         if (fallback) {
+          if (isFunction(fallback)) {
+            return fallback(value);
+          }
+
           return fallback;
         }
 

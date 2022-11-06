@@ -1,7 +1,7 @@
 import OBSERVABLE from "symbol-observable";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
-import { transformed } from "../helpers/makeState.js";
+import { makeTransformed } from "./makeWritable.js";
 
 export function makeMerged(...args) {
   const callback = args.pop();
@@ -85,7 +85,7 @@ export function merged(sources, mergeFn) {
         throw new TypeError(`Expected a transform function. Got: ${typeof transformFn}`);
       }
 
-      return transformed(binding, transformFn);
+      return makeTransformed(binding, transformFn);
     },
 
     subscribe(observer) {

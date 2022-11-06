@@ -107,7 +107,7 @@ export function makeApp(options = {}) {
         },
       };
 
-      subroutes(helpers);
+      subroutes.call(helpers, helpers);
     } else {
       routes.push({
         path,
