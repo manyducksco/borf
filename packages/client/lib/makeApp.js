@@ -1,4 +1,4 @@
-import { isFunction, isObject, isString, isTemplate } from "./helpers/typeChecking.js";
+import { isBlueprint, isFunction, isObject, isString } from "./helpers/typeChecking.js";
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
@@ -57,7 +57,7 @@ export function makeApp(options = {}) {
       view = view.view;
     }
 
-    if (isTemplate(view)) {
+    if (isBlueprint(view)) {
       const c = view;
       view = () => c;
     }

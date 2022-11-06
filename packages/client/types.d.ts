@@ -373,11 +373,6 @@ declare module "@woofjs/client" {
     set(value: Value): void;
 
     /**
-     * Deletes this key from its bound state, returning the value to `undefined`.
-     */
-    unset(): void;
-
-    /**
      * Assigns a new value to the bound state through a callback function that takes the current value and returns a new one.
      */
     update(callback: (value: Value) => Value): void;

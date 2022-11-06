@@ -102,7 +102,7 @@ export function merged(sources, mergeFn) {
       if (!observing) {
         subscribeToSources();
       } else {
-        observer.next(this.get());
+        observer.next?.(this.get());
       }
 
       return {

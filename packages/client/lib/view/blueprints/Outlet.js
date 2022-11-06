@@ -83,10 +83,18 @@ class OutletView {
   setChildren(...args) {}
 
   connect(parent, after = null) {
-    if (!this.isConnected) {
-      parent.insertBefore(this.node, after?.nextSibling);
+    const wasConnected = this.isConnected;
+
+    parent.insertBefore(this.node, after?.nextSibling);
+
+    if (!wasConnected) {
       this.subscription = this.binding.subscribe((value) => {
-        this._render(value);
+        // TODO: Errors are being eaten in code called from here.
+        try {
+          this._render(value);
+        } catch (err) {
+          console.error(err);
+        }
       });
     }
   }

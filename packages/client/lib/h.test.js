@@ -1,10 +1,10 @@
 import { h } from "./h.js";
-import { isTemplate } from "./helpers/typeChecking";
+import { isBlueprint } from "./helpers/typeChecking";
 
 describe("h", () => {
   test("returns an element template", () => {
     const element = h("div");
 
-    expect(isTemplate(element)).toBe(true);
+    expect(isBlueprint(element)).toBe(true);
   });
 });

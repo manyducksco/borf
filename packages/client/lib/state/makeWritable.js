@@ -28,13 +28,6 @@ export function makeWritable(initialValue) {
       }
     },
 
-    unset() {
-      if (!deepEqual(currentValue, undefined)) {
-        currentValue = undefined;
-        broadcast();
-      }
-    },
-
     update(callback) {
       if (!isFunction(callback)) {
         throw new TypeError("Expected second argument to be an update callback function. Got: " + typeof callback);
@@ -98,7 +91,7 @@ export function makeWritable(initialValue) {
 }
 
 function makeReadable(ctx) {
-  const readable = omit(["set", "unset", "update", "readable"], ctx);
+  const readable = omit(["set", "update", "readable"], ctx);
 
   Object.defineProperties(readable, {
     [OBSERVABLE]: {

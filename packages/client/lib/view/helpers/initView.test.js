@@ -1,34 +1,15 @@
 import { h } from "../../h.js";
 import { initView } from "./initView.js";
 import { isView } from "../../helpers/typeChecking.js";
+import { makeDebug } from "../../helpers/makeDebug.js";
 
 /*========================*\
 ||         Utils          ||
 \*======================== */
 
 const appContext = {
-  globals: {
-    debug: {
-      exports: {
-        channel() {
-          return {
-            log: () => {},
-            warn: () => {},
-            error: () => {},
-          };
-        },
-      },
-    },
-  },
-  debug: {
-    makeChannel() {
-      return {
-        log: console.log.bind(console),
-        warn: console.warn.bind(console),
-        error: console.error.bind(console),
-      };
-    },
-  },
+  globals: {},
+  debug: makeDebug(),
 };
 
 appContext.globals.app = appContext;
@@ -183,19 +164,13 @@ test(".node returns the root DOM node", () => {
     return h(DOMComponent);
   }
 
-  function ChildrenComponent(ctx) {
-    return ctx.outlet();
-  }
-
   const nullResult = initView(NullComponent, { appContext });
   const domResult = initView(DOMComponent, { appContext });
   const nestedResult = initView(NestedComponent, { appContext });
-  const childrenResult = initView(ChildrenComponent, { appContext, children: root });
 
   expect(nullResult.node).toBe(null);
   expect(domResult.node).toBe(root);
   expect(nestedResult.node).toBe(root);
-  expect(childrenResult.node).toBe(root);
 });
 
 // test("attributes have correct initial values", () => {

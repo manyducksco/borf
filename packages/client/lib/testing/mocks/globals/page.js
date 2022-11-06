@@ -1,9 +1,6 @@
 export default function mockPage(ctx) {
-  ctx.defaultState = {
-    title: "Test",
-  };
-
   return {
-    $$title: ctx.writable("title"),
+    $$title: ctx.state("Test"),
+    $visibility: ctx.state("visible").readable(),
   };
 }

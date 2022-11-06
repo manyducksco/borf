@@ -1,16 +1,14 @@
 export default function mockRouter(ctx) {
-  ctx.defaultState = {
-    path: "/test",
-    route: "/test",
-    params: {},
-    query: {},
-  };
+  const $$path = ctx.state("/test");
+  const $$route = ctx.state("/test");
+  const $$params = ctx.state({});
+  const $$query = ctx.state({});
 
   return {
-    $path: ctx.readable("path"),
-    $route: ctx.readable("route"),
-    $params: ctx.readable("params"),
-    $$query: ctx.writable("query"),
+    $path: $$path.readable(),
+    $route: $$route.readable(),
+    $params: $$params.readable(),
+    $$query: $$query,
 
     back() {},
     forward() {},

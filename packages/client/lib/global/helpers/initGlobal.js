@@ -29,7 +29,7 @@ export function initGlobal(fn, config) {
 
       if (isObservable(args.at(0))) {
         const $merged = makeMerged(...args, callback);
-        $merged.subscribe();
+        $merged.subscribe(() => undefined);
       } else {
         const $merged = makeMerged(...args, () => undefined);
         $merged.subscribe(callback);

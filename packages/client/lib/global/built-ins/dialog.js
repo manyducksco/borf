@@ -1,4 +1,4 @@
-import { makeGlobal } from "@woofjs/client";
+import { makeGlobal } from "../makeGlobal.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../../keys.js";
 import { ViewBlueprint } from "../../view/blueprints/View.js";
 

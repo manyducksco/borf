@@ -67,10 +67,14 @@ export function initView(fn, config) {
     observe(...args) {
       let callback = args.pop();
 
+      if (args.length === 0) {
+        throw new TypeError(`Observe requires at least one observable.`);
+      }
+
       const start = () => {
         if (isObservable(args.at(0))) {
           const $merged = makeMerged(...args, callback);
-          return $merged.subscribe();
+          return $merged.subscribe(() => undefined);
         } else {
           const $merged = makeMerged(...args, () => undefined);
           return $merged.subscribe(callback);
@@ -205,7 +209,7 @@ export function initView(fn, config) {
 
           if (matches) {
             if (isFunction(result)) {
-              return result(value)
+              return result(value);
             }
 
             return result;
@@ -260,7 +264,13 @@ export function initView(fn, config) {
   ||      Run setup function     ||
   \*=============================*/
 
-  let element = fn(ctx, h);
+  let element;
+
+  try {
+    element = fn(ctx, h);
+  } catch (err) {
+    console.error(err);
+  }
 
   if (element?.isBlueprint) {
     element = element.build({ appContext, elementContext });

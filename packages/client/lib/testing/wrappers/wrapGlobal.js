@@ -1,7 +1,8 @@
 import { isFunction } from "../../helpers/typeChecking.js";
 import { initGlobal } from "../../global/helpers/initGlobal.js";
 
-import debug from "../../helpers/makeDebug.js";
+import { makeDebug } from "../../helpers/makeDebug.js";
+
 import http from "../mocks/globals/http.js";
 import page from "../mocks/globals/page.js";
 import router from "../mocks/globals/router.js";
@@ -17,6 +18,7 @@ export function wrapGlobal(globalFn, configFn) {
   const appContext = {
     options: {},
     globals: {},
+    debug: makeDebug(),
   };
 
   const onBeforeConnect = [];
@@ -38,7 +40,6 @@ export function wrapGlobal(globalFn, configFn) {
     },
   };
 
-  ctx.global("debug", debug);
   ctx.global("router", router);
   ctx.global("page", page);
   ctx.global("http", http);
