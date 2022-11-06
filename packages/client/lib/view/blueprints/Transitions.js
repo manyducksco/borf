@@ -1,5 +1,6 @@
-import { isFunction } from "../../helpers/typeChecking.js";
+import { isFunction, isObject, isString } from "../../helpers/typeChecking.js";
 import { ViewBlueprint } from "./View.js";
+import { makeWritable } from "../../state/makeWritable.js";
 
 export class TransitionsBlueprint {
   constructor(element, transitions) {
@@ -27,8 +28,9 @@ export class TransitionsBlueprint {
 
 class TransitionsView {
   constructor(blueprint, transitions, appContext, elementContext) {
-    this.view = blueprint.build({ appContext, elementContext });
-    this.state = this.view.state;
+    this.$$state = makeWritable({});
+
+    this.view = blueprint.build({ appContext, elementContext, attributes: { $transition: this.$$state.readable() } });
     this.transitions = transitions;
     this.appContext = appContext;
     this.elementContext = {
@@ -52,18 +54,46 @@ class TransitionsView {
     this.view.setChildren(children);
   }
 
+  #set(key, value) {
+    const entries = {};
+
+    if (isString(key)) {
+      entries[key] = value;
+    } else if (isObject(key)) {
+      Object.assign(entries, key);
+    } else {
+      throw new TypeError(`Set function expected a key or object as the first argument. Got: ${typeof key}`);
+    }
+
+    this.$$state.update((current) => {
+      for (const [key, value] of Object.entries(entries)) {
+        current[key] = value;
+      }
+    });
+  }
+
+  #get(key) {
+    const state = this.$$state.get();
+
+    if (key === undefined) {
+      return state;
+    }
+
+    return state[key];
+  }
+
   connect(parent, after = null) {
-    if (this.transitions.in && !this.isConnected) {
+    if (this.transitions.enter && !this.isConnected) {
       const ctx = {
         node: this.view.node,
-        get: this.view.state?.get ?? (() => undefined),
-        set: this.view.state?.set ?? (() => undefined),
+        get: this.#get.bind(this),
+        set: this.#set.bind(this),
         done: () => {},
       };
 
       this.view.connect(parent, after);
 
-      const res = this.transitions.in(ctx);
+      const res = this.transitions.enter(ctx);
       if (isFunction(res?.then)) {
         res.then(ctx.done);
       }
@@ -73,17 +103,17 @@ class TransitionsView {
   }
 
   disconnect() {
-    if (this.transitions.out) {
+    if (this.transitions.exit) {
       const ctx = {
         node: this.view.node,
-        get: this.view.state?.get ?? (() => undefined),
-        set: this.view.state?.set ?? (() => undefined),
+        get: this.#get.bind(this),
+        set: this.#set.bind(this),
         done: () => {
           this.view.disconnect();
         },
       };
 
-      const res = this.transitions.out(ctx);
+      const res = this.transitions.exit(ctx);
       if (isFunction(res?.then)) {
         res.then(ctx.done);
       }

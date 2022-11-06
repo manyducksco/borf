@@ -769,37 +769,46 @@ declare module "@woofjs/client" {
    *
    * @param transitions - An object with functions that implement the transitions.
    */
-  export function makeTransitions<Attrs = any>(transitions: Transitions<Attrs>): TransitionFactory<Attrs>;
+  export function makeTransitions<State extends Record<string, any>>(
+    transitions: Transitions<State>
+  ): TransitionFactory<State>;
 
   /**
    * Takes an element and returns a version of that element with these transitions applied.
    *
    * @param element - A view, a DOM node, or anything with a `.toString()` method.
    */
-  export interface TransitionFactory<Attrs> {
-    (fn: ViewFunction): Blueprint;
+  export interface TransitionFactory<State> {
+    (fn: ViewFunction<{ $transition: Readable<State> }, any>): Blueprint;
 
-    (view: View<Attrs, any>): Blueprint;
+    (view: View<{ $transition: Readable<State> }, any>): Blueprint;
 
     (element: Blueprint): Blueprint;
 
     (element: WoofElement): Blueprint;
   }
 
-  export interface Transitions<Attrs> {
+  export interface Transitions<State> {
     /**
      * Defines the transition that occurs when an element is added to the document.
      */
-    in?: (ctx: TransitionContext) => void;
+    enter?: (ctx: TransitionContext<State>) => void;
 
     /**
      * Defines the transition that occurs before the element is removed from the document.
      */
-    out?: (ctx: TransitionContext) => void;
+    exit?: (ctx: TransitionContext<State>) => void;
   }
 
-  export interface TransitionContext {
+  export interface TransitionContext<State extends Record<string, any>> {
     node: HTMLElement;
+
+    get(): State;
+    get<Key extends keyof State>(key: Key): State[Key];
+
+    set(fields: Partial<State>): void;
+    set<Key extends keyof State>(key: Key, value: State[Key]): void;
+
     done: () => void;
   }
 

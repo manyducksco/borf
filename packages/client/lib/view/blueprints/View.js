@@ -11,9 +11,12 @@ export class ViewBlueprint {
     return true;
   }
 
-  build({ appContext, elementContext }) {
+  build({ appContext, elementContext, attributes = {} }) {
     return initView(this.view, {
-      attributes: this.attributes,
+      attributes: {
+        ...this.attributes,
+        ...attributes,
+      },
       children: this.children,
       appContext,
       elementContext,

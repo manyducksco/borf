@@ -50,7 +50,11 @@ export const MouseFollowerExample = makeView((ctx) => {
           $$enabled,
           // Transitions can set view state, so this kind of composition is possible.
           animated((ctx) => {
-            const { $transition } = ctx.attrs;
+            ctx.name = "AnimatedMouseFollower";
+
+            const $scale = ctx.attrs.$transition.as(
+              (state) => state.scale || 0
+            );
 
             return (
               <div
@@ -61,7 +65,7 @@ export const MouseFollowerExample = makeView((ctx) => {
                   // Composite transform based on mouse position and animated scale.
                   transform: ctx.merge(
                     $position,
-                    $transition.as((t) => t.scale),
+                    $scale,
                     (p, s) => `translate(${p.x}px, ${p.y}px) scale(${s})`
                   ),
                 }}
@@ -93,34 +97,8 @@ export const MouseFollowerExample = makeView((ctx) => {
  * Scales the element up from `0` on enter and down to `0` on exit.
  * Animates the `scale` value in view's context.
  */
-const animated2 = makeTransitions((ctx) => {
-  const $$scale = ctx.state(0);
-
-  ctx.attrs = {
-    $scale: $$scale.readable(),
-  };
-
-  ctx.in((done) => {
-    animate({
-      from: 0,
-      to: 1,
-      duration: 500,
-      ease: bounceOut,
-      onUpdate: function (latest) {
-        $$scale.set(latest);
-      },
-      onComplete: function () {
-        $$scale.set(1);
-        done();
-      },
-    });
-  });
-
-  ctx.out((done) => {});
-});
-
 const animated = makeTransitions({
-  in: function (ctx) {
+  enter(ctx) {
     animate({
       from: 0,
       to: 1,
@@ -135,7 +113,7 @@ const animated = makeTransitions({
       },
     });
   },
-  out: function (ctx) {
+  exit(ctx) {
     animate({
       from: 1,
       to: 0,
