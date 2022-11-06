@@ -41,30 +41,30 @@ export const ConditionalExample = makeView((ctx) => {
 });
 
 const animated = makeTransitions({
-  in: function (ctx) {
+  enter(ctx) {
     animate({
       from: { opacity: 0, y: -10 },
       to: { opacity: 1, y: 0 },
       duration: 200,
-      onUpdate: function (latest) {
+      onUpdate(latest) {
         ctx.node.style.opacity = latest.opacity;
         ctx.node.style.transform = `translateY(${latest.y}px)`;
       },
-      onComplete: function () {
+      onComplete() {
         ctx.done();
       },
     });
   },
-  out: function (ctx) {
+  exit(ctx) {
     animate({
       from: { opacity: 1, y: 0 },
       to: { opacity: 0, y: 10 },
       duration: 200,
-      onUpdate: function (latest) {
+      onUpdate(latest) {
         ctx.node.style.opacity = latest.opacity;
         ctx.node.style.transform = `translateY(${latest.y}px)`;
       },
-      onComplete: function () {
+      onComplete() {
         ctx.done();
       },
     });

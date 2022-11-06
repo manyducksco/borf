@@ -3,7 +3,7 @@ import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle";
 
 const animated = makeTransitions({
-  out: function (ctx) {
+  exit(ctx) {
     animate({
       from: 0,
       to: 100,

@@ -74,30 +74,30 @@ export const DynamicListExample = makeView((ctx) => {
 });
 
 const animated = makeTransitions({
-  in: function (ctx) {
+  enter(ctx) {
     animate({
       from: { opacity: 0, x: -10 },
       to: { opacity: 1, x: 0 },
       duration: 300,
-      onUpdate: function (latest) {
+      onUpdate(latest) {
         ctx.node.style.opacity = latest.opacity;
         ctx.node.style.transform = `translateX(${latest.x}px)`;
       },
-      onComplete: function () {
+      onComplete() {
         ctx.done();
       },
     });
   },
-  out: function (ctx) {
+  exit(ctx) {
     animate({
       from: { opacity: 1, x: 0 },
       to: { opacity: 0, x: 10 },
       duration: 300,
-      onUpdate: function (latest) {
+      onUpdate(latest) {
         ctx.node.style.opacity = latest.opacity;
         ctx.node.style.transform = `translateX(${latest.x}px)`;
       },
-      onComplete: function () {
+      onComplete() {
         ctx.done();
       },
     });
