@@ -18,12 +18,10 @@ import { makeApp, makeModule } from "https://cdn.skypack.dev/@woofjs/client";
 const mod = makeModule();
 
 mod.global("counter", (ctx) => {
-  ctx.defaultState = {
-    count: 0,
-  };
+  const $$count = ctx.state(0);
 
   function increment() {
-    ctx.set("count", (current) => current + 1);
+    $$count.update("count", (current) => current + 1);
   }
 
   ctx.afterConnect(() => {
@@ -31,7 +29,7 @@ mod.global("counter", (ctx) => {
   });
 
   return {
-    $count: ctx.readable("count"),
+    $count: $$count.readable(),
   };
 });
 
@@ -72,12 +70,10 @@ import { makeModule } from "https://cdn.skypack.dev/@woofjs/client";
 const mod = makeModule();
 
 mod.global("counter", (ctx) => {
-  ctx.defaultState = {
-    count: 0,
-  };
+  const $$count = ctx.state(0);
 
   function increment() {
-    ctx.set("count", (current) => current + 1);
+    $$count.update((current) => current + 1);
   }
 
   ctx.afterConnect(() => {
@@ -85,7 +81,7 @@ mod.global("counter", (ctx) => {
   });
 
   return {
-    $count: ctx.readable("count"),
+    $count: $$count.readable(),
   };
 });
 

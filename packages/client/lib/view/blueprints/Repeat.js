@@ -1,5 +1,5 @@
 import { isArray, isFunction } from "../../helpers/typeChecking.js";
-import { makeWritable } from "../../state/makeWritable.js";
+import { makeState } from "../../helpers/state.js";
 
 /**
  * Displays a dynamic list of views based on items in an array.
@@ -78,8 +78,8 @@ class RepeatView {
         connected.$$index.set(potential.index);
         newItems[potential.index] = connected;
       } else {
-        const $$value = makeWritable(potential.value);
-        const $$index = makeWritable(potential.index);
+        const $$value = makeState(potential.value);
+        const $$index = makeState(potential.index);
 
         const blueprint = this.renderFn($$value.readable(), $$index.readable());
 

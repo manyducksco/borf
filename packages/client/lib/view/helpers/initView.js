@@ -2,8 +2,7 @@ import { isDOM, isView, isString, isObservable, isArray, isFunction } from "../.
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../../keys.js";
 import { h } from "../../h.js";
 
-import { makeWritable } from "../../state/makeWritable.js";
-import { makeMerged } from "../../state/makeMerged.js";
+import { makeState, makeMerged } from "../../helpers/state.js";
 
 import { OutletBlueprint } from "../blueprints/Outlet.js";
 import { RepeatBlueprint } from "../blueprints/Repeat.js";
@@ -20,14 +19,14 @@ import { RepeatBlueprint } from "../blueprints/Repeat.js";
  */
 
 export function initView(fn, config) {
-  let { appContext, elementContext, attributes, children, channelPrefix } = config;
+  let { appContext, elementContext, attributes, children, channelPrefix, name } = config;
 
   attributes = Object.freeze(attributes ? { ...attributes } : {});
   channelPrefix = channelPrefix || "view";
 
   // Children can be changed at runtime when a view is mounted on a route with subroutes.
   // The outlet should update to reflect the latest children, hence the writable binding.
-  const $$children = makeWritable(children || []);
+  const $$children = makeState(children || []);
 
   const beforeConnectCallbacks = [];
   const afterConnectCallbacks = [];
@@ -43,7 +42,7 @@ export function initView(fn, config) {
   ||         Parse attrs         ||
   \*=============================*/
 
-  const channel = appContext.debug.makeChannel(`${channelPrefix}:${fn.name || "<anonymous>"}`);
+  const channel = appContext.debug.makeChannel(`${channelPrefix}:${name || fn.name || "<anonymous>"}`);
 
   /*=============================*\
   ||    Define context object    ||
@@ -57,7 +56,7 @@ export function initView(fn, config) {
     attrs: attributes,
 
     state(initialValue) {
-      return makeWritable(initialValue);
+      return makeState(initialValue);
     },
 
     merge(...args) {

@@ -1,7 +1,6 @@
 import { APP_CONTEXT } from "../../keys.js";
 import { isObject, isObservable, isString } from "../../helpers/typeChecking.js";
-import { makeWritable } from "../../state/makeWritable.js";
-import { makeMerged } from "../../state/makeMerged.js";
+import { makeState, makeMerged } from "../../helpers/state.js";
 
 export function initGlobal(fn, config) {
   let { appContext, name, channelPrefix } = config;
@@ -17,7 +16,7 @@ export function initGlobal(fn, config) {
     [APP_CONTEXT]: appContext,
 
     state(initialValue) {
-      return makeWritable(initialValue);
+      return makeState(initialValue);
     },
 
     merge(...args) {

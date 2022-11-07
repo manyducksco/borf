@@ -1,6 +1,6 @@
 import { isFunction, isObject, isString } from "../../helpers/typeChecking.js";
 import { ViewBlueprint } from "./View.js";
-import { makeWritable } from "../../state/makeWritable.js";
+import { makeState } from "../../helpers/state.js";
 
 export class TransitionsBlueprint {
   constructor(element, transitions) {
@@ -28,7 +28,7 @@ export class TransitionsBlueprint {
 
 class TransitionsView {
   constructor(blueprint, transitions, appContext, elementContext) {
-    this.$$state = makeWritable({});
+    this.$$state = makeState({});
 
     this.view = blueprint.build({ appContext, elementContext, attributes: { $transition: this.$$state.readable() } });
     this.transitions = transitions;

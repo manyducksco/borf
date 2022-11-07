@@ -145,7 +145,7 @@ state by exporting bindings of their own for use in many views.
 When the values stored in state change, anything observing those bindings is immediately notified and updated to match.
 
 ```js
-import {makeView} from "@woofjs/client";
+import { makeView } from "@woofjs/client";
 
 const Timer = makeView((ctx) => {
   // Binding naming conventions.
@@ -167,10 +167,12 @@ const Timer = makeView((ctx) => {
     setInterval(increment, 1000);
   });
 
-  return <div>
-    <input type="text" value={$seconds} disabled />
-    <button onclick={reset}>Reset Counter</button>
-  </div>;
+  return (
+    <div>
+      <input type="text" value={$seconds} disabled />
+      <button onclick={reset}>Reset Counter</button>
+    </div>
+  );
 });
 ```
 
@@ -181,10 +183,12 @@ times as you need. Views can take attributes that set their default state and es
 
 ```jsx
 const Example = makeView((ctx) => {
-  return <div>
-    <h1>{ctx.attrs.title}</h1>
-    <p>This is a reusable view.</p>
-  </div>
+  return (
+    <div>
+      <h1>{ctx.attrs.title}</h1>
+      <p>This is a reusable view.</p>
+    </div>
+  );
 });
 
 // Views can be mounted directly on a route.
@@ -192,9 +196,11 @@ app.route("example", Example);
 
 // They can also be used inside another view.
 app.route("other", (ctx) => {
-  return <div>
-    <Example title="In Another View" />
-  </div>
+  return (
+    <div>
+      <Example title="In Another View" />
+    </div>
+  );
 });
 ```
 
@@ -203,7 +209,7 @@ app.route("other", (ctx) => {
 Views receive a context object they may use to translate state and lifecycle into DOM nodes.
 
 ```js
-const Example = makeView(function (ctx, h) {
+const Example = makeView((ctx, h) => {
   // Access globals by name.
   const global = ctx.global("name");
 
@@ -219,15 +225,22 @@ const Example = makeView(function (ctx, h) {
   /*=================================*\
   ||              State              ||
   \*=================================*/
-  
+
   // Creates a writable (two-way) binding with a default value.
   const $$title = ctx.state("The Default Title");
 
-  ctx.merge();
-
   // Runs a callback function each time a state changes (or any observable emits a value).
-  ctx.observe($title, (title) => {
+  ctx.observe($$title, (title) => {
     console.log("title attribute changed to " + title);
+  });
+
+  // Merge two or more bindings into a single binding.
+  const $formattedTitle = ctx.merge($$title, global.$uppercase, (title, uppercase) => {
+    if (uppercase) {
+      return title.toUpperCase();
+    }
+
+    return title;
   });
 
   /*=================================*\
@@ -261,8 +274,8 @@ const Example = makeView(function (ctx, h) {
   ctx.match();
   ctx.repeat();
 
-  // Render children inside a `<div>`
-  return h("div", ctx.outlet());
+  // Render children inside a `<div class="container">`
+  return h("div", { class: "container" }, ctx.outlet());
 });
 ```
 
@@ -348,7 +361,7 @@ const Example = makeView((ctx, h) => {
 });
 
 const Subview = makeView((ctx, h) => {
-  const name = ctx.get("name");
+  const { name } = ctx.attrs;
 
   return h("h1", "Hello ", name, "!");
 });
@@ -362,7 +375,7 @@ const Example = makeView((ctx) => {
 });
 
 const Subview = makeView((ctx) => {
-  const name = ctx.get("name");
+  const { name } = ctx.attrs;
 
   return <h1>Hello {name}!</h1>;
 });
@@ -375,10 +388,8 @@ Helpers supply the control flow you would expect when creating dynamic views, li
 #### Conditionals (`when` and `unless`)
 
 - `ctx.when($binding, element)`
-- `ctx.when("key", element)`
 
 - `ctx.unless($binding, element)`
-- `ctx.unless("key", element)`
 
 The `when` helper displays the element only when the bound value is truthy, while `unless` displays the element only when
 the bound value is falsy. The condition can be a plain value, a $binding, or the name of a view state key to bind to.
@@ -391,33 +402,100 @@ const Example = makeView((ctx, h) => {
     $$on.update((on) => !on);
   }
 
-  return <div>
-    {ctx.when($$on, <h1>Is On</h1>)}
-    {ctx.unless($$on, <h1>Is Off</h1>)}
+  return (
+    <div>
+      {ctx.when($$on, <h1>Is On</h1>)}
+      {ctx.unless($$on, <h1>Is Off</h1>)}
 
-    <button onclick={toggle}>Toggle</button>
-  </div>
+      <button onclick={toggle}>Toggle</button>
+    </div>
+  );
 });
+```
+
+#### Pattern Matching (`match`)
+
+- `ctx.match($binding, cases)`
+
+Renders the first matching case from the value of a binding.
+
+```js
+const Example = makeView((ctx, h) => {
+  const $$tab = ctx.state("home");
+
+  // Displays a set of tabs and content for the most recently clicked tab.
+  return (
+    <main>
+      <nav class="tabs">
+        <ul>
+          <li>
+            <button class="tab-button" onclick={() => $$tab.set("home")}>
+              Home
+            </button>
+          </li>
+          <li>
+            <button class="tab-button" onclick={() => $$tab.set("photos")}>
+              Photos
+            </button>
+          </li>
+          <li>
+            <button class="tab-button" onclick={() => $$tab.set("contacts")}>
+              Contacts
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="content">
+        {ctx.match($$tab, [
+          ["home", <HomeContent />],
+          ["photos", <PhotosContent />],
+          ["contacts", <ContactsContent />],
+          <NoTabContent />, // Fallback content if none of the cases match.
+        ])}
+      </div>
+    </main>
+  );
+});
+```
+
+The `cases` structure is a 2D array of `[value, result]` (followed by an optional `fallback` item) where:
+
+- `value` can be either a literal or a condition function: `(value) => boolean`
+- `result` can be either a renderable element or a render function returning a renderable element: `(value) => element`
+- `fallback` can be either a renderable element or a render function returning a renderable element: `(value) => element`
+
+```js
+ctx.match($$tab, [
+  // Do unnecessary processing on the tab name to determine if it's the one.
+  // Has the same result as the "home" literal in the example above.
+  [(tab) => tab.toUpperCase() === "HOME", <HomeContent />],
+
+  // Pass "PHOTOS!" as the `title` attribute when rendering <PhotosContent>.
+  ["photos", (tab) => <PhotosContent title={tab.toUpperCase() + "!"} />],
+
+  ["contacts", <ContactsContent />],
+
+  // Fallback: passes the tab name to <NoTabContent>, presumably to tell the user the unknown tab.
+  (tab) => <NoTabContent tabName={tab} />,
+]);
 ```
 
 #### Looping
 
 - `ctx.repeat($binding, callback)`
-- `ctx.repeat("key", callback)`
 
 Repeats a render callback once for each item in an array.
 
 ```js
 const Example = makeView((ctx, h) => {
-  ctx.defaultState = {
-    list: ["one", "two", "three"],
-  };
+  const $$list = ctx.state(["one", "two", "three"]);
 
   return h(
     "ul",
 
-    // Render once for each item in $list. Updates when $list changes.
-    ctx.repeat("list", function ($item) {
+    // Render once for each item in $$list. Updates when $$list changes.
+    ctx.repeat($$list, function ($item, $index) {
       // Return an <li> that contains the current value of this list item.
       return h("li", $item);
     })
@@ -439,10 +517,6 @@ ctx.repeat($list, View, (item, index) => item.id);
 #### Children &amp; Other Elements
 
 - `ctx.outlet()`
-- `ctx.outlet($binding)`
-- `ctx.outlet("key")`
-- `ctx.outlet($binding, callback)`
-- `ctx.outlet("key", callback)`
 
 Renders elements from state to DOM, optionally through the use of a render callback to convert the value into something
 renderable. Called anew every time the value changes.
@@ -480,8 +554,8 @@ const Example = makeView((ctx, h) => {
         // Always includes "container" class
         container: true,
 
-        // Includes "active" class when 'isActive' attribute is truthy
-        active: ctx.readable("isActive"),
+        // Includes "active" class when '$isActive' attribute is truthy
+        active: ctx.attrs.$isActive,
       },
     },
     ctx.outlet()
@@ -514,7 +588,7 @@ const Example = makeView((ctx) => {
       class={[
         "container",
         {
-          active: ctx.readable("isActive"),
+          active: ctx.attrs.$isActive,
         },
       ]}
     >
@@ -539,19 +613,17 @@ data through a `counter` global.
 ```js
 // The `counter` global holds the current count and provides methods for incrementing and decrementing.
 app.global("counter", function (ctx) {
-  ctx.defaultState = {
-    count: 0,
-  };
+  const $$count = ctx.state(0);
 
   return {
-    $current: ctx.readable("count"), // Exports a read only version that can only be changed through the methods.
+    $current: $$count.readable(), // Exports a read only version that can only be changed through the methods.
 
     increment() {
-      ctx.set("count", (current) => current + 1);
+      $$count.update((current) => current + 1);
     },
 
     decrement() {
-      ctx.set("count", (current) => current - 1);
+      $$count.update((current) => current - 1);
     },
   };
 });
@@ -594,18 +666,12 @@ app.global("example", function (ctx) {
   // The globals being accessed must have been registered before this one or the app will throw an error.
   const global = ctx.global("name");
 
-  ctx.defaultState = {
-    title: "THE TITLE",
-  };
+  const $$title = ctx.state("THE TITLE");
 
-  const title = ctx.get("title");
-  const $title = ctx.readable("title");
-  const $$title = ctx.writable("title");
-
-  ctx.set("title", "New Title");
+  ctx.merge();
 
   // Runs a callback function each time a state changes (or any observable emits a value).
-  ctx.observe($title, (title) => {
+  ctx.observe($$title, (title) => {
     console.log("title attribute changed to " + title);
   });
 
@@ -633,8 +699,27 @@ app.global("example", function (ctx) {
 
 This library also includes some utilities to help with really common tasks in frontend development:
 
+- useRef
 - makeDebounce
 - makeTransitions
+
+## Ref
+
+Refs are functions that store a value when called with one, and return the last stored value when called with no arguments. Pass a ref as the `ref` attribute on any HTML element to store a reference to that element's DOM node once it's rendered to the page.
+
+```js
+import { makeView, makeRef } from "@woofjs/client";
+
+const Example = makeView((ctx) => {
+  const divRef = makeRef();
+
+  ctx.afterConnect(() => {
+    console.log("rendered element", divRef());
+  });
+
+  return <div ref={divRef} />;
+});
+```
 
 ## Debounce
 
@@ -686,7 +771,7 @@ import { animate } from "popmotion";
 // TODO: Change names to `enter` and `exit` since `in` causes weird syntax highlighting in some editors since it's a keyword.
 const animated = makeTransitions({
   // Fade opacity from 0 to 1 when the element enters.
-  in: (ctx) => {
+  enter: (ctx) => {
     animate({
       from: 0,
       to: 1,
@@ -702,7 +787,7 @@ const animated = makeTransitions({
   },
 
   // Fade opacity from 1 to 0 when the element exits.
-  out: (ctx) => {
+  exit: (ctx) => {
     animate({
       from: 1,
       to: 0,
@@ -729,6 +814,8 @@ const ExampleView = makeView((ctx, h) => {
   ]);
 });
 ```
+
+> TODO: Outline transition ctx.get, ctx.set and $transition attribute for transitioning views.
 
 ## Testing
 

@@ -20,6 +20,7 @@ export class ViewBlueprint {
       children: this.children,
       appContext,
       elementContext,
+      name: this.view.viewName,
     });
   }
 }
