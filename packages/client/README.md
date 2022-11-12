@@ -100,8 +100,7 @@ Now when you visit the page the document should look something like this:
 
 ## Routing
 
-At the top level, woof determines what view to display using routes. Routes "match" when the pathname of the
-current URL fits a pattern. When a route matches, that route's view is displayed.
+Routes are used to separate your app into distinct pages displayed according to the current URL.
 
 You'll notice that even a simple Hello World requires us to set up a route. Routing is central to what the web is. By
 following this convention several things users expect from a web app will just work out of the box; back and forward

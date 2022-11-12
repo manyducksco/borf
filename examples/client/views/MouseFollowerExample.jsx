@@ -52,9 +52,8 @@ export const MouseFollowerExample = makeView((ctx) => {
           animated((ctx) => {
             ctx.name = "AnimatedMouseFollower";
 
-            const $scale = ctx.attrs.$transition.as(
-              (state) => state.scale || 0
-            );
+            const { $transition } = ctx.attrs;
+            const $scale = $transition.as((t) => t.scale || 0);
 
             return (
               <div

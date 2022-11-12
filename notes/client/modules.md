@@ -36,7 +36,7 @@ mod.global("counter", (ctx) => {
 mod.route("/test", function (ctx) {
   const { $count } = ctx.global("counter");
 
-  return h("h1", "The count is", $count);
+  return <h1>The count is {$count}</h1>;
 });
 
 // Then mounted on an app:
@@ -85,11 +85,18 @@ mod.global("counter", (ctx) => {
   };
 });
 
-mod.route("/test", function (ctx, h) {
+mod.route("/test", (ctx, h) => {
   const { $count } = ctx.global("counter");
 
   return h("h1", "The count is", $count);
 });
 
 export default mod;
+```
+
+## Module names
+
+```js
+// Module name is prepended to all debug messages generated in this module
+const mod = makeModule({ name: "my-module" });
 ```
