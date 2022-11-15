@@ -126,26 +126,6 @@ async function AsyncHeader(...children) {
   return html`<div class="container">${children}</div>`;
 }
 
-app.get("/timer", function (ctx) {
-  // TODO: All events are emitted at once when the time ends.
-  ctx.eventSource((events) => {
-    let seconds = 10;
-
-    events.emit("time", seconds);
-
-    setInterval(() => {
-      --seconds;
-
-      if (seconds === 0) {
-        events.send("Timer is up!");
-        events.close();
-      } else {
-        events.emit("time", seconds);
-      }
-    }, 1000);
-  });
-});
-
 // Listen for HTTP requests on localhost at specified port number.
 app.listen(PORT).then((info) => {
   console.log(`connected on port ${info.port}`);

@@ -1,4 +1,4 @@
-import { isFunction } from "../../helpers/typeChecking.js";
+import { isFunction, isObject } from "../../helpers/typeChecking.js";
 import { initGlobal } from "../../global/helpers/initGlobal.js";
 
 import { makeDebug } from "../../helpers/makeDebug.js";
@@ -26,6 +26,11 @@ export function wrapGlobal(globalFn, configFn) {
 
   const ctx = {
     global(name, fn) {
+      if (isObject(fn)) {
+        const obj = fn;
+        fn = () => obj;
+      }
+
       if (!isFunction(fn)) {
         throw new Error(`Expected a global function for '${name}'`);
       }

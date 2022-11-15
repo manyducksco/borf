@@ -2,13 +2,17 @@
   "name": "@woofjs/server",
   "version": "0.8.1",
   "description": "API routes and server rendered pages for dogs. 🐕",
-  "main": "lib/index.js",
   "types": "types.d.ts",
+  "main": "./lib/index.js",
   "type": "module",
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",
     "test:coverage": "npm run test -- --coverage"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./testing": "./lib/testing/index.js"
   },
   "keywords": [],
   "author": "Morgan Doboszynski <morgan@manyducks.co>",
