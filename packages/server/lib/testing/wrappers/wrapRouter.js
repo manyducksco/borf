@@ -3,7 +3,6 @@ import { matchRoute, parseRoute, sortRoutes } from "../../helpers/routing.js";
 import { initGlobal } from "../../helpers/initGlobal.js";
 import { makeDebug } from "../../helpers/makeDebug.js";
 
-import { inspect } from "util";
 import { Request } from "../../objects/Request.js";
 import { Response } from "../../objects/Response.js";
 
@@ -146,25 +145,20 @@ export function wrapRouter(router, configFn) {
     async get(path, config) {
       return makeRequest("GET", path, config);
     },
-    async put(path, config) {
-      return makeRequest("PUT", path, config);
-    },
     async post(path, config) {
       return makeRequest("POST", path, config);
     },
-    // ...
+    async put(path, config) {
+      return makeRequest("PUT", path, config);
+    },
+    async patch(path, config) {
+      return makeRequest("PATCH", path, config);
+    },
+    async delete(path, config) {
+      return makeRequest("DELETE", path, config);
+    },
+    async head(path, config) {
+      return makeRequest("HEAD", path, config);
+    },
   };
 }
-
-/**
- * const wrapped = wrapRouter(router, (ctx) => {
- *   ctx.global("db", mockDBObj);
- * });
- *
- * const response = await wrapped.post("/login", {
- *   body: {},
- *   headers: {},
- * });
- *
- * expect(response.body).toStrictEqual({});
- */
