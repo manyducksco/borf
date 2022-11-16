@@ -86,9 +86,9 @@ declare module "@woofjs/server" {
   ||           Globals           ||
   \*=============================*/
 
-  type GlobalFunction = (ctx: GlobalContext) => Object;
+  export type GlobalFunction = (ctx: GlobalContext) => Object;
 
-  interface GlobalContext {
+  export interface GlobalContext {
     debug: DebugChannel;
     global: {
       [name: string]: any;
@@ -101,7 +101,7 @@ declare module "@woofjs/server" {
 
   export function makeRouter(): Router;
 
-  interface Router {
+  export interface Router {
     use(middleware: RouteHandler): this;
 
     mount(router: Router): this;
@@ -122,9 +122,6 @@ declare module "@woofjs/server" {
     delete(path: string, handler: RouteHandler): this;
     delete(path: string, ...handlers: RouteHandler[]): this;
 
-    options(path: string, handler: RouteHandler): this;
-    options(path: string, ...handlers: RouteHandler[]): this;
-
     head(path: string, handler: RouteHandler): this;
     head(path: string, ...handlers: RouteHandler[]): this;
   }
@@ -144,64 +141,35 @@ declare module "@woofjs/server" {
     response: Response;
     redirect(to: string, statusCode?: number): void;
     next(): Function;
+  }
+}
 
-    eventSource(fn: (ctx: EventSourceContext) => void);
+declare module "@woofjs/server/testing" {
+  import { Router, Response, GlobalFunction } from "@woofjs/server";
+
+  interface RouterWrapperContext {
+    global(name: string, exports: Record<any, any>): this;
+    global(name: string, fn: GlobalFunction): this;
   }
 
-  /*=============================*\
-  ||      Server Sent Events     ||
-  \*=============================*/
-
-  /**
-   * A server-side event source which emits events to a client through a persistent connection.
-   * Commonly known as SSE (Server Sent Events).
-   *
-   * Return an EventSource from a request handler to establish this kind of connection.
-   */
-  export class EventSource {
-    constructor(fn: EventSourceCallback);
-    start(res: import("http").ServerResponse): void;
+  interface RouterWrapperRequestOptions {
+    headers?: Record<string, string>;
+    body?: Record<string, any>;
   }
 
-  type EventSourceOptions = {
-    /**
-     * Number of milliseconds for client to wait before attempting to reconnect when the connection is lost.
-     */
-    retryTimeout?: number;
-  };
+  interface RouterWrapper {
+    get(path: string, options: Omit<RouterWrapperRequestOptions, "body">): Promise<Response>;
 
-  type EventSourceCallback = (connection: EventSourceContext) => void;
+    post(path: string, options: RouterWrapperRequestOptions): Promise<Response>;
 
-  class EventSourceContext {
-    /**
-     * Listen for events on this connection with a callback.
-     */
-    on(event: "close", callback: () => void): void;
+    put(path: string, options: RouterWrapperRequestOptions): Promise<Response>;
 
-    /**
-     * Unregister a callback that is currently listening for events.
-     */
-    off(event: "close", callback: () => void): void;
+    patch(path: string, options: RouterWrapperRequestOptions): Promise<Response>;
 
-    /**
-     * Send raw data without an event.
-     *
-     * @param data - Any serializable object.
-     */
-    send(data: any): void;
+    delete(path: string, options: Omit<RouterWrapperRequestOptions, "body">): Promise<Response>;
 
-    /**
-     * Emit an event with a specific name. The client will listen for this with
-     * `source.addEventListener("event")`.
-     *
-     * @param event - Event name.
-     * @param data - Any serializable object.
-     */
-    emit(event: string, data: any): void;
-
-    /**
-     * Close the connection.
-     */
-    close(): void;
+    head(path: string, options: Omit<RouterWrapperRequestOptions, "body">): Promise<Response>;
   }
+
+  export function wrapRouter(router: Router, configFn: (ctx: RouterWrapperContext) => void): RouterWrapper;
 }
