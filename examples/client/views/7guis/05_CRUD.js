@@ -1,9 +1,9 @@
-import { makeView } from "@woofjs/client";
+import { joinStates, makeState, makeView } from "@woofjs/client";
 
 export default makeView((ctx) => {
   ctx.name = "7guis:CRUD";
 
-  const $$people = ctx.state([
+  const $$people = makeState([
     {
       id: 1,
       name: "Hans",
@@ -20,13 +20,13 @@ export default makeView((ctx) => {
       surname: "Tisch",
     },
   ]);
-  const $$nextId = ctx.state(4);
-  const $$selectedId = ctx.state(1);
-  const $$nameInput = ctx.state("");
-  const $$surnameInput = ctx.state("");
-  const $$filterPrefix = ctx.state("");
+  const $$nextId = makeState(4);
+  const $$selectedId = makeState(1);
+  const $$nameInput = makeState("");
+  const $$surnameInput = makeState("");
+  const $$filterPrefix = makeState("");
 
-  const $filteredPeople = ctx.merge(
+  const $filteredPeople = joinStates(
     $$people,
     $$filterPrefix,
     (people, prefix) => {

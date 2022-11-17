@@ -1,5 +1,5 @@
 import { h } from "./h.js";
-import { isBlueprint } from "./helpers/typeChecking";
+import { isBlueprint } from "../helpers/typeChecking.js";
 
 describe("h", () => {
   test("returns an element template", () => {

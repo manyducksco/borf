@@ -1,5 +1,5 @@
 import { omit } from "../helpers/omit.js";
-import { h } from "../h.js";
+import { h } from "../view/h.js";
 
 export { Fragment } from "../view/Fragment.js";
 

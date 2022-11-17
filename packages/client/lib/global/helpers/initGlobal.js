@@ -1,6 +1,6 @@
 import { APP_CONTEXT } from "../../keys.js";
 import { isObject, isObservable, isString } from "../../helpers/typeChecking.js";
-import { makeState, makeMerged } from "../../helpers/state.js";
+import { joinStates } from "../../helpers/state.js";
 
 export function initGlobal(fn, config) {
   let { appContext, name, channelPrefix } = config;
@@ -15,22 +15,14 @@ export function initGlobal(fn, config) {
   const ctx = {
     [APP_CONTEXT]: appContext,
 
-    state(initialValue) {
-      return makeState(initialValue);
-    },
-
-    merge(...args) {
-      return makeMerged(...args);
-    },
-
     observe(...args) {
       let callback = args.pop();
 
       if (isObservable(args.at(0))) {
-        const $merged = makeMerged(...args, callback);
+        const $merged = joinStates(...args, callback);
         $merged.subscribe(() => undefined);
       } else {
-        const $merged = makeMerged(...args, () => undefined);
+        const $merged = joinStates(...args, () => undefined);
         $merged.subscribe(callback);
       }
     },

@@ -1,9 +1,9 @@
-import { makeView } from "@woofjs/client";
+import { makeView, makeState } from "@woofjs/client";
 
 export const ComponentAttrsExample = makeView((ctx) => {
   ctx.name = "ComponentAttrsExample";
 
-  const $$message = ctx.state("test");
+  const $$message = makeState("test");
 
   return (
     <div class="example">

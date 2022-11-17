@@ -1,9 +1,9 @@
-import { makeView } from "@woofjs/client";
+import { makeState, makeView } from "@woofjs/client";
 
 export default makeView((ctx) => {
   ctx.name = "7guis:Counter";
 
-  const $$count = ctx.state(0);
+  const $$count = makeState(0);
 
   return (
     <div class="example">

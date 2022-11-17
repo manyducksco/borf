@@ -1,17 +1,17 @@
-import { makeView } from "@woofjs/client";
+import { joinStates, makeState, makeView } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export const HTTPRequestExample = makeView((ctx) => {
   ctx.name = "HTTPRequestExample";
 
-  const $$loading = ctx.state(false);
-  const $$message = ctx.state("");
+  const $$loading = makeState(false);
+  const $$message = makeState("");
 
   const http = ctx.global("http");
 
   logLifecycle(ctx);
 
-  const $label = ctx.merge($$loading, $$message, (loading, message) => {
+  const $label = joinStates($$loading, $$message, (loading, message) => {
     if (loading) {
       return "LOADING...";
     } else {

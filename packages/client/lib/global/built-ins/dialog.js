@@ -1,6 +1,7 @@
 import { makeGlobal } from "../makeGlobal.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../../keys.js";
 import { ViewBlueprint } from "../../view/blueprints/View.js";
+import { makeState } from "../../helpers/state.js";
 
 /**
  * Manages dialogs. Also known as modals.
@@ -11,7 +12,7 @@ export default makeGlobal((ctx) => {
    * A first-in-last-out queue of dialogs. The last one appears on top.
    * This way if a dialog opens another dialog the new dialog stacks.
    */
-  const $$dialogs = ctx.state([]);
+  const $$dialogs = makeState([]);
 
   // Add $dialogs to app context so the app can display them.
   ctx[APP_CONTEXT].$dialogs = $$dialogs.readable();

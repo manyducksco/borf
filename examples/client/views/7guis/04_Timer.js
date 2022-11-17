@@ -1,10 +1,10 @@
-import { makeView } from "@woofjs/client";
+import { makeState, makeView } from "@woofjs/client";
 
 export default makeView((ctx) => {
   ctx.name = "7guis:Timer";
 
-  const $$duration = ctx.state(10); // duration in seconds
-  const $$elapsed = ctx.state(0); // elapsed time in seconds
+  const $$duration = makeState(10); // duration in seconds
+  const $$elapsed = makeState(0); // elapsed time in seconds
 
   let lastTick = null;
 

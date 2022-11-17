@@ -1,22 +1,10 @@
 import { isDOM, isView, isString, isObservable, isArray, isFunction } from "../../helpers/typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../../keys.js";
-import { h } from "../../h.js";
+import { h } from "../h.js";
 
-import { makeState, makeMerged } from "../../helpers/state.js";
+import { makeState, joinStates } from "../../helpers/state.js";
 
 import { OutletBlueprint } from "../blueprints/Outlet.js";
-import { RepeatBlueprint } from "../blueprints/Repeat.js";
-
-/**
- * State binding for views:
- *
- * - Values are passed as attributes
- * - defaultState is applied
- * - attribute values are applied
- * - bindings are configured;
- *   - readable bindings are observed
- *   - writable bindings are observed and state is observed to write values back
- */
 
 export function initView(fn, config) {
   let { appContext, elementContext, attributes, children, channelPrefix, name } = config;
@@ -42,7 +30,7 @@ export function initView(fn, config) {
   ||         Parse attrs         ||
   \*=============================*/
 
-  const channel = appContext.debug.makeChannel(`${channelPrefix}:${name || fn.name || "<anonymous>"}`);
+  const channel = appContext.debug.makeChannel(`${channelPrefix}:${name || fn.viewName || fn.name || "<anonymous>"}`);
 
   /*=============================*\
   ||    Define context object    ||
@@ -55,14 +43,6 @@ export function initView(fn, config) {
 
     attrs: attributes,
 
-    state(initialValue) {
-      return makeState(initialValue);
-    },
-
-    merge(...args) {
-      return makeMerged(...args);
-    },
-
     observe(...args) {
       let callback = args.pop();
 
@@ -72,10 +52,10 @@ export function initView(fn, config) {
 
       const start = () => {
         if (isObservable(args.at(0))) {
-          const $merged = makeMerged(...args, callback);
+          const $merged = joinStates(...args, callback);
           return $merged.subscribe(() => undefined);
         } else {
-          const $merged = makeMerged(...args, () => undefined);
+          const $merged = joinStates(...args, () => undefined);
           return $merged.subscribe(callback);
         }
       };
@@ -125,117 +105,6 @@ export function initView(fn, config) {
     },
     afterDisconnect(callback) {
       afterDisconnectCallbacks.push(callback);
-    },
-
-    /**
-     * Displays an element when `value` is truthy.
-     *
-     * @example
-     * ctx.when($value, h("h1", "If you can read this the value is truthy."))
-     *
-     * // Switch-style case array.
-     * ctx.when($value, [
-     *   ["value1", <ThisView />],
-     *   ["value2", <ThatView />],
-     *   ["value3", <AnotherView />],
-     *   <FallbackView />
-     * ])
-     *
-     * @param $value - Binding to observe.
-     * @param element - Element to display when value is truthy.
-     */
-    when($value, element) {
-      return new OutletBlueprint($value, (value) => {
-        if (value) {
-          return element;
-        }
-
-        return null;
-      });
-    },
-
-    /**
-     * Displays an element when `value` is falsy.
-     *
-     * @example
-     * ctx.unless($value, h("h1", "If you can read this the value is falsy."))
-     *
-     * @param $value - Binding to observe.
-     * @param element - Element to display.
-     */
-    unless($value, element) {
-      return new OutletBlueprint($value, (value) => {
-        if (!value) {
-          return element;
-        }
-
-        return null;
-      });
-    },
-
-    /**
-     * Matches a value against a set of cases, returning the matching result.
-     *
-     * @example
-     * ctx.match($value, [
-     *   ["value1", <ThisView />],
-     *   ["value2", <ThatView />],
-     *   ["value3", <AnotherView />],
-     *   <FallbackView />
-     * ]);
-     *
-     * @param $value - Binding to observe.
-     * @param cases - Array of cases with an optional fallback as a final element.
-     */
-    match($value, cases) {
-      if (!isArray(cases)) {
-        throw new TypeError(
-          `Expected an array of [value, result] cases to match as a second argument. Got: ${typeof cases}`
-        );
-      }
-
-      const fallback = !isArray(cases[cases.length - 1]) ? cases.pop() : null;
-
-      return new OutletBlueprint($value, (value) => {
-        for (const [cond, result] of cases) {
-          let matches = false;
-
-          if (isFunction(cond) && cond(value)) {
-            matches = true;
-          } else if (cond === value) {
-            matches = true;
-          }
-
-          if (matches) {
-            if (isFunction(result)) {
-              return result(value);
-            }
-
-            return result;
-          }
-        }
-
-        if (fallback) {
-          if (isFunction(fallback)) {
-            return fallback(value);
-          }
-
-          return fallback;
-        }
-
-        return null;
-      });
-    },
-
-    /**
-     * Repeats a component once for each item in `$values`.
-     *
-     * @param $value - Binding containing an array.
-     * @param renderFn - Function to repeat for each item. Takes $value and $index bindings and returns an element to render.
-     * @param keyFn - Takes an item and returns a unique key. If not provided then the item identity (===) will be used.
-     */
-    repeat($value, renderFn, keyFn = null) {
-      return new RepeatBlueprint($value, renderFn, keyFn);
     },
 
     /**

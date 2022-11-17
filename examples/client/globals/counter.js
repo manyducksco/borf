@@ -1,10 +1,10 @@
-import { makeGlobal } from "@woofjs/client";
+import { makeGlobal, makeState } from "@woofjs/client";
 
 /**
  * Exposes a $current value and increments it by one each second.
  */
 export default makeGlobal((ctx) => {
-  const $$current = ctx.state(0);
+  const $$current = makeState(0);
 
   ctx.afterConnect(() => {
     setInterval(() => {

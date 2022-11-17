@@ -1,4 +1,4 @@
-import { makeView } from "@woofjs/client";
+import { joinStates, makeState, makeView } from "@woofjs/client";
 
 const flightTypes = ["one-way flight", "return flight"];
 const flipped = (value) => !value; // Boolean flipping function.
@@ -27,7 +27,7 @@ function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
-export default makeView((ctx) => {
+export default makeView((ctx, h) => {
   ctx.name = "7guis:FlightBooker";
   ctx.defaultState = {
     flightType: flightTypes[0],
@@ -37,14 +37,14 @@ export default makeView((ctx) => {
     returnDateIsValid: true,
   };
 
-  const $$flightType = ctx.state(flightTypes[0]);
-  const $$startDate = ctx.state(formatDate(new Date()));
-  const $$returnDate = ctx.state(formatDate(new Date()));
-  const $$startDateIsValid = ctx.state(true);
-  const $$returnDateIsValid = ctx.state(true);
+  const $$flightType = makeState(flightTypes[0]);
+  const $$startDate = makeState(formatDate(new Date()));
+  const $$returnDate = makeState(formatDate(new Date()));
+  const $$startDateIsValid = makeState(true);
+  const $$returnDateIsValid = makeState(true);
 
   // Concatenate date states and convert through a function into a new state.
-  const $formIsValid = ctx.merge(
+  const $formIsValid = joinStates(
     $$startDateIsValid,
     $$returnDateIsValid,
     (x, y) => x && y
@@ -68,8 +68,8 @@ export default makeView((ctx) => {
               $$flightType.set(e.target.value);
             }}
           >
-            {ctx.repeat(flightTypes, ($value) => {
-              const $selected = ctx.merge(
+            {h.repeat(flightTypes, ($value) => {
+              const $selected = joinStates(
                 $value,
                 $$flightType,
                 (x, y) => x === y

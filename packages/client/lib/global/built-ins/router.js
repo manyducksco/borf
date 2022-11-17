@@ -8,6 +8,7 @@ import { isObject, isFunction } from "../../helpers/typeChecking.js";
 import { joinPath } from "../../helpers/joinPath.js";
 import { resolvePath } from "../../helpers/resolvePath.js";
 import { catchLinks } from "../../helpers/catchLinks.js";
+import { makeState } from "../../helpers/state.js";
 import { initView } from "../../view/helpers/initView.js";
 
 import { OutletBlueprint } from "../../view/blueprints/Outlet.js";
@@ -44,12 +45,12 @@ export default makeGlobal((ctx) => {
     }
   }
 
-  const $$view = ctx.state();
+  const $$view = makeState();
 
-  const $$route = ctx.state("");
-  const $$path = ctx.state("");
-  const $$params = ctx.state({});
-  const $$query = ctx.state({});
+  const $$route = makeState("");
+  const $$path = makeState("");
+  const $$params = makeState({});
+  const $$query = makeState({});
 
   // Track and skip updating the URL when the change came from URL navigation
   let isRouteChange = false;

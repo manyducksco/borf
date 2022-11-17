@@ -1,7 +1,7 @@
-import { makeGlobal } from "@woofjs/client";
+import { makeGlobal, makeState } from "@woofjs/client";
 
 export default makeGlobal((ctx) => {
-  const $$position = ctx.state({ x: 0, y: 0 });
+  const $$position = makeState({ x: 0, y: 0 });
 
   ctx.afterConnect(() => {
     ctx.log("listening for mousemove events");

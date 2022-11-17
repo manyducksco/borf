@@ -227,53 +227,108 @@ declare module "@woofjs/client" {
   };
 
   /*==================================*\
-  ||           State Context          ||
+  ||            Observables            ||
   \*==================================*/
+
+  export interface Observable<Value> {
+    subscribe(observer: Observer<Value>): Subscription;
+
+    subscribe(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): Subscription;
+  }
+
+  export interface Observer<Value> {
+    next(value: Value): void;
+  }
+
+  export interface Subscription {
+    unsubscribe(): void;
+  }
+
+  /*==================================*\
+  ||          State / Bindings        ||
+  \*==================================*/
+
+  export interface Readable<Value> extends Observable<Value> {
+    /**
+     * Returns the current value.
+     */
+    get(): Value;
+
+    /**
+     * Returns a new state whose value reflects the return value of `transform` when called with this state's value.
+     *
+     * @param transform - Function to convert the value of the current state into the value of a new state.
+     */
+    as<NewValue>(transform: (value: Value) => NewValue): Readable<NewValue>;
+  }
+
+  export interface Writable<Value> extends Readable<Value> {
+    /**
+     * Assigns a new value to the bound state.
+     *
+     * @param value - New value.
+     */
+    set(value: Value): void;
+
+    /**
+     * Assigns a new value to the bound state through a callback function that takes the current value and returns a new one.
+     */
+    update(callback: (value: Value) => Value): void;
+
+    /**
+     * Assigns a new value to the bound state through a callback function that takes the current value and mutates it to the desired value.
+     */
+    update(callback: (value: Value) => void): void;
+
+    /**
+     * Creates a new read-only binding to this value.
+     */
+    readable(): Readable<Value>;
+  }
+
+  export function makeState<Value>(initialValue: Value): Writable<Value>;
+  export function makeState<Value = any>(): Writable<Value | undefined>;
+
+  export function joinStates<ValueOne, ValueTwo, Result>(
+    observableOne: Observable<ValueOne>,
+    observableTwo: Observable<ValueTwo>,
+    join: (valueOne: ValueOne, valueTwo: ValueTwo) => Result
+  ): Readable<Result>;
+
+  export function joinStates<ValueOne, ValueTwo, ValueThree, Result>(
+    observableOne: Observable<ValueOne>,
+    observableTwo: Observable<ValueTwo>,
+    observableThree: Observable<ValueThree>,
+    join: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => Result
+  ): Readable<Result>;
+
+  export function joinStates<ValueOne, ValueTwo, ValueThree, ValueFour, Result>(
+    observableOne: Observable<ValueOne>,
+    observableTwo: Observable<ValueTwo>,
+    observableThree: Observable<ValueThree>,
+    observableFour: Observable<ValueFour>,
+    join: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree, valueFour: ValueFour) => Result
+  ): Readable<Result>;
+
+  export function joinStates<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive, Result>(
+    observableOne: Observable<ValueOne>,
+    observableTwo: Observable<ValueTwo>,
+    observableThree: Observable<ValueThree>,
+    observableFour: Observable<ValueFour>,
+    observableFive: Observable<ValueFive>,
+    join: (
+      valueOne: ValueOne,
+      valueTwo: ValueTwo,
+      valueThree: ValueThree,
+      valueFour: ValueFour,
+      valueFive: ValueFive
+    ) => Result
+  ): Readable<Result>;
 
   /**
    * Context for stateful objects like views and globals.
    */
   interface StateContext {
-    state<Value>(initialValue: Value): Writable<Value>;
-
-    state<Value = any>(): Writable<Value | undefined>;
-
-    merge<ValueOne, ValueTwo, Result>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      fn: (valueOne: ValueOne, valueTwo: ValueTwo) => Result
-    ): Readable<Result>;
-
-    merge<ValueOne, ValueTwo, ValueThree, Result>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      fn: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => Result
-    ): Readable<Result>;
-
-    merge<ValueOne, ValueTwo, ValueThree, ValueFour, Result>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      observableFour: Observable<ValueFour>,
-      fn: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree, valueFour: ValueFour) => Result
-    ): Readable<Result>;
-
-    merge<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive, Result>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      observableFour: Observable<ValueFour>,
-      observableFive: Observable<ValueFive>,
-      fn: (
-        valueOne: ValueOne,
-        valueTwo: ValueTwo,
-        valueThree: ValueThree,
-        valueFour: ValueFour,
-        valueFive: ValueFive
-      ) => Result
-    ): Readable<Result>;
-
     /**
      * Subscribes to an observable while this view is connected.
      *
@@ -329,66 +384,6 @@ declare module "@woofjs/client" {
   }
 
   /*==================================*\
-  ||            Observables            ||
-  \*==================================*/
-
-  export interface Observable<Value> {
-    subscribe(observer: Observer<Value>): Subscription;
-
-    subscribe(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): Subscription;
-  }
-
-  export interface Observer<Value> {
-    next(value: Value): void;
-  }
-
-  export interface Subscription {
-    unsubscribe(): void;
-  }
-
-  /*==================================*\
-  ||             Bindings             ||
-  \*==================================*/
-
-  export interface Readable<Value> extends Observable<Value> {
-    /**
-     * Returns the current value.
-     */
-    get(): Value;
-
-    /**
-     * Returns a new state that takes the return value of `callbackFn` when called with the value of this state.
-     *
-     * @param convert - Function to convert the value of the current state into the value of a new state.
-     */
-    as<NewValue>(convert: (value: Value) => NewValue): Readable<NewValue>;
-  }
-
-  export interface Writable<Value> extends Readable<Value> {
-    /**
-     * Assigns a new value to the bound state.
-     *
-     * @param value - New value.
-     */
-    set(value: Value): void;
-
-    /**
-     * Assigns a new value to the bound state through a callback function that takes the current value and returns a new one.
-     */
-    update(callback: (value: Value) => Value): void;
-
-    /**
-     * Assigns a new value to the bound state through a callback function that takes the current value and mutates it to the desired value.
-     */
-    update(callback: (value: Value) => void): void;
-
-    /**
-     * Creates a new read-only binding to this value.
-     */
-    readable(): Readable<Value>;
-  }
-
-  /*==================================*\
   ||               View               ||
   \*==================================*/
 
@@ -417,6 +412,12 @@ declare module "@woofjs/client" {
   export function h(view: View<any, any>, ...children: WoofElement[]): Blueprint;
   export function h<Attrs>(view: View<Attrs, any>, attrs: Attrs, ...children: WoofElement[]): Blueprint;
 
+  type MatchCondCallback<Value> = (value: Value) => boolean;
+  type MatchResultCallback<Value> = (value: Value) => Blueprint;
+
+  type MatchCondition<Value> = Value | MatchCondCallback<Value>;
+  type MatchResult<Value> = WoofElement | MatchResultCallback<Value>;
+
   /**
    * Creates an instance of an HTML element or view.
    */
@@ -434,9 +435,39 @@ declare module "@woofjs/client" {
     (view: View<any, any>, ...children: WoofElement[]): Blueprint;
 
     <Attrs>(view: View<Attrs, any>, attrs: Attrs, ...children: WoofElement[]): Blueprint;
+
+    /**
+     * Displays `element` when `value` is truthy.
+     */
+    when(value: Observable<any>, element: WoofElement): Blueprint;
+
+    /**
+     * Displays `element` when `value` is falsy.
+     */
+    unless(value: Observable<any>, element: WoofElement): Blueprint;
+
+    match<Value>(
+      value: Observable<Value>,
+      cases: ([MatchCondition<Value>, MatchResult<Value>] | MatchResult<Value>)[]
+    ): Blueprint;
+
+    /**
+     * Repeats an element for each item in `value`. Value must be iterable.
+     * The `render` function takes bindings to the item and index and returns an element to render.
+     */
+    repeat<Value>(
+      value: Value[] | Observable<Value[]>,
+      render: ($value: Readable<Value>, $index: Readable<number>) => WoofElement,
+      key?: (value: Value) => any
+    ): Blueprint;
   }
 
   export function makeView<Attrs = any, Globals = any>(fn: ViewFunction<Attrs, Globals>): View<Attrs, Globals>;
+
+  export function makeView<Attrs = any, Globals = any>(
+    name: string,
+    fn: ViewFunction<Attrs, Globals>
+  ): View<Attrs, Globals>;
 
   export type ViewFunction<Attrs = any, Globals = any> = (
     ctx: ViewContext<Attrs, Globals>,
@@ -447,12 +478,6 @@ declare module "@woofjs/client" {
   export type View<Attrs, Globals> = (props: Attrs & { children?: any }) => {
     create(): Blueprint;
   };
-
-  type MatchCondCallback<Value> = (value: Value) => boolean;
-  type MatchResultCallback<Value> = (value: Value) => Blueprint;
-
-  type MatchCondition<Value> = Value | MatchCondCallback<Value>;
-  type MatchResult<Value> = WoofElement | MatchResultCallback<Value>;
 
   export interface ViewContext<Attrs = any, Globals = any> extends StateContext, DebugChannel {
     /**
@@ -491,31 +516,6 @@ declare module "@woofjs/client" {
      * Displays nested content where it is called.
      */
     outlet(): WoofElement;
-
-    /**
-     * Displays `element` when `value` is truthy.
-     */
-    when(value: Observable<any>, element: WoofElement): Blueprint;
-
-    /**
-     * Displays `element` when `value` is falsy.
-     */
-    unless(value: Observable<any>, element: WoofElement): Blueprint;
-
-    match<Value>(
-      value: Observable<Value>,
-      cases: ([MatchCondition<Value>, MatchResult<Value>] | MatchResult<Value>)[]
-    ): Blueprint;
-
-    /**
-     * Repeats an element for each item in `value`. Value must be iterable.
-     * The `render` function takes bindings to the item and index and returns an element to render.
-     */
-    repeat<Value>(
-      value: Value[] | Observable<Value[]>,
-      renderFn: ($value: Readable<Value>, $index: Readable<number>) => WoofElement,
-      keyFn?: (value: Value) => any
-    ): Blueprint;
   }
 
   /*==================================*\
@@ -551,7 +551,7 @@ declare module "@woofjs/client" {
   \*==================================*/
 
   export type GlobalDialog = Global<{
-    make<Attrs extends DialogViewAttrs>(viewFn: ViewFunction<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
+    make<Attrs extends DialogViewAttrs>(fn: ViewFunction<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
     make<Attrs extends DialogViewAttrs>(view: View<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
   }>;
 

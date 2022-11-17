@@ -57,7 +57,7 @@ export function makeState(initialValue) {
         throw new TypeError(`Expected a transform function. Got: ${typeof transformFn}`);
       }
 
-      return makeTransformed(ctx, transformFn);
+      return transformState(ctx, transformFn);
     },
 
     subscribe(observer) {
@@ -125,7 +125,7 @@ function makeReadable(ctx) {
  * @param source - Original state container.
  * @param transformFn - Function to transform values.
  */
-export function makeTransformed(source, transformFn) {
+export function transformState(source, transformFn) {
   const binding = {
     get() {
       let currentValue = source.get();
@@ -144,7 +144,7 @@ export function makeTransformed(source, transformFn) {
         throw new TypeError(`Expected a transform function. Got: ${typeof transformFn}`);
       }
 
-      return makeTransformed(binding, transformFn);
+      return transformState(binding, transformFn);
     },
 
     subscribe(observer) {
@@ -189,7 +189,7 @@ export function makeTransformed(source, transformFn) {
  *
  * @param args - Two or more state bindings to merge followed by a merge function.
  */
-export function makeMerged(...args) {
+export function joinStates(...args) {
   let mergeFn = args.pop();
   let sources = args;
 
@@ -268,7 +268,7 @@ export function makeMerged(...args) {
         throw new TypeError(`Expected a transform function. Got: ${typeof transformFn}`);
       }
 
-      return makeTransformed(binding, transformFn);
+      return transformState(binding, transformFn);
     },
 
     subscribe(observer) {

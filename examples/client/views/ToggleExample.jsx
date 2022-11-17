@@ -1,4 +1,4 @@
-import { makeView } from "@woofjs/client";
+import { makeState, makeView } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 /**
@@ -9,7 +9,7 @@ export const ToggleExample = makeView((ctx) => {
 
   logLifecycle(ctx);
 
-  const $$active = ctx.state(false);
+  const $$active = makeState(false);
   const $status = $$active.as((t) => (t ? "ON" : "OFF"));
 
   return (

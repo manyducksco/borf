@@ -1,15 +1,41 @@
-import { makeTransitions, makeView } from "@woofjs/client";
+import { makeTransitions, makeView, makeState } from "@woofjs/client";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const ConditionalExample = makeView((ctx) => {
+export const ConditionalExample = makeView((ctx, h) => {
   ctx.name = "ConditionalExample";
 
-  const $$show = ctx.state(false);
+  const $$show = makeState(false);
 
   logLifecycle(ctx);
 
   const $label = $$show.as((t) => (t ? "Hide Text" : "Show Text"));
+
+  // return h("div", { class: "example" }, [
+  //   h("h3", "Conditional rendering with ", h("code", "when()")),
+  //   h("div", [
+  //     h(
+  //       "button",
+  //       {
+  //         style: { width: 100 },
+  //         onclick: () => {
+  //           $$show.update((t) => !t);
+  //         },
+  //       },
+  //       $label
+  //     ),
+  //     h.when(
+  //       $$show,
+  //       animated(
+  //         h(
+  //           "span",
+  //           { style: { display: "inline-block", paddingLeft: "0.5rem" } },
+  //           "Hello there!"
+  //         )
+  //       )
+  //     ),
+  //   ]),
+  // ]);
 
   return (
     <div class="example">
@@ -27,7 +53,7 @@ export const ConditionalExample = makeView((ctx) => {
         >
           {$label}
         </button>
-        {ctx.when(
+        {h.when(
           $$show,
           animated(
             <span style={{ display: "inline-block", paddingLeft: "0.5rem" }}>

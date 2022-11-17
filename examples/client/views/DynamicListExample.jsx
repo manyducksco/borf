@@ -1,14 +1,14 @@
-import { makeTransitions, makeView } from "@woofjs/client";
+import { makeTransitions, makeView, makeState } from "@woofjs/client";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];
 
-export const DynamicListExample = makeView((ctx) => {
+export const DynamicListExample = makeView((ctx, h) => {
   ctx.name = "DynamicListExample";
 
-  const $$shoppingList = ctx.state(initialList);
-  const $$inputValue = ctx.state("");
+  const $$shoppingList = makeState(initialList);
+  const $$inputValue = makeState("");
 
   logLifecycle(ctx);
 
@@ -61,7 +61,7 @@ export const DynamicListExample = makeView((ctx) => {
           <button onclick={reset}>Reset List</button>
         </div>
 
-        {ctx.repeat($$shoppingList, ($item) => {
+        {h.repeat($$shoppingList, ($item) => {
           const onclick = () => {
             alert($item.get());
           };

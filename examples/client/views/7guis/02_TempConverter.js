@@ -1,9 +1,9 @@
-import { makeView } from "@woofjs/client";
+import { makeState, makeView } from "@woofjs/client";
 
 export default makeView((ctx) => {
   ctx.name = "7guis:TempConverter";
 
-  const $$celsius = ctx.state(10);
+  const $$celsius = makeState(10);
 
   const setCelsius = (c) => {
     $$celsius.set(c);

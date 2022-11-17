@@ -1,16 +1,16 @@
-import { makeView } from "@woofjs/client";
+import { makeView, makeState, joinStates } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const FormExample = makeView((ctx) => {
+export const FormExample = makeView((ctx, h) => {
   ctx.name = "FormExample";
 
-  const $$firstName = ctx.state("");
-  const $$lastName = ctx.state("");
-  const $$age = ctx.state(18);
+  const $$firstName = makeState("");
+  const $$lastName = makeState("");
+  const $$age = makeState(18);
 
   logLifecycle(ctx);
 
-  const $errors = ctx.merge(
+  const $errors = joinStates(
     $$firstName,
     $$lastName,
     $$age,
@@ -56,9 +56,9 @@ export const FormExample = makeView((ctx) => {
 
         <button disabled={$hasErrors}>Submit</button>
 
-        {ctx.when(
+        {h.when(
           $hasErrors,
-          ctx.repeat($errors, ($error) => {
+          h.repeat($errors, ($error) => {
             return <div style="color:red">{$error}</div>;
           })
         )}

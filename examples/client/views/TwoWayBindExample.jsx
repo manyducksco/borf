@@ -1,11 +1,11 @@
-import { makeView } from "@woofjs/client";
+import { makeState, makeView } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export const TwoWayBindExample = makeView((ctx) => {
   ctx.name = "TwoWayBindExample";
 
-  const $$text = ctx.state("edit me");
-  const $$size = ctx.state(18);
+  const $$text = makeState("edit me");
+  const $$size = makeState(18);
 
   logLifecycle(ctx);
 

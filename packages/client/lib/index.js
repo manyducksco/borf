@@ -2,6 +2,7 @@
 export { makeApp } from "./makeApp.js";
 export { makeView } from "./view/makeView.js";
 export { makeGlobal } from "./global/makeGlobal.js";
+export { makeState, joinStates } from "./helpers/state.js";
 
 // Utilities
 export { makeRef } from "./makeRef.js";

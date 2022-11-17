@@ -1,14 +1,19 @@
-import { makeView, makeTransitions } from "@woofjs/client";
+import {
+  makeView,
+  makeTransitions,
+  makeState,
+  joinStates,
+} from "@woofjs/client";
 import { animate, bounceOut } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const bestColor = "#ff0088";
 
-export const MouseFollowerExample = makeView((ctx) => {
+export const MouseFollowerExample = makeView((ctx, h) => {
   ctx.name = "MouseFollowerExample";
 
-  const $$enabled = ctx.state(false);
-  const $$color = ctx.state(bestColor);
+  const $$enabled = makeState(false);
+  const $$color = makeState(bestColor);
 
   logLifecycle(ctx);
 
@@ -46,7 +51,7 @@ export const MouseFollowerExample = makeView((ctx) => {
     <div class="example">
       <h3>More complex state management</h3>
       <div>
-        {ctx.when(
+        {h.when(
           $$enabled,
           // Transitions can set view state, so this kind of composition is possible.
           animated((ctx) => {
@@ -62,7 +67,7 @@ export const MouseFollowerExample = makeView((ctx) => {
                   backgroundColor: $$color,
 
                   // Composite transform based on mouse position and animated scale.
-                  transform: ctx.merge(
+                  transform: joinStates(
                     $position,
                     $scale,
                     (p, s) => `translate(${p.x}px, ${p.y}px) scale(${s})`
@@ -77,7 +82,7 @@ export const MouseFollowerExample = makeView((ctx) => {
           Change Follower Color
         </button>
 
-        {ctx.when(
+        {h.when(
           $isNotBestColor,
           <button onclick={resetColor} disabled={$disabled}>
             Reset to Best Color

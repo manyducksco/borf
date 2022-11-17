@@ -1,4 +1,4 @@
-import { h } from "../../h.js";
+import { h } from "../h.js";
 import { initView } from "./initView.js";
 import { isView } from "../../helpers/typeChecking.js";
 import { makeDebug } from "../../helpers/makeDebug.js";
