@@ -2,10 +2,10 @@ import { makeView } from "@woofjs/client";
 import styles from "./index.module.css";
 import Panel from "../Panel";
 
-export default makeView(function AboutPanel(ctx) {
+export default makeView((ctx) => {
   const { $currentView } = ctx.global("view");
 
-  const $description = $currentView.map((view) => {
+  const $description = $currentView.as((view) => {
     if (view) {
       return view.description || "View has no description.";
     } else {

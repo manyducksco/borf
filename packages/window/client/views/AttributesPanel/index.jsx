@@ -1,4 +1,4 @@
-import { repeat, unless, when, watch, makeProxyState } from "@woofjs/client";
+import { makeView } from "@woofjs/client";
 
 import styles from "./index.module.css";
 
@@ -17,7 +17,7 @@ import InputToggle from "./InputToggle";
 /**
  * Displays the current window's attributes and provides inputs for editing them.
  */
-export default function AttributesPanel() {
+export default makeView((ctx, h) => {
   this.debug.name = "AttributesPanel";
 
   const { $currentView } = this.services.view;
@@ -29,16 +29,14 @@ export default function AttributesPanel() {
 
   return (
     <Panel header={<h1>🎛️ Attributes</h1>}>
-      {unless($hasAttrs, <p>This view has no attributes.</p>)}
+      {h.unless($hasAttrs, <p>This view has no attributes.</p>)}
 
-      {when(
+      {h.when(
         $hasAttrs,
         <ul class={styles.attrsList}>
-          {repeat($attributes, function Attribute() {
-            const $attribute = this.$attrs.map("value");
-
-            const $name = $attribute.map("name");
-            const $description = $attribute.map("description");
+          {h.repeat($attributes, ($attribute) => {
+            const $name = $attribute.as((x) => x.name);
+            const $description = $attribute.as((x) => x.description);
 
             // Using a proxy to have one state that can point to other states over time.
             const $value = makeProxyState($attribute.get("$value"));
@@ -52,46 +50,44 @@ export default function AttributesPanel() {
               <li class={styles.attrGroup}>
                 <h2 class={styles.attrHeader}>{$name}</h2>
 
-                {when(
+                {h.when(
                   $description,
                   <p class={styles.attrDescription}>{$description}</p>
                 )}
 
-                {watch($attribute, ({ input }) => {
-                  switch (input.type) {
-                    case "text":
-                      return <InputText $value={$value} />;
-                    case "number":
-                      return <InputNumber $value={$value} />;
-                    case "toggle":
-                      return <InputToggle $value={$value} />;
-                    case "color":
-                      return <InputColor $value={$value} />;
-                    case "date":
-                      return <InputDate $value={$value} />;
-                    case "select":
-                      return (
-                        <InputSelect $value={$value} options={input.options} />
-                      );
-                    case "radio":
-                      return (
-                        <InputRadio $value={$value} options={input.options} />
-                      );
-                    case "range":
-                      return (
-                        <InputRange
-                          $value={$value}
-                          min={input.min}
-                          max={input.max}
-                          step={input.step}
-                        />
-                      );
-                    case "none":
-                      return <InputNone value={$value} />;
-                    default:
-                      throw new Error(`Unknown input type: ${input.type}`);
-                  }
-                })}
+                {h.match($attribute, [
+                  ["text", <InputText $value={$value} />],
+                  ["number", <InputNumber $value={$value} />],
+                  ["toggle", <InputToggle $value={$value} />],
+                  ["color", <InputColor $value={$value} />],
+                  ["date", <InputDate $value={$value} />],
+                  [
+                    "select",
+                    ({ input }) => (
+                      <InputSelect $value={$value} options={input.options} />
+                    ),
+                  ],
+                  [
+                    "radio",
+                    ({ input }) => (
+                      <InputRadio $value={$value} options={input.options} />
+                    ),
+                  ],
+                  [
+                    "range",
+                    ({ input }) => (
+                      <InputRange
+                        $value={$value}
+                        min={input.min}
+                        max={input.max}
+                        step={input.step}
+                      />
+                    ),
+                  ],
+                  ["none", <InputNone value={$value} />],
+                  ({ input }) =>
+                    throw new Error(`Unknown input type: ${input.type}`),
+                ])}
               </li>
             );
           })}
@@ -99,4 +95,4 @@ export default function AttributesPanel() {
       )}
     </Panel>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { repeat, when, unless, makeProxyState } from "@woofjs/client";
+import { makeState, makeView } from "@woofjs/client";
 import dayjs from "dayjs";
 
 import styles from "./index.module.css";
@@ -8,20 +8,20 @@ import Panel from "../Panel";
 /**
  * Displays action log.
  */
-export default function ActionsPanel() {
-  this.debug.name = "ActionsPanel";
+export default makeView((ctx, h) => {
+  ctx.name = "ActionsPanel";
 
-  const { $currentView } = this.services.view;
+  const { $currentView } = ctx.global("view");
 
-  const $actionLog = makeProxyState([]);
-  const $actionsCalled = $actionLog.map((log) => log.length > 0);
+  const $$actionLog = makeState([]);
+  const $actionsCalled = $actionLog.as((log) => log.length > 0);
 
-  this.watchState($currentView, (view) => {
-    if (view) {
-      $actionLog.proxy(view.actions.$log);
-    } else {
-      $actionLog.unproxy();
-    }
+  ctx.observe($currentView, (view) => {
+    // if (view) {
+    //   $actionLog.proxy(view.actions.$log);
+    // } else {
+    //   $actionLog.unproxy();
+    // }
   });
 
   return (
@@ -40,16 +40,16 @@ export default function ActionsPanel() {
         </div>
       }
     >
-      {unless($actionsCalled, <p>No actions fired yet.</p>)}
+      {h.unless($actionsCalled, <p>No actions fired yet.</p>)}
 
-      {when(
+      {h.when(
         $actionsCalled,
         <ol class={styles.actionList}>
-          {repeat($actionLog, function () {
-            const $name = this.$attrs.map("value.name");
-            const $message = this.$attrs.map("value.message");
-            const $timestamp = this.$attrs.map("value.timestamp", (ts) =>
-              dayjs(ts).format("HH:mm:ss")
+          {h.repeat($$actionLog, function ($value) {
+            const $name = $value.as((x) => x.name);
+            const $message = $value.as((x) => x.message);
+            const $timestamp = $value.as((x) =>
+              dayjs(x.timestamp).format("HH:mm:ss")
             );
 
             return (
@@ -62,4 +62,4 @@ export default function ActionsPanel() {
       )}
     </Panel>
   );
-}
+});

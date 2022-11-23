@@ -3,7 +3,7 @@
  */
 // views-index.js is generated from the views in the project
 import views from "./views-index.js";
-import { h, makeState, mergeStates } from "@woofjs/client";
+import { h, makeState, joinStates } from "@woofjs/client";
 import { makeDebug, initService, catchLinks } from "@woofjs/client/helpers";
 
 function makeMockRouter() {

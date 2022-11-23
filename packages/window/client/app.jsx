@@ -1,7 +1,7 @@
 import "./global.css";
 import styles from "./app.module.css";
 
-import woof from "@woofjs/client";
+import { makeApp } from "@woofjs/client";
 
 import screen from "./globals/screen.js";
 import view from "./globals/view.js";
@@ -13,7 +13,7 @@ import NavigationPanel from "./views/NavigationPanel";
 import ViewPanel from "./views/ViewPanel";
 import Sidebar from "./views/Sidebar";
 
-const app = woof();
+const app = makeApp();
 
 app.global("screen", screen);
 app.global("view", view);

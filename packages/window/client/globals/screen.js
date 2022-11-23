@@ -1,11 +1,9 @@
-import { makeGlobal } from "@woofjs/client";
+import { makeGlobal, makeState } from "@woofjs/client";
 
 export default makeGlobal((ctx) => {
-  ctx.defaultState = {
-    dragging: false,
-  };
+  const $$dragging = makeState(false);
 
   return {
-    $dragging: ctx.readable("dragging"),
+    $dragging: $$dragging.readable(),
   };
 });

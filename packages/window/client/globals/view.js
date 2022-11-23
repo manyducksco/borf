@@ -1,4 +1,4 @@
-import { makeGlobal } from "@woofjs/client";
+import { makeGlobal, makeState, makeRef, joinStates } from "@woofjs/client";
 
 export default makeGlobal((ctx) => {
   let API;
@@ -7,15 +7,11 @@ export default makeGlobal((ctx) => {
   const router = ctx.global("router");
   const page = ctx.global("page");
 
-  ctx.defaultState = {
-    collections: [],
-  };
+  const $$collections = makeState([]);
+  const frameRef = makeRef();
 
-  const frameRef = ctx.ref();
-  const $collections = ctx.readable("collections");
-
-  const $currentView = ctx.merge(
-    $collections,
+  const $currentView = joinStates(
+    $$collections,
     router.$params,
     (collections, params) => {
       let matched;
@@ -40,16 +36,16 @@ export default makeGlobal((ctx) => {
     frame.addEventListener("load", () => {
       API = frame.contentWindow.WOOF_VIEW;
 
-      API.onEvent("mount", (component) => {
-        $currentAttrs.proxy(component.$attrs);
-      });
+      // API.onEvent("mount", (component) => {
+      //   $currentAttrs.proxy(component.$attrs);
+      // });
+      //
+      // API.onEvent("unmount", () => {
+      //   $currentAttrs.unproxy();
+      //   $currentAttrs.set({});
+      // });
 
-      API.onEvent("unmount", () => {
-        $currentAttrs.unproxy();
-        $currentAttrs.set({});
-      });
-
-      const oldCollections = $collections.get();
+      const oldCollections = $$collections.get();
       const newCollections = API.getCollections();
 
       // Transfer existing attributes onto reloaded views.
@@ -83,7 +79,7 @@ export default makeGlobal((ctx) => {
         ctx.log("reloaded views");
       }
 
-      ctx.set("collections", newCollections);
+      $$collections.set(newCollections);
       API.setActiveView($currentView.get()?.id);
 
       frameLoaded = true;
@@ -98,8 +94,8 @@ export default makeGlobal((ctx) => {
 
   return {
     frameRef,
-    $collections,
+    $collections: $$collections.readable(),
     $currentView,
-    $currentAttrs,
+    // $currentAttrs,
   };
 });
