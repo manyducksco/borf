@@ -130,15 +130,19 @@ declare module "@woofjs/server" {
 
   interface Request {}
 
-  interface Response {}
+  interface Response<Body> {
+    status: number;
+    headers: Record<string, string>;
+    body: Body;
+  }
 
-  interface RouteContext {
+  interface RouteContext<ResponseBody = any> {
     cache: {
       [key: string]: any;
     };
     global(name: string): any;
     request: Request;
-    response: Response;
+    response: Response<ResponseBody>;
     redirect(to: string, statusCode?: number): void;
     next(): Function;
   }

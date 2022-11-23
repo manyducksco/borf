@@ -42,6 +42,10 @@ export function wrapRouter(router, configFn) {
       },
     });
 
+    if (!matched) {
+      throw new Error(`No route for path '${path}' is registered on this router.`);
+    }
+
     const mockReq = {
       headers: config.headers ?? {},
       url: path,
