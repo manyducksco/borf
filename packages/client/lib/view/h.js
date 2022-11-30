@@ -56,11 +56,16 @@ export function h(element, ...args) {
  *
  * @param $value - Binding to observe.
  * @param element - Element to display when value is truthy.
+ * @param otherwise - Alternate element to display when value is falsy.
  */
-h.when = function when($value, element) {
+h.when = function when($value, element, otherwise) {
   return new OutletBlueprint($value, (value) => {
     if (value) {
       return element;
+    }
+
+    if (otherwise) {
+      return otherwise;
     }
 
     return null;
@@ -78,7 +83,7 @@ h.when = function when($value, element) {
  */
 h.unless = function unless($value, element) {
   return new OutletBlueprint($value, (value) => {
-    if (!value) {
+    if (value) {
       return element;
     }
 

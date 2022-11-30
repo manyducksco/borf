@@ -8,10 +8,10 @@ import { makeDebug, initService, catchLinks } from "@woofjs/client/helpers";
 
 function makeMockRouter() {
   return {
-    $path: makeState("/test").map(),
-    $route: makeState("/test").map(),
-    $params: makeState({}).map(),
-    $query: makeState({}),
+    $path: makeState("/test").readable(),
+    $route: makeState("/test").readable(),
+    $params: makeState({}).readable(),
+    $$query: makeState({}),
 
     back() {},
     forward() {},
@@ -21,7 +21,7 @@ function makeMockRouter() {
 
 function makeMockPage() {
   return {
-    $title: makeState("Page Title"),
+    $$title: makeState("Page Title"),
   };
 }
 

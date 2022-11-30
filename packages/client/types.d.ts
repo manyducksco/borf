@@ -442,6 +442,11 @@ declare module "@woofjs/client" {
     when(value: Observable<any>, element: WoofElement): Blueprint;
 
     /**
+     * Displays `element` when `value` is truthy and `otherwise`... otherwise.
+     */
+    when(value: Observable<any>, element: WoofElement, otherwise: WoofElement): Blueprint;
+
+    /**
      * Displays `element` when `value` is falsy.
      */
     unless(value: Observable<any>, element: WoofElement): Blueprint;

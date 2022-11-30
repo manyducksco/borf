@@ -55,16 +55,31 @@ export class ElementView {
       this.node = document.createElement(tag);
     }
 
+    const attributes = {};
+
+    for (const key in attrs) {
+      const normalized = key.toLowerCase();
+
+      switch (normalized) {
+        case "classname":
+          attributes["class"] = attrs[key];
+          break;
+        default:
+          attributes[key] = attrs[key];
+          break;
+      }
+    }
+
     // Call ref function, if present.
-    if (attrs.ref) {
-      if (isFunction(attrs.ref)) {
-        attrs.ref(this.node);
+    if (attributes.ref) {
+      if (isFunction(attributes.ref)) {
+        attributes.ref(this.node);
       } else {
         throw new Error("Ref is not a function. Got: " + attrs.ref);
       }
     }
 
-    this.attrs = omit(["ref"], attrs);
+    this.attrs = omit(["ref"], attributes);
     this.children = children.map((c) => c.build({ appContext, elementContext }));
   }
 

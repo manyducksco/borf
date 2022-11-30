@@ -210,9 +210,11 @@ export function initView(fn, config) {
       isConnected = true;
 
       if (!wasConnected) {
-        for (const callback of afterConnectCallbacks) {
-          callback();
-        }
+        setTimeout(() => {
+          for (const callback of afterConnectCallbacks) {
+            callback();
+          }
+        }, 0);
       }
     },
 
@@ -233,14 +235,16 @@ export function initView(fn, config) {
 
         isConnected = false;
 
-        for (const callback of afterDisconnectCallbacks) {
-          callback();
-        }
+        setTimeout(() => {
+          for (const callback of afterDisconnectCallbacks) {
+            callback();
+          }
 
-        for (const subscription of subscriptions) {
-          subscription.unsubscribe();
-        }
-        subscriptions = [];
+          for (const subscription of subscriptions) {
+            subscription.unsubscribe();
+          }
+          subscriptions = [];
+        }, 0);
       }
     },
   };

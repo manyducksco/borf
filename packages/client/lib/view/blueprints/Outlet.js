@@ -44,21 +44,21 @@ class OutletView {
   }
 
   _render(value) {
-    if (value == null) {
+    let rendered = this.render ? this.render(value) : value;
+
+    if (rendered == null) {
       return this._unrender();
     }
 
-    let rendered = this.render ? this.render(value) : value;
-
     // Render function returned a function (that should return an element).
-    if (rendered && isFunction(rendered)) {
+    if (isFunction(rendered)) {
       rendered = rendered();
     }
 
     // Render function didn't return anything.
-    if (rendered === undefined) {
-      throw new TypeError(`Outlet: render function returned undefined.`);
-    }
+    // if (rendered === undefined) {
+    //   throw new TypeError(`Outlet: render function returned undefined.`);
+    // }
 
     this._unrender();
 

@@ -35,7 +35,7 @@ export function makeState(initialValue) {
 
     update(callback) {
       if (!isFunction(callback)) {
-        throw new TypeError("Expected second argument to be an update callback function. Got: " + typeof callback);
+        throw new TypeError(`Expected an update function. Got: ${typeof callback}`);
       }
 
       const newValue = produce(currentValue, callback);
@@ -50,10 +50,8 @@ export function makeState(initialValue) {
       return makeReadable(ctx);
     },
 
-    as(transformFn = null) {
-      if (transformFn == null) {
-        transformFn = (x) => x;
-      } else if (!isFunction(transformFn)) {
+    as(transformFn) {
+      if (!isFunction(transformFn)) {
         throw new TypeError(`Expected a transform function. Got: ${typeof transformFn}`);
       }
 
@@ -125,7 +123,7 @@ function makeReadable(ctx) {
  * @param source - Original state container.
  * @param transformFn - Function to transform values.
  */
-export function transformState(source, transformFn) {
+function transformState(source, transformFn) {
   const binding = {
     get() {
       let currentValue = source.get();
@@ -137,10 +135,8 @@ export function transformState(source, transformFn) {
       return currentValue;
     },
 
-    as(transformFn = null) {
-      if (transformFn == null) {
-        transformFn = (x) => x;
-      } else if (!isFunction(transformFn)) {
+    as(transformFn) {
+      if (!isFunction(transformFn)) {
         throw new TypeError(`Expected a transform function. Got: ${typeof transformFn}`);
       }
 
@@ -204,10 +200,12 @@ export function joinStates(...args) {
   let subscriptions = [];
   let values = [];
 
-  function updateValue() {
+  function updateValue(force = false) {
     const value = mergeFn(...values);
 
-    if (!deepEqual(value, currentValue)) {
+    // Skip equality check on initial subscription to guarantee
+    // that observers receive an initial value, even if undefined.
+    if (force || !deepEqual(value, currentValue)) {
       currentValue = value;
 
       for (const observer of observers) {
@@ -236,7 +234,7 @@ export function joinStates(...args) {
 
       observing = true;
 
-      updateValue();
+      updateValue(true);
     }
   }
 
@@ -261,10 +259,8 @@ export function joinStates(...args) {
       return value;
     },
 
-    as(transformFn = null) {
-      if (transformFn == null) {
-        transformFn = (x) => x;
-      } else if (!isFunction(transformFn)) {
+    as(transformFn) {
+      if (!isFunction(transformFn)) {
         throw new TypeError(`Expected a transform function. Got: ${typeof transformFn}`);
       }
 
@@ -282,10 +278,10 @@ export function joinStates(...args) {
 
       observers.push(observer);
 
-      if (!observing) {
-        subscribeToSources();
-      } else {
+      if (observing) {
         observer.next?.(this.get());
+      } else {
+        subscribeToSources();
       }
 
       return {

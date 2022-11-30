@@ -12,12 +12,10 @@ const appContext = {
   debug: makeDebug(),
 };
 
-appContext.globals.app = appContext;
-
 /**
  * Creates a mock DOM node for testing.
  */
-function makeDOMNode() {
+export function makeDOMNode() {
   const self = {
     isDOM: true,
     parentNode: null,

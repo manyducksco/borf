@@ -1,6 +1,8 @@
+import { makeState } from "../../../helpers/state.js";
+
 export default function mockPage(ctx) {
   return {
-    $$title: ctx.state("Test"),
-    $visibility: ctx.state("visible").readable(),
+    $$title: makeState("Test"),
+    $visibility: makeState("visible").readable(),
   };
 }

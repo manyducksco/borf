@@ -18,26 +18,31 @@ export default makeGlobal((ctx) => {
   ctx[APP_CONTEXT].$dialogs = $$dialogs.readable();
 
   return {
-    make: (view, options) => makeDialog(view, options, ctx),
+    make: (view, options) => makeDialog(view, options, ctx, $$dialogs),
   };
 });
 
-function makeDialog(viewFn, options, ctx) {
-  const view = new ViewBlueprint(viewFn).build({
-    appContext: ctx[APP_CONTEXT],
-    elementContext: ctx[ELEMENT_CONTEXT],
-  });
+function makeDialog(viewFn, options, ctx, $$dialogs) {
+  const blueprint = new ViewBlueprint(viewFn);
 
-  const $$open = ctx.state(true);
+  const $$open = makeState(true);
   let openSubscription;
+  let view;
 
   function open(attributes = {}) {
-    view.state.set({ ...attributes, open: true });
+    $$open.set(true);
 
-    ctx.update("dialogs", (current) => {
-      if (!current.includes(view)) {
-        current.push(view);
-      }
+    view = blueprint.build({
+      appContext: ctx[APP_CONTEXT],
+      elementContext: ctx[ELEMENT_CONTEXT],
+      attributes: {
+        ...attributes,
+        $$open,
+      },
+    });
+
+    $$dialogs.update((current) => {
+      current.push(view);
     });
 
     openSubscription = $$open.subscribe((value) => {
@@ -48,12 +53,15 @@ function makeDialog(viewFn, options, ctx) {
   }
 
   function close() {
-    ctx.update("dialogs", (current) => {
-      current.splice(
-        current.findIndex((v) => v === view),
-        1
-      );
-    });
+    if (view) {
+      $$dialogs.update((current) => {
+        current.splice(
+          current.findIndex((v) => v === view),
+          1
+        );
+      });
+      view = null;
+    }
 
     if (openSubscription) {
       openSubscription.unsubscribe();

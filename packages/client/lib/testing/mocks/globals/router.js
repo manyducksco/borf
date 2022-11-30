@@ -1,8 +1,10 @@
+import { makeState } from "../../../helpers/state.js";
+
 export default function mockRouter(ctx) {
-  const $$path = ctx.state("/test");
-  const $$route = ctx.state("/test");
-  const $$params = ctx.state({});
-  const $$query = ctx.state({});
+  const $$path = makeState("/test");
+  const $$route = makeState("/test");
+  const $$params = makeState({});
+  const $$query = makeState({});
 
   return {
     $path: $$path.readable(),
