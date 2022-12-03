@@ -463,7 +463,7 @@ declare module "@woofjs/client" {
     repeat<Value>(
       value: Value[] | Observable<Value[]>,
       render: ($value: Readable<Value>, $index: Readable<number>) => WoofElement,
-      key?: (value: Value) => any
+      key?: (value: Value, index: number) => any
     ): Blueprint;
   }
 

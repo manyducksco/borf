@@ -7,5 +7,5 @@ export function makeRef(initialValue) {
     }
 
     currentValue = newValue;
-  }
+  };
 }
