@@ -401,16 +401,18 @@ declare module "@woofjs/client" {
     build(appContext: AppContext<any>): View<unknown, unknown>;
   }
 
-  export function h<Tag extends keyof JSX.IntrinsicElements>(
-    tag: Tag,
-    attributes: JSX.IntrinsicElements[Tag],
-    ...children: WoofElement[]
-  ): Blueprint;
-  export function h(tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Blueprint;
-  export function h(tag: string, ...children: WoofElement[]): Blueprint;
+  export const h: HypertextFunction;
 
-  export function h(view: View<any, any>, ...children: WoofElement[]): Blueprint;
-  export function h<Attrs>(view: View<Attrs, any>, attrs: Attrs, ...children: WoofElement[]): Blueprint;
+  // export function h<Tag extends keyof JSX.IntrinsicElements>(
+  //   tag: Tag,
+  //   attributes: JSX.IntrinsicElements[Tag],
+  //   ...children: WoofElement[]
+  // ): Blueprint;
+  // export function h(tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Blueprint;
+  // export function h(tag: string, ...children: WoofElement[]): Blueprint;
+  //
+  // export function h(view: View<any, any>, ...children: WoofElement[]): Blueprint;
+  // export function h<Attrs>(view: View<Attrs, any>, attrs: Attrs, ...children: WoofElement[]): Blueprint;
 
   type MatchCondCallback<Value> = (value: Value) => boolean;
   type MatchResultCallback<Value> = (value: Value) => Blueprint;
@@ -450,6 +452,49 @@ declare module "@woofjs/client" {
      * Displays `element` when `value` is falsy.
      */
     unless(value: Observable<any>, element: WoofElement): Blueprint;
+
+    observe<Value>(observable: Observable<Value>, callback: (value: Value) => WoofElement | null): Blueprint;
+
+    observe<ValueOne, ValueTwo>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      callback: (valueOne: ValueOne, valueTwo: ValueTwo) => WoofElement | null
+    ): Blueprint;
+
+    observe<ValueOne, ValueTwo, ValueThree>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      callback: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => WoofElement | null
+    ): Blueprint;
+
+    observe<ValueOne, ValueTwo, ValueThree, ValueFour>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      observableFour: Observable<ValueFour>,
+      callback: (
+        valueOne: ValueOne,
+        valueTwo: ValueTwo,
+        valueThree: ValueThree,
+        valueFour: ValueFour
+      ) => WoofElement | null
+    ): Blueprint;
+
+    observe<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      observableFour: Observable<ValueFour>,
+      observableFive: Observable<ValueFive>,
+      callback: (
+        valueOne: ValueOne,
+        valueTwo: ValueTwo,
+        valueThree: ValueThree,
+        valueFour: ValueFour,
+        valueFive: ValueFive
+      ) => WoofElement | null
+    ): Blueprint;
 
     match<Value>(
       value: Observable<Value>,
@@ -1121,6 +1166,9 @@ declare namespace JSX {
 
   type EventHandler<E> = (event: E) => void;
 
+  /**
+   * Events supported by all HTML elements.
+   */
   interface HTMLGlobalEvents {
     /**
      * The `auxclick` event is fired at an Element when a non-primary pointing device button
@@ -1426,6 +1474,36 @@ declare namespace JSX {
      * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/submit_event
      */
     onsubmit: EventHandler<SubmitEvent>;
+
+    /**
+     * The `touchcancel` event is fired when one or more touch points have been disrupted in an
+     * implementation-specific manner (for example, too many touch points are created).
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchcancel_event
+     */
+    ontouchcancel: EventHandler<TouchEvent>;
+
+    /**
+     * The `touchend` event fires when one or more touch points are removed from the touch surface.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchend_event
+     */
+    ontouchend: EventHandler<TouchEvent>;
+
+    /**
+     * The `touchstart` event is fired when one or more touch points are placed on the touch surface.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchstart_event
+     */
+    ontouchstart: EventHandler<TouchEvent>;
+
+    /**
+     * The `touchmove` event is fired when one or more touch points are moved along the touch surface.
+     *
+     * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchmove_event
+     */
+    ontouchmove: EventHandler<TouchEvent>;
+
     /**
      * The `toggle` event fires when the open/closed state of a `<details>` element is toggled.
      *

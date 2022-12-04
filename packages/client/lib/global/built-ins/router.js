@@ -11,7 +11,7 @@ import { catchLinks } from "../../helpers/catchLinks.js";
 import { makeState } from "../../helpers/state.js";
 import { initView } from "../../view/helpers/initView.js";
 
-import { OutletBlueprint } from "../../view/blueprints/Outlet.js";
+import { ObserverBlueprint } from "../../view/blueprints/Observer.js";
 
 /**
  * Top level navigation service.
@@ -82,7 +82,7 @@ export default makeGlobal((ctx) => {
   ctx.afterConnect(() => {
     const root = appContext.rootElement;
 
-    appOutlet = new OutletBlueprint($$view.readable()).build({ appContext });
+    appOutlet = new ObserverBlueprint($$view.readable()).build({ appContext });
     appOutlet.connect(root);
 
     history.listen(onRouteChange);

@@ -1,10 +1,10 @@
-import { isDOM, isView, isString, isObservable, isArray, isFunction } from "../../helpers/typeChecking.js";
+import { isDOM, isView, isString, isObservable } from "../../helpers/typeChecking.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../../keys.js";
 import { h } from "../h.js";
 
 import { makeState, joinStates } from "../../helpers/state.js";
 
-import { OutletBlueprint } from "../blueprints/Outlet.js";
+import { ObserverBlueprint } from "../blueprints/Observer.js";
 
 export function initView(fn, config) {
   let { appContext, elementContext, attributes, children, channelPrefix, name } = config;
@@ -111,7 +111,7 @@ export function initView(fn, config) {
      * Renders nested elements passed to this view.
      */
     outlet() {
-      return new OutletBlueprint($$children.readable());
+      return new ObserverBlueprint($$children.readable());
     },
   };
 

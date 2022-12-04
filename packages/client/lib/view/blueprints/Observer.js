@@ -4,7 +4,7 @@ import { toBlueprints } from "../helpers/toBlueprints.js";
 /**
  * Wraps a binding in a view.
  */
-export class OutletBlueprint {
+export class ObserverBlueprint {
   constructor(binding, render) {
     this.binding = binding;
     this.render = render || ((x) => x);

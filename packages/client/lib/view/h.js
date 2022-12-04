@@ -4,8 +4,9 @@ import { ElementBlueprint } from "./blueprints/Element.js";
 import { ViewBlueprint } from "./blueprints/View.js";
 
 import { Fragment } from "./Fragment.js";
-import { OutletBlueprint } from "./blueprints/Outlet.js";
+import { ObserverBlueprint } from "./blueprints/Observer.js";
 import { RepeatBlueprint } from "./blueprints/Repeat.js";
+import { joinStates } from "../helpers/state.js";
 
 /**
  * Template function. Used in views to render content.
@@ -44,22 +45,14 @@ export function h(element, ...args) {
  * Displays an element when `value` is truthy.
  *
  * @example
- * ctx.when($value, h("h1", "If you can read this the value is truthy."))
- *
- * // Switch-style case array.
- * ctx.when($value, [
- *   ["value1", <ThisView />],
- *   ["value2", <ThatView />],
- *   ["value3", <AnotherView />],
- *   <FallbackView />
- * ])
+ * h.when($value, h("h1", "If you can read this the value is truthy."))
  *
  * @param $value - Binding to observe.
  * @param element - Element to display when value is truthy.
- * @param otherwise - Alternate element to display when value is falsy.
+ * @param otherwise - (Optional) alternate element to display when value is falsy.
  */
 h.when = function when($value, element, otherwise) {
-  return new OutletBlueprint($value, (value) => {
+  return new ObserverBlueprint($value, (value) => {
     if (value) {
       return element;
     }
@@ -76,14 +69,14 @@ h.when = function when($value, element, otherwise) {
  * Displays an element when `value` is falsy.
  *
  * @example
- * ctx.unless($value, h("h1", "If you can read this the value is falsy."))
+ * h.unless($value, h("h1", "If you can read this the value is falsy."))
  *
  * @param $value - Binding to observe.
  * @param element - Element to display.
  */
 h.unless = function unless($value, element) {
-  return new OutletBlueprint($value, (value) => {
-    if (value) {
+  return new ObserverBlueprint($value, (value) => {
+    if (!value) {
       return element;
     }
 
@@ -92,10 +85,38 @@ h.unless = function unless($value, element) {
 };
 
 /**
+ * Renders a dynamic DOM chunk that changes with one or more states.
+ *
+ * @example
+ * h.observe($state1, $state2, (value1, value2) => {
+ *   if (value1) {
+ *     return <ThisView />;
+ *   }
+ *
+ *   if (value2) {
+ *     return <ThatView />;
+ *   }
+ *
+ *   return <FallbackView />
+ * });
+ *
+ * @param args - One or more observables followed by a render function that takes their values.
+ */
+h.observe = function observe(...args) {
+  const render = args.pop();
+
+  if (!isFunction(render)) {
+    throw new TypeError("Expected a function as the last argument. Got: " + render);
+  }
+
+  return new ObserverBlueprint(joinStates(...args, render));
+};
+
+/**
  * Matches a value against a set of cases, returning the matching result.
  *
  * @example
- * ctx.match($value, [
+ * h.match($value, [
  *   ["value1", <ThisView />],
  *   ["value2", <ThatView />],
  *   ["value3", <AnotherView />],
@@ -112,7 +133,7 @@ h.match = function match($value, cases) {
 
   const fallback = !isArray(cases[cases.length - 1]) ? cases.pop() : null;
 
-  return new OutletBlueprint($value, (value) => {
+  return new ObserverBlueprint($value, (value) => {
     for (const [cond, result] of cases) {
       let matches = false;
 
