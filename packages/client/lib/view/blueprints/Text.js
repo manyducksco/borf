@@ -1,4 +1,4 @@
-import { isFunction } from "../../helpers/typeChecking.js";
+import { isObservable } from "../../helpers/typeChecking.js";
 
 export class TextBlueprint {
   constructor(binding, defaultValue) {
@@ -43,7 +43,7 @@ class TextView {
 
   connect(parent, after = null) {
     if (!this.isConnected) {
-      if (isFunction(this.binding.subscribe)) {
+      if (isObservable(this.binding)) {
         this.subscription = this.binding.subscribe((value) => {
           this._update(value);
         });

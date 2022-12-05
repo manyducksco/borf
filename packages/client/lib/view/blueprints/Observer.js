@@ -1,4 +1,4 @@
-import { isFunction } from "../../helpers/typeChecking.js";
+import { isFunction, isObservable } from "../../helpers/typeChecking.js";
 import { toBlueprints } from "../helpers/toBlueprints.js";
 
 /**
@@ -37,30 +37,25 @@ class OutletView {
     return this.node.parentNode != null;
   }
 
-  _unrender() {
+  _cleanup() {
     while (this.connectedViews.length > 0) {
       this.connectedViews.pop().disconnect();
     }
   }
 
-  _render(value) {
+  _update(value) {
     let rendered = this.render ? this.render(value) : value;
 
+    this._cleanup();
+
     if (rendered == null) {
-      return this._unrender();
+      return;
     }
 
     // Render function returned a function (that should return an element).
     if (isFunction(rendered)) {
       rendered = rendered();
     }
-
-    // Render function didn't return anything.
-    // if (rendered === undefined) {
-    //   throw new TypeError(`Outlet: render function returned undefined.`);
-    // }
-
-    this._unrender();
 
     if (rendered != null) {
       const blueprints = toBlueprints(rendered);
@@ -88,22 +83,29 @@ class OutletView {
     parent.insertBefore(this.node, after?.nextSibling);
 
     if (!wasConnected) {
-      this.subscription = this.binding.subscribe((value) => {
-        // TODO: Errors are being eaten in code called from here.
-        try {
-          this._render(value);
-        } catch (err) {
-          console.error(err);
-        }
-      });
+      if (isObservable(this.binding)) {
+        this.subscription = this.binding.subscribe((value) => {
+          // TODO: Errors are being eaten in code called from here.
+          try {
+            this._update(value);
+          } catch (err) {
+            console.error(err);
+          }
+        });
+      } else {
+        this._update(this.binding);
+      }
     }
   }
 
   disconnect() {
     if (this.isConnected) {
-      this.subscription.unsubscribe();
+      if (this.subscription) {
+        this.subscription.unsubscribe();
+      }
+
       this.node.parentNode.removeChild(this.node);
-      this._unrender();
+      this._cleanup();
     }
   }
 }

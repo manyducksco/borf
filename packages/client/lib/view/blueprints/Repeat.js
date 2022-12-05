@@ -1,4 +1,4 @@
-import { isArray, isFunction } from "../../helpers/typeChecking.js";
+import { isArray, isObservable } from "../../helpers/typeChecking.js";
 import { makeState } from "../../helpers/state.js";
 
 /**
@@ -108,7 +108,7 @@ class RepeatView {
     if (!this.isConnected) {
       parent.insertBefore(this.node, after?.nextSibling);
 
-      if (isFunction(this.binding.subscribe)) {
+      if (isObservable(this.binding)) {
         this.subscription = this.binding.subscribe((value) => {
           this._update(value);
         });
