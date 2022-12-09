@@ -4,7 +4,7 @@ import { makeGlobal } from "../makeGlobal.js";
 
 import { APP_CONTEXT } from "../../keys.js";
 import { matchRoute } from "../../helpers/routing.js";
-import { isObject, isFunction } from "../../helpers/typeChecking.js";
+import { isObject, isFunction, isString } from "../../helpers/typeChecking.js";
 import { joinPath } from "../../helpers/joinPath.js";
 import { resolvePath } from "../../helpers/resolvePath.js";
 import { catchLinks } from "../../helpers/catchLinks.js";
@@ -134,8 +134,6 @@ export default makeGlobal((ctx) => {
             if (activeLayer?.id !== matchedLayer.id) {
               activeLayers = activeLayers.slice(0, i);
 
-              const view = initView(matchedLayer.view, { appContext });
-
               const parentLayer = activeLayers[activeLayers.length - 1];
 
               const mount = (view) => {
@@ -153,17 +151,29 @@ export default makeGlobal((ctx) => {
                 });
               };
 
+              let redirected = false;
+              let preloadResult = {};
+
               if (matchedLayer.preload) {
-                await preloadRoute(matchedLayer.preload, mount, {
+                preloadResult = await preloadRoute(matchedLayer.preload, mount, {
                   appContext,
                   elementContext: {},
                 });
+
+                if (preloadResult.redirectPath) {
+                  // Redirect to other path.
+                  redirected = true;
+                  navigate(preloadResult.redirectPath, { replace: true });
+                }
               }
 
-              mount(view);
+              if (!redirected) {
+                const view = initView(matchedLayer.view, { appContext, attributes: preloadResult.attributes ?? {} });
+                mount(view);
 
-              // Push and connect new active layer.
-              activeLayers.push({ id: matchedLayer.id, view });
+                // Push and connect new active layer.
+                activeLayers.push({ id: matchedLayer.id, view });
+              }
             }
           }
         }
@@ -183,6 +193,23 @@ export default makeGlobal((ctx) => {
           parseNumbers: true,
         })
       );
+    }
+  }
+
+  function navigate(...args) {
+    let path = "";
+    let options = {};
+
+    if (isObject(args[args.length - 1])) {
+      options = args.pop();
+    }
+
+    path = resolvePath(history.location.pathname, joinPath(...args));
+
+    if (options.replace) {
+      history.replace(path);
+    } else {
+      history.push(path);
     }
   }
 
@@ -208,34 +235,38 @@ export default makeGlobal((ctx) => {
      *
      * @param args - One or more path segments optionally followed by an options object.
      */
-    navigate(...args) {
-      let path = "";
-      let options = {};
-
-      if (isObject(args[args.length - 1])) {
-        options = args.pop();
-      }
-
-      path = resolvePath(history.location.pathname, joinPath(...args));
-
-      if (options.replace) {
-        history.replace(path);
-      } else {
-        history.push(path);
-      }
-    },
+    navigate,
   };
 });
 
 /**
- * Perform preload with route's preload function. Called only when this component is mounted on a route.
+ * Prepare data before a route is mounted using a preload function.
+ *
+ * The preload function can return an object that will be passed to the mounted view as attributes.
  *
  * @param preload - Function that defines preload loading for a route.
  * @param mount - Function that takes a component instance and connects it to the DOM.
  */
 async function preloadRoute(preload, mount, { appContext, elementContext }) {
   return new Promise((resolve, reject) => {
+    let resolved = false;
+
     const ctx = {
+      global: (name) => {
+        if (!isString(name)) {
+          throw new TypeError("Expected a string.");
+        }
+
+        if (appContext.globals[name]) {
+          return appContext.globals[name].exports;
+        }
+
+        throw new Error(`Global '${name}' is not registered on this app.`);
+      },
+
+      /**
+       * Show another element temporarily while this route is loading.
+       */
       show: (element) => {
         if (element?.isBlueprint) {
           element = element.build({ appContext, elementContext });
@@ -245,15 +276,36 @@ async function preloadRoute(preload, mount, { appContext, elementContext }) {
 
         mount(element);
       },
-      done: () => {
-        resolve();
+
+      /**
+       * Redirect to another route instead of loading this one.
+       * @param {string} to - Redirect path (e.g. `/login`)
+       */
+      redirect(to) {
+        if (!resolved) {
+          resolve({
+            redirectPath: to,
+          });
+          resolved = true;
+        }
       },
     };
 
     const result = preload(ctx);
 
-    if (result && isFunction(result.then)) {
-      result.then(() => ctx.done());
+    if (!isFunction(result.then)) {
+      throw new TypeError(`Preload function must return a Promise.`);
     }
+
+    result.then((attributes) => {
+      if (attributes && !isObject(attributes)) {
+        throw new TypeError(`Preload function must return an attributes object or null/undefined. Got: ${attributes}`);
+      }
+
+      if (!resolved) {
+        resolve({ attributes });
+        resolved = true;
+      }
+    });
   });
 }

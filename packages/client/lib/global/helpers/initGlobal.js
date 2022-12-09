@@ -69,9 +69,9 @@ export function initGlobal(fn, config) {
 
   return {
     exports,
-    beforeConnect() {
+    async beforeConnect() {
       for (const callback of beforeConnectCallbacks) {
-        callback();
+        await callback();
       }
     },
     afterConnect() {

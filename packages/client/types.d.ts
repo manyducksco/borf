@@ -106,10 +106,10 @@ declare module "@woofjs/client" {
   export type AppLifecycleCallback<Globals> = (ctx: AppContext<Globals>) => void | Promise<void>;
 
   export type DefaultGlobals = {
-    dialog: ReturnType<GlobalDialog>;
-    router: ReturnType<GlobalRouter>;
-    http: ReturnType<GlobalHTTP>;
-    page: ReturnType<GlobalPage>;
+    "@dialog": ReturnType<GlobalDialog>;
+    "@router": ReturnType<GlobalRouter>;
+    "@http": ReturnType<GlobalHTTP>;
+    "@page": ReturnType<GlobalPage>;
   };
 
   export type AppGlobals<T> = DefaultGlobals & {
@@ -130,6 +130,12 @@ declare module "@woofjs/client" {
      * Show content while this route is preloading.
      */
     show(element: WoofElement): void;
+
+    /**
+     * Redirect to another path instead of loading this route.
+     * @param {string} to - Redirect path.
+     */
+    redirect(to: string): void;
   };
 
   // These two options objects need to be defined separately or the context
@@ -138,7 +144,7 @@ declare module "@woofjs/client" {
     /**
      * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
      */
-    preload?: (ctx: PreloadContext<Globals>) => Promise<void> | void;
+    preload?: (ctx: PreloadContext<Globals>) => Promise<void | Attrs>;
     /**
      * The view to display when this route matches.
      */
@@ -153,7 +159,7 @@ declare module "@woofjs/client" {
     /**
      * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
      */
-    preload?: (ctx: PreloadContext<Globals>) => Promise<void> | void;
+    preload?: (ctx: PreloadContext<Globals>) => Promise<void | Attrs>;
     /**
      * The view to display when this route matches.
      */

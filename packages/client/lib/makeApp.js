@@ -18,10 +18,10 @@ const builtInGlobals = [dialog, router, page, http];
  */
 export function makeApp(options = {}) {
   const globals = {
-    dialog,
-    router,
-    page,
-    http,
+    "@dialog": dialog,
+    "@router": router,
+    "@page": page,
+    "@http": http,
   };
 
   const appContext = {
@@ -287,7 +287,7 @@ export function makeApp(options = {}) {
 
       // beforeConnect is the first opportunity to configure globals before anything else happens.
       for (const global of Object.values(appContext.globals)) {
-        global.beforeConnect();
+        await global.beforeConnect();
       }
 
       return onBeforeConnect().then(async () => {
