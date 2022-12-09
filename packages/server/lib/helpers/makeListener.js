@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import send from "send";
-import { isString, isTemplate } from "./typeChecking.js";
+import { isString, isTemplate, isFunction } from "./typeChecking.js";
 import { matchRoute } from "./routing.js";
 import { parseFormBody } from "./parseFormBody.js";
 import { EventSource } from "../objects/EventSource.js";
@@ -119,6 +119,16 @@ export function makeListener(appContext) {
         }
       }
 
+      if (!ctx.request.body) {
+        const buffers = [];
+
+        for await (const chunk of req) {
+          buffers.push(chunk);
+        }
+
+        ctx.request.body = Buffer.concat(buffers);
+      }
+
       let index = -1;
       const handlers = [...middlewares, ...matched.data.handlers];
 
@@ -150,6 +160,8 @@ export function makeListener(appContext) {
         return;
       }
 
+      let bodyIsStream = false;
+
       // Automatically handle content-type and body formatting when returned from handler function.
       if (ctx.response.body) {
         if (isTemplate(ctx.response.body)) {
@@ -157,6 +169,9 @@ export function makeListener(appContext) {
           ctx.response.body = await ctx.response.body.render();
         } else if (isString(ctx.response.body)) {
           ctx.response.headers.set("content-type", "text/plain");
+        } else if (isFunction(ctx.response.body.pipe)) {
+          // Is a stream; handled below
+          bodyIsStream = true;
         } else if (!ctx.response.headers.has("content-type")) {
           ctx.response.headers.set("content-type", "application/json");
           ctx.response.body = JSON.stringify(ctx.response.body);
@@ -165,11 +180,15 @@ export function makeListener(appContext) {
 
       res.writeHead(ctx.response.status, ctx.response.headers.toJSON());
 
-      if (ctx.response.body != null) {
-        res.write(Buffer.from(ctx.response.body));
-      }
+      if (bodyIsStream) {
+        ctx.response.body.pipe(res);
+      } else {
+        if (ctx.response.body != null) {
+          res.write(Buffer.from(ctx.response.body));
+        }
 
-      res.end();
+        res.end();
+      }
     } else if (!canStatic(req)) {
       res.writeHead(404, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ message: "Route not found." }));
