@@ -10,7 +10,7 @@ import { Response } from "../objects/Response.js";
 import { Headers } from "../objects/Headers.js";
 
 // Display detailed logging when true.
-const VERBOSE_LOGGING = true;
+const VERBOSE_LOGGING = false;
 
 /**
  * Returns a request handler callback for a node `http` server.
@@ -204,8 +204,6 @@ export function makeListener(appContext) {
       if (fallback && canFallback(req, VERBOSE_LOGGING)) {
         match = appContext.staticCache.get(fallback);
       }
-
-      console.log({ fallback, match, url: req.url, method: req.method, cache: appContext.staticCache._statics });
 
       if (!match) {
         res.writeHead(404, { "Content-Type": "application/json" });

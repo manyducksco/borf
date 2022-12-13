@@ -3,3 +3,6 @@
 
 export const APP_CONTEXT = Symbol("appContext");
 export const ELEMENT_CONTEXT = Symbol("elementContext");
+
+export const READABLE = Symbol("Readable");
+export const WRITABLE = Symbol("Writable");

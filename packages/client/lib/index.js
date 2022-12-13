@@ -9,3 +9,6 @@ export { h } from "./view/h.js";
 export { makeRef } from "./makeRef.js";
 export { makeDebounce } from "./makeDebounce.js";
 export { makeTransitions } from "./view/makeTransitions.js";
+
+// Helpers
+export { isReadable, isWritable } from "./helpers/typeChecking.js";

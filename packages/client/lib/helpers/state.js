@@ -1,5 +1,6 @@
 import produce from "immer";
 import OBSERVABLE from "symbol-observable";
+import { READABLE, WRITABLE } from "../keys.js";
 import { deepEqual } from "./deepEqual.js";
 import { isFunction, isObject } from "./typeChecking.js";
 import { omit } from "./omit.js";
@@ -82,11 +83,11 @@ export function makeState(initialValue) {
     [OBSERVABLE]: {
       value: () => ctx,
     },
-    isBinding: {
-      value: true,
+    [READABLE]: {
+      value: () => ctx,
     },
-    isWritable: {
-      value: true,
+    [WRITABLE]: {
+      value: () => ctx,
     },
   });
 
@@ -105,11 +106,8 @@ function makeReadable(ctx) {
     [OBSERVABLE]: {
       value: () => readable,
     },
-    isBinding: {
-      value: true,
-    },
-    isWritable: {
-      value: false,
+    [READABLE]: {
+      value: () => readable,
     },
   });
 
@@ -169,11 +167,8 @@ function transformState(source, transformFn) {
     [OBSERVABLE]: {
       value: () => binding,
     },
-    isBinding: {
-      value: true,
-    },
-    isWritable: {
-      value: false,
+    [READABLE]: {
+      value: () => binding,
     },
   });
 
@@ -300,11 +295,8 @@ export function joinStates(...args) {
     [OBSERVABLE]: {
       value: () => binding,
     },
-    isBinding: {
-      value: true,
-    },
-    isWritable: {
-      value: false,
+    [READABLE]: {
+      value: () => binding,
     },
   });
 

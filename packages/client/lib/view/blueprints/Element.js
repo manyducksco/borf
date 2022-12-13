@@ -4,8 +4,9 @@ import {
   isString,
   isNumber,
   isFunction,
-  isBinding,
   isObservable,
+  isWritable,
+  isReadable,
 } from "../../helpers/typeChecking.js";
 import { omit } from "../../helpers/omit.js";
 import { toBlueprints } from "../helpers/toBlueprints.js";
@@ -126,14 +127,14 @@ function applyAttrs(element, attrs, subscriptions) {
 
     // Bind or set value depending on its type.
     if (key === "value") {
-      if (isBinding(value)) {
+      if (isReadable(value)) {
         subscriptions.push(
           value.subscribe((current) => {
             element.value = String(current);
           })
         );
 
-        if (value.isWritable) {
+        if (isWritable(value)) {
           const listener = (e) => {
             const updated = toTypeOf(value.get(), e.target.value);
             value.set(updated);

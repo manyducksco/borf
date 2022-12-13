@@ -292,6 +292,9 @@ declare module "@woofjs/client" {
     readable(): Readable<Value>;
   }
 
+  export function isReadable<Value>(value: unknown): value is Readable<Value>;
+  export function isWritable<Value>(value: unknown): value is Writable<Value>;
+
   export function makeState<Value>(initialValue: Value): Writable<Value>;
   export function makeState<Value = any>(): Writable<Value | undefined>;
 

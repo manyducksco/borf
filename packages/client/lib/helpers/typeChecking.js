@@ -1,4 +1,5 @@
-import $$observable from "symbol-observable";
+import OBSERVABLE from "symbol-observable";
+import { READABLE, WRITABLE } from "../keys.js";
 
 export const isFunction = (value) => typeof value === "function";
 
@@ -12,10 +13,10 @@ export const isObject = (value) => value != null && typeof value === "object" &&
 
 export const isDOM = (value) => value != null && (value instanceof Node || value.isDOM === true);
 
-export const isBinding = (value) => isObject(value) && value.isBinding === true;
-
 export const isView = (value) => isObject(value) && value.isView === true;
 
 export const isBlueprint = (value) => isObject(value) && value.isBlueprint === true;
 
-export const isObservable = (value) => (value && value[$$observable] && value === value[$$observable]()) || false;
+export const isObservable = (value) => (value && value[OBSERVABLE] && value === value[OBSERVABLE]()) || false;
+export const isReadable = (value) => (value && value[READABLE] && value === value[READABLE]()) || false;
+export const isWritable = (value) => (value && value[WRITABLE] && value === value[WRITABLE]()) || false;
