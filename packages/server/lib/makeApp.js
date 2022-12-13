@@ -18,13 +18,18 @@ const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), process.env.WOOF_STATIC_P
  */
 class StaticCache {
   _values = new Map();
+  _statics;
+
+  constructor(statics) {
+    const files = makeStaticFileCache(statics);
+
+    for (const file of files) {
+      this._values.set(file.href, file);
+    }
+  }
 
   get(filePath) {
     return this._values.get(filePath);
-  }
-
-  set(filePath, fileInfo) {
-    return this._values.set(filePath, fileInfo);
   }
 }
 
@@ -40,21 +45,25 @@ class NoCache {
 
   get(filePath) {
     for (const loc of this._statics) {
-      const targetPath = path.join(loc.source, filePath);
+      if (!filePath.startsWith(loc.path)) {
+        continue;
+      }
+
+      const fileName = filePath.replace(loc.path, "");
+      const targetPath = path.join(loc.source, fileName);
 
       if (fs.existsSync(targetPath)) {
         const hasGZ = fs.existsSync(targetPath + ".gz");
 
         return {
           source: loc.source,
-          path: filePath,
+          path: fileName,
+          href: filePath,
           gz: hasGZ ? filePath + ".gz" : null,
         };
       }
     }
   }
-
-  set(filePath, fileInfo) {}
 }
 
 export function makeApp(options = {}) {
@@ -218,12 +227,7 @@ export function makeApp(options = {}) {
       if (IS_DEV) {
         appContext.staticCache = new NoCache(statics);
       } else {
-        appContext.staticCache = new StaticCache();
-
-        const files = makeStaticFileCache(statics);
-        for (const file of files) {
-          appContext.staticCache.set(file.path, file);
-        }
+        appContext.staticCache = new StaticCache(statics);
       }
 
       // Sort routes by specificity before any matches are attempted.

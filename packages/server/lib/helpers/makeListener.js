@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import send from "send";
 import { isString, isTemplate, isFunction } from "./typeChecking.js";
 import { matchRoute } from "./routing.js";
@@ -8,6 +8,9 @@ import { EventSource } from "../objects/EventSource.js";
 import { Request } from "../objects/Request.js";
 import { Response } from "../objects/Response.js";
 import { Headers } from "../objects/Headers.js";
+
+// Display detailed logging when true.
+const VERBOSE_LOGGING = true;
 
 /**
  * Returns a request handler callback for a node `http` server.
@@ -189,7 +192,7 @@ export function makeListener(appContext) {
 
         res.end();
       }
-    } else if (!canStatic(req)) {
+    } else if (!canStatic(req, VERBOSE_LOGGING)) {
       res.writeHead(404, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ message: "Route not found." }));
     } else {
@@ -198,9 +201,11 @@ export function makeListener(appContext) {
       let fallback = appContext.fallback ? normalizePath(appContext.fallback) : null;
       let match = appContext.staticCache.get(req.url);
 
-      if (fallback && canFallback(req)) {
+      if (fallback && canFallback(req, VERBOSE_LOGGING)) {
         match = appContext.staticCache.get(fallback);
       }
+
+      console.log({ fallback, match, url: req.url, method: req.method, cache: appContext.staticCache._statics });
 
       if (!match) {
         res.writeHead(404, { "Content-Type": "application/json" });
@@ -227,45 +232,54 @@ export function makeListener(appContext) {
   };
 }
 
-function canFallback(req) {
+function canFallback(req, verbose = false) {
   const { method, headers, url } = req;
 
   // Method is not GET or HEAD.
   if (method !== "GET" && method !== "HEAD") {
+    if (verbose) console.log(`[cannot fall back to index: method is not GET or HEAD] ${req.method} ${req.url}`);
     return false;
   }
 
   // Accept header is not sent.
   if (!isString(headers.accept)) {
+    if (verbose) console.log(`[cannot fall back to index: no "Accept" header was sent] ${req.method} ${req.url}`);
     return false;
   }
 
   // Client prefers JSON.
   if (headers.accept.startsWith("application/json")) {
+    if (verbose) console.log(`[cannot fall back to index: client prefers JSON] ${req.method} ${req.url}`);
     return false;
   }
 
   // Client doesn't accept HTML.
   if (!headers.accept.startsWith("text/html") && !headers.accept.startsWith("*/*")) {
+    if (verbose) console.log(`[cannot fall back to index: client doesn't accept HTML] ${req.method} ${req.url}`);
     return false;
   }
 
   // Client is requesting file with an extension.
   if (url.lastIndexOf(".") > url.lastIndexOf("/")) {
+    if (verbose)
+      console.log(`[cannot fall back to index: client requests a file with extension] ${req.method} ${req.url}`);
     return false;
   }
 
+  if (verbose) console.log(`[can fall back to index] ${req.method} ${req.url}`);
   return true;
 }
 
-function canStatic(req) {
+function canStatic(req, verbose = false) {
   const { method } = req;
 
   // Method is not GET or HEAD.
   if (method !== "GET" && method !== "HEAD") {
+    if (verbose) console.log(`[cannot fall back to static: method is not GET or HEAD] ${req.method} ${req.url}`);
     return false;
   }
 
+  if (verbose) console.log(`[can fall back to static] ${req.method} ${req.url}`);
   return true;
 }
 

@@ -55,7 +55,7 @@ export default makeGlobal((ctx) => {
 });
 
 function makeRequest({ id, log, method, url, middleware, fetch }) {
-  const [path, query] = url.split("?");
+  const [_, query] = url.split("?");
   const queryParams = new URLSearchParams(query || "");
 
   const ctx = {

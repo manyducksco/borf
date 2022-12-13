@@ -21,7 +21,8 @@ export function makeStaticFileCache(entries) {
         const gzip = filesList.find((l) => path.extname(l.path).toLowerCase() === ".gz" && l.path.startsWith(f.path));
 
         files.push({
-          path: f.path.replace(entry.source, entry.path.replace(/^\//, "")),
+          href: f.path.replace(entry.source, entry.path),
+          path: f.path.replace(entry.source, ""),
           type,
           charset,
           source: entry.source,
