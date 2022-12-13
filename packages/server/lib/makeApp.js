@@ -20,11 +20,13 @@ class StaticCache {
   _values = new Map();
   _statics;
 
-  constructor(statics) {
+  constructor(statics, debug) {
     const files = makeStaticFileCache(statics);
+    const channel = debug.makeChannel("woof:cache");
 
     for (const file of files) {
       this._values.set(file.href, file);
+      channel.log("added to static cache", file);
     }
   }
 
@@ -226,8 +228,10 @@ export function makeApp(options = {}) {
     async listen(port) {
       if (IS_DEV) {
         appContext.staticCache = new NoCache(statics);
+        channel.log("using NoCache for static file caching");
       } else {
         appContext.staticCache = new StaticCache(statics);
+        channel.log("using StaticCache for static file caching");
       }
 
       // Sort routes by specificity before any matches are attempted.

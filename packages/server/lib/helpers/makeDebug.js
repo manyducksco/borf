@@ -41,30 +41,38 @@ export function makeDebug(options = {}, console = global.console) {
 
         get log() {
           if (options.log === false || !matchFn(name)) {
-            return () => {};
+            return noop;
           }
 
-          return console.log.bind(console, `[${name}]`);
+          return console.log.bind(console, `${timestamp()} [${name}]`);
         },
 
         get warn() {
           if (options.warn === false || !matchFn(name)) {
-            return () => {};
+            return noop;
           }
 
-          return console.warn.bind(console, `[${name}]`);
+          return console.warn.bind(console, `${timestamp()} [${name}]`);
         },
 
         get error() {
           if (options.error === false || !matchFn(name)) {
-            return () => {};
+            return noop;
           }
 
-          return console.error.bind(console, `[${name}]`);
+          return console.error.bind(console, `${timestamp()} [${name}]`);
         },
       };
     },
   };
+}
+
+function noop() {
+  // Do nothing.
+}
+
+function timestamp() {
+  return new Date().toISOString();
 }
 
 /**
