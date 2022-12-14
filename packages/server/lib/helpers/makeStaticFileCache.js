@@ -11,18 +11,21 @@ export function makeStaticFileCache(entries) {
   const files = [];
 
   for (const entry of entries) {
+    // Get a complete list of all files in the source folder and subfolders.
     const filesList = recurseFiles(entry.source);
 
     for (const f of filesList) {
       const ext = path.extname(f.path).toLowerCase();
 
+      // Generate metadata for each file.
+      // Ignore gzipped files; `gz` paths are included in metadata for the original file.
       if (ext !== ".gz") {
         const { type, charset } = getFileType(f.path);
         const gzip = filesList.find((l) => path.extname(l.path).toLowerCase() === ".gz" && l.path.startsWith(f.path));
 
         files.push({
-          href: f.path.replace(entry.source, entry.path),
-          path: f.path.replace(entry.source, ""),
+          href: path.normalize(f.path.replace(entry.source, entry.path)),
+          path: path.normalize(f.path.replace(entry.source, "")),
           type,
           charset,
           source: entry.source,
@@ -32,6 +35,7 @@ export function makeStaticFileCache(entries) {
     }
   }
 
+  // Return a flat list of one metadata object for each file found in the source folder.
   return files;
 }
 
