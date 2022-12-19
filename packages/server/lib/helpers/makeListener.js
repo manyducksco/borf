@@ -191,7 +191,7 @@ export function makeListener(appContext) {
         res.end();
       }
     } else if (!canStatic(req, channel)) {
-      res.writeHead(404, { "Content-Type": "application/json" });
+      res.writeHead(404, { ...ctx.response.headers.toJSON(), "Content-Type": "application/json" });
       res.end(JSON.stringify({ message: "Route not found." }));
     } else {
       req.url = normalizePath(req.url);
@@ -202,8 +202,6 @@ export function makeListener(appContext) {
       if (fallback && canFallback(req, channel)) {
         match = appContext.staticCache.get(fallback);
       }
-
-      channel.log({ url: req.url, method: req.method, fallback, match });
 
       if (!match) {
         res.writeHead(404, { "Content-Type": "application/json" });
@@ -223,8 +221,11 @@ export function makeListener(appContext) {
         res.setHeader("Vary", "Accept-Encoding");
 
         filePath = path.join(match.source, match.gz);
-        channel.log("sending GZIP");
       }
+
+      Object.entries(headers.toJSON()).forEach(([key, value]) => {
+        res.setHeader(key, value);
+      });
 
       send(req, filePath).pipe(res);
     }
