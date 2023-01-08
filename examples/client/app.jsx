@@ -83,10 +83,10 @@ app.route("*", {
           {/* <ToggleExample /> */}
           {/* <CounterExample /> */}
           {/* <ConditionalExample /> */}
-          {/* <DynamicListExample /> */}
+          <DynamicListExample />
           {/* <TwoWayBindExample /> */}
           {/* <FormExample /> */}
-          {/* <MouseFollowerExample /> */}
+          <MouseFollowerExample />
           {/* <HTTPRequestExample /> */}
           {/* <ComponentAttrsExample /> */}
           {/*<RenderOrderTest />*/}

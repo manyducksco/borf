@@ -1,19 +1,22 @@
 import {
+  h,
   makeView,
   makeTransitions,
+  withTransitions,
+  withAttributes,
   makeState,
   joinStates,
   withName,
   makeSpring,
 } from "@woofjs/client";
-import { animate, bounceOut } from "popmotion";
+import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const bestColor = "#ff0088";
 
 export const MouseFollowerExample = makeView(
   withName("MouseFollowerExample"),
-  (ctx, h) => {
+  (ctx) => {
     const $$enabled = makeState(false);
     const $$color = makeState(bestColor);
 
@@ -61,29 +64,7 @@ export const MouseFollowerExample = makeView(
         <div>
           {h.when(
             $$enabled,
-            <Animated>
-              {(ctx) => {
-                ctx.name = "AnimatedMouseFollower";
-
-                const $scale = ctx.attributes.readable("scale");
-
-                return (
-                  <div
-                    class="follower"
-                    style={{
-                      backgroundColor: $$color,
-
-                      // Composite transform based on mouse position and animated scale.
-                      transform: joinStates(
-                        mouse.$position,
-                        $scale,
-                        (p, s) => `translate(${p.x}px, ${p.y}px) scale(${s})`
-                      ),
-                    }}
-                  />
-                );
-              }}
-            </Animated>
+            <MouseFollower position={mouse.$position} color={$$color} />
           )}
 
           <button onclick={randomizeColor} disabled={$disabled}>
@@ -112,10 +93,10 @@ export const MouseFollowerExample = makeView(
  * Scales the element up from `0` on enter and down to `0` on exit.
  * Animates the `scale` value in view's context.
  */
-const Animated = makeTransitions((ctx) => {
+const scaleInOut = makeTransitions((ctx) => {
   const scale = makeSpring(0, {
     stiffness: 200,
-    damping: 100,
+    damping: 30,
   });
 
   ctx.enter(async () => {
@@ -128,3 +109,43 @@ const Animated = makeTransitions((ctx) => {
 
   return { scale };
 });
+
+const MouseFollower = makeView(
+  withName("AnimatedMouseFollower"),
+  withTransitions(scaleInOut),
+  withAttributes({
+    color: {
+      type: "string",
+      required: true,
+    },
+    position: {
+      type: "object",
+      required: true,
+    },
+    scale: {
+      type: "number",
+      required: true,
+    },
+  }),
+  (ctx) => {
+    const $color = ctx.attrs.readable("color");
+    const $position = ctx.attrs.readable("position");
+    const $scale = ctx.attrs.readable("scale");
+
+    return (
+      <div
+        class="follower"
+        style={{
+          backgroundColor: $color,
+
+          // Composite transform based on mouse position and animated scale.
+          transform: joinStates(
+            $position,
+            $scale,
+            (p, s) => `translate(${p.x}px, ${p.y}px) scale(${s})`
+          ),
+        }}
+      />
+    );
+  }
+);

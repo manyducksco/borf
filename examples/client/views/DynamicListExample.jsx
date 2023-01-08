@@ -1,5 +1,11 @@
-import { h, makeTransitions, makeView, makeState } from "@woofjs/client";
-import { animate } from "popmotion";
+import {
+  h,
+  makeTransitions,
+  withTransitions,
+  makeView,
+  makeState,
+  makeSpring,
+} from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];
@@ -62,44 +68,35 @@ export const DynamicListExample = makeView((ctx) => {
         </div>
 
         {h.repeat($$shoppingList, ($item) => {
-          const onclick = () => {
-            alert($item.get());
-          };
-
-          return animated(<li onclick={onclick}>{$item}</li>);
+          return <Item value={$item} />;
         })}
       </div>
     </div>
   );
 });
 
-const animated = makeTransitions({
-  enter(ctx) {
-    animate({
-      from: { opacity: 0, x: -10 },
-      to: { opacity: 1, x: 0 },
-      duration: 300,
-      onUpdate(latest) {
-        ctx.node.style.opacity = latest.opacity;
-        ctx.node.style.transform = `translateX(${latest.x}px)`;
-      },
-      onComplete() {
-        ctx.done();
-      },
-    });
-  },
-  exit(ctx) {
-    animate({
-      from: { opacity: 1, x: 0 },
-      to: { opacity: 0, x: 10 },
-      duration: 300,
-      onUpdate(latest) {
-        ctx.node.style.opacity = latest.opacity;
-        ctx.node.style.transform = `translateX(${latest.x}px)`;
-      },
-      onComplete() {
-        ctx.done();
-      },
-    });
-  },
+const itemTransitions = makeTransitions((ctx) => {
+  const opacity = makeSpring(0);
+  const x = makeSpring(-10);
+
+  ctx.enter(() => Promise.all([opacity.to(1), x.to(0)]));
+  ctx.exit(() => Promise.all([opacity.to(0), x.to(-10)]));
+
+  return { opacity, x };
+});
+
+const Item = makeView(withTransitions(itemTransitions), (ctx) => {
+  const $value = ctx.attrs.readable("value");
+  const $opacity = ctx.attrs.readable("opacity");
+  const $transform = ctx.attrs.readable("x").as((x) => `translateX(${x}px)`);
+
+  const onclick = () => {
+    alert($value.get());
+  };
+
+  return (
+    <li style={{ opacity: $opacity, transform: $transform }} onclick={onclick}>
+      {$value}
+    </li>
+  );
 });

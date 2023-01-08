@@ -1,4 +1,4 @@
-import { makeView, makeState, withName, withAttribute } from "@woofjs/client";
+import { makeView, makeState, withName, withAttributes } from "@woofjs/client";
 
 export const ComponentAttrsExample = makeView(
   withName("ComponentAttrsExample"),
@@ -20,8 +20,10 @@ export const ComponentAttrsExample = makeView(
 
 const SubComponent = makeView(
   withName("SubComponent"),
-  withAttribute("message", {
-    type: "string",
+  withAttributes({
+    message: {
+      type: "string",
+    },
   }),
   (ctx) => {
     const $$message = ctx.attributes.writable("message");

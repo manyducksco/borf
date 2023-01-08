@@ -6,7 +6,7 @@ export { makeState, joinStates } from "./helpers/state.js";
 export { h } from "./view/h.js";
 
 // Traits
-export { withAttribute } from "./traits/withAttribute.js";
+export { withAttributes } from "./traits/withAttributes.js";
 export { withName } from "./traits/withName.js";
 export { withTransitions } from "./traits/withTransitions.js";
 

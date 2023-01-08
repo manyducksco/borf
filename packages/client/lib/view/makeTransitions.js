@@ -28,7 +28,7 @@ export function makeTransitions(fn) {
         if (node?.style && mapToCSS) {
           sub = observeExports(exports, (current) => {
             requestAnimationFrame(() => {
-              const mapped = mapFn(current);
+              const mapped = mapToCSS(current);
               for (const key in mapped) {
                 node.style[key] = mapped[key];
               }
@@ -48,7 +48,7 @@ export function makeTransitions(fn) {
         if (node?.style && mapToCSS) {
           sub = observeExports(exports, (current) => {
             requestAnimationFrame(() => {
-              const mapped = mapFn(current);
+              const mapped = mapToCSS(current);
               for (const key in mapped) {
                 node.style[key] = mapped[key];
               }
@@ -90,8 +90,8 @@ function observeExports(exports, observerFn) {
     statics[key] = value;
   }
 
-  const $combined = joinStates(Object.values(readables), (...current) => {
-    const keys = Object.keys();
+  const $combined = joinStates(...Object.values(readables), (...current) => {
+    const keys = Object.keys(readables);
     const values = current.reduce((obj, value, i) => {
       obj[keys[i]] = value;
       return obj;

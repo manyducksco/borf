@@ -3,69 +3,54 @@ import {
   withTransitions,
   makeView,
   makeState,
+  makeSpring,
 } from "@woofjs/client";
-import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle";
 
-const slideOut = makeTransitions((ctx) => {
-  const $$transform = makeState(0);
+const slideInOut = makeTransitions((ctx) => {
+  const y = makeSpring(0, { stiffness: 100, damping: 100 });
 
-  ctx.exit((ctx) => {
-    return new Promise((resolve) => {
-      animate({
-        from: 0,
-        to: 100,
-        duration: 500,
-        onUpdate: function (latest) {
-          $$transform.set();
-          ctx.node.style.transform = `translateY(${latest}%)`;
-        },
-        onComplete: function () {
-          resolve();
-        },
-      });
-    });
-  });
+  ctx.enter(() => y.to(0));
+  ctx.exit(() => y.to(100));
 
-  return { transform: $$transform.readable() };
+  return {
+    transform: y.as((y) => `translateY(${y}%)`),
+  };
 });
 
 export function preloadAppLayout(ctx) {
   return new Promise((resolve) => {
-    const PreloadView = makeView(
-      withTransitions(slideOut, (current) => current),
-      () => {
-        return (
-          <div
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              bottom: 0,
-              left: 0,
-              backgroundColor: "white",
-              padding: "1rem",
-              zIndex: 200,
-            }}
+    const PreloadView = makeView(withTransitions(slideInOut), (ctx) => {
+      const $transform = ctx.attrs.readable("transform");
+
+      return (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "white",
+            padding: "1rem",
+            zIndex: 200,
+            transform: $transform,
+          }}
+        >
+          <h1>WELCOME</h1>
+          <p>This page has examples of things woof can do.</p>
+          <p>
+            Click the button below to demonstrate calling <code>done()</code> in
+            a route component's loadRoute hook. When it's triggered by an event,
+            you can create disclaimer pages like this. Generally you would use
+            this to show temp content while making API calls.
+          </p>
+          <button
+            onclick={() => resolve()}
+            title="demonstrate calling done() in a component's preload hook"
           >
-            <h1>WELCOME</h1>
-            <p>This page has examples of things woof can do.</p>
-            <p>
-              Click the button below to demonstrate calling <code>done()</code>{" "}
-              in a route component's loadRoute hook. When it's triggered by an
-              event, you can create disclaimer pages like this. Generally you
-              would use this to show temp content while making API calls.
-            </p>
-            <button
-              onclick={() => resolve()}
-              title="demonstrate calling done() in a component's preload hook"
-            >
-              Continue
-            </button>
-          </div>
-        );
-      }
-    );
+            Continue
+          </button>
+        </div>
+      );
+    });
 
     // When the promise is resolved, this content is removed and the real view is connected.
     ctx.show(<PreloadView />);

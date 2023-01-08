@@ -31,11 +31,13 @@ class DOMAdapterView {
 }
 
 export function initView(fn, config) {
-  let { appContext, elementContext, traits, children, channelPrefix } = config;
+  let { appContext, elementContext, children, channelPrefix } = config;
 
   channelPrefix = channelPrefix || "view";
 
   const $$children = makeState(children || []);
+  const traits = fn._traits ?? [];
+  const attributes = { ...config.attributes };
 
   const beforeConnectCallbacks = [];
   const afterConnectCallbacks = [];
@@ -47,8 +49,6 @@ export function initView(fn, config) {
 
   let transitions = traits.find((t) => t._trait === "transitions");
   let mapToCSS;
-
-  const attributes = { ...config.attributes };
 
   if (transitions) {
     mapToCSS = transitions.mapToCSS;
@@ -62,7 +62,7 @@ export function initView(fn, config) {
 
   const name = traits.find((t) => t._trait === "name")?.name || "<unnamed>";
   const channel = appContext.debug.makeChannel(`${channelPrefix}:${name}`);
-  const attrs = makeAttributes(channel, attributes, traits ?? []);
+  const attrs = makeAttributes(channel, attributes, traits.find((t) => t._trait === "attributes")?.definitions);
 
   /*=============================*\
   ||    Define context object    ||
@@ -241,7 +241,11 @@ export function initView(fn, config) {
 
         if (!wasConnected) {
           if (transitions) {
-            await transitions.enter(element.node);
+            try {
+              await transitions.enter(element.node);
+            } catch (err) {
+              console.error(err);
+            }
           }
 
           setTimeout(() => {
@@ -266,7 +270,11 @@ export function initView(fn, config) {
           }
 
           if (transitions) {
-            await transitions.exit(element.node);
+            try {
+              await transitions.exit(element.node);
+            } catch (err) {
+              console.error(err);
+            }
           }
 
           if (element) {

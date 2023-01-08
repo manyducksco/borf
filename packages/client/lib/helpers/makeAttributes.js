@@ -14,7 +14,7 @@ import {
 } from "./typeChecking.js";
 import { deepEqual } from "./deepEqual.js";
 
-export function makeAttributes(channel, attributes, traits) {
+export function makeAttributes(channel, attributes, definitions) {
   // Separate static attributes, read-only attributes and writable attributes.
   // Set values of static attributes.
   // Create observers for readable and writable attributes.
@@ -36,6 +36,14 @@ export function makeAttributes(channel, attributes, traits) {
     }
   }
 
+  if (definitions) {
+    for (const key in definitions) {
+      if (!(key in attributes) && definitions[key].default !== undefined) {
+        statics[key] = definitions[key].default;
+      }
+    }
+  }
+
   const $$attrs = makeState({ ...statics });
 
   /**
@@ -47,7 +55,7 @@ export function makeAttributes(channel, attributes, traits) {
       for (const key in readables) {
         subscriptions.push(
           readables[key].subscribe((next) => {
-            assertValidAttribute(traits, { [key]: next }, key);
+            assertValidItem(definitions, next, key);
 
             $$attrs.update((current) => {
               current[key] = next;
@@ -59,7 +67,7 @@ export function makeAttributes(channel, attributes, traits) {
       for (const key in writables) {
         subscriptions.push(
           writables[key].subscribe((next) => {
-            assertValidAttribute(traits, { [key]: next }, key);
+            assertValidItem(definitions, next, key);
 
             $$attrs.update((current) => {
               current[key] = next;
@@ -111,27 +119,30 @@ export function makeAttributes(channel, attributes, traits) {
         );
       }
 
-      // Assert that new values match types defined by traits.
-      // TODO: Disable with app setting (and by default in production builds).
-      for (const key in values) {
-        assertValidAttribute(traits, values, key);
+      const before = $$attrs.get();
+      const after = { ...before, ...values };
+
+      assertValidAttributes(definitions, after);
+
+      const diff = objectDiff(before, after);
+
+      for (const key in diff) {
+        if (deepEqual(diff[key].before, diff[key].after)) {
+          continue;
+        }
+
+        const value = diff[key].after;
+
+        if (writables[key]) {
+          // Update writable.
+          writables[key].set(value);
+        } else if (readables[key]) {
+          // Don't change. Throw error.
+          throw new Error(`Tried to set value of read-only binding '${key}'. Did you mean to pass a writable binding?`);
+        }
       }
 
-      $$attrs.update((current) => {
-        for (const key in values) {
-          if (writables[key]) {
-            // Change and update writable.
-            current[key] = values[key];
-            writables[key].set(values[key]);
-          } else if (readables[key]) {
-            // Don't change. Print warning.
-            channel.warn(`Tried to set value of read-only binding '${key}'. Did you mean to use a writable binding?`);
-          } else {
-            // Update value.
-            current[key] = values[key];
-          }
-        }
-      });
+      $$attrs.set(after);
     },
     update(fn) {
       if (!isFunction(fn)) {
@@ -141,34 +152,27 @@ export function makeAttributes(channel, attributes, traits) {
       const before = $$attrs.get();
       const after = produce(before, fn);
 
-      // Validate that attributes match the types defined by traits.
-      for (const key in after) {
-        assertValidAttribute(traits, after, key);
-      }
+      assertValidAttributes(definitions, after);
 
       const diff = objectDiff(before, after);
 
-      $$attrs.update((current) => {
-        for (const key in diff) {
-          if (deepEqual(diff[key].before, diff[key].after)) {
-            continue;
-          }
-
-          const value = diff[key].after;
-
-          if (writables[key]) {
-            // Change and update writable.
-            current[key] = value;
-            writables[key].set(value);
-          } else if (readables[key]) {
-            // Don't change. Print warning.
-            channel.warn(`Tried to set value of read-only binding '${key}'. Did you mean to use a writable binding?`);
-          } else {
-            // Update value.
-            current[key] = value;
-          }
+      for (const key in diff) {
+        if (deepEqual(diff[key].before, diff[key].after)) {
+          continue;
         }
-      });
+
+        const value = diff[key].after;
+
+        if (writables[key]) {
+          // Update writable.
+          writables[key].set(value);
+        } else if (readables[key]) {
+          // Don't change. Throw error.
+          throw new Error(`Tried to set value of read-only binding '${key}'. Did you mean to pass a writable binding?`);
+        }
+      }
+
+      $$attrs.set(after);
     },
     readable(...args) {
       if (args.length === 0) {
@@ -193,8 +197,6 @@ export function makeAttributes(channel, attributes, traits) {
           return $$attrs.get()[key];
         },
         set(value) {
-          assertValidAttribute(traits, { [key]: value }, key);
-
           // TODO: Validate and parse.
           return api.update((current) => {
             current[key] = value;
@@ -257,54 +259,70 @@ export function makeAttributes(channel, attributes, traits) {
   return { controls, api };
 }
 
-function assertValidAttribute(traits, attributes, key) {
-  if (traits.length === 0) {
-    return;
+function assertValidAttributes(definitions, attributes) {
+  if (definitions == null) {
+    return; // Pass when no definitions are provided.
   }
 
-  const trait = trait.find((t) => t._trait === "attribute" && t.name === key);
-
-  if (!trait) {
-    throw new TypeError(`Attribute '${key}' is not defined on this view.`);
+  for (const name in definitions) {
+    if (definitions[name].required && attributes[name] == null) {
+      throw new TypeError(`Attribute '${name}' is required, but value is undefined.`);
+    }
   }
 
-  if (!trait.options.type) {
+  for (const name in attributes) {
+    assertValidItem(definitions, attributes[name], name);
+  }
+}
+
+function assertValidItem(definitions, value, name) {
+  if (definitions == null) {
+    return; // Pass when no definitions are provided.
+  }
+
+  const def = definitions[name];
+
+  if (!def) {
+    throw new TypeError(`Attribute '${name}' is not defined, but a value was passed.`);
+  }
+
+  if (!def.type) {
     return; // All values are allowed when no type is specified.
   }
 
-  switch (trait.type) {
+  switch (def.type) {
     case "boolean":
-      if (!isBoolean(attributes[key])) {
-        throw new TypeError(`Attribute '${key}' must be a boolean. Got: ${attributes[key]}`);
+      if (!isBoolean(value)) {
+        throw new TypeError(`Attribute '${name}' must be a boolean. Got: ${value}`);
       }
       break;
     case "string":
-      if (!isString(attributes[key])) {
-        throw new TypeError(`Attribute '${key}' must be a string. Got: ${attributes[key]}`);
+      if (!isString(value)) {
+        throw new TypeError(`Attribute '${name}' must be a string. Got: ${value}`);
       }
       break;
     case "number":
-      if (!isNumber(attributes[key])) {
-        throw new TypeError(`Attribute '${key}' must be a number. Got: ${attributes[key]}`);
+      if (!isNumber(value)) {
+        throw new TypeError(`Attribute '${name}' must be a number. Got: ${value}`);
       }
       break;
     case "array":
-      if (!isArray(attributes[key])) {
-        throw new TypeError(`Attribute '${key}' must be an array. Got: ${attributes[key]}`);
+      if (!isArray(value)) {
+        throw new TypeError(`Attribute '${name}' must be an array. Got: ${value}`);
       }
       break;
     case "object":
-      if (!isObject(attributes[key])) {
-        throw new TypeError(`Attribute '${key}' must be an object. Got: ${attributes[key]}`);
+      if (!isObject(value)) {
+        throw new TypeError(`Attribute '${name}' must be an object. Got: ${value}`);
       }
       break;
     case "function":
-      if (!isFunction(attributes[key])) {
-        throw new TypeError(`Attribute '${key}' must be a function. Got: ${attributes[key]}`);
+      if (!isFunction(value)) {
+        throw new TypeError(`Attribute '${name}' must be a function. Got: ${value}`);
       }
       break;
     default:
-      throw new TypeError(`Attribute '${key}' does not support type '${trait.type}'.`);
+      throw new TypeError(`Attribute '${name}' does not support type '${def.type}'.`);
   }
 }
 

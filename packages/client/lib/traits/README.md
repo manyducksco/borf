@@ -19,22 +19,23 @@ const Example = makeView(withName("ViewName"), function (ctx) {
 });
 ```
 
-## withAttribute
+## withAttributes
 
 Usable with:
 
 - `makeLocal`
 - `makeView`
-- `makeTransitions`
 
 ```jsx
-import { makeView, withAttribute, isString } from "@woofjs/client";
+import { makeView, withAttributes, isString } from "@woofjs/client";
 
 const Example = makeView(
-  withAttribute("title", {
-    validate: isString, // Validate type (only in dev mode by default)
-    default: "The Default Title", // Provide a default value if not passed
-    writable: false, // Allow .set, .update, and two way bindings
+  withAttributes({
+    title: {
+      type: "string", // Validate type (only in dev mode by default)
+      default: "The Default Title", // Provide a default value if not passed
+      writable: false, // Allow .set, .update, and two way bindings
+    },
   }),
   function (ctx) {
     return (
@@ -53,7 +54,9 @@ Usable with:
 - `makeView`
 
 ```jsx
-const fadeInOut = makeTransitions(function (ctx) {
+import { makeTransitions, makeSpring, makeView, withTransitions } from "@woofjs/client";
+
+const fadeInOut = makeTransitions((ctx) => {
   const opacity = makeSpring(0, { stiffness: 100, damping: 300 });
   const y = makeSpring(-20, { stiffness: 200, damping: 200 });
 
@@ -63,7 +66,7 @@ const fadeInOut = makeTransitions(function (ctx) {
   return { opacity, y };
 });
 
-const ExampleView = makeView(withTransitions(fadeInOut), function (ctx) {
+const ExampleView = makeView(withTransitions(fadeInOut), (ctx) => {
   const $opacity = ctx.attrs.readable("opacity");
   const $transform = ctx.attrs.readable("y").as((y) => `translateY(${y}px)`);
 
@@ -81,15 +84,13 @@ const ExampleView = makeView(withTransitions(fadeInOut), function (ctx) {
 
 // Alternative CSS mapper call signature.
 const ExampleView = makeView(
-  withTransitions(fadeInOut, function (values) {
-    // This function maps fadeInOut's exports to CSS properties.
-    // These properties will be applied to this view's `.node` automatically when this function is defined.
+  withTransitions(fadeInOut, (values) => {
     return {
       opacity: values.opacity,
       transform: `translateY(${values.y}px)`,
     };
   }),
-  function (ctx) {
+  (ctx) => {
     return <div>This is animated.</div>;
   }
 );
