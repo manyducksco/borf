@@ -18,7 +18,7 @@ export default makeGlobal((ctx) => {
   ctx[APP_CONTEXT].$dialogs = $$dialogs.readable();
 
   return {
-    make: (view, options) => makeDialog(view, options, ctx, $$dialogs),
+    makeDialog: (view, options) => makeDialog(view, options, ctx, $$dialogs),
   };
 });
 

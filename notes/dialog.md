@@ -4,13 +4,13 @@ Add a `dialog` global to handle dialogs (modals) by passing a view.
 
 ```js
 function ExampleView(ctx) {
-  const dialog = ctx.global("dialog");
+  const { makeDialog } = ctx.global("@dialog");
 
   return (
     <button
       onclick={() => {
         //  make(view, config) => Dialog
-        const example = dialog.make(DialogView, {
+        const example = makeDialog(DialogView, {
           closeOnClickAway: true,
         });
 
@@ -29,13 +29,15 @@ function ExampleView(ctx) {
 }
 
 function DialogView(ctx) {
+  const $message = ctx.attrs.readable("message");
+
   return (
     <div class="dialog-panel">
       <p>This is a dialog. Click the close button to close it.</p>
-      <p>Message: {ctx.readable("message")}</p>
+      <p>Message: {$message}</p>
       <button
         onclick={() => {
-          ctx.set("open", false);
+          ctx.attrs.set("open", false);
         }}
       >
         Close

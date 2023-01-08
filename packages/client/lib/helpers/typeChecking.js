@@ -1,6 +1,8 @@
 import OBSERVABLE from "symbol-observable";
 import { READABLE, WRITABLE } from "../keys.js";
 
+export const isBoolean = (value) => value === true || value === false;
+
 export const isFunction = (value) => typeof value === "function";
 
 export const isString = (value) => typeof value === "string";

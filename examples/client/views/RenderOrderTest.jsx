@@ -1,6 +1,6 @@
-import { makeState, makeView } from "@woofjs/client";
+import { makeState, makeView, h } from "@woofjs/client";
 
-export const RenderOrderTest = makeView((ctx, h) => {
+export const RenderOrderTest = makeView((ctx) => {
   const $$isTrue = makeState(true);
 
   let interval;

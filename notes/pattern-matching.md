@@ -1,28 +1,12 @@
 ```js
-function when(cond, result) {}
-
-function unless(cond, result) {}
-
-// when(value, matches: [
-//   [pattern, returnThis]
-// ])
-
-// equal to `result` when `cond` is truthy
-const someView = when(true, "some-value");
-
 // Run against a value:
-const checked = when(someValue, [
-  [1, "once"],
-  [2, "twice"],
-  [3, "thrice"],
-  (value) => `${value} times`,
-]);
-
-// Taking a function which transforms a truthy value
-const uppercasedIfTruthy = when(someValue, (v) => v.toUpperCase());
+const checked = match(
+  [[1, "once"], [2, "twice"], [3, "thrice"], (value) => `${value} times`],
+  someValue
+);
 
 // Create matcher function with a pattern only:
-const ordinal = when([
+const ordinal = match([
   [1, "once"],
   [2, "twice"],
   [3, "thrice"],
@@ -33,10 +17,9 @@ ordinal(5); // "5 times"
 ordinal(2); // "twice"
 
 // Pattern can be as simple as a literal:
-const fiveIfTruthy = when(5);
-const isFive = fiveIfTruthy(true);
+const isFive = match(5);
 
-const fizzify = when([
+const fizzify = match([
   [(n) => n % 15 === 0, "fizzbuzz"],
   [(n) => n % 3 === 0, "fizz"],
   [(n) => n % 5 === 0, "buzz"],
@@ -68,7 +51,7 @@ function print(value) {
   };
 }
 
-const fizzify = when([
+const fizzify = match([
   [dividesBy(15), "fizzbuzz"],
   [dividesBy(3), "fizz"],
   [dividesBy(5), "buzz"],
@@ -79,7 +62,7 @@ range(0, 100).forEach(print(fizzify));
 
 range(0, 100).forEach(
   print(
-    when([
+    match([
       [dividesBy(15), "fizzbuzz"],
       [dividesBy(3), "fizz"],
       [dividesBy(5), "buzz"],
@@ -89,24 +72,22 @@ range(0, 100).forEach(
 );
 
 // String matching
-const check = when(contains("substring"));
+const check = match(contains("substring"));
 
 check("this is substring"); // true
 check("wowowow"); // false
-
-when(dividesBy(12));
 
 for (let i = 0; i < 100; i++) {
   fizzify(i);
 }
 
 // One big convenience feature is that this works as a drop-in for JS .filter and .map
-const evenOnly = range(0, 100).filter(when(dividesBy(2)));
+const evenOnly = range(0, 100).filter(match(dividesBy(2)));
 
 // This is pretty composable:
 const even = dividesBy(2);
 const negate = (n) => n * -1;
-const evensNegative = range(0, 100).map(when([even, negate], pass));
+const negativeEvens = range(0, 100).map(match([even, negate], pass));
 
 // Pattern matching library:
 import { when, contains, dividesBy, not, pass, even, odd } from "pataan";
@@ -201,13 +182,13 @@ const any = (pattern) => (x) => {
 const none = not(any);
 
 // true when array has all even numbers
-when(all(even));
-when(none(not(even)));
+match(all(even));
+match(none(not(even)));
 
 const when = (pattern, value) => {
   const fn = (value) => {
     if (array(pattern)) {
-      const fallback = when(last(not(array)), pattern) && pattern.pop();
+      const fallback = match(last(not(array)), pattern) && pattern.pop();
       for (const entry of pattern) {
         if (matches(entry[0], value)) {
           if (func(entry[1])) {
@@ -234,10 +215,10 @@ const when = (pattern, value) => {
   }
 };
 
-when([[even, negate], pass]);
+match([[even, negate], pass]);
 
 // The many faces of `contains`:
-when(something, [
+match(something, [
   [contains({ name: 1 }), "object where 'name' is 1"],
   [contains("sub"), "string with 'sub' in it"],
   [contains(5), "array with 5 in it"],
@@ -247,21 +228,24 @@ when(something, [
 assert(number, arg);
 
 // Pattern matching an object:
-const result = when(someValue, [
-  // Deep equality test:
-  [{ name: 1 }, "literally is { name: 1 }"],
-  // Or literal equality:
-  ["some-value", 'literally is "some-value"'],
-  // Partial equality test:
-  [contains({ name: 1 }), "name is 1 (and may have other properties)"],
-  // Function test. Matches if returns true:
-  [(v) => v.name === 2, "name is 2 (and may have other properties)"],
+const result = match(
+  [
+    // Deep equality test:
+    [{ name: 1 }, "literally is { name: 1 }"],
+    // Or literal equality:
+    ["some-value", 'literally is "some-value"'],
+    // Partial equality test:
+    [contains({ name: 1 }), "name is 1 (and may have other properties)"],
+    // Function test. Matches if returns true:
+    [(v) => v.name === 2, "name is 2 (and may have other properties)"],
 
-  // Function value. Takes the value being matched and returns the resulting value.
-  ["some-value", (value) => value.toUpperCase()],
-]);
+    // Function value. Takes the value being matched and returns the resulting value.
+    ["some-value", (value) => value.toUpperCase()],
+  ],
+  someValue
+);
 
-const nameIsOne = when(includes({ name: 1 }));
+const nameIsOne = match(includes({ name: 1 }));
 
 const isTrue = nameIsOne({ age: 3741, name: 1 }); // isTrue === true
 ```

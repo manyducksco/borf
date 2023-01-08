@@ -15,6 +15,7 @@ import { TwoWayBindExample } from "./views/TwoWayBindExample";
 import { FormExample } from "./views/FormExample";
 import { MouseFollowerExample } from "./views/MouseFollowerExample";
 import { HTTPRequestExample } from "./views/HTTPRequestExample";
+import { SpringExample } from "./views/SpringExample";
 
 import { RenderOrderTest } from "./views/RenderOrderTest.jsx";
 
@@ -73,18 +74,21 @@ app.route("*", {
   view: AppLayout,
   preload: preloadAppLayout,
   subroutes: function (sub) {
+    sub.route("/spring", SpringExample);
+
     sub.route("/examples", function () {
       return (
         <div>
-          <ToggleExample />
-          <CounterExample />
-          <ConditionalExample />
-          <DynamicListExample />
-          <TwoWayBindExample />
-          <FormExample />
-          <MouseFollowerExample />
-          <HTTPRequestExample />
-          <ComponentAttrsExample />
+          <SpringExample />
+          {/* <ToggleExample /> */}
+          {/* <CounterExample /> */}
+          {/* <ConditionalExample /> */}
+          {/* <DynamicListExample /> */}
+          {/* <TwoWayBindExample /> */}
+          {/* <FormExample /> */}
+          {/* <MouseFollowerExample /> */}
+          {/* <HTTPRequestExample /> */}
+          {/* <ComponentAttrsExample /> */}
           {/*<RenderOrderTest />*/}
         </div>
       );

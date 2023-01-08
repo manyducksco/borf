@@ -7,7 +7,7 @@ export const HTTPRequestExample = makeView((ctx) => {
   const $$loading = makeState(false);
   const $$message = makeState("");
 
-  const http = ctx.global("http");
+  const http = ctx.global("@http");
 
   logLifecycle(ctx);
 

@@ -40,9 +40,7 @@ export class ElementView {
   subscriptions = [];
 
   constructor({ tag, attrs, children, appContext, elementContext }) {
-    elementContext = {
-      ...elementContext,
-    };
+    elementContext = Object.create(elementContext);
 
     // This and all nested views will be created as SVG elements.
     if (tag.toLowerCase() === "svg") {

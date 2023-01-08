@@ -3,7 +3,7 @@
 Ensure integrity of JS objects and variables at runtime. Also bind to forms for easy validation.
 
 ```js
-const makeUser = makeModel((ctx) => {
+const User = makeModel((ctx) => {
   ctx.strict = true; // not strict by default because you should explicitly know to handle errors if it's on.
 
   return ctx.object({
@@ -15,7 +15,7 @@ const makeUser = makeModel((ctx) => {
   });
 });
 
-const user = makeUser({
+const user = User.make({
   name: {
     first: "Tony",
     last: 5,

@@ -7,10 +7,7 @@ export default makeGlobal((ctx) => {
     ctx.log("listening for mousemove events");
 
     window.addEventListener("mousemove", (e) => {
-      $$position.set({
-        x: e.clientX,
-        y: e.clientY,
-      });
+      $$position.set({ x: e.clientX, y: e.clientY });
     });
   });
 

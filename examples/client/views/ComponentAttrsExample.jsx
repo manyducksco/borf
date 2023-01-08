@@ -1,37 +1,42 @@
-import { makeView, makeState } from "@woofjs/client";
+import { makeView, makeState, withName, withAttribute } from "@woofjs/client";
 
-export const ComponentAttrsExample = makeView((ctx) => {
-  ctx.name = "ComponentAttrsExample";
+export const ComponentAttrsExample = makeView(
+  withName("ComponentAttrsExample"),
+  (ctx) => {
+    const $$message = makeState("Hello");
 
-  const $$message = makeState("test");
-
-  return (
-    <div class="example">
-      <h3>Component Attributes</h3>
-      <div>
-        <input type="text" value={$$message} />
-        <hr />
-        <SubComponent $$message={$$message} />
+    return (
+      <div class="example">
+        <h3>Component Attributes</h3>
+        <div>
+          <input type="text" value={$$message} />
+          <hr />
+          <SubComponent message={$$message} />
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
-const SubComponent = makeView((ctx) => {
-  ctx.name = "SubComponent";
+const SubComponent = makeView(
+  withName("SubComponent"),
+  withAttribute("message", {
+    type: "string",
+  }),
+  (ctx) => {
+    const $$message = ctx.attributes.writable("message");
 
-  const { $$message } = ctx.attrs;
-
-  return (
-    <div>
-      <p>Message: {$$message}</p>
-      <button
-        onclick={() => {
-          $$message.set("test");
-        }}
-      >
-        Reset State
-      </button>
-    </div>
-  );
-});
+    return (
+      <div>
+        <p>Message: {$$message}</p>
+        <button
+          onclick={() => {
+            $$message.set("Hello");
+          }}
+        >
+          Reset State
+        </button>
+      </div>
+    );
+  }
+);

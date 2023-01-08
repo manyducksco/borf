@@ -3,47 +3,42 @@ import { ViewBlueprint } from "./View.js";
 import { makeState } from "../../helpers/state.js";
 
 export class TransitionsBlueprint {
-  constructor(element, transitions) {
-    this.transitions = transitions;
-
-    if (isFunction(element)) {
-      this.blueprint = new ViewBlueprint(element);
-    } else if (element?.isBlueprint) {
-      this.blueprint = element;
-    }
-
-    if (!this.blueprint.isBlueprint) {
-      throw new TypeError(`Transitions can only be applied to an element or view.`);
-    }
+  constructor(fn) {
+    this.fn = fn;
   }
 
   get isBlueprint() {
     return true;
   }
 
-  build({ appContext, elementContext }) {
-    return new TransitionsView(this.blueprint, this.transitions, appContext, elementContext);
+  build({ appContext, elementContext, ...ctx }) {
+    const element = null;
+
+    console.log(ctx);
+
+    return new TransitionsView({ fn: this.fn, appContext, elementContext });
   }
 }
 
 class TransitionsView {
-  constructor(blueprint, transitions, appContext, elementContext) {
+  node = document.createComment("transitions");
+  transitions = {
+    enter: () => Promise.resolve(),
+    exit: () => Promise.resolve(),
+  };
+
+  constructor({ fn, appContext, elementContext }) {
     this.$$state = makeState({});
 
-    this.view = blueprint.build({ appContext, elementContext, attributes: { $transition: this.$$state.readable() } });
-    this.transitions = transitions;
+    this.fn = fn;
     this.appContext = appContext;
     this.elementContext = {
       ...elementContext,
     };
   }
 
-  get node() {
-    return this.view.node;
-  }
-
   get isConnected() {
-    return this.view.isConnected;
+    return this.node.parentNode != null;
   }
 
   get isView() {
@@ -51,49 +46,45 @@ class TransitionsView {
   }
 
   setChildren(children) {
-    this.view.setChildren(children);
-  }
-
-  #set(key, value) {
-    const entries = {};
-
-    if (isString(key)) {
-      entries[key] = value;
-    } else if (isObject(key)) {
-      Object.assign(entries, key);
-    } else {
-      throw new TypeError(`Set function expected a key or object as the first argument. Got: ${typeof key}`);
-    }
-
-    this.$$state.update((current) => {
-      for (const [key, value] of Object.entries(entries)) {
-        current[key] = value;
-      }
-    });
-  }
-
-  #get(key) {
-    const state = this.$$state.get();
-
-    if (key === undefined) {
-      return state;
-    }
-
-    return state[key];
+    console.warn(`Tried to setChildren on a TransitionsView. This is not currently supported.`);
   }
 
   connect(parent, after = null) {
-    if (this.transitions.enter && !this.isConnected) {
+    let view;
+    const { transitions } = this;
+
+    console.log(this);
+
+    const ctx = {
+      get node() {
+        return view?.node;
+      },
+      enter(fn) {
+        transitions.enter = fn;
+      },
+      exit(fn) {
+        transitions.exit = fn;
+      },
+      observe() {},
+    };
+
+    const transitionAttributes = this.fn(ctx);
+
+    view = new OutletBlueprint().build({
+      appContext: this.appContext,
+      elementContext: this.elementContext,
+      attributes: transitionAttributes,
+    });
+
+    if (transitions.enter && !this.isConnected) {
       const ctx = {
         node: this.view.node,
-        get: this.#get.bind(this),
-        set: this.#set.bind(this),
         done: () => {},
       };
 
       this.view.connect(parent, after);
 
-      const res = this.transitions.enter(ctx);
+      const res = transitions.enter(ctx);
       if (isFunction(res?.then)) {
         res.then(ctx.done);
       }
@@ -104,16 +95,7 @@ class TransitionsView {
 
   disconnect() {
     if (this.transitions.exit) {
-      const ctx = {
-        node: this.view.node,
-        get: this.#get.bind(this),
-        set: this.#set.bind(this),
-        done: () => {
-          this.view.disconnect();
-        },
-      };
-
-      const res = this.transitions.exit(ctx);
+      const res = this.transitions.exit();
       if (isFunction(res?.then)) {
         res.then(ctx.done);
       }

@@ -1,37 +1,14 @@
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../../keys.js";
 import { h } from "../h.js";
 
-import { omit } from "../../helpers/omit.js";
-import { isDOM, isView, isString, isObservable } from "../../helpers/typeChecking.js";
+import { isString, isObservable } from "../../helpers/typeChecking.js";
 import { makeState, joinStates } from "../../helpers/state.js";
 import { makeAttributes } from "../../helpers/makeAttributes.js";
 
-import { ObserverBlueprint } from "../blueprints/Observer.js";
+import { ObserverBlueprint } from "../../view/blueprints/Observer.js";
 
-class DOMAdapterView {
-  constructor(node) {
-    this.node = node;
-  }
-
-  get isView() {
-    return true;
-  }
-
-  get isConnected() {
-    return this.node.parentNode != null;
-  }
-
-  connect(parent, after = null) {
-    parent.insertBefore(this.node, after?.nextSibling);
-  }
-
-  disconnect() {
-    this.node.parentNode?.removeChild(this.node);
-  }
-}
-
-export function initView(fn, config) {
-  let { appContext, elementContext, traits, children, channelPrefix } = config;
+export function initLocal(fn, config) {
+  let { appContext, elementContext, attributes, children, channelPrefix, name } = config;
 
   channelPrefix = channelPrefix || "view";
 
@@ -45,24 +22,8 @@ export function initView(fn, config) {
   let subscriptions = [];
   let isConnected = false;
 
-  let transitions = traits.find((t) => t._trait === "transitions");
-  let mapToCSS;
-
-  const attributes = { ...config.attributes };
-
-  if (transitions) {
-    mapToCSS = transitions.mapToCSS;
-    transitions = transitions.create(mapToCSS);
-
-    // Forward exports as attributes unless mapToCSS is defined.
-    if (!mapToCSS) {
-      Object.assign(attributes, transitions.exports);
-    }
-  }
-
-  const name = traits.find((t) => t._trait === "name")?.name || "<unnamed>";
-  const channel = appContext.debug.makeChannel(`${channelPrefix}:${name}`);
-  const attrs = makeAttributes(channel, attributes, traits ?? []);
+  const channel = appContext.debug.makeChannel(`${channelPrefix}:${name || fn.name || "<anonymous>"}`);
+  const attrs = makeAttributes(channel, attributes);
 
   /*=============================*\
   ||    Define context object    ||
@@ -147,13 +108,6 @@ export function initView(fn, config) {
     afterDisconnect(callback) {
       afterDisconnectCallbacks.push(callback);
     },
-
-    /**
-     * Renders nested elements passed to this view.
-     */
-    outlet() {
-      return new ObserverBlueprint($$children.readable());
-    },
   };
 
   // Add debug methods.
@@ -173,21 +127,32 @@ export function initView(fn, config) {
   ||      Run setup function     ||
   \*=============================*/
 
-  let element = fn(ctx);
+  let exports;
 
-  if (element !== null) {
-    if (element.isBlueprint) {
-      element = element.build({ appContext, elementContext });
-    } else if (isDOM(element)) {
-      element = new DOMAdapterView(element);
-    } else {
-      throw new TypeError(`Views must return a blueprint, a DOM node or null. Got: ${element}`);
-    }
+  try {
+    exports = fn(ctx, h);
+  } catch (err) {
+    console.error(err);
+  }
+
+  if (!isObject(exports)) {
+    throw new TypeError(`Local functions must return an object. Got: ${exports}`);
   }
 
   /*=============================*\
   ||     Define view object      ||
   \*=============================*/
+
+  const outlet = new ObserverBlueprint($$children.readable()).build({
+    appContext,
+    elementContext: {
+      ...elementContext,
+      locals: {
+        ...(elementContext?.locals || {}),
+        [attributes.as]: exports,
+      },
+    },
+  });
 
   // This is the object the framework will use to control the view.
   const view = {
@@ -195,18 +160,14 @@ export function initView(fn, config) {
      * Returns the view's root DOM node, or null if there is none.
      */
     get node() {
-      if (element) {
-        return element.node;
-      }
-
-      return null;
+      return outlet.node;
     },
 
     /**
      * True if the root DOM node is currently in the document.
      */
     get isConnected() {
-      return isConnected;
+      return outlet.isConnected;
     },
 
     setChildren(children) {
@@ -221,76 +182,54 @@ export function initView(fn, config) {
      * @param parent - DOM node under which this view should be connected as a child.
      * @param after - A child node under `parent` after which this view should be connected.
      */
-    async connect(parent, after = null) {
-      return new Promise(async (resolve) => {
-        const wasConnected = view.isConnected;
+    connect(parent, after = null) {
+      const wasConnected = outlet.isConnected;
 
-        if (!wasConnected) {
-          attrs.controls.connect();
+      if (!wasConnected) {
+        attrs.controls.connect();
 
-          for (const callback of beforeConnectCallbacks) {
+        for (const callback of beforeConnectCallbacks) {
+          callback();
+        }
+      }
+
+      outlet.connect(parent, after);
+      isConnected = true;
+
+      if (!wasConnected) {
+        setTimeout(() => {
+          for (const callback of afterConnectCallbacks) {
             callback();
           }
-        }
-
-        if (element) {
-          element.connect(parent, after);
-        }
-
-        isConnected = true;
-
-        if (!wasConnected) {
-          if (transitions) {
-            await transitions.enter(element.node);
-          }
-
-          setTimeout(() => {
-            for (const callback of afterConnectCallbacks) {
-              callback();
-            }
-
-            resolve();
-          }, 0);
-        }
-      });
+        }, 0);
+      }
     },
 
     /**
      * Disconnects this view from the DOM and runs lifecycle hooks.
      */
-    async disconnect() {
-      return new Promise(async (resolve) => {
-        if (view.isConnected) {
-          for (const callback of beforeDisconnectCallbacks) {
+    disconnect() {
+      if (outlet.isConnected) {
+        for (const callback of beforeDisconnectCallbacks) {
+          callback();
+        }
+
+        outlet.disconnect();
+        isConnected = false;
+
+        setTimeout(() => {
+          for (const callback of afterDisconnectCallbacks) {
             callback();
           }
 
-          if (transitions) {
-            await transitions.exit(element.node);
+          for (const subscription of subscriptions) {
+            subscription.unsubscribe();
           }
+          subscriptions = [];
+        }, 0);
+      }
 
-          if (element) {
-            element.disconnect();
-          }
-
-          isConnected = false;
-
-          setTimeout(() => {
-            for (const callback of afterDisconnectCallbacks) {
-              callback();
-            }
-
-            for (const subscription of subscriptions) {
-              subscription.unsubscribe();
-            }
-            subscriptions = [];
-
-            resolve();
-          }, 0);
-        }
-
-        attrs.controls.disconnect();
-      });
+      attrs.controls.disconnect();
     },
   };
 

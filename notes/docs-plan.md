@@ -4,6 +4,7 @@
 2. [State](#state)
 3. [Views](#views)
 4. [Globals](#globals)
+5. [Locals](#locals)
 
 Outline for future guide:
 

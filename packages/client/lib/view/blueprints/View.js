@@ -1,10 +1,11 @@
 import { initView } from "../helpers/initView.js";
 
 export class ViewBlueprint {
-  constructor(view, attributes, children) {
-    this.view = view;
+  constructor(fn, attributes, children) {
+    this.fn = fn;
     this.attributes = attributes;
     this.children = children;
+    this.traits = fn._traits ?? [];
   }
 
   get isBlueprint() {
@@ -12,15 +13,15 @@ export class ViewBlueprint {
   }
 
   build({ appContext, elementContext, attributes = {} }) {
-    return initView(this.view, {
+    return initView(this.fn, {
       attributes: {
         ...this.attributes,
-        ...attributes,
+        ...attributes, // TODO: I'm not sure where these would be passed.
       },
       children: this.children,
+      traits: this.traits,
       appContext,
       elementContext,
-      name: this.view.viewName,
     });
   }
 }

@@ -1,22 +1,24 @@
-import { isString, isFunction } from "../helpers/typeChecking.js";
+import { isFunction } from "../helpers/typeChecking.js";
 
 export function makeView(...args) {
-  let name;
-  let fn;
+  // Args should be zero or more traits followed by a view function.
+  const fn = args.pop();
 
-  if (isString(args[0])) {
-    name = args.shift();
+  if (!isFunction(fn)) {
+    throw new TypeError(`Expected a view function as the last argument. Got: ${fn}`);
   }
 
-  if (isFunction(args[0])) {
-    fn = args[0];
-  }
+  fn._traits = [];
 
-  if (!fn) {
-    throw new TypeError(`Expected a view function, but no function was passed.`);
+  for (let i = 0; i < args.length; i++) {
+    if (args[i]._trait) {
+      fn._traits.push(args[i]);
+    } else {
+      throw new Error(
+        `Argument at index ${i} is not a trait. Expected zero or more traits followed by a view function.`
+      );
+    }
   }
-
-  fn.viewName = name;
 
   return fn;
 }

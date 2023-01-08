@@ -1,4 +1,4 @@
-import { joinStates, makeState, makeView } from "@woofjs/client";
+import { h, joinStates, makeState, makeView } from "@woofjs/client";
 
 export default makeView((ctx) => {
   ctx.name = "7guis:CRUD";
@@ -108,7 +108,7 @@ export default makeView((ctx) => {
               $$selectedId.set(Number(e.target.value));
             }}
           >
-            {ctx.repeat($filteredPeople, ($person) => {
+            {h.repeat($filteredPeople, ($person) => {
               const $id = $person.as((p) => p.id);
               const $name = $person.as((p) => p.name);
               const $surname = $person.as((p) => p.surname);

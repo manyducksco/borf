@@ -1,10 +1,10 @@
-import { makeTransitions, makeView, makeState } from "@woofjs/client";
+import { h, makeTransitions, makeView, makeState } from "@woofjs/client";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];
 
-export const DynamicListExample = makeView((ctx, h) => {
+export const DynamicListExample = makeView((ctx) => {
   ctx.name = "DynamicListExample";
 
   const $$shoppingList = makeState(initialList);

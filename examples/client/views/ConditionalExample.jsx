@@ -1,71 +1,68 @@
-import { makeTransitions, makeView, makeState } from "@woofjs/client";
-import { animate } from "popmotion";
+import {
+  h,
+  makeTransitions,
+  makeView,
+  makeState,
+  withName,
+} from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const ConditionalExample = makeView((ctx, h) => {
-  ctx.name = "ConditionalExample";
+export const ConditionalExample = makeView(
+  withName("ConditionalExample"),
+  (ctx) => {
+    logLifecycle(ctx);
 
-  logLifecycle(ctx);
+    const $$show = makeState(false);
+    const $label = $$show.as((t) => (t ? "Hide Text" : "Show Text"));
 
-  const $$show = makeState(false);
-  const $label = $$show.as((t) => (t ? "Hide Text" : "Show Text"));
+    return (
+      <div class="example">
+        <h3>
+          Conditional rendering with <code>when()</code>
+        </h3>
+        <div>
+          <button
+            style={{
+              width: 100,
+            }}
+            onclick={() => {
+              $$show.update((t) => !t);
+            }}
+          >
+            {$label}
+          </button>
 
-  return (
-    <div class="example">
-      <h3>
-        Conditional rendering with <code>when()</code>
-      </h3>
-      <div>
-        <button
-          style={{
-            width: 100,
-          }}
-          onclick={() => {
-            $$show.update((t) => !t);
-          }}
-        >
-          {$label}
-        </button>
-        {h.when(
-          $$show,
-          animated(
-            <span style={{ display: "inline-block", paddingLeft: "0.5rem" }}>
-              Hello there!
-            </span>
-          )
-        )}
+          {h.when(
+            $$show,
+            <Animated>
+              <span style={{ display: "inline-block", paddingLeft: "0.5rem" }}>
+                Hello there!
+              </span>
+            </Animated>
+          )}
+        </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);
 
-const animated = makeTransitions({
-  enter(ctx) {
-    animate({
-      from: { opacity: 0, y: -10 },
-      to: { opacity: 1, y: 0 },
-      duration: 200,
-      onUpdate(latest) {
-        ctx.node.style.opacity = latest.opacity;
-        ctx.node.style.transform = `translateY(${latest.y}px)`;
-      },
-      onComplete() {
-        ctx.done();
-      },
-    });
-  },
-  exit(ctx) {
-    animate({
-      from: { opacity: 1, y: 0 },
-      to: { opacity: 0, y: 10 },
-      duration: 200,
-      onUpdate(latest) {
-        ctx.node.style.opacity = latest.opacity;
-        ctx.node.style.transform = `translateY(${latest.y}px)`;
-      },
-      onComplete() {
-        ctx.done();
-      },
-    });
-  },
+const Animated = makeTransitions((ctx) => {
+  const opacity = makeSpring(0);
+  const y = makeSpring(-10);
+
+  ctx.enter(() => {
+    return Promise.all([opacity.to(1), y.to(0)]);
+  });
+
+  ctx.exit(() => {
+    return Promise.all([opacity.to(0), y.to(-10)]);
+  });
+
+  // Update DOM node directly.
+  ctx.observe(opacity, (current) => {
+    ctx.node.style.opacity = current;
+  });
+  ctx.observe(y, (current) => {
+    ctx.node.style.transform = `translateY(${current}px)`;
+  });
 });
