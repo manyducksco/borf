@@ -1,307 +1,313 @@
-import { isBlueprint, isFunction, isObject, isString } from "./helpers/typeChecking.js";
+import { isFunction, isObject, isString } from "./helpers/typeChecking.js";
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
 import { makeDebug } from "./helpers/makeDebug.js";
+import { toBlueprint } from "./helpers/toBlueprints.js";
+import { ViewBlueprint } from "./blueprints/View.js";
 
-import dialog from "./global/built-ins/dialog.js";
-import http from "./global/built-ins/http.js";
-import page from "./global/built-ins/page.js";
-import router from "./global/built-ins/router.js";
-
-import { initGlobal } from "./global/helpers/initGlobal.js";
+import dialog from "./globals/dialog.js";
+import http from "./globals/http.js";
+import page from "./globals/page.js";
+import router from "./globals/router.js";
 
 const builtInGlobals = [dialog, router, page, http];
 
-/**
- * Creates a woof application.
- */
-export function makeApp(options = {}) {
-  const globals = {
+export function makeApp(options) {
+  return new App(options);
+}
+
+class App {
+  _layerId = 0;
+  _subscriptions = [];
+
+  options = {
+    preload: null,
+    view: (ctx) => ctx.outlet(),
+    globals: {},
+    routes: [],
+    debug: {
+      filter: "*,-woof:*",
+      log: true,
+      warn: true,
+      error: true,
+    },
+    router: {
+      hash: false,
+    },
+  };
+
+  globals = {
     "@dialog": dialog,
     "@router": router,
     "@page": page,
     "@http": http,
   };
 
-  const appContext = {
-    options,
-    debug: makeDebug(options.debug ?? {}),
-    globals: {},
-    routes: [],
-    rootElement: null,
-    // $dialogs - added by dialog global
-  };
+  routes = [];
 
-  let layerId = 0;
+  isConnected = false;
 
-  let onBeforeConnect = async () => true;
-  let onAfterConnect = async () => true;
+  constructor(options) {
+    if (!options) {
+      options = {};
+    }
+
+    // Support calling with only a view setup function.
+    if (isFunction(options)) {
+      options = {
+        view: options,
+      };
+    }
+
+    // Merge options.
+    options = Object.assign(this.options, options);
+
+    // Add developer-defined globals.
+    if (options.globals) {
+      Object.assign(this.globals, options.globals);
+    }
+
+    if (options.routes) {
+      this.routes = [];
+
+      for (const route of options.routes) {
+        this.routes.push(...this.#prepareRoute(route));
+      }
+    }
+
+    this._context = {
+      options,
+      debug: makeDebug(options.debug ?? {}),
+      globals: {},
+      routes: this.routes,
+      rootElement: null,
+      rootView: null,
+      // $dialogs - added by dialog global
+    };
+  }
 
   /**
-   * Parses routes into a flat data structure appropriate for handling by the router service.
+   * Initializes the app and starts routing.
    *
-   * @param path - Path to match before calling handlers.
-   * @param view - View to display when route matches.
-   * @param defineRoutes - Function that defines routes to be displayed as children of `window`.
+   * @param element - Selector string or DOM node to attach to.
+   */
+  async connect(element) {
+    if (isString(element)) {
+      element = document.querySelector(element);
+    }
+
+    if (!(element instanceof Node)) {
+      throw new TypeError(`Expected a DOM node. Got: ${element}`);
+    }
+
+    const appContext = this._context;
+
+    appContext.rootElement = element;
+
+    // Set up crashing getters to handle globals being accessed by other globals.
+    for (const name in this.globals) {
+      Object.defineProperty(appContext.globals, name, {
+        get() {
+          throw new Error(
+            `Global '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other globals that access it.`
+          );
+        },
+        configurable: true,
+      });
+    }
+
+    // Initialize globals.
+    for (const name in this.globals) {
+      let global = this.globals[name];
+
+      if (isFunction(global)) {
+        global = makeGlobal(global);
+      }
+
+      if (global == null || !global.isGlobal) {
+        throw new TypeError(`Global '${name}' must be a global or a global setup function. Got: ${global}`);
+      }
+
+      let channelPrefix = "global";
+      if (builtInGlobals.includes(global)) {
+        channelPrefix = "woof:global";
+      }
+
+      const instance = global.instantiate({ appContext, channelPrefix, name: global.name || name });
+
+      if (!isObject(instance.exports)) {
+        throw new TypeError(`Setup function for global '${name}' did not return an object.`);
+      }
+
+      // Add to appContext.globals
+      Object.defineProperty(appContext.globals, name, {
+        value: instance,
+        writable: false,
+        enumerable: true,
+        configurable: false,
+      });
+    }
+
+    // beforeConnect is the first opportunity to configure globals before anything else happens.
+    for (const global of Object.values(appContext.globals)) {
+      await global.beforeConnect();
+    }
+
+    return this.#preload().then(async (attributes) => {
+      // Initialize view and connect to root element.
+      appContext.rootView = new ViewBlueprint(this.options.view).build({ appContext, attributes });
+      appContext.rootView.connect(appContext.rootElement);
+
+      // Send connected signal to all globals.
+      for (const global of Object.values(appContext.globals)) {
+        global.afterConnect();
+      }
+
+      this._subscriptions.push(connectDialogs(appContext));
+
+      this.isConnected = true;
+    });
+  }
+
+  async disconnect() {
+    if (this.isConnected) {
+      const appContext = this._context;
+
+      for (const global of Object.values(appContext.globals)) {
+        await global.beforeDisconnect();
+      }
+
+      await appContext.rootView.disconnect();
+
+      this.isConnected = false;
+
+      while (this._subscriptions.length > 0) {
+        const sub = this._subscriptions.shift();
+        sub.unsubscribe();
+      }
+
+      for (const global of Object.values(appContext.globals)) {
+        await global.afterDisconnect();
+      }
+    }
+  }
+
+  async #preload() {
+    if (this.options.preload) {
+      const appContext = this._context;
+      const channel = appContext.debug.makeChannel("woof:app:preload");
+
+      return new Promise((resolve) => {
+        let resolved = false;
+
+        const ctx = {
+          ...channel,
+
+          global: (name) => {
+            if (!isString(name)) {
+              throw new TypeError("Expected a string.");
+            }
+
+            if (appContext.globals[name]) {
+              return appContext.globals[name].exports;
+            }
+
+            throw new Error(`Global '${name}' is not registered on this app.`);
+          },
+
+          /**
+           * Redirect to another route instead of loading this one.
+           * @param {string} to - Redirect path (e.g. `/login`)
+           */
+          redirect: (to) => {
+            if (!resolved) {
+              appContext.redirectPath = to;
+              resolve();
+              resolved = true;
+            }
+          },
+        };
+
+        const result = this.options.preload(ctx);
+
+        if (!isFunction(result.then)) {
+          throw new TypeError(`Preload function must return a Promise.`);
+        }
+
+        result.then((attributes) => {
+          if (attributes && !isObject(attributes)) {
+            throw new TypeError(
+              `Preload function must return an attributes object or null/undefined. Got: ${attributes}`
+            );
+          }
+
+          if (!resolved) {
+            resolve(attributes);
+            resolved = true;
+          }
+        });
+      });
+    }
+
+    return {};
+  }
+
+  /**
+   * Parses routes into a flat data structure appropriate for handling by the router.
+   *
+   * @param route - Route config object.
    * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
    */
-  function prepareRoutes(path, view, defineRoutes = null, layers = []) {
-    let preload;
-    let subroutes = defineRoutes;
-
-    // Config object
-    if (isObject(view) && typeof view.view === "function") {
-      subroutes = view.subroutes;
-      preload = view.preload;
-      view = view.view;
+  #prepareRoute(route, layers = []) {
+    if (!isObject(route) || !isString(route.path)) {
+      throw new TypeError(`Route configs must be objects with a 'path' string property. Got: ${route}`);
     }
 
-    if (isBlueprint(view)) {
-      const c = view;
-      view = () => c;
-    }
+    const parts = splitRoute(route.path);
 
-    if (!isFunction(view)) {
-      throw new TypeError(`Route needs a path and a view function. Got: ${path} and ${view}`);
+    // Remove trailing wildcard for joining with nested routes.
+    if (parts[parts.length - 1] === "*") {
+      parts.pop();
     }
 
     const routes = [];
-    const layer = { id: layerId++, view, preload };
 
-    // Parse nested routes if they exist.
-    if (subroutes != null) {
-      const parts = splitRoute(path);
+    if (route.redirect) {
+      console.log({ route, parts: [...parts, route.redirect] });
+      let redirect = resolvePath(...parts, route.redirect);
 
-      // Remove trailing wildcard for joining with nested routes.
-      if (parts[parts.length - 1] === "*") {
-        parts.pop();
+      if (!redirect.startsWith("/")) {
+        redirect = "/" + redirect;
       }
 
-      const helpers = {
-        /**
-         * Registers a new nested route with a path relative to the current route.
-         */
-        route: (path, view, defineRoutes) => {
-          const fullPath = joinPath(...parts, path);
+      routes.push({
+        path: route.path,
+        fragments: parseRoute(route.path).fragments,
+        redirect,
+      });
 
-          routes.push(...prepareRoutes(fullPath, view, defineRoutes, [...layers, layer]));
-        },
-        /**
-         * Registers a new nested redirect with a path relative to the current route.
-         */
-        redirect: (from, to) => {
-          from = joinPath(...parts, from);
-          to = resolvePath(joinPath(...parts), to);
-          const { fragments } = parseRoute(from);
+      return routes;
+    }
 
-          if (!to.startsWith("/")) {
-            to = "/" + to;
-          }
+    const layer = { id: this._layerId++, view: route.view || ((ctx) => ctx.outlet()) };
 
-          routes.push({
-            path: from,
-            redirect: to,
-            fragments,
-          });
-        },
-      };
-
-      subroutes.call(helpers, helpers);
+    // Parse nested routes if they exist.
+    if (route.routes) {
+      for (const subroute of route.routes) {
+        const path = joinPath(...parts, subroute.path);
+        routes.push(...this.#prepareRoute({ ...subroute, path }, [...layers, layer]));
+      }
     } else {
       routes.push({
-        path,
-        fragments: parseRoute(path).fragments,
+        path: route.path,
+        fragments: parseRoute(route.path).fragments,
         layers: [...layers, layer],
       });
     }
 
     return routes;
   }
-
-  ////
-  // Public
-  ////
-
-  return {
-    /**
-     * Registers a new global accessible throughout the app.
-     *
-     * @param name - Name of the service.
-     * @param fn - The global function.
-     */
-    global(name, fn) {
-      globals[name] = fn;
-
-      return this;
-    },
-
-    /**
-     * Adds a route to the list for matching when the URL changes.
-     *
-     * @param path - Path to match before calling handlers.
-     * @param view - View to display when route matches.
-     * @param defineRoutes - Function that defines routes to be displayed as children of `window`.
-     */
-    route(path, view, defineRoutes = null) {
-      appContext.routes.push(...prepareRoutes(path, view, defineRoutes));
-
-      return this;
-    },
-
-    /**
-     * Adds a route that redirects to another path.
-     *
-     * @param path - Path to match.
-     * @param to - New location for redirect.
-     */
-    redirect(path, to) {
-      if (isString(to)) {
-        appContext.routes.push({
-          path,
-          redirect: to,
-        });
-      } else {
-        throw new TypeError(`Expected a path. Got: ${to}`);
-      }
-
-      return this;
-    },
-
-    /**
-     * Takes a function that configures the app before it is connected.
-     * This function is called after globals have been created, before the first route match.
-     *
-     * If the function returns a Promise, the app will not be connected until the Promise resolves.
-     */
-    beforeConnect(fn) {
-      onBeforeConnect = async () => {
-        const channel = appContext.debug.makeChannel("woof:app:beforeConnect");
-
-        const ctx = {
-          ...channel,
-
-          global(name) {
-            if (!isString(name)) {
-              throw new TypeError("Expected a string.");
-            }
-
-            if (appContext.globals[name]) {
-              return appContext.globals[name].exports;
-            }
-
-            throw new Error(`Global '${name}' is not registered on this app.`);
-          },
-        };
-
-        return fn(ctx);
-      };
-
-      return this;
-    },
-
-    /**
-     * Takes a function that configures the app after it is connected.
-     * This function is called after the first route match.
-     */
-    afterConnect(fn) {
-      onAfterConnect = async () => {
-        const channel = appContext.debug.makeChannel("woof:app:afterConnect");
-
-        const ctx = {
-          ...channel,
-
-          global(name) {
-            if (!isString(name)) {
-              throw new TypeError("Expected a string.");
-            }
-
-            if (appContext.globals[name]) {
-              return appContext.globals[name].exports;
-            }
-
-            throw new Error(`Global '${name}' is not registered on this app.`);
-          },
-        };
-
-        return fn(ctx);
-      };
-
-      return this;
-    },
-
-    /**
-     * Initializes the app and starts routing.
-     *
-     * @param element - Selector string or DOM node to attach to.
-     */
-    async connect(element) {
-      if (isString(element)) {
-        element = document.querySelector(element);
-      }
-
-      if (!(element instanceof Node)) {
-        throw new TypeError(`Expected a DOM node. Got: ${element}`);
-      }
-
-      appContext.rootElement = element;
-
-      // Set up crashing getters to handle globals being accessed by other globals.
-      for (const name in globals) {
-        Object.defineProperty(appContext.globals, name, {
-          get() {
-            throw new Error(
-              `Global '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other globals that access it.`
-            );
-          },
-          configurable: true,
-        });
-      }
-
-      for (const name in globals) {
-        const fn = globals[name];
-
-        if (!isFunction(fn)) {
-          throw new Error(`Service '${name}' must be a function that returns an object. Got ${typeof globals[name]}`);
-        }
-
-        let channelPrefix;
-        if (builtInGlobals.includes(fn)) {
-          channelPrefix = "woof:global";
-        }
-
-        const global = initGlobal(fn, { appContext, channelPrefix, name });
-
-        if (!isObject(global.exports)) {
-          throw new TypeError(`Global function for '${name}' did not return an object.`);
-        }
-
-        // Add to appContext.globals
-        Object.defineProperty(appContext.globals, name, {
-          value: global,
-          writable: false,
-          enumerable: true,
-          configurable: false,
-        });
-      }
-
-      // beforeConnect is the first opportunity to configure globals before anything else happens.
-      for (const global of Object.values(appContext.globals)) {
-        await global.beforeConnect();
-      }
-
-      return onBeforeConnect().then(async () => {
-        // Send connected signal to all globals.
-        for (const global of Object.values(appContext.globals)) {
-          global.afterConnect();
-        }
-
-        connectDialogs(appContext);
-
-        return onAfterConnect();
-      });
-    },
-  };
 }
 
 /**
@@ -321,7 +327,7 @@ function connectDialogs(appContext) {
 
   let activeDialogs = [];
 
-  $dialogs.subscribe((dialogs) => {
+  return $dialogs.subscribe((dialogs) => {
     requestAnimationFrame(() => {
       let removed = [];
       let added = [];

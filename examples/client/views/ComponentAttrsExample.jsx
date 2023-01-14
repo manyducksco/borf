@@ -1,8 +1,8 @@
-import { makeView, makeState, withName, withAttributes } from "@woofjs/client";
+import { makeView, makeState } from "@woofjs/client";
 
-export const ComponentAttrsExample = makeView(
-  withName("ComponentAttrsExample"),
-  (ctx) => {
+export const ComponentAttrsExample = makeView({
+  name: "ComponentAttrsExample",
+  setup: () => {
     const $$message = makeState("Hello");
 
     return (
@@ -15,18 +15,19 @@ export const ComponentAttrsExample = makeView(
         </div>
       </div>
     );
-  }
-);
+  },
+});
 
-const SubComponent = makeView(
-  withName("SubComponent"),
-  withAttributes({
+const SubComponent = makeView({
+  name: "SubComponent",
+  attributes: {
     message: {
       type: "string",
+      required: true,
     },
-  }),
-  (ctx) => {
-    const $$message = ctx.attributes.writable("message");
+  },
+  setup: (ctx) => {
+    const $$message = ctx.attrs.writable("message");
 
     return (
       <div>
@@ -40,5 +41,5 @@ const SubComponent = makeView(
         </button>
       </div>
     );
-  }
-);
+  },
+});

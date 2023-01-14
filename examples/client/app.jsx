@@ -5,7 +5,7 @@ import { makeApp } from "@woofjs/client";
 import counter from "./globals/counter";
 import mouse from "./globals/mouse";
 
-import { AppLayout, preloadAppLayout } from "./views/AppLayout";
+import { AppLayout } from "./views/AppLayout";
 import { ComponentAttrsExample } from "./views/ComponentAttrsExample";
 import { ToggleExample } from "./views/ToggleExample";
 import { CounterExample } from "./views/CounterExample";
@@ -16,6 +16,7 @@ import { FormExample } from "./views/FormExample";
 import { MouseFollowerExample } from "./views/MouseFollowerExample";
 import { HTTPRequestExample } from "./views/HTTPRequestExample";
 import { SpringExample } from "./views/SpringExample";
+import { LocalsExample } from "./views/LocalsExample";
 
 import { RenderOrderTest } from "./views/RenderOrderTest.jsx";
 
@@ -28,17 +29,17 @@ import CRUD from "./views/7guis/05_CRUD";
 import CircleDrawer from "./views/7guis/06_CircleDrawer";
 import Cells from "./views/7guis/07_Cells";
 
-// const timer = new EventSource("/timer");
-//
-// timer.addEventListener("time", (event) => {
-//   console.log("time:", event.data + " seconds remaining");
-// });
-//
-// timer.addEventListener("message", (event) => {
-//   console.log("message:", event.data);
-// });
+const timer = new EventSource("/timer");
 
-const app = makeApp({
+timer.addEventListener("time", (event) => {
+  console.log("time:", event.data + " seconds remaining");
+});
+
+timer.addEventListener("message", (event) => {
+  console.log("message:", event.data);
+});
+
+const Examples = makeApp({
   debug: {
     filter: "*",
     log: true,
@@ -48,96 +49,72 @@ const app = makeApp({
   router: {
     hash: false,
   },
-});
-
-// Make separate modules with their own globals and routes. Modules can be mounted on any route.
-// Modules do have access to app-level globals, though ones of the same name on their module will override.
-// const mod = makeModule();
-
-// mod.global("counter", counter);
-// mod.route("/test", function () {
-//   return <div>Welcome to a module.</div>;
-// });
-
-// app.route("/module", mod);
-
-app.global("counter", counter);
-app.global("mouse", mouse);
-
-app.route("/client-test", function () {
-  return <h1>Test</h1>;
-});
-
-app.route("/render-order", RenderOrderTest);
-
-app.route("*", {
-  view: AppLayout,
-  preload: preloadAppLayout,
-  subroutes: function (sub) {
-    sub.route("/spring", SpringExample);
-
-    sub.route("/examples", function () {
-      return (
-        <div>
-          <SpringExample />
-          {/* <ToggleExample /> */}
-          {/* <CounterExample /> */}
-          {/* <ConditionalExample /> */}
-          <DynamicListExample />
-          {/* <TwoWayBindExample /> */}
-          {/* <FormExample /> */}
-          <MouseFollowerExample />
-          {/* <HTTPRequestExample /> */}
-          {/* <ComponentAttrsExample /> */}
-          {/*<RenderOrderTest />*/}
-        </div>
-      );
-    });
-
-    sub.route("/7guis", SevenGUIs, function (sub) {
-      sub.route("/counter", Counter);
-      sub.route("/temp-converter", TempConverter);
-      sub.route("/flight-booker", FlightBooker);
-      sub.route("/timer", Timer);
-      sub.route("/crud", CRUD);
-      sub.route("/circle-drawer", CircleDrawer);
-      sub.route("/cells", Cells);
-      sub.redirect("*", "./counter");
-    });
-
-    sub.route("/router-test/one", function () {
-      return <h1>One</h1>;
-    });
-
-    sub.route("/router-test/two", function () {
-      return <h1>Two</h1>;
-    });
-
-    sub.redirect("/router-test/*", "/router-test/one");
-
-    sub.route("/nested", {
-      view: function (ctx) {
+  globals: {
+    counter,
+    mouse,
+  },
+  view: AppLayout, // Defaults to (ctx) => ctx.outlet() when not passed.
+  routes: [
+    // Routes are always rendered in the outlet of the sibling view.
+    {
+      path: "/examples",
+      view: () => {
+        return (
+          <div>
+            {/* <LocalsExample /> */}
+            <SpringExample />
+            <ToggleExample />
+            <CounterExample />
+            {/* {<ConditionalExample />} */}
+            <DynamicListExample />
+            <TwoWayBindExample />
+            {/* <FormExample /> */}
+            <MouseFollowerExample />
+            {/* <HTTPRequestExample /> */}
+            {/* <ComponentAttrsExample /> */}
+            {/* <RenderOrderTest /> */}
+          </div>
+        );
+      },
+    },
+    {
+      path: "/7guis",
+      view: SevenGUIs,
+      routes: [
+        { path: "/counter", view: Counter },
+        { path: "/temp-converter", view: TempConverter },
+        { path: "/flight-booker", view: FlightBooker },
+        { path: "/timer", view: Timer },
+        { path: "/crud", view: CRUD },
+        { path: "/circle-drawer", view: CircleDrawer },
+        { path: "/cells", view: Cells },
+        { path: "*", redirect: "./counter" },
+      ],
+    },
+    { path: "/router-test/one", view: () => <h1>One</h1> },
+    { path: "/router-test/two", view: () => <h1>Two</h1> },
+    { path: "/router-test/*", redirect: "/router-test/one" },
+    {
+      path: "/nested",
+      view: (ctx) => {
         return (
           <div>
             <h1>Nested Routes!</h1>
-
             {ctx.outlet()}
           </div>
         );
       },
-      subroutes: function (sub) {
-        sub.route("/one", function () {
-          return <h1>NESTED #1</h1>;
-        });
-        sub.route("/two", function () {
-          return <h1>NESTED #2</h1>;
-        });
-        sub.redirect("*", "./one");
-      },
-    });
-
-    sub.redirect("*", "./examples");
-  },
+      routes: [
+        { path: "/one", view: () => <h1>NESTED #1</h1> },
+        { path: "/two", view: () => <h1>NESTED #2</h1> },
+        { path: "*", redirect: "./one" },
+      ],
+    },
+    { path: "*", redirect: "./examples" },
+  ],
 });
 
-app.connect("#app");
+console.log(Examples.routes); // Metadata about route configuration
+console.log(Examples.globals); // Metadata about registered services
+
+Examples.connect("#app");

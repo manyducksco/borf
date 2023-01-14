@@ -57,6 +57,30 @@ declare module "@woofjs/client" {
        */
       history?: History;
     };
+
+    globals?: Record<string, Global | GlobalFunction>;
+
+    preload?: RoutePreloadFn;
+
+    view?: View | ViewFunction;
+
+    routes?: RouteConfig[];
+  }
+
+  interface RoutePreloadFn {
+    (context: RoutePreloadContext): void;
+  }
+
+  interface RoutePreloadContext {
+    global(name: string): any;
+  }
+
+  interface RouteConfig {
+    path: string;
+    redirect?: string;
+    preload?: RoutePreloadFn;
+    view?: View | ViewFunction;
+    routes?: RouteConfig[];
   }
 
   /**
@@ -94,6 +118,8 @@ declare module "@woofjs/client" {
      * @param root - DOM node or a selector string.
      */
     connect(root: string | Node): Promise<void>;
+
+    disconnect(): Promise<void>;
   }
 
   export interface AppContext<Globals> extends DebugChannel {
@@ -869,6 +895,45 @@ declare module "@woofjs/client" {
     set<Key extends keyof State>(key: Key, value: State[Key]): void;
 
     done: () => void;
+  }
+
+  /*==================================*\
+  ||         Animations: Spring       ||
+  \*==================================*/
+
+  export function makeSpring(initialValue: number, options?: SpringOptions): Spring;
+
+  export interface Spring extends Readable<number> {
+    snapTo(endValue: number): Promise<void>;
+    to(endValue: number, options?: SpringOptions): Promise<void>;
+    animate(startValue: number, endValue: number, options?: SpringOptions): Promise<void>;
+  }
+
+  export interface SpringOptions {
+    mass?: number;
+    stiffness?: number;
+    damping?: number;
+    velocity?: number;
+  }
+
+  /*==================================*\
+  ||         Animations: Tween        ||
+  \*==================================*/
+
+  export function makeTween(options?: TweenOptions): Tween;
+
+  export interface Tween extends Readable<number> {
+    snapTo(endValue: number): Promise<void>;
+    to(endValue: number, options?: TweenOptions): Promise<void>;
+    animate(startValue: number, endValue: number, options?: TweenOptions): Promise<void>;
+  }
+
+  type EasingFunction = (x: number) => number;
+  type EasingArray = [number, number, number, number];
+
+  export interface TweenOptions {
+    duration?: number;
+    easing?: EasingArray | EasingFunction;
   }
 
   /*==================================*\

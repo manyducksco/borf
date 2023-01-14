@@ -1,22 +1,12 @@
-import {
-  h,
-  makeView,
-  makeTransitions,
-  withTransitions,
-  withAttributes,
-  makeState,
-  joinStates,
-  withName,
-  makeSpring,
-} from "@woofjs/client";
+import { makeView, makeState, joinStates, makeSpring } from "@woofjs/client";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const bestColor = "#ff0088";
 
-export const MouseFollowerExample = makeView(
-  withName("MouseFollowerExample"),
-  (ctx) => {
+export const MouseFollowerExample = makeView({
+  name: "MouseFollowerExample",
+  setup: (ctx, { when }) => {
     const $$enabled = makeState(false);
     const $$color = makeState(bestColor);
 
@@ -62,7 +52,7 @@ export const MouseFollowerExample = makeView(
       <div class="example">
         <h3>More complex state management</h3>
         <div>
-          {h.when(
+          {when(
             $$enabled,
             <MouseFollower position={mouse.$position} color={$$color} />
           )}
@@ -71,7 +61,7 @@ export const MouseFollowerExample = makeView(
             Change Follower Color
           </button>
 
-          {h.when(
+          {when(
             $isNotBestColor,
             <button onclick={resetColor} disabled={$disabled}>
               Reset to Best Color
@@ -86,34 +76,12 @@ export const MouseFollowerExample = makeView(
         </div>
       </div>
     );
-  }
-);
-
-/**
- * Scales the element up from `0` on enter and down to `0` on exit.
- * Animates the `scale` value in view's context.
- */
-const scaleInOut = makeTransitions((ctx) => {
-  const scale = makeSpring(0, {
-    stiffness: 200,
-    damping: 30,
-  });
-
-  ctx.enter(async () => {
-    return scale.to(1);
-  });
-
-  ctx.exit(async () => {
-    return scale.to(0);
-  });
-
-  return { scale };
+  },
 });
 
-const MouseFollower = makeView(
-  withName("AnimatedMouseFollower"),
-  withTransitions(scaleInOut),
-  withAttributes({
+const MouseFollower = makeView({
+  name: "AnimatedMouseFollower",
+  attributes: {
     color: {
       type: "string",
       required: true,
@@ -122,15 +90,18 @@ const MouseFollower = makeView(
       type: "object",
       required: true,
     },
-    scale: {
-      type: "number",
-      required: true,
-    },
-  }),
-  (ctx) => {
+  },
+  setup: (ctx) => {
+    const scale = makeSpring(0, {
+      stiffness: 200,
+      damping: 30,
+    });
+
+    ctx.animateIn(() => scale.to(1));
+    ctx.animateOut(() => scale.to(0));
+
     const $color = ctx.attrs.readable("color");
     const $position = ctx.attrs.readable("position");
-    const $scale = ctx.attrs.readable("scale");
 
     return (
       <div
@@ -141,11 +112,11 @@ const MouseFollower = makeView(
           // Composite transform based on mouse position and animated scale.
           transform: joinStates(
             $position,
-            $scale,
+            scale,
             (p, s) => `translate(${p.x}px, ${p.y}px) scale(${s})`
           ),
         }}
       />
     );
-  }
-);
+  },
+});

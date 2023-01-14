@@ -3,33 +3,231 @@
 Router needs to support nested routes.
 
 ```js
-const app = makeApp();
+const Example = makeView({
+  name: "Example",
+  attributes: {
+    value: {
+      type: "string",
+      default: "The Value",
+      description: "A string value.",
+    },
+  },
+  setup: (ctx) => {
+    const name = ctx.global("name");
 
-app.route("/example", ExampleLayout, function () {
-  // Every route defined in this function is mounted at '/example/*' and rendered as children of an ExampleLayout.
-  this.route("/users", UsersLayout, function () {
-    // Every route defined in this function is mounted at '/example/users/*' and rendered as children of a UsersLayout.
-    this.route("/", UsersList);
-    this.route("/:id", UserDetails);
-    this.route("/:id/edit", UserEdit);
-  });
+    // Just add more lifecycle hooks to views and skip the whole makeTransitions thing altogether. Makes transitions less reusable though.
+    // Do transitions even need to be reusable? This isn't really a problem I've had. I would just make a view with the transitions I want baked in and reuse that.
+    // I'm probably overthinking this entire transitions thing. The code below is the simplest by far.
+    const x = makeSpring(0);
 
-  this.route("/projects", Projects);
+    ctx.animateIn(async () => {
+      // Runs just after view is connected.
+      await x.to(100);
+    });
 
-  this.route("*", PageNotFound);
+    ctx.animateOut(async () => {
+      // Runs before view is disconnected.
+      await x.to(0);
+    });
+
+    return (
+      <h1 style={{ transform: x.as((x) => `translateX(${x}px)`) }}>
+        {name.$value}
+      </h1>
+    );
+  },
+});
+```
+
+```js
+const ExampleGlobal = makeGlobal((self) => {});
+
+const ExampleGlobal = makeGlobal({
+  name: "Example",
+  setup: (ctx) => {
+    return {
+      value: 5,
+    };
+  },
 });
 
-app.redirect("*", "/example/users");
+const ExampleLocal = makeLocal({
+  name: "Example",
+  attributes: {
+    initialValue: {
+      type: "number",
+      default: 0,
+    },
+  },
+  setup: (ctx) => {
+    const initialValue = ctx.attrs.get("initialValue");
+    const $$value = makeState(initialValue);
 
-const activeLayers = [{
-  id: 1,
-  component: ExampleLayout,
-  outlet: {},
-}, {
-  id: 2,
-  component: UsersLayout,
-  outlet: {}
-}];
+    return {
+      $value: $$value.readable(),
+      increment: () => {
+        $$value.update((x) => x + 1);
+      },
+      decrement: () => {
+        $$value.update((x) => x - 1);
+      },
+    };
+  },
+});
+```
+
+## App
+
+```js
+// The simplest app. No globals or routing.
+const Hello = makeApp(() => {
+  return <h1>Hello World!</h1>;
+});
+
+Hello.connect("#app");
+
+// Top level outlet renders an easter-egg placeholder without routes.
+const Hello = makeApp((ctx) => ctx.outlet());
+const Hello = makeApp(); // Equivalent to above
+
+const Hello = makeApp({
+  view: (ctx) => {
+    // This view function is equivalent to not passing one.
+    return ctx.outlet(); // Outlet now renders route content.
+  },
+
+  // Use preload to run async code before the route is connected. Usually to fetch data.
+  // If `preload` returns an object, its values are passed as attributes to the view.
+  preload: async (ctx) => {
+    const http = ctx.global("@http");
+    const res = await http.get("/api/data");
+
+    return { data: res.body };
+  },
+
+  routes: [
+    // Routes become children of sibling view when their route fragment matches the current URL.
+    // Only one route per `routes` array can be mounted at a time. Infinite nesting is supported.
+    { path: "/hello", view: () => <h1>Hello World!</h1> },
+    { path: "*", redirect: "/hello" },
+
+    // Full route object example:
+    {
+      // Path is always required.
+      path: "/example",
+
+      // URL to redirect to when this path is matched.
+      redirect: "/elsewhere",
+
+      // Preloads, configures and returns initial attributes for `view` before the view is connected.
+      // TODO: Figure out if this works with redirects. Preloading before a redirect seems like it could be useful.
+      preload: async (ctx) => {
+        // What happens to attributes when you preload before a redirect? // Do they get passed to the view at the redirect?
+        return { attribute: "value" };
+      },
+
+      // Defines the view inside which routes are displayed. Not allowed when `redirect` is passed.
+      view: (ctx) => ctx.outlet(),
+
+      // Defines the routes to render into the view's outlet. Not allowed when `redirect` is passed.
+      routes: [
+        /* ... */
+      ],
+    },
+  ],
+});
+
+// NOTE: Could try initializing globals on demand when accessed from other globals during the init process.
+// This could possibly eliminate any kind of ordering issue, but not a circular dependency.
+
+// Define all your routes upfront. Easier to see the structure of your whole app from one place.
+
+const Hello = makeApp({
+  // globals: [{ name: "data", global: SomeGlobal }],
+  globals: {
+    data: SomeGlobal,
+  },
+  view: (ctx) => {
+    const { $name } = ctx.global("data");
+    return <span>Hello {$name}!</span>;
+  },
+});
+
+// Arrays of objects style (most explicit):
+const Quack = makeApp({
+  debug: {
+    filter: "*", // Print everything
+    log: false, // Skip logs
+    warn: true, // Print warnings
+    error: true, // Print errors
+  },
+  router: {
+    hash: true,
+  },
+  // globals: [
+  //   { name: "name", global: SomeGlobal },
+  //   { name: "other", global: SomeOtherGlobal },
+  // ],
+  globals: {
+    name: SomeGlobal,
+    other: SomeOtherGlobal,
+  },
+  routes: [
+    {
+      path: "/example",
+      view: ExampleLayout,
+      routes: [
+        {
+          path: "/users",
+          view: UsersLayout,
+          routes: [
+            { path: "/", view: UsersList },
+            { path: "/{id:number}", view: UserDetails },
+            { path: "/{id:number}/edit", view: UserEdit },
+          ],
+        },
+        { path: "/projects", view: Projects },
+        { path: "*", view: PageNotFound },
+      ],
+    },
+    {
+      // Nested routes without a layout view.
+      path: "/with-nested",
+      routes: [
+        { path: "/nested-one", view: () => <span>One</span> },
+        { path: "/nested-two", view: () => <span>Two</span> },
+      ],
+    },
+    { path: "*", redirect: "/example/users" },
+  ],
+});
+
+// Note: route parsing
+// `/{id:number}/edit` will only match where the `id` fragment is a numeric string, and the param will be parsed into a number.
+
+Quack.connect("#app").then((ctx) => {
+  // After route is matched and app is visible.
+});
+
+Quack.disconnect().then((ctx) => {
+  // Do cleanup
+});
+
+const activeLayers = [
+  {
+    id: 1,
+    component: ExampleLayout,
+    outlet: {},
+  },
+  {
+    id: 2,
+    component: UsersLayout,
+    outlet: {},
+  },
+];
+```
+
+```js
 
 // Creates the following flat structure. Nested views are defined as layers.
 [

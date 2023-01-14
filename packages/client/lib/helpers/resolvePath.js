@@ -4,6 +4,11 @@ import { joinPath } from "./joinPath.js";
  * Resolves relative route paths against a base, handling './' and '../' style navigation.
  */
 export function resolvePath(current, target) {
+  if (target == null) {
+    target = current;
+    current = "";
+  }
+
   if (target.startsWith("/")) {
     return target;
   }

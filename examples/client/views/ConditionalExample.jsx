@@ -1,17 +1,9 @@
-import {
-  h,
-  makeTransitions,
-  makeView,
-  makeState,
-  withName,
-} from "@woofjs/client";
+import { makeView, makeState, makeSpring } from "@woofjs/client";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const ConditionalExample = makeView(
-  withName("ConditionalExample"),
-  (ctx) => {
-    logLifecycle(ctx);
-
+export const ConditionalExample = makeView({
+  name: "ConditionalExample",
+  setup: (ctx, h) => {
     const $$show = makeState(false);
     const $label = $$show.as((t) => (t ? "Hide Text" : "Show Text"));
 
@@ -32,37 +24,30 @@ export const ConditionalExample = makeView(
             {$label}
           </button>
 
-          {h.when(
-            $$show,
-            <Animated>
-              <span style={{ display: "inline-block", paddingLeft: "0.5rem" }}>
-                Hello there!
-              </span>
-            </Animated>
-          )}
+          {h.when($$show, <Message />)}
         </div>
       </div>
     );
-  }
-);
+  },
+});
 
-const Animated = makeTransitions((ctx) => {
-  const opacity = makeSpring(0);
-  const y = makeSpring(-10);
+const Message = makeView((ctx) => {
+  const opacity = makeSpring(0, { stiffness: 200, damping: 50 });
+  const y = makeSpring(-10, { stiffness: 200, damping: 50 });
 
-  ctx.enter(() => {
-    return Promise.all([opacity.to(1), y.to(0)]);
-  });
+  ctx.animateIn(() => Promise.all([opacity.to(1), y.to(0)]));
+  ctx.animateOut(() => Promise.all([opacity.to(0), y.to(-10)]));
 
-  ctx.exit(() => {
-    return Promise.all([opacity.to(0), y.to(-10)]);
-  });
-
-  // Update DOM node directly.
-  ctx.observe(opacity, (current) => {
-    ctx.node.style.opacity = current;
-  });
-  ctx.observe(y, (current) => {
-    ctx.node.style.transform = `translateY(${current}px)`;
-  });
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        paddingLeft: "0.5rem",
+        opacity: opacity,
+        transform: y.as((y) => `translateY(${y}px)`),
+      }}
+    >
+      Hello there!
+    </span>
+  );
 });

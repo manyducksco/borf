@@ -1,7 +1,7 @@
 import produce from "immer";
 import OBSERVABLE from "symbol-observable";
 import { READABLE, WRITABLE } from "../keys.js";
-import { makeState } from "./state.js";
+import { makeState } from "../makeState.js";
 import {
   isFunction,
   isObject,

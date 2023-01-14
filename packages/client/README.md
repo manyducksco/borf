@@ -53,29 +53,24 @@ Inside `index.html`:
       <!-- app goes here -->
     </main>
 
-    <script async src="./app.jsx"></script>
+    <script async src="./app.js"></script>
   </body>
 </html>
 ```
 
-Inside `app.jsx`:
+Inside `app.js`:
 
 ```js
 import { makeApp } from "https://cdn.skypack.dev/@woofjs/client";
 
 // Create a new woof app.
-const app = makeApp();
-
-// Display a <h1>Hello World</h1> at the root URL.
-app.route("/", function (ctx, h) {
-  return h("h1", "Hello World");
+const HelloWorld = makeApp((ctx, m) => {
+  // Use the markup function to generate DOM elements.
+  return m("h1", "Hello World");
 });
 
-// Redirect any other URL back to root.
-app.redirect("*", "/");
-
-// Display this app inside the element with an `id` of "app"
-app.connect("#app");
+// Display this app inside the element with `id="app"`
+HelloWorld.connect("#app");
 ```
 
 Now when you visit the page the document should look something like this:
@@ -91,7 +86,7 @@ Now when you visit the page the document should look something like this:
       <h1>Hello World</h1>
     </main>
 
-    <script async src="./app.jsx"></script>
+    <script async src="./app.js"></script>
   </body>
 </html>
 ```
@@ -208,15 +203,16 @@ app.route("other", (ctx) => {
 Views receive a context object they may use to translate state and lifecycle into DOM nodes.
 
 ```js
-const Example = makeView((ctx, h) => {
+const Example = makeView((ctx, m) => {
   // Access globals by name.
   const global = ctx.global("name");
+
+  const local = ctx.local("name");
 
   /*=================================*\
   ||             Logging             ||
   \*=================================*/
 
-  ctx.name = "Example"; // Prefix messages in the console to make tracing easier at a glance.
   ctx.log("Something happened.");
   ctx.warn("Something happened!");
   ctx.error("SOMETHING HAPPENED!!!!");
@@ -226,7 +222,7 @@ const Example = makeView((ctx, h) => {
   \*=================================*/
 
   // Creates a writable (two-way) binding with a default value.
-  const $$title = ctx.state("The Default Title");
+  const $$title = makeState("The Default Title");
 
   // Runs a callback function each time a state changes (or any observable emits a value).
   ctx.observe($$title, (title) => {
@@ -252,6 +248,8 @@ const Example = makeView((ctx, h) => {
     // Runs when the view is about to be (but is not yet) added to the page.
   });
 
+  ctx.animateIn(async () => {});
+
   ctx.afterConnect(() => {
     // Runs after the view is added to the page.
   });
@@ -259,6 +257,8 @@ const Example = makeView((ctx, h) => {
   ctx.beforeDisconnect(() => {
     // Runs when the view is about to be (but is not yet) removed from the page.
   });
+
+  ctx.animateOut(async () => {});
 
   ctx.afterDisconnect(() => {
     // Runs after the view is removed from the page.
@@ -268,13 +268,19 @@ const Example = makeView((ctx, h) => {
   ||      Rendering & Children       ||
   \*=================================*/
 
-  ctx.when();
-  ctx.unless();
-  ctx.match();
-  ctx.repeat();
+  m.when();
+  m.unless();
+  m.observe();
+  m.repeat();
+
+  //   m.ul($items, { class: "list-class" }, (ctx) => {
+  //     const $value = ctx.attrs.readable("value");
+  //
+  //     return <li>{$value}</li>;
+  //   });
 
   // Render children inside a `<div class="container">`
-  return h("div", { class: "container" }, ctx.outlet());
+  return m("div", { class: "container" }, ctx.outlet());
 });
 ```
 

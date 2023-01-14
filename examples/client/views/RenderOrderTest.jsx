@@ -1,6 +1,6 @@
-import { makeState, makeView, h } from "@woofjs/client";
+import { makeState, makeView } from "@woofjs/client";
 
-export const RenderOrderTest = makeView((ctx) => {
+export const RenderOrderTest = makeView((ctx, m) => {
   const $$isTrue = makeState(true);
 
   let interval;
@@ -17,14 +17,14 @@ export const RenderOrderTest = makeView((ctx) => {
 
   return (
     <ul>
-      {h.when($$isTrue, <SubView value={1} />)}
+      {m.when($$isTrue, <SubView value={1} />)}
       <SubView value="a" />
-      {h.when($$isTrue, <SubView value={2} />)}
+      {m.when($$isTrue, <SubView value={2} />)}
       <SubView value="b" />
-      {h.when($$isTrue, <SubView value={3} />)}
+      {m.when($$isTrue, <SubView value={3} />)}
       <SubView value="c" />
-      {h.when($$isTrue, <SubView value={4} />)}
-      {h.when($$isTrue, <SubView value={5} />)}
+      {m.when($$isTrue, <SubView value={4} />)}
+      {m.when($$isTrue, <SubView value={5} />)}
       <SubView value="d" />
     </ul>
   );
