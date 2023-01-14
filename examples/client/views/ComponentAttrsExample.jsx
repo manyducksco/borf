@@ -24,6 +24,7 @@ const SubComponent = makeView({
     message: {
       type: "string",
       required: true,
+      writable: true,
     },
   },
   setup: (ctx) => {

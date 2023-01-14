@@ -7,35 +7,45 @@ import.
 You look at a view through a window. A window has many panes, each offering a slightly different point of view.
 
 ```js
-import { makeWindow } from "@woof/client/window";
+import { makeViewer } from "woofle/viewer";
 import { Example } from "./Example.jsx";
 
-export default makeWindow(Example, {
-  description: "Description of the window.",
-  panes: [
+export default makeViewer(Example, {
+  globals: {
+    // Provide mock globals
+    count: CountGlobal,
+  },
+  decorator: (view) => {
+    // Decorator wraps the view, for example, with locals or in some kind of demo layout.
+    return <ExampleLocal name="example">{view}</ExampleLocal>;
+  },
+  presets: [
     {
       name: "Defaults",
-      description: "Example window with the default settings.",
-      state: {},
+      description: "Example view with the default settings.",
+      attributes: {},
+      globals: {
+        // Can override globals per preset.
+        count: { value: 7 },
+      },
+      decorator: (view) => {
+        // Adds an additional decorator for this preset INSIDE the top level decorator.
+      },
     },
     {
       name: "Type: Primary",
-      description: "Example window as a primary button.",
-      state: {
-        type: "Primary",
+      description: "Example view as a primary button.",
+      attributes: {
+        type: "primary",
       },
     },
     {
       name: "Type: Danger",
-      description: "Example window as a danger button.",
-      state: {
-        type: "Danger",
+      description: "Example view as a danger button.",
+      attributes: {
+        type: "danger",
       },
     },
   ],
 });
 ```
-
-Each pane represents a different test case. The `state` from the pane becomes the starting state when you switch to that
-pane, then you as the developer are free to watch the state change as you interact with the view or modify the state
-directly from the window runner.

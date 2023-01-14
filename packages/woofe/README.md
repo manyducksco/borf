@@ -1,35 +1,35 @@
-# 🐕🖥 @woofjs/client
+# 🐕🖥 woofe
 
-![bundle size](https://img.shields.io/bundlephobia/minzip/@woofjs/client?style=flat&label=gzipped%20size)
+![bundle size](https://img.shields.io/bundlephobia/minzip/woofe?style=flat&label=gzipped%20size)
 
-Woof is a front end framework that aims to cover the most common needs of modern web apps. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box.
+Woofe is a front end framework that aims to cover the most common needs of modern web apps. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box.
 
 ## Installation
 
 ### CDN
 
-Woof includes everything you need to make a fully functioning web app by importing the `@woofjs/client` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running without configuring a build step.
+Woof includes everything you need to make a fully functioning web app by importing the `woofe` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running without configuring a build step.
 
 ```js
-import { ... } from "https://cdn.skypack.dev/@woofjs/client";
-import { ... } from "https://unpkg.com/@woofjs/client"
+import { ... } from "https://cdn.skypack.dev/woofe";
+import { ... } from "https://unpkg.com/woofe"
 ```
 
 ### NPM
 
-You can also get `@woofjs/client` from npm. Best used in combination with `@woofjs/build` which adds support for JSX, a dev server with auto-reload, optimized production builds and more. Run this in your project directory:
+You can also get `woofe` from npm. Best used in combination with `builde` which adds support for JSX, a dev server with auto-reload, optimized production builds and more. Run this in your project directory:
 
 ```
-$ npm i -D @woofjs/build @woofjs/client
+$ npm i -D builde woofe
 ```
 
 And the imports will look like this:
 
 ```js
-import { ... } from "@woofjs/client";
+import { ... } from "woofe";
 ```
 
-See the [@woofjs/build]() docs for configuration tips.
+See the [builde]() docs for configuration tips.
 
 ## Hello World
 
@@ -61,9 +61,8 @@ Inside `index.html`:
 Inside `app.js`:
 
 ```js
-import { makeApp } from "https://cdn.skypack.dev/@woofjs/client";
+import { makeApp } from "https://cdn.skypack.dev/woofe";
 
-// Create a new woof app.
 const Hello = makeApp((ctx, m) => {
   // Use the markup function to generate DOM elements.
   return m("h1", "Hello World");
@@ -79,7 +78,7 @@ Now when you visit the page the document should look something like this:
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Woof Demo</title>
+    <title>Woofe Demo</title>
   </head>
   <body>
     <main id="app">
@@ -139,7 +138,7 @@ state by exporting bindings of their own for use in many views.
 When the values stored in state change, anything observing those bindings is immediately notified and updated to match.
 
 ```js
-import { makeView } from "@woofjs/client";
+import { makeView } from "woofe";
 
 const Timer = makeView((ctx) => {
   // Binding naming conventions.

@@ -64,8 +64,8 @@ const ExampleLocal = makeLocal((ctx) => {
 
 const ContainerView = makeView((ctx) => {
   return (
-    // 2. Use it like a view to make one available to all subviews.
-    <ExampleLocal as="example">
+    // 2. Use it like a view to make available to all subviews.
+    <ExampleLocal name="example">
       <SubView />
     </ExampleLocal>
   );
@@ -82,18 +82,20 @@ const SubView = makeView((ctx) => {
 Should locals also work with attribute validation so you can pass arguments?
 
 ```jsx
-const ExampleLocal = makeLocal(
-  withAttribute("initialValue", {
-    type: "number",
-    default: 0,
-    description: "starting value (defaults to 0)",
-  }),
-  (ctx) => {
+const ExampleLocal = makeLocal({
+  attributes: {
+    initialValue: {
+      type: "number",
+      default: 0,
+      description: "starting value (defaults to 0)",
+    },
+  },
+  setup: (ctx) => {
     return {
       $$value: makeState(ctx.attributes.get("initialValue")),
     };
-  }
-);
+  },
+});
 
 // Now in a view:
 <ExampleLocal as="example" initialValue={15}>

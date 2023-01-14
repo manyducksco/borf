@@ -15,9 +15,6 @@ const Example = makeView({
   setup: (ctx) => {
     const name = ctx.global("name");
 
-    // Just add more lifecycle hooks to views and skip the whole makeTransitions thing altogether. Makes transitions less reusable though.
-    // Do transitions even need to be reusable? This isn't really a problem I've had. I would just make a view with the transitions I want baked in and reuse that.
-    // I'm probably overthinking this entire transitions thing. The code below is the simplest by far.
     const x = makeSpring(0);
 
     ctx.animateIn(async () => {
@@ -91,11 +88,6 @@ const Hello = makeApp((ctx) => ctx.outlet());
 const Hello = makeApp(); // Equivalent to above
 
 const Hello = makeApp({
-  view: (ctx) => {
-    // This view function is equivalent to not passing one.
-    return ctx.outlet(); // Outlet now renders route content.
-  },
-
   // Use preload to run async code before the route is connected. Usually to fetch data.
   // If `preload` returns an object, its values are passed as attributes to the view.
   preload: async (ctx) => {
@@ -103,6 +95,11 @@ const Hello = makeApp({
     const res = await http.get("/api/data");
 
     return { data: res.body };
+  },
+
+  view: (ctx) => {
+    // This view function is equivalent to not passing one.
+    return ctx.outlet(); // Outlet now renders route content.
   },
 
   routes: [

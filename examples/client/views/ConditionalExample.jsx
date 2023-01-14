@@ -7,6 +7,8 @@ export const ConditionalExample = makeView({
     const $$show = makeState(false);
     const $label = $$show.as((t) => (t ? "Hide Text" : "Show Text"));
 
+    logLifecycle(ctx);
+
     return (
       <div class="example">
         <h3>
