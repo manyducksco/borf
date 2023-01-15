@@ -1,6 +1,6 @@
 import "./styles/demo.css";
 
-import { makeApp } from "@woofjs/client";
+import { makeApp } from "woofe";
 
 import counter from "./globals/counter";
 import mouse from "./globals/mouse";

@@ -1,4 +1,4 @@
-import { makeView, makeSpring } from "@woofjs/client";
+import { makeView, makeSpring } from "woofe";
 import logLifecycle from "../utils/logLifecycle";
 
 export const AppLayout = makeView({

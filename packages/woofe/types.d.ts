@@ -1,8 +1,8 @@
-declare module "@woofjs/client" {
+declare module "woofe" {
   import { History } from "history";
 
   /**
-   * Creates a new woof app.
+   * Creates a new app.
    *
    * @param options - Configuration options.
    */

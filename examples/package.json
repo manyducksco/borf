@@ -24,8 +24,8 @@
   "author": "Tony McCoy <tony@manyducks.co>",
   "license": "MIT",
   "devDependencies": {
+    "woofe": "file:../packages/woofe",
     "@woofjs/build": "file:../packages/build",
-    "@woofjs/client": "file:../packages/client",
     "@woofjs/data": "file:../packages/data",
     "@woofjs/server": "file:../packages/server",
     "@woofjs/view": "file:../packages/view",
