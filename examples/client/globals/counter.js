@@ -1,4 +1,4 @@
-import { makeGlobal, makeState } from "@woofjs/client";
+import { makeGlobal, makeState } from "woofe";
 
 /**
  * Exposes a $current value and increments it by one each second.

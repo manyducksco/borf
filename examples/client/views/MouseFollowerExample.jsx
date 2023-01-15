@@ -1,4 +1,4 @@
-import { makeView, makeState, joinStates, makeSpring } from "@woofjs/client";
+import { makeView, makeState, joinStates, makeSpring } from "woofe";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 

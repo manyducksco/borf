@@ -1,4 +1,4 @@
-import { makeView, makeState, makeLocal } from "@woofjs/client";
+import { makeView, makeState, makeLocal } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export const LocalsExample = makeView({

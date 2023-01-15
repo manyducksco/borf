@@ -1,4 +1,4 @@
-import { joinStates, makeState, makeView } from "@woofjs/client";
+import { joinStates, makeState, makeView } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export const HTTPRequestExample = makeView((ctx) => {

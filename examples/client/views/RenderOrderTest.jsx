@@ -1,4 +1,4 @@
-import { makeState, makeView } from "@woofjs/client";
+import { makeState, makeView } from "woofe";
 
 export const RenderOrderTest = makeView((ctx, m) => {
   const $$isTrue = makeState(true);

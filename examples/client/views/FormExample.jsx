@@ -1,4 +1,4 @@
-import { makeView, makeState, joinStates } from "@woofjs/client";
+import { makeView, makeState, joinStates } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export const FormExample = makeView((ctx, h) => {

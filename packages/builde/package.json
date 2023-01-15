@@ -1,0 +1,60 @@
+{
+  "name": "builde",
+  "version": "0.10.25",
+  "description": "Build system in a box for woofe and growle projects.",
+  "main": "lib/index.js",
+  "type": "module",
+  "bin": {
+    "builde": "cli.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./lib/index.js"
+    }
+  },
+  "keywords": [],
+  "author": "tony@manyducks.co",
+  "license": "MIT",
+  "dependencies": {
+    "@ratwizard/cli": "^0.17.0",
+    "autoprefixer": "^10.4.8",
+    "cheerio": "^1.0.0-rc.12",
+    "chokidar": "^3.5.3",
+    "esbuild": "^0.15.5",
+    "esbuild-style-plugin": "^1.6.0",
+    "fs-extra": "^10.1.0",
+    "get-port": "^6.1.2",
+    "gzip-size": "^7.0.0",
+    "html-minifier": "^4.0.0",
+    "http-proxy": "^1.18.1",
+    "imagemin": "^8.0.1",
+    "imagemin-jpegtran": "^7.0.0",
+    "imagemin-pngquant": "^9.0.2",
+    "imagemin-svgo": "^10.0.1",
+    "ip": "^1.1.8",
+    "lodash": "^4.17.21",
+    "mustache": "^4.2.0",
+    "nanoid": "^4.0.0",
+    "nodemon": "^2.0.19",
+    "pako": "^2.0.4",
+    "send": "^0.18.0",
+    "superbytes": "^1.3.2",
+    "xxhashjs": "^0.2.2"
+  },
+  "peerDependencies": {
+    "woofe": ">=0.18.0",
+    "growle": ">=0.2.0"
+  },
+  "peerDependenciesMeta": {
+    "woofe": {
+      "optional": true
+    },
+    "growle": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "woofe": "^0.33.1",
+    "growle": "^0.11.7"
+  }
+}

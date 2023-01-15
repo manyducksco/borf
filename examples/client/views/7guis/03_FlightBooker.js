@@ -1,4 +1,4 @@
-import { joinStates, makeState, makeView } from "@woofjs/client";
+import { joinStates, makeState, makeView } from "woofe";
 
 const flightTypes = ["one-way flight", "return flight"];
 const flipped = (value) => !value; // Boolean flipping function.

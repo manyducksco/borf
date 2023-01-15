@@ -1,4 +1,4 @@
-import { makeView, makeState } from "@woofjs/client";
+import { makeView, makeState } from "woofe";
 
 export const ComponentAttrsExample = makeView({
   name: "ComponentAttrsExample",

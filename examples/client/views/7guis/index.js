@@ -1,4 +1,4 @@
-import { makeView } from "@woofjs/client";
+import { makeView } from "woofe";
 
 export default makeView((ctx) => {
   return (

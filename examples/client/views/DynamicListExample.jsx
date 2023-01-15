@@ -1,4 +1,4 @@
-import { makeView, makeState, makeSpring } from "@woofjs/client";
+import { makeView, makeState, makeSpring } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];

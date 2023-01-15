@@ -1,4 +1,4 @@
-import { makeState, makeView } from "@woofjs/client";
+import { makeState, makeView } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
 /**

@@ -6,10 +6,9 @@
   "type": "module",
   "scripts": {
     "start:prod": "node server/app.js",
-    "start": "woof-build --watch",
-    "build": "woof-build --minify --compress",
-    "view": "woof-view start ./client",
-    "view:build": "woof-view build ./client -o ./view-static",
+    "start": "builde --watch",
+    "build": "builde --minify --compress",
+    "viewer": "woofe-viewer ./client",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
     "test:coverage": "npm run test -- --coverage",
@@ -21,13 +20,13 @@
     "functional",
     "reactive state"
   ],
-  "author": "Tony McCoy <tony@manyducks.co>",
+  "author": "tony@manyducks.co",
   "license": "MIT",
   "devDependencies": {
     "woofe": "file:../packages/woofe",
-    "@woofjs/build": "file:../packages/build",
+    "growle": "file:../packages/growle",
+    "builde": "file:../packages/builde",
     "@woofjs/data": "file:../packages/data",
-    "@woofjs/server": "file:../packages/server",
     "@woofjs/view": "file:../packages/view",
     "popmotion": "^11.0.5",
     "stylefire": "^7.0.3"

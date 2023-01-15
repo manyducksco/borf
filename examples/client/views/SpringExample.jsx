@@ -1,4 +1,4 @@
-import { makeView, makeSpring } from "@woofjs/client";
+import { makeView, makeSpring } from "woofe";
 
 export const SpringExample = makeView((ctx) => {
   const spring = makeSpring(0, {

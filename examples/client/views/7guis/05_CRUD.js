@@ -1,4 +1,4 @@
-import { joinStates, makeState, makeView } from "@woofjs/client";
+import { joinStates, makeState, makeView } from "woofe";
 
 export default makeView({
   name: "7guis:CRUD",

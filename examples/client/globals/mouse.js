@@ -1,4 +1,4 @@
-import { makeGlobal, makeState } from "@woofjs/client";
+import { makeGlobal, makeState } from "woofe";
 
 export default makeGlobal((ctx) => {
   const $$position = makeState({ x: 0, y: 0 });

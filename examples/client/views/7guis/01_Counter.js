@@ -1,4 +1,4 @@
-import { makeState, makeView } from "@woofjs/client";
+import { makeState, makeView } from "woofe";
 
 export default makeView((ctx) => {
   ctx.name = "7guis:Counter";
