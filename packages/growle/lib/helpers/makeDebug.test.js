@@ -7,10 +7,10 @@ describe("makeDebug", () => {
     expect(debug.filter).toBe("*,-test:*");
   });
 
-  test("filters out internal woof:* messages by default", () => {
+  test("filters out internal growle:* messages by default", () => {
     const debug = makeDebug();
 
-    expect(debug.filter).toBe("*,-woof:*");
+    expect(debug.filter).toBe("*,-growle:*");
   });
 
   test("can change name", () => {

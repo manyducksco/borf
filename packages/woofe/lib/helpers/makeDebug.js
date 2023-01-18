@@ -3,7 +3,7 @@ import colorHash from "simple-color-hash";
 const noop = () => {};
 
 export function makeDebug(options = {}, _console = window?.console || global?.console) {
-  let filter = options.filter || "*,-woof:*";
+  let filter = options.filter || "*,-woofe:*";
   let matchFn = makeMatch(filter);
 
   return {

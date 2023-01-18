@@ -69,7 +69,7 @@ class NoCache {
 
 export function makeApp(options = {}) {
   const debug = makeDebug(options.debug);
-  const channel = debug.makeChannel("woof:app");
+  const channel = debug.makeChannel("growle:app");
 
   const statics = [];
   const globals = {};

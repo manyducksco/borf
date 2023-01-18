@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import send from "send";
 import { isString, isTemplate, isFunction } from "./typeChecking.js";
@@ -16,7 +15,7 @@ export function makeListener(appContext) {
   return async function requestListener(req, res) {
     const { routes, globals, middlewares, cors } = appContext;
     const headers = new Headers();
-    const channel = appContext.debug.makeChannel("woof:listener");
+    const channel = appContext.debug.makeChannel("growle:listener");
 
     if (cors) {
       // set these headers for both preflight and normal requests

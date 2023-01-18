@@ -1,5 +1,5 @@
 import { APP_CONTEXT } from "./keys.js";
-import { isFunction, isObject, isObservable } from "./helpers/typeChecking.js";
+import { isFunction, isObject, isObservable, isString } from "./helpers/typeChecking.js";
 import { joinStates } from "./makeState.js";
 
 export function makeGlobal(config) {

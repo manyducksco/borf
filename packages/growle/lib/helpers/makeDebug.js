@@ -9,7 +9,7 @@
  * @param options - Options for the debug instance. Specify an initial `filter` and enable or disable `log`, `warn` or `error` with booleans.
  */
 export function makeDebug(options = {}, console = global.console) {
-  let filter = options.filter || "*,-woof:*";
+  let filter = options.filter || "*,-growle:*";
   let matchFn = makeMatchFn(filter);
 
   return {

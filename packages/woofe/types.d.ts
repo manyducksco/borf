@@ -58,28 +58,12 @@ declare module "woofe" {
       history?: History;
     };
 
-    globals?: Record<string, Global | GlobalFunction>;
+    globals?: { name: string; global: Global | GlobalSetupFn }[];
 
     preload?: RoutePreloadFn;
 
-    view?: View | ViewFunction;
+    view?: View | ViewSetupFn;
 
-    routes?: RouteConfig[];
-  }
-
-  interface RoutePreloadFn {
-    (context: RoutePreloadContext): void;
-  }
-
-  interface RoutePreloadContext {
-    global(name: string): any;
-  }
-
-  interface RouteConfig {
-    path: string;
-    redirect?: string;
-    preload?: RoutePreloadFn;
-    view?: View | ViewFunction;
     routes?: RouteConfig[];
   }
 
@@ -87,30 +71,9 @@ declare module "woofe" {
    * An app is the central object of a Woof app. It handles mounting and unmounting of routes
    * based on the current URL and providing globals to views rendered under those routes.
    */
-  interface App<Globals> extends RouterContext<Globals> {
-    /**
-     * Registers a service on this app. Services have only one instance created per app.
-     * Any component rendered under one of this app's routes, as well as any other globals
-     * registered on this app will be able to access this new service.
-     *
-     * @param name - Name the service is accessed by.
-     * @param fn - The global constructor. Must be a function that returns an object.
-     */
-    global<Name extends keyof Globals>(name: Name, fn: Globals[Name]): this;
-
-    /**
-     * Runs a callback function after globals are created but before any views have been connected.
-     *
-     * @param callback - Setup function.
-     */
-    beforeConnect(callback: AppLifecycleCallback<Globals>): this;
-
-    /**
-     * Runs a callback function just after the initial route is connected.
-     *
-     * @param callback - Setup function.
-     */
-    afterConnect(callback: AppLifecycleCallback<Globals>): this;
+  interface App<Globals> {
+    routes: {}[];
+    globals: {};
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -129,8 +92,6 @@ declare module "woofe" {
     global<K extends keyof AppGlobals<Globals>>(name: K): AppGlobals<Globals>[K];
   }
 
-  export type AppLifecycleCallback<Globals> = (ctx: AppContext<Globals>) => void | Promise<void>;
-
   export type DefaultGlobals = {
     "@dialog": ReturnType<GlobalDialog>;
     "@router": ReturnType<GlobalRouter>;
@@ -146,94 +107,22 @@ declare module "woofe" {
   ||             Routing              ||
   \*==================================*/
 
-  type PreloadContext<Globals> = {
-    /**
-     * Returns the global registered under `name` or throws an error if the global isn't registered.
-     */
-    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name];
-
-    /**
-     * Show content while this route is preloading.
-     */
-    show(element: WoofElement): void;
-
-    /**
-     * Redirect to another path instead of loading this route.
-     * @param {string} to - Redirect path.
-     */
-    redirect(to: string): void;
-  };
-
-  // These two options objects need to be defined separately or the context
-  // type can't be inferred when you pass a view function directly.
-  interface RouteViewFnOptions<Globals, Attrs = any> {
-    /**
-     * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
-     */
-    preload?: (ctx: PreloadContext<Globals>) => Promise<void | Attrs>;
-    /**
-     * The view to display when this route matches.
-     */
-    view?: ViewFunction<Attrs, Globals>;
-    /**
-     * Function to define subroutes that will be displayed as children of `view` when their routes match.
-     */
-    subroutes?: SubroutesFunction<Globals>;
+  interface RoutePreloadContext {
+    global(name: string): any;
+    redirect(to: string): any;
   }
 
-  interface RouteViewOptions<Globals, Attrs = any> {
-    /**
-     * Resolves before `view` is displayed. Useful for fetching data and preparing state prior to navigating to the page.
-     */
-    preload?: (ctx: PreloadContext<Globals>) => Promise<void | Attrs>;
-    /**
-     * The view to display when this route matches.
-     */
-    view?: View<Attrs, Globals>;
-    /**
-     * Function to define subroutes that will be displayed as children of `view` when their routes match.
-     */
-    subroutes?: SubroutesFunction<Globals>;
+  interface RoutePreloadFn {
+    (context: RoutePreloadContext): void;
   }
 
-  interface RouterContext<Globals> {
-    route<Attrs = {}>(path: string, options: RouteViewFnOptions<Globals, Attrs>): this;
-
-    route<Attrs = {}>(path: string, options: RouteViewOptions<Globals, Attrs>): this;
-
-    /**
-     * Registers a new route that will render `view` when `path` matches the current URL.
-     * Register nested routes by passing a function as the third argument. Nested route views
-     * will be rendered as this `view`'s children.
-     *
-     * @param path - Path to match.
-     * @param view - View to render when path matches URL.
-     * @param subroutes - Optional function to define nested routes.
-     */
-    route<Attrs = {}>(path: string, view: ViewFunction<Attrs, Globals>, subroutes?: SubroutesFunction<Globals>): this;
-
-    /**
-     * Display `view` when `path` matches the current URL. Nested routes defined in `defineRoutes` are
-     * passed as children to `view` when `path` + nested `path` matches the current URL.
-     *
-     * @param path - Path to match.
-     * @param view - View to render when path matches URL.
-     * @param subroutes - Optional function to define nested routes.
-     */
-    route<Attrs = {}>(path: string, view: View<Attrs, Globals>, subroutes?: SubroutesFunction<Globals>): this;
-
-    route(path: string, view: Blueprint, subroutes?: SubroutesFunction<Globals>): this;
-
-    /**
-     * Register a route that will redirect to another when the `path` matches the current URL.
-     *
-     * @param from - Path to match.
-     * @param to - Path to redirect location.
-     */
-    redirect: (from: string, to: string) => RouterContext<Globals>;
+  interface RouteConfig {
+    path: string;
+    redirect?: string;
+    preload?: RoutePreloadFn;
+    view?: View | ViewSetupFn;
+    routes?: RouteConfig[];
   }
-
-  type SubroutesFunction<Globals> = (ctx: RouterContext<Globals>) => void;
 
   /*==================================*\
   ||           Debug Context          ||
@@ -430,35 +319,25 @@ declare module "woofe" {
     toString(): string;
   }
 
+  // TODO: Rename to Buildable
   export interface Blueprint {
     readonly isBlueprint: true;
 
     build(appContext: AppContext<any>): View<unknown, unknown>;
   }
 
-  export const h: HypertextFunction;
-
-  // export function h<Tag extends keyof JSX.IntrinsicElements>(
-  //   tag: Tag,
-  //   attributes: JSX.IntrinsicElements[Tag],
-  //   ...children: WoofElement[]
-  // ): Blueprint;
-  // export function h(tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Blueprint;
-  // export function h(tag: string, ...children: WoofElement[]): Blueprint;
-  //
-  // export function h(view: View<any, any>, ...children: WoofElement[]): Blueprint;
-  // export function h<Attrs>(view: View<Attrs, any>, attrs: Attrs, ...children: WoofElement[]): Blueprint;
-
-  type MatchCondCallback<Value> = (value: Value) => boolean;
-  type MatchResultCallback<Value> = (value: Value) => Blueprint;
-
-  type MatchCondition<Value> = Value | MatchCondCallback<Value>;
-  type MatchResult<Value> = WoofElement | MatchResultCallback<Value>;
+  // TODO: View base interface. Rename to Connectable
+  interface Renderable {
+    readonly node: Node;
+    readonly isConnected: boolean;
+    connect(parent: Node, after?: Node): Promise<void>;
+    disconnect(): Promise<void>;
+  }
 
   /**
    * Creates an instance of an HTML element or view.
    */
-  interface HypertextFunction {
+  interface MarkupFn {
     <Tag extends keyof JSX.IntrinsicElements>(
       tag: Tag,
       attributes: JSX.IntrinsicElements[Tag],
@@ -531,11 +410,6 @@ declare module "woofe" {
       ) => WoofElement | null
     ): Blueprint;
 
-    match<Value>(
-      value: Observable<Value>,
-      cases: ([MatchCondition<Value>, MatchResult<Value>] | MatchResult<Value>)[]
-    ): Blueprint;
-
     /**
      * Repeats an element for each item in `value`. Value must be iterable.
      * The `render` function takes bindings to the item and index and returns an element to render.
@@ -547,22 +421,74 @@ declare module "woofe" {
     ): Blueprint;
   }
 
-  export function makeView<Attrs = any, Globals = any>(fn: ViewFunction<Attrs, Globals>): View<Attrs, Globals>;
+  export function makeView<Attrs = any, Globals = any>(fn: ViewSetupFn<Attrs, Globals>): View<Attrs, Globals>;
+  export function makeView<Attrs = any, Globals = any>(config: ViewConfig<Attrs, Globals>): View<Attrs, Globals>;
 
-  export function makeView<Attrs = any, Globals = any>(
-    name: string,
-    fn: ViewFunction<Attrs, Globals>
-  ): View<Attrs, Globals>;
+  interface AttributesConfig {
+    [name: string]: {
+      /**
+       * Fuzzy type checking is enabled during development when you specify a type.
+       */
+      type?: "string" | "number" | "function" | "object" | "array" | "boolean";
 
-  export type ViewFunction<Attrs = any, Globals = any> = (
+      /**
+       * Attribute description for viewer.
+       */
+      description?: string;
+
+      /**
+       * Default value.
+       */
+      default?: any;
+
+      /**
+       * Allows writing back to attributes and passing writables to receive those changes in a parent view.
+       * Also known as two-way binding.
+       */
+      writable?: boolean;
+
+      /**
+       * Requires a value to be passed.
+       */
+      required?: boolean;
+    };
+  }
+
+  interface ViewConfig<Attrs, Globals> {
+    name?: string;
+    attributes?: AttributesConfig;
+    setup: ViewSetupFn<Attrs, Globals>;
+  }
+
+  export type ViewSetupFn<Attrs = any, Globals = any> = (
     ctx: ViewContext<Attrs, Globals>,
-    h: HypertextFunction
+    m: MarkupFn
   ) => Blueprint | null;
 
+  type AttrsWrapper<T> = {
+    [K in keyof T]: T[K] | Readable<T[K]>;
+  };
+
   // Fake type to enable JSX attribute type checking.
-  export type View<Attrs, Globals> = (props: Attrs & { children?: any }) => {
+  export type View<Attrs, Globals> = (props: AttrsWrapper<Attrs> & { children?: any }) => {
     create(): Blueprint;
   };
+
+  interface Attributes<T> extends Readable<T> {
+    get<K extends keyof T>(key: K): T[K];
+    get(): T;
+
+    set<K extends keyof T>(key: K, value: T[K]): void;
+    set(values: Partial<T>): void;
+
+    update(fn: (value: T) => void | T): void;
+
+    readable<K extends keyof T>(key: K): Readable<T[K]>;
+    readable(): Readable<T>;
+
+    writable<K extends keyof T>(key: K): Writable<T[K]>;
+    writable(): Writable<T>;
+  }
 
   export interface ViewContext<Attrs = any, Globals = any> extends StateContext, DebugChannel {
     /**
@@ -570,12 +496,16 @@ declare module "woofe" {
      */
     readonly isConnected: boolean;
 
-    attrs: Attrs;
+    attrs: Attributes<Attrs>;
+
+    attributes: Attributes<Attrs>;
 
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
      */
     global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name];
+
+    local<T>(name: string): T;
 
     /**
      * Registers a callback to run before the component is connected to the DOM.
@@ -586,6 +516,18 @@ declare module "woofe" {
      * Registers a callback to run after the component is connected to the DOM.
      */
     afterConnect(callback: () => void): void;
+
+    /**
+     * Implements logic for an enter transition that is considered settled when the promise resolves.
+     * `afterConnect` is not fired until `animateIn` resolves.
+     */
+    animateIn(callback: () => Promise<void>): void;
+
+    /**
+     * Implements logic for an animation that is considered settled when the promise resolves.
+     * DOM node is not disconnected until `animateOut` resolves.
+     */
+    animateOut(callback: () => Promise<void>): void;
 
     /**
      * Registers a callback to run before the component is removed from the DOM.
@@ -608,9 +550,16 @@ declare module "woofe" {
   \*==================================*/
 
   // TODO: Find out how to infer return type of `fn` while Globals is passed.
-  export function makeGlobal<Globals>(fn: GlobalFunction<Globals>): Global<any>;
+  export function makeGlobal<Globals>(fn: GlobalSetupFn<Globals>): Global<any>;
 
-  export type GlobalFunction<Globals> = (ctx: GlobalContext<Globals>) => any;
+  interface GlobalConfig<AppGlobals> {
+    name?: string;
+    setup: GlobalSetupFn<AppGlobals>;
+  }
+
+  export function makeGlobal<AppGlobals>(config: GlobalConfig<AppGlobals>): Global<any>;
+
+  export type GlobalSetupFn<Globals> = (ctx: GlobalContext<Globals>) => any;
 
   export type Global<Exports> = (this: GlobalContext<any>) => Exports;
 
@@ -629,6 +578,16 @@ declare module "woofe" {
      * Registers a callback to run after the app is connected and the first route match has taken place.
      */
     afterConnect: (callback: () => void) => void;
+
+    /**
+     * Registers a callback to run just before the app is disconnected.
+     */
+    beforeDisconnect: (callback: () => void) => void;
+
+    /**
+     * Registers a callback to run after the app is disconnected.
+     */
+    afterDisconnect: (callback: () => void) => void;
   }
 
   /*==================================*\
@@ -636,21 +595,21 @@ declare module "woofe" {
   \*==================================*/
 
   export type GlobalDialog = Global<{
-    make<Attrs extends DialogViewAttrs>(fn: ViewFunction<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
-    make<Attrs extends DialogViewAttrs>(view: View<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
+    makeDialog<Attrs extends DialogViewAttrs>(fn: ViewSetupFn<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
+    makeDialog<Attrs extends DialogViewAttrs>(view: View<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
   }>;
 
   export interface DialogViewAttrs {
     /**
      * Controls the dialog's open state. When this is true the dialog is displayed. When false the dialog is hidden.
      */
-    $$open: Writable<boolean>;
+    open: boolean;
   }
 
   export type DialogOptions = {};
 
   export type Dialog<Attrs> = {
-    open: (attrs?: Partial<Omit<Attrs, "$$open">>) => void;
+    open: (attrs?: Partial<Omit<Attrs, "open">>) => void;
     close: () => void;
   };
 
@@ -846,68 +805,8 @@ declare module "woofe" {
   export function makeRef<Value>(initialValue?: Value): Ref<Value>;
 
   /*==================================*\
-  ||            Transitions           ||
-  \*==================================*/
-
-  /**
-   * Defines a set of standalone transitions that can be applied to any element.
-   *
-   * @param transitions - An object with functions that implement the transitions.
-   */
-  export function makeTransitions<State extends Record<string, any>>(
-    transitions: Transitions<State>
-  ): TransitionFactory<State>;
-
-  /**
-   * Takes an element and returns a version of that element with these transitions applied.
-   *
-   * @param element - A view, a DOM node, or anything with a `.toString()` method.
-   */
-  export interface TransitionFactory<State> {
-    (fn: ViewFunction<{ $transition: Readable<State> }, any>): Blueprint;
-
-    (view: View<{ $transition: Readable<State> }, any>): Blueprint;
-
-    (element: Blueprint): Blueprint;
-
-    (element: WoofElement): Blueprint;
-  }
-
-  export interface Transitions<State> {
-    /**
-     * Defines the transition that occurs when an element is added to the document.
-     */
-    enter?: (ctx: TransitionContext<State>) => void;
-
-    /**
-     * Defines the transition that occurs before the element is removed from the document.
-     */
-    exit?: (ctx: TransitionContext<State>) => void;
-  }
-
-  export interface TransitionContext<State extends Record<string, any>> {
-    node: HTMLElement;
-
-    get(): State;
-    get<Key extends keyof State>(key: Key): State[Key];
-
-    set(fields: Partial<State>): void;
-    set<Key extends keyof State>(key: Key, value: State[Key]): void;
-
-    done: () => void;
-  }
-
-  /*==================================*\
   ||         Animations: Spring       ||
   \*==================================*/
-
-  export function makeSpring(initialValue: number, options?: SpringOptions): Spring;
-
-  export interface Spring extends Readable<number> {
-    snapTo(endValue: number): Promise<void>;
-    to(endValue: number, options?: SpringOptions): Promise<void>;
-    animate(startValue: number, endValue: number, options?: SpringOptions): Promise<void>;
-  }
 
   export interface SpringOptions {
     mass?: number;
@@ -916,25 +815,13 @@ declare module "woofe" {
     velocity?: number;
   }
 
-  /*==================================*\
-  ||         Animations: Tween        ||
-  \*==================================*/
-
-  export function makeTween(options?: TweenOptions): Tween;
-
-  export interface Tween extends Readable<number> {
+  export interface Spring extends Readable<number> {
     snapTo(endValue: number): Promise<void>;
-    to(endValue: number, options?: TweenOptions): Promise<void>;
-    animate(startValue: number, endValue: number, options?: TweenOptions): Promise<void>;
+    to(endValue: number, options?: SpringOptions): Promise<void>;
+    animate(startValue: number, endValue: number, options?: SpringOptions): Promise<void>;
   }
 
-  type EasingFunction = (x: number) => number;
-  type EasingArray = [number, number, number, number];
-
-  export interface TweenOptions {
-    duration?: number;
-    easing?: EasingArray | EasingFunction;
-  }
+  export function makeSpring(initialValue: number, options?: SpringOptions): Spring;
 
   /*==================================*\
   ||             Debounce             ||
@@ -989,8 +876,8 @@ declare module "woofe" {
   }
 }
 
-declare module "@woofjs/client/jsx-runtime" {
-  import { Blueprint, View } from "@woofjs/client";
+declare module "woofe/jsx-runtime" {
+  import { Blueprint, View } from "woofe";
 
   export function jsx(
     element: string | View<any, any>,
@@ -1005,8 +892,8 @@ declare module "@woofjs/client/jsx-runtime" {
   ): Blueprint;
 }
 
-declare module "@woofjs/client/jsx-dev-runtime" {
-  import { Blueprint, View } from "@woofjs/client";
+declare module "woofe/jsx-dev-runtime" {
+  import { Blueprint, View } from "woofe";
 
   export function jsxDEV(
     element: string | View<any, any>,
@@ -1019,7 +906,7 @@ declare module "@woofjs/client/jsx-dev-runtime" {
 }
 
 declare namespace JSX {
-  import { Observable, Ref, ToStringable } from "@woofjs/client";
+  import { Observable, Ref, ToStringable } from "woofe";
   import * as CSS from "csstype";
 
   interface ElementChildrenAttribute {

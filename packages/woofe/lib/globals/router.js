@@ -8,6 +8,7 @@ import { isObject, isFunction, isString } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
+import { toBlueprint } from "../helpers/toBlueprints.js";
 import { ViewBlueprint } from "../blueprints/View.js";
 
 /**
@@ -185,12 +186,13 @@ export default makeGlobal((ctx) => {
               }
 
               if (!redirected) {
-                const view = matchedLayer.view?.isView
-                  ? matchedLayer.view
-                  : new ViewBlueprint({ setup: matchedLayer.view }).build({
-                      appContext,
-                      attributes: preloadResult.attributes ?? {},
-                    });
+                console.log({ matchedLayer });
+
+                const view = toBlueprint(matchedLayer.view)?.build({
+                  appContext,
+                  attributes: preloadResult.attributes || {},
+                });
+
                 mount(view);
 
                 // Push and connect new active layer.

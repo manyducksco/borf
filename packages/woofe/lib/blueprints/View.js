@@ -12,9 +12,17 @@ export class ViewBlueprint {
     } else if (isObject(config)) {
       this.name = config.name;
       this.setup = config.setup;
-      this.attributes = config.attributes;
+      this.attributeDefs = config.attributes;
+
+      // These can be changed after the blueprint is created to change which children and attributes new views are built with.
+      this.defaultChildren = config.defaultChildren ?? [];
+      this.defaultAttributes = config.defaultAttributes ?? {};
     } else {
       throw new TypeError(`Views must be defined with a setup function or a config object. Got: ${config}`);
+    }
+
+    if (!this.setup) {
+      throw new TypeError(`View has no setup function.`);
     }
   }
 
@@ -24,10 +32,12 @@ export class ViewBlueprint {
 
   build(config) {
     return new View({
+      attributes: this.defaultAttributes,
+      children: this.defaultChildren,
       ...config,
       name: this.name,
       setup: this.setup,
-      attributeDefs: this.attributes,
+      attributeDefs: this.attributeDefs,
     });
   }
 }
@@ -43,6 +53,7 @@ class View {
     afterDisconnect: [],
   };
   _subscriptions = [];
+  _isConnected = false;
 
   get isView() {
     return true;
@@ -53,7 +64,7 @@ class View {
   }
 
   get isConnected() {
-    return this._isConnected || false;
+    return this._isConnected;
   }
 
   constructor(config) {
@@ -61,13 +72,18 @@ class View {
     this._channel = config.appContext.debug.makeChannel(
       `${config.channelPrefix || "view"}:${config.name || "<unnamed>"}`
     );
-    this._attributes = config._attributes ?? makeAttributes(this._channel, config.attributes, config.attributeDefs);
-    this._$$children = config.$$children ?? makeState(config.children || []);
+
+    this._attributes = makeAttributes({
+      attributes: config.attributes,
+      definitions: config.attributeDefs,
+    });
+    this._$$children = makeState(config.children || []);
 
     const { setup, appContext, elementContext } = config;
 
     const ctx = {
       attrs: this._attributes.api,
+      attributes: this._attributes.api,
 
       observe: (...args) => {
         let callback = args.pop();
@@ -86,7 +102,7 @@ class View {
           }
         };
 
-        if (this.isConnected) {
+        if (this._isConnected) {
           // If called when the view is connected, we assume this code is in a lifecycle hook
           // where it will be triggered at some point again after the view is reconnected.
           this._subscriptions.push(start());
@@ -123,10 +139,6 @@ class View {
         throw new Error(`Local '${name}' is not connected upview.`);
       },
 
-      get isConnected() {
-        return this._isConnected;
-      },
-
       beforeConnect: (callback) => {
         this._lifecycleCallbacks.beforeConnect.push(callback);
       },
@@ -158,6 +170,9 @@ class View {
 
     // Add debug methods.
     Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(this._channel));
+    Object.defineProperty(ctx, "isConnected", {
+      get: () => this._isConnected,
+    });
 
     let element;
 
@@ -179,9 +194,12 @@ class View {
       this._element = blueprint.build({
         appContext,
         elementContext,
-        _attributes: this._attributes,
-        $$children: this._$$children,
+        attributes: config.attributes,
       });
+    }
+
+    if (isFunction(config.attributes?.ref)) {
+      config.attributes.ref(this._element.node);
     }
   }
 

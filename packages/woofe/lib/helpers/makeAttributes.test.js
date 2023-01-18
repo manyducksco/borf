@@ -1,16 +1,12 @@
 import { makeState } from "../../helpers/state.js";
-import { makeDebug } from "../../helpers/makeDebug.js";
 import { makeAttributes } from "./makeAttributes.js";
-
-const debug = makeDebug({ filter: "*" });
-const channel = debug.makeChannel("test");
 
 test("the basics", () => {
   const plain = "value";
   const readOnly = makeState(5).readable();
   const writable = makeState({ write: "this" });
 
-  const { controls, api } = makeAttributes(channel, { plain, readOnly, writable });
+  const { controls, api } = makeAttributes({ attributes: { plain, readOnly, writable } });
 
   controls.connect();
 

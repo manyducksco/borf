@@ -20,5 +20,7 @@ export const isView = (value) => isObject(value) && value.isView === true;
 export const isBlueprint = (value) => isObject(value) && value.isBlueprint === true;
 
 export const isObservable = (value) => (value && value[OBSERVABLE] && value === value[OBSERVABLE]()) || false;
+
 export const isReadable = (value) => (value && value[READABLE] && value === value[READABLE]()) || false;
+
 export const isWritable = (value) => (value && value[WRITABLE] && value === value[WRITABLE]()) || false;

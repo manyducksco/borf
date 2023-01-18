@@ -1,6 +1,7 @@
-import { isArray, isObservable, isDOM, isString, isNumber } from "./typeChecking.js";
+import { isArray, isObservable, isDOM, isString, isNumber, isFunction, isObject } from "./typeChecking.js";
 import { flatten } from "./flatten.js";
 import { TextBlueprint } from "../blueprints/Text.js";
+import { ViewBlueprint } from "../blueprints/View.js";
 
 /**
  * Convert renderable elements into an array of blueprints, ready to build and connect.
@@ -39,6 +40,16 @@ export function toBlueprint(element) {
     return null;
   }
 
+  // Standalone View setup functions.
+  if (isFunction(element)) {
+    return new ViewBlueprint(element);
+  }
+
+  // Plain View config object.
+  if (isObject(element) && isFunction(element.setup)) {
+    return new ViewBlueprint(element);
+  }
+
   if (element.isBlueprint) {
     return element;
   }
@@ -65,9 +76,7 @@ export function toBlueprint(element) {
     return new TextBlueprint(element);
   }
 
-  console.trace(element, isString(element));
-
-  throw new TypeError(`Children must be a DOM node, string, number, or null. Got: ${element}`);
+  throw new TypeError(`Children must be a DOM node, string, number, function, or null. Got: ${element}`);
 }
 
 /**

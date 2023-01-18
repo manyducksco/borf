@@ -61,7 +61,10 @@ class LocalView {
     this._channel = config.appContext.debug.makeChannel(
       `${config.channelPrefix || "local"}:${config.name || "<unnamed>"}`
     );
-    this._attributes = makeAttributes(this._channel, omit(["name"], config.attributes), config.attributeDefs);
+    this._attributes = makeAttributes({
+      attributes: omit(["name"], config.attributes),
+      definitions: config.attributeDefs,
+    });
     this._$$children = makeState(config.children || []);
 
     this.node = document.createComment(`local: ${config.name}`);

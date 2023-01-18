@@ -1,4 +1,4 @@
-import { isArray, isFunction, isObject, isString, isBlueprint } from "./typeChecking.js";
+import { isFunction, isObject, isString, isBlueprint } from "./typeChecking.js";
 
 import { ElementBlueprint } from "../blueprints/Element.js";
 import { ViewBlueprint } from "../blueprints/View.js";
@@ -19,10 +19,6 @@ import { joinStates } from "../makeState.js";
  * @param args - Optional attributes object and zero or more children.
  */
 export function m(element, ...args) {
-  if (isBlueprint(element)) {
-    return element;
-  }
-
   let attributes = {};
   let children = args;
 
@@ -30,14 +26,17 @@ export function m(element, ...args) {
     attributes = children.shift();
   }
 
-  if (isString(element)) {
+  if (isBlueprint(element)) {
+    element.defaultAttributes = attributes;
+    element.defaultChildren = children;
+    return element;
+  } else if (isString(element)) {
     if (element === "<>") {
       return new ObserverBlueprint(children);
-    } else {
-      return new ElementBlueprint(element, attributes, children);
     }
+    return new ElementBlueprint(element, attributes, children);
   } else if (isFunction(element)) {
-    return new ViewBlueprint(element, attributes, children);
+    return new ViewBlueprint({ setup: element, defaultAttributes: attributes, defaultChildren: children });
   } else {
     console.warn(element);
     throw new TypeError(`m() accepts either a tag name or a view as the first argument. Got: ${element}`);
@@ -113,58 +112,6 @@ m.observe = function observe(...args) {
   }
 
   return new ObserverBlueprint(joinStates(...args, render));
-};
-
-/**
- * Matches a value against a set of cases, returning the matching result.
- *
- * @example
- * h.match($value, [
- *   ["value1", <ThisView />],
- *   ["value2", <ThatView />],
- *   ["value3", <AnotherView />],
- *   <FallbackView />
- * ]);
- *
- * @param $value - Binding to observe.
- * @param cases - Array of cases with an optional fallback as a final element.
- */
-m.match = function match($value, cases) {
-  if (!isArray(cases)) {
-    throw new TypeError(`Expected an array of [value, result] cases as the second argument. Got: ${typeof cases}`);
-  }
-
-  const fallback = !isArray(cases[cases.length - 1]) ? cases.pop() : null;
-
-  return new ObserverBlueprint($value, (value) => {
-    for (const [cond, result] of cases) {
-      let matches = false;
-
-      if (isFunction(cond) && cond(value)) {
-        matches = true;
-      } else if (cond === value) {
-        matches = true;
-      }
-
-      if (matches) {
-        if (isFunction(result)) {
-          return result(value);
-        }
-
-        return result;
-      }
-    }
-
-    if (fallback) {
-      if (isFunction(fallback)) {
-        return fallback(value);
-      }
-
-      return fallback;
-    }
-
-    return null;
-  });
 };
 
 /**

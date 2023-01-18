@@ -3,7 +3,7 @@ import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
 import { makeDebug } from "./helpers/makeDebug.js";
-import { toBlueprint } from "./helpers/toBlueprints.js";
+import { makeGlobal } from "./makeGlobal.js";
 import { ViewBlueprint } from "./blueprints/View.js";
 
 import dialog from "./globals/dialog.js";
@@ -27,7 +27,7 @@ class App {
     globals: {},
     routes: [],
     debug: {
-      filter: "*,-woof:*",
+      filter: "*,-woofe:*",
       log: true,
       warn: true,
       error: true,
@@ -37,12 +37,12 @@ class App {
     },
   };
 
-  globals = {
-    "@dialog": dialog,
-    "@router": router,
-    "@page": page,
-    "@http": http,
-  };
+  globals = [
+    { name: "@dialog", global: dialog },
+    { name: "@router", global: router },
+    { name: "@page", global: page },
+    { name: "@http", global: http },
+  ];
 
   routes = [];
 
@@ -65,7 +65,13 @@ class App {
 
     // Add developer-defined globals.
     if (options.globals) {
-      Object.assign(this.globals, options.globals);
+      for (const { name, global } of options.globals) {
+        const dupeIndex = this.globals.findIndex((x) => x.name === name);
+        if (dupeIndex > -1) {
+          this.globals.splice(dupeIndex, 1);
+        }
+        this.globals.push({ name, global });
+      }
     }
 
     if (options.routes) {
@@ -106,7 +112,7 @@ class App {
     appContext.rootElement = element;
 
     // Set up crashing getters to handle globals being accessed by other globals.
-    for (const name in this.globals) {
+    for (const { name } of this.globals) {
       Object.defineProperty(appContext.globals, name, {
         get() {
           throw new Error(
@@ -118,9 +124,7 @@ class App {
     }
 
     // Initialize globals.
-    for (const name in this.globals) {
-      let global = this.globals[name];
-
+    for (let { name, global } of this.globals) {
       if (isFunction(global)) {
         global = makeGlobal(global);
       }
@@ -131,7 +135,7 @@ class App {
 
       let channelPrefix = "global";
       if (builtInGlobals.includes(global)) {
-        channelPrefix = "woof:global";
+        channelPrefix = "woofe:global";
       }
 
       const instance = global.instantiate({ appContext, channelPrefix, name: global.name || name });
@@ -196,7 +200,7 @@ class App {
   async #preload() {
     if (this.options.preload) {
       const appContext = this._context;
-      const channel = appContext.debug.makeChannel("woof:app:preload");
+      const channel = appContext.debug.makeChannel("woofe:app:preload");
 
       return new Promise((resolve) => {
         let resolved = false;
@@ -274,7 +278,6 @@ class App {
     const routes = [];
 
     if (route.redirect) {
-      console.log({ route, parts: [...parts, route.redirect] });
       let redirect = resolvePath(...parts, route.redirect);
 
       if (!redirect.startsWith("/")) {

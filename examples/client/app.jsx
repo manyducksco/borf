@@ -49,11 +49,11 @@ const Examples = makeApp({
   router: {
     hash: false,
   },
-  globals: {
-    counter,
-    mouse,
-  },
-  view: AppLayout, // Defaults to (ctx) => ctx.outlet() when not passed.
+  globals: [
+    { name: "counter", global: counter },
+    { name: "mouse", global: mouse },
+  ],
+  view: AppLayout,
   routes: [
     // Routes are always rendered in the outlet of the sibling view.
     {
@@ -91,7 +91,13 @@ const Examples = makeApp({
         { path: "*", redirect: "./counter" },
       ],
     },
-    { path: "/router-test/one", view: () => <h1>One</h1> },
+    {
+      path: "/router-test/one",
+      view: {
+        name: "Inline View Config",
+        setup: () => <h1>One</h1>,
+      },
+    },
     { path: "/router-test/two", view: () => <h1>Two</h1> },
     { path: "/router-test/*", redirect: "/router-test/one" },
     {

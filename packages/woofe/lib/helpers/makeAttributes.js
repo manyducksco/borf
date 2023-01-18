@@ -9,12 +9,13 @@ import {
   isString,
   isNumber,
   isArray,
+  isReadable,
   isWritable,
   isBoolean,
 } from "./typeChecking.js";
 import { deepEqual } from "./deepEqual.js";
 
-export function makeAttributes(channel, attributes, definitions) {
+export function makeAttributes({ attributes, definitions }) {
   // Separate static attributes, read-only attributes and writable attributes.
   // Set values of static attributes.
   // Create observers for readable and writable attributes.
@@ -24,27 +25,40 @@ export function makeAttributes(channel, attributes, definitions) {
 
   const writables = {};
   const readables = {};
+  const observables = {};
   const statics = {};
 
-  for (const key in attributes) {
-    if (isWritable(attributes[key])) {
-      writables[key] = attributes[key];
-    } else if (isObservable(attributes[key])) {
-      readables[key] = attributes[key];
+  for (const name in attributes) {
+    if (isWritable(attributes[name])) {
+      writables[name] = attributes[name];
+    } else if (isReadable(attributes[name])) {
+      readables[name] = attributes[name];
+    } else if (isObservable(attributes[name])) {
+      observables[name] = attributes[name];
     } else {
-      statics[key] = attributes[key];
+      statics[name] = attributes[name];
     }
   }
 
   if (definitions) {
-    for (const key in definitions) {
-      if (!(key in attributes) && definitions[key].default !== undefined) {
-        statics[key] = definitions[key].default;
+    for (const name in definitions) {
+      if (!(name in attributes) && definitions[name].default !== undefined) {
+        statics[name] = definitions[name].default;
       }
     }
   }
 
-  const $$attrs = makeState({ ...statics });
+  const initialAttrs = { ...statics };
+
+  for (const name in writables) {
+    initialAttrs[name] = writables[name].get();
+  }
+
+  for (const name in readables) {
+    initialAttrs[name] = readables[name].get();
+  }
+
+  const $$attrs = makeState(initialAttrs);
 
   /**
    * Called by the framework.
@@ -67,6 +81,18 @@ export function makeAttributes(channel, attributes, definitions) {
       for (const key in writables) {
         subscriptions.push(
           writables[key].subscribe((next) => {
+            assertValidItem(definitions, next, key);
+
+            $$attrs.update((current) => {
+              current[key] = next;
+            });
+          })
+        );
+      }
+
+      for (const key in observables) {
+        subscriptions.push(
+          observables[key].subscribe((next) => {
             assertValidItem(definitions, next, key);
 
             $$attrs.update((current) => {
@@ -290,6 +316,14 @@ function assertValidItem(definitions, value, name) {
     return; // All values are allowed when no type is specified.
   }
 
+  // Type can be a custom validator function taking the item value and returning a boolean.
+  if (isFunction(def.type)) {
+    if (!def.type(value)) {
+      throw new TypeError(`Attribute '${name}' must be a valid type. Got: ${value}`);
+    }
+  }
+
+  // If not a function, type can be one of these strings.
   switch (def.type) {
     case "boolean":
       if (!isBoolean(value)) {
@@ -322,7 +356,7 @@ function assertValidItem(definitions, value, name) {
       }
       break;
     default:
-      throw new TypeError(`Attribute '${name}' does not support type '${def.type}'.`);
+      throw new TypeError(`Attribute '${name}' is assigned an unrecognized type '${def.type}'.`);
   }
 }
 
