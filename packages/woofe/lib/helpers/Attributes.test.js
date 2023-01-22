@@ -1,14 +1,15 @@
 import { makeState } from "../../helpers/state.js";
-import { makeAttributes } from "./makeAttributes.js";
+import { Attributes } from "./Attributes.js";
 
 test("the basics", () => {
   const plain = "value";
   const readOnly = makeState(5).readable();
   const writable = makeState({ write: "this" });
 
-  const { controls, api } = makeAttributes({ attributes: { plain, readOnly, writable } });
+  const attributes = new Attributes({ attributes: { plain, readOnly, writable } });
+  const api = attributes.api;
 
-  controls.connect();
+  attributes.connect();
 
   expect(api.get()).toStrictEqual({
     plain: "value",
@@ -36,5 +37,5 @@ test("the basics", () => {
   expect(api.get("plain")).toBe("value");
   expect(api.get("borf")).toBe("this is new");
 
-  controls.disconnect();
+  attributes.disconnect();
 });

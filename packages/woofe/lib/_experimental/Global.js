@@ -2,11 +2,7 @@ import { APP_CONTEXT } from "./keys.js";
 import { isFunction, isObject, isObservable, isString } from "./helpers/typeChecking.js";
 import { joinStates } from "./makeState.js";
 
-export function makeGlobal(config) {
-  return new Global(config);
-}
-
-class Global {
+export class Global {
   constructor(config) {
     if (isFunction(config)) {
       this.setup = config;

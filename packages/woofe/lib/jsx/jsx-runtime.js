@@ -10,7 +10,7 @@ export function jsx(element, props, key) {
   const attributes = { ...omit(["children", "key"], props) };
   const children = [props.children];
 
-  return m(element, attributes, children);
+  return m(element, attributes, ...children);
 }
 
 /**
@@ -20,5 +20,5 @@ export function jsxs(element, props, key) {
   const attributes = { ...omit(["children", "key"], props) };
   const children = props.children;
 
-  return m(element, attributes, children);
+  return m(element, attributes, ...children);
 }

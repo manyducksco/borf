@@ -4,11 +4,21 @@
 
 Woofe is a front end framework that aims to cover the most common needs of modern web apps. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box.
 
+## Terms
+
+- App
+- Component (anything you write that plugs into woofe)
+  - View
+  - Local (member of 'state components' alongside Global)
+  - Global (member of 'state components' alongside Local)
+- Author (developer using woofe)
+- User (end user of the app)
+
 ## Installation
 
 ### CDN
 
-Woof includes everything you need to make a fully functioning web app by importing the `woofe` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running without configuring a build step.
+Woof includes everything you need to make a fully functioning web app by importing the `woofe` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running in a browser without configuring a build step.
 
 ```js
 import { ... } from "https://cdn.skypack.dev/woofe";
@@ -37,7 +47,7 @@ Suppose you have two files on your web server:
 
 ```
 index.html
-app.jsx
+app.js
 ```
 
 Inside `index.html`:
@@ -46,7 +56,7 @@ Inside `index.html`:
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Woof Demo</title>
+    <title>Woofe Demo</title>
   </head>
   <body>
     <main id="app">
@@ -66,6 +76,9 @@ import { makeApp } from "https://cdn.skypack.dev/woofe";
 const Hello = makeApp((ctx, m) => {
   // Use the markup function to generate DOM elements.
   return m("h1", "Hello World");
+
+  // When building with the `builde` package you can use JSX instead:
+  // return <h1>Hello World</h1>;
 });
 
 // Display this app inside the element with `id="app"`

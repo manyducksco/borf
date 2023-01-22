@@ -10,13 +10,12 @@ export const LocalsExample = makeView({
       <div class="example">
         <h3>Scoped state with locals.</h3>
         <div>
-          <ExampleLocal as="example" initialValue="Instance 1">
+          <ExampleLocal name="example" initialValue="Instance 1">
             <ValueDisplay />
 
-            {/* Should override for subviews */}
-            <ExampleLocal as="example" initialValue="Instance 2">
+            {/* <ExampleLocal name="example" initialValue="Instance 2">
               <ValueDisplay />
-            </ExampleLocal>
+            </ExampleLocal> */}
           </ExampleLocal>
         </div>
       </div>

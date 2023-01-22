@@ -1,5 +1,6 @@
+import produce from "immer";
 import { isFunction, isObject, isObservable, isString } from "../helpers/typeChecking.js";
-import { makeAttributes } from "../helpers/makeAttributes.js";
+import { Attributes } from "../helpers/Attributes.js";
 import { makeState, joinStates } from "../makeState.js";
 
 export class LocalBlueprint {
@@ -9,10 +10,18 @@ export class LocalBlueprint {
     } else if (isObject(config)) {
       this.name = config.name;
       this.setup = config.setup;
-      this.attributes = config.attributes;
+      this.attributeDefs = config.attributes;
     } else {
-      throw new TypeError(`Views must be defined with a setup function or a config object. Got: ${config}`);
+      throw new TypeError(`Locals must be defined with a setup function or a config object. Got: ${config}`);
     }
+
+    if (!this.setup) {
+      throw new TypeError(`Local has no setup function.`);
+    }
+
+    // These can be changed after the blueprint is created to change which children and attributes new views are built with.
+    this.defaultChildren = config.defaultChildren ?? [];
+    this.defaultAttributes = config.defaultAttributes ?? {};
   }
 
   get isBlueprint() {
@@ -21,10 +30,12 @@ export class LocalBlueprint {
 
   build(config) {
     return new LocalView({
+      attributes: this.defaultAttributes,
+      children: this.defaultChildren,
       ...config,
       name: this.name,
       setup: this.setup,
-      attributeDefs: this.attributes,
+      attributeDefs: this.attributeDefs,
     });
   }
 }
@@ -59,15 +70,13 @@ class LocalView {
     this._name = config.attributes.name;
 
     this._channel = config.appContext.debug.makeChannel(
-      `${config.channelPrefix || "local"}:${config.name || "<unnamed>"}`
+      `${config.channelPrefix || "local"}:${this._name || "<unnamed>"}`
     );
-    this._attributes = makeAttributes({
+    this._attributes = new Attributes({
       attributes: omit(["name"], config.attributes),
       definitions: config.attributeDefs,
     });
     this._$$children = makeState(config.children || []);
-
-    this.node = document.createComment(`local: ${config.name}`);
 
     const { setup, appContext, elementContext } = config;
 
@@ -128,10 +137,6 @@ class LocalView {
         throw new Error(`Local '${name}' is not connected upview.`);
       },
 
-      get isConnected() {
-        return this.isConnected;
-      },
-
       beforeConnect: (callback) => {
         this._lifecycleCallbacks.beforeConnect.push(callback);
       },
@@ -151,6 +156,9 @@ class LocalView {
 
     // Add debug methods.
     Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(this._channel));
+    Object.defineProperty(ctx, "isConnected", {
+      get: () => this._isConnected,
+    });
 
     let exports;
 
@@ -158,6 +166,7 @@ class LocalView {
       exports = setup(ctx);
     } catch (err) {
       this._channel.error(err);
+      throw new Error(err.message);
     }
 
     if (!isObject(exports)) {
@@ -166,13 +175,12 @@ class LocalView {
 
     this._outlet = new ObserverBlueprint(this._$$children.readable()).build({
       appContext,
-      elementContext: {
-        ...elementContext,
-        locals: {
-          ...(elementContext?.locals || {}),
-          [this._name]: exports,
-        },
-      },
+      elementContext: produce(elementContext, (ctx) => {
+        if (!ctx.locals) {
+          ctx.locals = {};
+        }
+        ctx.locals[this._name] = exports;
+      }),
     });
   }
 
@@ -189,14 +197,14 @@ class LocalView {
       const wasConnected = this.isConnected;
 
       if (!wasConnected) {
-        this._attributes.controls.connect();
+        this._attributes.connect();
 
         for (const callback of this._lifecycleCallbacks.beforeConnect) {
           callback();
         }
       }
 
-      this._outlet.connect(parent, after);
+      await this._outlet.connect(parent, after);
 
       if (!wasConnected) {
         setTimeout(() => {
@@ -220,7 +228,7 @@ class LocalView {
           callback();
         }
 
-        this._outlet.disconnect();
+        await this._outlet.disconnect();
 
         setTimeout(() => {
           for (const callback of this._lifecycleCallbacks.afterDisconnect) {
@@ -236,7 +244,7 @@ class LocalView {
         }, 0);
       }
 
-      this._attributes.controls.disconnect();
+      this._attributes.disconnect();
     });
   }
 }

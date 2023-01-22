@@ -20,7 +20,7 @@ import { joinStates } from "../makeState.js";
  */
 export function m(element, ...args) {
   let attributes = {};
-  let children = args;
+  let children = args.filter((x) => x !== null && x !== undefined && x !== false);
 
   if (isObject(children[0])) {
     attributes = children.shift();

@@ -4,24 +4,25 @@ import logLifecycle from "../utils/logLifecycle.js";
 /**
  * Component with controls and a mapped label based on the state inside the service.
  */
-export const CounterExample = makeView((ctx) => {
-  ctx.name = "CounterExample";
+export const CounterExample = makeView({
+  name: "CounterExample",
+  setup: (ctx) => {
+    logLifecycle(ctx);
 
-  logLifecycle(ctx);
+    const counter = ctx.global("counter");
+    const $label = counter.$current.as((n) => `the number is: ${n}`);
 
-  const counter = ctx.global("counter");
-  const $label = counter.$current.as((n) => `the number is: ${n}`);
-
-  return (
-    <div class="example">
-      <h3>Shared state with services</h3>
-      <div>
-        <p>{$label}</p>
-        <button onclick={counter.reset}>Reset</button>
-        <CounterViewLabel />
+    return (
+      <div class="example">
+        <h3>Shared state with services</h3>
+        <div>
+          <p>{$label}</p>
+          <button onclick={counter.reset}>Reset</button>
+          <CounterViewLabel />
+        </div>
       </div>
-    </div>
-  );
+    );
+  },
 });
 
 /**

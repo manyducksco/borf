@@ -5,11 +5,12 @@ Router needs to support nested routes.
 ```js
 const Example = makeView({
   name: "Example",
+  about: "An example view.", // About text is picked up in woofe/viewer
   attributes: {
     value: {
       type: "string",
+      about: "A string value.",
       default: "The Value",
-      description: "A string value.",
     },
   },
   setup: (ctx) => {
@@ -140,10 +141,7 @@ const Hello = makeApp({
 // Define all your routes upfront. Easier to see the structure of your whole app from one place.
 
 const Hello = makeApp({
-  // globals: [{ name: "data", global: SomeGlobal }],
-  globals: {
-    data: SomeGlobal,
-  },
+  globals: [{ name: "data", global: SomeGlobal }],
   view: (ctx) => {
     const { $name } = ctx.global("data");
     return <span>Hello {$name}!</span>;
@@ -161,14 +159,10 @@ const Quack = makeApp({
   router: {
     hash: true,
   },
-  // globals: [
-  //   { name: "name", global: SomeGlobal },
-  //   { name: "other", global: SomeOtherGlobal },
-  // ],
-  globals: {
-    name: SomeGlobal,
-    other: SomeOtherGlobal,
-  },
+  globals: [
+    { name: "name", global: SomeGlobal },
+    { name: "other", global: SomeOtherGlobal },
+  ],
   routes: [
     {
       path: "/example",

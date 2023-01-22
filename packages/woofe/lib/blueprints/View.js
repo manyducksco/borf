@@ -1,6 +1,6 @@
 import { m } from "../helpers/markup.js";
 import { isFunction, isObject, isString, isObservable } from "../helpers/typeChecking.js";
-import { makeAttributes } from "../helpers/makeAttributes.js";
+import { Attributes } from "../helpers/Attributes.js";
 import { toBlueprint } from "../helpers/toBlueprints.js";
 import { makeState, joinStates } from "../makeState.js";
 import { ObserverBlueprint } from "./Observer.js";
@@ -13,10 +13,6 @@ export class ViewBlueprint {
       this.name = config.name;
       this.setup = config.setup;
       this.attributeDefs = config.attributes;
-
-      // These can be changed after the blueprint is created to change which children and attributes new views are built with.
-      this.defaultChildren = config.defaultChildren ?? [];
-      this.defaultAttributes = config.defaultAttributes ?? {};
     } else {
       throw new TypeError(`Views must be defined with a setup function or a config object. Got: ${config}`);
     }
@@ -24,6 +20,10 @@ export class ViewBlueprint {
     if (!this.setup) {
       throw new TypeError(`View has no setup function.`);
     }
+
+    // These can be changed after the blueprint is created to set which children and attributes new views are built with.
+    this.defaultChildren = config.defaultChildren ?? [];
+    this.defaultAttributes = config.defaultAttributes ?? {};
   }
 
   get isBlueprint() {
@@ -52,7 +52,7 @@ class View {
     animateOut: [],
     afterDisconnect: [],
   };
-  _subscriptions = [];
+  _activeSubscriptions = [];
   _isConnected = false;
 
   get isView() {
@@ -69,11 +69,14 @@ class View {
 
   constructor(config) {
     this._config = config;
+
+    this.name = config.name;
+    this.about = config.about;
+
     this._channel = config.appContext.debug.makeChannel(
       `${config.channelPrefix || "view"}:${config.name || "<unnamed>"}`
     );
-
-    this._attributes = makeAttributes({
+    this._attributes = new Attributes({
       attributes: config.attributes,
       definitions: config.attributeDefs,
     });
@@ -105,12 +108,12 @@ class View {
         if (this._isConnected) {
           // If called when the view is connected, we assume this code is in a lifecycle hook
           // where it will be triggered at some point again after the view is reconnected.
-          this._subscriptions.push(start());
+          this._activeSubscriptions.push(start());
         } else {
           // This should only happen if called in the body of the view.
           // This code is not always re-run between when a view is disconnected and reconnected.
           this._lifecycleCallbacks.afterConnect.push(() => {
-            this._subscriptions.push(start());
+            this._activeSubscriptions.push(start());
           });
         }
       },
@@ -194,7 +197,7 @@ class View {
       this._element = blueprint.build({
         appContext,
         elementContext,
-        attributes: config.attributes,
+        // attributes: config.attributes,
       });
     }
 
@@ -220,7 +223,7 @@ class View {
       const wasConnected = this._isConnected;
 
       if (!wasConnected) {
-        this._attributes.controls.connect();
+        this._attributes.connect();
 
         for (const callback of this._lifecycleCallbacks.beforeConnect) {
           callback();
@@ -284,16 +287,16 @@ class View {
             callback();
           }
 
-          for (const subscription of this._subscriptions) {
+          for (const subscription of this._activeSubscriptions) {
             subscription.unsubscribe();
           }
-          this._subscriptions = [];
+          this._activeSubscriptions = [];
 
           resolve();
         }, 0);
       }
 
-      this._attributes.controls.disconnect();
+      this._attributes.disconnect();
     });
   }
 }

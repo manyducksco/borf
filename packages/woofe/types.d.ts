@@ -6,13 +6,13 @@ declare module "woofe" {
    *
    * @param options - Configuration options.
    */
-  export function makeApp<Globals = any>(options?: AppOptions): App<Globals>;
+  export function makeApp(options?: AppOptions): App;
 
   /*==================================*\
   ||               App                ||
   \*==================================*/
 
-  interface AppOptions {
+  interface AppOptions<A = any> {
     /**
      * Options for debug system.
      */
@@ -58,11 +58,11 @@ declare module "woofe" {
       history?: History;
     };
 
-    globals?: { name: string; global: Global | GlobalSetupFn }[];
+    globals?: { name: string; global: GlobalLike }[];
 
-    preload?: RoutePreloadFn;
+    preload?: RoutePreloadFn<A>;
 
-    view?: View | ViewSetupFn;
+    view?: ViewLike;
 
     routes?: RouteConfig[];
   }
@@ -73,7 +73,7 @@ declare module "woofe" {
    */
   interface App<Globals> {
     routes: {}[];
-    globals: {};
+    globals: { name: string; global: GlobalLike }[];
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -99,6 +99,10 @@ declare module "woofe" {
     "@page": ReturnType<GlobalPage>;
   };
 
+  export type GlobalsList<K extends keyof T, T> = { name: K; global: GlobalLike<T[K]> }[];
+
+  export type GetGlobals<T> = DefaultGlobals;
+
   export type AppGlobals<T> = DefaultGlobals & {
     [K in keyof T]: T[K] extends (...any) => any ? ReturnType<T[K]> : never;
   };
@@ -112,15 +116,15 @@ declare module "woofe" {
     redirect(to: string): any;
   }
 
-  interface RoutePreloadFn {
-    (context: RoutePreloadContext): void;
+  interface RoutePreloadFn<T> {
+    (context: RoutePreloadContext): Promise<T>;
   }
 
-  interface RouteConfig {
+  interface RouteConfig<T extends ReturnType<RoutePreloadFn<any>> = any> {
     path: string;
     redirect?: string;
-    preload?: RoutePreloadFn;
-    view?: View | ViewSetupFn;
+    preload?: T;
+    view?: ViewLike<T>;
     routes?: RouteConfig[];
   }
 
@@ -434,7 +438,7 @@ declare module "woofe" {
       /**
        * Attribute description for viewer.
        */
-      description?: string;
+      about?: string;
 
       /**
        * Default value.
@@ -454,8 +458,11 @@ declare module "woofe" {
     };
   }
 
+  export type ViewLike<A> = ViewSetupFn<A, any> | ViewConfig<A, any> | View<A, any>;
+
   interface ViewConfig<Attrs, Globals> {
     name?: string;
+    about?: string;
     attributes?: AttributesConfig;
     setup: ViewSetupFn<Attrs, Globals>;
   }
@@ -549,15 +556,18 @@ declare module "woofe" {
   ||              Global              ||
   \*==================================*/
 
+  export type GlobalLike = GlobalSetupFn<any> | GlobalConfig<any> | Global<any>;
+
   // TODO: Find out how to infer return type of `fn` while Globals is passed.
   export function makeGlobal<Globals>(fn: GlobalSetupFn<Globals>): Global<any>;
 
   interface GlobalConfig<AppGlobals> {
     name?: string;
+    about?: string;
     setup: GlobalSetupFn<AppGlobals>;
   }
 
-  export function makeGlobal<AppGlobals>(config: GlobalConfig<AppGlobals>): Global<any>;
+  export function makeGlobal<Globals>(config: GlobalConfig<Globals>): Global<any>;
 
   export type GlobalSetupFn<Globals> = (ctx: GlobalContext<Globals>) => any;
 
@@ -874,6 +884,28 @@ declare module "woofe" {
      */
     callback: () => any;
   }
+}
+
+declare module "woofe/viewer" {
+  import { ViewLike, GlobalLike } from "woofe";
+
+  export interface ViewerConfig<A = any> {
+    globals?: { name: string; global: GlobalLike }[];
+    // locals?: {name: string, local: Local}[],
+    presets: {
+      name: string;
+      attributes?: A;
+      globals: { name: string; global: GlobalLike }[];
+    }[];
+  }
+
+  export interface Viewer {
+    config: ViewerConfig;
+    // TODO: Instantiate and connect, select preset, etc.
+    // This object will be used by the viewer runner.
+  }
+
+  export function makeViewer<A>(view: ViewLike<A>, config?: ViewerConfig<A>): Viewer;
 }
 
 declare module "woofe/jsx-runtime" {

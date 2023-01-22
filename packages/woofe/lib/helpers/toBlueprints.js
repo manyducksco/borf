@@ -1,4 +1,4 @@
-import { isArray, isObservable, isDOM, isString, isNumber, isFunction, isObject } from "./typeChecking.js";
+import { isArray, isObservable, isDOM, isString, isNumber, isFunction, isObject, isBlueprint } from "./typeChecking.js";
 import { flatten } from "./flatten.js";
 import { TextBlueprint } from "../blueprints/Text.js";
 import { ViewBlueprint } from "../blueprints/View.js";
@@ -38,6 +38,10 @@ export function toBlueprints(elements) {
 export function toBlueprint(element) {
   if (element == null || element === false) {
     return null;
+  }
+
+  if (isBlueprint(element)) {
+    return element;
   }
 
   // Standalone View setup functions.

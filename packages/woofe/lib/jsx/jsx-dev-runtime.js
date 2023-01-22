@@ -1,11 +1,11 @@
 import { omit } from "../helpers/omit.js";
-import { h } from "../view/h.js";
+import { m } from "../helpers/markup.js";
 
-export { Fragment } from "../view/Fragment.js";
+export { FragmentBlueprint as Fragment } from "../blueprints/Fragment.js";
 
 export function jsxDEV(element, props, key, isStaticChildren, source, self) {
-  const attributes = { ...omit(["children", "key"], props), key };
+  const attributes = { ...omit(["children", "key"], props) };
   const children = Array.isArray(props.children) ? props.children : [props.children];
 
-  return h(element, attributes, children);
+  return m(element, attributes, ...children);
 }

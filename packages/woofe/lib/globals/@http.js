@@ -1,58 +1,113 @@
 import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
 import { APP_CONTEXT } from "../keys.js";
 import { makeGlobal } from "../makeGlobal.js";
+import { Global } from "../_experimental/Global.js";
 
-export default makeGlobal((ctx) => {
-  const _middleware = [];
-  const fetch = ctx[APP_CONTEXT].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
-  let requestId = 0;
+export default class extends Global {
+  setup(ctx) {
+    const _middleware = [];
+    const fetch = ctx[APP_CONTEXT].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
+    let requestId = 0;
 
-  const request = (method, url) => {
-    return makeRequest({
-      id: ++requestId,
-      method,
-      url,
-      fetch,
-      log: ctx.log,
-      middleware: _middleware,
-    });
-  };
+    const request = (method, url) => {
+      return makeRequest({
+        id: ++requestId,
+        method,
+        url,
+        fetch,
+        log: ctx.log,
+        middleware: _middleware,
+      });
+    };
 
-  const methods = {
-    request,
+    const methods = {
+      request,
 
-    use(...middleware) {
-      _middleware.push(...middleware);
-      return methods;
-    },
+      use(...middleware) {
+        _middleware.push(...middleware);
+        return methods;
+      },
 
-    get(url) {
-      return request("get", url);
-    },
+      get(url) {
+        return request("get", url);
+      },
 
-    put(url) {
-      return request("put", url);
-    },
+      put(url) {
+        return request("put", url);
+      },
 
-    patch(url) {
-      return request("patch", url);
-    },
+      patch(url) {
+        return request("patch", url);
+      },
 
-    post(url) {
-      return request("post", url);
-    },
+      post(url) {
+        return request("post", url);
+      },
 
-    delete(url) {
-      return request("delete", url);
-    },
+      delete(url) {
+        return request("delete", url);
+      },
 
-    head(url) {
-      return request("head", url);
-    },
-  };
+      head(url) {
+        return request("head", url);
+      },
+    };
 
-  return methods;
-});
+    return methods;
+  }
+}
+
+// export default makeGlobal((ctx) => {
+//   const _middleware = [];
+//   const fetch = ctx[APP_CONTEXT].options.http?._fetch || window.fetch.bind(window); // Accepts a _fetch option in the app context options for mocking.
+//   let requestId = 0;
+
+//   const request = (method, url) => {
+//     return makeRequest({
+//       id: ++requestId,
+//       method,
+//       url,
+//       fetch,
+//       log: ctx.log,
+//       middleware: _middleware,
+//     });
+//   };
+
+//   const methods = {
+//     request,
+
+//     use(...middleware) {
+//       _middleware.push(...middleware);
+//       return methods;
+//     },
+
+//     get(url) {
+//       return request("get", url);
+//     },
+
+//     put(url) {
+//       return request("put", url);
+//     },
+
+//     patch(url) {
+//       return request("patch", url);
+//     },
+
+//     post(url) {
+//       return request("post", url);
+//     },
+
+//     delete(url) {
+//       return request("delete", url);
+//     },
+
+//     head(url) {
+//       return request("head", url);
+//     },
+//   };
+
+//   return methods;
+// });
 
 function makeRequest({ id, log, method, url, middleware, fetch }) {
   const [_, query] = url.split("?");
