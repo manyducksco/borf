@@ -1,12 +1,11 @@
-import { makeView, makeState, joinStates, makeSpring } from "woofe";
+import { View, makeState, joinStates, makeSpring } from "woofe";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const bestColor = "#ff0088";
 
-export const MouseFollowerExample = makeView({
-  name: "MouseFollowerExample",
-  setup: (ctx, { when }) => {
+export class MouseFollowerExample extends View {
+  setup(ctx, { when }) {
     const $$enabled = makeState(false);
     const $$color = makeState(bestColor);
 
@@ -76,12 +75,11 @@ export const MouseFollowerExample = makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}
 
-const MouseFollower = makeView({
-  name: "AnimatedMouseFollower",
-  attributes: {
+class MouseFollower extends View {
+  static attrs = {
     color: {
       type: "string",
       required: true,
@@ -90,8 +88,9 @@ const MouseFollower = makeView({
       type: "object",
       required: true,
     },
-  },
-  setup: (ctx) => {
+  };
+
+  setup(ctx) {
     const scale = makeSpring(0, {
       stiffness: 200,
       damping: 30,
@@ -118,5 +117,5 @@ const MouseFollower = makeView({
         }}
       />
     );
-  },
-});
+  }
+}

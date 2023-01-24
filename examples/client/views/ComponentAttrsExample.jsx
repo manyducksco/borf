@@ -1,8 +1,9 @@
-import { makeView, makeState } from "woofe";
+import { View, makeState } from "woofe";
 
-export const ComponentAttrsExample = makeView({
-  name: "ComponentAttrsExample",
-  setup: () => {
+export class ComponentAttrsExample extends View {
+  static about = "Demonstrates passing attributes to a subview.";
+
+  setup(ctx, m) {
     const $$message = makeState("Hello");
 
     return (
@@ -15,19 +16,21 @@ export const ComponentAttrsExample = makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}
 
-const SubComponent = makeView({
-  name: "SubComponent",
-  attributes: {
+class SubComponent extends View {
+  static about =
+    "Demonstrates working with attribute bindings passed from a superview.";
+  static attrs = {
     message: {
       type: "string",
       required: true,
       writable: true,
     },
-  },
-  setup: (ctx) => {
+  };
+
+  setup(ctx) {
     const $$message = ctx.attrs.writable("message");
 
     return (
@@ -42,5 +45,5 @@ const SubComponent = makeView({
         </button>
       </div>
     );
-  },
-});
+  }
+}

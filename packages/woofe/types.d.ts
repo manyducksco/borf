@@ -317,25 +317,46 @@ declare module "woofe" {
 
   /* ----- Templating ----- */
 
-  export type WoofElement = Blueprint | ToStringable | Readable<ToStringable>;
+  interface Connectable {
+    readonly node: Node;
+    readonly isConnected: boolean;
+
+    connect(parent: Node, after?: Node): Promise<void>;
+    disconnect(): Promise<void>;
+  }
+
+  export class Local<T extends Record<string, any>> extends Connectable {
+    exports: T;
+    setup(ctx: LocalContext): T;
+  }
+
+  interface ElementContext {
+    isSVG: boolean;
+    locals: {
+      [name: string]: Local<any>;
+    };
+  }
+
+  interface MarkupConfig {
+    appContext: AppContext;
+    elementContext?: ElementContext;
+  }
+
+  interface Markup {
+    init(config: MarkupConfig): Connectable;
+  }
 
   interface ToStringable {
     toString(): string;
   }
+
+  export type WoofElement = Markup | ToStringable | Observable<ToStringable>;
 
   // TODO: Rename to Buildable
   export interface Blueprint {
     readonly isBlueprint: true;
 
     build(appContext: AppContext<any>): View<unknown, unknown>;
-  }
-
-  // TODO: View base interface. Rename to Connectable
-  interface Renderable {
-    readonly node: Node;
-    readonly isConnected: boolean;
-    connect(parent: Node, after?: Node): Promise<void>;
-    disconnect(): Promise<void>;
   }
 
   /**
@@ -480,6 +501,10 @@ declare module "woofe" {
   export type View<Attrs, Globals> = (props: AttrsWrapper<Attrs> & { children?: any }) => {
     create(): Blueprint;
   };
+
+  export class View<A> extends Connectable {
+    render(props: AttrsWrapper<A> & { children?: any }): Markup;
+  }
 
   interface Attributes<T> extends Readable<T> {
     get<K extends keyof T>(key: K): T[K];

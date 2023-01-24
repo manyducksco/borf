@@ -5,11 +5,13 @@ import { Global } from "../_experimental/Global.js";
 import { makeState } from "../makeState.js";
 import { APP_CONTEXT } from "../keys.js";
 import { matchRoute } from "../helpers/routing.js";
-import { isObject, isFunction, isString } from "../helpers/typeChecking.js";
+import { isObject, isFunction, isString, isView } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
 import { toBlueprint } from "../helpers/toBlueprints.js";
+import { View } from "../_experimental/View.js";
+import { Markup } from "../_experimental/Markup.js";
 
 /**
  * Top level navigation service.
@@ -115,6 +117,7 @@ export default class extends Global {
         );
       }
 
+      // Skip remaining logic for apps with a top level view and no routes.
       if (routes.length === 0) {
         $$route.set(null);
         $$path.set(location.pathname);
@@ -162,6 +165,7 @@ export default class extends Global {
                     }
 
                     if (parentLayer) {
+                      console.log(parentLayer);
                       parentLayer.view.setChildren(view);
                     } else {
                       appContext.rootView.setChildren(view);
@@ -187,8 +191,9 @@ export default class extends Global {
                 }
 
                 if (!redirected) {
-                  const view = toBlueprint(matchedLayer.view)?.build({
+                  const view = matchedLayer.view.init({
                     appContext,
+                    elementContext: {},
                     attributes: preloadResult.attributes || {},
                   });
 

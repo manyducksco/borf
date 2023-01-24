@@ -18,6 +18,8 @@ export class Local extends Connectable {
   }
 
   constructor(config) {
+    super();
+
     this.#node = document.createComment(` Local: ${config.attributes.name} `);
   }
 }

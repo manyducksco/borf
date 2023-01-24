@@ -1,8 +1,9 @@
-import { makeState, makeView } from "woofe";
+import { makeState, View } from "woofe";
 
-export default makeView({
-  name: "7guis:Timer",
-  setup: (ctx) => {
+export class Timer extends View {
+  static label = "7guis:Timer";
+
+  setup(ctx) {
     const $$duration = makeState(10); // duration in seconds
     const $$elapsed = makeState(0); // elapsed time in seconds
 
@@ -70,5 +71,7 @@ export default makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}
+
+export default Timer;

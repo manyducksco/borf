@@ -24,6 +24,8 @@ export class HTML extends Connectable {
   }
 
   constructor({ tag, attributes, children, appContext, elementContext = {} }) {
+    super();
+
     elementContext = Object.create(elementContext);
 
     // This and all nested views will be created as SVG elements.
@@ -38,31 +40,31 @@ export class HTML extends Connectable {
       this.#node = document.createElement(tag);
     }
 
-    const attributes = {};
+    const normalizedAttrs = {};
 
-    for (const key in attrs) {
+    for (const key in attributes) {
       const normalized = key.toLowerCase();
 
       switch (normalized) {
         case "classname":
-          attributes["class"] = attrs[key];
+          normalizedAttrs["class"] = attributes[key];
           break;
         default:
-          attributes[key] = attrs[key];
+          normalizedAttrs[key] = attributes[key];
           break;
       }
     }
 
     // Call ref function, if present.
-    if (attributes.ref) {
-      if (isFunction(attributes.ref)) {
-        attributes.ref(this.#node);
+    if (normalizedAttrs.ref) {
+      if (isFunction(normalizedAttrs.ref)) {
+        normalizedAttrs.ref(this.#node);
       } else {
         throw new Error("Ref is not a function. Got: " + attrs.ref);
       }
     }
 
-    this.#attributes = omit(["ref"], attributes);
+    this.#attributes = omit(["ref"], normalizedAttrs);
     this.#children = children.map((c) => c.init({ appContext, elementContext }));
     this.#appContext = appContext;
     this.#elementContext = elementContext;

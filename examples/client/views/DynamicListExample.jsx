@@ -1,11 +1,10 @@
-import { makeView, makeState, makeSpring } from "woofe";
+import { View, makeState, makeSpring } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];
 
-export const DynamicListExample = makeView({
-  name: "DynamicListExample",
-  setup: (ctx, { repeat }) => {
+export class DynamicListExample extends View {
+  setup(ctx, { repeat }) {
     const $$shoppingList = makeState(initialList);
     const $$inputValue = makeState("");
 
@@ -66,28 +65,30 @@ export const DynamicListExample = makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}
 
-const Item = makeView((ctx) => {
-  const opacity = makeSpring(0);
-  const x = makeSpring(-10);
+class Item extends View {
+  setup(ctx) {
+    const opacity = makeSpring(0);
+    const x = makeSpring(-10);
 
-  ctx.animateIn(() => Promise.all([opacity.to(1), x.to(0)]));
-  ctx.animateOut(() => Promise.all([opacity.to(0), x.to(-10)]));
+    ctx.animateIn(() => Promise.all([opacity.to(1), x.to(0)]));
+    ctx.animateOut(() => Promise.all([opacity.to(0), x.to(-10)]));
 
-  const $value = ctx.attrs.readable("value");
+    const $value = ctx.attrs.readable("value");
 
-  const onclick = () => {
-    alert($value.get());
-  };
+    const onclick = () => {
+      alert($value.get());
+    };
 
-  return (
-    <li
-      style={{ opacity, transform: x.as((x) => `translateX(${x}px)`) }}
-      onclick={onclick}
-    >
-      {$value}
-    </li>
-  );
-});
+    return (
+      <li
+        style={{ opacity, transform: x.as((x) => `translateX(${x}px)`) }}
+        onclick={onclick}
+      >
+        {$value}
+      </li>
+    );
+  }
+}

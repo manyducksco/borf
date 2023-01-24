@@ -1,9 +1,8 @@
-import { makeView, makeState, makeLocal } from "woofe";
+import { View, Local, makeState } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const LocalsExample = makeView({
-  name: "LocalsExample",
-  setup: (ctx) => {
+export class LocalsExample extends View {
+  setup(ctx) {
     logLifecycle(ctx);
 
     return (
@@ -20,25 +19,28 @@ export const LocalsExample = makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}
 
-const ExampleLocal = makeLocal({
-  attributes: {
+class ExampleLocal extends Local {
+  static attrs = {
     initialValue: {
       type: "string",
       default: "DEFAULT",
     },
-  },
-  setup: (ctx) => {
+  };
+
+  setup(ctx) {
     return {
       $$value: makeState(ctx.attributes.get("initialValue")),
     };
-  },
-});
+  }
+}
 
-const ValueDisplay = makeView((ctx) => {
-  const { $$value } = ctx.local("example");
+class ValueDisplay extends View {
+  setup(ctx) {
+    const { $$value } = ctx.local("example");
 
-  return <span>{$$value}</span>;
-});
+    return <span>{$$value}</span>;
+  }
+}

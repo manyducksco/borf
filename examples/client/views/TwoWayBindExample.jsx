@@ -1,9 +1,8 @@
-import { makeState, makeView } from "woofe";
+import { makeState, View } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const TwoWayBindExample = makeView({
-  name: "TwoWayBindExample",
-  setup: (ctx) => {
+export class TwoWayBindExample extends View {
+  setup(ctx) {
     const $$text = makeState("edit me");
     const $$size = makeState(18);
 
@@ -28,5 +27,5 @@ export const TwoWayBindExample = makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}

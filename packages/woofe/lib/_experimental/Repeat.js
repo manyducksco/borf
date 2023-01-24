@@ -2,7 +2,7 @@ import { isObservable } from "../helpers/typeChecking";
 import { Connectable } from "./Connectable.js";
 
 export class Repeat extends Connectable {
-  #node = document.createComment(" Repeat ");
+  #node = document.createComment("Repeat");
   #value;
   #subscription;
   #connectedItems = [];
@@ -16,6 +16,8 @@ export class Repeat extends Connectable {
   }
 
   constructor({ appContext, elementContext, attributes }) {
+    super();
+
     this.#appContext = appContext;
     this.#elementContext = elementContext;
 

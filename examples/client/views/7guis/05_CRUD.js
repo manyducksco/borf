@@ -1,24 +1,13 @@
-import { joinStates, makeState, makeView } from "woofe";
+import { joinStates, makeState, View } from "woofe";
 
-export default makeView({
-  name: "7guis:CRUD",
-  setup: (ctx, m) => {
+class CRUD extends View {
+  static label = "7guis:CRUD";
+
+  setup(ctx, m) {
     const $$people = makeState([
-      {
-        id: 1,
-        name: "Hans",
-        surname: "Emil",
-      },
-      {
-        id: 2,
-        name: "Max",
-        surname: "Mustermann",
-      },
-      {
-        id: 3,
-        name: "Roman",
-        surname: "Tisch",
-      },
+      { id: 1, name: "Hans", surname: "Emil" },
+      { id: 2, name: "Max", surname: "Mustermann" },
+      { id: 3, name: "Roman", surname: "Tisch" },
     ]);
     const $$nextId = makeState(4);
     const $$selectedId = makeState(1);
@@ -133,5 +122,7 @@ export default makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}
+
+export default CRUD;

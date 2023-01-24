@@ -1,12 +1,11 @@
-import { makeView } from "woofe";
+import { View } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
 /**
  * Component with controls and a mapped label based on the state inside the service.
  */
-export const CounterExample = makeView({
-  name: "CounterExample",
-  setup: (ctx) => {
+export class CounterExample extends View {
+  setup(ctx) {
     logLifecycle(ctx);
 
     const counter = ctx.global("counter");
@@ -22,14 +21,16 @@ export const CounterExample = makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}
 
 /**
  * Second component with a view only. Displays the same information from the same service.
  */
-const CounterViewLabel = makeView((ctx) => {
-  const { $current } = ctx.global("counter");
+class CounterViewLabel extends View {
+  setup(ctx) {
+    const { $current } = ctx.global("counter");
 
-  return <h1>{$current}</h1>;
-});
+    return <h1>{$current}</h1>;
+  }
+}

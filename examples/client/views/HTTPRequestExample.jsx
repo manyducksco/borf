@@ -1,9 +1,8 @@
-import { joinStates, makeState, makeView } from "woofe";
+import { joinStates, makeState, View } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const HTTPRequestExample = makeView({
-  name: "HTTPRequestExample",
-  setup: (ctx) => {
+export class HTTPRequestExample extends View {
+  setup(ctx) {
     const $$loading = makeState(false);
     const $$message = makeState("");
 
@@ -47,5 +46,5 @@ export const HTTPRequestExample = makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}

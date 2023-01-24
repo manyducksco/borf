@@ -16,6 +16,8 @@ export class Fragment extends Connectable {
   }
 
   constructor({ children, appContext, elementContext }) {
+    super();
+
     this.#children = children;
     this.#appContext = appContext;
     this.#elementContext = elementContext;

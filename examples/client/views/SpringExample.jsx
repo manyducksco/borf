@@ -1,7 +1,7 @@
-import { makeView, makeSpring } from "woofe";
+import { View, makeSpring } from "woofe";
 
-export const SpringExample = makeView({
-  setup: (ctx) => {
+export class SpringExample extends View {
+  setup(ctx) {
     const spring = makeSpring(0, {
       stiffness: 50,
       damping: 10,
@@ -36,5 +36,5 @@ export const SpringExample = makeView({
         </button>
       </div>
     );
-  },
-});
+  }
+}

@@ -2,8 +2,8 @@ import "./styles/demo.css";
 
 import { makeApp } from "woofe";
 
-import counter from "./globals/counter";
-import mouse from "./globals/mouse";
+import { CounterGlobal } from "./globals/counter";
+import { MouseGlobal } from "./globals/mouse";
 
 import { AppLayout } from "./views/AppLayout";
 import { ComponentAttrsExample } from "./views/ComponentAttrsExample";
@@ -46,78 +46,72 @@ const Examples = makeApp({
     warn: true,
     error: true,
   },
-  router: {
-    hash: false,
-  },
   globals: [
-    { name: "counter", global: counter },
-    { name: "mouse", global: mouse },
+    { name: "counter", global: CounterGlobal },
+    { name: "mouse", global: MouseGlobal },
   ],
   view: AppLayout,
   // Routes are always rendered in the outlet of the sibling view.
-  // routes: [
-  //   {
-  //     path: "/examples",
-  //     view: () => {
-  //       return (
-  //         <div>
-  //           {/* <LocalsExample /> */}
-  //           <SpringExample />
-  //           <ToggleExample />
-  //           <CounterExample />
-  //           <ConditionalExample />
-  //           <DynamicListExample />
-  //           <TwoWayBindExample />
-  //           <FormExample />
-  //           <MouseFollowerExample />
-  //           <HTTPRequestExample />
-  //           <ComponentAttrsExample />
-  //           {/* <RenderOrderTest /> */}
-  //         </div>
-  //       );
-  //     },
-  //   },
-  //   {
-  //     path: "/7guis",
-  //     view: SevenGUIs,
-  //     routes: [
-  //       { path: "/counter", view: Counter },
-  //       { path: "/temp-converter", view: TempConverter },
-  //       { path: "/flight-booker", view: FlightBooker },
-  //       { path: "/timer", view: Timer },
-  //       { path: "/crud", view: CRUD },
-  //       { path: "/circle-drawer", view: CircleDrawer },
-  //       { path: "/cells", view: Cells },
-  //       { path: "*", redirect: "./counter" },
-  //     ],
-  //   },
-  //   {
-  //     path: "/router-test/one",
-  //     view: {
-  //       name: "Inline View Config",
-  //       setup: () => <h1>One</h1>,
-  //     },
-  //   },
-  //   { path: "/router-test/two", view: () => <h1>Two</h1> },
-  //   { path: "/router-test/*", redirect: "/router-test/one" },
-  //   {
-  //     path: "/nested",
-  //     view: (ctx) => {
-  //       return (
-  //         <div>
-  //           <h1>Nested Routes!</h1>
-  //           {ctx.outlet()}
-  //         </div>
-  //       );
-  //     },
-  //     routes: [
-  //       { path: "/one", view: () => <h1>NESTED #1</h1> },
-  //       { path: "/two", view: () => <h1>NESTED #2</h1> },
-  //       { path: "*", redirect: "./one" },
-  //     ],
-  //   },
-  //   { path: "*", redirect: "./examples" },
-  // ],
+  routes: [
+    {
+      path: "/examples",
+      view: () => {
+        return (
+          <div>
+            {/* <LocalsExample /> */}
+            {/* <SpringExample /> */}
+            {/* <ToggleExample /> */}
+            <CounterExample />
+            <ConditionalExample />
+            {/* <DynamicListExample /> */}
+            {/* <TwoWayBindExample /> */}
+            {/* <FormExample /> */}
+            {/* <MouseFollowerExample /> */}
+            {/* <HTTPRequestExample /> */}
+            <ComponentAttrsExample />
+            {/* <RenderOrderTest /> */}
+          </div>
+        );
+      },
+    },
+    {
+      path: "/7guis",
+      view: SevenGUIs,
+      routes: [
+        { path: "/counter", view: Counter },
+        { path: "/temp-converter", view: TempConverter },
+        { path: "/flight-booker", view: FlightBooker },
+        { path: "/timer", view: Timer },
+        { path: "/crud", view: CRUD },
+        { path: "/circle-drawer", view: CircleDrawer },
+        { path: "/cells", view: Cells },
+        { path: "*", redirect: "./counter" },
+      ],
+    },
+    {
+      path: "/router-test/one",
+      view: () => <h1>One</h1>,
+    },
+    { path: "/router-test/two", view: () => <h1>Two</h1> },
+    { path: "/router-test/*", redirect: "/router-test/one" },
+    {
+      path: "/nested",
+      view: (ctx) => {
+        return (
+          <div>
+            <h1>Nested Routes!</h1>
+            {ctx.outlet()}
+          </div>
+        );
+      },
+      routes: [
+        { path: "/one", view: () => <h1>NESTED #1</h1> },
+        { path: "/two", view: () => <h1>NESTED #2</h1> },
+        { path: "*", redirect: "./one" },
+      ],
+    },
+    { path: "*", redirect: "./examples" },
+  ],
 });
 
 // console.log(Examples.routes); // Metadata about route configuration

@@ -1,10 +1,12 @@
 import { Attributes } from "../helpers/Attributes.js";
-import { isFunction, isString } from "../helpers/typeChecking.js";
+import { isFunction, isString, isObservable } from "../helpers/typeChecking.js";
 import { Connectable } from "./Connectable.js";
 import { m, Markup } from "./Markup.js";
+import { makeState, joinStates } from "../makeState.js";
+import { Outlet } from "./Outlet.js";
 
 export class View extends Connectable {
-  name;
+  label;
   about;
 
   #lifecycleCallbacks = {
@@ -30,17 +32,23 @@ export class View extends Connectable {
     appContext,
     elementContext = {},
     channelPrefix = "view",
-    name = "<anonymous>",
+    label = "<anonymous>",
     about,
     attributes = {},
     attributeDefs,
     children = [],
-    setup = this.setup, // This is passed in directly to `new View()` to turn a standalone setup function into a view.
+    setup, // This is passed in directly to `new View()` to turn a standalone setup function into a view.
   }) {
-    this.name = name;
+    super();
+
+    this.label = label;
     this.about = about;
 
-    this.#channel = appContext.debug.makeChannel(`${channelPrefix}:${name}`);
+    if (!setup) {
+      setup = this.setup.bind(this);
+    }
+
+    this.#channel = appContext.debug.makeChannel(`${channelPrefix}:${label}`);
     this.#attributes = new Attributes({
       attributes,
       definitions: attributeDefs,
@@ -130,7 +138,7 @@ export class View extends Connectable {
       },
 
       outlet: () => {
-        return new ObserverBlueprint(this.#$$children);
+        return new Markup((config) => new Outlet({ ...config, value: this.#$$children }));
       },
     };
 

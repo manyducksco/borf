@@ -4,12 +4,15 @@ import { Connectable } from "./Connectable";
 export class Text extends Connectable {
   #node = document.createTextNode("");
   #value = "";
+  #subscription;
 
   get node() {
     return this.#node;
   }
 
   constructor({ value }) {
+    super();
+
     this.#value = value;
   }
 

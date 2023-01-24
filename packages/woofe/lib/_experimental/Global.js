@@ -1,33 +1,8 @@
-import { APP_CONTEXT } from "./keys.js";
-import { isFunction, isObject, isObservable, isString } from "./helpers/typeChecking.js";
-import { joinStates } from "./makeState.js";
+import { APP_CONTEXT } from "../keys.js";
+import { isFunction, isObject, isObservable, isString } from "../helpers/typeChecking.js";
+import { joinStates } from "../makeState.js";
 
 export class Global {
-  constructor(config) {
-    if (isFunction(config)) {
-      this.setup = config;
-    } else if (isObject(config)) {
-      this.name = config.name;
-      this.setup = config.setup;
-    } else {
-      throw new TypeError(`Globals must be defined with a setup function or a config object. Got: ${config}`);
-    }
-  }
-
-  get isGlobal() {
-    return true;
-  }
-
-  instantiate(config) {
-    return new GlobalInstance({
-      ...config,
-      name: config.name ?? this.name,
-      setup: this.setup,
-    });
-  }
-}
-
-class GlobalInstance {
   #lifecycleCallbacks = {
     beforeConnect: [],
     afterConnect: [],
@@ -39,15 +14,19 @@ class GlobalInstance {
   #config;
   #channel;
 
-  get isGlobalInstance() {
-    return true;
+  get label() {
+    return this.#config.label || this.constructor.name || "<unnamed>";
   }
 
   constructor(config) {
-    const { appContext, channelPrefix, name } = config;
+    const { appContext, channelPrefix } = config;
+
+    if (config.setup) {
+      this.setup = config.setup;
+    }
 
     this.#config = config;
-    this.#channel = appContext.debug.makeChannel(`${channelPrefix || "global"}:${name || "<unnamed>"}`);
+    this.#channel = appContext.debug.makeChannel(`${channelPrefix}:${this.label}`);
 
     const ctx = {
       [APP_CONTEXT]: appContext,
@@ -117,7 +96,7 @@ class GlobalInstance {
     let exports;
 
     try {
-      exports = config.setup(ctx);
+      exports = this.setup(ctx);
     } catch (err) {
       this.#channel.error(err);
     }
@@ -127,6 +106,10 @@ class GlobalInstance {
     }
 
     this.exports = exports;
+  }
+
+  setup() {
+    throw new Error(`This global needs a setup function.`);
   }
 
   async beforeConnect() {

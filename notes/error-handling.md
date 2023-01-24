@@ -27,7 +27,7 @@ Other random ideas:
 
 ```jsx
 // An element created with m() or JSX
-class MarkupView extends Connectable {
+class Markup extends Connectable {
   constructor() {}
 
   setup(ctx) {}

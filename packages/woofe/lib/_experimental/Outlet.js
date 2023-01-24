@@ -1,22 +1,28 @@
-import { isArray, isObservable } from "../helpers/typeChecking.js";
+import { isArray, isConnectable, isObservable } from "../helpers/typeChecking.js";
 import { Connectable } from "./Connectable.js";
-import { formatChildren } from "./Markup.js";
+import { Markup } from "./Markup.js";
 
 /**
  * Displays dynamic children without a parent element.
  */
 export class Outlet extends Connectable {
-  #node = document.createComment(" Outlet ");
+  #node = document.createComment("Outlet");
   #connectedViews = [];
   #subscription;
   #value;
+  #render; // A render function: (value) => some renderable value.
+  #appContext;
+  #elementContext;
 
   get node() {
     return this.#node;
   }
 
-  constructor({ value, appContext, elementContext }) {
+  constructor({ value, render, appContext, elementContext }) {
+    super();
+
     this.#value = value;
+    this.#render = render;
     this.#appContext = appContext;
     this.#elementContext = elementContext;
   }
@@ -30,16 +36,16 @@ export class Outlet extends Connectable {
 
     if (isObservable(this.#value)) {
       this.#subscription = this.#value.subscribe((value) => {
-        if (!isArray(value)) {
-          value = [value];
+        if (this.#render) {
+          value = this.#render(value);
         }
-        this.#update(formatChildren(value));
+        this.#update(value);
       });
     } else {
-      if (!isArray(value)) {
-        value = [value];
+      if (this.#render) {
+        value = this.#render(value);
       }
-      this.#update(formatChildren(value));
+      this.#update(value);
     }
   }
 
@@ -68,14 +74,22 @@ export class Outlet extends Connectable {
   #update(children) {
     this.#cleanup();
 
-    if (children == null || children.length > 0) {
+    if (children == null) {
       return;
+    }
+
+    if (!isArray(children)) {
+      children = [children];
     }
 
     for (const child of children) {
       let previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
+      let view = child;
 
-      const view = child.init({ appContext: this.#appContext, elementContext: this.#elementContext });
+      if (child instanceof Markup) {
+        view = child.init({ appContext: this.#appContext, elementContext: this.#elementContext });
+      }
+
       view.connect(this.#node.parentNode, previous);
 
       this.#connectedViews.push(view);

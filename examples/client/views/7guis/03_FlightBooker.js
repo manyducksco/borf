@@ -1,4 +1,4 @@
-import { joinStates, makeState, makeView } from "woofe";
+import { joinStates, makeState, View } from "woofe";
 
 const flightTypes = ["one-way flight", "return flight"];
 const flipped = (value) => !value; // Boolean flipping function.
@@ -27,90 +27,87 @@ function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
-export default makeView((ctx, h) => {
-  ctx.name = "7guis:FlightBooker";
-  ctx.defaultState = {
-    flightType: flightTypes[0],
-    startDate: formatDate(new Date()),
-    returnDate: formatDate(new Date()),
-    startDateIsValid: true,
-    returnDateIsValid: true,
-  };
+class FlightBooker extends View {
+  static label = "7guis:FlightBooker";
 
-  const $$flightType = makeState(flightTypes[0]);
-  const $$startDate = makeState(formatDate(new Date()));
-  const $$returnDate = makeState(formatDate(new Date()));
-  const $$startDateIsValid = makeState(true);
-  const $$returnDateIsValid = makeState(true);
+  setup(ctx, m) {
+    const $$flightType = makeState(flightTypes[0]);
+    const $$startDate = makeState(formatDate(new Date()));
+    const $$returnDate = makeState(formatDate(new Date()));
+    const $$startDateIsValid = makeState(true);
+    const $$returnDateIsValid = makeState(true);
 
-  // Concatenate date states and convert through a function into a new state.
-  const $formIsValid = joinStates(
-    $$startDateIsValid,
-    $$returnDateIsValid,
-    (x, y) => x && y
-  );
+    // Concatenate date states and convert through a function into a new state.
+    const $formIsValid = joinStates(
+      $$startDateIsValid,
+      $$returnDateIsValid,
+      (x, y) => x && y
+    );
 
-  return (
-    <div class="example">
-      <header>
-        <h3>Flight Booker</h3>
-      </header>
+    return (
+      <div class="example">
+        <header>
+          <h3>Flight Booker</h3>
+        </header>
 
-      <form
-        onsubmit={(e) => {
-          e.preventDefault();
-          alert("Flight booked.");
-        }}
-      >
-        <div>
-          <select
-            onchange={(e) => {
-              $$flightType.set(e.target.value);
-            }}
-          >
-            {h.repeat(flightTypes, ($value) => {
-              const $selected = joinStates(
-                $value,
-                $$flightType,
-                (x, y) => x === y
-              );
+        <form
+          onsubmit={(e) => {
+            e.preventDefault();
+            alert("Flight booked.");
+          }}
+        >
+          <div>
+            <select
+              onchange={(e) => {
+                $$flightType.set(e.target.value);
+              }}
+            >
+              {m.repeat(flightTypes, ($value) => {
+                const $selected = joinStates(
+                  $value,
+                  $$flightType,
+                  (x, y) => x === y
+                );
 
-              return (
-                <option value={$value} selected={$selected}>
-                  {$value}
-                </option>
-              );
-            })}
-          </select>
-        </div>
+                return (
+                  <option value={$value} selected={$selected}>
+                    {$value}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
 
-        <div>
-          <input
-            type="text"
-            value={$$startDate}
-            pattern={"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$"}
-            oninput={(e) => {
-              $$startDateIsValid.set(!e.target.validity.patternMismatch);
-            }}
-          />
-        </div>
+          <div>
+            <input
+              type="text"
+              value={$$startDate}
+              pattern={"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$"}
+              oninput={(e) => {
+                $$startDateIsValid.set(!e.target.validity.patternMismatch);
+              }}
+            />
+          </div>
 
-        <div>
-          <input
-            type="text"
-            value={$$returnDate}
-            disabled={$$flightType.as((t) => t === "one-way flight")}
-            pattern={/^\d{2}\.\d{2}\.\d{4}$/}
-            oninput={(e) => {
-              $$returnDateIsValid.set(!e.target.validity.patternMismatch);
-            }}
-          />
-        </div>
+          <div>
+            <input
+              type="text"
+              value={$$returnDate}
+              disabled={$$flightType.as((t) => t === "one-way flight")}
+              pattern={/^\d{2}\.\d{2}\.\d{4}$/}
+              oninput={(e) => {
+                $$returnDateIsValid.set(!e.target.validity.patternMismatch);
+              }}
+            />
+          </div>
 
-        <div>
-          <button disabled={$formIsValid.as(flipped)}>Book</button>
-        </div>
-      </form>
-    </div>
-  );
-});
+          <div>
+            <button disabled={$formIsValid.as(flipped)}>Book</button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+}
+
+export default FlightBooker;

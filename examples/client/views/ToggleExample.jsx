@@ -1,12 +1,11 @@
-import { makeState, makeView } from "woofe";
+import { makeState, View } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
-/**
- * Displays a div that toggles a class when clicked and a label based on the current status.
- */
-export const ToggleExample = makeView({
-  name: "ToggleExample",
-  setup: (ctx) => {
+export class ToggleExample extends View {
+  static about =
+    "Displays a div that toggles a class when clicked and a label based on the current status.";
+
+  setup(ctx) {
     logLifecycle(ctx);
 
     const $$active = makeState(false);
@@ -28,5 +27,5 @@ export const ToggleExample = makeView({
         </div>
       </div>
     );
-  },
-});
+  }
+}

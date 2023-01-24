@@ -1,9 +1,8 @@
-import { makeView, makeSpring } from "woofe";
-import { View } from "woofe/lib";
+import { View } from "woofe";
 import logLifecycle from "../utils/logLifecycle";
 
 export class AppLayout extends View {
-  static label = "🐕";
+  static label = "🐕"; // Override class name label in debug messages
   static about =
     "Top level layout for the app. All other routes are rendered in this one's ctx.outlet()";
   static attrs = {};

@@ -1,9 +1,8 @@
-import { makeView, makeState, joinStates } from "woofe";
+import { View, makeState, joinStates } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
-export const FormExample = makeView({
-  name: "FormExample",
-  setup: (ctx, m) => {
+export class FormExample extends View {
+  setup(ctx, m) {
     const $$firstName = makeState("");
     const $$lastName = makeState("");
     const $$age = makeState(18);
@@ -65,5 +64,5 @@ export const FormExample = makeView({
         </form>
       </div>
     );
-  },
-});
+  }
+}

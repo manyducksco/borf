@@ -1,4 +1,4 @@
-import { isFunction, isObject, isString } from "./helpers/typeChecking.js";
+import { isFunction, isGlobal, isObject, isString, isView } from "./helpers/typeChecking.js";
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
@@ -6,7 +6,9 @@ import { makeDebug } from "./helpers/makeDebug.js";
 import { extendsClass } from "./helpers/extendsClass.js";
 import { merge } from "./helpers/merge.js";
 import { makeGlobal } from "./makeGlobal.js";
+import { Global } from "./_experimental/Global.js";
 import { ViewBlueprint } from "./blueprints/View.js";
+import { m } from "./_experimental/Markup.js";
 
 import dialog from "./globals/@dialog.js";
 import http from "./globals/@http.js";
@@ -35,7 +37,7 @@ class App {
   #options = {
     preload: null,
     view: (ctx) => ctx.outlet(),
-    globals: {},
+    globals: [],
     routes: [],
     debug: {
       filter: "*,-woofe:*",
@@ -137,34 +139,28 @@ class App {
 
     // Now initialize the real globals.
     for (let { name, global } of this.#globals) {
-      // Accepts a standalone setup function or a global config object (fully initialized globals pass through).
-      if (isFunction(global) || isFunction(global?.setup)) {
-        global = makeGlobal(global);
-      }
+      // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
+      // Built-in globals get an additional 'woofe:' prefix so it's clear messages are from the framework.
+      // 'woofe:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
+      let channelPrefix = name.startsWith("@") ? "woofe:global" : "global";
 
-      if (global == null || !global.isGlobal) {
+      // Accepts a standalone setup function or a global class.
+      if (isGlobal(global)) {
+        global = new global({ appContext, channelPrefix, label: global.label || name });
+      } else if (isFunction(global)) {
+        global = new Global({ appContext, channelPrefix, setup: global });
+      } else {
         throw new TypeError(`Global '${name}' must be a global or a global setup function. Got: ${global}`);
       }
 
-      // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
-      // Built-in globals get an additional 'woofe:' prefix so it's clear messages are from the framework.
-      // 'woofe:*' messages are filtered out by default, but this can be overridden with the `debug.filter` app option.
-      let channelPrefix = name.startsWith("@") ? "woofe:global" : "global";
-
-      const instance = global.instantiate({
-        appContext,
-        channelPrefix,
-        name: global.name || name,
-      });
-
       // Globals must have a setup function that returns an object. That is the object you get by calling `ctx.global("name")`.
-      if (!isObject(instance.exports)) {
+      if (!isObject(global.exports)) {
         throw new TypeError(`Setup function for global '${name}' did not return an object.`);
       }
 
       // Add to appContext for access by views and other globals.
       Object.defineProperty(appContext.globals, name, {
-        value: instance,
+        value: global,
         writable: false,
         enumerable: true,
         configurable: false,
@@ -181,9 +177,10 @@ class App {
     return this.#preload().then(async (attributes) => {
       // Then the view is initialized and connected to root element.
       if (isFunction(this.#options.view)) {
-        appContext.rootView = new View({ appContext, attributes, setup: this.#options.view });
+        appContext.rootView = new View({ appContext, attributes, setup: this.#options.view, label: "app" });
       } else if (extendsClass(View, this.#options.view)) {
-        appContext.rootView = new this.#options.view({ appContext, attributes });
+        const view = this.#options.view;
+        appContext.rootView = new this.#options.view({ appContext, attributes, label: view.label ?? view.name });
       }
       // appContext.rootView = new ViewBlueprint(this.#options.view).build({ appContext, attributes });
       appContext.rootView.connect(appContext.rootElement);
@@ -333,7 +330,16 @@ class App {
       return routes;
     }
 
-    const layer = { id: this.#layerId++, view: route.view || ((ctx) => ctx.outlet()) };
+    // Make sure the `view` is the correct type if passed.
+    if (route.view && !isView(route.view) && !isFunction(route.view)) {
+      console.warn(route.view);
+      throw new TypeError(
+        `Route '${route.path}' needs a setup function or a subclass of View for 'view'. Got: ${route.view}`
+      );
+    }
+
+    const markup = m(route.view || ((ctx) => ctx.outlet()));
+    const layer = { id: this.#layerId++, view: markup };
 
     // Parse nested routes if they exist.
     if (route.routes) {
