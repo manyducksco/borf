@@ -58,7 +58,8 @@ declare module "woofe" {
       history?: History;
     };
 
-    globals?: { name: string; global: GlobalLike }[];
+    // globals?: { name: string; global: GlobalLike }[];
+    globals?: { new (): Store }[];
 
     preload?: RoutePreloadFn<A>;
 
@@ -72,8 +73,7 @@ declare module "woofe" {
    * based on the current URL and providing globals to views rendered under those routes.
    */
   interface App<Globals> {
-    routes: {}[];
-    globals: { name: string; global: GlobalLike }[];
+    readonly isConnected: boolean;
 
     /**
      * Connects the app and starts routing. Routes are rendered as children of the `root` element.
@@ -92,18 +92,16 @@ declare module "woofe" {
     global<K extends keyof AppGlobals<Globals>>(name: K): AppGlobals<Globals>[K];
   }
 
-  export type DefaultGlobals = {
-    "@dialog": ReturnType<GlobalDialog>;
-    "@router": ReturnType<GlobalRouter>;
-    "@http": ReturnType<GlobalHTTP>;
-    "@page": ReturnType<GlobalPage>;
+  export type BuiltInGlobals = {
+    dialog: ReturnType<GlobalDialog>;
+    router: ReturnType<GlobalRouter>;
+    http: ReturnType<GlobalHTTP>;
+    page: ReturnType<GlobalPage>;
   };
 
   export type GlobalsList<K extends keyof T, T> = { name: K; global: GlobalLike<T[K]> }[];
 
-  export type GetGlobals<T> = DefaultGlobals;
-
-  export type AppGlobals<T> = DefaultGlobals & {
+  export type AppGlobals<T> = BuiltInGlobals & {
     [K in keyof T]: T[K] extends (...any) => any ? ReturnType<T[K]> : never;
   };
 
@@ -352,13 +350,6 @@ declare module "woofe" {
 
   export type WoofElement = Markup | ToStringable | Observable<ToStringable>;
 
-  // TODO: Rename to Buildable
-  export interface Blueprint {
-    readonly isBlueprint: true;
-
-    build(appContext: AppContext<any>): View<unknown, unknown>;
-  }
-
   /**
    * Creates an instance of an HTML element or view.
    */
@@ -446,9 +437,6 @@ declare module "woofe" {
     ): Blueprint;
   }
 
-  export function makeView<Attrs = any, Globals = any>(fn: ViewSetupFn<Attrs, Globals>): View<Attrs, Globals>;
-  export function makeView<Attrs = any, Globals = any>(config: ViewConfig<Attrs, Globals>): View<Attrs, Globals>;
-
   interface AttributesConfig {
     [name: string]: {
       /**
@@ -479,32 +467,32 @@ declare module "woofe" {
     };
   }
 
-  export type ViewLike<A> = ViewSetupFn<A, any> | ViewConfig<A, any> | View<A, any>;
+  export type ViewLike<A> = ViewSetupFn<A, any> | View<A, any>;
 
-  interface ViewConfig<Attrs, Globals> {
-    name?: string;
-    about?: string;
-    attributes?: AttributesConfig;
-    setup: ViewSetupFn<Attrs, Globals>;
+  // interface ViewConfig<Attrs, Globals> {
+  //   name?: string;
+  //   about?: string;
+  //   attributes?: AttributesConfig;
+  //   setup: ViewSetupFn<Attrs, Globals>;
+  // }
+
+  export class View extends Connectable {
+    setup(ctx: ViewSetupContext, m: MarkupFn): Markup | null;
   }
 
   export type ViewSetupFn<Attrs = any, Globals = any> = (
-    ctx: ViewContext<Attrs, Globals>,
+    ctx: ViewSetupContext<Attrs, Globals>,
     m: MarkupFn
-  ) => Blueprint | null;
+  ) => Markup | null;
 
   type AttrsWrapper<T> = {
     [K in keyof T]: T[K] | Readable<T[K]>;
   };
 
   // Fake type to enable JSX attribute type checking.
-  export type View<Attrs, Globals> = (props: AttrsWrapper<Attrs> & { children?: any }) => {
-    create(): Blueprint;
-  };
-
-  export class View<A> extends Connectable {
-    render(props: AttrsWrapper<A> & { children?: any }): Markup;
-  }
+  // export type View<Attrs, Globals> = (props: AttrsWrapper<Attrs> & { children?: any }) => {
+  //   create(): Blueprint;
+  // };
 
   interface Attributes<T> extends Readable<T> {
     get<K extends keyof T>(key: K): T[K];
@@ -522,7 +510,7 @@ declare module "woofe" {
     writable(): Writable<T>;
   }
 
-  export interface ViewContext<Attrs = any, Globals = any> extends StateContext, DebugChannel {
+  export interface ViewSetupContext<Attrs = any, Globals = any> extends StateContext, DebugChannel {
     /**
      * True while this view is connected to the DOM.
      */
@@ -574,31 +562,54 @@ declare module "woofe" {
     /**
      * Displays nested content where it is called.
      */
-    outlet(): WoofElement;
+    outlet(): Markup;
   }
 
   /*==================================*\
   ||              Global              ||
   \*==================================*/
 
-  export type GlobalLike = GlobalSetupFn<any> | GlobalConfig<any> | Global<any>;
+  export class Store<T = any> {
+    setup(ctx: StoreSetupContext): T;
 
-  // TODO: Find out how to infer return type of `fn` while Globals is passed.
-  export function makeGlobal<Globals>(fn: GlobalSetupFn<Globals>): Global<any>;
-
-  interface GlobalConfig<AppGlobals> {
-    name?: string;
-    about?: string;
-    setup: GlobalSetupFn<AppGlobals>;
+    exports: T;
   }
 
-  export function makeGlobal<Globals>(config: GlobalConfig<Globals>): Global<any>;
+  export interface StoreSetupContext {
+    useStore<S extends Store>(storeClass: S): S.exports;
 
-  export type GlobalSetupFn<Globals> = (ctx: GlobalContext<Globals>) => any;
+    useStore<N extends keyof BuiltInGlobals>(name: N): BuiltInGlobals[N];
 
-  export type Global<Exports> = (this: GlobalContext<any>) => Exports;
+    /**
+     * Registers a callback to run before the store is connected.
+     */
+    beforeConnect: (callback: () => void) => void;
 
-  export interface GlobalContext<Globals> extends StateContext, DebugChannel {
+    /**
+     * Registers a callback to run after the store is connected.
+     */
+    afterConnect: (callback: () => void) => void;
+
+    /**
+     * Registers a callback to run just before the store is disconnected.
+     */
+    beforeDisconnect: (callback: () => void) => void;
+
+    /**
+     * Registers a callback to run after the store is disconnected.
+     */
+    afterDisconnect: (callback: () => void) => void;
+  }
+
+  export type GlobalLike = GlobalSetupFn<any> | Global<any>;
+
+  export type GlobalSetupFn<Globals> = (ctx: GlobalSetupContext<Globals>) => any;
+
+  export class Global<Globals = any> {
+    setup(ctx: GlobalSetupContext<Globals>): Exports;
+  }
+
+  export interface GlobalSetupContext<Globals> extends StateContext, DebugChannel {
     /**
      * Returns the global registered under `name` or throws an error if the global isn't registered.
      */

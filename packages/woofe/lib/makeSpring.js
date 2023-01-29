@@ -1,3 +1,4 @@
+import { isObservable, isReadable } from "./helpers/typeChecking.js";
 import { OBSERVABLE, READABLE } from "./keys.js";
 import { makeState } from "./makeState.js";
 
@@ -24,12 +25,18 @@ export function makeSpring(initialValue = 0, options = {}) {
       return new Promise((resolve) => {
         const id = nextId++;
         const amplitude = makeAmplitudeMeasurer();
-        const solve = makeSpringSolver(
-          options?.mass ?? mass,
-          options?.stiffness ?? stiffness,
-          options?.damping ?? damping,
-          options?.velocity ?? velocity
-        );
+        // const solve = makeSpringSolver(
+        //   options?.mass ?? mass,
+        //   options?.stiffness ?? stiffness,
+        //   options?.damping ?? damping,
+        //   options?.velocity ?? velocity
+        // );
+        const solver = new SpringSolver({
+          mass: options?.mass ?? mass,
+          stiffness: options?.stiffness ?? stiffness,
+          damping: options?.damping ?? damping,
+          velocity: options?.velocity ?? velocity,
+        });
         const startTime = Date.now();
         const startValue = $$value.get();
 
@@ -40,7 +47,7 @@ export function makeSpring(initialValue = 0, options = {}) {
           }
 
           const elapsedTime = Date.now() - startTime;
-          const proportion = solve(elapsedTime / 1000);
+          const proportion = solver.solve(elapsedTime / 1000);
 
           $$value.set(startValue + (value - startValue) * proportion);
 
@@ -86,6 +93,58 @@ export function makeSpring(initialValue = 0, options = {}) {
   });
 
   return spring;
+}
+
+class DietReadable {
+  #value;
+
+  constructor(value) {
+    this.#value = value;
+  }
+
+  get() {
+    return this.#value;
+  }
+}
+
+class SpringSolver {
+  constructor({ mass, stiffness, damping, velocity }) {
+    this.$mass = isReadable(mass) ? mass : new DietReadable(mass);
+    this.$stiffness = isReadable(stiffness) ? stiffness : new DietReadable(stiffness);
+    this.$damping = isReadable(damping) ? damping : new DietReadable(damping);
+    this.$velocity = isReadable(velocity) ? velocity : new DietReadable(velocity);
+  }
+
+  solve(t) {
+    // Getting the variables each time allows the values to change as the spring is animating.
+    const mass = this.$mass.get();
+    const stiffness = this.$stiffness.get();
+    const damping = this.$damping.get();
+    const velocity = this.$velocity.get();
+
+    const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
+    const undampedAngularFreq = Math.sqrt(stiffness / mass);
+
+    let angularFreq;
+    let A = 1;
+    let B;
+
+    if (dampingRatio < 1) {
+      angularFreq = undampedAngularFreq * Math.sqrt(1 - dampingRatio * dampingRatio);
+      B = (dampingRatio * undampedAngularFreq + -velocity) / angularFreq;
+
+      t =
+        Math.exp(-t * dampingRatio * undampedAngularFreq) *
+        (A * Math.cos(angularFreq * t) + B * Math.sin(angularFreq * t));
+    } else {
+      angularFreq = 0;
+      B = -velocity + undampedAngularFreq;
+
+      t = (A + B * t) * Math.exp(-t * undampedAngularFreq);
+    }
+
+    return 1 - t;
+  }
 }
 
 // Adapted from the Webkit spring solver JS implementation: https://webkit.org/demos/spring/

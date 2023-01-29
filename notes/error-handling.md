@@ -4,14 +4,14 @@ It's become clear that just throwing errors wherever in the framework isn't goin
 
 Ideas
 
-- Add an @errors global that collects all errors thrown inside the framework.
-- Unmount the app when an error is thrown.
-- Display a simple error page in development with message and stack trace info.
+- Add an `errors` store that collects all errors thrown inside the app.
+- Disconnect the whole app when an error is thrown.
+- Display a simple error page with message and stack trace info (defaults to on in development, off in production).
 
-Authors can intercept errors and customize the error page through the @errors global.
+Authors can intercept errors and customize the error page through the `errors` store.
 
 ```jsx
-const errors = ctx.global("@errors");
+const errors = ctx.useStore("errors");
 
 // Intercept errors
 const sub = errors.subscribe((err) => {
@@ -19,30 +19,13 @@ const sub = errors.subscribe((err) => {
 });
 sub.unsubscribe();
 
-errors.setErrorPage(ErrorPageView);
+errors.setErrorPage(ErrorPageView); // Set to null to not display one.
 errors.showErrorsInProduction(); // Will enable if called by default, but can also take a boolean to set value directly.
-```
 
-Other random ideas:
-
-```jsx
-// An element created with m() or JSX
-class Markup extends Connectable {
-  constructor() {}
-
-  setup(ctx) {}
-}
-
-// TODO: One upside of classes is they have a name, so you don't need to supply one. Switch to this?
 class ErrorPageView extends View {
-  // NOTE: If static, 'about' and 'attrs' will need to be passed to the view constructor by the calling code.
-  // A little weird but it still seems nicer than duplicating them for every instance.
-  // I also like that they can't be accessed from inside setup if they're static.
-
-  // TODO: Warn in console in dev mode of any views that don't have an 'about' or 'attributes' defined.
+  // TODO: Warn in console in dev mode of any views that don't have an 'about' or 'attrs' defined.
   static about = "Custom error page for displaying custom errors.";
 
-  // TODO: Shorten attribute definitions to just 'attrs' since that's what it's still called on the context.
   static attrs = {
     error: {
       about: "An Error object as collected by @errors",
@@ -69,66 +52,4 @@ class ErrorPageView extends View {
     );
   }
 }
-
-// When used in a view like <ErrorPageView>, passed to m(ErrorPageView, attributes, ...children)
-// That function determines that it's a view class and handles accordingly.
-const view = new ErrorPageView({
-  appContext,
-  elementContext,
-  attributes,
-  children,
-});
-view.connect(parentNode);
-
-class SomeLocal extends Local {
-  static about = "Example of a local with class syntax.";
-  static attributes = {
-    initialValue: {
-      type: "number",
-      default: 1,
-    },
-  };
-
-  setup(ctx) {
-    return {
-      value: ctx.attrs.get("initialValue"),
-    };
-  }
-}
-
-class SomeGlobal extends Global {
-  static about = "Example of a global with class syntax.";
-
-  setup(ctx) {
-    const $$value = makeState(5);
-
-    return {
-      $value: $$value.readable(),
-    };
-  }
-}
-
-const Quack = makeApp({
-  // Is there any way to extract a type from a globals array?
-  // Like
-  // {
-  //   some: typeof SomeGlobal,
-  //   other: typeof OtherGlobal,
-  //   whuh: typeof Whuh
-  // }
-  globals: [
-    { name: "some", global: SomeGlobal },
-    { name: "other", global: OtherGlobal },
-    { name: "whuh", global: WhuhGlobal },
-  ],
-  view: (ctx) => {
-    const some = ctx.global("some");
-    return <div>Value is: {some.$value}</div>;
-  },
-});
-
-// Get global types to pass to components.
-type QuackGlobals = GlobalsOf<typeof Quack>;
-
-Quack.connect("#app");
 ```

@@ -6,7 +6,7 @@ export class HTTPRequestExample extends View {
     const $$loading = makeState(false);
     const $$message = makeState("");
 
-    const http = ctx.global("@http");
+    const http = ctx.useStore("http");
 
     logLifecycle(ctx);
 
@@ -29,8 +29,11 @@ export class HTTPRequestExample extends View {
               $$loading.set(true);
 
               http
-                .get("/hello-json")
-                .header("accept", "application/json")
+                .get("/hello-json", {
+                  headers: {
+                    accept: "application/json",
+                  },
+                })
                 .then((res) => {
                   $$message.set(res.body.message);
                 })

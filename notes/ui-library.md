@@ -14,19 +14,35 @@ Create a UI library built on woof. Standard input elements that are fully stylab
 - SafeArea (container for content that uses safe-area-inset-\* variables)
 - HistoryStack (like iOS navigation stack where you can animate nav transitions forward and back)
 
-Layout primitives.
+Layout primitives (Flow components):
 
 ```jsx
-const Example = makeView({
-  setup: (ctx, m) => {
-    // Gap and padding are in units, which are defined at the top level of the app. 1 unit in this case could be something like 4px.
+class Example extends View {
+  setup(ctx, m) {
+    // Gap and padding are in units, which are defined on a FlowLayoutStore. Here 1 unit is 4px.
     return (
-      <FlowRight gap={2} padding={4} scroll>
-        {/* Children will flow from left to right with 8px between each item */}
+      <FlowLayoutStore unit="4px">
+        <FlowRight
+          breakpoints={{ "800": { gap: 3, fill: 0.5 } }}
+          gap={2}
+          padding={4}
+          align="center"
+          justify="center"
+          fill={1}
+          scroll
+        >
+          {/* Children will flow from left to right with 8px gap between each item and 16px padding around */}
+          {/* Content scrolls horizontally */}
 
-        <FlowDown>{/* Children flow top to bottom */}</FlowDown>
-      </FlowRight>
+          <FlowDown>{/* Children flow top to bottom */}</FlowDown>
+        </FlowRight>
+      </FlowLayoutStore>
     );
   },
-});
+}
+
+// Can also be configured globally on the app.
+stores = [
+  { store: FlowLayoutStore, attrs: { unit: "4px", defaults: { gap: 2, padding: 4 } } }
+]
 ```

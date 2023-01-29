@@ -101,50 +101,83 @@ const Example = makeView((ctx) => {
 });
 ```
 
-## Make web components with woof
+## Make web components with woofe
 
-Register a woof view as a web component. This might be better as a separate library since it wouldn't see much use in a traditional woof app.
+Register a woofe view as a web component. This would be better as a separate import since it wouldn't see much use in a traditional woofe app, though it would technically be compatible.
 
 ```jsx
-import { registerGlobal, registerWebComponent } from "@woofjs/web-views";
+import { Store, View } from "woofe";
+import { defineStore, defineElement } from "woofe/web-components";
 
-// register globals that are accessible to all woof web views on the page
-registerGlobal("example", (ctx) => {
-  return {
-    value: 5,
-  };
-});
+// Create a store that holds a title.
+class TitleStore extends Store {
+  setup(ctx) {
+    return {
+      title: "This is the Title",
+    };
+  }
+}
 
-// register a view by specifying a tag name
-registerWebComponent("tag-name", (ctx) => {
-  const title = ctx.get("title");
-  const { value } = ctx.global("example");
+// Create a view that displays the title from the store.
+class TitleView extends View {
+  setup(ctx, m) {
+    const { title } = ctx.useStore(TitleStore);
 
-  return (
-    <section>
-      <header>
-        <h1>{title}</h1>
-      </header>
+    return m("h1", title);
+  }
+}
 
-      <p>Value is: {value}</p>
+// Make that store global, available to all web components.
+defineStore(TitleStore);
 
-      {ctx.outlet()}
-    </section>
-  );
-});
+// Or define a store that can be used as an element to provide local state.
+defineElement("title-store", TitleStore);
 
-// or
-registerWebComponent("tag-name", ExistingView);
+// Define the view as a <title-view> element that will be rendered whenever you use that tag on the page.
+defineElement("title-view", TitleView);
 ```
 
-This will register the view as a web component that can be used on any HTML page where the script is included.
+This will register the view as a web component that can be used on any HTML page where the script is included. Views loaded in this way can still access the built-in stores you would expect in a standard app.
+
+Custom elements will resolve stores in this order: Local (-> App, if used within an app) -> defineStore global.
+Normal views used in an app will resolve Local -> App and don't have access to those defined with defineStore.
 
 ```html
 <body>
-  <tag-name title="Hello">Takes children just like a normal view.</tag-name>
+  <title-store>
+    <title-view></title-view>
+  </title-store>
 
-  <script src="./components/tag-name.js"></script>
+  <script src="./elements.js"></script>
 </body>
 ```
 
-One downside is that the JSX is still going to require transpiling, so this script would require a build step.
+One downside is that JSX is still going to require transpiling, so you need to use the `m` function to render if you're just dropping this script into a page.
+
+## TODO: Decorators
+
+For whenever decorators finally get added to JS (or if you're using TS), the define functions should also double as decorators if you leave off the component argument at the end and preface them with @ above the component.
+
+```tsx
+import { Store, View } from "woofe";
+import { defineStore, defineElement } from "woofe/web-components";
+
+@defineStore() // Make it global.
+@defineElement("title-store") // Define a <title-store> element.
+class TitleStore extends Store {
+  setup(ctx) {
+    return {
+      title: "This is the Title",
+    };
+  }
+}
+
+@defineElement("title-view") // Define a <title-view> element.
+class TitleView extends View {
+  setup(ctx, m) {
+    const { title } = ctx.useStore(TitleStore);
+
+    return m("h1", title);
+  }
+}
+```

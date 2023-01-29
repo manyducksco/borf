@@ -33,9 +33,8 @@ const $position = spring.as((x) => `${x}px`); // Transform to a new state.
 ## View animation API
 
 ```jsx
-const ExampleView = makeView({
-  name: "ExampleView",
-  setup: () => {
+class ExampleView extends View {
+  setup() {
     const opacity = makeSpring(0, { stiffness: 100, damping: 300 });
     const y = makeSpring(-20, { stiffness: 200, damping: 200 });
 
@@ -52,5 +51,5 @@ const ExampleView = makeView({
       </div>
     );
   },
-});
+}
 ```

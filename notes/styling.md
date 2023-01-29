@@ -1,10 +1,8 @@
 # Styling
 
-CSS modules are really convenient but they require a bundler. Can I come up with something using JS functions that composes just as well as CSS stylesheets?
+CSS modules are really convenient but they require a bundler. Can I come up with something using JS functions that composes just as well as CSS stylesheets? Probably not, but that won't stop me trying.
 
 ```js
-const makeClass = () => {};
-
 const button = css`
   color: blue;
   border: 2px solid orange;
@@ -15,25 +13,29 @@ const active = css`
 `;
 
 // Multiple classes
-button.and(".active")`
+button.with(".active")`
   color: red;
 `;
 
 // Class references
-button.and(active)`
+button.with(active)`
   border: 1px solid orange;
 `;
 
 // Chainable
-button.not(".active").and(".cool")`
-
+button.without(".active").with(".cool")`
+  border: 1px solid red;
 `;
+
+// Chainable: Object syntax
+button.without(".active").with(".cool")({
+  border: "1px solid red"
+});
 
 // Pseudo selectors
 button.pseudo("before")`
 
 `;
-
 
 const active = css({
   color: red;
@@ -58,11 +60,25 @@ button.not(active).after({
   /* styles */
 });
 
-const active = makeClass({
+// Media queries:
+button.media("screen", "min-width: 600px")({
+  /* styles */
+});
+
+button.media("print")({
+  /* styles */
+})
+
+const active = css({
 
 });
 
-button.active(active);
+const hovering = css({
+
+});
+
+button.active(active); // Apply 'active' styles when button is active.
+button.hover(hovering); // Apply 'hovering' styles when button is hovered over.
 
 export button;
 

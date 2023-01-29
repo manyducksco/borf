@@ -50,8 +50,8 @@ And to test (pictured in Jest):
 
 ```js
 test("API calls return expected response", async () => {
-  const userGlobal = wrapGlobal(UserGlobal, (ctx) => {
-    ctx.global("http", mockHTTP);
+  const userGlobal = wrapGlobal(UserGlobal, {
+    globals: [{ name: "@http", global: mockHTTP }],
   });
 
   // Run lifecycle hooks

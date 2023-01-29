@@ -2,10 +2,14 @@ import "./styles/demo.css";
 
 import { makeApp } from "woofe";
 
-import { CounterGlobal } from "./globals/counter";
-import { MouseGlobal } from "./globals/mouse";
+import { CounterStore } from "./globals/CounterStore";
+import { MouseStore } from "./globals/MouseStore";
 
 import { AppLayout } from "./views/AppLayout";
+
+import { PassingAttributes } from "./examples/PassingAttributes";
+import { SpringAnimation } from "./examples/SpringAnimation";
+
 import { ComponentAttrsExample } from "./views/ComponentAttrsExample";
 import { ToggleExample } from "./views/ToggleExample";
 import { CounterExample } from "./views/CounterExample";
@@ -46,10 +50,7 @@ const Examples = makeApp({
     warn: true,
     error: true,
   },
-  globals: [
-    { name: "counter", global: CounterGlobal },
-    { name: "mouse", global: MouseGlobal },
-  ],
+  stores: [CounterStore, MouseStore],
   view: AppLayout,
   // Routes are always rendered in the outlet of the sibling view.
   routes: [
@@ -58,16 +59,18 @@ const Examples = makeApp({
       view: () => {
         return (
           <div>
+            <SpringAnimation />
+            <PassingAttributes />
             {/* <LocalsExample /> */}
             {/* <SpringExample /> */}
-            {/* <ToggleExample /> */}
+            <ToggleExample />
             <CounterExample />
             <ConditionalExample />
-            {/* <DynamicListExample /> */}
-            {/* <TwoWayBindExample /> */}
-            {/* <FormExample /> */}
-            {/* <MouseFollowerExample /> */}
-            {/* <HTTPRequestExample /> */}
+            <DynamicListExample />
+            <TwoWayBindExample />
+            <FormExample />
+            <MouseFollowerExample />
+            <HTTPRequestExample />
             <ComponentAttrsExample />
             {/* <RenderOrderTest /> */}
           </div>
@@ -115,6 +118,5 @@ const Examples = makeApp({
 });
 
 // console.log(Examples.routes); // Metadata about route configuration
-// console.log(Examples.globals); // Metadata about registered services
 
 Examples.connect("#app");

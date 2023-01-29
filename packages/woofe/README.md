@@ -9,8 +9,11 @@ Woofe is a front end framework that aims to cover the most common needs of moder
 - App
 - Component (anything you write that plugs into woofe)
   - View
-  - Local (member of 'state components' alongside Global)
-  - Global (member of 'state components' alongside Local)
+  - Store
+- Attributes (any values you pass to a Component)
+- Markup (any HTML element or component returned from a View)
+- Readable / Writable (dynamic data containers with different levels of access)
+
 - Author (developer using woofe)
 - User (end user of the app)
 
@@ -73,12 +76,60 @@ Inside `app.js`:
 ```js
 import { makeApp } from "https://cdn.skypack.dev/woofe";
 
-const Hello = makeApp((ctx, m) => {
-  // Use the markup function to generate DOM elements.
-  return m("h1", "Hello World");
+class Random extends Store {
+  setup(ctx) {
+    return {
+      get value() {
+        return ~~(Math.random() * 100);
+      },
+    };
+  }
+}
 
-  // When building with the `builde` package you can use JSX instead:
-  // return <h1>Hello World</h1>;
+type SubViewAttrs = {
+  onClick: () => void,
+};
+
+class SubView extends View<SubViewAttrs> {
+  static attrs = {
+    onClick: {
+      type: "function",
+      required: true,
+    },
+  };
+
+  setup(ctx, m) {
+    const { onClick } = ctx.attrs.get();
+
+    return m("h1", { onClick }, ctx.outlet());
+  }
+}
+
+class App extends View {
+  setup(ctx, m) {
+    const http = ctx.useStore("http");
+    const random = ctx.useStore(Random);
+
+    function onClick() {
+      alert(`Today's random number is ${random.value}.`);
+    }
+
+    return m(SubView, { onClick }, "Hello World");
+  }
+}
+
+const Hello = makeApp({
+  stores: [Random], // One global instance loaded here
+  view: App, // Accessible in here
+});
+
+// Stores are also components, so this is equivalent to above:
+const Hello = makeApp({
+  view: () => (
+    <Random>
+      <App />
+    </Random>
+  ),
 });
 
 // Display this app inside the element with `id="app"`

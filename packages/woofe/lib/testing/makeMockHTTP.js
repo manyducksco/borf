@@ -1,9 +1,7 @@
 import { makeMockFetch } from "./makeMockFetch.js";
-import { initGlobal } from "../global/helpers/initGlobal.js";
-
 import { makeDebug } from "../helpers/makeDebug.js";
-
-import http from "../global/built-ins/http.js";
+import HTTPGlobal from "../globals/@http.js";
+import { Global } from "../classes/Global.js";
 
 /**
  * @example
@@ -44,6 +42,7 @@ export function makeMockHTTP(fn) {
       debug: makeDebug(),
     };
 
-    return initGlobal(http, { appContext, channelPrefix: "mock:global", name: "http" }).exports;
+    return new Global({ setup: http, appContext, channelPrefix: "mock:global", label: "http" }).exports;
+    // return initGlobal(http, { appContext, channelPrefix: "mock:global", name: "http" }).exports;
   };
 }

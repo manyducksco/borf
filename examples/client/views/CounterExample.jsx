@@ -1,5 +1,6 @@
 import { View } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
+import { CounterStore } from "../globals/CounterStore.js";
 
 /**
  * Component with controls and a mapped label based on the state inside the service.
@@ -8,7 +9,7 @@ export class CounterExample extends View {
   setup(ctx) {
     logLifecycle(ctx);
 
-    const counter = ctx.global("counter");
+    const counter = ctx.useStore(CounterStore);
     const $label = counter.$current.as((n) => `the number is: ${n}`);
 
     return (
@@ -29,7 +30,7 @@ export class CounterExample extends View {
  */
 class CounterViewLabel extends View {
   setup(ctx) {
-    const { $current } = ctx.global("counter");
+    const { $current } = ctx.useStore(CounterStore);
 
     return <h1>{$current}</h1>;
   }

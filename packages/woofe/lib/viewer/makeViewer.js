@@ -1,30 +1,30 @@
-import { ViewBlueprint } from "../blueprints/View.js";
+import { View } from "../classes/View.js";
+import { Markup } from "../classes/Markup.js";
+import { isView, isStore, isObject } from "../helpers/typeChecking.js";
 
-export function makeViewer(view, config = {}) {
-  return new Viewer(view, config);
+export function makeViewer(component, config = {}) {
+  return new Viewer(component, config);
 }
 
 class Viewer {
   isConnected = false;
 
-  constructor(view, config = {}) {
-    if (view.isBlueprint) {
-      this.blueprint = view;
-    } else {
-      this.blueprint = new ViewBlueprint(view);
+  constructor(component, config = {}) {
+    if (!isView(component) && !isStore(component)) {
+      throw new TypeError(`Expected a component as the first argument. Got: ${component}`);
     }
 
+    this.markup = new Markup((config) => new component(config));
     this.config = {
-      globals: config.globals || [],
-      locals: config.locals || [],
+      stores: config.stores || [],
       attributes: config.attributes || {},
+      presets: config.presets || [],
     };
   }
 
   async connect(parent, preset = null) {
     // Take values from top level config first.
-    let globals = [...this.config.globals];
-    let locals = [...this.config.locals];
+    let stores = new Map(Object.entries(this.config.stores));
     let attributes = { ...this.config.attributes };
 
     // Merge in values from preset.
@@ -39,28 +39,19 @@ class Viewer {
         Object.assign(attributes, data.attributes);
       }
 
-      if (data.globals) {
-        for (const { name, global } of data.globals) {
-          const index = globals.findIndex((x) => x.name === name);
+      if (data.stores) {
+        data.stores.forEach((store) => {
+          let config;
 
-          if (index > -1) {
-            globals.splice(index, 1, { name, global });
-          } else {
-            globals.push({ name, global });
+          if (isStore(store)) {
+            config = { store };
+          } else if (isStore(store?.store)) {
+            config = store;
+            store = config.store;
           }
-        }
-      }
 
-      if (data.locals) {
-        for (const { name, local } of data.globals) {
-          const index = locals.findIndex((x) => x.name === name);
-
-          if (index > -1) {
-            locals.splice(index, 1, { name, local });
-          } else {
-            locals.push({ name, local });
-          }
-        }
+          stores.set(store, config);
+        });
       }
     }
 
@@ -70,23 +61,29 @@ class Viewer {
     }
 
     const appContext = {
-      globals: {},
+      stores: new Map(),
     };
 
     const elementContext = {
-      locals: {},
+      stores: new Map(),
     };
 
-    // TODO: Initialize globals
-    for (const { name, global } of globals) {
+    // Set up stores.
+    for (const store of stores) {
+      let config;
+
+      if (isStore(store)) {
+        config = { store };
+      } else if (isStore(store?.store)) {
+        config = store;
+        store = config.store;
+      }
+
+      stores.set(store, config);
     }
 
-    // TODO: Initialize locals
-    for (const { name, local } of locals) {
-    }
-
-    // TODO: Create and connect view.
-    const view = this.blueprint.build({
+    // Create and connect view.
+    const view = this.markup.init({
       appContext,
       elementContext,
       attributes,

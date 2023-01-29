@@ -1,21 +1,19 @@
-import { isFunction, isGlobal, isObject, isString, isView } from "./helpers/typeChecking.js";
+import { isFunction, isObject, isStore, isString, isView } from "./helpers/typeChecking.js";
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
 import { makeDebug } from "./helpers/makeDebug.js";
 import { extendsClass } from "./helpers/extendsClass.js";
 import { merge } from "./helpers/merge.js";
-import { makeGlobal } from "./makeGlobal.js";
-import { Global } from "./_experimental/Global.js";
-import { ViewBlueprint } from "./blueprints/View.js";
-import { m } from "./_experimental/Markup.js";
 
-import dialog from "./globals/@dialog.js";
-import http from "./globals/@http.js";
-import page from "./globals/@page.js";
-import router from "./globals/@router.js";
+import { Store } from "./classes/Store.js";
+import { View } from "./classes/View.js";
+import { m } from "./classes/Markup.js";
 
-import { View } from "./_experimental/View.js";
+import { DialogStore } from "./stores/dialog.js";
+import { HTTPStore } from "./stores/http.js";
+import { PageStore } from "./stores/page.js";
+import { RouterStore } from "./stores/router.js";
 
 export function makeApp(options) {
   return new App(options);
@@ -25,19 +23,22 @@ class App {
   #layerId = 0;
   #isConnected = false;
   #activeSubscriptions = [];
-  #globals = [
-    { name: "@dialog", global: dialog },
-    { name: "@router", global: router },
-    { name: "@page", global: page },
-    { name: "@http", global: http },
-  ];
+  #stores = new Map([
+    ["dialog", { store: DialogStore, ready: false }],
+    ["router", { store: RouterStore, ready: false }],
+    ["page", { store: PageStore, ready: false }],
+    ["http", { store: HTTPStore, ready: false }],
+  ]);
   #routes = [];
   #appContext;
+  #elementContext = {
+    stores: new Map(),
+  };
 
   #options = {
     preload: null,
     view: (ctx) => ctx.outlet(),
-    globals: [],
+    stores: [],
     routes: [],
     debug: {
       filter: "*,-woofe:*",
@@ -59,13 +60,6 @@ class App {
       options = {};
     }
 
-    // Accepts a standalone view setup function.
-    if (isFunction(options)) {
-      options = {
-        view: options,
-      };
-    }
-
     if (!isObject(options)) {
       throw new TypeError(`App options must be an object. Got: ${options}`);
     }
@@ -73,33 +67,29 @@ class App {
     // Merge options with defaults.
     this.#options = merge(this.#options, options);
 
-    // Add globals, making sure to have only one copy of a global with the same name.
-    if (this.#options.globals) {
-      for (const { name, global } of this.#options.globals) {
-        const index = this.#globals.findIndex((x) => x.name === name);
-        if (index > -1) {
-          this.#globals.splice(index, 1, { name, global });
-        } else {
-          this.#globals.push({ name, global });
-        }
-      }
+    for (const route of this.#options.routes) {
+      this.#routes.push(...this.#prepareRoute(route));
     }
 
-    // Process routes into something the @router can match.
-    if (this.#options.routes) {
-      this.#routes = [];
-
-      for (const route of this.#options.routes) {
-        this.#routes.push(...this.#prepareRoute(route));
-      }
+    for (const store of this.#options.stores) {
+      this.#stores.set(store, this.#prepareStore(store));
     }
+
+    // Pass router store the attrs it needs to match routes.
+    const router = this.#stores.get("router");
+    this.#stores.set("router", {
+      ...router,
+      attrs: {
+        routes: this.#routes,
+        options: this.#options.router,
+      },
+    });
 
     // And finally create the appContext. This is the central config object accessible to all components.
     this.#appContext = {
       options: this.#options,
       debug: makeDebug(this.#options.debug ?? {}),
-      globals: {},
-      routes: this.#routes,
+      stores: this.#stores,
       rootElement: null,
       rootView: null,
       // $dialogs - added by @dialog global
@@ -121,55 +111,66 @@ class App {
     }
 
     const appContext = this.#appContext;
+    const elementContext = this.#elementContext;
 
     appContext.rootElement = element;
 
-    // Set up temporary getters to prevent globals being accessed by other globals before they are initialized.
-    // These are overwritten as the real globals are initialized.
-    for (const { name } of this.#globals) {
-      Object.defineProperty(appContext.globals, name, {
-        get() {
-          throw new Error(
-            `Global '${name}' was accessed before it was initialized. Make sure '${name}' is registered before other globals that access it.`
-          );
-        },
-        configurable: true,
-      });
-    }
+    // Initialize global stores.
+    for (let [key, item] of this.#stores.entries()) {
+      const { store, attrs, exports } = item;
 
-    // Now initialize the real globals.
-    for (let { name, global } of this.#globals) {
       // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
       // Built-in globals get an additional 'woofe:' prefix so it's clear messages are from the framework.
       // 'woofe:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
-      let channelPrefix = name.startsWith("@") ? "woofe:global" : "global";
+      const channelPrefix = isString(key) ? "woofe:store" : "store";
+      const label = isString(key) ? key : store.label || store.name;
+      const config = {
+        appContext,
+        elementContext,
+        channelPrefix,
+        label,
+        attributes: attrs,
+      };
 
-      // Accepts a standalone setup function or a global class.
-      if (isGlobal(global)) {
-        global = new global({ appContext, channelPrefix, label: global.label || name });
-      } else if (isFunction(global)) {
-        global = new Global({ appContext, channelPrefix, setup: global });
+      let instance;
+
+      if (exports) {
+        if (isStore(exports)) {
+          instance = new exports({
+            ...config,
+            label: exports.label,
+            about: exports.about,
+            attributeDefs: exports.attrs,
+          });
+        }
+
+        if (isFunction(exports)) {
+          instance = new Store({ ...config, setup: exports });
+        }
+
+        if (isObject(exports)) {
+          instance = new Store({ ...config, setup: () => exports });
+        }
+
+        if (!instance || !(instance instanceof Store) || !isObject(instance?.exports)) {
+          throw new TypeError(`Value of 'exports' didn't result in a usable store. Got: ${exports}`);
+        }
       } else {
-        throw new TypeError(`Global '${name}' must be a global or a global setup function. Got: ${global}`);
+        instance = new store({ ...config, about: store.about, attributeDefs: store.attrs });
       }
 
-      // Globals must have a setup function that returns an object. That is the object you get by calling `ctx.global("name")`.
-      if (!isObject(global.exports)) {
-        throw new TypeError(`Setup function for global '${name}' did not return an object.`);
+      // Stores must have a setup function that returns an object. That is the object you get by calling `ctx.useStore()`.
+      if (!isObject(instance?.exports)) {
+        throw new TypeError(`Setup function for store '${label}' did not return an object.`);
       }
 
-      // Add to appContext for access by views and other globals.
-      Object.defineProperty(appContext.globals, name, {
-        value: global,
-        writable: false,
-        enumerable: true,
-        configurable: false,
-      });
+      // Add instance and mark as ready.
+      this.#stores.set(key, { ...item, instance, ready: true });
     }
 
     // beforeConnect is the first opportunity to configure globals before anything else happens.
-    for (const global of Object.values(appContext.globals)) {
-      await global.beforeConnect();
+    for (const { instance } of this.#stores.values()) {
+      await instance.beforeConnect();
     }
 
     // Then the app-level preload function runs (if any), resolving to initial attributes for the app-level view.
@@ -177,21 +178,32 @@ class App {
     return this.#preload().then(async (attributes) => {
       // Then the view is initialized and connected to root element.
       if (isFunction(this.#options.view)) {
-        appContext.rootView = new View({ appContext, attributes, setup: this.#options.view, label: "app" });
+        appContext.rootView = new View({
+          appContext,
+          elementContext,
+          attributes,
+          setup: this.#options.view,
+          label: "app",
+        });
       } else if (extendsClass(View, this.#options.view)) {
         const view = this.#options.view;
-        appContext.rootView = new this.#options.view({ appContext, attributes, label: view.label ?? view.name });
+        appContext.rootView = new this.#options.view({
+          appContext,
+          elementContext,
+          attributes,
+          label: view.label ?? view.name ?? "app",
+        });
       }
-      // appContext.rootView = new ViewBlueprint(this.#options.view).build({ appContext, attributes });
+
       appContext.rootView.connect(appContext.rootElement);
 
       // Then we initialize the dialog container for the @dialog global.
       // This subscription manages the actual DOM nodes behind the data in the @dialog global.
       this.#activeSubscriptions.push(connectDialogs(appContext));
 
-      // Then globals receive the afterConnect signal. This notifies @router to start listening for route changes.
-      for (const global of Object.values(appContext.globals)) {
-        global.afterConnect();
+      // Then stores receive the afterConnect signal. This notifies `router` to start listening for route changes.
+      for (const { instance } of this.#stores.values()) {
+        await instance.afterConnect();
       }
 
       // The app is now connected.
@@ -206,9 +218,9 @@ class App {
     if (this.#isConnected) {
       const appContext = this.#appContext;
 
-      // Send beforeDisconnect signal to globals.
-      for (const global of Object.values(appContext.globals)) {
-        await global.beforeDisconnect();
+      // Send beforeDisconnect signal to stores.
+      for (const { instance } of this.#stores.values()) {
+        await instance.beforeDisconnect();
       }
 
       // Remove the root view from the page (runs teardown callbacks on all connected views).
@@ -223,9 +235,9 @@ class App {
         sub.unsubscribe();
       }
 
-      // Send final afterDisconnect signal to globals.
-      for (const global of Object.values(appContext.globals)) {
-        global.afterDisconnect();
+      // Send final afterDisconnect signal to stores.
+      for (const { instance } of this.#stores.values()) {
+        await instance.afterDisconnect();
       }
     }
   }
@@ -239,6 +251,7 @@ class App {
     }
 
     const appContext = this.#appContext;
+    const elementContext = this.#elementContext;
     const channel = appContext.debug.makeChannel("woofe:app:preload");
 
     return new Promise((resolve) => {
@@ -247,16 +260,31 @@ class App {
       const ctx = {
         ...channel,
 
-        global: (name) => {
-          if (!isString(name)) {
-            throw new TypeError("Expected a string.");
+        useStore: (store) => {
+          const name = store?.name || store;
+
+          if (elementContext.stores.has(store)) {
+            if (appContext.stores.has(store)) {
+              // Warn if shadowing a global, just in case this isn't intended.
+              channel.warn(`Using local store '${name}' which shadows global store '${name}'.`);
+            }
+
+            return elementContext.stores.get(store).instance.exports;
           }
 
-          if (appContext.globals[name]) {
-            return appContext.globals[name].exports;
+          if (appContext.stores.has(store)) {
+            const _store = appContext.stores.get(store);
+
+            if (!_store.ready) {
+              throw new Error(
+                `Store '${name}' was accessed before it was set up. Make sure '${name}' appears earlier in the 'stores' array than other stores that access it.`
+              );
+            }
+
+            return _store.instance.exports;
           }
 
-          throw new Error(`Global '${name}' is not registered on this app.`);
+          throw new Error(`Store '${name}' is not registered on this app.`);
         },
 
         /**
@@ -292,6 +320,16 @@ class App {
         }
       });
     });
+  }
+
+  #prepareStore(store) {
+    if (isStore(store)) {
+      store = { store };
+    }
+
+    store.ready = false;
+
+    return store;
   }
 
   /**

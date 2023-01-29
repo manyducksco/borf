@@ -1,4 +1,4 @@
-import { View, Local, makeState } from "woofe";
+import { View, Store, makeState } from "woofe";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export class LocalsExample extends View {
@@ -9,20 +9,20 @@ export class LocalsExample extends View {
       <div class="example">
         <h3>Scoped state with locals.</h3>
         <div>
-          <ExampleLocal name="example" initialValue="Instance 1">
+          <ExampleStore initialValue="Instance 1">
             <ValueDisplay />
 
-            {/* <ExampleLocal name="example" initialValue="Instance 2">
+            <ExampleStore initialValue="Instance 2">
               <ValueDisplay />
-            </ExampleLocal> */}
-          </ExampleLocal>
+            </ExampleStore>
+          </ExampleStore>
         </div>
       </div>
     );
   }
 }
 
-class ExampleLocal extends Local {
+class ExampleStore extends Store {
   static attrs = {
     initialValue: {
       type: "string",
@@ -32,14 +32,14 @@ class ExampleLocal extends Local {
 
   setup(ctx) {
     return {
-      $$value: makeState(ctx.attributes.get("initialValue")),
+      $$value: makeState(ctx.attrs.get("initialValue")),
     };
   }
 }
 
 class ValueDisplay extends View {
   setup(ctx) {
-    const { $$value } = ctx.local("example");
+    const { $$value } = ctx.useStore(ExampleStore);
 
     return <span>{$$value}</span>;
   }

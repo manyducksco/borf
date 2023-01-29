@@ -1,8 +1,7 @@
 import { omit } from "../helpers/omit.js";
-// import { m } from "../helpers/markup.js";
-import { m } from "../_experimental/Markup.js";
+import { m } from "../classes/Markup.js";
 
-export { FragmentBlueprint as Fragment } from "../blueprints/Fragment.js";
+export { Fragment } from "../classes/Fragment.js";
 
 /**
  * JSX function for elements with dynamic children.

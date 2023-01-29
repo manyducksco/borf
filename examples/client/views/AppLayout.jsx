@@ -1,4 +1,5 @@
 import { View } from "woofe";
+import { MouseStore } from "../globals/MouseStore";
 import logLifecycle from "../utils/logLifecycle";
 
 export class AppLayout extends View {
@@ -12,8 +13,8 @@ export class AppLayout extends View {
 
     logLifecycle(ctx);
 
-    const page = ctx.global("@page");
-    const mouse = ctx.global("mouse");
+    const page = ctx.useStore("page");
+    const mouse = ctx.useStore(MouseStore);
 
     // Display current mouse coordinates as tab title
     ctx.observe(mouse.$position, (pos) => {
@@ -54,53 +55,3 @@ export class AppLayout extends View {
     );
   }
 }
-
-// export const AppLayout = makeView({
-//   name: "🐕",
-//   setup: (ctx) => {
-//     ctx.log("hi");
-
-//     logLifecycle(ctx);
-
-//     const page = ctx.global("@page");
-//     const mouse = ctx.global("mouse");
-
-//     // Display current mouse coordinates as tab title
-//     ctx.observe(mouse.$position, (pos) => {
-//       page.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
-//     });
-
-//     ctx.observe(page.$visibility, (status) => {
-//       ctx.log(`visibility: ${status}`);
-//     });
-
-//     return (
-//       <div class="demo">
-//         <nav class="nav">
-//           <ul>
-//             <li>
-//               <a href="/examples">Examples</a>
-//             </li>
-//             <li>
-//               <a href="/7guis">7 GUIs</a>
-//             </li>
-//             <li>
-//               <a href="/router-test">Router Test</a>
-//             </li>
-//             <li>
-//               <a href="/nested/one">Nested: #1</a>
-//             </li>
-//             <li>
-//               <a href="/nested/two">Nested: #2</a>
-//             </li>
-//             <li>
-//               <a href="/nested/invalid">Nested: Redirect *</a>
-//             </li>
-//           </ul>
-//         </nav>
-
-//         {ctx.outlet()}
-//       </div>
-//     );
-//   },
-// });

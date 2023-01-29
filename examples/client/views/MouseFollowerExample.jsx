@@ -1,6 +1,7 @@
 import { View, makeState, joinStates, makeSpring } from "woofe";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
+import { MouseStore } from "../globals/MouseStore.js";
 
 const bestColor = "#ff0088";
 
@@ -11,7 +12,7 @@ export class MouseFollowerExample extends View {
 
     logLifecycle(ctx);
 
-    const mouse = ctx.global("mouse");
+    const mouse = ctx.useStore(MouseStore);
 
     const $disabled = $$enabled.as((t) => !t);
     const $isNotBestColor = $$color.as(
