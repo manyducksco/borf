@@ -1,12 +1,11 @@
 # Testing Utils
 
-`@woofjs/client` includes tools for unit testing its own views and globals as well as views and globals created by users
-for their own apps.
+`woofe/testing` includes tools for automated testing.
 
 ## Testing globals (and HTTP calls)
 
 ```js
-import { wrapGlobal, makeMockHTTP } from "@woofjs/client/testing";
+import { wrapStore, makeMockHTTP } from "woofe/testing";
 
 const mockHTTP = makeMockHTTP((on) => {
   // Define a mock responder for requests matching 'POST /users/create'
@@ -27,45 +26,76 @@ const mockHTTP = makeMockHTTP((on) => {
   });
 });
 
-// A global that makes HTTP calls:
-function UserGlobal(ctx) {
-  const http = ctx.global("http");
+// A store that makes HTTP calls:
+class UserStore extends Store {
+  setup(ctx) {
+    const http = ctx.useStore("http");
 
-  function createUser(name) {
-    return http.post("/users/create").body({ name });
+    function createUser(name) {
+      return http.post("/users/create").body({ name });
+    }
+
+    function deleteUser(id) {
+      return http.delete(`/users/${id}`);
+    }
+
+    return {
+      createUser,
+      deleteUser,
+    };
   }
-
-  function deleteUser(id) {
-    return http.delete(`/users/${id}`);
-  }
-
-  return {
-    createUser,
-    deleteUser,
-  };
 }
-```
 
-And to test (pictured in Jest):
-
-```js
+// And to test (pictured in Jest):
 test("API calls return expected response", async () => {
-  const userGlobal = wrapGlobal(UserGlobal, {
-    globals: [{ name: "@http", global: mockHTTP }],
+  const userStore = wrapStore(UserStore, {
+    stores: [{ store: "http", exports: mockHTTP }],
   });
 
   // Run lifecycle hooks
-  userGlobal.beforeConnect();
-  userGlobal.afterConnect();
+  await userStore.connect();
 
   // Access the exported object at 'exports'
-  const createRes = await userGlobal.exports.createUser("Jimbo Jones");
+  const createRes = await useStore.exports.createUser("Jimbo Jones");
 
   expect(createRes.status).toBe(200);
   expect(createRes.body.name).toBe("Jimbo Jones");
 
-  const deleteRes = await userGlobal.exports.deleteUser(createRes.body.user.id);
+  const deleteRes = await userStore.exports.deleteUser(createRes.body.user.id);
 
   expect(deleteRes.status).toBe(204);
+});
+```
+
+This can also be done with Views. The view wrapper simulates rendering, allowing you to query for "rendered" DOM nodes without actually displaying anything.
+
+```tsx
+import test from "ava";
+import { wrapView } from "woofe/testing";
+import { SomeView } from "./SomeView";
+
+test("works", async (t) => {
+  const view = wrapView(SomeView, {
+    // Provide options:
+    stores: [],
+    attrs: {},
+  });
+
+  // Set up
+  await view.connect();
+
+  // Check that button is not rendered with default attributes.
+  t.falsy(view.querySelector("button[data-test-id='the-button']"));
+
+  // Check that button is rendered when showButton is true.
+  view.attrs.set("showButton", true);
+  t.truthy(view.querySelector("button[data-test-id='the-button']"));
+
+  // Check that button is not rendered when showButton is false.
+  view.attrs.set("showButton", false);
+  t.falsy(view.querySelector("button[data-test-id='the-button']"));
+
+  // Tear down
+  await view.disconnect();
 });
 ```

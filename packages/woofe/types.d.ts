@@ -58,8 +58,7 @@ declare module "woofe" {
       history?: History;
     };
 
-    // globals?: { name: string; global: GlobalLike }[];
-    globals?: { new (): Store }[];
+    stores?: (StoreConstructor<any> | StoreConfig<any>)[];
 
     preload?: RoutePreloadFn<A>;
 
@@ -72,7 +71,7 @@ declare module "woofe" {
    * An app is the central object of a Woof app. It handles mounting and unmounting of routes
    * based on the current URL and providing globals to views rendered under those routes.
    */
-  interface App<Globals> {
+  interface App {
     readonly isConnected: boolean;
 
     /**
@@ -85,32 +84,14 @@ declare module "woofe" {
     disconnect(): Promise<void>;
   }
 
-  export interface AppContext<Globals> extends DebugChannel {
-    /**
-     * Returns the global registered under `name` or throws an error if the global isn't registered.
-     */
-    global<K extends keyof AppGlobals<Globals>>(name: K): AppGlobals<Globals>[K];
-  }
-
-  export type BuiltInGlobals = {
-    dialog: ReturnType<GlobalDialog>;
-    router: ReturnType<GlobalRouter>;
-    http: ReturnType<GlobalHTTP>;
-    page: ReturnType<GlobalPage>;
-  };
-
-  export type GlobalsList<K extends keyof T, T> = { name: K; global: GlobalLike<T[K]> }[];
-
-  export type AppGlobals<T> = BuiltInGlobals & {
-    [K in keyof T]: T[K] extends (...any) => any ? ReturnType<T[K]> : never;
-  };
-
   /*==================================*\
   ||             Routing              ||
   \*==================================*/
 
-  interface RoutePreloadContext {
-    global(name: string): any;
+  interface RoutePreloadContext extends DebugChannel {
+    useStore<S extends StoreConstructor<any>>(store: S): ReturnType<S.setup>;
+    useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+
     redirect(to: string): any;
   }
 
@@ -118,10 +99,10 @@ declare module "woofe" {
     (context: RoutePreloadContext): Promise<T>;
   }
 
-  interface RouteConfig<T extends ReturnType<RoutePreloadFn<any>> = any> {
+  interface RouteConfig<T = any> {
     path: string;
     redirect?: string;
-    preload?: T;
+    preload?: RoutePreloadFn<T>;
     view?: ViewLike<T>;
     routes?: RouteConfig[];
   }
@@ -323,20 +304,13 @@ declare module "woofe" {
     disconnect(): Promise<void>;
   }
 
-  export class Local<T extends Record<string, any>> extends Connectable {
-    exports: T;
-    setup(ctx: LocalContext): T;
-  }
-
   interface ElementContext {
     isSVG: boolean;
-    locals: {
-      [name: string]: Local<any>;
-    };
+    stores: Map<StoreConstructor<any> | string, StoreConfig<any>>;
   }
 
   interface MarkupConfig {
-    appContext: AppContext;
+    appContext: any;
     elementContext?: ElementContext;
   }
 
@@ -461,29 +435,19 @@ declare module "woofe" {
       writable?: boolean;
 
       /**
-       * Requires a value to be passed.
+       * Allows a value to be omitted without a default value.
        */
-      required?: boolean;
+      optional?: boolean;
     };
   }
 
   export type ViewLike<A> = ViewSetupFn<A, any> | View<A, any>;
 
-  // interface ViewConfig<Attrs, Globals> {
-  //   name?: string;
-  //   about?: string;
-  //   attributes?: AttributesConfig;
-  //   setup: ViewSetupFn<Attrs, Globals>;
-  // }
-
   export class View extends Connectable {
     setup(ctx: ViewSetupContext, m: MarkupFn): Markup | null;
   }
 
-  export type ViewSetupFn<Attrs = any, Globals = any> = (
-    ctx: ViewSetupContext<Attrs, Globals>,
-    m: MarkupFn
-  ) => Markup | null;
+  export type ViewSetupFn<A = any> = (ctx: ViewSetupContext<A>, m: MarkupFn) => Markup | null;
 
   type AttrsWrapper<T> = {
     [K in keyof T]: T[K] | Readable<T[K]>;
@@ -510,22 +474,16 @@ declare module "woofe" {
     writable(): Writable<T>;
   }
 
-  export interface ViewSetupContext<Attrs = any, Globals = any> extends StateContext, DebugChannel {
+  export interface ViewSetupContext<A = any> extends StateContext, DebugChannel {
     /**
      * True while this view is connected to the DOM.
      */
     readonly isConnected: boolean;
 
-    attrs: Attributes<Attrs>;
+    attrs: Attributes<A>;
 
-    attributes: Attributes<Attrs>;
-
-    /**
-     * Returns the global registered under `name` or throws an error if the global isn't registered.
-     */
-    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name];
-
-    local<T>(name: string): T;
+    useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+    useStore<S extends StoreConstructor>(store: S): ReturnType<S.setup>;
 
     /**
      * Registers a callback to run before the component is connected to the DOM.
@@ -566,19 +524,28 @@ declare module "woofe" {
   }
 
   /*==================================*\
-  ||              Global              ||
+  ||              Stores              ||
   \*==================================*/
 
-  export class Store<T = any> {
-    setup(ctx: StoreSetupContext): T;
-
-    exports: T;
+  interface StoreConstructor<Attrs> {
+    new (): Store<Attrs>;
   }
 
-  export interface StoreSetupContext {
-    useStore<S extends Store>(storeClass: S): S.exports;
+  interface StoreConfig<Attrs> {
+    store: StoreConstructor<Attrs>;
+    exports?: StoreConstructor<Attrs> | StoreSetupFn<Attrs> | Record<string, any>;
+    attrs?: Attrs;
+  }
 
-    useStore<N extends keyof BuiltInGlobals>(name: N): BuiltInGlobals[N];
+  export class Store<Attrs = any, Exports = any> {
+    setup(ctx: StoreSetupContext<Attrs>): Exports;
+  }
+
+  export interface StoreSetupContext<Attrs> extends DebugChannel, StateContext {
+    attrs: Attributes<Attrs>;
+
+    useStore<S extends StoreConstructor<any>>(store: S): ReturnType<S.setup>;
+    useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
 
     /**
      * Registers a callback to run before the store is connected.
@@ -601,49 +568,91 @@ declare module "woofe" {
     afterDisconnect: (callback: () => void) => void;
   }
 
-  export type GlobalLike = GlobalSetupFn<any> | Global<any>;
-
-  export type GlobalSetupFn<Globals> = (ctx: GlobalSetupContext<Globals>) => any;
-
-  export class Global<Globals = any> {
-    setup(ctx: GlobalSetupContext<Globals>): Exports;
-  }
-
-  export interface GlobalSetupContext<Globals> extends StateContext, DebugChannel {
-    /**
-     * Returns the global registered under `name` or throws an error if the global isn't registered.
-     */
-    global<Name extends keyof AppGlobals<Globals>>(name: Name): AppGlobals<Globals>[Name];
-
-    /**
-     * Registers a callback to run before the app is connected.
-     */
-    beforeConnect: (callback: () => void) => void;
-
-    /**
-     * Registers a callback to run after the app is connected and the first route match has taken place.
-     */
-    afterConnect: (callback: () => void) => void;
-
-    /**
-     * Registers a callback to run just before the app is disconnected.
-     */
-    beforeDisconnect: (callback: () => void) => void;
-
-    /**
-     * Registers a callback to run after the app is disconnected.
-     */
-    afterDisconnect: (callback: () => void) => void;
-  }
-
   /*==================================*\
-  ||         Built-in Globals         ||
+  ||          Built-in Stores         ||
   \*==================================*/
 
-  export type GlobalDialog = Global<{
-    makeDialog<Attrs extends DialogViewAttrs>(fn: ViewSetupFn<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
-    makeDialog<Attrs extends DialogViewAttrs>(view: View<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
-  }>;
+  export type BuiltInStores = {
+    dialog: {
+      makeDialog<Attrs extends DialogViewAttrs>(fn: ViewSetupFn<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
+      makeDialog<Attrs extends DialogViewAttrs>(view: View<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
+    };
+    router: {
+      $route: Readable<string>;
+      $path: Readable<string>;
+      $params: Readable<{ [name: string]: unknown }>;
+      $$query: Writable<{ [name: string]: unknown }>;
+
+      back: (steps?: number) => void;
+      forward: (steps?: number) => void;
+      navigate: (path: string, options?: { replace?: boolean }) => void;
+    };
+    http: {
+      /**
+       * Add middleware to the HTTP service for all requests.
+       * Middleware can intercept outgoing requests and modify incoming responses.
+       *
+       * @param middleware - Async middleware function.
+       */
+      use(middleware: HTTPMiddleware): GlobalHTTP;
+
+      /**
+       * Make an HTTP request to `url` with any `method`.
+       *
+       * @param method - HTTP method.
+       * @param url - Request endpoint.
+       */
+      request<ResBody>(method: string, url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
+
+      /**
+       * Make an HTTP `GET` request to `url`.
+       *
+       * @param url - Request endpoint.
+       */
+      get<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
+
+      /**
+       * Make an HTTP `PUT` request to `url`.
+       *
+       * @param url - Request endpoint.
+       */
+      put<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
+
+      /**
+       * Make an HTTP `PATCH` request to `url`.
+       *
+       * @param url - Request endpoint.
+       */
+      patch<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
+
+      /**
+       * Make an HTTP `POST` request to `url`.
+       *
+       * @param url - Request endpoint.
+       */
+      post<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
+
+      /**
+       * Make an HTTP `DELETE` request to `url`.
+       *
+       * @param url - Request endpoint.
+       */
+      delete<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
+
+      /**
+       * Make an HTTP `HEAD` request to `url`.
+       *
+       * @param url - Request endpoint.
+       */
+      head(url: string, options?: HTTPRequestOptions): HTTPRequest<void>;
+    };
+    page: {
+      $$title: Writable<string>;
+      $visibility: Readable<"visible" | "hidden">;
+    };
+  };
+
+  /* ----- Dialog ----- */
 
   export interface DialogViewAttrs {
     /**
@@ -659,83 +668,21 @@ declare module "woofe" {
     close: () => void;
   };
 
-  export type GlobalRouter = Global<{
-    $route: Readable<string>;
-    $path: Readable<string>;
-    $params: Readable<{ [name: string]: unknown }>;
-    $$query: Writable<{ [name: string]: unknown }>;
+  /* ----- HTTP ----- */
 
-    back: (steps?: number) => void;
-    forward: (steps?: number) => void;
-    navigate: (path: string, options?: { replace?: boolean }) => void;
-  }>;
+  type HTTPStoreAttrs = {
+    fetch: typeof window.fetch;
+  };
 
-  export type GlobalPage = Global<{
-    $$title: Writable<string>;
-    $visibility: Readable<"visible" | "hidden">;
-  }>;
-
-  export type GlobalHTTP = Global<{
-    /**
-     * Add middleware to the HTTP service for all requests.
-     * Middleware can intercept outgoing requests and modify incoming responses.
-     *
-     * @param middleware - Async middleware function.
-     */
-    use(middleware: HTTPMiddleware): GlobalHTTP;
-
-    /**
-     * Make an HTTP request to `url` with any `method`.
-     *
-     * @param method - HTTP method.
-     * @param url - Request endpoint.
-     */
-    request<T>(method: string, url: string): HTTPRequest<T>;
-
-    /**
-     * Make an HTTP `GET` request to `url`.
-     *
-     * @param url - Request endpoint.
-     */
-    get<T = any>(url: string): HTTPRequest<T>;
-
-    /**
-     * Make an HTTP `PUT` request to `url`.
-     *
-     * @param url - Request endpoint.
-     */
-    put<T = any>(url: string): HTTPRequest<T>;
-
-    /**
-     * Make an HTTP `PATCH` request to `url`.
-     *
-     * @param url - Request endpoint.
-     */
-    patch<T = any>(url: string): HTTPRequest<T>;
-
-    /**
-     * Make an HTTP `POST` request to `url`.
-     *
-     * @param url - Request endpoint.
-     */
-    post<T = any>(url: string): HTTPRequest<T>;
-
-    /**
-     * Make an HTTP `DELETE` request to `url`.
-     *
-     * @param url - Request endpoint.
-     */
-    delete<T = any>(url: string): HTTPRequest<T>;
-
-    /**
-     * Make an HTTP `HEAD` request to `url`.
-     *
-     * @param url - Request endpoint.
-     */
-    head(url: string): HTTPRequest<void>;
-  }>;
+  type HTTPRequestOptions<ReqBody> = {
+    body: ReqBody;
+    query: Record<string, ToStringable>;
+    headers: Record<string, ToStringable>;
+  };
 
   type HTTPResponse<BodyType> = {
+    url: string;
+    method: string;
     status: number;
     statusText: string;
     headers: {
@@ -744,95 +691,84 @@ declare module "woofe" {
     body: BodyType;
   };
 
-  type HTTPMiddleware = <T>(req: HTTPRequest<T>, next: () => Promise<void>) => Promise<void>;
+  type HTTPMiddleware = <ResBody>(req: HTTPRequest<ResBody>, next: () => Promise<void>) => Promise<void>;
 
-  interface HTTPRequest<T> extends Promise<HTTPResponse<T>> {
+  interface HTTPRequest<ResBody> extends Promise<HTTPResponse<ResBody>> {
     /**
      * True if this request is to a URL relative to the current page.
      */
-    readonly isRelative: boolean;
+    readonly isSameDomain: boolean;
 
     /**
      * Gets the current request URL.
      */
-    url(): string;
+    getURL(): string;
 
     /**
      * Sets the request URL.
      */
-    url(value: string): void;
+    setURL(url: string): this;
 
     /**
      * Gets the current header value by name.
      */
-    header(name: string): string | undefined;
+    getHeader(name: string): string | undefined;
 
     /**
      * Sets the value of the header with name `name` to `value`.
      * If `value` is null the header is removed.
      */
-    header(name: string, value: ToStringable | null): this;
+    setHeader(name: string, value: ToStringable | null): this;
 
     /**
      * Clears the value of the header with name `name`.
      */
-    header(name: string, value: null): this;
+    setHeader(name: string, value: null): this;
+
+    getHeaders(): Record<string, string>;
 
     /**
      * Sets multiple headers at once using an object.
      * Merge values with existing headers.
      */
-    header(headers: { [name: string]: string }): this;
+    setHeaders(headers: { [name: string]: string }): this;
 
-    /**
-     * Returns the current value of the header with name `name`.
-     */
-    headers(name: string): string | undefined;
-
-    /**
-     * Sets the value of the header with name `name` to `value`.
-     * If `value` is null the header is removed.
-     */
-    headers(name: string, value: ToStringable | null): this;
-
-    /**
-     * Sets multiple headers at once using an object.
-     * New values are merged with existing headers.
-     */
-    headers(headers: { [name: string]: ToStringable | null }): this;
+    getQuery(): Record<string, string>;
 
     /**
      * Returns the value of the query param with name `name`.
      */
-    query(name: string): string | undefined;
+    getQuery(name: string): string | undefined;
 
     /**
      * Sets the value of the query param with name `name` to `value`.
      * If `value` is null the query param is removed.
      */
-    query(name: string, value: ToStringable | null): this;
+    setQuery(name: string, value: ToStringable | null): this;
 
     /**
      * Sets multiple query params at once using an object.
      * New values are merged with existing params.
      */
-    query(params: { [name: string]: ToStringable | null }): this;
+    setQuery(params: { [name: string]: ToStringable | null }): this;
+
+    getBody(): any;
 
     /**
      * Sets the request body to `value`.
      */
-    body(value: any): this;
+    setBody(value: any): this;
 
     /**
      * Defines a check for whether the response code indicates an error or success.
      * If this function returns false for a status code, it will be thrown as an error.
      */
-    ok(check: (status: number) => boolean): this;
+    checkOk(check: (res: HTTPResponse<ResBody>) => boolean): this;
 
     /**
      * Returns the response object (if there is one).
      */
-    response(): HTTPResponse<T> | undefined;
+    getResponse(): HTTPResponse<ResBody> | undefined;
   }
 
   /*==================================*\

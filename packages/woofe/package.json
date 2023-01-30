@@ -26,6 +26,9 @@
     "./testing": {
       "import": "./lib/testing/index.js"
     },
+    "./web-components": {
+      "import": "./lib/web-components/index.js"
+    },
     "./jsx-runtime": {
       "import": "./lib/jsx/jsx-runtime.js"
     },

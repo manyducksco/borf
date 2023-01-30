@@ -1,3 +1,5 @@
+This is an idea for a pattern matching library, but upon re-reading it this might be a bunch of extra complexity that most code wouldn't benefit from.
+
 ```js
 // Run against a value:
 const checked = match(

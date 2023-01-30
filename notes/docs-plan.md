@@ -1,10 +1,10 @@
 ## Table of Concepts
 
-1. [Routing](#routing)
-2. [State](#state)
-3. [Views](#views)
-4. [Globals](#globals)
-5. [Locals](#locals)
+1. Overview
+2. Views
+3. State
+4. Stores
+5. Routing
 
 Outline for future guide:
 

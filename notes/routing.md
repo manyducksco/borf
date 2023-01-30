@@ -1,10 +1,9 @@
 # Routing Notes
 
-Router needs to support nested routes.
+Routes are defined in the AppConfig object.
 
 ```jsx
-// Arrays of objects style (most explicit):
-const Quack = makeApp({
+const Example = makeApp({
   routes: [
     {
       path: "/example",
@@ -35,22 +34,18 @@ const Quack = makeApp({
   ],
 });
 
-const activeLayers = [
-  {
-    id: 1,
-    component: ExampleLayout,
-    outlet: {},
-  },
-  {
-    id: 2,
-    component: UsersLayout,
-    outlet: {},
-  },
-];
+// Each object in the routes array has this schema:
+type RouteConfig = {
+  path: string,
+  view: ViewSetupFn | View,
+  routes?: RouteConfig[],
+  redirect?: string,
+};
 ```
 
-```js
+Routes are passed in nested form, but flattened into layers by the router. Layers are essentially an array of the `view`s from each level of nesting in a flat array. The next layer is mounted as a child of the previous layer when that route matches.
 
+```js
 // Creates the following flat structure. Nested views are defined as layers.
 [
   {
@@ -99,6 +94,8 @@ const activeLayers = [
 ];
 ```
 
+Algorithm:
+
 1. Find new route match
 2. If redirect, choose new match based on redirect path. Repeat until non-redirect route is found.
 3. Diff layers; disconnect at first layer that doesn't exist at the corresponding index, connect new layer.
@@ -120,164 +117,41 @@ The code above defines these routes:
 - `/example/*` -> ExampleLayout > PageNotFound
 - `/*` -> (redirect to `/example/users`)
 
-All routes are defined at the top level of the app. This way one global \$route state could be provided by the @router service. Only one route can match at a time, and routes are always defined in only one place.
-
-```js
-import { makeState, v, when, repeat, bind } from "@woofjs/client";
-
-// Component is called with `self` as this, so you can do this?
-function Component($attrs) {
-  const { $route, $params } = this.service("router");
-
-  const someValue = $attrs.get("someValue");
-  const $inputValue = makeState("");
-
-  this.beforeConnect(() => {
-    // Do callback.
-  });
-
-  v("input", { type: "text", value: bind($inputValue) });
-  <input type="text" value={bind($inputValue)} />;
-
-  return when($condition, v("h1", "Yo!"));
-
-  return v("div", [
-    repeat($items, function Item($attrs) {
-      return v("h1", $attrs.map("value"));
-    }),
-  ]);
-}
-
-// The whole app is rendered as children of an AppLayout
-app.route("*", AppLayout, function () {
-  this.route("/users", UsersList); // Display UsersList at '/users'
-  this.route("/users/:id", UserDetails); // Display UserDetails at '/users/:id/
-  this.route("/users/:id/edit", UserEdit); // Display UserEdit at '/users/:id/edit'
-
-  this.route("/nested", NestedLayout, function () {
-    this.route("/route", NestedRoute);
-  });
-
-  // Redirect to '/users' if no other sibling routes match
-  this.redirect("*", "/users");
-});
-
-// This would generate the following routes object:
-const routes = [
-  // These routes are handled by the app's top level Outlet
-  {
-    path: "*",
-    component: AppLayout,
-    // These routes are handled by an Outlet that is the child of AppLayout
-    // <AppLayout>
-    //   <Outlet routes={these...} />
-    // </AppLayout>
-    // The question is how to get the outlets to respond to changes at the top level.
-    routes: [
-      {
-        path: "/users",
-        component: UsersList,
-      },
-      {
-        path: "/users/:id",
-        component: UserDetails,
-      },
-      {
-        path: "/users/:id/edit",
-        component: UserEdit,
-      },
-      {
-        path: "/nested",
-        component: NestedLayout,
-        routes: [
-          {
-            path: "/route",
-            component: NestedRoute,
-          },
-        ],
-      },
-      {
-        path: "*",
-        redirect: "/users",
-      },
-    ],
-  },
-];
-```
+All routes are defined at the top level of the app. This way one global $route state could be provided by the `router` store. Only one route can match at a time, and routes are always defined in only one place.
 
 ```ts
-// Each object in the array has this schema:
-type Route = {
-  path: string;
-  component: Function | Object;
-  routes?: Route[];
-  redirect?: string;
-};
-```
+import { makeState, View } from "@woofjs/client";
 
-The Outlet component takes an array of these route objects and renders them, creating a new Outlet for each `children` array.
+// View is called with `self` as this, so you can do this?
+class Example extends View {
+  setup(ctx, m) {
+    const router = ctx.useStore("router");
 
-- `app.route(path, component)` to render a component at a path
-- `app.route(path, component, defineRoutes)` to render nested routes as children of the component
+    // Route path with param placeholders (like '/users/{userId}/edit')
+    router.$route.get();
 
-Then components can access the current route info and navigation on the `@router` service.
+    // Full path as it appears in the URL (like '/users/12/edit')
+    router.$path.get();
 
-```js
-function ExampleComponent($attrs, self) {
-  const { $route, $path, $params, $query, navigate, back, forward } =
-    self.getService("@router");
+    // Work with URL params
+    router.$params.get("userId"); // Access URL params by :name
+    router.$params.get("wildcard"); // Access matched content for '/*' fragment of route
 
-  // Route path with param placeholders (like '/users/:userId/edit')
-  $route.get();
+    // Update query params in URL: ?selected=some-tab&r=/users/5
+    router.$$query.update((query) => {
+      query.selected = "some-tab";
+      query.r = "/users/5";
 
-  // Full path as it appears in the URL (like '/users/12/edit')
-  $path.get();
+      // TODO: Automatically URL-encode? $$query would always hold decoded versions.
+    });
 
-  // Work with URL params
-  $params.get("userId"); // Access URL params by :name
-  $params.get("wildcard"); // Access matched content for '/*' fragment of route
+    // Back and forward, just like clicking the buttons
+    router.back();
+    router.forward();
 
-  // Set params to change URL? Alternative way to redirect.
-  $params.set((params) => {
-    params.userId = 12;
-  });
-
-  // Update query params in URL: ?selected=some-tab&r=/users/5
-  $query.set((query) => {
-    query.selected = "some-tab";
-    query.r = "/users/5";
-  });
-
-  // TODO: Support this syntax if state's value is an object?
-  $query.set("selected", "some-tab");
-
-  // Back and forward, just like clicking the buttons
-  back();
-  forward();
-
-  // Navigate to another URL:
-  navigate("/some/path");
-  navigate($path.get(), "../edit"); // Supports multiple fragments with relative paths
+    // Navigate to another URL:
+    router.navigate("/some/path");
+    router.navigate($path.get(), "../edit"); // Supports multiple fragments with relative paths
+  }
 }
 ```
-
-## Connecting views
-
-The `v` function is used in components to render DOM elements and other components. Once the component function has been called to set up the component, the views need to be given the getService() function so their components can access it. How does this happen?
-
-```js
-function Component() {
-  return v("div", [
-    repeat($items, function Item($attrs) {
-      return v("h1", $attrs.map("value"));
-    }),
-  ]);
-}
-
-const view = Component();
-
-// Init the returned window, which will in turn init each child window.
-view.init({ getService });
-```
-
-A component is a function that returns `null`, a DOM node, or a view. If it's a view, the view is initialized immediately after the component function is called. Views, when initialized, initialize their children.
