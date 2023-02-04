@@ -109,6 +109,7 @@ class App {
 
         console.log({ instance, rootElement: this.#appContext.rootElement });
 
+        // TODO: This is somehow leading to a Markup being passed as an HTML attribute.
         instance.connect(this.#appContext.rootElement);
       },
       crashPage: this.#options.crashPage,

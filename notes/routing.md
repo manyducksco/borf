@@ -57,7 +57,9 @@ Routes are passed in nested form, but flattened into layers by the router. Layer
     ],
   },
   {
-    path: "/example/users/:id",
+    // Prefixing a variable name with # will only match a numeric string and the value will be parsed to a number.
+    // Without the #, any string value will match.
+    path: "/example/users/{#id}",
     layers: [
       { id: 1, component: ExampleLayout },
       { id: 2, component: UsersLayout },
@@ -66,7 +68,7 @@ Routes are passed in nested form, but flattened into layers by the router. Layer
   },
   // When navigating to ./edit layers 1 and 2 are unchanged, but layer 4 gets disconnected and layer 5 gets connected.
   {
-    path: "/example/users/:id/edit",
+    path: "/example/users/{#id}/edit",
     layers: [
       { id: 1, component: ExampleLayout },
       { id: 2, component: UsersLayout },
@@ -111,8 +113,8 @@ Needs:
 The code above defines these routes:
 
 - `/example/users` -> ExampleLayout > UsersLayout > UsersList
-- `/example/users/:id` -> ExampleLayout > UsersLayout > UserDetails
-- `/example/users/:id/edit` -> ExampleLayout > UsersLayout > UserEdit
+- `/example/users/{id}` -> ExampleLayout > UsersLayout > UserDetails
+- `/example/users/{id}/edit` -> ExampleLayout > UsersLayout > UserEdit
 - `/example/projects` -> ExampleLayout > Projects
 - `/example/*` -> ExampleLayout > PageNotFound
 - `/*` -> (redirect to `/example/users`)
