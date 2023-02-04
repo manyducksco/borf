@@ -1,4 +1,4 @@
-import { isClass } from "./helpers/typeChecking.js";
+import { isClass } from "./core/helpers/typeChecking.js";
 import { makeApp, makeRef, makeSpring, makeState, joinStates, View, Store } from "./index.js";
 
 test("exports expected things", () => {

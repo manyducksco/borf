@@ -1,12 +1,12 @@
-import { makeMatch } from "./makeDebug.js";
+import { makeMatcher } from "./DebugHub.js";
 
 describe("makeMatch", () => {
   test("correctly parses filter string or regex", () => {
-    const matchOne = makeMatch("*"); // Allow everything
-    const matchTwo = makeMatch("test:*"); // Only allow things starting with 'test:'
-    const matchThree = makeMatch("*,-test:*"); // Allow everything, but exclude channels starting with 'test:'
-    const matchFour = makeMatch(/^test:|name$/); // starts with 'test:' or ends with 'name'
-    const matchFive = makeMatch("jwioefnm234,test:one");
+    const matchOne = makeMatcher("*"); // Allow everything
+    const matchTwo = makeMatcher("test:*"); // Only allow things starting with 'test:'
+    const matchThree = makeMatcher("*,-test:*"); // Allow everything, but exclude channels starting with 'test:'
+    const matchFour = makeMatcher(/^test:|name$/); // starts with 'test:' or ends with 'name'
+    const matchFive = makeMatcher("jwioefnm234,test:one");
 
     const nameOne = "test:one";
     const nameTwo = "jwioefnm234";

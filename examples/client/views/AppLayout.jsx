@@ -1,4 +1,4 @@
-import { View } from "woofe";
+import { View, makeState } from "woofe";
 import { MouseStore } from "../globals/MouseStore";
 import logLifecycle from "../utils/logLifecycle";
 
@@ -8,8 +8,16 @@ export class AppLayout extends View {
     "Top level layout for the app. All other routes are rendered in this one's ctx.outlet()";
   static attrs = {};
 
-  setup(ctx) {
+  loading() {
+    return <h1>This app is loading!</h1>;
+  }
+
+  async setup(ctx) {
     ctx.log("hi");
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 3000);
+    });
 
     logLifecycle(ctx);
 
@@ -25,8 +33,12 @@ export class AppLayout extends View {
       ctx.log(`visibility: ${status}`);
     });
 
+    const $$webComponentTest = makeState("app layout");
+
     return (
       <div class="demo">
+        <web-component-view test={$$webComponentTest}></web-component-view>
+
         <nav class="nav">
           <ul>
             <li>

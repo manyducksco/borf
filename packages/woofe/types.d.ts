@@ -804,58 +804,18 @@ declare module "woofe" {
   }
 
   export function makeSpring(initialValue: number, options?: SpringOptions): Spring;
+}
 
-  /*==================================*\
-  ||             Debounce             ||
-  \*==================================*/
+declare module "woofe/web-components" {
+  import { View, Store, StoreConfig, BuiltInStores } from "woofe";
 
-  export interface makeDebounce {
-    /**
-     * Returns a function that takes a callback function and calls it after `timeout` milliseconds.
-     * If this function is called again before `timeout` elapses, the previously queued callback function
-     * is cancelled and the timeout is reset.
-     *
-     * @param timeout - Amount of milliseconds to wait before the callback function is called.
-     */
-    (timeout: number): (callback: () => any) => void;
+  export function defineElement(tag: string, component: Class<View> | Class<Store>): void;
 
-    /**
-     * Returns a function calls `callback` after `timeout` milliseconds.
-     * If this function is called again before `timeout` elapses, the previously queued callback function
-     * is cancelled and the timeout is reset.
-     *
-     * @param timeout - Amount of milliseconds to wait before the callback function is called.
-     * @param callback - Function to call after `timeout` milliseconds.
-     */
-    (timeout: number, callback: () => any): () => void;
+  export function defineStore(store: Class<Store>): void;
+  export function defineStore(config: StoreConfig): void;
 
-    /**
-     *
-     * @param options
-     */
-    (options: DebounceOptions): (callback: () => any) => void;
-
-    (options: DebounceCallbackOptions): () => void;
-  }
-
-  export interface DebounceOptions {
-    /**
-     * Amount of milliseconds to wait before the callback function is called.
-     */
-    timeout: number;
-
-    /**
-     * If debounce is triggered when no previous call is queued, execute immediately.
-     */
-    immediate?: boolean;
-  }
-
-  export interface DebounceCallbackOptions extends DebounceOptions {
-    /**
-     * Function to call after `timeout` milliseconds.
-     */
-    callback: () => any;
-  }
+  export function useStore<S extends Store>(store: Class<S>): S.exports;
+  export function useStore<S extends keyof BuiltInStores>(name: S): BuiltInStores[S];
 }
 
 declare module "woofe/viewer" {

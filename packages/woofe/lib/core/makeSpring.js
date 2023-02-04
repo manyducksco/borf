@@ -1,4 +1,4 @@
-import { isObservable, isReadable } from "./helpers/typeChecking.js";
+import { isReadable } from "./helpers/typeChecking.js";
 import { OBSERVABLE, READABLE } from "./keys.js";
 import { makeState } from "./makeState.js";
 
@@ -25,12 +25,6 @@ export function makeSpring(initialValue = 0, options = {}) {
       return new Promise((resolve) => {
         const id = nextId++;
         const amplitude = makeAmplitudeMeasurer();
-        // const solve = makeSpringSolver(
-        //   options?.mass ?? mass,
-        //   options?.stiffness ?? stiffness,
-        //   options?.damping ?? damping,
-        //   options?.velocity ?? velocity
-        // );
         const solver = new SpringSolver({
           mass: options?.mass ?? mass,
           stiffness: options?.stiffness ?? stiffness,
@@ -145,40 +139,6 @@ class SpringSolver {
 
     return 1 - t;
   }
-}
-
-// Adapted from the Webkit spring solver JS implementation: https://webkit.org/demos/spring/
-function makeSpringSolver(mass, stiffness, damping, velocity) {
-  const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
-  const undampedAngularFreq = Math.sqrt(stiffness / mass);
-
-  let angularFreq;
-  let A;
-  let B;
-
-  if (dampingRatio < 1) {
-    angularFreq = undampedAngularFreq * Math.sqrt(1 - dampingRatio * dampingRatio);
-    A = 1;
-    B = (dampingRatio * undampedAngularFreq + -velocity) / angularFreq;
-  } else {
-    angularFreq = 0;
-    A = 1;
-    B = -velocity + undampedAngularFreq;
-  }
-
-  // TODO: Calculate end of animation?
-
-  return function solve(t) {
-    if (dampingRatio < 1) {
-      t =
-        Math.exp(-t * dampingRatio * undampedAngularFreq) *
-        (A * Math.cos(angularFreq * t) + B * Math.sin(angularFreq * t));
-    } else {
-      t = (A + B * t) * Math.exp(-t * undampedAngularFreq);
-    }
-
-    return 1 - t;
-  };
 }
 
 function makeAmplitudeMeasurer() {

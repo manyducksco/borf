@@ -1,6 +1,5 @@
-import { View } from "../classes/View.js";
-import { Markup } from "../classes/Markup.js";
-import { isView, isStore } from "../helpers/typeChecking.js";
+import { Markup } from "../core/classes/Markup.js";
+import { isView, isStore } from "../core/helpers/typeChecking.js";
 
 export function makeViewer(component, config = {}) {
   return new Viewer(component, config);

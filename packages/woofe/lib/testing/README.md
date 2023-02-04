@@ -5,26 +5,43 @@
 ## Testing globals (and HTTP calls)
 
 ```js
-import { wrapStore, makeMockHTTP } from "woofe/testing";
+import { wrapStore, MockHTTP } from "woofe/testing";
 
-const mockHTTP = makeMockHTTP((on) => {
-  // Define a mock responder for requests matching 'POST /users/create'
-  on.post("/users/create", (ctx) => {
-    ctx.response.status = 200;
+class ExampleHTTP extends MockHTTP {
+  respond(on) {
+    // Define a mock responder for requests matching 'POST /users/create'
+    on.post("/users/create", (req, res) => {
+      res.status(200).body({
+        user: {
+          id: 1,
+          name: req.body.name,
+          createdAt: new Date(),
+        },
+      });
+    });
 
-    return {
-      user: {
-        id: 1,
-        name: ctx.request.body.name,
-        createdAt: new Date(),
-      },
-    };
-  });
+    on.delete("/users/:id", (req, res) => {
+      res.status(204);
+    });
+  }
+}
 
-  on.delete("/users/:id", (ctx) => {
-    ctx.response.status = 204;
-  });
-});
+// const ExampleHTTP = makeMockHTTP((on) => {
+//   // Define a mock responder for requests matching 'POST /users/create'
+//   on.post("/users/create", (req, res) => {
+//     res.status(200).body({
+//       user: {
+//         id: 1,
+//         name: req.body.name,
+//         createdAt: new Date(),
+//       },
+//     });
+//   });
+
+//   on.delete("/users/:id", (req, res) => {
+//     res.status(204);
+//   });
+// });
 
 // A store that makes HTTP calls:
 class UserStore extends Store {
@@ -32,7 +49,7 @@ class UserStore extends Store {
     const http = ctx.useStore("http");
 
     function createUser(name) {
-      return http.post("/users/create").body({ name });
+      return http.post("/users/create", { body: { name } });
     }
 
     function deleteUser(id) {
@@ -48,22 +65,29 @@ class UserStore extends Store {
 
 // And to test (pictured in Jest):
 test("API calls return expected response", async () => {
-  const userStore = wrapStore(UserStore, {
-    stores: [{ store: "http", exports: mockHTTP }],
+  const store = wrapStore(UserStore, {
+    stores: [
+      {
+        store: "http", // You can use the name of a built-in to override it.
+        exports: ExampleHTTP,
+      },
+    ],
   });
 
   // Run lifecycle hooks
-  await userStore.connect();
+  await store.connect();
 
   // Access the exported object at 'exports'
-  const createRes = await useStore.exports.createUser("Jimbo Jones");
+  const createRes = await store.exports.createUser("Jimbo Jones");
 
   expect(createRes.status).toBe(200);
   expect(createRes.body.name).toBe("Jimbo Jones");
 
-  const deleteRes = await userStore.exports.deleteUser(createRes.body.user.id);
+  const deleteRes = await store.exports.deleteUser(createRes.body.user.id);
 
   expect(deleteRes.status).toBe(204);
+
+  await store.disconnect();
 });
 ```
 

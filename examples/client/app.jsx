@@ -1,6 +1,42 @@
 import "./styles/demo.css";
 
-import { makeApp } from "woofe";
+import { makeApp, View, Store } from "woofe";
+
+import { defineElement, defineStore } from "woofe/web-components";
+
+class WebComponentStore extends Store {
+  setup(ctx) {
+    return {
+      value: ctx.attrs.get("initialValue"),
+    };
+  }
+}
+
+class WebComponentView extends View {
+  static attrs = {
+    test: {
+      type: "string",
+      about: "A test value to make sure attributes are coming through.",
+      required: true,
+    },
+  };
+
+  setup(ctx) {
+    const { test } = ctx.attrs.get();
+
+    const store = ctx.useStore(WebComponentStore);
+    const http = ctx.useStore("http");
+    ctx.log({ store, http });
+
+    return <h1>This is a web component. [test:{test}]</h1>;
+  }
+}
+
+defineStore({
+  store: WebComponentStore,
+  attrs: { initialValue: "test" },
+});
+defineElement("web-component-view", WebComponentView);
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";

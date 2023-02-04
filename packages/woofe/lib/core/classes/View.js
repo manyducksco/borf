@@ -1,4 +1,4 @@
-import { isFunction, isString, isObservable } from "../helpers/typeChecking.js";
+import { isFunction, isPromise, isObservable, isMarkup } from "../helpers/typeChecking.js";
 import { makeState, joinStates } from "../makeState.js";
 import { Connectable } from "./Connectable.js";
 import { Attributes } from "./Attributes.js";
@@ -24,6 +24,10 @@ export class View extends Connectable {
   #element;
   #$$children;
 
+  #appContext;
+  #elementContext;
+  #ref;
+
   get node() {
     return this.#element?.node;
   }
@@ -44,21 +48,33 @@ export class View extends Connectable {
     this.label = label;
     this.about = about;
 
-    if (!setup) {
-      setup = this.setup.bind(this);
+    if (setup) {
+      this.setup = setup;
     }
 
-    this.#channel = appContext.debug.makeChannel(`${channelPrefix}:${label}`);
+    this.#appContext = appContext;
+    this.#elementContext = elementContext;
+    this.#ref = attributes.ref;
+
+    this.#channel = appContext.debug.channel(`${channelPrefix}:${label}`);
     this.#attributes = new Attributes({
       attributes,
       definitions: attributeDefs,
     });
     this.#$$children = makeState(children);
+  }
+
+  async #initialize(parent, after) {
+    const appContext = this.#appContext;
+    const elementContext = this.#elementContext;
 
     const ctx = {
       attrs: this.#attributes.api,
       attributes: this.#attributes.api,
 
+      /**
+       * Takes one or more observables followed by a callback function that receives their values as arguments when any of the observables change.
+       */
       observe: (...args) => {
         let callback = args.pop();
 
@@ -89,6 +105,11 @@ export class View extends Connectable {
         }
       },
 
+      /**
+       * Returns the nearest instance of `store`.
+       *
+       * @param store - A store class to access, or the name of a built-in store.
+       */
       useStore: (store) => {
         const name = store?.name || store;
 
@@ -104,9 +125,9 @@ export class View extends Connectable {
         if (appContext.stores.has(store)) {
           const _store = appContext.stores.get(store);
 
-          if (!_store.ready) {
+          if (!_store.instance) {
             throw new Error(
-              `Store '${name}' was accessed before it was set up. Make sure '${name}' appears earlier in the 'stores' array than other stores that access it.`
+              `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
             );
           }
 
@@ -145,37 +166,62 @@ export class View extends Connectable {
       },
     };
 
-    // Add debug methods.
+    // Add debug channel methods directly to context.
     Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(this.#channel));
     Object.defineProperty(ctx, "isConnected", {
       get: () => this.isConnected,
     });
 
+    const assertUsable = (element) => {
+      if (element === undefined) {
+        throw new TypeError(`Views must return a markup element, or null to render nothing. Returned undefined.`);
+      }
+
+      if (element !== null) {
+        // m() returns a Markup with something in it. Either an HTML tag, a view setup function or a connectable class.
+        // Markup.init(config) is called, which passes config stuff to the connectable's constructor.
+        if (!isMarkup(element)) {
+          throw new TypeError(`Views must return a markup element, or null to render nothing. Returned ${element}.`);
+        }
+      }
+    };
+
     let element;
 
     try {
-      element = setup(ctx, m);
+      element = this.setup(ctx, m);
     } catch (err) {
       console.error(err);
       throw err;
     }
 
-    if (element === undefined) {
-      throw new TypeError(`Views must return a markup element or return null to render nothing. Returned undefined.`);
-    }
+    // Display loading content while setup promise pends.
+    if (isPromise(element)) {
+      let cleanup;
 
-    if (element !== null) {
-      // m() returns a Markup with something in it. Either an HTML tag, a view setup function or a viewable class.
-      // Markup.init(config) is called, which passes config stuff to the viewable's constructor.
-      if (!(element instanceof Markup)) {
-        throw new TypeError(`Views must return a markup element, or null to render nothing. Returned ${element}.`);
+      if (isFunction(this.loading)) {
+        // Render contents from loading() while waiting for setup to resolve.
+        const content = this.loading(m);
+        assertUsable(content);
+
+        const component = content.init({ appContext, elementContext });
+        component.connect(parent, after);
+
+        cleanup = () => component.disconnect();
       }
 
-      this.#element = element.init({ appContext, elementContext });
+      element = await element;
+
+      if (cleanup) {
+        cleanup();
+      }
     }
 
-    if (isFunction(attributes.ref)) {
-      attributes.ref(this.#element.node);
+    assertUsable(element);
+    this.#element = element.init({ appContext, elementContext });
+
+    if (isFunction(this.#ref)) {
+      this.#ref(this.#element.node);
     }
   }
 
@@ -200,6 +246,8 @@ export class View extends Connectable {
       const wasConnected = this.isConnected;
 
       if (!wasConnected) {
+        await this.#initialize(parent, after); // Run setup() to configure the view.
+
         this.#attributes.connect();
 
         for (const callback of this.#lifecycleCallbacks.beforeConnect) {
@@ -217,7 +265,7 @@ export class View extends Connectable {
             const ctx = { node: this.node };
             await Promise.all(this.#lifecycleCallbacks.animateIn.map((callback) => callback(ctx)));
           } catch (err) {
-            console.error(err);
+            this.#channel.error(err);
           }
         }
 

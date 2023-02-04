@@ -1,4 +1,4 @@
-import { makeDebounce } from "./makeDebounce.js";
+import { makeDebounce } from "./_makeDebounce.js";
 
 const sleep = (ms) =>
   new Promise((resolve) => {

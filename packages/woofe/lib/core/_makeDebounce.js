@@ -1,6 +1,11 @@
 import { isNumber, isObject, isFunction } from "./helpers/typeChecking.js";
 
 /**
+ * I decided to remove this from the main library, but I haven't decided if it should be packaged elsewhere.
+ * For now it's marked with an underscore and not exported from the index.
+ */
+
+/**
  * Works one of two ways:
  *
  * 1. Takes a `timeout` and a `callback`, returns a function that fires `callback` `timeout` milliseconds after the last time it was called.

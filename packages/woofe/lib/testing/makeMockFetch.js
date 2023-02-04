@@ -1,5 +1,5 @@
-import { matchRoute, parseRoute, sortRoutes } from "../helpers/routing.js";
-import { isFunction } from "../helpers/typeChecking.js";
+import { matchRoute, parseRoute, sortRoutes } from "../core/helpers/routing.js";
+import { isFunction } from "../core/helpers/typeChecking.js";
 
 const { Response } = require("fetch-ponyfill")();
 
@@ -7,18 +7,18 @@ const { Response } = require("fetch-ponyfill")();
  * Creates a `fetch`-compatible function that responds with its own mock handlers.
  *
  * @example
- * import { makeMockFetch } from "@woofjs/app/testing";
+ * import { makeMockFetch } from "woofe/testing";
  *
  * // Create a mock HTTP instance
- * const fetch = makeMockFetch(function () {
- *   this.get("/example/route", (ctx) => {
+ * const fetch = makeMockFetch((on) => {
+ *   on.get("/example/route", (ctx) => {
  *     // Respond with JSON
  *     return {
  *       message: "success"
  *     }
  *   });
  *
- *   this.put("/users/:id", (ctx) => {
+ *   on.put("/users/:id", (ctx) => {
  *     ctx.response.status = 200;
  *
  *     return {

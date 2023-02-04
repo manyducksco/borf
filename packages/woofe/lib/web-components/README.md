@@ -23,10 +23,21 @@ defineElement("title-store", TitleStore);
 
 // Create a view that displays the title from the store.
 class TitleView extends View {
-  setup(ctx, m) {
+  // If setup can be async, does this remove the need for router preload?
+  async setup(ctx, m) {
     const { title } = ctx.useStore(TitleStore);
 
+    const { title } = await useStore(TitleStore);
+
+    ctx.reload(); // Unrelated, but completely tears down and sets up the view again. Do we need this?
+
     return m("h1", title);
+  }
+
+  // TODO: Make setup async and have some other function to render while it's setting up.
+  // Loading is active while setup returns a Promise and that promise is pending.
+  loading(m) {
+    return <h1>Loading...</h1>;
   }
 }
 
@@ -76,3 +87,9 @@ class TitleView extends View {
   }
 }
 ```
+
+## Known Issues
+
+As of this writing, web component tags used in a woofe app will still use global stores, not those of the app.
+
+Also the async `setup` with `loading()` function scheme will be a little weird to pull off for Stores in web components. Elements may need to put themselves in some kind of queue to wait for certain stores to be registered before displaying.

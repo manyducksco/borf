@@ -33,11 +33,11 @@ export class Store extends Connectable {
   }) {
     super();
 
-    if (!setup) {
-      setup = this.setup.bind(this);
+    if (setup) {
+      this.setup = setup;
     }
 
-    this.#channel = appContext.debug.makeChannel(`${channelPrefix}:${label}`);
+    this.#channel = appContext.debug.channel(`${channelPrefix}:${label}`);
     this.#attributes = new Attributes({ attributes, definitions: attributeDefs });
 
     const ctx = {
@@ -91,9 +91,9 @@ export class Store extends Connectable {
         if (appContext.stores.has(store)) {
           const _store = appContext.stores.get(store);
 
-          if (!_store.ready) {
+          if (!_store.instance) {
             throw new Error(
-              `Store '${name}' was accessed before it was set up. Make sure '${name}' appears earlier in the 'stores' array than other stores that access it.`
+              `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
             );
           }
 
@@ -126,7 +126,7 @@ export class Store extends Connectable {
     let exports;
 
     try {
-      exports = setup(ctx);
+      exports = this.setup(ctx);
     } catch (err) {
       this.#channel.error(err);
     }

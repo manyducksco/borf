@@ -46,3 +46,36 @@ stores = [
   { store: FlowLayoutStore, attrs: { unit: "4px", defaults: { gap: 2, padding: 4 } } }
 ]
 ```
+
+## Gesture Recognizers
+
+Utils to recognize and respond to common touch gestures like panning and pinching. These are relatively hard to get right.
+
+How do we define a pan or pinch?
+
+- Pan: user puts their finger down at one spot, moves their finger to another spot and picks their finger up.
+- Pinch:
+
+```jsx
+import { View } from "woofe";
+import { DragZone } from "woofe/ui";
+import { omit } from "woofe/tools";
+
+interface DragState {}
+
+class Example extends View {
+  setup(ctx, m) {
+    const [ref, $state] = makeDraggable({});
+
+    const filtered = ctx.attrs.as(omit(["ignoreMe", "onClick"]));
+
+    return (
+      <DragZone>
+        <div ref={ref} etc={{ class: "more stuff" }}>
+          Drag Me
+        </div>
+      </DragZone>
+    );
+  }
+}
+```

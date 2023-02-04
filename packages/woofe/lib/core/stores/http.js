@@ -8,7 +8,7 @@ export class HTTPStore extends Store {
     fetch: {
       about: "The fetch function to use for requests. Pass this to mock for testing.",
       type: "function",
-      default: window.fetch.bind(window),
+      default: (window ?? global).fetch?.bind(window ?? global),
     },
   };
 

@@ -2,10 +2,10 @@ import { isFunction, isObject, isStore, isString, isView } from "./helpers/typeC
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
-import { makeDebug } from "./helpers/makeDebug.js";
 import { extendsClass } from "./helpers/extendsClass.js";
 import { merge } from "./helpers/merge.js";
 
+import { DebugHub } from "./classes/DebugHub.js";
 import { Store } from "./classes/Store.js";
 import { View } from "./classes/View.js";
 import { m } from "./classes/Markup.js";
@@ -87,9 +87,9 @@ class App {
 
     // And finally create the appContext. This is the central config object accessible to all components.
     this.#appContext = {
-      options: this.#options,
-      debug: makeDebug(this.#options.debug ?? {}),
+      debug: new DebugHub(this.#options.debug ?? {}),
       stores: this.#stores,
+      options: this.#options,
       rootElement: null,
       rootView: null,
       // $dialogs - added by @dialog global
@@ -252,7 +252,7 @@ class App {
 
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
-    const channel = appContext.debug.makeChannel("woofe:app:preload");
+    const channel = appContext.debug.channel("woofe:app:preload");
 
     return new Promise((resolve) => {
       let resolved = false;
@@ -275,7 +275,7 @@ class App {
           if (appContext.stores.has(store)) {
             const _store = appContext.stores.get(store);
 
-            if (!_store.ready) {
+            if (!_store.instance) {
               throw new Error(
                 `Store '${name}' was accessed before it was set up. Make sure '${name}' appears earlier in the 'stores' array than other stores that access it.`
               );
@@ -325,6 +325,18 @@ class App {
   #prepareStore(store) {
     if (isStore(store)) {
       store = { store };
+    }
+
+    // Allow overrides of built in stores.
+    if (isString(store.store)) {
+      if (!store.exports) {
+        throw new Error(`Tried to override '${store.store}' store without passing a value for 'exports'.`);
+      }
+
+      store = { ...store };
+
+      store.store = store.exports;
+      store.exports = undefined;
     }
 
     store.ready = false;
