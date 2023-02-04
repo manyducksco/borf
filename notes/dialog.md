@@ -10,14 +10,15 @@ class ExampleView extends View {
     return (
       <button
         onclick={() => {
-          const example = dialog.open(DialogView, {
+          const close = dialog.open(DialogView, {
             closeOnClickAway: true,
             attrs: {
               message: "This is a message from where the dialog was shown.",
             },
           });
 
-          example.close();
+          // Call function to close the dialog.
+          close();
         }}
       >
         Show Dialog

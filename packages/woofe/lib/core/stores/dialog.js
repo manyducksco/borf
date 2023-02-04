@@ -3,6 +3,7 @@ import { APP_CONTEXT } from "../keys.js";
 import { Store } from "../classes/Store.js";
 import { Markup } from "../classes/Markup.js";
 import { View } from "../classes/View.js";
+import { isFunction, isView } from "../helpers/typeChecking.js";
 
 /**
  * Manages dialogs. Also known as modals.
@@ -20,59 +21,52 @@ export class DialogStore extends Store {
     ctx[APP_CONTEXT].$dialogs = $$dialogs.readable();
 
     return {
-      makeDialog: (view, options) => makeDialog(view, options, ctx, $$dialogs),
+      open: (view, attributes) => openDialog(view, attributes, ctx, $$dialogs),
     };
   }
 }
 
-function makeDialog(viewFn, options, ctx, $$dialogs) {
-  const markup = new Markup((config) => new View({ ...config, setup: viewFn }));
+function openDialog(view, attributes, ctx, $$dialogs) {
+  let markup;
+
+  if (isFunction(view)) {
+    markup = new Markup((config) => new View({ ...config, setup: view }));
+  } else if (isView(view)) {
+    markup = new Markup((config) => new view(config));
+  }
+
+  if (!markup) {
+    throw new TypeError(`Expected a view or setup function. Got: ${view}`);
+  }
 
   const $$open = makeState(true);
-  let openSubscription;
-  let view;
 
-  function open(attributes = {}) {
-    $$open.set(true);
+  const view = markup.init({
+    appContext: ctx[APP_CONTEXT],
+    attributes: {
+      ...attributes,
+      open: $$open,
+    },
+  });
+  $$dialogs.update((current) => {
+    current.push(view);
+  });
 
-    view = markup.build({
-      appContext: ctx[APP_CONTEXT],
-      attributes: {
-        ...attributes,
-        $$open,
-      },
-    });
+  const openSubscription = $$open.subscribe((value) => {
+    if (!value) {
+      close();
+    }
+  });
 
+  return function close() {
     $$dialogs.update((current) => {
-      current.push(view);
+      current.splice(
+        current.findIndex((v) => v === view),
+        1
+      );
     });
+    view = null;
 
-    openSubscription = $$open.subscribe((value) => {
-      if (!value) {
-        close();
-      }
-    });
-  }
-
-  function close() {
-    if (view) {
-      $$dialogs.update((current) => {
-        current.splice(
-          current.findIndex((v) => v === view),
-          1
-        );
-      });
-      view = null;
-    }
-
-    if (openSubscription) {
-      openSubscription.unsubscribe();
-      openSubscription = null;
-    }
-  }
-
-  return {
-    open,
-    close,
+    openSubscription.unsubscribe();
   };
 }
