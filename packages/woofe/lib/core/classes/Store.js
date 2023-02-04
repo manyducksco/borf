@@ -37,8 +37,12 @@ export class Store extends Connectable {
       this.setup = setup;
     }
 
-    this.#channel = appContext.debug.channel(`${channelPrefix}:${label}`);
-    this.#attributes = new Attributes({ attributes, definitions: attributeDefs });
+    this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
+    this.#attributes = new Attributes({
+      attributes,
+      definitions: attributeDefs,
+      enableValidation: true,
+    });
 
     const ctx = {
       [APP_CONTEXT]: appContext,
@@ -117,6 +121,10 @@ export class Store extends Connectable {
 
       afterDisconnect: (callback) => {
         this.#lifecycleCallbacks.afterDisconnect.push(callback);
+      },
+
+      crash: (error) => {
+        appContext.crashCollector.crash(error);
       },
     };
 

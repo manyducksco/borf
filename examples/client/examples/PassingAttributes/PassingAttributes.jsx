@@ -11,15 +11,13 @@ export class PassingAttributes extends View {
 
     return (
       <ExampleFrame>
-        <div class={styles.example}>
-          <h3>Passing Attributes</h3>
-          <div>
-            {/* Input values support two way binding, so changes here will propagate to $$message and vice versa */}
-            <input type="text" value={$$message} />
-            <hr />
-            {/* Passing a writable state for two-way binding */}
-            <SubView message={$$message} />
-          </div>
+        <h3>Passing Attributes</h3>
+        <div>
+          {/* Input values support two way binding, so changes here will propagate to $$message and vice versa */}
+          <input type="text" value={$$message} />
+          <hr />
+          {/* Passing a writable state for two-way binding */}
+          <SubView message={$$message} />
         </div>
       </ExampleFrame>
     );

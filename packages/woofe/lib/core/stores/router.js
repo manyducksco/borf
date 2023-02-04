@@ -269,7 +269,7 @@ export class RouterStore extends Store {
  */
 export async function preloadRoute(preload, { appContext, channelName }) {
   return new Promise((resolve) => {
-    const channel = appContext.debug.channel(channelName);
+    const channel = appContext.debugHub.channel(channelName);
     let resolved = false;
 
     const ctx = {

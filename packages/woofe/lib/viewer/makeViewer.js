@@ -8,12 +8,12 @@ export function makeViewer(component, config = {}) {
 class Viewer {
   isConnected = false;
 
-  constructor(component, config = {}) {
-    if (!isView(component) && !isStore(component)) {
-      throw new TypeError(`Expected a component as the first argument. Got: ${component}`);
+  constructor(Component, config = {}) {
+    if (!isView(Component) && !isStore(Component)) {
+      throw new TypeError(`Expected a component as the first argument. Got: ${Component}`);
     }
 
-    this.markup = new Markup((config) => new component(config));
+    this.markup = new Markup((config) => new Component(config));
     this.config = {
       stores: config.stores || [],
       attributes: config.attributes || {},

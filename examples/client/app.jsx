@@ -14,7 +14,7 @@ class WebComponentStore extends Store {
 
 class WebComponentView extends View {
   static attrs = {
-    test: {
+    location: {
       type: "string",
       about: "A test value to make sure attributes are coming through.",
       required: true,
@@ -22,13 +22,13 @@ class WebComponentView extends View {
   };
 
   setup(ctx) {
-    const { test } = ctx.attrs.get();
+    const { location } = ctx.attrs.get();
 
     const store = ctx.useStore(WebComponentStore);
     const http = ctx.useStore("http");
-    ctx.log({ store, http });
+    // ctx.log({ store, http });
 
-    return <h1>This is a web component. [test:{test}]</h1>;
+    return <h1>This is a web component. [location:{location}]</h1>;
   }
 }
 
@@ -43,6 +43,8 @@ import { MouseStore } from "./globals/MouseStore";
 
 import { AppLayout } from "./views/AppLayout";
 
+import { CrashHandling } from "./examples/CrashHandling";
+import { Languages } from "./examples/Languages";
 import { PassingAttributes } from "./examples/PassingAttributes";
 import { SpringAnimation } from "./examples/SpringAnimation";
 
@@ -80,6 +82,21 @@ timer.addEventListener("message", (event) => {
 });
 
 const Examples = makeApp({
+  language: {
+    supported: ["en-US", "en-GB", "ja"],
+    default: "en-US",
+    translations: {
+      "en-US": {
+        greeting: "Howdy",
+      },
+      "en-GB": {
+        greeting: "Greetings",
+      },
+      ja: {
+        greeting: "ようこそ",
+      },
+    },
+  },
   debug: {
     filter: "*",
     log: true,
@@ -95,19 +112,21 @@ const Examples = makeApp({
       view: () => {
         return (
           <div>
+            <Languages />
+            <CrashHandling />
             <SpringAnimation />
             <PassingAttributes />
             {/* <LocalsExample /> */}
             {/* <SpringExample /> */}
-            <ToggleExample />
-            <CounterExample />
-            <ConditionalExample />
-            <DynamicListExample />
-            <TwoWayBindExample />
-            <FormExample />
-            <MouseFollowerExample />
-            <HTTPRequestExample />
-            <ComponentAttrsExample />
+            {/* <ToggleExample /> */}
+            {/* <CounterExample /> */}
+            {/* <ConditionalExample /> */}
+            {/* <DynamicListExample /> */}
+            {/* <TwoWayBindExample /> */}
+            {/* <FormExample /> */}
+            {/* <MouseFollowerExample /> */}
+            {/* <HTTPRequestExample /> */}
+            {/* <ComponentAttrsExample /> */}
             {/* <RenderOrderTest /> */}
           </div>
         );

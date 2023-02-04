@@ -650,7 +650,15 @@ declare module "woofe" {
       $$title: Writable<string>;
       $visibility: Readable<"visible" | "hidden">;
     };
+    language: WoofeLanguageStore;
   };
+
+  interface WoofeLanguageStore<Langs extends string[]> {
+    $currentLanguage: Readable<keyof Langs>;
+    supportedLanguages: Langs;
+    setLanguage(language: keyof Langs): Promise<void>;
+    t(key: string, values?: Record<string, any>): Readable<string>;
+  }
 
   /* ----- Dialog ----- */
 

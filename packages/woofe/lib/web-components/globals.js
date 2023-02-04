@@ -11,7 +11,7 @@ import { RouterStore } from "./stores/router.js";
  */
 
 export const appContext = {
-  debug: new DebugHub(),
+  debugHub: new DebugHub(),
   stores: new Map(),
   rootElement: {
     insertBefore: () => {},
@@ -23,7 +23,7 @@ export const elementContext = {
   stores: new Map(),
 };
 
-const channel = appContext.debug.channel("woofe:web-components");
+const channel = appContext.debugHub.channel("woofe:web-components");
 
 /**
  * Adds a new global store.

@@ -56,12 +56,15 @@ export class View extends Connectable {
     this.#elementContext = elementContext;
     this.#ref = attributes.ref;
 
-    this.#channel = appContext.debug.channel(`${channelPrefix}:${label}`);
+    this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
     this.#attributes = new Attributes({
       attributes,
       definitions: attributeDefs,
+      enableValidation: true, // TODO: Disable for production builds (unless specified in makeApp options).
     });
     this.#$$children = makeState(children);
+
+    console.log({ channelPrefix, label, attributes, attributeDefs });
   }
 
   async #initialize(parent, after) {
@@ -79,7 +82,7 @@ export class View extends Connectable {
         let callback = args.pop();
 
         if (args.length === 0) {
-          throw new TypeError(`Observe requires at least one observable.`);
+          throw new TypeError(`Expected at least one observable.`);
         }
 
         const start = () => {
@@ -164,6 +167,10 @@ export class View extends Connectable {
       outlet: () => {
         return new Markup((config) => new Outlet({ ...config, value: this.#$$children }));
       },
+
+      crash: (error) => {
+        appContext.crashCollector.crash({ error, component: this });
+      },
     };
 
     // Add debug channel methods directly to context.
@@ -190,9 +197,8 @@ export class View extends Connectable {
 
     try {
       element = this.setup(ctx, m);
-    } catch (err) {
-      console.error(err);
-      throw err;
+    } catch (error) {
+      appContext.crashCollector.crash({ error, component: this });
     }
 
     // Display loading content while setup promise pends.
@@ -210,7 +216,11 @@ export class View extends Connectable {
         cleanup = () => component.disconnect();
       }
 
-      element = await element;
+      try {
+        element = await element;
+      } catch (error) {
+        appContext.crashCollector.crash({ error, component: this });
+      }
 
       if (cleanup) {
         cleanup();
@@ -251,7 +261,11 @@ export class View extends Connectable {
         this.#attributes.connect();
 
         for (const callback of this.#lifecycleCallbacks.beforeConnect) {
-          callback();
+          try {
+            callback();
+          } catch (error) {
+            this.#appContext.crashCollector.crash({ error, component: this });
+          }
         }
       }
 
@@ -263,15 +277,20 @@ export class View extends Connectable {
         if (this.#lifecycleCallbacks.animateIn.length > 0) {
           try {
             const ctx = { node: this.node };
+
             await Promise.all(this.#lifecycleCallbacks.animateIn.map((callback) => callback(ctx)));
-          } catch (err) {
-            this.#channel.error(err);
+          } catch (error) {
+            this.#appContext.crashCollector.crash({ error, component: this });
           }
         }
 
         setTimeout(() => {
           for (const callback of this.#lifecycleCallbacks.afterConnect) {
-            callback();
+            try {
+              callback();
+            } catch (err) {
+              this.#appContext.crashCollector.crash({ error, component: this });
+            }
           }
 
           resolve();
@@ -290,15 +309,19 @@ export class View extends Connectable {
 
     return new Promise(async (resolve) => {
       for (const callback of this.#lifecycleCallbacks.beforeDisconnect) {
-        callback();
+        try {
+          callback();
+        } catch (error) {
+          this.#appContext.crashCollector.crash({ error, component: this });
+        }
       }
 
       if (this.#lifecycleCallbacks.animateOut.length > 0) {
         try {
           const ctx = { node: this.node };
           await Promise.all(this.#lifecycleCallbacks.animateOut.map((callback) => callback(ctx)));
-        } catch (err) {
-          console.error(err);
+        } catch (error) {
+          this.#appContext.crashCollector.crash({ error, component: this });
         }
       }
 
@@ -308,7 +331,11 @@ export class View extends Connectable {
 
       setTimeout(() => {
         for (const callback of this.#lifecycleCallbacks.afterDisconnect) {
-          callback();
+          try {
+            callback();
+          } catch (error) {
+            this.#appContext.crashCollector.crash({ error, component: this });
+          }
         }
 
         for (const subscription of this.#activeSubscriptions) {

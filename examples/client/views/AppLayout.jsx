@@ -16,7 +16,7 @@ export class AppLayout extends View {
     ctx.log("hi");
 
     await new Promise((resolve) => {
-      setTimeout(resolve, 3000);
+      setTimeout(resolve, 400);
     });
 
     logLifecycle(ctx);
@@ -37,7 +37,7 @@ export class AppLayout extends View {
 
     return (
       <div class="demo">
-        <web-component-view test={$$webComponentTest}></web-component-view>
+        <web-component-view location={$$webComponentTest}></web-component-view>
 
         <nav class="nav">
           <ul>

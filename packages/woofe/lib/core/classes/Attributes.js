@@ -118,6 +118,10 @@ export class Attributes {
         })
       );
     }
+
+    if (this._enableValidation) {
+      assertValidAttributes(this._definitions, this._$$attrs.get());
+    }
   }
 
   /**

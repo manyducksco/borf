@@ -89,7 +89,7 @@ declare module "growle" {
   export type GlobalFunction = (ctx: GlobalContext) => Object;
 
   export interface GlobalContext {
-    debug: DebugChannel;
+    debugHub: DebugChannel;
     global: {
       [name: string]: any;
     };

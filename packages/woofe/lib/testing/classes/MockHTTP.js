@@ -11,7 +11,7 @@ export class MockHTTP extends Store {
   setup(ctx) {
     const appContext = {
       stores: new Map(),
-      debug: new DebugHub(),
+      debugHub: new DebugHub(),
     };
 
     const elementContext = {

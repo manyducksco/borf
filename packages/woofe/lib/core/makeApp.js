@@ -12,8 +12,10 @@ import { m } from "./classes/Markup.js";
 
 import { DialogStore } from "./stores/dialog.js";
 import { HTTPStore } from "./stores/http.js";
+import { LanguageStore } from "./stores/language.js";
 import { PageStore } from "./stores/page.js";
 import { RouterStore } from "./stores/router.js";
+import { CrashCollector } from "./classes/CrashCollector.js";
 
 export function makeApp(options) {
   return new App(options);
@@ -24,10 +26,11 @@ class App {
   #isConnected = false;
   #activeSubscriptions = [];
   #stores = new Map([
-    ["dialog", { store: DialogStore, ready: false }],
-    ["router", { store: RouterStore, ready: false }],
-    ["page", { store: PageStore, ready: false }],
-    ["http", { store: HTTPStore, ready: false }],
+    ["dialog", { store: DialogStore }],
+    ["router", { store: RouterStore }],
+    ["page", { store: PageStore }],
+    ["http", { store: HTTPStore }],
+    ["language", { store: LanguageStore }],
   ]);
   #routes = [];
   #appContext;
@@ -49,6 +52,7 @@ class App {
     router: {
       hash: false,
     },
+    language: {},
   };
 
   get isConnected() {
@@ -75,6 +79,10 @@ class App {
       this.#stores.set(store, this.#prepareStore(store));
     }
 
+    // Pass language options to language store.
+    const language = this.#stores.get("language");
+    this.#stores.set("language", { ...language, attrs: this.#options.language });
+
     // Pass router store the attrs it needs to match routes.
     const router = this.#stores.get("router");
     this.#stores.set("router", {
@@ -85,9 +93,31 @@ class App {
       },
     });
 
+    // options.crashPage can be
+    // - boolean; true to enable, false to disable
+    // - "onlyDev"; enable when running locally but disable for production builds
+    // - a view; crash page view
+
+    // Crash collector is used by components to handle crashes and errors.
+    const crashCollector = new CrashCollector({
+      disconnectApp: () => this.disconnect(),
+      connectView: (markup) => {
+        const instance = markup.init({
+          appContext: this.#appContext,
+          elementContext: this.#elementContext,
+        });
+
+        console.log({ instance, rootElement: this.#appContext.rootElement });
+
+        instance.connect(this.#appContext.rootElement);
+      },
+      crashPage: this.#options.crashPage,
+    });
+
     // And finally create the appContext. This is the central config object accessible to all components.
     this.#appContext = {
-      debug: new DebugHub(this.#options.debug ?? {}),
+      crashCollector,
+      debugHub: new DebugHub({ ...this.#options.debug, crashCollector }),
       stores: this.#stores,
       options: this.#options,
       rootElement: null,
@@ -252,7 +282,7 @@ class App {
 
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
-    const channel = appContext.debug.channel("woofe:app:preload");
+    const channel = appContext.debugHub.channel("woofe:app:preload");
 
     return new Promise((resolve) => {
       let resolved = false;

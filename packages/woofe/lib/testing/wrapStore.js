@@ -20,7 +20,7 @@ export async function wrapStore(store, config = {}) {
   ]);
 
   const appContext = {
-    debug: new DebugHub(),
+    debugHub: new DebugHub(),
     stores: new Map(),
     rootElement: makeMockDOMNode(),
   };
