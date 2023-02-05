@@ -5,24 +5,30 @@ import { makeApp, View, Store } from "woofe";
 import { defineElement, defineStore } from "woofe/web-components";
 
 class WebComponentStore extends Store {
-  setup(ctx) {
-    return {
-      value: ctx.attrs.get("initialValue"),
-    };
-  }
-}
-
-class WebComponentView extends View {
-  static attrs = {
-    location: {
-      type: "string",
-      about: "A test value to make sure attributes are coming through.",
+  static inputs = {
+    initialValue: {
       required: true,
     },
   };
 
   setup(ctx) {
-    const { location } = ctx.attrs.get();
+    return {
+      value: ctx.inputs.get("initialValue"),
+    };
+  }
+}
+
+class WebComponentView extends View {
+  static inputs = {
+    location: {
+      type: "string",
+      about: "A string to indicate where this instance is being rendered.",
+      required: true,
+    },
+  };
+
+  setup(ctx) {
+    const { location } = ctx.inputs.get();
 
     const store = ctx.useStore(WebComponentStore);
     const http = ctx.useStore("http");
@@ -34,7 +40,7 @@ class WebComponentView extends View {
 
 defineStore({
   store: WebComponentStore,
-  attrs: { initialValue: "test" },
+  inputs: { initialValue: "test" },
 });
 defineElement("web-component-view", WebComponentView);
 
@@ -48,7 +54,7 @@ import { Languages } from "./examples/Languages";
 import { PassingAttributes } from "./examples/PassingAttributes";
 import { SpringAnimation } from "./examples/SpringAnimation";
 
-import { ComponentAttrsExample } from "./views/ComponentAttrsExample";
+import { ComponentInputsExample } from "./views/ComponentAttrsExample";
 import { ToggleExample } from "./views/ToggleExample";
 import { CounterExample } from "./views/CounterExample";
 import { ConditionalExample } from "./views/ConditionalExample";
@@ -87,7 +93,7 @@ const Examples = makeApp({
     default: "en-US",
     translations: {
       "en-US": {
-        greeting: "Howdy",
+        greeting: "Hey",
       },
       "en-GB": {
         greeting: "Greetings",
@@ -112,10 +118,10 @@ const Examples = makeApp({
       view: () => {
         return (
           <div>
-            <Languages />
-            <CrashHandling />
+            {/* <Languages /> */}
+            {/* <CrashHandling /> */}
             <SpringAnimation />
-            <PassingAttributes />
+            {/* <PassingAttributes /> */}
             {/* <LocalsExample /> */}
             {/* <SpringExample /> */}
             {/* <ToggleExample /> */}

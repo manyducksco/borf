@@ -34,7 +34,7 @@ export class RenderOrderTest extends View {
 
 class SubView extends View {
   setup(ctx) {
-    const { value } = ctx.attrs;
+    const { value } = ctx.inputs.get();
 
     return <li>{value}</li>;
   }

@@ -5,58 +5,38 @@ import styles from "./SpringAnimation.module.css";
 
 export class SpringAnimation extends View {
   static about = "Demonstrates the use of springs for animation.";
-  static attrs = {};
+  static inputs = {};
 
   setup(ctx, m) {
-    const $$stiffness = makeState(550);
-    const $$damping = makeState(30);
-    const $$mass = makeState(1);
-    const $$velocity = makeState(15);
-
-    const spring = makeSpring(0, {
-      stiffness: $$stiffness,
-      damping: $$damping,
-      mass: $$mass,
-      velocity: $$velocity,
-    });
+    const $$stiffness = makeState(1549);
+    const $$mass = makeState(7);
+    const $$damping = makeState(83);
+    const $$velocity = makeState(14);
 
     return (
-      <ExampleFrame>
-        <div>
-          <h1>Spring Animation</h1>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: "50%",
-              backgroundColor: "red",
-              transform: spring.as((current) => `translateX(${current}px)`), // Use the spring's value as the X coordinate of this marker.
-            }}
-          />
-          <button
-            onclick={() => {
-              spring.to(0); // Animate to 0 based on spring parameters.
-            }}
-          >
-            0px
-          </button>
-          <button
-            onclick={() => {
-              spring.to(100); // Animate to 100 based on spring parameters.
-            }}
-          >
-            100px
-          </button>
+      <ExampleFrame
+        title="Spring Animation"
+        about="Move sliders to adjust spring parameters."
+      >
+        <div class={styles.layout}>
+          <div style={{ marginRight: "1rem" }}>
+            <Examples
+              stiffness={$$stiffness}
+              damping={$$damping}
+              mass={$$mass}
+              velocity={$$velocity}
+            />
+          </div>
 
-          <div>
+          <div class={styles.controls}>
             <ControlGroup
-              label="Stiffness"
+              label="Tension"
               value={$$stiffness}
               min={0}
               max={2000}
             />
-            <ControlGroup label="Damping" value={$$damping} min={0} max={400} />
-            <ControlGroup label="Mass" value={$$mass} min={0} max={50} />
+            <ControlGroup label="Weight" value={$$mass} min={1} max={50} />
+            <ControlGroup label="Damping" value={$$damping} min={1} max={400} />
             <ControlGroup
               label="Velocity"
               value={$$velocity}
@@ -67,50 +47,109 @@ export class SpringAnimation extends View {
         </div>
       </ExampleFrame>
     );
+  }
+}
 
-    // return m(ExampleFrame, [
-    //   m("div", [
-    //     m("h1", "Spring Animation"),
-    //     m("div", {
-    //       style: {
-    //         width: 36,
-    //         height: 36,
-    //         borderRadius: "50%",
-    //         backgroundColor: "red",
-    //         transform: spring.as((current) => `translateX(${current}px)`), // Use the spring's value as the X coordinate of this marker.
-    //       },
-    //     }),
+class Examples extends View {
+  static inputs = {
+    stiffness: {
+      type: "number",
+    },
+    damping: {
+      damping: "number",
+    },
+    mass: {
+      type: "number",
+    },
+    velocity: {
+      type: "number",
+    },
+  };
 
-    //     m("button", { onclick: () => spring.to(0) }, "0px"),
-    //     m("button", { onclick: () => spring.to(100) }, "100px"),
+  setup(ctx, m) {
+    const $stiffness = ctx.inputs.readable("stiffness");
+    const $damping = ctx.inputs.readable("damping");
+    const $mass = ctx.inputs.readable("mass");
+    const $velocity = ctx.inputs.readable("velocity");
 
-    //     m("div", [
-    //       m(ControlGroup, {
-    //         label: "Stiffness",
-    //         value: $$stiffness,
-    //         min: 0,
-    //         max: 2000,
-    //       }),
-    //       m(ControlGroup, {
-    //         label: "Damping",
-    //         value: $$damping,
-    //         min: 0,
-    //         max: 1000,
-    //       }),
-    //       m(ControlGroup, {
-    //         label: "Mass",
-    //         value: $$mass,
-    //         min: 0,
-    //         max: 100,
-    //       }),
-    //     ]),
-    //   ]),
-    // ]);
+    const spring = makeSpring(0, {
+      stiffness: $stiffness,
+      damping: $damping,
+      mass: $mass,
+      velocity: $velocity,
+    });
+
+    const animate = async () => {
+      return spring
+        .to(1)
+        .then(() => spring.to(0))
+        .then(() => animate());
+    };
+
+    ctx.afterConnect(() => {
+      animate();
+    });
+
+    const $$tab = makeState(1);
+
+    return (
+      <div class={styles.examples}>
+        <div class={styles.exampleCanvas}>
+          <div
+            style={{
+              width: 16,
+              height: 16,
+              borderRadius: "50%",
+              backgroundColor: "red",
+              transform: spring.as((x) => `translateX(${x * 250 - 125}%)`),
+            }}
+          />
+        </div>
+
+        <div class={styles.exampleCanvas} style={{ overflow: "hidden" }}>
+          <div
+            style={{
+              position: "absolute",
+              inset: "0 0.5rem",
+              backgroundColor: "orange",
+              transform: spring.as(
+                (current) => `translateY(${90 - (1 - current) * 60}%)`
+              ),
+            }}
+          />
+        </div>
+
+        <div class={styles.exampleCanvas}>
+          <div
+            style={{
+              position: "absolute",
+              width: 36,
+              height: 36,
+              backgroundColor: "purple",
+              transform: spring.as((x) => `scale(${0.5 + x * 1})`),
+            }}
+          />
+        </div>
+
+        <div class={styles.exampleCanvas} style={{ overflow: "hidden" }}>
+          <div
+            style={{
+              position: "absolute",
+              width: 2,
+              height: 60,
+              backgroundColor: "white",
+              transformOrigin: "bottom center",
+              transform: spring.as((x) => `rotate(${45 + x * -90}deg)`),
+            }}
+          />
+        </div>
+      </div>
+    );
   }
 }
 
 class ControlGroup extends View {
-  static attrs = {
+  static inputs = {
     label: {
       type: "string",
       required: true,
@@ -130,43 +169,29 @@ class ControlGroup extends View {
     },
   };
 
-  setup({ attrs }, m) {
-    const $label = attrs.readable("label");
-    const $min = attrs.readable("min");
-    const $max = attrs.readable("max");
+  setup(ctx, m) {
+    const $label = ctx.inputs.readable("label");
+    const $min = ctx.inputs.readable("min");
+    const $max = ctx.inputs.readable("max");
 
-    const $$value = attrs.writable("value");
+    const $$value = ctx.inputs.writable("value");
 
     return (
       <div class={styles.controlGroup}>
-        <label for="stiffness">{$label}</label>
-        <div class={styles.controlSplit}>
-          <input
-            class={styles.controlInput}
-            id="stiffness"
-            type="range"
-            min={$min}
-            max={$max}
-            value={$$value}
-          />
+        <label for={$label}>
+          <span>{$label}</span>
           <span class={styles.controlLabel}>{$$value}</span>
-        </div>
+        </label>
+
+        <input
+          class={styles.controlInput}
+          id={$label}
+          type="range"
+          min={$min}
+          max={$max}
+          value={$$value}
+        />
       </div>
     );
-
-    // return m("div", { class: styles.controlGroup }, [
-    //   m("label", { for: "stiffness" }, $label),
-    //   m("div", { class: styles.controlSplit }, [
-    //     m("input", {
-    //       class: styles.controlInput,
-    //       id: "stiffness",
-    //       type: "range",
-    //       min: $min,
-    //       max: $max,
-    //       value: $$value,
-    //     }),
-    //     m("span", { class: styles.controlLabel }, $$value),
-    //   ]),
-    // ]);
   }
 }

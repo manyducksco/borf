@@ -12,7 +12,7 @@ class ExampleView extends View {
         onclick={() => {
           const close = dialog.open(DialogView, {
             closeOnClickAway: true,
-            attrs: {
+            inputs: {
               message: "This is a message from where the dialog was shown.",
             },
           });
@@ -28,8 +28,21 @@ class ExampleView extends View {
 }
 
 class DialogView extends View {
+  static inputs = {
+    open: {
+      type: "boolean",
+      about: "Dialog open/closed state.",
+      required: true,
+      writable: true,
+    },
+    message: {
+      type: "string",
+      default: "THIS IS THE DEFAULT MESSAGE",
+    },
+  };
+
   setup(ctx) {
-    const $message = ctx.attrs.readable("message");
+    const $message = ctx.inputs.readable("message");
 
     return (
       <div class="dialog-panel">
@@ -37,7 +50,7 @@ class DialogView extends View {
         <p>Message: {$message}</p>
         <button
           onclick={() => {
-            ctx.attrs.set("open", false);
+            ctx.inputs.set("open", false);
           }}
         >
           Close

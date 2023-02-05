@@ -42,7 +42,7 @@ class TestStore extends Store {
       async makeAPICall() {
         return http.get("/api/call").then((res) => res.body);
       },
-      value: ctx.attrs.get("initialValue"),
+      value: ctx.inputs.get("initialValue"),
     };
   }
 }
@@ -50,7 +50,7 @@ class TestStore extends Store {
 test("basics", async () => {
   const { exports, teardown } = await wrapStore(TestStore, {
     stores: [{ store: "http", exports: TestHTTP }],
-    attrs: { initialValue: 5 },
+    inputs: { initialValue: 5 },
   });
 
   // expect(exports.isConnected).toBe(true);

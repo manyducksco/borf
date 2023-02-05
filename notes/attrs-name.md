@@ -2,12 +2,13 @@
 
 I don't like 'attrs' because it's an abbreviation. I think a full word would look better. Possible alternatives:
 
+- attrs (current; abbreviation, not a big fan)
 - attributes (good but feels a little long to type out, aligns with HTML terms)
 - props (still an abbreviation, but familiar to react users)
+- properties (meaningless word like 'component' or 'module')
 - inputs (shorter and explicit about where they come from; aesthetically pleasing and easy to think about)
 - fields (kind of odd)
 - bindings (maybe?)
-- pipes (novel but probably not clear enough)
 
 ```jsx
 class Example extends View {

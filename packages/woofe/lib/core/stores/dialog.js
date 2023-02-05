@@ -21,12 +21,12 @@ export class DialogStore extends Store {
     ctx[APP_CONTEXT].$dialogs = $$dialogs.readable();
 
     return {
-      open: (view, attributes) => openDialog(view, attributes, ctx, $$dialogs),
+      open: (view, inputs) => openDialog(view, inputs, ctx, $$dialogs),
     };
   }
 }
 
-function openDialog(view, attributes, ctx, $$dialogs) {
+function openDialog(view, inputs, ctx, $$dialogs) {
   let markup;
 
   if (isFunction(view)) {
@@ -41,15 +41,15 @@ function openDialog(view, attributes, ctx, $$dialogs) {
 
   const $$open = makeState(true);
 
-  const view = markup.init({
+  let instance = markup.init({
     appContext: ctx[APP_CONTEXT],
-    attributes: {
-      ...attributes,
+    inputs: {
+      ...inputs,
       open: $$open,
     },
   });
   $$dialogs.update((current) => {
-    current.push(view);
+    current.push(instance);
   });
 
   const openSubscription = $$open.subscribe((value) => {
@@ -65,7 +65,7 @@ function openDialog(view, attributes, ctx, $$dialogs) {
         1
       );
     });
-    view = null;
+    instance = null;
 
     openSubscription.unsubscribe();
   };

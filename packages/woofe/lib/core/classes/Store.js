@@ -2,7 +2,7 @@ import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 import { isObject, isObservable, isString } from "../helpers/typeChecking.js";
 import { joinStates } from "../makeState.js";
 import { Connectable } from "./Connectable.js";
-import { Attributes } from "./Attributes.js";
+import { Inputs } from "./Inputs.js";
 
 export class Store extends Connectable {
   #node = document.createComment("Store");
@@ -16,7 +16,7 @@ export class Store extends Connectable {
   #isConnected = false;
   #config;
   #channel;
-  #attributes;
+  #inputs;
 
   get node() {
     return this.#node;
@@ -27,8 +27,8 @@ export class Store extends Connectable {
     elementContext,
     channelPrefix = "store",
     label = "<anonymous>",
-    attributes = {},
-    attributeDefs,
+    inputs = {},
+    inputDefs,
     setup, // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
   }) {
     super();
@@ -38,9 +38,9 @@ export class Store extends Connectable {
     }
 
     this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
-    this.#attributes = new Attributes({
-      attributes,
-      definitions: attributeDefs,
+    this.#inputs = new Inputs({
+      inputs,
+      definitions: inputDefs,
       enableValidation: true,
     });
 
@@ -48,7 +48,7 @@ export class Store extends Connectable {
       [APP_CONTEXT]: appContext,
       [ELEMENT_CONTEXT]: elementContext,
 
-      attrs: this.#attributes.api,
+      inputs: this.#inputs.api,
 
       observe: (...args) => {
         let callback = args.pop();
@@ -193,7 +193,7 @@ export class Store extends Connectable {
   }
 
   async beforeConnect() {
-    this.#attributes.connect();
+    this.#inputs.connect();
 
     for (const callback of this.#lifecycleCallbacks.beforeConnect) {
       await callback();
@@ -218,7 +218,7 @@ export class Store extends Connectable {
     }
     this.#activeSubscriptions = [];
 
-    this.#attributes.disconnect();
+    this.#inputs.disconnect();
   }
 
   afterDisconnect() {

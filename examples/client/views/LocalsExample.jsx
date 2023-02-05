@@ -23,7 +23,7 @@ export class LocalsExample extends View {
 }
 
 class ExampleStore extends Store {
-  static attrs = {
+  static inputs = {
     initialValue: {
       type: "string",
       default: "DEFAULT",
@@ -32,7 +32,7 @@ class ExampleStore extends Store {
 
   setup(ctx) {
     return {
-      $$value: makeState(ctx.attrs.get("initialValue")),
+      $$value: makeState(ctx.inputs.get("initialValue")),
     };
   }
 }

@@ -4,7 +4,7 @@ import { ExampleFrame } from "./ExampleFrame.jsx";
 export default makeViewer(ExampleFrame, {
   presets: {
     "Example #1": {
-      attrs: {
+      inputs: {
         value: 1,
       },
       decorator: (view) => {

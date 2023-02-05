@@ -81,13 +81,13 @@ class App {
 
     // Pass language options to language store.
     const language = this.#stores.get("language");
-    this.#stores.set("language", { ...language, attrs: this.#options.language });
+    this.#stores.set("language", { ...language, inputs: this.#options.language });
 
-    // Pass router store the attrs it needs to match routes.
+    // Pass router store the inputs it needs to match routes.
     const router = this.#stores.get("router");
     this.#stores.set("router", {
       ...router,
-      attrs: {
+      inputs: {
         routes: this.#routes,
         options: this.#options.router,
       },
@@ -148,7 +148,7 @@ class App {
 
     // Initialize global stores.
     for (let [key, item] of this.#stores.entries()) {
-      const { store, attrs, exports } = item;
+      const { store, inputs, exports } = item;
 
       // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
       // Built-in globals get an additional 'woofe:' prefix so it's clear messages are from the framework.
@@ -160,7 +160,7 @@ class App {
         elementContext,
         channelPrefix,
         label,
-        attributes: attrs,
+        inputs,
       };
 
       let instance;
@@ -171,7 +171,7 @@ class App {
             ...config,
             label: exports.label,
             about: exports.about,
-            attributeDefs: exports.attrs,
+            inputDefs: exports.inputs,
           });
         }
 
@@ -187,7 +187,7 @@ class App {
           throw new TypeError(`Value of 'exports' didn't result in a usable store. Got: ${exports}`);
         }
       } else {
-        instance = new store({ ...config, about: store.about, attributeDefs: store.attrs });
+        instance = new store({ ...config, about: store.about, inputDefs: store.inputs });
       }
 
       // Stores must have a setup function that returns an object. That is the object you get by calling `ctx.useStore()`.
@@ -196,7 +196,7 @@ class App {
       }
 
       // Add instance and mark as ready.
-      this.#stores.set(key, { ...item, instance, ready: true });
+      this.#stores.set(key, { ...item, instance });
     }
 
     // beforeConnect is the first opportunity to configure globals before anything else happens.
@@ -204,15 +204,15 @@ class App {
       await instance.beforeConnect();
     }
 
-    // Then the app-level preload function runs (if any), resolving to initial attributes for the app-level view.
+    // Then the app-level preload function runs (if any), resolving to initial inputs for the app-level view.
     // The preload process for routes is handled by the @router global.
-    return this.#preload().then(async (attributes) => {
+    return this.#preload().then(async (inputs) => {
       // Then the view is initialized and connected to root element.
       if (isFunction(this.#options.view)) {
         appContext.rootView = new View({
           appContext,
           elementContext,
-          attributes,
+          inputs,
           setup: this.#options.view,
           label: "app",
         });
@@ -221,7 +221,7 @@ class App {
         appContext.rootView = new this.#options.view({
           appContext,
           elementContext,
-          attributes,
+          inputs,
           label: view.label ?? view.name ?? "app",
         });
       }

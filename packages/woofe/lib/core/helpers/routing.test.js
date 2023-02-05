@@ -2,7 +2,7 @@ import { FragTypes, parseRoute, matchRoute, sortRoutes } from "./routing.js";
 
 describe("parseRoute", () => {
   test("parses routes", () => {
-    expect(parseRoute("/some-path/:id/edit")).toStrictEqual({
+    expect(parseRoute("/some-path/{id}/edit")).toStrictEqual({
       fragments: [
         {
           type: FragTypes.Literal,
@@ -22,7 +22,7 @@ describe("parseRoute", () => {
       ],
     });
 
-    expect(parseRoute("/some-path/:one///:two/:three/asdf")).toStrictEqual({
+    expect(parseRoute("/some-path/{one}///{two}/{three}/asdf")).toStrictEqual({
       fragments: [
         {
           type: FragTypes.Literal,
@@ -81,10 +81,10 @@ describe("matchRoute", () => {
     const routes = sortRoutes([
       { ...parseRoute("*"), handlers: [] },
       { ...parseRoute("items"), handlers: [] },
-      { ...parseRoute("items/:id"), handlers: [] },
+      { ...parseRoute("items/{#id}"), handlers: [] },
       { ...parseRoute("/"), handlers: [] },
-      { ...parseRoute("items/:id/edit"), handlers: [] },
-      { ...parseRoute("/items/:id/:fish/*"), handlers: [] },
+      { ...parseRoute("items/{#id}/edit"), handlers: [] },
+      { ...parseRoute("/items/{#id}/{fish}/*"), handlers: [] },
       { ...parseRoute("items/what"), handlers: [] },
     ]);
 
@@ -100,25 +100,25 @@ describe("matchRoute", () => {
       params: {},
     });
 
-    expect(matchRoute(routes, "items/what")).toMatchObject({
-      path: "/items/what",
-      route: "/items/what",
+    expect(matchRoute(routes, "items/123")).toMatchObject({
+      path: "/items/123",
+      route: "/items/{#id}",
       params: {},
     });
 
-    expect(matchRoute(routes, "items/what/edit")).toMatchObject({
-      path: "/items/what/edit",
-      route: "/items/:id/edit",
+    expect(matchRoute(routes, "items/123/edit")).toMatchObject({
+      path: "/items/123/edit",
+      route: "/items/{#id}/edit",
       params: {
-        id: "what",
+        id: 123,
       },
     });
 
     expect(matchRoute(routes, "items/555/toast/oh/nice/5/...")).toMatchObject({
       path: "/items/555/toast/oh/nice/5/...",
-      route: "/items/:id/:fish/*",
+      route: "/items/{#id}/{fish}/*",
       params: {
-        id: "555",
+        id: 555,
         fish: "toast",
         wildcard: "/oh/nice/5/...",
       },
@@ -129,6 +129,31 @@ describe("matchRoute", () => {
       route: "/*",
       params: {
         wildcard: "/aaa/bbb/ccc",
+      },
+    });
+  });
+
+  test("numeric fragments are more specific than non-numeric", () => {
+    const routes = sortRoutes([
+      { ...parseRoute("*"), handlers: [] },
+      // Without numeric, these would have a conflict. With numeric they are distinct routes.
+      { ...parseRoute("items/{name}"), handlers: [] },
+      { ...parseRoute("items/{#id}"), handlers: [] },
+    ]);
+
+    expect(matchRoute(routes, "/items/123")).toMatchObject({
+      path: "/items/123",
+      route: "/items/{#id}",
+      params: {
+        id: 123,
+      },
+    });
+
+    expect(matchRoute(routes, "/items/some-item")).toMatchObject({
+      path: "/items/some-item",
+      route: "/items/{name}",
+      params: {
+        name: "some-item",
       },
     });
   });

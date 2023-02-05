@@ -6,7 +6,7 @@ export class LanguageStore extends Store {
   static about = "Manages translations.";
 
   setup(ctx) {
-    const options = ctx.attrs.get();
+    const options = ctx.inputs.get();
 
     const supportedLanguages = Object.freeze(options.supported || []);
     const translations = options.translations || {};

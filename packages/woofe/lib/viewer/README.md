@@ -19,7 +19,7 @@ export default makeViewer(ButtonView, {
   ],
 
   // Provide a default 'onclick' attr to all presets.
-  attrs: {
+  inputs: {
     onclick: () => {
       console.log("Clicked!");
     },
@@ -38,8 +38,8 @@ export default makeViewer(ButtonView, {
   presets: [
     {
       name: "Primary",
-      // Preset attrs are merged with default viewer attrs, so this will include the 'onclick' when connected.
-      attrs: {
+      // Preset inputs are merged with default viewer inputs, so this will include the 'onclick' when connected.
+      inputs: {
         variant: "primary",
       },
       // Decorate the preset to provide the button a label.
@@ -49,7 +49,7 @@ export default makeViewer(ButtonView, {
     },
     {
       name: "Primary",
-      attrs: {
+      inputs: {
         variant: "secondary",
       },
       decorator: (Viewer, m) => {
@@ -69,7 +69,7 @@ import styles from "./ButtonView.module.css";
 
 export class ButtonView extends View {
   static about = "A button that does things when you click it.";
-  static attrs = {
+  static inputs = {
     variant: {
       type: "string",
       default: "primary",
@@ -80,7 +80,7 @@ export class ButtonView extends View {
   };
 
   setup(ctx) {
-    const { variant, onclick } = ctx.attrs.get();
+    const { variant, onclick } = ctx.inputs.get();
 
     return (
       <button class={[styles.button, styles[variant]]} onclick={onclick}>

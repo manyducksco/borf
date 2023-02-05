@@ -16,11 +16,11 @@ import {
 import { deepEqual } from "../helpers/deepEqual.js";
 
 /**
- * Handles observables, readables, writables and plain values as passed to a View or Local.
+ * Handles observables, readables, writables and plain values as passed to a View or Store.
  * Exposes an API to work with values, automatically propagating writables back to the original binding.
  * Validates values against a set of attribute definitions if supplied.
  */
-export class Attributes {
+export class Inputs {
   _subscriptions = [];
 
   _readables = {};
@@ -28,49 +28,49 @@ export class Attributes {
   _observables = {};
   _statics = {};
 
-  constructor({ attributes, definitions, enableValidation = true }) {
-    this._attributes = attributes;
+  constructor({ inputs, definitions, enableValidation = true }) {
+    this._attributes = inputs;
     this._definitions = definitions;
     this._enableValidation = enableValidation;
 
-    // Sort attributes by binding type.
-    for (const name in attributes) {
-      if (isWritable(attributes[name])) {
-        this._writables[name] = attributes[name];
-      } else if (isReadable(attributes[name])) {
-        this._readables[name] = attributes[name];
-      } else if (isObservable(attributes[name])) {
-        this._observables[name] = attributes[name];
+    // Sort inputs by binding type.
+    for (const name in inputs) {
+      if (isWritable(inputs[name])) {
+        this._writables[name] = inputs[name];
+      } else if (isReadable(inputs[name])) {
+        this._readables[name] = inputs[name];
+      } else if (isObservable(inputs[name])) {
+        this._observables[name] = inputs[name];
       } else {
-        this._statics[name] = attributes[name];
+        this._statics[name] = inputs[name];
       }
     }
 
     // Set initial values for unpassed attributes with a `default` defined.
     if (definitions) {
       for (const name in definitions) {
-        if (!(name in attributes) && definitions[name].default !== undefined) {
+        if (!(name in inputs) && definitions[name].default !== undefined) {
           this._statics[name] = definitions[name].default;
         }
       }
     }
 
     // Assemble current attribute values into a state.
-    const initialAttrs = { ...this._statics };
+    const initialValues = { ...this._statics };
 
     for (const name in this._writables) {
-      initialAttrs[name] = this._writables[name].get();
+      initialValues[name] = this._writables[name].get();
     }
 
     for (const name in this._readables) {
-      initialAttrs[name] = this._readables[name].get();
+      initialValues[name] = this._readables[name].get();
     }
 
-    this._$$attrs = makeState(initialAttrs);
+    this._$$values = makeState(initialValues);
 
     // Create the API to interact with attribute values.
-    this.api = new AttributesAPI(
-      this._$$attrs,
+    this.api = new InputsAPI(
+      this._$$values,
       this._definitions,
       this._readables,
       this._writables,
@@ -88,7 +88,7 @@ export class Attributes {
         this._readables[key].subscribe((next) => {
           assertValidItem(key, next, this._definitions);
 
-          this._$$attrs.update((current) => {
+          this._$$values.update((current) => {
             current[key] = next;
           });
         })
@@ -100,7 +100,7 @@ export class Attributes {
         this._writables[key].subscribe((next) => {
           assertValidItem(key, next, this._definitions);
 
-          this._$$attrs.update((current) => {
+          this._$$values.update((current) => {
             current[key] = next;
           });
         })
@@ -112,7 +112,7 @@ export class Attributes {
         this._observables[key].subscribe((next) => {
           assertValidItem(key, next, this._definitions);
 
-          this._$$attrs.update((current) => {
+          this._$$values.update((current) => {
             current[key] = next;
           });
         })
@@ -120,7 +120,7 @@ export class Attributes {
     }
 
     if (this._enableValidation) {
-      assertValidAttributes(this._definitions, this._$$attrs.get());
+      assertValidInputs(this._definitions, this._$$values.get());
     }
   }
 
@@ -138,16 +138,16 @@ export class Attributes {
 /**
  * Provides a State-like API for accessing attribute data.
  */
-class AttributesAPI {
-  #attrs;
+class InputsAPI {
+  #values;
   #definitions;
   #readables;
   #writables;
   #observables;
   #enableValidation;
 
-  constructor($$attrs, definitions, readables, writables, observables, enableValidation) {
-    this.#attrs = $$attrs;
+  constructor($$values, definitions, readables, writables, observables, enableValidation) {
+    this.#values = $$values;
     this.#definitions = definitions;
     this.#readables = readables;
     this.#writables = writables;
@@ -158,7 +158,7 @@ class AttributesAPI {
   get(...args) {
     // .get()
     if (args.length === 0) {
-      return this.#attrs.get();
+      return this.#values.get();
     }
 
     // .get("key")
@@ -169,12 +169,12 @@ class AttributesAPI {
       if (this.#enableValidation && this.#definitions) {
         if (!this.#definitions[key]) {
           throw new Error(
-            `Attribute '${key}' is not defined. Add an entry to your attributes object to accept this attribute.`
+            `Input '${key}' is not defined. Add an entry to your static inputs object to accept this input.`
           );
         }
       }
 
-      return this.#attrs.get()[key];
+      return this.#values.get()[key];
     }
 
     throw new TypeError(`Bad call signature. Expected .get() or .get("key"). Called as .get(${args.join(", ")})`);
@@ -201,12 +201,12 @@ class AttributesAPI {
       );
     }
 
-    const before = this.#attrs.get();
+    const before = this.#values.get();
     const after = { ...before, ...values };
 
-    // Make sure attributes match definitions before committing the new values.
+    // Make sure values match definitions before committing the new values.
     if (this.#enableValidation) {
-      assertValidAttributes(this.#definitions, after);
+      assertValidInputs(this.#definitions, after);
     }
 
     const diff = objectDiff(before, after);
@@ -227,7 +227,7 @@ class AttributesAPI {
       }
     }
 
-    this.#attrs.set(after);
+    this.#values.set(after);
   }
 
   update(fn) {
@@ -235,11 +235,11 @@ class AttributesAPI {
       throw new TypeError(`Bad call signature. Expected .update(fn). Called as .update(${fn})`);
     }
 
-    const before = this.#attrs.get();
+    const before = this.#values.get();
     const after = produce(before, fn);
 
     if (this.#enableValidation) {
-      assertValidAttributes(this.#definitions, after);
+      assertValidInputs(this.#definitions, after);
     }
 
     const diff = objectDiff(before, after);
@@ -260,16 +260,16 @@ class AttributesAPI {
       }
     }
 
-    this.#attrs.set(after);
+    this.#values.set(after);
   }
 
   readable(...args) {
     if (args.length === 0) {
-      return this.#attrs.readable();
+      return this.#values.readable();
     }
 
     if (isString(args[0])) {
-      return this.#attrs.as((current) => current[args[0]]);
+      return this.#values.as((current) => current[args[0]]);
     }
 
     throw new TypeError(
@@ -279,32 +279,32 @@ class AttributesAPI {
 
   writable(key) {
     if (key == null) {
-      return this.#attrs;
+      return this.#values;
     }
 
     if (this.#enableValidation && this.#definitions) {
       if (!this.#definitions[key]) {
         throw new Error(
-          `Attribute '${key}' is not defined. Add an entry to your attributes object to accept this attribute.`
+          `Input '${key}' is not defined. Add an entry to your attributes object to accept this attribute.`
         );
       }
 
       if (!this.#definitions[key].writable) {
         throw new Error(
-          `Attribute '${key}' is not marked as writable. Add 'writable: true' to this attribute to enable two way binding.`
+          `Input '${key}' is not marked as writable. Add 'writable: true' to this attribute to enable two way binding.`
         );
       }
     }
 
-    return new WritableAttribute(this, key);
+    return new WritableInput(this, key);
   }
 
   as(transform) {
-    return this.#attrs.as(transform);
+    return this.#values.as(transform);
   }
 
   subscribe(...args) {
-    return this.#attrs.subscribe(...args);
+    return this.#values.subscribe(...args);
   }
 
   [OBSERVABLE]() {
@@ -321,9 +321,9 @@ class AttributesAPI {
 }
 
 /**
- * Writable binding to a specific attribute.
+ * Writable binding to a specific input.
  */
-class WritableAttribute {
+class WritableInput {
   #api;
   #key;
 
@@ -376,7 +376,7 @@ class WritableAttribute {
   }
 }
 
-function assertValidAttributes(definitions, values) {
+function assertValidInputs(definitions, values) {
   if (definitions == null) {
     return; // Pass when no definitions are provided.
   }
@@ -385,7 +385,7 @@ function assertValidAttributes(definitions, values) {
   for (const name in definitions) {
     if (!definitions[name].optional && values[name] == null) {
       throw new TypeError(
-        `Attribute '${name}' is required, but value is undefined. Use 'optional: true' in 'attrs.${name}' to make it optional, or provide a 'default' value, if passing this attribute isn't necessary.`
+        `Attribute '${name}' is required, but value is undefined. Use 'optional: true' in 'inputs.${name}' to make it optional, or provide a 'default' value, if passing this attribute isn't necessary.`
       );
     }
   }
@@ -421,36 +421,36 @@ function assertValidItem(name, value, definitions) {
   switch (def.type) {
     case "boolean":
       if (!isBoolean(value)) {
-        throw new TypeError(`Attribute '${name}' must be a boolean. Got: ${value}`);
+        throw new TypeError(`Input '${name}' must be a boolean. Got: ${value}`);
       }
       break;
     case "string":
       if (!isString(value)) {
-        throw new TypeError(`Attribute '${name}' must be a string. Got: ${value}`);
+        throw new TypeError(`Input '${name}' must be a string. Got: ${value}`);
       }
       break;
     case "number":
       if (!isNumber(value)) {
-        throw new TypeError(`Attribute '${name}' must be a number. Got: ${value}`);
+        throw new TypeError(`Input '${name}' must be a number. Got: ${value}`);
       }
       break;
     case "array":
       if (!isArray(value)) {
-        throw new TypeError(`Attribute '${name}' must be an array. Got: ${value}`);
+        throw new TypeError(`Input '${name}' must be an array. Got: ${value}`);
       }
       break;
     case "object":
       if (!isObject(value)) {
-        throw new TypeError(`Attribute '${name}' must be an object. Got: ${value}`);
+        throw new TypeError(`Input '${name}' must be an object. Got: ${value}`);
       }
       break;
     case "function":
       if (!isFunction(value)) {
-        throw new TypeError(`Attribute '${name}' must be a function. Got: ${value}`);
+        throw new TypeError(`Input '${name}' must be a function. Got: ${value}`);
       }
       break;
     default:
-      throw new TypeError(`Attribute '${name}' is assigned an unrecognized type '${def.type}'.`);
+      throw new TypeError(`Input '${name}' is assigned an unrecognized type '${def.type}'.`);
   }
 }
 

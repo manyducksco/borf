@@ -64,8 +64,8 @@ export function defineStore(store) {
   const instance = new StoreClass({
     appContext,
     elementContext,
-    attributes: config.attrs,
-    attributeDefs: config.store.attrs,
+    inputs: config.inputs,
+    inputDefs: config.store.inputs,
   });
 
   instance.connect(appContext.rootElement);

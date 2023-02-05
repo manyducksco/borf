@@ -1,7 +1,7 @@
 import { View, makeState } from "woofe";
 
-export class ComponentAttrsExample extends View {
-  static about = "Demonstrates passing attributes to a subview.";
+export class ComponentInputsExample extends View {
+  static about = "Demonstrates passing inputs to a subview.";
 
   setup(ctx, m) {
     const $$message = makeState("Hello");
@@ -22,7 +22,7 @@ export class ComponentAttrsExample extends View {
 class SubComponent extends View {
   static about =
     "Demonstrates working with attribute bindings passed from a superview.";
-  static attrs = {
+  static inputs = {
     message: {
       type: "string",
       required: true,
@@ -31,7 +31,7 @@ class SubComponent extends View {
   };
 
   setup(ctx) {
-    const $$message = ctx.attrs.writable("message");
+    const $$message = ctx.inputs.writable("message");
 
     return (
       <div>

@@ -90,8 +90,8 @@ export default makeViewer(ExampleView, {
     // This is equivalent to passing a store alone:
     { store: SomeOtherStore },
 
-    // You can also pass attributes using the config object:
-    { store: SomeOtherStore, attrs: { someValue: 5 } },
+    // You can also pass inputs using the config object:
+    { store: SomeOtherStore, inputs: { someValue: 5 } },
   ],
 
   // Wrap the viewer in a decorator to pass children and put it in a wrapper element.
@@ -108,7 +108,7 @@ export default makeViewer(ExampleView, {
   presets: [
     {
       name: "Some Name",
-      attrs: {
+      inputs: {
         exampleValue: "value",
       },
 
@@ -129,7 +129,7 @@ export default makeViewer(ExampleView, {
     },
     {
       name: "Other Name",
-      attrs: {
+      inputs: {
         exampleValue: "other value",
       },
     },

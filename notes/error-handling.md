@@ -23,31 +23,31 @@ errors.setErrorPage(ErrorPageView); // Set to null to not display one.
 errors.showErrorsInProduction(); // Will enable if called by default, but can also take a boolean to set value directly.
 
 class ErrorPageView extends View {
-  // TODO: Warn in console in dev mode of any views that don't have an 'about' or 'attrs' defined.
+  // TODO: Warn in console in dev mode of any views that don't have an 'about' or 'inputs' defined.
   static about = "Custom error page for displaying custom errors.";
 
-  static attrs = {
+  static inputs = {
     error: {
       about: "An Error object as collected by @errors",
-      required: true, // TODO: Make required the default with 'optional: true' for optional attributes.
+      required: true, // TODO: Make required the default with 'optional: true' for optional inputs.
     },
   };
 
   setup(ctx) {
-    const $error = ctx.attrs.readable("error");
+    const $error = ctx.inputs.readable("error");
 
     return (
       <div>
         <h1>Something Happened</h1>
         <p>{$error.as((e) => e.message)}</p>
 
-        <SomeLocal name="state">
+        <SomeStore>
           {(ctx) => {
-            const state = ctx.local("state");
+            const state = ctx.useStore(SomeStore);
 
             return <span>Local value is: {state.value}</span>;
           }}
-        </SomeLocal>
+        </SomeStore>
       </div>
     );
   }

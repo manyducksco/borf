@@ -3,6 +3,20 @@
 CSS modules are really convenient but they require a bundler. Can I come up with something using JS functions that composes just as well as CSS stylesheets? Probably not, but that won't stop me trying.
 
 ```js
+class Example extends View {
+  // Styles will be applied inside the example view's shadow DOM.
+  // Functions within delimiters will receive inputs and return the value for the CSS property whenever inputs change.
+  static styles = css`
+    .someThing {
+      color: ${(inputs) => inputs.textColor || "red"};
+    }
+  `;
+}
+```
+
+Or maybe a more modular approach to composing styles?
+
+```js
 const button = css`
   color: blue;
   border: 2px solid orange;

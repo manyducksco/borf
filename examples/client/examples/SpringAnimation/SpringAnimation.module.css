@@ -1,0 +1,54 @@
+.layout {
+  display: flex;
+}
+
+/* ----- Controls ----- */
+
+.controls {
+  background-color: #000;
+  flex: 1 1 auto;
+}
+
+.controlGroup {
+  height: 45px;
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: center;
+}
+
+.controlGroup > label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.controlInput {
+  width: 100%;
+}
+
+.controlLabel {
+  padding-left: 0.5rem;
+}
+
+/* ----- Examples ----- */
+
+.examples {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.exampleCanvas {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  border: 2px solid #48375a;
+  flex: 0 0 84px;
+}
+
+.exampleCanvas {
+}

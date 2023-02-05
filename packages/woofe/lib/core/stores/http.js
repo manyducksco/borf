@@ -4,7 +4,7 @@ import { isObject, isFunction } from "../helpers/typeChecking.js";
 export class HTTPStore extends Store {
   static about = "A nice HTTP client that auto-parses responses and supports middleware.";
 
-  static attrs = {
+  static inputs = {
     fetch: {
       about: "The fetch function to use for requests. Pass this to mock for testing.",
       type: "function",
@@ -13,7 +13,7 @@ export class HTTPStore extends Store {
   };
 
   setup(ctx) {
-    const { fetch } = ctx.attrs.get();
+    const { fetch } = ctx.inputs.get();
 
     const _middleware = [];
     let requestId = 0;

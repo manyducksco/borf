@@ -2,6 +2,7 @@ export const FragTypes = {
   Literal: 1,
   Param: 2,
   Wildcard: 3,
+  NumericParam: 4,
 };
 
 /**
@@ -38,10 +39,10 @@ export function parseRoute(route) {
         name: "*",
         value: null,
       });
-    } else if (part[0] === ":") {
+    } else if (part[0] === "{" && part.at(-1) === "}") {
       fragments.push({
-        type: FragTypes.Param,
-        name: part.slice(1),
+        type: part[1] === "#" ? FragTypes.NumericParam : FragTypes.Param,
+        name: part[1] === "#" ? part.slice(2, -1) : part.slice(1, -1),
         value: null,
       });
     } else {
@@ -101,6 +102,14 @@ export function matchRoute(routes, path, options = {}) {
         case FragTypes.Wildcard:
           matched.push({ ...frag, value: parts.slice(i).join("/") });
           break fragments;
+        case FragTypes.NumericParam:
+          console.log({ frag, part });
+          if (!isNaN(Number(part))) {
+            matched.push({ ...frag, value: Number(part) });
+            break;
+          } else {
+            continue routes;
+          }
         default:
           throw new Error(`Unknown fragment type: ${frag.type}`);
       }
@@ -113,6 +122,10 @@ export function matchRoute(routes, path, options = {}) {
         params[frag.name] = decodeURIComponent(frag.value);
       }
 
+      if (frag.type === FragTypes.NumericParam) {
+        params[frag.name] = frag.value;
+      }
+
       if (frag.type === FragTypes.Wildcard) {
         params.wildcard = "/" + decodeURIComponent(frag.value);
       }
@@ -120,7 +133,21 @@ export function matchRoute(routes, path, options = {}) {
 
     return {
       path: "/" + matched.map((f) => f.value).join("/"),
-      route: "/" + fragments.map((f) => (f.type === FragTypes.Param ? ":" + f.name : f.name)).join("/"),
+      route:
+        "/" +
+        fragments
+          .map((f) => {
+            if (f.type === FragTypes.Param) {
+              return `{${f.name}}`;
+            }
+
+            if (f.type === FragTypes.NumericParam) {
+              return `{#${f.name}}`;
+            }
+
+            return f.name;
+          })
+          .join("/"),
       params,
       data: route,
     };
@@ -133,12 +160,15 @@ export function matchRoute(routes, path, options = {}) {
  */
 export function sortRoutes(routes) {
   const withoutParams = [];
+  const withNumericParams = [];
   const withParams = [];
   const wildcard = [];
 
   for (const route of routes) {
     if (route.fragments.some((f) => f.type === FragTypes.Wildcard)) {
       wildcard.push(route);
+    } else if (route.fragments.some((f) => f.type === FragTypes.NumericParam)) {
+      withNumericParams.push(route);
     } else if (route.fragments.some((f) => f.type === FragTypes.Param)) {
       withParams.push(route);
     } else {
@@ -155,8 +185,9 @@ export function sortRoutes(routes) {
   };
 
   withoutParams.sort(bySizeDesc);
+  withNumericParams.sort(bySizeDesc);
   withParams.sort(bySizeDesc);
   wildcard.sort(bySizeDesc);
 
-  return [...withoutParams, ...withParams, ...wildcard];
+  return [...withoutParams, ...withNumericParams, ...withParams, ...wildcard];
 }

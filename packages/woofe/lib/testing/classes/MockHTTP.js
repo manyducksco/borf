@@ -26,8 +26,8 @@ export class MockHTTP extends Store {
       elementContext,
       channelPrefix: "mock:store",
       label: "http",
-      attributes: { fetch },
-      attributeDefs: HTTPStore.attrs,
+      inputs: { fetch },
+      inputDefs: HTTPStore.inputs,
     });
 
     return this.#http.exports;

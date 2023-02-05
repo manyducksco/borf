@@ -37,17 +37,17 @@ class SubView extends View {
   static about =
     "Demonstrates working with attribute bindings passed from a superview.";
 
-  static attrs = {
+  static inputs = {
     message: {
       type: "string",
-      required: true, // Throws an error if this attribute isn't passed.
+      required: true, // Throws an error if this input isn't passed.
       writable: true, // Allows this view to write back to a writable binding.
       // Without 'writable: true', writable bindings will be read-only when passed.
     },
   };
 
   setup(ctx) {
-    const $$message = ctx.attrs.writable("message");
+    const $$message = ctx.inputs.writable("message");
 
     return (
       <div>

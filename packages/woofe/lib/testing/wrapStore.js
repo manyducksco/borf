@@ -9,14 +9,15 @@ import { Store } from "../core/classes/Store.js";
 
 /**
  * Wraps a store in a test adapter that lets you call its lifecycle methods and access its exports.
- * You can pass any 'stores' or 'attrs' this store relies on through the config object.
+ * You can pass any 'stores' or 'inputs' this store relies on through the config object.
  */
 export async function wrapStore(store, config = {}) {
   const stores = new Map([
-    ["dialog", { store: MockDialogStore, instance: undefined, ready: false }],
-    ["router", { store: MockRouterStore, instance: undefined, ready: false }],
-    ["page", { store: MockPageStore, instance: undefined, ready: false }],
-    ["http", { store: MockHTTPStore, instance: undefined, ready: false }],
+    ["dialog", { store: MockDialogStore }],
+    ["router", { store: MockRouterStore }],
+    ["page", { store: MockPageStore }],
+    ["http", { store: MockHTTPStore }],
+    // TODO: Language?
   ]);
 
   const appContext = {
@@ -49,7 +50,7 @@ export async function wrapStore(store, config = {}) {
 
         stores.set(store.store, {
           store: store.exports,
-          attrs: store.attrs,
+          inputs: store.inputs,
           instance: undefined,
           ready: false,
         });
@@ -61,7 +62,7 @@ export async function wrapStore(store, config = {}) {
 
         stores.set(store.store, {
           store: store.exports || store.store,
-          attrs: store.attrs,
+          inputs: store.inputs,
           instance: undefined,
           ready: false,
         });
@@ -75,8 +76,8 @@ export async function wrapStore(store, config = {}) {
     const instance = new config.store({
       appContext,
       elementContext,
-      attributes: config.attrs,
-      attributeDefs: config.store.attrs,
+      inputs: config.inputs,
+      inputDefs: config.store.inputs,
     });
 
     if (!(instance instanceof Store)) {
@@ -91,8 +92,8 @@ export async function wrapStore(store, config = {}) {
   instance = new store({
     appContext,
     elementContext,
-    attributes: config.attrs,
-    attributeDefs: store.attrs,
+    inputs: config.inputs,
+    inputDefs: store.inputs,
     channelPrefix: "test:store",
     label: store.label,
   });

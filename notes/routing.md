@@ -14,8 +14,8 @@ const Example = makeApp({
           view: UsersLayout,
           routes: [
             { path: "/", view: UsersList },
-            { path: "/{id:number}", view: UserDetails },
-            { path: "/{id:number}/edit", view: UserEdit },
+            { path: "/{#id}", view: UserDetails },
+            { path: "/{#id}/edit", view: UserEdit },
           ],
         },
         { path: "/projects", view: Projects },
@@ -57,8 +57,8 @@ Routes are passed in nested form, but flattened into layers by the router. Layer
     ],
   },
   {
-    // Prefixing a variable name with # will only match a numeric string and the value will be parsed to a number.
-    // Without the #, any string value will match.
+    // Prefixing a variable name with # will only match a string that can be parsed as a number.
+    // Without the #, any string value will match. This is more specific than a regular param but less specific than a literal.
     path: "/example/users/{#id}",
     layers: [
       { id: 1, component: ExampleLayout },
@@ -113,8 +113,8 @@ Needs:
 The code above defines these routes:
 
 - `/example/users` -> ExampleLayout > UsersLayout > UsersList
-- `/example/users/{id}` -> ExampleLayout > UsersLayout > UserDetails
-- `/example/users/{id}/edit` -> ExampleLayout > UsersLayout > UserEdit
+- `/example/users/{#id}` -> ExampleLayout > UsersLayout > UserDetails
+- `/example/users/{#id}/edit` -> ExampleLayout > UsersLayout > UserEdit
 - `/example/projects` -> ExampleLayout > Projects
 - `/example/*` -> ExampleLayout > PageNotFound
 - `/*` -> (redirect to `/example/users`)
@@ -124,19 +124,18 @@ All routes are defined at the top level of the app. This way one global $route s
 ```ts
 import { makeState, View } from "@woofjs/client";
 
-// View is called with `self` as this, so you can do this?
 class Example extends View {
   setup(ctx, m) {
     const router = ctx.useStore("router");
 
-    // Route path with param placeholders (like '/users/{userId}/edit')
+    // Route path with param placeholders (like '/users/{#userId}/edit')
     router.$route.get();
 
     // Full path as it appears in the URL (like '/users/12/edit')
     router.$path.get();
 
     // Work with URL params
-    router.$params.get("userId"); // Access URL params by :name
+    router.$params.get("userId"); // Access URL params by {name}
     router.$params.get("wildcard"); // Access matched content for '/*' fragment of route
 
     // Update query params in URL: ?selected=some-tab&r=/users/5

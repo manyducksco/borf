@@ -1,7 +1,7 @@
 import { isFunction, isPromise, isObservable, isMarkup } from "../helpers/typeChecking.js";
 import { makeState, joinStates } from "../makeState.js";
 import { Connectable } from "./Connectable.js";
-import { Attributes } from "./Attributes.js";
+import { Inputs } from "./Inputs.js";
 import { Markup, m } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
 
@@ -20,7 +20,7 @@ export class View extends Connectable {
   };
   #activeSubscriptions = [];
   #channel;
-  #attributes;
+  #inputs;
   #element;
   #$$children;
 
@@ -38,8 +38,8 @@ export class View extends Connectable {
     channelPrefix = "view",
     label = "<anonymous>",
     about,
-    attributes = {},
-    attributeDefs,
+    inputs = {},
+    inputDefs,
     children = [],
     setup, // This is passed in directly to `new View()` to turn a standalone setup function into a view.
   }) {
@@ -54,17 +54,17 @@ export class View extends Connectable {
 
     this.#appContext = appContext;
     this.#elementContext = elementContext;
-    this.#ref = attributes.ref;
+    this.#ref = inputs.ref;
 
     this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
-    this.#attributes = new Attributes({
-      attributes,
-      definitions: attributeDefs,
+    this.#inputs = new Inputs({
+      inputs,
+      definitions: inputDefs,
       enableValidation: true, // TODO: Disable for production builds (unless specified in makeApp options).
     });
     this.#$$children = makeState(children);
 
-    console.log({ channelPrefix, label, attributes, attributeDefs });
+    console.log({ channelPrefix, label, inputs, inputDefs });
   }
 
   async #initialize(parent, after) {
@@ -72,8 +72,7 @@ export class View extends Connectable {
     const elementContext = this.#elementContext;
 
     const ctx = {
-      attrs: this.#attributes.api,
-      attributes: this.#attributes.api,
+      inputs: this.#inputs.api,
 
       /**
        * Takes one or more observables followed by a callback function that receives their values as arguments when any of the observables change.
@@ -258,7 +257,7 @@ export class View extends Connectable {
       if (!wasConnected) {
         await this.#initialize(parent, after); // Run setup() to configure the view.
 
-        this.#attributes.connect();
+        this.#inputs.connect();
 
         for (const callback of this.#lifecycleCallbacks.beforeConnect) {
           try {
@@ -346,7 +345,7 @@ export class View extends Connectable {
         resolve();
       }, 0);
 
-      this.#attributes.disconnect();
+      this.#inputs.disconnect();
     });
   }
 }

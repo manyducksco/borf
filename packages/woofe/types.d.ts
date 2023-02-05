@@ -58,6 +58,13 @@ declare module "woofe" {
       history?: History;
     };
 
+    language?: {
+      supported: string[];
+      default?: string | (() => Promise<string | undefined>);
+      translations?: Record<string, Translation>;
+      fetchTranslation?: (ctx: any, language: string) => Promise<Translation>;
+    };
+
     stores?: (StoreConstructor<any> | StoreConfig<any>)[];
 
     preload?: RoutePreloadFn<A>;
@@ -66,6 +73,8 @@ declare module "woofe" {
 
     routes?: RouteConfig[];
   }
+
+  type Translation = Record<string, string | Translation>;
 
   /**
    * An app is the central object of a Woof app. It handles mounting and unmounting of routes
@@ -340,7 +349,7 @@ declare module "woofe" {
 
     (view: View<any, any>, ...children: WoofElement[]): Blueprint;
 
-    <Attrs>(view: View<Attrs, any>, attrs: Attrs, ...children: WoofElement[]): Blueprint;
+    <Attrs>(view: View<Attrs, any>, inputs: Attrs, ...children: WoofElement[]): Blueprint;
 
     /**
      * Displays `element` when `value` is truthy.

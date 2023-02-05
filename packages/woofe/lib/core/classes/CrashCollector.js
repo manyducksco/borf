@@ -53,7 +53,7 @@ export class CrashCollector {
             error: error,
             componentName: component.label,
           },
-          attributeDefs: this.#crashPage.attrs,
+          attributeDefs: this.#crashPage.inputs,
         });
       });
       this.#connectView(markup);
@@ -72,8 +72,11 @@ export class CrashCollector {
 
 class DefaultCrashPage extends View {
   setup(ctx, m) {
-    const { message } = ctx.attrs.get();
+    const { message } = ctx.inputs.get();
 
-    return m("div", [m("h1", "IT'S DEAD, JIM:"), m("p", message)]);
+    return m("div", { style: { backgroundColor: "#880000", color: "#fff", padding: "2rem" } }, [
+      m("h1", "IT'S DEAD, JIM"),
+      m("p", message),
+    ]);
   }
 }

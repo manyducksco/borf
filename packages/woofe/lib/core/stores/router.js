@@ -10,7 +10,7 @@ import { catchLinks } from "../helpers/catchLinks.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
 export class RouterStore extends Store {
-  static attrs = {
+  static inputs = {
     routes: {
       type: "array",
       about: "Routes to load for matching.",
@@ -25,7 +25,7 @@ export class RouterStore extends Store {
     const appContext = ctx[APP_CONTEXT];
     const elementContext = ctx[ELEMENT_CONTEXT];
 
-    const { routes, options } = ctx.attrs.get();
+    const { routes, options } = ctx.inputs.get();
 
     let history;
 

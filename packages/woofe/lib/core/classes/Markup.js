@@ -27,12 +27,12 @@ export function m(element, attributes, ...children) {
     return new Markup(
       (config) =>
         new element({
-          attributes,
+          inputs: attributes,
           children,
           ...config,
           label: element.label ?? element.name,
           about: element.about,
-          attributeDefs: element.attrs,
+          inputDefs: element.inputs,
         })
     );
   }

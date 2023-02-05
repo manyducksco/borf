@@ -18,8 +18,8 @@ export function defineElement(tag, component) {
       component = component;
 
       static get observedAttributes() {
-        if (component.attrs) {
-          return Object.keys(component.attrs); // Subscribe to changes on all defined attributes.
+        if (component.inputs) {
+          return Object.keys(component.inputs); // Subscribe to changes on all defined attributes.
         } else {
           return [];
         }
@@ -34,7 +34,7 @@ class WoofeElement extends HTMLElement {
 
   connectedCallback() {
     // Unpack the NamedNodeMap into a usable object.
-    const initialAttributes = Object.values(this.attributes).reduce((obj, attr) => {
+    const initialValues = Object.values(this.attributes).reduce((obj, attr) => {
       obj[attr.localName] = attr.value;
       return obj;
     }, {});
@@ -42,8 +42,8 @@ class WoofeElement extends HTMLElement {
     this.instance = new this.component({
       appContext,
       elementContext,
-      attributes: initialAttributes, // TODO: Update attributes when `attributeChangedCallback` runs.
-      attributeDefs: this.component.attrs,
+      inputs: initialValues, // TODO: Update attributes when `attributeChangedCallback` runs.
+      inputDefs: this.component.inputs,
       channelPrefix: "element",
       label: this.component.label || this.localName,
     });

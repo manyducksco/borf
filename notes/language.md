@@ -15,7 +15,7 @@ makeApp({
       return loaded.value;
     },
 
-    // Specify translations inline.
+    // Specify translations inline. These will be loaded first.
     translations: {
       ja: {
         greeting: "ようこそ",
@@ -25,7 +25,7 @@ makeApp({
       },
     },
 
-    // Or specify a getLocale function to retrieve them.
+    // Or specify a fetch function to retrieve any that aren't in 'translations'.
     fetchTranslation: async (ctx, language) => {
       const http = ctx.useStore("http");
       const res = await http.get(`/translations/${language}.json`);
@@ -37,6 +37,6 @@ makeApp({
 const { t, setLanguage, $currentLanguage, supportedLanguages } =
   ctx.useStore("language");
 
-// Get a readable binding to a locale key.
+// Get a readable binding to a translation key.
 t("greeting");
 ```

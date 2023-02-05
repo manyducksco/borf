@@ -3,7 +3,7 @@ import { View } from "./View.js";
 
 test("a", () => {
   class SomeView extends View {
-    static attrs = {
+    static inputs = {
       value: {
         type: "string",
         default: "Default",
@@ -11,7 +11,7 @@ test("a", () => {
     };
 
     setup(ctx, m) {
-      return m("span", ctx.attrs.readable("value"));
+      return m("span", ctx.inputs.readable("value"));
     }
   }
 

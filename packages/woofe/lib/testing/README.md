@@ -102,21 +102,21 @@ test("works", async (t) => {
   const view = wrapView(SomeView, {
     // Provide options:
     stores: [],
-    attrs: {},
+    inputs: {},
   });
 
   // Set up
   await view.connect();
 
-  // Check that button is not rendered with default attributes.
+  // Check that button is not rendered with default inputs.
   t.falsy(view.querySelector("button[data-test-id='the-button']"));
 
   // Check that button is rendered when showButton is true.
-  view.attrs.set("showButton", true);
+  view.inputs.set("showButton", true);
   t.truthy(view.querySelector("button[data-test-id='the-button']"));
 
   // Check that button is not rendered when showButton is false.
-  view.attrs.set("showButton", false);
+  view.inputs.set("showButton", false);
   t.falsy(view.querySelector("button[data-test-id='the-button']"));
 
   // Tear down

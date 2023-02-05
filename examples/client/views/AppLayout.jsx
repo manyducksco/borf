@@ -6,7 +6,7 @@ export class AppLayout extends View {
   static label = "🐕"; // Override class name label in debug messages
   static about =
     "Top level layout for the app. All other routes are rendered in this one's ctx.outlet()";
-  static attrs = {};
+  static inputs = {};
 
   loading() {
     return <h1>This app is loading!</h1>;
@@ -15,9 +15,9 @@ export class AppLayout extends View {
   async setup(ctx) {
     ctx.log("hi");
 
-    await new Promise((resolve) => {
-      setTimeout(resolve, 400);
-    });
+    // await new Promise((resolve) => {
+    //   setTimeout(resolve, 400);
+    // });
 
     logLifecycle(ctx);
 
@@ -36,7 +36,7 @@ export class AppLayout extends View {
     const $$webComponentTest = makeState("app layout");
 
     return (
-      <div class="demo">
+      <div class="demo" style={{ margin: "0 auto", maxWidth: 600 }}>
         <web-component-view location={$$webComponentTest}></web-component-view>
 
         <nav class="nav">

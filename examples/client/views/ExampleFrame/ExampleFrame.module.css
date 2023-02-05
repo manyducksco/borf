@@ -1,6 +1,29 @@
 .frame {
-  background-color: transparent;
+  background-color: #000;
+  border: 2px solid #48375a;
   margin-bottom: 1em;
-  padding: 0.5em;
-  border: 1px solid #ccc;
+  padding: 1em;
+  /* border: 1px solid #ccc; */
+}
+
+.header {
+  border-bottom: 2px solid #48375a;
+  margin-bottom: 0.75rem;
+  /* padding-bottom: 0.5rem; */
+}
+
+.title {
+  line-height: 1;
+}
+
+.about {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.symbol {
+  padding-left: 1rem;
+  padding-right: 0.5rem;
+  opacity: 0.5;
 }

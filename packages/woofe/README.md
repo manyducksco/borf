@@ -10,7 +10,7 @@ Woofe is a front end framework that aims to cover the most common needs of moder
 - Component (anything you write that plugs into woofe)
   - View
   - Store
-- Attributes (any values you pass to a Component)
+- Inputs (any values you pass to a Component, equivalent to HTML attributes)
 - Markup (any HTML element or component returned from a View)
 - Readable / Writable (dynamic data containers with different levels of access)
 
@@ -86,12 +86,12 @@ class Random extends Store {
   }
 }
 
-type SubViewAttrs = {
+type SubViewInputs = {
   onClick: () => void,
 };
 
-class SubView extends View<SubViewAttrs> {
-  static attrs = {
+class SubView extends View<SubViewInputs> {
+  static inputs = {
     onClick: {
       type: "function",
       required: true,
@@ -99,7 +99,7 @@ class SubView extends View<SubViewAttrs> {
   };
 
   setup(ctx, m) {
-    const { onClick } = ctx.attrs.get();
+    const { onClick } = ctx.inputs.get();
 
     return m("h1", { onClick }, ctx.outlet());
   }
@@ -236,13 +236,13 @@ const Timer = makeView((ctx) => {
 ## Views
 
 Views are reusable modules with their own markup and logic. You can define a view once and reuse it as many
-times as you need. Views can take attributes that set their default state and establish data bindings.
+times as you need. Views can take inputs that set their default state and establish data bindings.
 
 ```jsx
 const Example = makeView((ctx) => {
   return (
     <div>
-      <h1>{ctx.attrs.title}</h1>
+      <h1>{ctx.inputs.get("title")}</h1>
       <p>This is a reusable view.</p>
     </div>
   );
@@ -420,7 +420,7 @@ const Subview = makeView((ctx, h) => {
 });
 ```
 
-When using subviews, you can pass them attributes just like you can with HTML elements. The Example views in
+When using subviews, you can pass them inputs just like you can with HTML elements. The Example views in
 the following code will display `<h1>Hello world!</h1>`.
 
 ```js

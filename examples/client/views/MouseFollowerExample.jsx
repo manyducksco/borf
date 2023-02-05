@@ -80,7 +80,7 @@ export class MouseFollowerExample extends View {
 }
 
 class MouseFollower extends View {
-  static attrs = {
+  static inputs = {
     color: {
       type: "string",
       required: true,
@@ -100,8 +100,8 @@ class MouseFollower extends View {
     ctx.animateIn(() => scale.to(1));
     ctx.animateOut(() => scale.to(0));
 
-    const $color = ctx.attrs.readable("color");
-    const $position = ctx.attrs.readable("position");
+    const $color = ctx.inputs.readable("color");
+    const $position = ctx.inputs.readable("position");
 
     return (
       <div
