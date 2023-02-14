@@ -2,18 +2,66 @@
   display: flex;
 }
 
+/* ----- Examples ----- */
+
+.examples {
+  position: relative;
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  /* justify-content: center; */
+  padding: 2rem 0;
+}
+
+.exampleCanvas {
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  border: 2px solid #48375a;
+  flex: 0 0 84px;
+}
+
+.exampleCanvas:not(:last-child) {
+  margin-right: 1rem;
+}
+
+/* ----- Presets ----- */
+
+.presetList {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  padding: 1rem 0 2rem 0;
+}
+
+.presetList > li {
+  margin-right: 0.5rem;
+}
+
+.presetButton {
+  font-size: 0.8rem;
+  font-weight: normal;
+}
+
 /* ----- Controls ----- */
 
 .controls {
   background-color: #000;
   flex: 1 1 auto;
+  max-width: 400px;
+  /* margin: 0 auto; */
+  padding: 2rem 0;
 }
 
 .controlGroup {
-  height: 45px;
   display: flex;
   flex-flow: column nowrap;
   justify-content: center;
+  margin-bottom: 0.5rem;
 }
 
 .controlGroup > label {
@@ -28,27 +76,4 @@
 
 .controlLabel {
   padding-left: 0.5rem;
-}
-
-/* ----- Examples ----- */
-
-.examples {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.exampleCanvas {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 84px;
-  height: 84px;
-  border: 2px solid #48375a;
-  flex: 0 0 84px;
-}
-
-.exampleCanvas {
 }

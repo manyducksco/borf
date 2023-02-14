@@ -1,11 +1,12 @@
 import { View } from "woofe";
-import logLifecycle from "../utils/logLifecycle.js";
-import { CounterStore } from "../globals/CounterStore.js";
+import logLifecycle from "../../utils/logLifecycle.js";
+import { CounterStore } from "../../globals/CounterStore.js";
+import { ExampleFrame } from "../../views/ExampleFrame/ExampleFrame.jsx";
 
 /**
  * Component with controls and a mapped label based on the state inside the service.
  */
-export class CounterExample extends View {
+export class CounterWithStore extends View {
   setup(ctx) {
     logLifecycle(ctx);
 
@@ -13,14 +14,18 @@ export class CounterExample extends View {
     const $label = counter.$current.as((n) => `the number is: ${n}`);
 
     return (
-      <div class="example">
-        <h3>Shared state with services</h3>
+      <ExampleFrame title="Shared State with Stores">
         <div>
           <p>{$label}</p>
           <button onclick={counter.reset}>Reset</button>
           <CounterViewLabel />
+          <p>
+            You'll notice the counter keeps its state and increments even when
+            you're not on the page. This is because this state is stored in a
+            global CounterStore. Global stores last for the lifetime of the app.
+          </p>
         </div>
-      </div>
+      </ExampleFrame>
     );
   }
 }

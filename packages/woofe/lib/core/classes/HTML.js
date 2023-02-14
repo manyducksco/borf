@@ -122,6 +122,7 @@ export class HTML extends Connectable {
 }
 
 function applyAttrs(element, attrs, subscriptions) {
+  console.log({ element, attrs });
   for (const key in attrs) {
     const value = attrs[key];
 
@@ -182,6 +183,7 @@ function applyAttrs(element, attrs, subscriptions) {
           })
         );
       } else if (value) {
+        console.log({ key, value });
         element.setAttribute(key, isBoolean ? "" : String(value));
       }
     }

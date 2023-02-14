@@ -9,16 +9,27 @@ class Viewer {
   isConnected = false;
 
   constructor(Component, config = {}) {
-    if (!isView(Component) && !isStore(Component)) {
+    if (isView(Component)) {
+      this.markup = this.#initView(Component);
+    } else if (isStore(Component)) {
+      this.markup = this.#initView(Component);
+    } else {
       throw new TypeError(`Expected a component as the first argument. Got: ${Component}`);
     }
 
-    this.markup = new Markup((config) => new Component(config));
     this.config = {
       stores: config.stores || [],
       attributes: config.attributes || {},
       presets: config.presets || [],
     };
+  }
+
+  #initView(View) {
+    return new Markup((config) => new View(config));
+  }
+
+  #initStore(Store) {
+    // TODO: Wrap in view that displays store data as a formatted JSON object.
   }
 
   async connect(parent, preset = null) {
@@ -68,7 +79,7 @@ class Viewer {
     };
 
     // Set up stores.
-    for (const store of stores) {
+    for (let store of stores) {
       let config;
 
       if (isStore(store)) {

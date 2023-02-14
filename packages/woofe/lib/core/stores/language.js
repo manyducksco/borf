@@ -17,6 +17,10 @@ export class LanguageStore extends Store {
     // Fallback labels for missing state and data.
     const $noLanguageValue = makeState("[NO LANGUAGE SET]").readable();
 
+    /**
+     * Retrieves the key-value store with translated strings for the requested language.
+     * Tries to load from cache first, fetching with `options.fetchTranslation` if there is none cached.
+     */
     async function fetchTranslation(language) {
       if (!translations[language]) {
         const translation = isFunction(options.fetchTranslation) && (await options.fetchTranslation(language));
@@ -29,6 +33,9 @@ export class LanguageStore extends Store {
       return translations[language];
     }
 
+    /**
+     * Replaces {{placeholders}} with values in translated strings.
+     */
     function replaceMustaches(template, values) {
       for (const name in values) {
         template = template.replace(`{{${name}}}`, String(values[name]));
@@ -65,6 +72,12 @@ export class LanguageStore extends Store {
         $$translation.set(translation);
       },
 
+      /**
+       * Returns a Readable of the translated value.
+
+       * @param key - Key to the translated value.
+       * @param values - A map of {{placeholder}} names and the values to replace them with.
+       */
       t(key, values = null) {
         if ($$language.get() == null) {
           return $noLanguageValue;

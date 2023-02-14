@@ -1,13 +1,14 @@
 import { View, Store, makeState } from "woofe";
-import logLifecycle from "../utils/logLifecycle.js";
+import { ExampleFrame } from "../../views/ExampleFrame";
+import logLifecycle from "../../utils/logLifecycle.js";
 
-export class LocalsExample extends View {
+export class LocalStores extends View {
   setup(ctx) {
     logLifecycle(ctx);
 
     return (
-      <div class="example">
-        <h3>Scoped state with locals.</h3>
+      <ExampleFrame title="Local State with Stores">
+        <p>You should be seeing "Instance 1" and "Instance 2" below this.</p>
         <div>
           <ExampleStore initialValue="Instance 1">
             <ValueDisplay />
@@ -17,7 +18,7 @@ export class LocalsExample extends View {
             </ExampleStore>
           </ExampleStore>
         </div>
-      </div>
+      </ExampleFrame>
     );
   }
 }
@@ -41,6 +42,6 @@ class ValueDisplay extends View {
   setup(ctx) {
     const { $$value } = ctx.useStore(ExampleStore);
 
-    return <span>{$$value}</span>;
+    return <span>Hello from {$$value}</span>;
   }
 }

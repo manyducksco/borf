@@ -1,5 +1,13 @@
 import { flatten } from "../helpers/flatten.js";
-import { isArray, isFunction, isNumber, isObservable, isString, isConnectable } from "../helpers/typeChecking.js";
+import {
+  isArray,
+  isFunction,
+  isNumber,
+  isObservable,
+  isString,
+  isConnectable,
+  isObject,
+} from "../helpers/typeChecking.js";
 import { View } from "./View.js";
 import { Text } from "./Text.js";
 import { HTML } from "./HTML.js";
@@ -19,6 +27,12 @@ export class Markup {
 }
 
 export function m(element, attributes, ...children) {
+  // If attributes isn't null or an object, consider it a child.
+  if (!isObject(attributes)) {
+    children.unshift(attributes);
+    attributes = {};
+  }
+
   // Filter out falsy children and convert remaining ones to Markup instances.
   children = formatChildren(children);
 

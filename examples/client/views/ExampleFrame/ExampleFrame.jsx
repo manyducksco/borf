@@ -6,10 +6,10 @@ export class ExampleFrame extends View {
   static inputs = {
     title: {
       type: "string",
-      required: true,
     },
     about: {
       type: "string",
+      optional: true,
     },
   };
 

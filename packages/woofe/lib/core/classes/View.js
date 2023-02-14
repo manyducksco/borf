@@ -64,9 +64,130 @@ export class View extends Connectable {
     });
     this.#$$children = makeState(children);
 
-    console.log({ channelPrefix, label, inputs, inputDefs });
+    // console.log({ channelPrefix, label, inputs, inputDefs });
   }
 
+  setup(ctx, m) {
+    throw new Error(`This view needs a setup function.`);
+  }
+
+  setChildren(children) {
+    this.#$$children.set(children);
+  }
+
+  /**
+   * Connects this view to the DOM, running lifecycle hooks if it wasn't already connected.
+   * Calling this on a view that is already connected can reorder it or move it to a different
+   * place in the DOM without re-triggering lifecycle hooks.
+   *
+   * @param parent - DOM node under which this view should be connected as a child.
+   * @param after - A child node under `parent` after which this view should be connected.
+   */
+  async connect(parent, after = null) {
+    return new Promise(async (resolve) => {
+      const wasConnected = this.isConnected;
+
+      if (!wasConnected) {
+        await this.#initialize(parent, after); // Run setup() to configure the view.
+
+        this.#inputs.connect();
+
+        for (const callback of this.#lifecycleCallbacks.beforeConnect) {
+          try {
+            callback();
+          } catch (error) {
+            this.#appContext.crashCollector.crash({ error, component: this });
+          }
+        }
+      }
+
+      if (this.#element) {
+        this.#element.connect(parent, after);
+      }
+
+      if (!wasConnected) {
+        if (this.#lifecycleCallbacks.animateIn.length > 0) {
+          try {
+            const ctx = { node: this.node };
+
+            await Promise.all(this.#lifecycleCallbacks.animateIn.map((callback) => callback(ctx)));
+          } catch (error) {
+            this.#appContext.crashCollector.crash({ error, component: this });
+          }
+        }
+
+        setTimeout(() => {
+          for (const callback of this.#lifecycleCallbacks.afterConnect) {
+            try {
+              callback();
+            } catch (err) {
+              this.#appContext.crashCollector.crash({ error, component: this });
+            }
+          }
+
+          resolve();
+        }, 0);
+      }
+    });
+  }
+
+  /**
+   * Disconnects this view from the DOM and runs lifecycle hooks.
+   */
+  async disconnect() {
+    if (!this.isConnected) {
+      return Promise.resolve();
+    }
+
+    return new Promise(async (resolve) => {
+      for (const callback of this.#lifecycleCallbacks.beforeDisconnect) {
+        try {
+          callback();
+        } catch (error) {
+          this.#appContext.crashCollector.crash({ error, component: this });
+        }
+      }
+
+      if (this.#lifecycleCallbacks.animateOut.length > 0) {
+        try {
+          const ctx = { node: this.node };
+          await Promise.all(this.#lifecycleCallbacks.animateOut.map((callback) => callback(ctx)));
+        } catch (error) {
+          this.#appContext.crashCollector.crash({ error, component: this });
+        }
+      }
+
+      if (this.#element) {
+        this.#element.disconnect();
+      }
+
+      setTimeout(() => {
+        for (const callback of this.#lifecycleCallbacks.afterDisconnect) {
+          try {
+            callback();
+          } catch (error) {
+            this.#appContext.crashCollector.crash({ error, component: this });
+          }
+        }
+
+        for (const subscription of this.#activeSubscriptions) {
+          subscription.unsubscribe();
+        }
+        this.#activeSubscriptions = [];
+
+        resolve();
+      }, 0);
+
+      this.#inputs.disconnect();
+    });
+  }
+
+  /**
+   * Prepares this view to be connected, handling loading state if necessary.
+   *
+   * @param parent - DOM node to connect loading content to.
+   * @param after - Sibling DOM node directly after which this view's node should appear.
+   */
   async #initialize(parent, after) {
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
@@ -108,7 +229,7 @@ export class View extends Connectable {
       },
 
       /**
-       * Returns the nearest instance of `store`.
+       * Returns the nearest matching store instance.
        *
        * @param store - A store class to access, or the name of a built-in store.
        */
@@ -232,120 +353,5 @@ export class View extends Connectable {
     if (isFunction(this.#ref)) {
       this.#ref(this.#element.node);
     }
-  }
-
-  setup(ctx, m) {
-    throw new Error(`This view needs a setup function.`);
-  }
-
-  setChildren(children) {
-    this.#$$children.set(children);
-  }
-
-  /**
-   * Connects this view to the DOM, running lifecycle hooks if it wasn't already connected.
-   * Calling this on a view that is already connected can reorder it or move it to a different
-   * place in the DOM without re-triggering lifecycle hooks.
-   *
-   * @param parent - DOM node under which this view should be connected as a child.
-   * @param after - A child node under `parent` after which this view should be connected.
-   */
-  async connect(parent, after = null) {
-    return new Promise(async (resolve) => {
-      const wasConnected = this.isConnected;
-
-      if (!wasConnected) {
-        await this.#initialize(parent, after); // Run setup() to configure the view.
-
-        this.#inputs.connect();
-
-        for (const callback of this.#lifecycleCallbacks.beforeConnect) {
-          try {
-            callback();
-          } catch (error) {
-            this.#appContext.crashCollector.crash({ error, component: this });
-          }
-        }
-      }
-
-      if (this.#element) {
-        this.#element.connect(parent, after);
-      }
-
-      if (!wasConnected) {
-        if (this.#lifecycleCallbacks.animateIn.length > 0) {
-          try {
-            const ctx = { node: this.node };
-
-            await Promise.all(this.#lifecycleCallbacks.animateIn.map((callback) => callback(ctx)));
-          } catch (error) {
-            this.#appContext.crashCollector.crash({ error, component: this });
-          }
-        }
-
-        setTimeout(() => {
-          for (const callback of this.#lifecycleCallbacks.afterConnect) {
-            try {
-              callback();
-            } catch (err) {
-              this.#appContext.crashCollector.crash({ error, component: this });
-            }
-          }
-
-          resolve();
-        }, 0);
-      }
-    });
-  }
-
-  /**
-   * Disconnects this view from the DOM and runs lifecycle hooks.
-   */
-  async disconnect() {
-    if (!this.isConnected) {
-      return Promise.resolve();
-    }
-
-    return new Promise(async (resolve) => {
-      for (const callback of this.#lifecycleCallbacks.beforeDisconnect) {
-        try {
-          callback();
-        } catch (error) {
-          this.#appContext.crashCollector.crash({ error, component: this });
-        }
-      }
-
-      if (this.#lifecycleCallbacks.animateOut.length > 0) {
-        try {
-          const ctx = { node: this.node };
-          await Promise.all(this.#lifecycleCallbacks.animateOut.map((callback) => callback(ctx)));
-        } catch (error) {
-          this.#appContext.crashCollector.crash({ error, component: this });
-        }
-      }
-
-      if (this.#element) {
-        this.#element.disconnect();
-      }
-
-      setTimeout(() => {
-        for (const callback of this.#lifecycleCallbacks.afterDisconnect) {
-          try {
-            callback();
-          } catch (error) {
-            this.#appContext.crashCollector.crash({ error, component: this });
-          }
-        }
-
-        for (const subscription of this.#activeSubscriptions) {
-          subscription.unsubscribe();
-        }
-        this.#activeSubscriptions = [];
-
-        resolve();
-      }, 0);
-
-      this.#inputs.disconnect();
-    });
   }
 }

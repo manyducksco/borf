@@ -89,7 +89,7 @@ export function makeSpring(initialValue = 0, options = {}) {
   return spring;
 }
 
-class DietReadable {
+class StaticReadable {
   #value;
 
   constructor(value) {
@@ -103,10 +103,10 @@ class DietReadable {
 
 class SpringSolver {
   constructor({ mass, stiffness, damping, velocity }) {
-    this.$mass = isReadable(mass) ? mass : new DietReadable(mass);
-    this.$stiffness = isReadable(stiffness) ? stiffness : new DietReadable(stiffness);
-    this.$damping = isReadable(damping) ? damping : new DietReadable(damping);
-    this.$velocity = isReadable(velocity) ? velocity : new DietReadable(velocity);
+    this.$mass = isReadable(mass) ? mass : new StaticReadable(mass);
+    this.$stiffness = isReadable(stiffness) ? stiffness : new StaticReadable(stiffness);
+    this.$damping = isReadable(damping) ? damping : new StaticReadable(damping);
+    this.$velocity = isReadable(velocity) ? velocity : new StaticReadable(velocity);
   }
 
   solve(t) {

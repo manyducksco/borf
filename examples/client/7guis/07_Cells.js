@@ -1,17 +1,14 @@
 import { View } from "woofe";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 class Cells extends View {
   static label = "7guis:Cells";
 
   setup(ctx) {
     return (
-      <div class="example">
-        <header>
-          <h3>Circle Drawer</h3>
-        </header>
-
+      <ExampleFrame title="7. Cells">
         <div></div>
-      </div>
+      </ExampleFrame>
     );
   }
 }

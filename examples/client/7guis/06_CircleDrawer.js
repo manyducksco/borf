@@ -1,17 +1,14 @@
 import { View } from "woofe";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 class CircleDrawer extends View {
   static label = "7guis:CircleDrawer";
 
   setup(ctx) {
     return (
-      <div class="example">
-        <header>
-          <h3>Circle Drawer</h3>
-        </header>
-
+      <ExampleFrame title="6. Circle Drawer">
         <div></div>
-      </div>
+      </ExampleFrame>
     );
   }
 }

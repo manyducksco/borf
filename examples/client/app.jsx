@@ -1,14 +1,10 @@
-import "./styles/demo.css";
-
 import { makeApp, View, Store } from "woofe";
 
 import { defineElement, defineStore } from "woofe/web-components";
 
 class WebComponentStore extends Store {
   static inputs = {
-    initialValue: {
-      required: true,
-    },
+    initialValue: {},
   };
 
   setup(ctx) {
@@ -23,7 +19,6 @@ class WebComponentView extends View {
     location: {
       type: "string",
       about: "A string to indicate where this instance is being rendered.",
-      required: true,
     },
   };
 
@@ -49,33 +44,22 @@ import { MouseStore } from "./globals/MouseStore";
 
 import { AppLayout } from "./views/AppLayout";
 
+import { CounterWithStore } from "./examples/CounterWithStore";
 import { CrashHandling } from "./examples/CrashHandling";
 import { Languages } from "./examples/Languages";
-import { PassingAttributes } from "./examples/PassingAttributes";
+import { LocalStores } from "./examples/LocalStores";
 import { SpringAnimation } from "./examples/SpringAnimation";
-
-import { ComponentInputsExample } from "./views/ComponentAttrsExample";
-import { ToggleExample } from "./views/ToggleExample";
-import { CounterExample } from "./views/CounterExample";
-import { ConditionalExample } from "./views/ConditionalExample";
-import { DynamicListExample } from "./views/DynamicListExample";
-import { TwoWayBindExample } from "./views/TwoWayBindExample";
-import { FormExample } from "./views/FormExample";
-import { MouseFollowerExample } from "./views/MouseFollowerExample";
-import { HTTPRequestExample } from "./views/HTTPRequestExample";
-import { SpringExample } from "./views/SpringExample";
-// import { LocalsExample } from "./views/LocalsExample";
 
 import { RenderOrderTest } from "./views/RenderOrderTest.jsx";
 
-import SevenGUIs from "./views/7guis";
-import Counter from "./views/7guis/01_Counter";
-import TempConverter from "./views/7guis/02_TempConverter";
-import FlightBooker from "./views/7guis/03_FlightBooker";
-import Timer from "./views/7guis/04_Timer";
-import CRUD from "./views/7guis/05_CRUD";
-import CircleDrawer from "./views/7guis/06_CircleDrawer";
-import Cells from "./views/7guis/07_Cells";
+import SevenGUIs from "./7guis";
+import Counter from "./7guis/01_Counter";
+import TempConverter from "./7guis/02_TempConverter";
+import FlightBooker from "./7guis/03_FlightBooker";
+import Timer from "./7guis/04_Timer";
+import CRUD from "./7guis/05_CRUD";
+import CircleDrawer from "./7guis/06_CircleDrawer";
+import Cells from "./7guis/07_Cells";
 
 const timer = new EventSource("/timer");
 
@@ -88,21 +72,6 @@ timer.addEventListener("message", (event) => {
 });
 
 const Examples = makeApp({
-  language: {
-    supported: ["en-US", "en-GB", "ja"],
-    default: "en-US",
-    translations: {
-      "en-US": {
-        greeting: "Hey",
-      },
-      "en-GB": {
-        greeting: "Greetings",
-      },
-      ja: {
-        greeting: "ようこそ",
-      },
-    },
-  },
   debug: {
     filter: "*",
     log: true,
@@ -111,32 +80,17 @@ const Examples = makeApp({
   },
   stores: [CounterStore, MouseStore],
   view: AppLayout,
-  // Routes are always rendered in the outlet of the sibling view.
   routes: [
     {
       path: "/examples",
-      view: () => {
-        return (
-          <div>
-            {/* <Languages /> */}
-            {/* <CrashHandling /> */}
-            <SpringAnimation />
-            {/* <PassingAttributes /> */}
-            {/* <LocalsExample /> */}
-            {/* <SpringExample /> */}
-            {/* <ToggleExample /> */}
-            {/* <CounterExample /> */}
-            {/* <ConditionalExample /> */}
-            {/* <DynamicListExample /> */}
-            {/* <TwoWayBindExample /> */}
-            {/* <FormExample /> */}
-            {/* <MouseFollowerExample /> */}
-            {/* <HTTPRequestExample /> */}
-            {/* <ComponentAttrsExample /> */}
-            {/* <RenderOrderTest /> */}
-          </div>
-        );
-      },
+      routes: [
+        { path: "/spring-animation", view: SpringAnimation },
+        { path: "/languages", view: Languages },
+        { path: "/crash-handling", view: CrashHandling },
+        { path: "/counter-with-store", view: CounterWithStore },
+        { path: "/local-stores", view: LocalStores },
+        { path: "*", redirect: "./spring-animation" },
+      ],
     },
     {
       path: "/7guis",
@@ -174,8 +128,27 @@ const Examples = makeApp({
         { path: "*", redirect: "./one" },
       ],
     },
+    {
+      path: "/tests",
+      routes: [{ path: "/render-order", view: RenderOrderTest }],
+    },
     { path: "*", redirect: "./examples" },
   ],
+  language: {
+    supported: ["en-US", "en-GB", "ja"],
+    default: "en-US",
+    translations: {
+      "en-US": {
+        greeting: "Hey",
+      },
+      "en-GB": {
+        greeting: "Greetings",
+      },
+      ja: {
+        greeting: "ようこそ",
+      },
+    },
+  },
 });
 
 // console.log(Examples.routes); // Metadata about route configuration

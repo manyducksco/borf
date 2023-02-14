@@ -60,6 +60,11 @@ Normal views used in an app will resolve Local -> App and don't have access to t
 
 One downside is that JSX is still going to require transpiling, so you need to use the `m` function to render if you're just dropping this script into a page.
 
+## Known Issues
+
+- As of this writing, web component tags used in a woofe app will still use global stores instead of those of the app. This might be fine though, since you can still use the element class directly if you want to load it as a View rather than as a web component. Each invocation style lives in its own little world.
+- The async `setup` with `loading()` function scheme will be a little weird to pull off for Stores in web components. Elements may need to put themselves in some kind of queue to wait for certain stores to be registered before displaying.
+
 ## TODO: Decorators
 
 For whenever decorators finally get added to JS (or if you're using TS), the define functions should also double as decorators if you leave off the component argument at the end and preface them with @ above the component.
@@ -87,9 +92,3 @@ class TitleView extends View {
   }
 }
 ```
-
-## Known Issues
-
-As of this writing, web component tags used in a woofe app will still use global stores, not those of the app.
-
-Also the async `setup` with `loading()` function scheme will be a little weird to pull off for Stores in web components. Elements may need to put themselves in some kind of queue to wait for certain stores to be registered before displaying.

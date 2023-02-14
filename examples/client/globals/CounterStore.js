@@ -1,8 +1,7 @@
 import { Store, makeState } from "woofe";
 
 export class CounterStore extends Store {
-  static about =
-    "Exposes a $current value and increments it by one each second.";
+  static about = "Keeps a counter that increments by one each second.";
 
   setup(ctx) {
     const $$current = makeState(0);

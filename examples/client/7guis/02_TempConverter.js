@@ -1,4 +1,5 @@
 import { makeState, View } from "woofe";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 class TempConverter extends View {
   static label = "7guis:TempConverter";
@@ -18,10 +19,7 @@ class TempConverter extends View {
     const $fahrenheit = $celsius.as((c) => c * (9 / 5) + 32);
 
     return (
-      <div class="example">
-        <header>
-          <h3>Temperature Converter</h3>
-        </header>
+      <ExampleFrame title="2. Temperature Converter">
         <input
           type="text"
           value={$celsius}
@@ -40,7 +38,7 @@ class TempConverter extends View {
           }}
         />
         Fahrenheit
-      </div>
+      </ExampleFrame>
     );
   }
 }

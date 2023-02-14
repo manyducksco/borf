@@ -1,11 +1,13 @@
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
-import { isObject, isObservable, isString } from "../helpers/typeChecking.js";
-import { joinStates } from "../makeState.js";
+import { isObject, isObservable, isPromise, isFunction, isMarkup, isString } from "../helpers/typeChecking.js";
+import { makeState, joinStates } from "../makeState.js";
 import { Connectable } from "./Connectable.js";
 import { Inputs } from "./Inputs.js";
+import { Outlet } from "./Outlet.js";
 
 export class Store extends Connectable {
   #node = document.createComment("Store");
+  #outlet;
   #lifecycleCallbacks = {
     beforeConnect: [],
     afterConnect: [],
@@ -17,6 +19,9 @@ export class Store extends Connectable {
   #config;
   #channel;
   #inputs;
+  #$$children;
+  #appContext;
+  #elementContext;
 
   get node() {
     return this.#node;
@@ -27,15 +32,23 @@ export class Store extends Connectable {
     elementContext,
     channelPrefix = "store",
     label = "<anonymous>",
+    about,
     inputs = {},
     inputDefs,
+    children = [],
     setup, // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
   }) {
     super();
 
+    this.label = label;
+    this.about = about;
+
     if (setup) {
       this.setup = setup;
     }
+
+    this.#appContext = appContext;
+    this.#elementContext = elementContext;
 
     this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
     this.#inputs = new Inputs({
@@ -43,6 +56,13 @@ export class Store extends Connectable {
       definitions: inputDefs,
       enableValidation: true,
     });
+    this.#$$children = makeState(children);
+    this.#outlet = new Outlet({ value: this.#$$children, appContext, elementContext });
+  }
+
+  async #initialize(parent, after = null) {
+    const appContext = this.#appContext;
+    const elementContext = this.#elementContext;
 
     const ctx = {
       [APP_CONTEXT]: appContext,
@@ -139,6 +159,47 @@ export class Store extends Connectable {
       this.#channel.error(err);
     }
 
+    // Display loading content while setup promise pends.
+    if (isPromise(exports)) {
+      let cleanup;
+
+      if (isFunction(this.loading)) {
+        // Render contents from loading() while waiting for setup to resolve.
+        const content = this.loading(m);
+
+        if (content === undefined) {
+          throw new TypeError(`loading() must return a markup element, or null to render nothing. Returned undefined.`);
+        }
+
+        if (content !== null) {
+          // m() returns a Markup with something in it. Either an HTML tag, a view setup function or a connectable class.
+          // Markup.init(config) is called, which passes config stuff to the connectable's constructor.
+          if (!isMarkup(content)) {
+            throw new TypeError(
+              `loading() must return a markup element, or null to render nothing. Returned ${element}.`
+            );
+          }
+        }
+
+        const component = content.init({ appContext, elementContext });
+        component.connect(parent, after);
+
+        cleanup = () => component.disconnect();
+      }
+
+      try {
+        exports = await exports;
+      } catch (error) {
+        appContext.crashCollector.crash({ error, component: this });
+      }
+
+      if (cleanup) {
+        cleanup();
+      }
+    }
+
+    console.log(exports, isObject(exports));
+
     if (!isObject(exports)) {
       throw new TypeError(`A store setup function must return an object. Got: ${exports}`);
     }
@@ -150,14 +211,20 @@ export class Store extends Connectable {
     throw new Error(`This store needs a setup function.`);
   }
 
+  setChildren(children) {
+    this.#$$children.set(children);
+  }
+
   async connect(parent, after = null) {
     const wasConnected = this.isConnected;
 
     if (!wasConnected) {
+      await this.#initialize(parent, after);
       await this.beforeConnect();
     }
 
     await super.connect(parent, after);
+    await this.#outlet.connect(parent, after);
 
     if (!wasConnected) {
       this.afterConnect();
@@ -171,6 +238,7 @@ export class Store extends Connectable {
       await this.beforeDisconnect();
     }
 
+    await this.#outlet.disconnect();
     await super.disconnect();
 
     if (!wasConnected) {
@@ -182,13 +250,18 @@ export class Store extends Connectable {
    * Connects the store without running lifecycle callbacks.
    */
   async connectManual(parent, after = null) {
+    await this.#initialize(parent, after);
+    await this.beforeConnect();
+
     await super.connect(parent, after);
+    await this.#outlet.connect(parent, after);
   }
 
   /**
    * Disconnects the store without running lifecycle callbacks.
    */
   async disconnectManual() {
+    await this.#outlet.disconnect();
     await super.disconnect();
   }
 

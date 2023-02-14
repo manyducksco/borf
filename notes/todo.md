@@ -13,3 +13,4 @@ Prepare for woofe v1.0
 Problems:
 
 - [ ] CrashHandling example is currently running into a problem when connecting loading() content where Markup is being passed as an attribute to an HTML element.
+- [ ] Local stores are not yet fully implemented.

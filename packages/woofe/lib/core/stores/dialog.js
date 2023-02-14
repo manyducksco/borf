@@ -11,62 +11,105 @@ import { isFunction, isView } from "../helpers/typeChecking.js";
  */
 export class DialogStore extends Store {
   setup(ctx) {
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.top = "0";
+    container.style.right = "0";
+    container.style.bottom = "0";
+    container.style.left = "0";
+    container.style.zIndex = "99999";
+
     /**
      * A first-in-last-out queue of dialogs. The last one appears on top.
      * This way if a dialog opens another dialog the new dialog stacks.
      */
     const $$dialogs = makeState([]);
 
-    // Add $dialogs to app context so the app can display them.
-    ctx[APP_CONTEXT].$dialogs = $$dialogs.readable();
+    let activeDialogs = [];
+
+    // Diff dialogs when value is updated, adding and removing dialogs as necessary.
+    ctx.observe($$dialogs, (dialogs) => {
+      requestAnimationFrame(() => {
+        let removed = [];
+        let added = [];
+
+        for (const dialog of activeDialogs) {
+          if (!dialogs.includes(dialog)) {
+            removed.push(dialog);
+          }
+        }
+
+        for (const dialog of dialogs) {
+          if (!activeDialogs.includes(dialog)) {
+            added.push(dialog);
+          }
+        }
+
+        for (const dialog of removed) {
+          dialog.disconnect();
+          activeDialogs.splice(activeDialogs.indexOf(dialog), 1);
+        }
+
+        for (const dialog of added) {
+          dialog.connect(container);
+          activeDialogs.push(dialog);
+        }
+
+        // Container is only connected to the DOM when there is at least one dialog to display.
+        if (activeDialogs.length > 0) {
+          if (!container.parentNode) {
+            document.body.appendChild(container);
+          }
+        } else {
+          if (container.parentNode) {
+            document.body.removeChild(container);
+          }
+        }
+      });
+    });
 
     return {
-      open: (view, inputs) => openDialog(view, inputs, ctx, $$dialogs),
+      open: (view, inputs = {}) => {
+        let markup;
+
+        if (isFunction(view)) {
+          markup = new Markup((config) => new View({ ...config, setup: view }));
+        } else if (isView(view)) {
+          markup = new Markup((config) => new view(config));
+        }
+
+        if (!markup) {
+          throw new TypeError(`Expected a view or setup function. Got: ${view}`);
+        }
+
+        const $$open = makeState(true);
+
+        let instance = markup.init({
+          appContext: ctx[APP_CONTEXT],
+          inputs: { ...inputs, open: $$open },
+        });
+        $$dialogs.update((current) => {
+          current.push(instance);
+        });
+
+        const openSubscription = $$open.subscribe((value) => {
+          if (!value) {
+            close();
+          }
+        });
+
+        return function close() {
+          $$dialogs.update((current) => {
+            current.splice(
+              current.findIndex((v) => v === view),
+              1
+            );
+          });
+          instance = null;
+
+          openSubscription.unsubscribe();
+        };
+      },
     };
   }
-}
-
-function openDialog(view, inputs, ctx, $$dialogs) {
-  let markup;
-
-  if (isFunction(view)) {
-    markup = new Markup((config) => new View({ ...config, setup: view }));
-  } else if (isView(view)) {
-    markup = new Markup((config) => new view(config));
-  }
-
-  if (!markup) {
-    throw new TypeError(`Expected a view or setup function. Got: ${view}`);
-  }
-
-  const $$open = makeState(true);
-
-  let instance = markup.init({
-    appContext: ctx[APP_CONTEXT],
-    inputs: {
-      ...inputs,
-      open: $$open,
-    },
-  });
-  $$dialogs.update((current) => {
-    current.push(instance);
-  });
-
-  const openSubscription = $$open.subscribe((value) => {
-    if (!value) {
-      close();
-    }
-  });
-
-  return function close() {
-    $$dialogs.update((current) => {
-      current.splice(
-        current.findIndex((v) => v === view),
-        1
-      );
-    });
-    instance = null;
-
-    openSubscription.unsubscribe();
-  };
 }

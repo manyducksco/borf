@@ -2,7 +2,6 @@ import { isFunction, isObject, isStore, isString, isView } from "./helpers/typeC
 import { parseRoute, splitRoute } from "./helpers/routing.js";
 import { joinPath } from "./helpers/joinPath.js";
 import { resolvePath } from "./helpers/resolvePath.js";
-import { extendsClass } from "./helpers/extendsClass.js";
 import { merge } from "./helpers/merge.js";
 
 import { DebugHub } from "./classes/DebugHub.js";
@@ -190,18 +189,19 @@ class App {
         instance = new store({ ...config, about: store.about, inputDefs: store.inputs });
       }
 
-      // Stores must have a setup function that returns an object. That is the object you get by calling `ctx.useStore()`.
-      if (!isObject(instance?.exports)) {
-        throw new TypeError(`Setup function for store '${label}' did not return an object.`);
-      }
-
       // Add instance and mark as ready.
       this.#stores.set(key, { ...item, instance });
     }
 
+    const storeParent = document.createElement("div");
+
     // beforeConnect is the first opportunity to configure globals before anything else happens.
     for (const { instance } of this.#stores.values()) {
-      await instance.beforeConnect();
+      await instance.connectManual(storeParent);
+
+      if (!isObject(instance.exports)) {
+        throw new TypeError(`Store setup functions must return an object. Got: ${instance.exports}`);
+      }
     }
 
     // Then the app-level preload function runs (if any), resolving to initial inputs for the app-level view.
@@ -216,7 +216,7 @@ class App {
           setup: this.#options.view,
           label: "app",
         });
-      } else if (extendsClass(View, this.#options.view)) {
+      } else if (this.#options.view.prototype instanceof View) {
         const view = this.#options.view;
         appContext.rootView = new this.#options.view({
           appContext,
@@ -228,11 +228,7 @@ class App {
 
       appContext.rootView.connect(appContext.rootElement);
 
-      // Then we initialize the dialog container for the @dialog global.
-      // This subscription manages the actual DOM nodes behind the data in the @dialog global.
-      this.#activeSubscriptions.push(connectDialogs(appContext));
-
-      // Then stores receive the afterConnect signal. This notifies `router` to start listening for route changes.
+      // Then stores receive the connected signal. This notifies `router` to start listening for route changes.
       for (const { instance } of this.#stores.values()) {
         await instance.afterConnect();
       }
@@ -438,63 +434,4 @@ class App {
 
     return routes;
   }
-}
-
-/**
- * Creates a dialog outlet element that gets added to the DOM.
- * This outlet is displayed when there is at least one dialog active and will contain any dialogs that are open.
- */
-function connectDialogs(appContext) {
-  const { rootElement, $dialogs } = appContext;
-
-  const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.top = "0";
-  container.style.right = "0";
-  container.style.bottom = "0";
-  container.style.left = "0";
-  container.style.zIndex = "99999";
-
-  let activeDialogs = [];
-
-  // Diff dialogs when value is updated, adding and removing dialogs as necessary.
-  return $dialogs.subscribe((dialogs) => {
-    requestAnimationFrame(() => {
-      let removed = [];
-      let added = [];
-
-      for (const dialog of activeDialogs) {
-        if (!dialogs.includes(dialog)) {
-          removed.push(dialog);
-        }
-      }
-
-      for (const dialog of dialogs) {
-        if (!activeDialogs.includes(dialog)) {
-          added.push(dialog);
-        }
-      }
-
-      for (const dialog of removed) {
-        dialog.disconnect();
-        activeDialogs.splice(activeDialogs.indexOf(dialog), 1);
-      }
-
-      for (const dialog of added) {
-        dialog.connect(container);
-        activeDialogs.push(dialog);
-      }
-
-      // Container is only connected to the DOM when there is at least one dialog to display.
-      if (activeDialogs.length > 0) {
-        if (!container.parentNode) {
-          rootElement.appendChild(container);
-        }
-      } else {
-        if (container.parentNode) {
-          rootElement.removeChild(container);
-        }
-      }
-    });
-  });
 }

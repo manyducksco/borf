@@ -39,7 +39,7 @@ export function parseRoute(route) {
         name: "*",
         value: null,
       });
-    } else if (part[0] === "{" && part.at(-1) === "}") {
+    } else if (part.at(0) === "{" && part.at(-1) === "}") {
       fragments.push({
         type: part[1] === "#" ? FragTypes.NumericParam : FragTypes.Param,
         name: part[1] === "#" ? part.slice(2, -1) : part.slice(1, -1),

@@ -1,4 +1,5 @@
 import { joinStates, makeState, View } from "woofe";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 const flightTypes = ["one-way flight", "return flight"];
 const flipped = (value) => !value; // Boolean flipping function.
@@ -45,11 +46,7 @@ class FlightBooker extends View {
     );
 
     return (
-      <div class="example">
-        <header>
-          <h3>Flight Booker</h3>
-        </header>
-
+      <ExampleFrame title="3. Flight Booker">
         <form
           onsubmit={(e) => {
             e.preventDefault();
@@ -105,7 +102,7 @@ class FlightBooker extends View {
             <button disabled={$formIsValid.as(flipped)}>Book</button>
           </div>
         </form>
-      </div>
+      </ExampleFrame>
     );
   }
 }

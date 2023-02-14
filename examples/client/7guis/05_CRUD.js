@@ -1,4 +1,5 @@
 import { joinStates, makeState, View } from "woofe";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 class CRUD extends View {
   static label = "7guis:CRUD";
@@ -80,11 +81,7 @@ class CRUD extends View {
     });
 
     return (
-      <div class="example">
-        <header>
-          <h3>CRUD</h3>
-        </header>
-
+      <ExampleFrame title="5. CRUD">
         <div>
           <div>
             Filter prefix: <input value={$$filterPrefix} />
@@ -120,7 +117,7 @@ class CRUD extends View {
             <button onclick={del}>Delete</button>
           </div>
         </div>
-      </div>
+      </ExampleFrame>
     );
   }
 }

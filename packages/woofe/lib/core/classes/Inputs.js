@@ -17,8 +17,8 @@ import { deepEqual } from "../helpers/deepEqual.js";
 
 /**
  * Handles observables, readables, writables and plain values as passed to a View or Store.
- * Exposes an API to work with values, automatically propagating writables back to the original binding.
- * Validates values against a set of attribute definitions if supplied.
+ * Exposes an API to work with input values, automatically propagating writable values back to the original binding.
+ * Validates against a set of definitions at runtime if supplied.
  */
 export class Inputs {
   _subscriptions = [];

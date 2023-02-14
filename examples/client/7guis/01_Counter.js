@@ -1,4 +1,5 @@
 import { makeState, View } from "woofe";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 class Counter extends View {
   static label = "7guis:Counter";
@@ -7,11 +8,7 @@ class Counter extends View {
     const $$count = makeState(0);
 
     return (
-      <div class="example">
-        <header>
-          <h3>Counter</h3>
-        </header>
-
+      <ExampleFrame title="1. Counter">
         <div>
           <input type="text" value={$$count.readable()} disabled />
           <button
@@ -22,7 +19,7 @@ class Counter extends View {
             Increment
           </button>
         </div>
-      </div>
+      </ExampleFrame>
     );
   }
 }

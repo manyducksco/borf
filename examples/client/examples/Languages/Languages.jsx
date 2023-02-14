@@ -4,13 +4,13 @@ import { ExampleFrame } from "../../views/ExampleFrame";
 import styles from "./Languages.module.css";
 
 export class Languages extends View {
+  static inputs = {};
+
   setup(ctx, m) {
     const { t, setLanguage, $currentLanguage } = ctx.useStore("language");
 
     return (
-      <ExampleFrame>
-        <h3>Languages</h3>
-
+      <ExampleFrame title="Languages">
         <div>
           <button
             class={{

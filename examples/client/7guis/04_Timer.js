@@ -1,4 +1,5 @@
 import { makeState, View } from "woofe";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 export class Timer extends View {
   static label = "7guis:Timer";
@@ -39,11 +40,7 @@ export class Timer extends View {
     });
 
     return (
-      <div class="example">
-        <header>
-          <h3>Timer</h3>
-        </header>
-
+      <ExampleFrame title="4. Timer">
         <div>
           <div>
             Elapsed Time: <progress max={$$duration} value={$$elapsed} />
@@ -69,7 +66,7 @@ export class Timer extends View {
             </button>
           </div>
         </div>
-      </div>
+      </ExampleFrame>
     );
   }
 }

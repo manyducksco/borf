@@ -4,8 +4,7 @@ import { ExampleFrame } from "../../views/ExampleFrame";
 export class CrashHandling extends View {
   setup(ctx, m) {
     return (
-      <ExampleFrame>
-        <h3>Crash Handling</h3>
+      <ExampleFrame title="Crash Handling">
         <div>
           <button
             onclick={() => {

@@ -4,6 +4,10 @@
 
 Woofe is a front end framework that aims to cover the most common needs of modern web apps. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box.
 
+# Why Woofe?
+
+I want Rails for UI. Hard parts solved, developer burdens lessened, minimal weeds to get lost in. When it comes to front end frameworks, I think a little more structure is good. Most apps do most of the same things, and for the parts where your app is different, you should be able to write a view or store and slot it in. The framework should already be a skeleton app; one with slots and adapters for your custom stuff.
+
 ## Terms
 
 - App
