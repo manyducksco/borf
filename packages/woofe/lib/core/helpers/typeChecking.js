@@ -19,10 +19,6 @@ export const isClass = (value) => typeof value === "function" && /^\s*class\s+/.
 
 export const isPromise = (value) => value != null && isFunction(value.then) && isFunction(value.catch);
 export const isDOM = (value) => value != null && (value instanceof Node || value.isDOM === true);
-export const isView = (value) => value != null && value.prototype instanceof View;
-export const isStore = (value) => value != null && value.prototype instanceof Store;
 export const isMarkup = (value) => value != null && value instanceof Markup;
-export const isReadable = (value) => (value && value[READABLE] && value === value[READABLE]()) || false;
-export const isWritable = (value) => (value && value[WRITABLE] && value === value[WRITABLE]()) || false;
 export const isObservable = (value) => (value && value[OBSERVABLE] && value === value[OBSERVABLE]()) || false;
 export const isConnectable = (value) => value != null && value.prototype instanceof Connectable;

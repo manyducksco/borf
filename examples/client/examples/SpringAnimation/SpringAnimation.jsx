@@ -1,4 +1,4 @@
-import { View, makeSpring, makeState, makeRef } from "woofe";
+import { View, Spring, State, Ref } from "woofe";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 import styles from "./SpringAnimation.module.css";
@@ -8,10 +8,10 @@ export class SpringAnimation extends View {
   static inputs = {};
 
   setup(ctx, m) {
-    const $$stiffness = makeState(1549); // TODO: Rename to 'tension'
-    const $$mass = makeState(7); // TODO: Rename to 'weight'
-    const $$damping = makeState(83);
-    const $$velocity = makeState(14);
+    const $$stiffness = new State(1549);
+    const $$mass = new State(7);
+    const $$damping = new State(83);
+    const $$velocity = new State(14);
 
     const preset = (stiffness, mass, damping, velocity) => () => {
       $$stiffness.set(stiffness);
@@ -20,10 +20,10 @@ export class SpringAnimation extends View {
       $$velocity.set(velocity);
     };
 
-    const codeRef = makeRef();
+    const codeRef = new Ref();
 
     ctx.observe($$stiffness, $$mass, $$damping, $$velocity, (s, m, d, v) => {
-      codeRef().textContent = `
+      codeRef.element.textContent = `
 const spring = makeSpring(0, {
   stiffness: ${s},
   mass: ${m},
@@ -142,7 +142,7 @@ class Examples extends View {
     const $damping = ctx.inputs.readable("damping");
     const $velocity = ctx.inputs.readable("velocity");
 
-    const spring = makeSpring(0, {
+    const spring = new Spring(0, {
       stiffness: $stiffness,
       mass: $mass,
       damping: $damping,

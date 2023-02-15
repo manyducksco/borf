@@ -1,7 +1,8 @@
 import { DebugHub } from "../core/classes/DebugHub.js";
+import { Store } from "../core/classes/Store.js";
 import { HTTPStore } from "../core/stores/http.js";
 import { PageStore } from "../core/stores/page.js";
-import { isObject, isStore, isString } from "../core/helpers/typeChecking.js";
+import { isObject, isString } from "../core/helpers/typeChecking.js";
 
 import { DialogStore } from "./stores/dialog.js";
 import { RouterStore } from "./stores/router.js";
@@ -31,7 +32,7 @@ const channel = appContext.debugHub.channel("woofe:web-components");
 export function defineStore(store) {
   let config;
 
-  if (isStore(store)) {
+  if (Store.isStore(store)) {
     config = { store, instance: undefined };
   } else if (isObject(store)) {
     config = { ...store, instance: undefined };
@@ -46,13 +47,13 @@ export function defineStore(store) {
       throw new Error("An 'exports' store must be defined when overriding a built in store.");
     }
 
-    if (!isStore(config.exports)) {
+    if (!Store.isStore(config.exports)) {
       throw new TypeError(`Store config 'exports' must be a store class. Got: ${config.exports}`);
     }
 
     StoreClass = config.exports;
-  } else if (isStore(config.store)) {
-    if (config.exports && !isStore(config.exports)) {
+  } else if (Store.isStore(config.store)) {
+    if (config.exports && !Store.isStore(config.exports)) {
       throw new TypeError(`Store config 'exports' must be a store class. Got: ${config.exports}`);
     }
 

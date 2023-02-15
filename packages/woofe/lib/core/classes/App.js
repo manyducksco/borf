@@ -1,26 +1,22 @@
-import { isFunction, isObject, isStore, isString, isView } from "./helpers/typeChecking.js";
-import { parseRoute, splitRoute } from "./helpers/routing.js";
-import { joinPath } from "./helpers/joinPath.js";
-import { resolvePath } from "./helpers/resolvePath.js";
-import { merge } from "./helpers/merge.js";
+import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
+import { parseRoute, splitRoute } from "../helpers/routing.js";
+import { joinPath } from "../helpers/joinPath.js";
+import { resolvePath } from "../helpers/resolvePath.js";
+import { merge } from "../helpers/merge.js";
 
-import { DebugHub } from "./classes/DebugHub.js";
-import { Store } from "./classes/Store.js";
-import { View } from "./classes/View.js";
-import { m } from "./classes/Markup.js";
+import { DialogStore } from "../stores/dialog.js";
+import { HTTPStore } from "../stores/http.js";
+import { LanguageStore } from "../stores/language.js";
+import { PageStore } from "../stores/page.js";
+import { RouterStore } from "../stores/router.js";
+import { CrashCollector } from "../classes/CrashCollector.js";
 
-import { DialogStore } from "./stores/dialog.js";
-import { HTTPStore } from "./stores/http.js";
-import { LanguageStore } from "./stores/language.js";
-import { PageStore } from "./stores/page.js";
-import { RouterStore } from "./stores/router.js";
-import { CrashCollector } from "./classes/CrashCollector.js";
+import { DebugHub } from "./DebugHub.js";
+import { Store } from "./Store.js";
+import { View } from "./View.js";
+import { m } from "./Markup.js";
 
-export function makeApp(options) {
-  return new App(options);
-}
-
-class App {
+export class App {
   #layerId = 0;
   #isConnected = false;
   #activeSubscriptions = [];
@@ -106,8 +102,6 @@ class App {
           elementContext: this.#elementContext,
         });
 
-        console.log({ instance, rootElement: this.#appContext.rootElement });
-
         // TODO: This is somehow leading to a Markup being passed as an HTML attribute.
         instance.connect(this.#appContext.rootElement);
       },
@@ -165,7 +159,7 @@ class App {
       let instance;
 
       if (exports) {
-        if (isStore(exports)) {
+        if (Store.isStore(exports)) {
           instance = new exports({
             ...config,
             label: exports.label,
@@ -350,7 +344,7 @@ class App {
   }
 
   #prepareStore(store) {
-    if (isStore(store)) {
+    if (Store.isStore(store)) {
       store = { store };
     }
 
@@ -408,7 +402,7 @@ class App {
     }
 
     // Make sure the `view` is the correct type if passed.
-    if (route.view && !isView(route.view) && !isFunction(route.view)) {
+    if (route.view && !View.isView(route.view) && !isFunction(route.view)) {
       console.warn(route.view);
       throw new TypeError(
         `Route '${route.path}' needs a setup function or a subclass of View for 'view'. Got: ${route.view}`

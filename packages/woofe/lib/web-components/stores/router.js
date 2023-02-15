@@ -2,7 +2,7 @@ import { createBrowserHistory } from "history";
 import queryString from "query-string";
 
 import { Store } from "../../core/classes/Store.js";
-import { makeState } from "../../core/makeState.js";
+import { State } from "../../core/classes/State.js";
 import { isObject } from "../../core/helpers/typeChecking.js";
 import { resolvePath } from "../../core/helpers/resolvePath.js";
 import { joinPath } from "../../core/helpers/joinPath.js";
@@ -12,10 +12,10 @@ export class RouterStore extends Store {
     const history = createBrowserHistory();
     let cancel;
 
-    const $$path = makeState("");
-    const $$route = makeState("");
-    const $$params = makeState({});
-    const $$query = makeState({});
+    const $$path = new State("");
+    const $$route = new State("");
+    const $$params = new State({});
+    const $$query = new State({});
 
     let lastQuery;
     let isRouteChange = false;

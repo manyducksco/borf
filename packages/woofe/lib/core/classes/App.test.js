@@ -1,8 +1,8 @@
 import { createMemoryHistory } from "history";
-import { makeApp } from "./makeApp.js";
+import { App } from "../App.js";
 
 test("lifecycle methods", async () => {
-  const app = makeApp({
+  const app = new App({
     router: {
       history: createMemoryHistory(),
     },
@@ -39,7 +39,7 @@ test("throws helpful error when accessing globals that haven't been created yet 
     };
   };
 
-  const app = makeApp({
+  const app = new App({
     router: {
       history: createMemoryHistory(),
     },
@@ -73,7 +73,7 @@ test("error doesn't occur if accessing outside of the main function scope", asyn
     };
   };
 
-  const app = makeApp({
+  const app = new App({
     router: {
       history: createMemoryHistory(),
     },

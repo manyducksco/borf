@@ -1,14 +1,7 @@
-import {
-  isArray,
-  isObject,
-  isString,
-  isNumber,
-  isFunction,
-  isObservable,
-  isWritable,
-  isReadable,
-} from "../helpers/typeChecking.js";
+import { isObject, isString, isNumber, isFunction, isObservable } from "../helpers/typeChecking.js";
 import { omit } from "../helpers/omit.js";
+import { Ref } from "./Ref.js";
+import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
 
 export class HTML extends Connectable {
@@ -55,12 +48,12 @@ export class HTML extends Connectable {
       }
     }
 
-    // Call ref function, if present.
+    // Set ref if present.
     if (normalizedAttrs.ref) {
-      if (isFunction(normalizedAttrs.ref)) {
-        normalizedAttrs.ref(this.#node);
+      if (Ref.isRef(normalizedAttrs.ref)) {
+        normalizedAttrs.ref.element = this.#node;
       } else {
-        throw new Error("Ref is not a function. Got: " + attrs.ref);
+        throw new Error("Expected an instance of Ref. Got: " + attrs.ref);
       }
     }
 
@@ -122,20 +115,19 @@ export class HTML extends Connectable {
 }
 
 function applyAttrs(element, attrs, subscriptions) {
-  console.log({ element, attrs });
   for (const key in attrs) {
     const value = attrs[key];
 
     // Bind or set value depending on its type.
     if (key === "value") {
-      if (isReadable(value)) {
+      if (State.isReadable(value)) {
         subscriptions.push(
           value.subscribe((current) => {
             element.value = String(current);
           })
         );
 
-        if (isWritable(value)) {
+        if (State.isWritable(value)) {
           const listener = (e) => {
             const updated = toTypeOf(value.get(), e.target.value);
             value.set(updated);
@@ -183,7 +175,6 @@ function applyAttrs(element, attrs, subscriptions) {
           })
         );
       } else if (value) {
-        console.log({ key, value });
         element.setAttribute(key, isBoolean ? "" : String(value));
       }
     }
@@ -308,7 +299,7 @@ function getClassMap(classes) {
     }
   } else if (isObject(classes)) {
     Object.assign(mapped, classes);
-  } else if (isArray(classes)) {
+  } else if (Array.isArray(classes)) {
     Array.from(classes)
       .filter((item) => item != null)
       .forEach((item) => {

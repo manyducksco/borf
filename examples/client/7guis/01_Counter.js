@@ -1,11 +1,11 @@
-import { makeState, View } from "woofe";
+import { State, View } from "woofe";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class Counter extends View {
   static label = "7guis:Counter";
 
   setup(ctx) {
-    const $$count = makeState(0);
+    const $$count = new State(0);
 
     return (
       <ExampleFrame title="1. Counter">

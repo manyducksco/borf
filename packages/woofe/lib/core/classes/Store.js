@@ -1,11 +1,17 @@
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
-import { isObject, isObservable, isPromise, isFunction, isMarkup, isString } from "../helpers/typeChecking.js";
-import { makeState, joinStates } from "../makeState.js";
+import { isObject, isObservable, isPromise, isFunction, isMarkup } from "../helpers/typeChecking.js";
+import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
 import { Inputs } from "./Inputs.js";
 import { Outlet } from "./Outlet.js";
 
 export class Store extends Connectable {
+  static isStore(value) {
+    // Store.isStore() considers a store class to be a "store",
+    // because framework users don't interact with instances directly.
+    return value?.prototype instanceof Store;
+  }
+
   #node = document.createComment("Store");
   #outlet;
   #lifecycleCallbacks = {
@@ -16,7 +22,6 @@ export class Store extends Connectable {
   };
   #activeSubscriptions = [];
   #isConnected = false;
-  #config;
   #channel;
   #inputs;
   #$$children;
@@ -48,16 +53,26 @@ export class Store extends Connectable {
     }
 
     this.#appContext = appContext;
-    this.#elementContext = elementContext;
+    this.#elementContext = {
+      ...elementContext,
+      stores: new Map([
+        ...elementContext.stores.entries(),
+        [this.constructor, { store: this.constructor, instance: this }],
+      ]),
+    };
 
     this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
+    this.#$$children = new State(children);
     this.#inputs = new Inputs({
       inputs,
       definitions: inputDefs,
       enableValidation: true,
     });
-    this.#$$children = makeState(children);
-    this.#outlet = new Outlet({ value: this.#$$children, appContext, elementContext });
+    this.#outlet = new Outlet({
+      value: this.#$$children,
+      appContext: this.#appContext,
+      elementContext: this.#elementContext,
+    });
   }
 
   async #initialize(parent, after = null) {
@@ -79,10 +94,10 @@ export class Store extends Connectable {
 
         const start = () => {
           if (isObservable(args.at(0))) {
-            const $merged = joinStates(...args, callback);
+            const $merged = State.merge(...args, callback);
             return $merged.subscribe(() => undefined);
           } else {
-            const $merged = joinStates(...args, () => undefined);
+            const $merged = State.merge(...args, () => undefined);
             return $merged.subscribe(callback);
           }
         };
@@ -197,8 +212,6 @@ export class Store extends Connectable {
         cleanup();
       }
     }
-
-    console.log(exports, isObject(exports));
 
     if (!isObject(exports)) {
       throw new TypeError(`A store setup function must return an object. Got: ${exports}`);

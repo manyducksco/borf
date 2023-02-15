@@ -453,10 +453,10 @@ declare module "woofe" {
   export type ViewLike<A> = ViewSetupFn<A, any> | View<A, any>;
 
   export class View extends Connectable {
-    setup(ctx: ViewSetupContext, m: MarkupFn): Markup | null;
+    setup(ctx: ViewContext, m: MarkupFn): Markup | null;
   }
 
-  export type ViewSetupFn<A = any> = (ctx: ViewSetupContext<A>, m: MarkupFn) => Markup | null;
+  export type ViewSetupFn<A = any> = (ctx: ViewContext<A>, m: MarkupFn) => Markup | null;
 
   type AttrsWrapper<T> = {
     [K in keyof T]: T[K] | Readable<T[K]>;
@@ -483,7 +483,7 @@ declare module "woofe" {
     writable(): Writable<T>;
   }
 
-  export interface ViewSetupContext<A = any> extends StateContext, DebugChannel {
+  export interface ViewContext<A = any> extends StateContext, DebugChannel {
     /**
      * True while this view is connected to the DOM.
      */
@@ -547,10 +547,10 @@ declare module "woofe" {
   }
 
   export class Store<Attrs = any, Exports = any> {
-    setup(ctx: StoreSetupContext<Attrs>): Exports;
+    setup(ctx: StoreContext<Attrs>): Exports;
   }
 
-  export interface StoreSetupContext<Attrs> extends DebugChannel, StateContext {
+  export interface StoreContext<Attrs> extends DebugChannel, StateContext {
     attrs: Attributes<Attrs>;
 
     useStore<S extends StoreConstructor<any>>(store: S): ReturnType<S.setup>;

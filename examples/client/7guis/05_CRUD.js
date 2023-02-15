@@ -1,22 +1,22 @@
-import { joinStates, makeState, View } from "woofe";
+import { State, View } from "woofe";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class CRUD extends View {
   static label = "7guis:CRUD";
 
   setup(ctx, m) {
-    const $$people = makeState([
+    const $$people = new State([
       { id: 1, name: "Hans", surname: "Emil" },
       { id: 2, name: "Max", surname: "Mustermann" },
       { id: 3, name: "Roman", surname: "Tisch" },
     ]);
-    const $$nextId = makeState(4);
-    const $$selectedId = makeState(1);
-    const $$nameInput = makeState("");
-    const $$surnameInput = makeState("");
-    const $$filterPrefix = makeState("");
+    const $$nextId = new State(4);
+    const $$selectedId = new State(1);
+    const $$nameInput = new State("");
+    const $$surnameInput = new State("");
+    const $$filterPrefix = new State("");
 
-    const $filteredPeople = joinStates(
+    const $filteredPeople = State.merge(
       $$people,
       $$filterPrefix,
       (people, prefix) => {

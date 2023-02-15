@@ -1,4 +1,3 @@
-import { isView } from "../helpers/typeChecking.js";
 import { View } from "./View.js";
 import { Markup } from "./Markup.js";
 
@@ -12,7 +11,7 @@ export class CrashCollector {
   #enableCrashPage; // Whether to show a crash page or just unmount to a white screen.
   #crashPage = DefaultCrashPage;
 
-  #crashed = false;
+  #isCrashed = false;
 
   constructor({ disconnectApp, connectView, crashPage, enableCrashPage = true }) {
     this.#disconnectApp = disconnectApp;
@@ -25,7 +24,7 @@ export class CrashCollector {
   }
 
   setCrashPage(view) {
-    if (!isView(view)) {
+    if (!View.isView(view)) {
       throw new TypeError(`Expected a view. Got: ${view}`);
     }
 
@@ -37,7 +36,7 @@ export class CrashCollector {
     this.#errors.push({ error, severity: "crash" });
 
     // The app can only be disconnected once.
-    if (this.#crashed) return;
+    if (this.#isCrashed) return;
 
     this.#disconnectApp();
 
@@ -48,18 +47,18 @@ export class CrashCollector {
           channelPrefix: "crash",
           label: this.#crashPage.label || this.#crashPage.name,
           about: this.#crashPage.about,
-          attributes: {
+          inputs: {
             message: error.message,
             error: error,
             componentName: component.label,
           },
-          attributeDefs: this.#crashPage.inputs,
+          inputDefs: this.#crashPage.inputs,
         });
       });
       this.#connectView(markup);
     }
 
-    this.#crashed = true;
+    this.#isCrashed = true;
 
     throw error;
   }

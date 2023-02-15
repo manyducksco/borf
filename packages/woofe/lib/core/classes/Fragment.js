@@ -1,5 +1,4 @@
 import { Connectable } from "./Connectable.js";
-// import { formatChildren } from "./Markup.js";
 
 /**
  * Displays static children without a parent element.

@@ -9,6 +9,7 @@ export class Languages extends View {
   setup(ctx, m) {
     const { t, setLanguage, $currentLanguage } = ctx.useStore("language");
 
+    // TODO: Show a larger component with multiple translated strings to give a better example of what's actually happening here.
     return (
       <ExampleFrame title="Languages">
         <div>

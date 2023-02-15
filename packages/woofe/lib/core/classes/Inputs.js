@@ -1,18 +1,8 @@
 import produce from "immer";
 import OBSERVABLE from "symbol-observable";
 import { READABLE, WRITABLE } from "../keys.js";
-import { makeState } from "../makeState.js";
-import {
-  isFunction,
-  isObject,
-  isObservable,
-  isString,
-  isNumber,
-  isArray,
-  isReadable,
-  isWritable,
-  isBoolean,
-} from "../helpers/typeChecking.js";
+import { State } from "./State.js";
+import { isFunction, isObject, isObservable, isString, isNumber, isArray, isBoolean } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 
 /**
@@ -35,9 +25,9 @@ export class Inputs {
 
     // Sort inputs by binding type.
     for (const name in inputs) {
-      if (isWritable(inputs[name])) {
+      if (State.isWritable(inputs[name])) {
         this._writables[name] = inputs[name];
-      } else if (isReadable(inputs[name])) {
+      } else if (State.isReadable(inputs[name])) {
         this._readables[name] = inputs[name];
       } else if (isObservable(inputs[name])) {
         this._observables[name] = inputs[name];
@@ -66,7 +56,7 @@ export class Inputs {
       initialValues[name] = this._readables[name].get();
     }
 
-    this._$$values = makeState(initialValues);
+    this._$$values = new State(initialValues);
 
     // Create the API to interact with attribute values.
     this.api = new InputsAPI(

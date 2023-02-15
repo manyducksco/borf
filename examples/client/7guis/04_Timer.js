@@ -1,12 +1,12 @@
-import { makeState, View } from "woofe";
+import { State, View } from "woofe";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 export class Timer extends View {
   static label = "7guis:Timer";
 
   setup(ctx) {
-    const $$duration = makeState(10); // duration in seconds
-    const $$elapsed = makeState(0); // elapsed time in seconds
+    const $$duration = new State(10); // duration in seconds
+    const $$elapsed = new State(0); // elapsed time in seconds
 
     let lastTick = null;
 

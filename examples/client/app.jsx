@@ -1,4 +1,4 @@
-import { makeApp, View, Store } from "woofe";
+import { App, View, Store } from "woofe";
 
 import { defineElement, defineStore } from "woofe/web-components";
 
@@ -71,7 +71,7 @@ timer.addEventListener("message", (event) => {
   console.log("message:", event.data);
 });
 
-const Examples = makeApp({
+const Examples = new App({
   debug: {
     filter: "*",
     log: true,

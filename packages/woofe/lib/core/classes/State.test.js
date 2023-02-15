@@ -1,8 +1,8 @@
-import { makeState, joinStates } from "./makeState.js";
+import { State } from "./State.js";
 
-describe("makeState", () => {
+describe("new State", () => {
   test("stores and returns a value", () => {
-    const $$value = makeState(5);
+    const $$value = new State(5);
 
     expect($$value.get()).toBe(5);
 
@@ -12,7 +12,7 @@ describe("makeState", () => {
   });
 
   test("converts to readable", () => {
-    const $$value = makeState(5);
+    const $$value = new State(5);
     const $readable = $$value.readable();
 
     expect($$value.get()).toBe(5);
@@ -24,7 +24,7 @@ describe("makeState", () => {
   });
 
   test("transforms with 'as'", () => {
-    const $$value = makeState(5);
+    const $$value = new State(5);
     const $doubled = $$value.as((x) => x * 2);
 
     expect($doubled.get()).toBe(10);
@@ -40,7 +40,7 @@ describe("makeState", () => {
   });
 
   test("chained transforms with 'as'", () => {
-    const $$value = makeState(5);
+    const $$value = new State(5);
     const $once = $$value.as((x) => x * 2);
     const $twice = $once.as((x) => x * 2);
     const next = jest.fn();
@@ -74,7 +74,7 @@ describe("makeState", () => {
   });
 
   test("can update state by mutating (immer)", () => {
-    const $$value = makeState(["one", "two", "three"]);
+    const $$value = new State(["one", "two", "three"]);
 
     const original = $$value.get();
 
@@ -94,7 +94,7 @@ describe("makeState", () => {
   });
 
   test("is observable", () => {
-    const $$value = makeState(5);
+    const $$value = new State(5);
     const next = jest.fn();
 
     const subscription = $$value.subscribe({ next });
@@ -117,7 +117,7 @@ describe("makeState", () => {
   });
 
   test("observer gets initial value even if it's undefined", () => {
-    const $$value = makeState();
+    const $$value = new State();
     const next = jest.fn();
 
     const subscription = $$value.subscribe({ next });
@@ -129,21 +129,21 @@ describe("makeState", () => {
   });
 });
 
-describe("joinStates", () => {
+describe("State.merge", () => {
   test("joins multiple states", () => {
-    const $$one = makeState(2);
-    const $$two = makeState(4);
-    const $$three = makeState(8);
+    const $$one = new State(2);
+    const $$two = new State(4);
+    const $$three = new State(8);
 
     const joinFirst = jest.fn((one, two) => {
       return one + two;
     });
-    const $first = joinStates($$one, $$two, joinFirst);
+    const $first = State.merge($$one, $$two, joinFirst);
 
     const joinSecond = jest.fn((one, two, three) => {
       return one + two + three;
     });
-    const $second = joinStates($$one, $$two, $$three, joinSecond);
+    const $second = State.merge($$one, $$two, $$three, joinSecond);
 
     expect($first.get()).toBe(6);
     expect($second.get()).toBe(14);
@@ -187,10 +187,10 @@ describe("joinStates", () => {
   });
 
   test("observers of 'undefined' value receive value once", () => {
-    const $$one = makeState(true);
-    const $$two = makeState(false);
+    const $$one = new State(true);
+    const $$two = new State(false);
 
-    const $joined = joinStates($$one, $$two, (one, two) => {
+    const $joined = State.merge($$one, $$two, (one, two) => {
       if (one && two) {
         return true;
       }
@@ -231,19 +231,19 @@ describe("joinStates", () => {
   });
 
   test("throws if no merge function is passed", () => {
-    const $$one = makeState(1);
-    const $$two = makeState(2);
+    const $$one = new State(1);
+    const $$two = new State(2);
 
     expect(() => {
-      joinStates($$one, $$two);
+      State.merge($$one, $$two);
     }).toThrow();
   });
 
   test("transform with 'as'", () => {
-    const $$one = makeState(1);
-    const $$two = makeState(2);
+    const $$one = new State(1);
+    const $$two = new State(2);
 
-    const $joined = joinStates($$one, $$two, (one, two) => one + two);
+    const $joined = State.merge($$one, $$two, (one, two) => one + two);
     const $doubled = $joined.as((x) => x * 2);
 
     expect($doubled.get()).toBe(6);

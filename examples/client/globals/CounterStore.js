@@ -1,10 +1,10 @@
-import { Store, makeState } from "woofe";
+import { Store, State } from "woofe";
 
 export class CounterStore extends Store {
   static about = "Keeps a counter that increments by one each second.";
 
   setup(ctx) {
-    const $$current = makeState(0);
+    const $$current = new State(0);
 
     ctx.afterConnect(() => {
       setInterval(() => {

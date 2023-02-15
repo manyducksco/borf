@@ -1,5 +1,6 @@
 import { Markup } from "../core/classes/Markup.js";
-import { isView, isStore } from "../core/helpers/typeChecking.js";
+import { Store } from "../core/classes/Store.js";
+import { View } from "../core/classes/View.js";
 
 export function makeViewer(component, config = {}) {
   return new Viewer(component, config);
@@ -9,9 +10,9 @@ class Viewer {
   isConnected = false;
 
   constructor(Component, config = {}) {
-    if (isView(Component)) {
+    if (View.isView(Component)) {
       this.markup = this.#initView(Component);
-    } else if (isStore(Component)) {
+    } else if (Store.isStore(Component)) {
       this.markup = this.#initView(Component);
     } else {
       throw new TypeError(`Expected a component as the first argument. Got: ${Component}`);
@@ -53,9 +54,9 @@ class Viewer {
         data.stores.forEach((store) => {
           let config;
 
-          if (isStore(store)) {
+          if (Store.isStore(store)) {
             config = { store };
-          } else if (isStore(store?.store)) {
+          } else if (Store.isStore(store?.store)) {
             config = store;
             store = config.store;
           }
@@ -82,9 +83,9 @@ class Viewer {
     for (let store of stores) {
       let config;
 
-      if (isStore(store)) {
+      if (Store.isStore(store)) {
         config = { store };
-      } else if (isStore(store?.store)) {
+      } else if (Store.isStore(store?.store)) {
         config = store;
         store = config.store;
       }

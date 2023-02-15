@@ -3,7 +3,7 @@ import { MockRouterStore } from "./stores/router.js";
 import { MockPageStore } from "./stores/page.js";
 import { MockHTTPStore } from "./stores/http.js";
 import { makeMockDOMNode } from "./makeMockDOMNode.js";
-import { isStore, isString } from "../core/helpers/typeChecking.js";
+import { isString } from "../core/helpers/typeChecking.js";
 import { DebugHub } from "../core/classes/DebugHub.js";
 import { Store } from "../core/classes/Store.js";
 
@@ -34,7 +34,7 @@ export async function wrapStore(store, config = {}) {
 
   if (config.stores) {
     for (const store of config.stores) {
-      if (isStore(store)) {
+      if (Store.isStore(store)) {
         store = { store: store };
       }
 
@@ -44,7 +44,7 @@ export async function wrapStore(store, config = {}) {
           throw new Error("An 'exports' store must be defined when overriding a built in store.");
         }
 
-        if (!isStore(store.exports)) {
+        if (!Store.isStore(store.exports)) {
           throw new TypeError(`Store config 'exports' must be a store class. Got: ${store.exports}`);
         }
 
@@ -54,9 +54,9 @@ export async function wrapStore(store, config = {}) {
           instance: undefined,
           ready: false,
         });
-      } else if (isStore(store.store)) {
+      } else if (Store.isStore(store.store)) {
         // Convert { store: Store, exports: Store } into { store: Store } where the final 'store' is the original 'exports'.
-        if (store.exports && !isStore(store.exports)) {
+        if (store.exports && !Store.isStore(store.exports)) {
           throw new TypeError(`Store config 'exports' must be a store class. Got: ${store.exports}`);
         }
 

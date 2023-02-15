@@ -1,9 +1,9 @@
-import { makeState, View } from "woofe";
+import { State, View } from "woofe";
 import { ExampleFrame } from "./ExampleFrame";
 
 export class RenderOrderTest extends View {
   setup(ctx, m) {
-    const $$isTrue = makeState(true);
+    const $$isTrue = new State(true);
 
     let interval;
 

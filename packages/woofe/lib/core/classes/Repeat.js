@@ -1,5 +1,5 @@
 import { isObservable, isArray } from "../helpers/typeChecking.js";
-import { makeState } from "../makeState.js";
+import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
 import { Markup } from "./Markup.js";
 
@@ -93,8 +93,8 @@ export class Repeat extends Connectable {
         connected.$$index.set(potential.index);
         newItems[potential.index] = connected;
       } else {
-        const $$value = makeState(potential.value);
-        const $$index = makeState(potential.index);
+        const $$value = new State(potential.value);
+        const $$index = new State(potential.index);
 
         const element = this.#renderFn($$value.readable(), $$index.readable());
 

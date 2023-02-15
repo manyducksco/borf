@@ -1,11 +1,17 @@
 import { isFunction, isPromise, isObservable, isMarkup } from "../helpers/typeChecking.js";
-import { makeState, joinStates } from "../makeState.js";
+import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
 import { Inputs } from "./Inputs.js";
 import { Markup, m } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
 
 export class View extends Connectable {
+  static isView(value) {
+    // View.isView() considers a view class to be a "view",
+    // because framework users don't interact with instances directly.
+    return value?.prototype instanceof View;
+  }
+
   label;
   about;
 
@@ -62,7 +68,7 @@ export class View extends Connectable {
       definitions: inputDefs,
       enableValidation: true, // TODO: Disable for production builds (unless specified in makeApp options).
     });
-    this.#$$children = makeState(children);
+    this.#$$children = new State(children);
 
     // console.log({ channelPrefix, label, inputs, inputDefs });
   }
@@ -120,7 +126,7 @@ export class View extends Connectable {
           for (const callback of this.#lifecycleCallbacks.afterConnect) {
             try {
               callback();
-            } catch (err) {
+            } catch (error) {
               this.#appContext.crashCollector.crash({ error, component: this });
             }
           }
@@ -207,10 +213,10 @@ export class View extends Connectable {
 
         const start = () => {
           if (isObservable(args.at(0))) {
-            const $merged = joinStates(...args, callback);
+            const $merged = State.merge(...args, callback);
             return $merged.subscribe(() => undefined);
           } else {
-            const $merged = joinStates(...args, () => undefined);
+            const $merged = State.merge(...args, () => undefined);
             return $merged.subscribe(callback);
           }
         };
@@ -256,6 +262,8 @@ export class View extends Connectable {
 
           return _store.instance.exports;
         }
+
+        console.log(store, [...elementContext.stores.entries()]);
 
         throw new Error(`Store '${name}' is not registered on this app.`);
       },

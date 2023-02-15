@@ -1,7 +1,7 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
 import { Store } from "../classes/Store.js";
-import { makeState } from "../makeState.js";
+import { State } from "../classes/State.js";
 import { matchRoute } from "../helpers/routing.js";
 import { isObject, isFunction, isString } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
@@ -51,10 +51,10 @@ export class RouterStore extends Store {
       }
     }
 
-    const $$route = makeState("");
-    const $$path = makeState("");
-    const $$params = makeState({});
-    const $$query = makeState({});
+    const $$route = new State("");
+    const $$path = new State("");
+    const $$params = new State({});
+    const $$query = new State({});
 
     // Track and skip updating the URL when the change came from URL navigation
     let isRouteChange = false;

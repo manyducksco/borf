@@ -1,9 +1,9 @@
-import { makeState } from "../makeState.js";
 import { APP_CONTEXT } from "../keys.js";
+import { State } from "../classes/State.js";
 import { Store } from "../classes/Store.js";
 import { Markup } from "../classes/Markup.js";
 import { View } from "../classes/View.js";
-import { isFunction, isView } from "../helpers/typeChecking.js";
+import { isFunction } from "../helpers/typeChecking.js";
 
 /**
  * Manages dialogs. Also known as modals.
@@ -23,7 +23,7 @@ export class DialogStore extends Store {
      * A first-in-last-out queue of dialogs. The last one appears on top.
      * This way if a dialog opens another dialog the new dialog stacks.
      */
-    const $$dialogs = makeState([]);
+    const $$dialogs = new State([]);
 
     let activeDialogs = [];
 
@@ -74,7 +74,7 @@ export class DialogStore extends Store {
 
         if (isFunction(view)) {
           markup = new Markup((config) => new View({ ...config, setup: view }));
-        } else if (isView(view)) {
+        } else if (View.isView(view)) {
           markup = new Markup((config) => new view(config));
         }
 
@@ -82,7 +82,7 @@ export class DialogStore extends Store {
           throw new TypeError(`Expected a view or setup function. Got: ${view}`);
         }
 
-        const $$open = makeState(true);
+        const $$open = new State(true);
 
         let instance = markup.init({
           appContext: ctx[APP_CONTEXT],

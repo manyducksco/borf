@@ -1,4 +1,4 @@
-import { View, makeState } from "woofe";
+import { View, State } from "woofe";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 import styles from "./PassingAttributes.module.css";
@@ -7,7 +7,7 @@ export class PassingAttributes extends View {
   static about = "Demonstrates passing attributes to a subview.";
 
   setup(ctx, m) {
-    const $$message = makeState("Hello");
+    const $$message = new State("Hello");
 
     return (
       <ExampleFrame>
@@ -23,15 +23,6 @@ export class PassingAttributes extends View {
     );
   }
 }
-
-// Pass as writable?
-// <SomeView $$message={$$message} />
-
-// Pass as readable?
-// <SomeView $message={$$message} />
-
-// Pass as static?
-// <SomeView message={$$message} />
 
 class SubView extends View {
   static about =

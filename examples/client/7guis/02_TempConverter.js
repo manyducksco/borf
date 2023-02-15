@@ -1,11 +1,11 @@
-import { makeState, View } from "woofe";
+import { State, View } from "woofe";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class TempConverter extends View {
   static label = "7guis:TempConverter";
 
   setup(ctx) {
-    const $$celsius = makeState(10);
+    const $$celsius = new State(10);
 
     const setCelsius = (c) => {
       $$celsius.set(c);

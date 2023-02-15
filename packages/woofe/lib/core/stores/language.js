@@ -1,4 +1,4 @@
-import { makeState, joinStates } from "../makeState.js";
+import { State } from "../classes/State.js";
 import { Store } from "../classes/Store.js";
 import { isFunction, isArray } from "../helpers/typeChecking.js";
 
@@ -11,11 +11,11 @@ export class LanguageStore extends Store {
     const supportedLanguages = Object.freeze(options.supported || []);
     const translations = options.translations || {};
 
-    const $$language = makeState();
-    const $$translation = makeState({});
+    const $$language = new State();
+    const $$translation = new State({});
 
     // Fallback labels for missing state and data.
-    const $noLanguageValue = makeState("[NO LANGUAGE SET]").readable();
+    const $noLanguageValue = new State("[NO LANGUAGE SET]").readable();
 
     /**
      * Retrieves the key-value store with translated strings for the requested language.
@@ -92,8 +92,8 @@ export class LanguageStore extends Store {
             }
           }
 
-          // This looks extremely weird, but it creates a joined state that contains
-          // the translation with the latest observable values.
+          // This looks extremely weird, but it creates a joined state
+          // that contains the translation with interpolated observable values.
           const observableEntries = Object.entries(observableValues);
           if (observableEntries.length > 0) {
             const merge = (t, ...entryValues) => {
@@ -113,7 +113,7 @@ export class LanguageStore extends Store {
 
             const joinArgs = [...observableEntries.map((x) => x[1]), merge];
 
-            return joinStates($$translation, ...joinArgs);
+            return State.merge($$translation, ...joinArgs);
           }
         }
 

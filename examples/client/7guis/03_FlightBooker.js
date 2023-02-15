@@ -1,4 +1,4 @@
-import { joinStates, makeState, View } from "woofe";
+import { State, View } from "woofe";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 const flightTypes = ["one-way flight", "return flight"];
@@ -32,14 +32,14 @@ class FlightBooker extends View {
   static label = "7guis:FlightBooker";
 
   setup(ctx, m) {
-    const $$flightType = makeState(flightTypes[0]);
-    const $$startDate = makeState(formatDate(new Date()));
-    const $$returnDate = makeState(formatDate(new Date()));
-    const $$startDateIsValid = makeState(true);
-    const $$returnDateIsValid = makeState(true);
+    const $$flightType = new State(flightTypes[0]);
+    const $$startDate = new State(formatDate(new Date()));
+    const $$returnDate = new State(formatDate(new Date()));
+    const $$startDateIsValid = new State(true);
+    const $$returnDateIsValid = new State(true);
 
     // Concatenate date states and convert through a function into a new state.
-    const $formIsValid = joinStates(
+    const $formIsValid = State.merge(
       $$startDateIsValid,
       $$returnDateIsValid,
       (x, y) => x && y

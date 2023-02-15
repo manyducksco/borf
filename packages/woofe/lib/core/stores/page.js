@@ -1,14 +1,14 @@
 import { Store } from "../classes/Store.js";
+import { State } from "../classes/State.js";
 import { isString } from "../helpers/typeChecking.js";
-import { makeState } from "../makeState.js";
 
 export class PageStore extends Store {
   static inputs = {};
 
   setup(ctx) {
-    const $$title = makeState(document?.title);
-    const $$visibility = makeState(document.visibilityState);
-    const $$orientation = makeState();
+    const $$title = new State(document?.title);
+    const $$visibility = new State(document.visibilityState);
+    const $$orientation = new State();
 
     /* ----- Title and Visibility ----- */
 
