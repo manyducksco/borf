@@ -37,10 +37,10 @@ export class PageStore extends Store {
     }
 
     // Listen for changes while connected.
-    ctx.afterConnect(() => {
+    ctx.onConnect(() => {
       landscapeQuery.addEventListener("change", onOrientationChange);
     });
-    ctx.afterDisconnect(() => {
+    ctx.onDisconnect(() => {
       landscapeQuery.removeEventListener("change", onOrientationChange);
     });
 

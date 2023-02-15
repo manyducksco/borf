@@ -18,20 +18,12 @@ class TestStore extends Store {
 
     const lifecycleRuns = [];
 
-    ctx.beforeConnect(() => {
-      lifecycleRuns.push({ name: "beforeConnect", timestamp: new Date() });
+    ctx.onConnect(() => {
+      lifecycleRuns.push({ name: "onConnect", timestamp: new Date() });
     });
 
-    ctx.afterConnect(() => {
-      lifecycleRuns.push({ name: "afterConnect", timestamp: new Date() });
-    });
-
-    ctx.beforeDisconnect(() => {
-      lifecycleRuns.push({ name: "beforeDisconnect", timestamp: new Date() });
-    });
-
-    ctx.afterDisconnect(() => {
-      lifecycleRuns.push({ name: "afterDisconnect", timestamp: new Date() });
+    ctx.onDisconnect(() => {
+      lifecycleRuns.push({ name: "onDisconnect", timestamp: new Date() });
     });
 
     return {

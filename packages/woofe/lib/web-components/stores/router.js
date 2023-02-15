@@ -40,7 +40,7 @@ export class RouterStore extends Store {
       });
     });
 
-    ctx.beforeConnect(() => {
+    ctx.onConnect(() => {
       cancel = history.listen(({ location }) => {
         // Update query params if they've changed.
         if (location.search !== lastQuery) {
@@ -63,7 +63,7 @@ export class RouterStore extends Store {
       });
     });
 
-    ctx.beforeDisconnect(() => {
+    ctx.onDisconnect(() => {
       cancel();
     });
 

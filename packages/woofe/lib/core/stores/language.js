@@ -5,7 +5,7 @@ import { isFunction, isArray } from "../helpers/typeChecking.js";
 export class LanguageStore extends Store {
   static about = "Manages translations.";
 
-  setup(ctx) {
+  async setup(ctx) {
     const options = ctx.inputs.get();
 
     const supportedLanguages = Object.freeze(options.supported || []);
@@ -43,19 +43,17 @@ export class LanguageStore extends Store {
       return template;
     }
 
-    ctx.beforeConnect(async () => {
-      const currentLanguage =
-        (isFunction(options.default) && (await options.default({ useStore: ctx.useStore }))) ||
-        options.default ||
-        (isArray(options.supported) && options.supported[0]);
+    const currentLanguage =
+      (isFunction(options.default) && (await options.default({ useStore: ctx.useStore }))) ||
+      options.default ||
+      (isArray(options.supported) && options.supported[0]);
 
-      if (currentLanguage != null) {
-        $$language.set(currentLanguage);
+    if (currentLanguage != null) {
+      $$language.set(currentLanguage);
 
-        const translation = await fetchTranslation(currentLanguage);
-        $$translation.set(translation);
-      }
-    });
+      const translation = await fetchTranslation(currentLanguage);
+      $$translation.set(translation);
+    }
 
     return {
       $currentLanguage: $$language.readable(),

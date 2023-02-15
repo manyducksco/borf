@@ -6,7 +6,7 @@ export class CounterStore extends Store {
   setup(ctx) {
     const $$current = new State(0);
 
-    ctx.afterConnect(() => {
+    ctx.onConnect(() => {
       setInterval(() => {
         $$current.update((x) => x + 1);
       }, 1000);

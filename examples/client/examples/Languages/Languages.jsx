@@ -1,5 +1,6 @@
 import { View } from "woofe";
 import { ExampleFrame } from "../../views/ExampleFrame";
+import logLifecycle from "../../utils/logLifecycle";
 
 import styles from "./Languages.module.css";
 
@@ -7,6 +8,7 @@ export class Languages extends View {
   static inputs = {};
 
   setup(ctx, m) {
+    logLifecycle(ctx);
     const { t, setLanguage, $currentLanguage } = ctx.useStore("language");
 
     // TODO: Show a larger component with multiple translated strings to give a better example of what's actually happening here.

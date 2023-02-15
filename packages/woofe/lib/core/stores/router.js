@@ -79,7 +79,7 @@ export class RouterStore extends Store {
       });
     });
 
-    ctx.afterConnect(() => {
+    ctx.onConnect(() => {
       if (appContext.redirectPath) {
         history.replace({ pathname: appContext.redirectPath });
         appContext.redirectPath = null;

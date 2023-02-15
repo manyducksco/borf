@@ -15,10 +15,8 @@ export class Store extends Connectable {
   #node = document.createComment("Store");
   #outlet;
   #lifecycleCallbacks = {
-    beforeConnect: [],
-    afterConnect: [],
-    beforeDisconnect: [],
-    afterDisconnect: [],
+    onConnect: [],
+    onDisconnect: [],
   };
   #activeSubscriptions = [];
   #isConnected = false;
@@ -109,7 +107,7 @@ export class Store extends Connectable {
         } else {
           // This should only happen if called in the body of the view.
           // This code is not always re-run between when a view is disconnected and reconnected.
-          this.#lifecycleCallbacks.afterConnect.push(() => {
+          this.#lifecycleCallbacks.onConnect.push(() => {
             this.#activeSubscriptions.push(start());
           });
         }
@@ -142,20 +140,12 @@ export class Store extends Connectable {
         throw new Error(`Store '${name}' is not registered on this app.`);
       },
 
-      beforeConnect: (callback) => {
-        this.#lifecycleCallbacks.beforeConnect.push(callback);
+      onConnect: (callback) => {
+        this.#lifecycleCallbacks.onConnect.push(callback);
       },
 
-      afterConnect: (callback) => {
-        this.#lifecycleCallbacks.afterConnect.push(callback);
-      },
-
-      beforeDisconnect: (callback) => {
-        this.#lifecycleCallbacks.beforeDisconnect.push(callback);
-      },
-
-      afterDisconnect: (callback) => {
-        this.#lifecycleCallbacks.afterDisconnect.push(callback);
+      onDisconnect: (callback) => {
+        this.#lifecycleCallbacks.onDisconnect.push(callback);
       },
 
       crash: (error) => {
@@ -281,23 +271,23 @@ export class Store extends Connectable {
   async beforeConnect() {
     this.#inputs.connect();
 
-    for (const callback of this.#lifecycleCallbacks.beforeConnect) {
-      await callback();
-    }
+    // for (const callback of this.#lifecycleCallbacks.beforeConnect) {
+    //   await callback();
+    // }
   }
 
   afterConnect() {
     this.#isConnected = true;
 
-    for (const callback of this.#lifecycleCallbacks.afterConnect) {
+    for (const callback of this.#lifecycleCallbacks.onConnect) {
       callback();
     }
   }
 
   async beforeDisconnect() {
-    for (const callback of this.#lifecycleCallbacks.beforeDisconnect) {
-      await callback();
-    }
+    // for (const callback of this.#lifecycleCallbacks.beforeDisconnect) {
+    //   await callback();
+    // }
 
     for (const sub of this.#activeSubscriptions) {
       sub.unsubscribe();
@@ -310,7 +300,7 @@ export class Store extends Connectable {
   afterDisconnect() {
     this.#isConnected = false;
 
-    for (const callback of this.#lifecycleCallbacks.afterDisconnect) {
+    for (const callback of this.#lifecycleCallbacks.onDisconnect) {
       callback();
     }
   }

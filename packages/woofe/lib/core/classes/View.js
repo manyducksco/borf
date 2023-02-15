@@ -16,13 +16,13 @@ export class View extends Connectable {
   about;
 
   #lifecycleCallbacks = {
-    beforeConnect: [],
+    // beforeConnect: [],
     animateIn: [],
-    afterConnect: [],
+    onConnect: [],
 
-    beforeDisconnect: [],
+    // beforeDisconnect: [],
     animateOut: [],
-    afterDisconnect: [],
+    onDisconnect: [],
   };
   #activeSubscriptions = [];
   #channel;
@@ -98,13 +98,13 @@ export class View extends Connectable {
 
         this.#inputs.connect();
 
-        for (const callback of this.#lifecycleCallbacks.beforeConnect) {
-          try {
-            callback();
-          } catch (error) {
-            this.#appContext.crashCollector.crash({ error, component: this });
-          }
-        }
+        // for (const callback of this.#lifecycleCallbacks.beforeConnect) {
+        //   try {
+        //     callback();
+        //   } catch (error) {
+        //     this.#appContext.crashCollector.crash({ error, component: this });
+        //   }
+        // }
       }
 
       if (this.#element) {
@@ -123,7 +123,7 @@ export class View extends Connectable {
         }
 
         setTimeout(() => {
-          for (const callback of this.#lifecycleCallbacks.afterConnect) {
+          for (const callback of this.#lifecycleCallbacks.onConnect) {
             try {
               callback();
             } catch (error) {
@@ -146,13 +146,13 @@ export class View extends Connectable {
     }
 
     return new Promise(async (resolve) => {
-      for (const callback of this.#lifecycleCallbacks.beforeDisconnect) {
-        try {
-          callback();
-        } catch (error) {
-          this.#appContext.crashCollector.crash({ error, component: this });
-        }
-      }
+      // for (const callback of this.#lifecycleCallbacks.beforeDisconnect) {
+      //   try {
+      //     callback();
+      //   } catch (error) {
+      //     this.#appContext.crashCollector.crash({ error, component: this });
+      //   }
+      // }
 
       if (this.#lifecycleCallbacks.animateOut.length > 0) {
         try {
@@ -168,7 +168,7 @@ export class View extends Connectable {
       }
 
       setTimeout(() => {
-        for (const callback of this.#lifecycleCallbacks.afterDisconnect) {
+        for (const callback of this.#lifecycleCallbacks.onDisconnect) {
           try {
             callback();
           } catch (error) {
@@ -228,7 +228,7 @@ export class View extends Connectable {
         } else {
           // This should only happen if called in the body of the view.
           // This code is not always re-run between when a view is disconnected and reconnected.
-          this.#lifecycleCallbacks.afterConnect.push(() => {
+          this.#lifecycleCallbacks.onConnect.push(() => {
             this.#activeSubscriptions.push(start());
           });
         }
@@ -268,28 +268,20 @@ export class View extends Connectable {
         throw new Error(`Store '${name}' is not registered on this app.`);
       },
 
-      beforeConnect: (callback) => {
-        this.#lifecycleCallbacks.beforeConnect.push(callback);
-      },
-
       animateIn: (callback) => {
         this.#lifecycleCallbacks.animateIn.push(callback);
-      },
-
-      afterConnect: (callback) => {
-        this.#lifecycleCallbacks.afterConnect.push(callback);
-      },
-
-      beforeDisconnect: (callback) => {
-        this.#lifecycleCallbacks.beforeDisconnect.push(callback);
       },
 
       animateOut: (callback) => {
         this.#lifecycleCallbacks.animateOut.push(callback);
       },
 
-      afterDisconnect: (callback) => {
-        this.#lifecycleCallbacks.afterDisconnect.push(callback);
+      onConnect: (callback) => {
+        this.#lifecycleCallbacks.onConnect.push(callback);
+      },
+
+      onDisconnect: (callback) => {
+        this.#lifecycleCallbacks.onDisconnect.push(callback);
       },
 
       outlet: () => {

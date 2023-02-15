@@ -1,5 +1,6 @@
 import { View, State } from "woofe";
 import { ExampleFrame } from "../../views/ExampleFrame";
+import logLifecycle from "../../utils/logLifecycle.js";
 
 import styles from "./PassingAttributes.module.css";
 
@@ -7,6 +8,8 @@ export class PassingAttributes extends View {
   static about = "Demonstrates passing attributes to a subview.";
 
   setup(ctx, m) {
+    logLifecycle(ctx);
+
     const $$message = new State("Hello");
 
     return (
@@ -38,6 +41,8 @@ class SubView extends View {
   };
 
   setup(ctx) {
+    logLifecycle(ctx);
+
     const $$message = ctx.inputs.writable("message");
 
     return (

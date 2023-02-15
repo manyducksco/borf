@@ -1,8 +1,11 @@
 import { View } from "woofe";
+import logLifecycle from "../../utils/logLifecycle";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 export class CrashHandling extends View {
   setup(ctx, m) {
+    logLifecycle(ctx);
+
     return (
       <ExampleFrame title="Crash Handling">
         <div>

@@ -6,7 +6,7 @@ export class MouseStore extends Store {
   setup(ctx) {
     const $$position = new State({ x: 0, y: 0 });
 
-    ctx.afterConnect(() => {
+    ctx.onConnect(() => {
       ctx.log("listening for mousemove events");
 
       window.addEventListener("mousemove", (e) => {

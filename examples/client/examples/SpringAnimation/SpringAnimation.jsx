@@ -158,7 +158,7 @@ class Examples extends View {
         });
     };
 
-    ctx.afterConnect(() => {
+    ctx.onConnect(() => {
       animate();
     });
 
