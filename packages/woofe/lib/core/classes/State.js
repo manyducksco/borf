@@ -4,34 +4,80 @@ import { READABLE, WRITABLE } from "../keys.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 
+/**
+ * A `.get()` and `.set()`-able data container. The primary mechanism for reactivity and data binding in Woofe.
+ * If you have data that will change at runtime, a State is most likely where you want to keep it.
+ */
 export class State {
+  /**
+   * Merges two or more observables into a single readable state.
+   *
+   * @param args - Two or more observables followed by a merge function.
+   * @returns PolyReadable
+   */
   static merge(...args) {
     return new PolyReadable(...args);
   }
 
+  /**
+   * Creates a brand new readable state whose value cannot change. Essentially `const` for states.
+   *
+   * @param value - Permanent value of the Readable.
+   * @returns Readable
+   */
+  static readable(value) {
+    return new State(value).readable();
+  }
+
+  /**
+   * Determines whether `value` is a Readable.
+   *
+   * @param value - A potential Readable.
+   */
   static isReadable(value) {
     return value != null && typeof value[READABLE] === "function" && value[READABLE]() === value;
   }
 
+  /**
+   * Determines whether `value` is a Writable.
+   *
+   * @param value - A potential Writable.
+   */
   static isWritable(value) {
     return value != null && typeof value[WRITABLE] === "function" && value[WRITABLE]() === value;
   }
 
+  /**
+   * Determines whether `value` is an instance of State.
+   *
+   * @param value - A potential State.
+   */
   static isState(value) {
     return value instanceof State;
   }
 
+  // The current value stored in the State.
   #currentValue;
+
+  // Observers to notify when currentValue is changed.
   #observers = [];
 
   constructor(initialValue) {
     this.#currentValue = initialValue;
   }
 
+  /**
+   * Returns the current value stored in this State.
+   */
   get() {
     return this.#currentValue;
   }
 
+  /**
+   * Replaces the value stored in this State with `newValue`.
+   *
+   * @param newValue - New value to set.
+   */
   set(newValue) {
     if (!deepEqual(this.#currentValue, newValue)) {
       this.#currentValue = newValue;
@@ -39,6 +85,12 @@ export class State {
     }
   }
 
+  /**
+   * Updates the value stored in this state by either 1) mutating that state inside the `callback` function,
+   * or 2) returning a replacement value from the `callback` function.
+   *
+   * @param callback - A function. Receives the current state and either mutates it or returns a derived state.
+   */
   update(callback) {
     if (!isFunction(callback)) {
       throw new TypeError(`Expected an update function. Got: ${typeof callback}`);
@@ -52,10 +104,21 @@ export class State {
     }
   }
 
+  /**
+   * Returns a read-only accessor for this state.
+   * Enables parts of the program to access the value without the ability to change it.
+   */
   readable() {
     return new Readable(this);
   }
 
+  /**
+   * Derives a new state whose value is equal to this State's current value as run through a `transform` function.
+   * Think of this like `map` for State.
+   *
+   * @param transform - A function. Receives the current value and returns a derived value for the new Readable.
+   * @returns Readable
+   */
   as(transform) {
     if (!isFunction(transform)) {
       throw new TypeError(`Expected a transform function. Got: ${typeof transform}`);
@@ -64,6 +127,12 @@ export class State {
     return new Readable(this, { transform });
   }
 
+  /**
+   * Subscribes to changes to this state's value.
+   *
+   * @param observer - A `next` function or an Observer object. Called every time this State's value changes.
+   * @returns Subscription
+   */
   subscribe(observer) {
     if (!isObject(observer)) {
       observer = {
@@ -83,6 +152,15 @@ export class State {
     };
   }
 
+  /**
+   * Notify all observers of the current value. This should run each time the value changes.
+   */
+  #broadcast() {
+    for (const observer of this.#observers) {
+      observer.next?.(this.#currentValue);
+    }
+  }
+
   [OBSERVABLE]() {
     return this;
   }
@@ -93,13 +171,6 @@ export class State {
 
   [WRITABLE]() {
     return this;
-  }
-
-  #broadcast() {
-    // Run key observers and separate out state observers for later.
-    for (const observer of this.#observers) {
-      observer.next?.(this.#currentValue);
-    }
   }
 }
 
@@ -119,10 +190,20 @@ class Readable {
     }
   }
 
+  /**
+   * Returns the current value stored in this State.
+   */
   get() {
     return this.#transform(this.#writable.get());
   }
 
+  /**
+   * Derives a new state whose value is equal to this State's current value as run through a `transform` function.
+   * Think of this like `map` for State.
+   *
+   * @param transform - A function. Receives the current value and returns a derived value for the new Readable.
+   * @returns Readable
+   */
   as(transform) {
     return this.#writable.as((value) => {
       const transformed = this.#transform(value);
@@ -130,6 +211,12 @@ class Readable {
     });
   }
 
+  /**
+   * Subscribes to changes to this state's value.
+   *
+   * @param observer - A `next` function or an Observer object. Called every time this State's value changes.
+   * @returns Subscription
+   */
   subscribe(observer) {
     if (!isObject(observer)) {
       observer = {
@@ -155,20 +242,35 @@ class Readable {
 }
 
 /**
- * Forms a single readable by passing the values of several other readables through a merge function.
- *
- * @param args - Two or more state bindings to merge followed by a merge function.
+ * Merges the values of several readables into one.
  */
 class PolyReadable {
+  // The list of Readables this PolyReadable is merging.
   #readables;
-  #merge;
-  #observers = [];
-  #currentValue;
 
-  #isObserving = false;
-  #subscriptions = [];
+  // Latest values of #readables.
   #values = [];
 
+  // Merge function to collapse multiple readable values to one.
+  #merge;
+
+  // The current value stored in the State.
+  #currentValue;
+
+  // Observers to notify when currentValue is changed.
+  #observers = [];
+
+  // Whether the PolyReadable is actively observing changes to #readables.
+  #isObserving = false;
+
+  // Subscriptions this PolyReadable is using to track changes to #readables.
+  #subscriptions = [];
+
+  /**
+   * Forms a single readable by passing the values of many readables through a merge function.
+   *
+   * @param args - Two or more state bindings to merge followed by a merge function.
+   */
   constructor(...args) {
     this.#merge = args.pop();
     this.#readables = args;
@@ -178,6 +280,11 @@ class PolyReadable {
     }
   }
 
+  /**
+   * Returns the value stored in this PolyReadable.
+   *
+   * @returns Readable
+   */
   get() {
     let value;
 
@@ -190,6 +297,13 @@ class PolyReadable {
     return value;
   }
 
+  /**
+   * Derives a new state whose value is equal to this State's current value as run through a `transform` function.
+   * Think of this like `map` for State.
+   *
+   * @param transform - A function. Receives the current value and returns a derived value for the new Readable.
+   * @returns Readable
+   */
   as(transform) {
     if (!isFunction(transform)) {
       throw new TypeError(`Expected a transform function. Got: ${typeof transform}`);
@@ -198,6 +312,12 @@ class PolyReadable {
     return new Readable(this, { transform });
   }
 
+  /**
+   * Subscribes to changes to this state's value.
+   *
+   * @param observer - A `next` function or an Observer object. Called every time this State's value changes.
+   * @returns Subscription
+   */
   subscribe(observer) {
     if (!isObject(observer)) {
       observer = {
@@ -226,6 +346,11 @@ class PolyReadable {
     };
   }
 
+  /**
+   * Calculates a new `#currentValue` and notifies observers if necessary.
+   *
+   * @param force - Notify observers even if the new value is deepEqual to the previous value.
+   */
   #updateValue(force = false) {
     const value = this.#merge(...this.#values);
 
@@ -240,6 +365,9 @@ class PolyReadable {
     }
   }
 
+  /**
+   * Begin observing changes to `#readables` and calculating new values.
+   */
   #subscribeToSources() {
     if (!this.#isObserving) {
       for (let i = 0; i < this.#readables.length; i++) {
@@ -263,6 +391,9 @@ class PolyReadable {
     }
   }
 
+  /**
+   * Stop observing changes to #readables.
+   */
   #unsubscribeFromSources() {
     this.#isObserving = false;
 

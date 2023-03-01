@@ -1,7 +1,7 @@
 import { appContext, elementContext } from "./globals.js";
 
 /**
- * Defines a woofe component as a custom element.
+ * Defines a component as a custom element.
  */
 export function defineElement(tag, component) {
   if (!tag.includes("-")) {

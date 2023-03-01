@@ -1,9 +1,6 @@
 import OBSERVABLE from "symbol-observable";
-import { READABLE, WRITABLE } from "../keys.js";
 import { Connectable } from "../classes/Connectable.js";
 import { Markup } from "../classes/Markup.js";
-import { Store } from "../classes/Store.js";
-import { View } from "../classes/View.js";
 
 /* ----- Primitive Types ----- */
 

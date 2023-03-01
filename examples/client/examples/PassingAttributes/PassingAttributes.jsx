@@ -4,9 +4,25 @@ import logLifecycle from "../../utils/logLifecycle.js";
 
 import styles from "./PassingAttributes.module.css";
 
-export class PassingAttributes extends View {
-  static about = "Demonstrates passing attributes to a subview.";
+export const PassingAttributes = View.define({
+  label: "PassingAttributes",
+  about: "Demonstrates passing attributes to a subview.",
+  // inputs: {
+  //   something: {
+  //     // TODO: Return type of `parse` is the type
+  //     parse: (x) => {
+  //       if (x === undefined) {
+  //         return "5";
+  //       }
 
+  //       if (typeof x !== "string" || isNaN(Number(x))) {
+  //         throw new TypeError(`'something' input must be a numeric string`);
+  //       }
+
+  //       return x;
+  //     },
+  //   },
+  // },
   setup(ctx, m) {
     logLifecycle(ctx);
 
@@ -24,8 +40,31 @@ export class PassingAttributes extends View {
         </div>
       </ExampleFrame>
     );
-  }
-}
+  },
+});
+
+// export class PassingAttributes extends View {
+//   static about = "Demonstrates passing attributes to a subview.";
+
+//   setup(ctx, m) {
+//     logLifecycle(ctx);
+
+//     const $$message = new State("Hello");
+
+//     return (
+//       <ExampleFrame>
+//         <h3>Passing Attributes</h3>
+//         <div>
+//           {/* Input values support two way binding, so changes here will propagate to $$message and vice versa */}
+//           <input type="text" value={$$message} />
+//           <hr />
+//           {/* Passing a writable state for two-way binding */}
+//           <SubView message={$$message} />
+//         </div>
+//       </ExampleFrame>
+//     );
+//   }
+// }
 
 class SubView extends View {
   static about =

@@ -12,6 +12,16 @@ export class Store extends Connectable {
     return value?.prototype instanceof Store;
   }
 
+  static define(config) {
+    return class extends Store {
+      static about = config.about;
+      static inputs = config.inputs;
+      static label = config.label;
+
+      setup = config.setup;
+    };
+  }
+
   #node = document.createComment("Store");
   #outlet;
   #lifecycleCallbacks = {

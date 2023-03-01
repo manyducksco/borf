@@ -31,7 +31,11 @@ export class Spring {
   }
 
   async to(value, options) {
-    // TODO: Act like snap if user prefers reduced motion
+    // Act like snap if user prefers reduced motion.
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mediaQuery.matches) {
+      return this.snapTo(value);
+    }
 
     return new Promise((resolve) => {
       const id = this.#nextId++;

@@ -1,13 +1,6 @@
 declare module "woofe" {
   import { History } from "history";
 
-  /**
-   * Creates a new app.
-   *
-   * @param options - Configuration options.
-   */
-  export function makeApp(options?: AppOptions): App;
-
   /*==================================*\
   ||               App                ||
   \*==================================*/
@@ -80,16 +73,26 @@ declare module "woofe" {
    * An app is the central object of a Woof app. It handles mounting and unmounting of routes
    * based on the current URL and providing globals to views rendered under those routes.
    */
-  interface App {
+  export class App {
     readonly isConnected: boolean;
 
     /**
-     * Connects the app and starts routing. Routes are rendered as children of the `root` element.
+     * Creates a new app.
+     *
+     * @param options - Configuration options.
+     */
+    constructor(options: AppOptions);
+
+    /**
+     * Connects the app and begins routing. Routes are rendered as children of the `root` element.
      *
      * @param root - DOM node or a selector string.
      */
     connect(root: string | Node): Promise<void>;
 
+    /**
+     * Disconnects the app.
+     */
     disconnect(): Promise<void>;
   }
 
@@ -143,7 +146,7 @@ declare module "woofe" {
   ||            Observables            ||
   \*==================================*/
 
-  export interface Observable<Value> {
+  export abstract class Observable<Value> {
     subscribe(observer: Observer<Value>): Subscription;
 
     subscribe(next?: (value: Value) => void, error?: (err: Error) => void, complete?: () => void): Subscription;
@@ -161,85 +164,112 @@ declare module "woofe" {
   ||          State / Bindings        ||
   \*==================================*/
 
-  export interface Readable<Value> extends Observable<Value> {
+  export class State<T> extends Observable<T> {
+    static isReadable<P>(value: unknown): value is Readable<P>;
+    static isWritable<P>(value: unknown): value is Writable<P>;
+    static isState<P>(value: unknown): value is State<P>;
+
+    constructor(initialValue: T): State<T>;
+    constructor(): State<T | undefined>;
+
     /**
      * Returns the current value.
      */
-    get(): Value;
+    get(): T;
 
     /**
      * Returns a new state whose value reflects the return value of `transform` when called with this state's value.
      *
      * @param transform - Function to convert the value of the current state into the value of a new state.
      */
-    as<NewValue>(transform: (value: Value) => NewValue): Readable<NewValue>;
-  }
+    as<R>(transform: (value: T) => R): Readable<R>;
 
-  export interface Writable<Value> extends Readable<Value> {
     /**
      * Assigns a new value to the bound state.
      *
      * @param value - New value.
      */
-    set(value: Value): void;
+    set(value: T): void;
 
     /**
      * Assigns a new value to the bound state through a callback function that takes the current value and returns a new one.
      */
-    update(callback: (value: Value) => Value): void;
+    update(callback: (value: T) => T): void;
 
     /**
      * Assigns a new value to the bound state through a callback function that takes the current value and mutates it to the desired value.
      */
-    update(callback: (value: Value) => void): void;
+    update(callback: (value: T) => void): void;
 
     /**
      * Creates a new read-only binding to this value.
      */
-    readable(): Readable<Value>;
+    readable(): Readable<T>;
+
+    static merge<ValueOne, ValueTwo, Result>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      merge: (valueOne: ValueOne, valueTwo: ValueTwo) => Result
+    ): Readable<Result>;
+
+    static merge<ValueOne, ValueTwo, ValueThree, Result>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      merge: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => Result
+    ): Readable<Result>;
+
+    static merge<ValueOne, ValueTwo, ValueThree, ValueFour, Result>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      observableFour: Observable<ValueFour>,
+      merge: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree, valueFour: ValueFour) => Result
+    ): Readable<Result>;
+
+    static merge<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive, Result>(
+      observableOne: Observable<ValueOne>,
+      observableTwo: Observable<ValueTwo>,
+      observableThree: Observable<ValueThree>,
+      observableFour: Observable<ValueFour>,
+      observableFive: Observable<ValueFive>,
+      merge: (
+        valueOne: ValueOne,
+        valueTwo: ValueTwo,
+        valueThree: ValueThree,
+        valueFour: ValueFour,
+        valueFive: ValueFive
+      ) => Result
+    ): Readable<Result>;
   }
 
-  export function isReadable<Value>(value: unknown): value is Readable<Value>;
-  export function isWritable<Value>(value: unknown): value is Writable<Value>;
+  export class Readable<T> extends Observable<T> {
+    /**
+     * Returns the current value.
+     */
+    get(): T;
 
-  export function makeState<Value>(initialValue: Value): Writable<Value>;
-  export function makeState<Value = any>(): Writable<Value | undefined>;
+    /**
+     * Returns a new state whose value reflects the return value of `transform` when called with this state's value.
+     *
+     * @param transform - Function to convert the value of the current state into the value of a new state.
+     */
+    as<R>(transform: (value: T) => R): Readable<R>;
+  }
 
-  export function joinStates<ValueOne, ValueTwo, Result>(
-    observableOne: Observable<ValueOne>,
-    observableTwo: Observable<ValueTwo>,
-    join: (valueOne: ValueOne, valueTwo: ValueTwo) => Result
-  ): Readable<Result>;
+  export class PolyReadable<T> extends Observable<T> {
+    /**
+     * Returns the current value.
+     */
+    get(): T;
 
-  export function joinStates<ValueOne, ValueTwo, ValueThree, Result>(
-    observableOne: Observable<ValueOne>,
-    observableTwo: Observable<ValueTwo>,
-    observableThree: Observable<ValueThree>,
-    join: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => Result
-  ): Readable<Result>;
-
-  export function joinStates<ValueOne, ValueTwo, ValueThree, ValueFour, Result>(
-    observableOne: Observable<ValueOne>,
-    observableTwo: Observable<ValueTwo>,
-    observableThree: Observable<ValueThree>,
-    observableFour: Observable<ValueFour>,
-    join: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree, valueFour: ValueFour) => Result
-  ): Readable<Result>;
-
-  export function joinStates<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive, Result>(
-    observableOne: Observable<ValueOne>,
-    observableTwo: Observable<ValueTwo>,
-    observableThree: Observable<ValueThree>,
-    observableFour: Observable<ValueFour>,
-    observableFive: Observable<ValueFive>,
-    join: (
-      valueOne: ValueOne,
-      valueTwo: ValueTwo,
-      valueThree: ValueThree,
-      valueFour: ValueFour,
-      valueFive: ValueFive
-    ) => Result
-  ): Readable<Result>;
+    /**
+     * Returns a new state whose value reflects the return value of `transform` when called with this state's value.
+     *
+     * @param transform - Function to convert the value of the current state into the value of a new state.
+     */
+    as<R>(transform: (value: T) => R): Readable<R>;
+  }
 
   /**
    * Context for stateful objects like views and globals.
@@ -420,12 +450,14 @@ declare module "woofe" {
     ): Blueprint;
   }
 
-  interface AttributesConfig {
-    [name: string]: {
+  type InputsConfig<I = any, IT> = {
+    [name in keyof I]: {
       /**
        * Fuzzy type checking is enabled during development when you specify a type.
        */
       type?: "string" | "number" | "function" | "object" | "array" | "boolean";
+
+      parse?: (value: unknown) => IT;
 
       /**
        * Attribute description for viewer.
@@ -448,26 +480,41 @@ declare module "woofe" {
        */
       optional?: boolean;
     };
-  }
-
-  export type ViewLike<A> = ViewSetupFn<A, any> | View<A, any>;
-
-  export class View extends Connectable {
-    setup(ctx: ViewContext, m: MarkupFn): Markup | null;
-  }
-
-  export type ViewSetupFn<A = any> = (ctx: ViewContext<A>, m: MarkupFn) => Markup | null;
-
-  type AttrsWrapper<T> = {
-    [K in keyof T]: T[K] | Readable<T[K]>;
   };
 
-  // Fake type to enable JSX attribute type checking.
-  // export type View<Attrs, Globals> = (props: AttrsWrapper<Attrs> & { children?: any }) => {
-  //   create(): Blueprint;
-  // };
+  export type ViewLike<I> = ViewSetupFn<I> | View<I>;
 
-  interface Attributes<T> extends Readable<T> {
+  export interface DefineViewOptions<I> {
+    label?: string;
+    about?: string;
+    inputs?: InputsConfig<I>;
+    setup: ViewSetupFn<I>;
+  }
+
+  export class View<I = any> extends Connectable {
+    static define<I>(options: DefineViewOptions<I>): View<I>;
+
+    constructor(config: ViewConfig<I>);
+
+    context: ViewContext<I>;
+
+    // Fake type for JSX attribute checking.
+    ___inputs: {
+      [K in keyof I]: ReadableOrStatic<I[K]>;
+    };
+  }
+
+  type ReadableOrStatic<T> = T | Readable<T>;
+
+  export type ViewSetupFn<I = any> = (ctx: ViewContext<I>, m: MarkupFn) => Markup | null;
+
+  interface ViewConfig<I> {
+    label?: string;
+    inputs?: InputsConfig<I>;
+    setup: ViewSetupFn<I>;
+  }
+
+  interface Inputs<T> extends Readable<T> {
     get<K extends keyof T>(key: K): T[K];
     get(): T;
 
@@ -483,26 +530,26 @@ declare module "woofe" {
     writable(): Writable<T>;
   }
 
-  export interface ViewContext<A = any> extends StateContext, DebugChannel {
+  export interface ViewContext<I = any> extends StateContext, DebugChannel {
     /**
      * True while this view is connected to the DOM.
      */
     readonly isConnected: boolean;
 
-    attrs: Attributes<A>;
+    inputs: Inputs<I>;
 
     useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-    useStore<S extends StoreConstructor>(store: S): ReturnType<S.setup>;
-
-    /**
-     * Registers a callback to run before the component is connected to the DOM.
-     */
-    beforeConnect(callback: () => void): void;
+    useStore<S extends StoreConstructor<any>>(store: S): S extends StoreConstructor<any, infer U> ? U : unknown;
 
     /**
      * Registers a callback to run after the component is connected to the DOM.
      */
-    afterConnect(callback: () => void): void;
+    onConnect(callback: () => void): void;
+
+    /**
+     * Registers a callback to run after the component is removed from the DOM.
+     */
+    onDisconnect(callback: () => void): void;
 
     /**
      * Implements logic for an enter transition that is considered settled when the promise resolves.
@@ -517,16 +564,6 @@ declare module "woofe" {
     animateOut(callback: () => Promise<void>): void;
 
     /**
-     * Registers a callback to run before the component is removed from the DOM.
-     */
-    beforeDisconnect(callback: () => void): void;
-
-    /**
-     * Registers a callback to run after the component is removed from the DOM.
-     */
-    afterDisconnect(callback: () => void): void;
-
-    /**
      * Displays nested content where it is called.
      */
     outlet(): Markup;
@@ -536,45 +573,35 @@ declare module "woofe" {
   ||              Stores              ||
   \*==================================*/
 
-  interface StoreConstructor<Attrs> {
-    new (): Store<Attrs>;
+  interface StoreConstructor<I, E> {
+    new (): Store<I, E>;
   }
 
-  interface StoreConfig<Attrs> {
-    store: StoreConstructor<Attrs>;
-    exports?: StoreConstructor<Attrs> | StoreSetupFn<Attrs> | Record<string, any>;
-    attrs?: Attrs;
+  interface StoreConfig<I, E = any> {
+    store: StoreConstructor<I, E>;
+    exports?: StoreConstructor<I, E> | Record<string, any>;
+    inputs?: I;
   }
 
-  export class Store<Attrs = any, Exports = any> {
-    setup(ctx: StoreContext<Attrs>): Exports;
+  export class Store<I = any, Exports = any> {
+    abstract setup(ctx: StoreContext<I>): Exports;
   }
 
-  export interface StoreContext<Attrs> extends DebugChannel, StateContext {
-    attrs: Attributes<Attrs>;
+  export interface StoreContext<I> extends DebugChannel, StateContext {
+    inputs: Inputs<I>;
 
-    useStore<S extends StoreConstructor<any>>(store: S): ReturnType<S.setup>;
     useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-
-    /**
-     * Registers a callback to run before the store is connected.
-     */
-    beforeConnect: (callback: () => void) => void;
+    useStore<S extends StoreConstructor<any>>(store: S): S extends StoreConstructor<any, infer U> ? U : unknown;
 
     /**
      * Registers a callback to run after the store is connected.
      */
-    afterConnect: (callback: () => void) => void;
-
-    /**
-     * Registers a callback to run just before the store is disconnected.
-     */
-    beforeDisconnect: (callback: () => void) => void;
+    onConnect: (callback: () => void) => void;
 
     /**
      * Registers a callback to run after the store is disconnected.
      */
-    afterDisconnect: (callback: () => void) => void;
+    onDisconnect: (callback: () => void) => void;
   }
 
   /*==================================*\
@@ -583,8 +610,8 @@ declare module "woofe" {
 
   export type BuiltInStores = {
     dialog: {
-      makeDialog<Attrs extends DialogViewAttrs>(fn: ViewSetupFn<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
-      makeDialog<Attrs extends DialogViewAttrs>(view: View<Attrs, any>, options?: DialogOptions): Dialog<Attrs>;
+      open<Attrs extends DialogViewAttrs>(view: View<Attrs>, options?: DialogOptions<Attrs>): Dialog<Attrs>;
+      open<Attrs extends DialogViewAttrs>(fn: ViewSetupFn<Attrs>, options?: DialogOptions<Attrs>): Dialog<Attrs>;
     };
     router: {
       $route: Readable<string>;
@@ -676,10 +703,11 @@ declare module "woofe" {
     open: boolean;
   }
 
-  export type DialogOptions = {};
+  export type DialogOptions<Attrs> = {
+    inputs?: Partial<Omit<Attrs, "open">>;
+  };
 
   export type Dialog<Attrs> = {
-    open: (attrs?: Partial<Omit<Attrs, "open">>) => void;
     close: () => void;
   };
 
@@ -790,16 +818,12 @@ declare module "woofe" {
   ||                Ref               ||
   \*==================================*/
 
-  /**
-   * Stores a value when called with one; returns the stored value when called without.
-   */
-  export interface Ref<Value> {
-    (value: Value): void;
+  export class Ref<T> {
+    constructor(): Ref<T | undefined>;
+    constructor(initialValue: T): Ref<T>;
 
-    (): Value;
+    element: T;
   }
-
-  export function makeRef<Value>(initialValue?: Value): Ref<Value>;
 
   /*==================================*\
   ||         Animations: Spring       ||
@@ -812,13 +836,13 @@ declare module "woofe" {
     velocity?: number;
   }
 
-  export interface Spring extends Readable<number> {
+  export class Spring extends Readable<number> {
+    constructor(initialValue: number, options?: SpringOptions);
+
     snapTo(endValue: number): Promise<void>;
     to(endValue: number, options?: SpringOptions): Promise<void>;
     animate(startValue: number, endValue: number, options?: SpringOptions): Promise<void>;
   }
-
-  export function makeSpring(initialValue: number, options?: SpringOptions): Spring;
 }
 
 declare module "woofe/web-components" {
@@ -890,6 +914,10 @@ declare namespace JSX {
 
   interface ElementChildrenAttribute {
     children: {}; // specify children name to use
+  }
+
+  interface ElementAttributesProperty {
+    ___inputs;
   }
 
   type MaybeObservable<T> = T | Observable<T>;

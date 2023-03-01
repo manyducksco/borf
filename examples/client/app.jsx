@@ -1,6 +1,9 @@
-import { App, View, Store } from "woofe";
+import { App, View, Store, ElementsHub } from "@frameworke/fronte";
+import { addElement, addStore } from "@frameworke/fronte/web-components";
 
-import { defineElement, defineStore } from "woofe/web-components";
+// TODO: Web components is an object with static methods
+ElementsHub.addStore(WebComponentStore);
+ElementsHub.addElement("web-component-view", WebComponentView);
 
 class WebComponentStore extends Store {
   static inputs = {
@@ -14,13 +17,32 @@ class WebComponentStore extends Store {
   }
 }
 
-class WebComponentView extends View {
-  static inputs = {
+// class WebComponentView extends View {
+//   static inputs = {
+//     location: {
+//       type: "string",
+//       about: "A string to indicate where this instance is being rendered.",
+//     },
+//   };
+
+//   setup(ctx) {
+//     const { location } = ctx.inputs.get();
+
+//     const store = ctx.useStore(WebComponentStore);
+//     const http = ctx.useStore("http");
+//     // ctx.log({ store, http });
+
+//     return <h1>This is a web component. [location:{location}]</h1>;
+//   }
+// }
+
+const WebComponentView = View.define({
+  inputs: {
     location: {
       type: "string",
       about: "A string to indicate where this instance is being rendered.",
     },
-  };
+  },
 
   setup(ctx) {
     const { location } = ctx.inputs.get();
@@ -30,14 +52,14 @@ class WebComponentView extends View {
     // ctx.log({ store, http });
 
     return <h1>This is a web component. [location:{location}]</h1>;
-  }
-}
+  },
+});
 
-defineStore({
+registerStore({
   store: WebComponentStore,
   inputs: { initialValue: "test" },
 });
-defineElement("web-component-view", WebComponentView);
+registerElement("web-component-view", WebComponentView);
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
