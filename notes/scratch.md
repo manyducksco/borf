@@ -281,7 +281,6 @@ await builder.build({ output: path });
 import { Inspector } from "@frameworke/inspecte";
 
 export default new Inspector(SomeView, {
-  about: "",
   presets: [
     {
       name: "Example 1",

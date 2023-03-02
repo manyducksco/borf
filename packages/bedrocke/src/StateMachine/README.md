@@ -15,7 +15,7 @@ const light = new StateMachine<TrafficLights>("red", {
     signals: { NEXT: "red", OFF: "offline" },
   },
   red: {
-    signals: { NEXT: "green", NEXT: "offline" },
+    signals: { NEXT: "green", OFF: "offline" },
   },
   offline: {
     signals: { ON: "red" },

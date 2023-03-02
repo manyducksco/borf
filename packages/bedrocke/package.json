@@ -1,7 +1,7 @@
 {
-  "name": "objects",
+  "name": "@frameworke/bedrocke",
   "version": "1.0.0",
-  "description": "",
+  "description": "A toolbox of building-block classes for all JS code.",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -9,7 +9,8 @@
     "test:observable": "tsc && node lib/verify-observable.js",
     "test:watch": "ava --watch",
     "build": "tsc",
-    "build:watch": "tsc --watch"
+    "build:watch": "tsc --watch",
+    "prepublishOnly": "tsc"
   },
   "keywords": [],
   "author": "tony@manyducks.co",

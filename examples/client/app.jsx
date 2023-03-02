@@ -1,9 +1,4 @@
-import { App, View, Store, ElementsHub } from "@frameworke/fronte";
-import { addElement, addStore } from "@frameworke/fronte/web-components";
-
-// TODO: Web components is an object with static methods
-ElementsHub.addStore(WebComponentStore);
-ElementsHub.addElement("web-component-view", WebComponentView);
+import { App, View, Store, WebComponentHub } from "@frameworke/fronte";
 
 class WebComponentStore extends Store {
   static inputs = {
@@ -55,11 +50,16 @@ const WebComponentView = View.define({
   },
 });
 
-registerStore({
+const hub = new WebComponentHub();
+
+hub.addStore({
   store: WebComponentStore,
   inputs: { initialValue: "test" },
 });
-registerElement("web-component-view", WebComponentView);
+
+hub.addElement("web-component-view", WebComponentView);
+
+hub.register();
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";

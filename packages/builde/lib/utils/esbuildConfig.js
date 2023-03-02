@@ -28,5 +28,5 @@ export default {
     ".woff2": "file",
   },
   jsx: "automatic",
-  jsxImportSource: "woofe",
+  jsxImportSource: "@frameworke/fronte",
 };

@@ -1,5 +1,14 @@
-declare module "woofe" {
+declare module "@frameworke/fronte" {
   import { History } from "history";
+
+  export class WebComponentHub {
+    constructor();
+
+    addStore(): void;
+    addElement(tag: string, component: View | Store): void;
+
+    register(): Promise<void>;
+  }
 
   /*==================================*\
   ||               App                ||
@@ -361,7 +370,7 @@ declare module "woofe" {
     toString(): string;
   }
 
-  export type WoofElement = Markup | ToStringable | Observable<ToStringable>;
+  export type FronteElement = Markup | ToStringable | Observable<ToStringable>;
 
   /**
    * Creates an instance of an HTML element or view.
@@ -370,45 +379,45 @@ declare module "woofe" {
     <Tag extends keyof JSX.IntrinsicElements>(
       tag: Tag,
       attributes: JSX.IntrinsicElements[Tag],
-      ...children: WoofElement[]
+      ...children: FronteElement[]
     ): Blueprint;
 
-    (tag: string, attributes: Record<string, any>, ...children: WoofElement[]): Blueprint;
+    (tag: string, attributes: Record<string, any>, ...children: FronteElement[]): Blueprint;
 
-    (tag: string, ...children: WoofElement[]): Blueprint;
+    (tag: string, ...children: FronteElement[]): Blueprint;
 
-    (view: View<any, any>, ...children: WoofElement[]): Blueprint;
+    (view: View<any, any>, ...children: FronteElement[]): Blueprint;
 
-    <Attrs>(view: View<Attrs, any>, inputs: Attrs, ...children: WoofElement[]): Blueprint;
+    <Attrs>(view: View<Attrs, any>, inputs: Attrs, ...children: FronteElement[]): Blueprint;
 
     /**
      * Displays `element` when `value` is truthy.
      */
-    when(value: Observable<any>, element: WoofElement): Blueprint;
+    when(value: Observable<any>, element: FronteElement): Blueprint;
 
     /**
      * Displays `element` when `value` is truthy and `otherwise`... otherwise.
      */
-    when(value: Observable<any>, element: WoofElement, otherwise: WoofElement): Blueprint;
+    when(value: Observable<any>, element: FronteElement, otherwise: FronteElement): Blueprint;
 
     /**
      * Displays `element` when `value` is falsy.
      */
-    unless(value: Observable<any>, element: WoofElement): Blueprint;
+    unless(value: Observable<any>, element: FronteElement): Blueprint;
 
-    observe<Value>(observable: Observable<Value>, callback: (value: Value) => WoofElement | null): Blueprint;
+    observe<Value>(observable: Observable<Value>, callback: (value: Value) => FronteElement | null): Blueprint;
 
     observe<ValueOne, ValueTwo>(
       observableOne: Observable<ValueOne>,
       observableTwo: Observable<ValueTwo>,
-      callback: (valueOne: ValueOne, valueTwo: ValueTwo) => WoofElement | null
+      callback: (valueOne: ValueOne, valueTwo: ValueTwo) => FronteElement | null
     ): Blueprint;
 
     observe<ValueOne, ValueTwo, ValueThree>(
       observableOne: Observable<ValueOne>,
       observableTwo: Observable<ValueTwo>,
       observableThree: Observable<ValueThree>,
-      callback: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => WoofElement | null
+      callback: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => FronteElement | null
     ): Blueprint;
 
     observe<ValueOne, ValueTwo, ValueThree, ValueFour>(
@@ -421,7 +430,7 @@ declare module "woofe" {
         valueTwo: ValueTwo,
         valueThree: ValueThree,
         valueFour: ValueFour
-      ) => WoofElement | null
+      ) => FronteElement | null
     ): Blueprint;
 
     observe<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive>(
@@ -436,7 +445,7 @@ declare module "woofe" {
         valueThree: ValueThree,
         valueFour: ValueFour,
         valueFive: ValueFive
-      ) => WoofElement | null
+      ) => FronteElement | null
     ): Blueprint;
 
     /**
@@ -445,7 +454,7 @@ declare module "woofe" {
      */
     repeat<Value>(
       value: Value[] | Observable<Value[]>,
-      render: ($value: Readable<Value>, $index: Readable<number>) => WoofElement,
+      render: ($value: Readable<Value>, $index: Readable<number>) => FronteElement,
       key?: (value: Value, index: number) => any
     ): Blueprint;
   }
@@ -845,18 +854,6 @@ declare module "woofe" {
   }
 }
 
-declare module "woofe/web-components" {
-  import { View, Store, StoreConfig, BuiltInStores } from "woofe";
-
-  export function defineElement(tag: string, component: Class<View> | Class<Store>): void;
-
-  export function defineStore(store: Class<Store>): void;
-  export function defineStore(config: StoreConfig): void;
-
-  export function useStore<S extends Store>(store: Class<S>): S.exports;
-  export function useStore<S extends keyof BuiltInStores>(name: S): BuiltInStores[S];
-}
-
 declare module "woofe/viewer" {
   import { ViewLike, GlobalLike } from "woofe";
 
@@ -879,8 +876,8 @@ declare module "woofe/viewer" {
   export function makeViewer<A>(view: ViewLike<A>, config?: ViewerConfig<A>): Viewer;
 }
 
-declare module "woofe/jsx-runtime" {
-  import { Blueprint, View } from "woofe";
+declare module "@frameworke/fronte/jsx-runtime" {
+  import { Blueprint, View } from "@frameworke/fronte";
 
   export function jsx(
     element: string | View<any, any>,
@@ -895,8 +892,8 @@ declare module "woofe/jsx-runtime" {
   ): Blueprint;
 }
 
-declare module "woofe/jsx-dev-runtime" {
-  import { Blueprint, View } from "woofe";
+declare module "@frameworke/fronte/jsx-dev-runtime" {
+  import { Blueprint, View } from "@frameworke/fronte";
 
   export function jsxDEV(
     element: string | View<any, any>,
@@ -909,7 +906,7 @@ declare module "woofe/jsx-dev-runtime" {
 }
 
 declare namespace JSX {
-  import { Observable, Ref, ToStringable } from "woofe";
+  import { Observable, Ref, ToStringable } from "@frameworke/fronte";
   import * as CSS from "csstype";
 
   interface ElementChildrenAttribute {

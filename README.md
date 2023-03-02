@@ -1,21 +1,22 @@
-# Woof JS
+# Frameworke
 
-This is a monorepo for the Woof JS framework. It is managed using [lerna](https://lerna.js.org/).
+This is a monorepo for Frameworke, a full stack JS framework. It is managed using [lerna](https://lerna.js.org/).
 
 ## Framework Goals
 
-- Be relatively lightweight (<30kb gzipped)
+- Be relatively lightweight on the front-end (<30kb gzipped)
 - Support common needs without relying on third party libraries (routing, state management, unit testing, logging)
 
 ## Core Packages
 
-- [`@woofjs/client`](./packages/client/README.md): Frontend framework. Create single page apps that run in the browser.
-- [`@woofjs/server`](./packages/server/README.md): Backend framework. Create APIs or server-rendered pages.
+- [`@frameworke/fronte`](./packages/fronte/README.md): Front-end framework which runs in the browser. Create single page apps that run in the browser.
+- [`@frameworke/backe`](./packages/backe/README.md): Back-end framework which runs on the server. Create APIs or server-rendered pages.
 
 ## Utility Packages
 
-- [`@woofjs/build`](./packages/build/README.md): Build-system-in-a-box for Woof projects.
-- [`@woofjs/view`](packages/window/README.md): Visual testing and development environment for `@woofjs/client` components.
+- [`@frameworke/builde`](./packages/builde/README.md): Build-system-in-a-box for Frameworke projects.
+- [`@frameworke/inspecte`](./packages/inspecte/README.md): Visual testing and development environment for `@frameworke/fronte` components.
+- [`@frameworke/bedrocke`](./packages/bedrocke/README.md): A supplement to the JS standard library, with useful building block types for all JS code (not just Frameworke).
 
 ## Resources
 
@@ -23,7 +24,7 @@ This is a monorepo for the Woof JS framework. It is managed using [lerna](https:
 
 ## Possible Size Optimizations
 
-The total gzipped size of `@woofjs/client` is currently 26.5 kB. This could be reduced further by removing dependencies and narrowing some functionality.
+The total gzipped size of `@frameworke/fronte` is currently 26.5 kB. This could be reduced further by removing dependencies and narrowing some functionality.
 
 These are the current third party dependencies and what they do:
 

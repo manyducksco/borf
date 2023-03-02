@@ -1,12 +1,8 @@
-# 🐕🖥 woofe
+# 🖥 Frameworke: Fronte
 
 ![bundle size](https://img.shields.io/bundlephobia/minzip/woofe?style=flat&label=gzipped%20size)
 
-Woofe is a front end framework that aims to cover the most common needs of modern web apps. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box.
-
-# Why Woofe?
-
-I want Rails for UI. Hard parts solved, developer burdens lessened, minimal weeds to get lost in. When it comes to front end frameworks, I think a little more structure is good. Most apps do most of the same things, and for the parts where your app is different, you should be able to write a view or store and slot it in. The framework should already be a skeleton app; one with slots and adapters for your custom stuff.
+Fronte is a front-end framework that aims to cover the common needs of modern web apps. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box.
 
 ## Terms
 
@@ -28,25 +24,25 @@ I want Rails for UI. Hard parts solved, developer burdens lessened, minimal weed
 Woof includes everything you need to make a fully functioning web app by importing the `woofe` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running in a browser without configuring a build step.
 
 ```js
-import { ... } from "https://cdn.skypack.dev/woofe";
-import { ... } from "https://unpkg.com/woofe"
+import { ... } from "https://cdn.skypack.dev/@frameworke/fronte";
+import { ... } from "https://unpkg.com/@frameworke/fronte";
 ```
 
 ### NPM
 
-You can also get `woofe` from npm. Best used in combination with `builde` which adds support for JSX, a dev server with auto-reload, optimized production builds and more. Run this in your project directory:
+You can also get `@frameworke/fronte` from npm. Best used in combination with `@frameworke/builde` which adds support for JSX, a dev server with auto-reload, optimized production builds and more. Run this in your project directory:
 
 ```
-$ npm i -D builde woofe
+$ npm i -D @frameworke/builde @frameworke/fronte
 ```
 
 And the imports will look like this:
 
 ```js
-import { ... } from "woofe";
+import { ... } from "@frameworke/fronte";
 ```
 
-See the [builde]() docs for configuration tips.
+See the [@frameworke/builde]() docs for configuration tips.
 
 ## Hello World
 
@@ -77,39 +73,39 @@ Inside `index.html`:
 
 Inside `app.js`:
 
-```js
-import { makeApp } from "https://cdn.skypack.dev/woofe";
+```tsx
+import { App, Store, View } from "https://cdn.skypack.dev/@frameworke/fronte";
 
-class Random extends Store {
+const Random = Store.define({
   setup(ctx) {
     return {
       get value() {
         return ~~(Math.random() * 100);
       },
     };
-  }
-}
+  },
+});
 
 type SubViewInputs = {
-  onClick: () => void,
+  onClick: () => void;
 };
 
-class SubView extends View<SubViewInputs> {
-  static inputs = {
+const SubView = View.define<SubViewInputs>({
+  inputs: {
     onClick: {
       type: "function",
       required: true,
     },
-  };
+  },
 
   setup(ctx, m) {
     const { onClick } = ctx.inputs.get();
 
     return m("h1", { onClick }, ctx.outlet());
-  }
-}
+  },
+});
 
-class App extends View {
+const Main = View.define({
   setup(ctx, m) {
     const http = ctx.useStore("http");
     const random = ctx.useStore(Random);
@@ -119,16 +115,16 @@ class App extends View {
     }
 
     return m(SubView, { onClick }, "Hello World");
-  }
-}
+  },
+});
 
-const Hello = makeApp({
+const Hello = new App({
   stores: [Random], // One global instance loaded here
-  view: App, // Accessible in here
+  view: Main, // Accessible in here
 });
 
 // Stores are also components, so this is equivalent to above:
-const Hello = makeApp({
+const Hello = new App({
   view: () => (
     <Random>
       <App />
@@ -146,7 +142,7 @@ Now when you visit the page the document should look something like this:
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Woofe Demo</title>
+    <title>Fronte Demo</title>
   </head>
   <body>
     <main id="app">
@@ -206,34 +202,36 @@ state by exporting bindings of their own for use in many views.
 When the values stored in state change, anything observing those bindings is immediately notified and updated to match.
 
 ```js
-import { makeView } from "woofe";
+import { View, State } from "@frameworke/fronte";
 
-const Timer = makeView((ctx) => {
-  // Binding naming conventions.
-  // Prepend $$ for writable bindings and $ for readable ones.
-  // Consider: one $ for a one-way binding, two $ for a two-way binding
-  const $$seconds = ctx.state(0);
-  const $seconds = $$seconds.readable();
+const Timer = View.define({
+  setup(ctx) {
+    // Binding naming conventions.
+    // Prepend $$ for writable bindings and $ for readable ones.
+    // Consider: one $ for a one-way binding, two $ for a two-way binding
+    const $$seconds = new State(0);
+    const $seconds = $$seconds.readable();
 
-  function increment() {
-    $$seconds.update((value) => value + 1);
-  }
+    function increment() {
+      $$seconds.update((value) => value + 1);
+    }
 
-  function reset() {
-    $$seconds.set(0);
-  }
+    function reset() {
+      $$seconds.set(0);
+    }
 
-  // Increment once per second after the view is connected to the DOM.
-  ctx.afterConnect(function () {
-    setInterval(increment, 1000);
-  });
+    // Increment once per second after the view is connected to the DOM.
+    ctx.afterConnect(function () {
+      setInterval(increment, 1000);
+    });
 
-  return (
-    <div>
-      <input type="text" value={$seconds} disabled />
-      <button onclick={reset}>Reset Counter</button>
-    </div>
-  );
+    return (
+      <div>
+        <input type="text" value={$seconds} disabled />
+        <button onclick={reset}>Reset Counter</button>
+      </div>
+    );
+  },
 });
 ```
 

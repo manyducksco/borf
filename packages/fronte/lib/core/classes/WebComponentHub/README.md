@@ -1,10 +1,9 @@
-# Woofe Web Components
-
-Woofe components can be loaded as web components instead of through an app.
+# Web Components
 
 ```jsx
-import { Store, View } from "woofe";
-import { defineStore, defineElement } from "woofe/web-components";
+import { Store, View, WebComponentHub } from "@frameworke/fronte";
+
+const hub = new WebComponentHub();
 
 // Create a store that holds a title.
 class TitleStore extends Store {
@@ -16,10 +15,10 @@ class TitleStore extends Store {
 }
 
 // Make that store global, available to all web components.
-defineStore(TitleStore);
+hub.addStore(TitleStore);
 
 // Or define a store that can be used as an element to provide local state.
-defineElement("title-store", TitleStore);
+hub.addElement("title-store", TitleStore);
 
 // Create a view that displays the title from the store.
 class TitleView extends View {
@@ -42,7 +41,12 @@ class TitleView extends View {
 }
 
 // Define the view as a <title-view> element that will be rendered whenever you use that tag on the page.
-defineElement("title-view", TitleView);
+hub.addElement("title-view", TitleView);
+
+// Registers elements and stores, activating ones currently in the DOM.
+hub.register().then(() => {
+  console.log("Hub elements are now registered.");
+});
 ```
 
 This will register the view as a web component that can be used on any HTML page where the script is included. Views loaded in this way can still access the built-in stores you would expect in a standard app (`http`, `router`, etc).

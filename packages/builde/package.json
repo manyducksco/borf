@@ -1,7 +1,7 @@
 {
-  "name": "builde",
+  "name": "@frameworke/builde",
   "version": "0.10.25",
-  "description": "Build system in a box for woofe and growle projects.",
+  "description": "Build system in a box.",
   "main": "lib/index.js",
   "type": "module",
   "bin": {
