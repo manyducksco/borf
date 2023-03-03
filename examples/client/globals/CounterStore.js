@@ -1,4 +1,4 @@
-import { Store, State } from "woofe";
+import { Store, State } from "@frameworke/fronte";
 
 export class CounterStore extends Store {
   static about = "Keeps a counter that increments by one each second.";

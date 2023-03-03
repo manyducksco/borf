@@ -12,7 +12,7 @@ export const isObject = (value) => value != null && typeof value === "object" &&
 export const isString = (value) => typeof value === "string";
 export const isClass = (value) => typeof value === "function" && /^\s*class\s+/.test(value.toString());
 
-/* ----- Woofe & Exotic ----- */
+/* ----- Fronte & Exotic ----- */
 
 export const isPromise = (value) => value != null && isFunction(value.then) && isFunction(value.catch);
 export const isDOM = (value) => value != null && (value instanceof Node || value.isDOM === true);

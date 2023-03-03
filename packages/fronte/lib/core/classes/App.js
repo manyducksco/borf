@@ -1,9 +1,9 @@
-import { isFunction, isObject, isString } from "../helpers/typeChecking.js";
-import { parseRoute, splitRoute } from "../helpers/routing.js";
+import { Type, Router } from "@frameworke/bedrocke";
+
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
 import { merge } from "../helpers/merge.js";
-
+import { splitRoute } from "../helpers/routing.js";
 import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
 import { LanguageStore } from "../stores/language.js";
@@ -39,7 +39,7 @@ export class App {
     stores: [],
     routes: [],
     debug: {
-      filter: "*,-woofe:*",
+      filter: "*,-fronte:*",
       log: true,
       warn: true,
       error: true,
@@ -59,15 +59,19 @@ export class App {
       options = {};
     }
 
-    if (!isObject(options)) {
+    if (!Type.isObject(options)) {
       throw new TypeError(`App options must be an object. Got: ${options}`);
     }
 
     // Merge options with defaults.
     this.#options = merge(this.#options, options);
 
+    const router = new Router();
+
     for (const route of this.#options.routes) {
-      this.#routes.push(...this.#prepareRoute(route));
+      this.#prepareRoute(route).forEach(({ pattern, meta }) => {
+        router.addRoute(pattern, meta);
+      });
     }
 
     for (const store of this.#options.stores) {
@@ -79,9 +83,9 @@ export class App {
     this.#stores.set("language", { ...language, inputs: this.#options.language });
 
     // Pass router store the inputs it needs to match routes.
-    const router = this.#stores.get("router");
+    const routerStore = this.#stores.get("router");
     this.#stores.set("router", {
-      ...router,
+      ...routerStore,
       inputs: {
         routes: this.#routes,
         options: this.#options.router,
@@ -116,6 +120,7 @@ export class App {
       options: this.#options,
       rootElement: null,
       rootView: null,
+      router,
       // $dialogs - added by @dialog global
     };
   }
@@ -126,7 +131,7 @@ export class App {
    * @param element - A selector string or a DOM node to attach to. If a string, follows the same format as that taken by `document.querySelector`.
    */
   async connect(element) {
-    if (isString(element)) {
+    if (Type.isString(element)) {
       element = document.querySelector(element);
     }
 
@@ -144,10 +149,10 @@ export class App {
       const { store, inputs, exports } = item;
 
       // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
-      // Built-in globals get an additional 'woofe:' prefix so it's clear messages are from the framework.
-      // 'woofe:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
-      const channelPrefix = isString(key) ? "woofe:store" : "store";
-      const label = isString(key) ? key : store.label || store.name;
+      // Built-in globals get an additional 'fronte:' prefix so it's clear messages are from the framework.
+      // 'fronte:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
+      const channelPrefix = Type.isString(key) ? "fronte:store" : "store";
+      const label = Type.isString(key) ? key : store.label || store.name;
       const config = {
         appContext,
         elementContext,
@@ -168,15 +173,15 @@ export class App {
           });
         }
 
-        if (isFunction(exports)) {
+        if (Type.isFunction(exports)) {
           instance = new Store({ ...config, setup: exports });
         }
 
-        if (isObject(exports)) {
+        if (Type.isObject(exports)) {
           instance = new Store({ ...config, setup: () => exports });
         }
 
-        if (!instance || !(instance instanceof Store) || !isObject(instance?.exports)) {
+        if (!instance || !(instance instanceof Store) || !Type.isObject(instance?.exports)) {
           throw new TypeError(`Value of 'exports' didn't result in a usable store. Got: ${exports}`);
         }
       } else {
@@ -193,7 +198,7 @@ export class App {
     for (const { instance } of this.#stores.values()) {
       await instance.connectManual(storeParent);
 
-      if (!isObject(instance.exports)) {
+      if (!Type.isObject(instance.exports)) {
         throw new TypeError(`Store setup functions must return an object. Got: ${instance.exports}`);
       }
     }
@@ -202,7 +207,7 @@ export class App {
     // The preload process for routes is handled by the @router global.
     return this.#preload().then(async (inputs) => {
       // Then the view is initialized and connected to root element.
-      if (isFunction(this.#options.view)) {
+      if (Type.isFunction(this.#options.view)) {
         appContext.rootView = new View({
           appContext,
           elementContext,
@@ -273,7 +278,7 @@ export class App {
 
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
-    const channel = appContext.debugHub.channel("woofe:app:preload");
+    const channel = appContext.debugHub.channel("fronte:app:preload");
 
     return new Promise((resolve) => {
       let resolved = false;
@@ -324,12 +329,12 @@ export class App {
 
       const result = this.#options.preload(ctx);
 
-      if (!isFunction(result.then)) {
+      if (!Type.isPromise(result)) {
         throw new TypeError(`Preload function must return a Promise.`);
       }
 
       result.then((attributes) => {
-        if (attributes && !isObject(attributes)) {
+        if (attributes && !Type.isObject(attributes)) {
           throw new TypeError(
             `Preload function must return an attributes object or null/undefined. Got: ${attributes}`
           );
@@ -349,7 +354,7 @@ export class App {
     }
 
     // Allow overrides of built in stores.
-    if (isString(store.store)) {
+    if (Type.isString(store.store)) {
       if (!store.exports) {
         throw new Error(`Tried to override '${store.store}' store without passing a value for 'exports'.`);
       }
@@ -372,7 +377,7 @@ export class App {
    * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
    */
   #prepareRoute(route, layers = []) {
-    if (!isObject(route) || !isString(route.path)) {
+    if (!Type.isObject(route) || !Type.isString(route.path)) {
       throw new TypeError(`Route configs must be objects with a 'path' string property. Got: ${route}`);
     }
 
@@ -393,16 +398,17 @@ export class App {
       }
 
       routes.push({
-        path: route.path,
-        fragments: parseRoute(route.path).fragments,
-        redirect,
+        pattern: route.path,
+        meta: {
+          redirect,
+        },
       });
 
       return routes;
     }
 
     // Make sure the `view` is the correct type if passed.
-    if (route.view && !View.isView(route.view) && !isFunction(route.view)) {
+    if (route.view && !View.isView(route.view) && !Type.isFunction(route.view)) {
       console.warn(route.view);
       throw new TypeError(
         `Route '${route.path}' needs a setup function or a subclass of View for 'view'. Got: ${route.view}`
@@ -420,9 +426,11 @@ export class App {
       }
     } else {
       routes.push({
-        path: route.path,
-        fragments: parseRoute(route.path).fragments,
-        layers: [...layers, layer],
+        pattern: route.path,
+        meta: {
+          path: route.path,
+          layers: [...layers, layer],
+        },
       });
     }
 

@@ -1,4 +1,4 @@
-import { View } from "woofe";
+import { View } from "@frameworke/fronte";
 import logLifecycle from "../../utils/logLifecycle.js";
 import { CounterStore } from "../../globals/CounterStore.js";
 import { ExampleFrame } from "../../views/ExampleFrame/ExampleFrame.jsx";

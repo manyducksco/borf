@@ -1,4 +1,4 @@
-import { View, Spring, State, Ref } from "woofe";
+import { View, Spring, State, Ref } from "@frameworke/fronte";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 import styles from "./SpringAnimation.module.css";

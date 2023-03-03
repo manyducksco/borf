@@ -5,20 +5,6 @@ import { Inputs } from "./Inputs.js";
 import { Markup, m } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
 
-// User writes this
-const SomeView = new View({
-  setup(ctx, m) {
-    return m("h1", "Hello");
-  },
-});
-
-// Framework calls this to get a connectable
-const element = SomeView.create({
-  appContext,
-  elementContext,
-  // ...
-});
-
 export class View extends Connectable {
   static isView(value) {
     // View.isView() considers a subclass of View to be a "view"

@@ -1,4 +1,4 @@
-import { View, makeState } from "woofe";
+import { View, makeState } from "@frameworke/fronte";
 
 export class ComponentInputsExample extends View {
   static about = "Demonstrates passing inputs to a subview.";

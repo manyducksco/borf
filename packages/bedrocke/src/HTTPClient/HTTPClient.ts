@@ -10,11 +10,6 @@ export type HTTPClientConfig = {
    * Injectable custom `fetch` function for testing or mocking purposes.
    */
   fetch?: any;
-
-  /**
-   * Optional logging function. Called whenever the HTTPClient wants to print a message.
-   */
-  log?: (...args: any[]) => void;
 };
 
 export type MiddlewareFunction<ResponseBody, RequestBody> = (
@@ -50,7 +45,7 @@ export class HTTPClient {
   request<ResponseBody = unknown, RequestBody = unknown>(
     method: string,
     url: string,
-    options?: HTTPRequestOptions<ResponseBody, RequestBody>
+    options?: HTTPRequestOptions<RequestBody>
   ) {
     return new HTTPRequest<ResponseBody, RequestBody>({
       method,
@@ -61,53 +56,50 @@ export class HTTPClient {
     });
   }
 
-  get<ResponseBody>(
-    url: string,
-    options?: HTTPRequestOptions<ResponseBody, void>
-  ) {
+  get<ResponseBody>(url: string, options?: HTTPRequestOptions<void>) {
     return this.request<ResponseBody, void>("get", url, options);
   }
 
   put<ResponseBody, RequestBody>(
     url: string,
-    options?: HTTPRequestOptions<ResponseBody, RequestBody>
+    options?: HTTPRequestOptions<RequestBody>
   ) {
     return this.request<ResponseBody, RequestBody>("put", url, options);
   }
 
   patch<ResponseBody, RequestBody>(
     url: string,
-    options?: HTTPRequestOptions<ResponseBody, RequestBody>
+    options?: HTTPRequestOptions<RequestBody>
   ) {
     return this.request<ResponseBody, RequestBody>("patch", url, options);
   }
 
   post<ResponseBody = unknown, RequestBody = unknown>(
     url: string,
-    options?: HTTPRequestOptions<ResponseBody, RequestBody>
+    options?: HTTPRequestOptions<RequestBody>
   ) {
     return this.request<ResponseBody, RequestBody>("post", url, options);
   }
 
   delete<ResponseBody = unknown>(
     url: string,
-    options?: HTTPRequestOptions<ResponseBody, void>
+    options?: HTTPRequestOptions<void>
   ) {
     return this.request<ResponseBody>("delete", url, options);
   }
 
   head<RequestBody = unknown>(
     url: string,
-    options?: HTTPRequestOptions<void, RequestBody>
+    options?: HTTPRequestOptions<RequestBody>
   ) {
     return this.request<void, RequestBody>("head", url, options);
   }
 
-  options(url: string, options?: HTTPRequestOptions<void, void>) {
+  options(url: string, options?: HTTPRequestOptions<void>) {
     return this.request<void, void>("options", url, options);
   }
 
-  trace(url: string, options?: HTTPRequestOptions<void, void>) {
+  trace(url: string, options?: HTTPRequestOptions<void>) {
     return this.request<void, void>("trace", url, options);
   }
 }
@@ -121,10 +113,10 @@ type HTTPRequestConfig<ResponseBody, RequestBody> = {
   url: string;
   fetch?: any;
   middleware: MiddlewareFunction<ResponseBody, RequestBody>[];
-  options?: HTTPRequestOptions<ResponseBody, RequestBody>;
+  options?: HTTPRequestOptions<RequestBody>;
 };
 
-export type HTTPRequestOptions<ResponseBody, RequestBody> = {
+export type HTTPRequestOptions<RequestBody> = {
   /**
    * Query params to interpolate into the URL.
    */

@@ -493,12 +493,32 @@ declare module "@frameworke/fronte" {
 
   export type ViewLike<I> = ViewSetupFn<I> | View<I>;
 
-  export interface DefineViewOptions<I> {
+  export type DefineViewOptions<I> = {
+    /**
+     * A name to identify this view in the console and dev tools.
+     */
     label?: string;
+
+    /**
+     * An explanation of this view.
+     */
     about?: string;
+
+    /**
+     *
+     */
     inputs?: InputsConfig<I>;
+
+    /**
+     *
+     */
+    loading?: (m: MarkupFn) => Markup;
+
+    /**
+     *
+     */
     setup: ViewSetupFn<I>;
-  }
+  };
 
   export class View<I = any> extends Connectable {
     static define<I>(options: DefineViewOptions<I>): View<I>;

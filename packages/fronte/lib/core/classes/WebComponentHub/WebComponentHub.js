@@ -1,8 +1,9 @@
-import { DebugHub } from "../core/classes/DebugHub.js";
-import { Store } from "../core/classes/Store.js";
-import { HTTPStore } from "../core/stores/http.js";
-import { PageStore } from "../core/stores/page.js";
-import { isClass, isObject, isString } from "../core/helpers/typeChecking.js";
+import { Type } from "@frameworke/bedrocke";
+
+import { DebugHub } from "../DebugHub.js";
+import { Store } from "../Store.js";
+import { HTTPStore } from "../../stores/http.js";
+import { PageStore } from "../../stores/page.js";
 
 import { DialogStore } from "./stores/dialog.js";
 import { RouterStore } from "./stores/router.js";
@@ -33,9 +34,9 @@ export class WebComponentHub {
    * Registers a new store for all elements on this hub.
    */
   addStore(store) {
-    if (isClass(store)) {
+    if (Type.isClass(store)) {
       this.#stores.push({ store, instance: undefined });
-    } else if (isObject(store)) {
+    } else if (Type.isObject(store)) {
       this.#stores.push({ ...store, instance: undefined });
     } else {
       throw new TypeError(`Expected a store class or a store config object. Got: ${store}`);
@@ -47,7 +48,7 @@ export class WebComponentHub {
 
       if (Store.isStore(store)) {
         config = { store, instance: undefined };
-      } else if (isObject(store)) {
+      } else if (Type.isObject(store)) {
         config = { ...store, instance: undefined };
       } else {
         throw new Error(`Expected a Store or a config object. Got: ${store}`);
@@ -55,7 +56,7 @@ export class WebComponentHub {
 
       let C;
 
-      if (isString(config.store)) {
+      if (Type.isString(config.store)) {
         if (config.exports == null) {
           throw new Error("An 'exports' store must be defined when overriding a built in store.");
         }

@@ -1,4 +1,4 @@
-import { View } from "woofe";
+import { View } from "@frameworke/fronte";
 
 import styles from "./ExampleFrame.module.css";
 

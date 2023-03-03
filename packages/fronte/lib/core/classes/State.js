@@ -5,7 +5,7 @@ import { deepEqual } from "../helpers/deepEqual.js";
 import { isFunction, isObject } from "../helpers/typeChecking.js";
 
 /**
- * A `.get()` and `.set()`-able data container. The primary mechanism for reactivity and data binding in Woofe.
+ * A `.get()` and `.set()`-able data container. The primary mechanism for reactivity and data binding in Fronte.
  * If you have data that will change at runtime, a State is most likely where you want to keep it.
  */
 export class State {

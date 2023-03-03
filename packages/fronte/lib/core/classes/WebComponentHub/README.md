@@ -66,33 +66,5 @@ One downside is that JSX is still going to require transpiling, so you need to u
 
 ## Known Issues
 
-- As of this writing, web component tags used in a woofe app will still use global stores instead of those of the app. This might be fine though, since you can still use the element class directly if you want to load it as a View rather than as a web component. Each invocation style lives in its own little world.
+- As of this writing, web component tags used in a Fronte app will still use global stores instead of those of the app. This might be fine though, since you can still use the element class directly if you want to load it as a View rather than as a web component. Each invocation style lives in its own little world.
 - The async `setup` with `loading()` function scheme will be a little weird to pull off for Stores in web components. Elements may need to put themselves in some kind of queue to wait for certain stores to be registered before displaying.
-
-## TODO: Decorators
-
-For whenever decorators finally get added to JS (or if you're using TS), the define functions should also double as decorators if you leave off the component argument at the end and preface them with @ above the component.
-
-```tsx
-import { Store, View } from "woofe";
-import { defineStore, defineElement } from "woofe/web-components";
-
-@defineStore() // Make it global.
-@defineElement("title-store") // Define a <title-store> element.
-class TitleStore extends Store {
-  setup(ctx) {
-    return {
-      title: "This is the Title",
-    };
-  }
-}
-
-@defineElement("title-view") // Define a <title-view> element.
-class TitleView extends View {
-  setup(ctx, m) {
-    const { title } = ctx.useStore(TitleStore);
-
-    return m("h1", title);
-  }
-}
-```

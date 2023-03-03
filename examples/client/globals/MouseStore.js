@@ -1,4 +1,4 @@
-import { Store, State } from "woofe";
+import { Store, State } from "@frameworke/fronte";
 
 export class MouseStore extends Store {
   static about = "Keeps the current mouse position.";

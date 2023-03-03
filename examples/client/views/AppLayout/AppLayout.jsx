@@ -1,18 +1,18 @@
-import { View } from "woofe";
+import { View } from "@frameworke/fronte";
 import { MouseStore } from "../../globals/MouseStore";
 import logLifecycle from "../../utils/logLifecycle";
 
 import styles from "./AppLayout.module.css";
 
-export class AppLayout extends View {
-  static label = "🐕"; // Override class name label in debug messages
-  static about =
-    "Top level layout for the app. All other routes are rendered in this one's ctx.outlet()";
-  static inputs = {};
+export const AppLayout = View.define({
+  label: "🐕",
+  about:
+    "Top level layout for the app. All other routes are rendered in this one's ctx.outlet()",
+  inputs: {},
 
   loading() {
     return <h1>This app is loading!</h1>;
-  }
+  },
 
   async setup(ctx) {
     ctx.log("hi");
@@ -106,5 +106,5 @@ export class AppLayout extends View {
         <div class={styles.content}>{ctx.outlet()}</div>
       </div>
     );
-  }
-}
+  },
+});

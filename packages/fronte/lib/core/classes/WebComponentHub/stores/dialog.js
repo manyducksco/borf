@@ -1,4 +1,4 @@
-import { Store } from "../../core/classes/Store.js";
+import { Store } from "../../Store.js";
 
 export class DialogStore extends Store {
   setup(ctx) {

@@ -1,4 +1,4 @@
-import { State, View } from "woofe";
+import { State, View } from "@frameworke/fronte";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class TempConverter extends View {

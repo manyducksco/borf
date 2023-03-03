@@ -1,4 +1,4 @@
-import { State, View } from "woofe";
+import { State, View } from "@frameworke/fronte";
 import { ExampleFrame } from "./ExampleFrame";
 
 export class RenderOrderTest extends View {

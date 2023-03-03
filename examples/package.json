@@ -23,11 +23,10 @@
   "author": "tony@manyducks.co",
   "license": "MIT",
   "devDependencies": {
-    "woofe": "file:../packages/woofe",
-    "growle": "file:../packages/growle",
-    "builde": "file:../packages/builde",
-    "@woofjs/data": "file:../packages/data",
-    "@woofjs/view": "file:../packages/view",
+    "@frameworke/fronte": "file:../packages/fronte",
+    "@frameworke/backe": "file:../packages/backe",
+    "@frameworke/builde": "file:../packages/builde",
+    "@frameworke/bedrocke": "file:../packages/bedrocke",
     "popmotion": "^11.0.5",
     "stylefire": "^7.0.3"
   },

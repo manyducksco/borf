@@ -1,6 +1,6 @@
 {
   "name": "@frameworke/bedrocke",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A toolbox of building-block classes.",
   "main": "lib/index.js",
   "type": "module",

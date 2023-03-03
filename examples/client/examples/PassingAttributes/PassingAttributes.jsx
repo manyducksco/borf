@@ -1,4 +1,4 @@
-import { View, State } from "woofe";
+import { View, State } from "@frameworke/fronte";
 import { ExampleFrame } from "../../views/ExampleFrame";
 import logLifecycle from "../../utils/logLifecycle.js";
 

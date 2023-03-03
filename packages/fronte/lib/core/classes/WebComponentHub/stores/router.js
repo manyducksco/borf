@@ -1,11 +1,11 @@
+import { Type } from "@frameworke/bedrocke";
 import { createBrowserHistory } from "history";
 import queryString from "query-string";
 
-import { Store } from "../../core/classes/Store.js";
-import { State } from "../../core/classes/State.js";
-import { isObject } from "../../core/helpers/typeChecking.js";
-import { resolvePath } from "../../core/helpers/resolvePath.js";
-import { joinPath } from "../../core/helpers/joinPath.js";
+import { Store } from "../../Store.js";
+import { State } from "../../State.js";
+import { resolvePath } from "../../../helpers/resolvePath.js";
+import { joinPath } from "../../../helpers/joinPath.js";
 
 export class RouterStore extends Store {
   setup(ctx) {
@@ -71,7 +71,7 @@ export class RouterStore extends Store {
       let path = "";
       let options = {};
 
-      if (isObject(args[args.length - 1])) {
+      if (Type.isObject(args[args.length - 1])) {
         options = args.pop();
       }
 

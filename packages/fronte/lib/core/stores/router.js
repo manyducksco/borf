@@ -2,7 +2,6 @@ import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
 import { Store } from "../classes/Store.js";
 import { State } from "../classes/State.js";
-import { matchRoute } from "../helpers/routing.js";
 import { isObject, isFunction, isString } from "../helpers/typeChecking.js";
 import { joinPath } from "../helpers/joinPath.js";
 import { resolvePath } from "../helpers/resolvePath.js";
@@ -39,14 +38,15 @@ export class RouterStore extends Store {
 
     // Test redirects to make sure all possible redirect targets actually exist.
     for (const route of routes) {
-      if (route.redirect) {
-        const match = matchRoute(
-          routes.filter((r) => r !== route),
-          route.redirect
-        );
+      if (route.meta.redirect) {
+        const match = appContext.router.match(route.meta.redirect, {
+          willMatch(r) {
+            return r !== route;
+          },
+        });
 
         if (!match) {
-          throw new Error(`Found a redirect to an undefined URL. From '${route.path}' to '${route.redirect}'`);
+          throw new Error(`Found a redirect to an undefined URL. From '${route.pattern}' to '${route.meta.redirect}'`);
         }
       }
     }
@@ -132,11 +132,13 @@ export class RouterStore extends Store {
         return;
       }
 
-      const matched = matchRoute(routes, location.pathname);
+      const matched = appContext.router.match(location.pathname);
+
+      // const matched = matchRoute(routes, location.pathname);
 
       if (matched) {
-        if (matched.data.redirect != null) {
-          let path = matched.data.redirect;
+        if (matched.meta.redirect != null) {
+          let path = matched.meta.redirect;
 
           for (const key in matched.params) {
             path = path.replace(":" + key, matched.params[key]);
@@ -147,10 +149,10 @@ export class RouterStore extends Store {
           $$path.set(matched.path);
           $$params.set(matched.params);
 
-          if (matched.route !== $$route.get()) {
-            $$route.set(matched.route);
+          if (matched.pattern !== $$route.get()) {
+            $$route.set(matched.pattern);
 
-            const { layers } = matched.data;
+            const { layers } = matched.meta;
 
             // Diff and update route layers.
             for (let i = 0; i < layers.length; i++) {

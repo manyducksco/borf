@@ -1,4 +1,4 @@
-import { View } from "woofe";
+import { View } from "@frameworke/fronte";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class Cells extends View {

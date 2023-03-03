@@ -1,4 +1,4 @@
-import { View } from "woofe";
+import { View } from "@frameworke/fronte";
 
 class SevenGUIs extends View {
   setup(ctx) {

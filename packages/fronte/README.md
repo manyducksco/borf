@@ -1,8 +1,8 @@
 # 🖥 Frameworke: Fronte
 
-![bundle size](https://img.shields.io/bundlephobia/minzip/woofe?style=flat&label=gzipped%20size)
+![bundle size](https://img.shields.io/bundlephobia/minzip/@frameworke/fronte?style=flat&label=gzipped%20size)
 
-Fronte is a front-end framework that aims to cover the common needs of modern web apps. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box.
+Fronte is the frontend (browser) component of Frameworke. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box, aiming to cover the common needs of modern web apps.
 
 ## Terms
 
@@ -12,7 +12,7 @@ Fronte is a front-end framework that aims to cover the common needs of modern we
   - Store
 - Inputs (any values you pass to a Component, equivalent to HTML attributes)
 - Markup (any HTML element or component returned from a View)
-- Readable / Writable (dynamic data containers with different levels of access)
+- State -> Readable / Writable (dynamic data containers with different levels of access)
 
 - Author (developer using woofe)
 - User (end user of the app)

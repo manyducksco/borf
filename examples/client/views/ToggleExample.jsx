@@ -1,4 +1,4 @@
-import { makeState, View } from "woofe";
+import { makeState, View } from "@frameworke/fronte";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export class ToggleExample extends View {

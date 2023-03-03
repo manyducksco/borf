@@ -1,4 +1,4 @@
-import { joinStates, makeState, View } from "woofe";
+import { joinStates, makeState, View } from "@frameworke/fronte";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export class HTTPRequestExample extends View {
