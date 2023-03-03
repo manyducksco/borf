@@ -19,15 +19,6 @@ type TypeNames =
   | "observable"
   | "NaN";
 
-// const example = {
-//   // Pass a tuple of [check, message] to supply an error message to print when the value fails the test.
-//   // validate: [Type.isString, "value must be a string"],
-//
-//   // Or
-//   validate: [Type.isArrayOf(Type.isNumber), "expected an array of numbers"],
-//   validate: Type.isString
-// };
-
 /**
  * Represents an object that can be called with `new` to produce a T.
  */
@@ -35,11 +26,6 @@ type Factory<T> = { new (): T };
 
 /**
  * Unified type checking utilities for JavaScript.
- *
- * The `typeof` and `instanceof` keywords only go so far and have some awkward edge cases.
- * Type is an attempt to create a standardized type checking system that can identify variables
- * in a more specific way. For example, yes, an array *is* an object according to `typeof`, but
- * that's not really what we mean as programmers by an `object`. An object is {}.
  */
 export class Type {
   /**
@@ -95,6 +81,25 @@ export class Type {
   }
 
   /**
+   * Throws an error if `value` is not an array.
+   */
+  static assertArray(
+    value: unknown,
+    errorMessage?: string
+  ): value is Array<unknown> {
+    if (Array.isArray(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage || "Expected array. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns a function that takes a `value` and ensures that it is an array for which `check` returns true for every item.
    *
    * @param check - Function to check items against.
@@ -118,9 +123,50 @@ export class Type {
     const check = args[0] as (item: unknown) => boolean;
 
     const test = (value: unknown): value is T[] => {
-      // TODO: Can we infer T from the type of `check`?
-      // Example: Type.isArrayOf(Type.isString, someValue) should cast the result as a `string[]`.
       return Array.isArray(value) && value.every((item) => check(item));
+    };
+
+    if (args.length < 2) {
+      return test;
+    } else {
+      return test(args[1]);
+    }
+  }
+
+  /**
+   * Returns a function that takes a `value` and throws a TypeError unless it is an array for which `check` returns true for every item.
+   *
+   * @param check - Function to check items against.
+   */
+  static assertArrayOf<T>(
+    check: (item: unknown) => boolean
+  ): (value: unknown) => value is T[];
+
+  /**
+   * Throws a TypeError unless `value` is an array and `check` returns true for every item.
+   *
+   * @param check - Function to check items against.
+   * @param value - A possible array.
+   * @param errorMessage - A custom error message.
+   */
+  static assertArrayOf<T>(
+    check: (item: unknown) => boolean,
+    value: unknown,
+    errorMessage?: string
+  ): value is T[];
+
+  static assertArrayOf<T>(...args: unknown[]) {
+    const check = args[0] as (item: unknown) => boolean;
+    const message = Type.isString(args[2])
+      ? args[2]
+      : "Expected an array of valid items. Got type: %t, value: %v";
+
+    const test = (value: unknown): value is T[] => {
+      if (Array.isArray(value) && value.every((item) => check(item))) {
+        return true;
+      }
+
+      throw new TypeError(formatError(value, message));
     };
 
     if (args.length < 2) {
@@ -138,10 +184,45 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `value` is equal to `true` or `false`.
+   */
+  static assertBoolean(
+    value: unknown,
+    errorMessage?: string
+  ): value is boolean {
+    if (Type.isBoolean(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected a boolean. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns true if `value` is a string.
    */
   static isString(value: unknown): value is string {
     return typeof value === "string";
+  }
+
+  /**
+   * Throws a TypeError unless `value` is a string.
+   */
+  static assertString(value: unknown, errorMessage?: string): value is string {
+    if (Type.isString(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected a string. Got type: %t, value: %v"
+      )
+    );
   }
 
   // TODO: More specific validation for common types of strings? Email address, URL, UUID, etc?
@@ -156,10 +237,45 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `value` is a function.
+   */
+  static assertFunction<T = (...args: unknown[]) => unknown>(
+    value: unknown,
+    errorMessage?: string
+  ): value is T {
+    if (Type.isFunction(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected a function. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns true if `value` is a number.
    */
   static isNumber(value: unknown): value is number {
     return typeof value === "number" && !isNaN(value);
+  }
+
+  /**
+   * Throws a TypeError unless `value` is a number.
+   */
+  static assertNumber(value: unknown, errorMessage?: string): value is number {
+    if (Type.isNumber(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected a number. Got type: %t, value: %v"
+      )
+    );
   }
 
   /**
@@ -170,10 +286,42 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `value` is a number with no fractional component.
+   */
+  static assertInteger(value: unknown, errorMessage?: string): value is number {
+    if (Type.isInteger(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected an integer. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns true if `value` is a BigInt.
    */
   static isBigInt(value: unknown): value is BigInt {
     return typeof value === "bigint";
+  }
+
+  /**
+   * Throws a TypeError unless `value` is a BigInt.
+   */
+  static assertBigInt(value: unknown, errorMessage?: string): value is BigInt {
+    if (Type.isBigInt(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected a BigInt. Got type: %t, value: %v"
+      )
+    );
   }
 
   /**
@@ -197,10 +345,52 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `value` implements the Promise protocol.
+   * This matches true instances of Promise as well as any object that
+   * implements `next`, `catch` and `finally` methods.
+   *
+   * To strictly allow only instances of Promise, use `Type.assertInstanceOf(Promise)`.
+   */
+  static assertPromise<T = unknown>(
+    value: unknown,
+    errorMessage?: string
+  ): value is Promise<T> {
+    if (Type.isPromise(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected a promise. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns true if `value` is a class.
    */
   static isClass(value: unknown): value is { new (): unknown } {
     return typeof value === "function" && /^\s*class\s+/.test(value.toString());
+  }
+
+  /**
+   * Throws a TypeError unless `value` is a class.
+   */
+  static assertClass(
+    value: unknown,
+    errorMessage?: string
+  ): value is { new (): unknown } {
+    if (Type.isClass(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected a class. Got type: %t, value: %v"
+      )
+    );
   }
 
   /**
@@ -230,6 +420,57 @@ export class Type {
       }
 
       return value.prototype instanceof constructor;
+    };
+
+    if (value === undefined) {
+      return check;
+    } else {
+      return check(value);
+    }
+  }
+
+  /**
+   * Returns a function that takes a `value` and throws a TypeError unless `value` extends `constructor`.
+   * Value should be a class or constructor function.
+   *
+   * @param constructor - The constructor a value must extend to match.
+   */
+  static assertExtends<T>(
+    constructor: T
+  ): (value: unknown) => value is Factory<T>;
+
+  /**
+   * Throws a TypeError unless `value` extends `constructor`.
+   * Value should be a class or constructor function.
+   *
+   * @param constructor - The constructor `value` must extend.
+   * @param value - A value that may extend `constructor`.
+   */
+  static assertExtends<T extends Function>(
+    constructor: T,
+    value: unknown,
+    errorMessage?: string
+  ): value is Factory<T>;
+
+  static assertExtends<T extends Function>(
+    constructor: T,
+    value?: unknown,
+    errorMessage?: string
+  ) {
+    const check = (value: unknown) => {
+      if (Type.isFunction(value) || Type.isClass(value)) {
+        if (value.prototype instanceof constructor) {
+          return true;
+        }
+      }
+
+      throw new TypeError(
+        formatError(
+          value,
+          errorMessage ??
+            `Expected a class or function that extends ${constructor.name}. Got type: %t, value: %v`
+        )
+      );
     };
 
     if (value === undefined) {
@@ -274,6 +515,49 @@ export class Type {
   }
 
   /**
+   * Returns a function that takes a `value` and throws a TypeError unless `value` is an instance of `constructor`.
+   *
+   * @param constructor - The constructor a value must be an instance of to match.
+   */
+  static assertInstanceOf<T extends Function>(
+    constructor: T
+  ): (value: unknown) => value is T;
+
+  /**
+   * Throws a TypeError unless `value` is an instance of `constructor`.
+   *
+   * @param constructor - The constructor `value` must be an instance of.
+   * @param value - A value that may be an instance of `constructor`.
+   * @param errorMessage - A custom error message for when the assertion fails.
+   */
+  static assertInstanceOf<T extends Function>(
+    constructor: T,
+    value: unknown,
+    errorMessage?: string
+  ): value is T;
+
+  static assertInstanceOf<T extends Function>(...args: unknown[]) {
+    const constructor = args[0] as T;
+    const errorMessage = Type.isString(args[2])
+      ? args[2]
+      : `Expected instance of ${constructor.name}. Got type: %t, value: %v`;
+
+    const test = (value: unknown): value is T => {
+      if (value instanceof constructor) {
+        return true;
+      }
+
+      throw new TypeError(formatError(value, errorMessage));
+    };
+
+    if (args.length < 2) {
+      return test;
+    } else {
+      return test(args[1]);
+    }
+  }
+
+  /**
    * Returns true if `value` is a Map.
    */
   static isMap<K = unknown, V = unknown>(value: any): value is Map<K, V> {
@@ -281,10 +565,48 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `value` is a Map.
+   */
+  static assertMap<K = unknown, V = unknown>(
+    value: any,
+    errorMessage?: string
+  ): value is Map<K, V> {
+    if (Type.isMap(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected a Map. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns true if `value` is a Set.
    */
   static isSet<T = unknown>(value: any): value is Set<T> {
     return value instanceof Set;
+  }
+
+  /**
+   * Throws a TypeError if `value` is not a Set.
+   */
+  static assertSet<T = unknown>(
+    value: any,
+    errorMessage?: string
+  ): value is Set<T> {
+    if (Type.isSet(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected a Set. Got type: %t, value: %v"
+      )
+    );
   }
 
   /**
@@ -313,6 +635,26 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `value` implements the Observable protocol.
+   */
+  static assertObservable<T>(
+    value: any,
+    errorMessage?: string
+  ): value is Observable<T> {
+    if (Type.isObservable(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ??
+          "Expected an object that implements the observable protocol. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns true if `value` implements the Iterable protocol.
    */
   static isIterable<T>(value: any): value is Iterable<T> {
@@ -338,10 +680,46 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `value` implements the Iterable protocol.
+   */
+  static assertIterable<T>(
+    value: any,
+    errorMessage?: string
+  ): value is Iterable<T> {
+    if (Type.isIterable(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ??
+          "Expected an object that implements the iterable protocol. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns true if `value` is a plain JavaScript object.
    */
   static isObject(value: unknown): value is object {
     return value != null && typeof value === "object" && !Array.isArray(value);
+  }
+
+  /**
+   * Throws a TypeError unless `value` is a plain JavaScript object.
+   */
+  static assertObject(value: unknown, errorMessage?: string): value is object {
+    if (Type.isObject(value)) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected an object. Got type: %t, value: %v"
+      )
+    );
   }
 
   /**
@@ -352,6 +730,22 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `value` is equal to `null`.
+   */
+  static assertNull(value: unknown, errorMessage?: string): value is null {
+    if (value === null) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected null. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns true if `value` is equal to `undefined`.
    */
   static isUndefined(value: unknown): value is undefined {
@@ -359,9 +753,56 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `value` is equal to `undefined`.
+   */
+  static assertUndefined(
+    value: unknown,
+    errorMessage?: string
+  ): value is undefined {
+    if (value === undefined) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected undefined. Got type: %t, value: %v"
+      )
+    );
+  }
+
+  /**
    * Returns true if `value` is equal to `null` or `undefined`.
    */
-  static isNullish(value: unknown): value is void {
+  static isEmpty(value: unknown): value is void {
     return value === null || value === undefined;
   }
+
+  /**
+   * Throws a TypeError unless `value` is equal to `null` or `undefined`.
+   */
+  static assertEmpty(value: unknown, errorMessage?: string): value is void {
+    if (value == null) {
+      return true;
+    }
+
+    throw new TypeError(
+      formatError(
+        value,
+        errorMessage ?? "Expected null or undefined. Got type: %t, value: %v"
+      )
+    );
+  }
+}
+
+/**
+ * Replaces `%t` and `%v` placeholders in a message with real values.
+ */
+function formatError(value: unknown, message: string) {
+  const typeName = Type.of(value);
+
+  // TODO: Pretty format value as string based on type.
+  const valueString = value?.toString?.() || String(value);
+
+  return message.replaceAll("%t", typeName).replaceAll("%v", valueString);
 }
