@@ -2,8 +2,9 @@
   "name": "@frameworke/bedrocke",
   "version": "1.0.0",
   "description": "A toolbox of building-block classes.",
-  "main": "index.js",
+  "main": "lib/index.js",
   "type": "module",
+  "sideEffects": false,
   "scripts": {
     "test": "tsc && ava",
     "test:observable": "tsc && node lib/verify-observable.js",
@@ -11,6 +12,11 @@
     "build": "tsc",
     "build:watch": "tsc --watch",
     "prepublishOnly": "tsc"
+  },
+  "exports": {
+    ".": {
+      "import": "./lib/index.js"
+    }
   },
   "keywords": [],
   "author": "tony@manyducks.co",
