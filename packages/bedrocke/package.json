@@ -5,6 +5,7 @@
   "main": "lib/index.js",
   "type": "module",
   "sideEffects": false,
+  "repository": "https://github.com/manyducksco/frameworke",
   "scripts": {
     "test": "tsc && ava",
     "test:observable": "tsc && node lib/verify-observable.js",

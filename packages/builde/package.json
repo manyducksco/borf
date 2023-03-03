@@ -4,6 +4,7 @@
   "description": "Build system in a box.",
   "main": "lib/index.js",
   "type": "module",
+  "repository": "https://github.com/manyducksco/frameworke",
   "bin": {
     "builde": "cli.js"
   },

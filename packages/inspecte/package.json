@@ -5,6 +5,7 @@
   "main": "cli.js",
   "type": "module",
   "private": true,
+  "repository": "https://github.com/manyducksco/frameworke",
   "scripts": {
     "build": "woof-build --minify",
     "start": "woof-build --watch --minify",

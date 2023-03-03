@@ -1,18 +1,20 @@
-# 🐕☁️ growle
+# ☁️ Frameworke: Backe
 
 > CAUTION: This package is extremely early in development. Breaking changes are expected and not all documented features are implemented yet.
 
-JSON API companion server for dogs. 🐕
+JSON API companion server.
 
 Support your client-side app with an API or create a dynamic server-rendered app.
 
 ## Basics and Routing
 
 ```js
-import { makeApp } from "growle";
-import example from "./globals/example";
+import { App } from "@frameworke/backe";
+import { ExampleStore } from "./globals/ExampleStore";
 
-const app = makeApp();
+const app = new App({
+  stores: [ExampleStore],
+});
 
 const corsDefaults = {
   allowOrigin: ["*"],
