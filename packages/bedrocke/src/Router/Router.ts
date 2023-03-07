@@ -1,3 +1,5 @@
+import { Type } from "Type/Type";
+
 export type RouteMatch<T = Record<string, any>> = {
   /**
    * The path string that triggered this match.
@@ -49,6 +51,106 @@ export type RouteMatchOptions<T> = {
 };
 
 export class Router<T = any> {
+  /**
+   * Separates a URL path into multiple fragments.
+   *
+   * @param path - A path string (e.g. `"/api/users/5"`)
+   * @returns an array of fragments (e.g. `["api", "users", "5"]`)
+   */
+  static splitPath(path: string): string[] {
+    Type.assertString(
+      path,
+      "Expected `path` to be a string. Got type: %t, value: %v"
+    );
+
+    return path
+      .split("/")
+      .map((f) => f.trim())
+      .filter((f) => f !== "");
+  }
+
+  /**
+   * Joins multiple URL path fragments into a single string.
+   *
+   * @param parts - One or more URL fragments (e.g. `["api", "users", 5]`)
+   * @returns a joined path (e.g. `"api/users/5"`)
+   */
+  static joinPath(parts: { toString(): string }[]): string {
+    Type.assertArrayOf(
+      Type.isString,
+      parts,
+      "Expected `parts` to be an array of objects with a .toString() method. Got type: %t, value: %v"
+    );
+
+    parts = parts.filter((x) => x).flatMap(String);
+
+    let joined = parts.shift()?.toString();
+
+    if (joined) {
+      for (const part of parts.map((p) => p.toString())) {
+        if (part.startsWith(".")) {
+          // Resolve relative path against joined
+          joined = Router.resolvePath(joined, part);
+        } else if (joined[joined.length - 1] !== "/") {
+          if (part[0] !== "/") {
+            joined += "/" + part;
+          } else {
+            joined += part;
+          }
+        } else {
+          if (part[0] === "/") {
+            joined += part.slice(1);
+          } else {
+            joined += part;
+          }
+        }
+      }
+
+      // Remove trailing slash (unless path is just '/')
+      if (joined && joined !== "/" && joined.endsWith("/")) {
+        joined = joined.slice(0, joined.length - 1);
+      }
+    }
+
+    return joined ?? "";
+  }
+
+  static resolvePath(base: string, part: string | null) {
+    Type.assertString(
+      base,
+      "Expected `base` to be a string. Got type: %t, value: %v"
+    );
+
+    if (part == null) {
+      part = base;
+      base = "";
+    }
+
+    if (part.startsWith("/")) {
+      return part;
+    }
+
+    let resolved = base;
+
+    while (true) {
+      if (part.startsWith("..")) {
+        for (let i = resolved.length; i > 0; --i) {
+          if (resolved[i] === "/" || i === 0) {
+            resolved = resolved.slice(0, i);
+            part = part.replace(/^\.\.\/?/, "");
+            break;
+          }
+        }
+      } else if (part.startsWith(".")) {
+        part = part.replace(/^\.\/?/, "");
+      } else {
+        break;
+      }
+    }
+
+    return Router.joinPath([resolved, part]);
+  }
+
   #routes: Route<T>[] = [];
 
   /**
@@ -76,7 +178,7 @@ export class Router<T = any> {
     options: RouteMatchOptions<T> = {}
   ): RouteMatch<T> | undefined {
     const [path, query] = url.split("?");
-    const parts = this.#splitPath(path);
+    const parts = Router.splitPath(path);
 
     routes: for (const route of this.#routes) {
       const { fragments } = route;
@@ -215,25 +317,12 @@ export class Router<T = any> {
   }
 
   /**
-   * Separates a URL path into multiple fragments.
-   *
-   * @param path - A path string (e.g. `"/api/users/5"`)
-   * @returns an array of fragments (e.g. `["api", "users", "5"]`)
-   */
-  #splitPath(path: string): string[] {
-    return path
-      .split("/")
-      .map((f) => f.trim())
-      .filter((f) => f !== "");
-  }
-
-  /**
    * Converts a route pattern into a set of matchable fragments.
    *
    * @param route - A route string (e.g. "/api/users/{id}")
    */
   #intoFragments(pattern: string): RouteFragment[] {
-    const parts = this.#splitPath(pattern);
+    const parts = Router.splitPath(pattern);
     const fragments = [];
 
     for (let i = 0; i < parts.length; i++) {

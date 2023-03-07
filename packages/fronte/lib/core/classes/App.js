@@ -1,9 +1,6 @@
 import { Type, Router } from "@frameworke/bedrocke";
 
-import { joinPath } from "../helpers/joinPath.js";
-import { resolvePath } from "../helpers/resolvePath.js";
 import { merge } from "../helpers/merge.js";
-import { splitRoute } from "../helpers/routing.js";
 import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
 import { LanguageStore } from "../stores/language.js";
@@ -381,7 +378,7 @@ export class App {
       throw new TypeError(`Route configs must be objects with a 'path' string property. Got: ${route}`);
     }
 
-    const parts = splitRoute(route.path);
+    const parts = Router.splitPath(route.path);
 
     // Remove trailing wildcard for joining with nested routes.
     if (parts[parts.length - 1] === "*") {
@@ -391,7 +388,7 @@ export class App {
     const routes = [];
 
     if (route.redirect) {
-      let redirect = resolvePath(...parts, route.redirect);
+      let redirect = Router.resolvePath(...parts, route.redirect);
 
       if (!redirect.startsWith("/")) {
         redirect = "/" + redirect;
@@ -421,7 +418,7 @@ export class App {
     // Parse nested routes if they exist.
     if (route.routes) {
       for (const subroute of route.routes) {
-        const path = joinPath(...parts, subroute.path);
+        const path = Router.joinPath([...parts, subroute.path]);
         routes.push(...this.#prepareRoute({ ...subroute, path }, [...layers, layer]));
       }
     } else {

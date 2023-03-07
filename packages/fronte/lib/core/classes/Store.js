@@ -1,5 +1,6 @@
+import { Type } from "@frameworke/bedrocke";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
-import { isObject, isObservable, isPromise, isFunction, isMarkup } from "../helpers/typeChecking.js";
+import { isMarkup } from "../helpers/typeChecking.js";
 import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
 import { Inputs } from "./Inputs.js";
@@ -101,7 +102,7 @@ export class Store extends Connectable {
         }
 
         const start = () => {
-          if (isObservable(args.at(0))) {
+          if (Type.isObservable(args.at(0))) {
             const $merged = State.merge(...args, callback);
             return $merged.subscribe(() => undefined);
           } else {
@@ -175,10 +176,10 @@ export class Store extends Connectable {
     }
 
     // Display loading content while setup promise pends.
-    if (isPromise(exports)) {
+    if (Type.isPromise(exports)) {
       let cleanup;
 
-      if (isFunction(this.loading)) {
+      if (Type.isFunction(this.loading)) {
         // Render contents from loading() while waiting for setup to resolve.
         const content = this.loading(m);
 
@@ -213,7 +214,7 @@ export class Store extends Connectable {
       }
     }
 
-    if (!isObject(exports)) {
+    if (!Type.isObject(exports)) {
       throw new TypeError(`A store setup function must return an object. Got: ${exports}`);
     }
 

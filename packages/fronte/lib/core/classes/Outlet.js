@@ -1,4 +1,4 @@
-import { isArray, isObservable } from "../helpers/typeChecking.js";
+import { Type } from "@frameworke/bedrocke";
 import { Connectable } from "./Connectable.js";
 import { Markup } from "./Markup.js";
 
@@ -34,7 +34,7 @@ export class Outlet extends Connectable {
 
     parent.insertBefore(this.node, after?.nextSibling);
 
-    if (isObservable(this.#value)) {
+    if (Type.isObservable(this.#value)) {
       this.#subscription = this.#value.subscribe((value) => {
         if (this.#renderFn) {
           value = this.#renderFn(value);
@@ -78,7 +78,7 @@ export class Outlet extends Connectable {
       return;
     }
 
-    if (!isArray(children)) {
+    if (!Type.isArray(children)) {
       children = [children];
     }
 

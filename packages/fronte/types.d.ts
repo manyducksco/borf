@@ -459,7 +459,7 @@ declare module "@frameworke/fronte" {
     ): Blueprint;
   }
 
-  type InputsConfig<I = any, IT> = {
+  type InputsConfig<I, IT = any> = {
     [name in keyof I]: {
       /**
        * Fuzzy type checking is enabled during development when you specify a type.

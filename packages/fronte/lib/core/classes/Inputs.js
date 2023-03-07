@@ -1,8 +1,8 @@
 import produce from "immer";
 import OBSERVABLE from "symbol-observable";
+import { Type } from "@frameworke/bedrocke";
 import { READABLE, WRITABLE } from "../keys.js";
 import { State } from "./State.js";
-import { isFunction, isObject, isObservable, isString, isNumber, isArray, isBoolean } from "../helpers/typeChecking.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 
 /**
@@ -29,7 +29,7 @@ export class Inputs {
         this._writables[name] = inputs[name];
       } else if (State.isReadable(inputs[name])) {
         this._readables[name] = inputs[name];
-      } else if (isObservable(inputs[name])) {
+      } else if (Type.isObservable(inputs[name])) {
         this._observables[name] = inputs[name];
       } else {
         this._statics[name] = inputs[name];
@@ -152,7 +152,7 @@ class InputsAPI {
     }
 
     // .get("key")
-    if (args.length === 1 && isString(args[0])) {
+    if (args.length === 1 && Type.isString(args[0])) {
       const key = args[0];
 
       // Ensure key is actually in definitions.
@@ -174,18 +174,18 @@ class InputsAPI {
     let values;
 
     // .set({ key: value })
-    if (args.length === 1 && isObject(args[0])) {
+    if (args.length === 1 && Type.isObject(args[0])) {
       values = args[0];
     }
 
     // .set("key", value)
-    if (args.length === 2 && isString(args[0])) {
+    if (args.length === 2 && Type.isString(args[0])) {
       values = {
         [args[0]]: args[1],
       };
     }
 
-    if (!isObject(values)) {
+    if (!Type.isObject(values)) {
       throw new TypeError(
         `Bad call signature. Expected .set({ key: value }) or .set("key", value). Called as .set(${args.join(", ")})`
       );
@@ -221,9 +221,7 @@ class InputsAPI {
   }
 
   update(fn) {
-    if (!isFunction(fn)) {
-      throw new TypeError(`Bad call signature. Expected .update(fn). Called as .update(${fn})`);
-    }
+    Type.assertFunction(fn, `Bad call signature. Expected .update(fn). Called as .update(${fn})`);
 
     const before = this.#values.get();
     const after = produce(before, fn);
@@ -258,7 +256,7 @@ class InputsAPI {
       return this.#values.readable();
     }
 
-    if (isString(args[0])) {
+    if (Type.isString(args[0])) {
       return this.#values.as((current) => current[args[0]]);
     }
 
@@ -401,7 +399,7 @@ function assertValidItem(name, value, definitions) {
   }
 
   // Type can be a custom validator function taking the item value and returning a boolean.
-  if (isFunction(def.type)) {
+  if (Type.isFunction(def.type)) {
     if (!def.type(value)) {
       throw new TypeError(`Attribute '${name}' failed type validation. Got: ${value}`);
     }
@@ -410,32 +408,32 @@ function assertValidItem(name, value, definitions) {
   // If not a function, type can be one of these strings.
   switch (def.type) {
     case "boolean":
-      if (!isBoolean(value)) {
+      if (!Type.isBoolean(value)) {
         throw new TypeError(`Input '${name}' must be a boolean. Got: ${value}`);
       }
       break;
     case "string":
-      if (!isString(value)) {
+      if (!Type.isString(value)) {
         throw new TypeError(`Input '${name}' must be a string. Got: ${value}`);
       }
       break;
     case "number":
-      if (!isNumber(value)) {
+      if (!Type.isNumber(value)) {
         throw new TypeError(`Input '${name}' must be a number. Got: ${value}`);
       }
       break;
     case "array":
-      if (!isArray(value)) {
+      if (!Type.isArray(value)) {
         throw new TypeError(`Input '${name}' must be an array. Got: ${value}`);
       }
       break;
     case "object":
-      if (!isObject(value)) {
+      if (!Type.isObject(value)) {
         throw new TypeError(`Input '${name}' must be an object. Got: ${value}`);
       }
       break;
     case "function":
-      if (!isFunction(value)) {
+      if (!Type.isFunction(value)) {
         throw new TypeError(`Input '${name}' must be a function. Got: ${value}`);
       }
       break;

@@ -1,4 +1,4 @@
-import { isObject, isString, isNumber, isFunction, isObservable } from "../helpers/typeChecking.js";
+import { Type } from "@frameworke/bedrocke";
 import { omit } from "../helpers/omit.js";
 import { Ref } from "./Ref.js";
 import { State } from "./State.js";
@@ -141,7 +141,7 @@ function applyAttrs(element, attrs, subscriptions) {
             },
           });
         }
-      } else if (isObservable(value)) {
+      } else if (Type.isObservable(value)) {
         subscriptions.push(
           value.subscribe((current) => {
             element.value = String(current);
@@ -152,7 +152,7 @@ function applyAttrs(element, attrs, subscriptions) {
       }
     } else if (eventAttrs.includes(key.toLowerCase())) {
       const eventName = key.slice(2).toLowerCase();
-      const listener = isObservable(attrs[key]) ? (e) => attrs[key].get()(e) : attrs[key];
+      const listener = Type.isObservable(attrs[key]) ? (e) => attrs[key].get()(e) : attrs[key];
 
       element.addEventListener(eventName, listener);
 
@@ -164,7 +164,7 @@ function applyAttrs(element, attrs, subscriptions) {
     } else if (!privateAttrs.includes(key)) {
       const isBoolean = booleanAttrs.includes(key);
 
-      if (isObservable(value)) {
+      if (Type.isObservable(value)) {
         subscriptions.push(
           value.subscribe((current) => {
             if (current) {
@@ -184,12 +184,12 @@ function applyAttrs(element, attrs, subscriptions) {
 function applyStyles(element, styles, subscriptions) {
   const propSubscriptions = [];
 
-  if (isObservable(styles)) {
+  if (Type.isObservable(styles)) {
     let unapply;
 
     const subscription = styles.subscribe((current) => {
       requestAnimationFrame(() => {
-        if (isFunction(unapply)) {
+        if (Type.isFunction(unapply)) {
           unapply();
         }
         element.style = null;
@@ -199,16 +199,16 @@ function applyStyles(element, styles, subscriptions) {
 
     subscriptions.push(subscription);
     propSubscriptions.push(subscription);
-  } else if (isString(styles)) {
+  } else if (Type.isString(styles)) {
     element.style = styles;
-  } else if (isObject(styles)) {
+  } else if (Type.isObject(styles)) {
     for (const key in styles) {
       const value = styles[key];
       const setProperty = key.startsWith("--")
         ? (key, value) => element.style.setProperty(key, value)
         : (key, value) => (element.style[key] = value);
 
-      if (isObservable(value)) {
+      if (Type.isObservable(value)) {
         const subscription = value.subscribe((current) => {
           if (current) {
             setProperty(key, current);
@@ -219,9 +219,9 @@ function applyStyles(element, styles, subscriptions) {
 
         subscriptions.push(subscription);
         propSubscriptions.push(subscription);
-      } else if (isString(value)) {
+      } else if (Type.isString(value)) {
         setProperty(key, value);
-      } else if (isNumber(value)) {
+      } else if (Type.isNumber(value)) {
         setProperty(key, value + "px");
       } else {
         throw new TypeError(`Style properties should be strings, $states or numbers. Got (${key}: ${value})`);
@@ -242,12 +242,12 @@ function applyStyles(element, styles, subscriptions) {
 function applyClasses(element, classes, subscriptions) {
   const classSubscriptions = [];
 
-  if (isObservable(classes)) {
+  if (Type.isObservable(classes)) {
     let unapply;
 
     const subscription = classes.subscribe((current) => {
       requestAnimationFrame(() => {
-        if (isFunction(unapply)) {
+        if (Type.isFunction(unapply)) {
           unapply();
         }
         element.removeAttribute("class");
@@ -263,7 +263,7 @@ function applyClasses(element, classes, subscriptions) {
     for (const name in mapped) {
       const value = mapped[name];
 
-      if (isObservable(value)) {
+      if (Type.isObservable(value)) {
         const subscription = value.subscribe((current) => {
           if (current) {
             element.classList.add(name);
@@ -291,13 +291,13 @@ function applyClasses(element, classes, subscriptions) {
 function getClassMap(classes) {
   let mapped = {};
 
-  if (isString(classes)) {
+  if (Type.isString(classes)) {
     // Support multiple classes in one string like HTML.
     const names = classes.split(" ");
     for (const name of names) {
       mapped[name] = true;
     }
-  } else if (isObject(classes)) {
+  } else if (Type.isObject(classes)) {
     Object.assign(mapped, classes);
   } else if (Array.isArray(classes)) {
     Array.from(classes)

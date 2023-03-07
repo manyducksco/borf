@@ -1,9 +1,9 @@
+import { Type } from "@frameworke/bedrocke";
 import { APP_CONTEXT } from "../keys.js";
 import { State } from "../classes/State.js";
 import { Store } from "../classes/Store.js";
 import { Markup } from "../classes/Markup.js";
 import { View } from "../classes/View.js";
-import { isFunction } from "../helpers/typeChecking.js";
 
 /**
  * Manages dialogs. Also known as modals.
@@ -72,7 +72,7 @@ export class DialogStore extends Store {
       open: (view, inputs = {}) => {
         let markup;
 
-        if (isFunction(view)) {
+        if (Type.isFunction(view)) {
           markup = new Markup((config) => new View({ ...config, setup: view }));
         } else if (View.isView(view)) {
           markup = new Markup((config) => new view(config));

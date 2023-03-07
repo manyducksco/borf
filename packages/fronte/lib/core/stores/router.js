@@ -1,10 +1,8 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
+import { Router, Type } from "@frameworke/bedrocke";
 import { Store } from "../classes/Store.js";
 import { State } from "../classes/State.js";
-import { isObject, isFunction, isString } from "../helpers/typeChecking.js";
-import { joinPath } from "../helpers/joinPath.js";
-import { resolvePath } from "../helpers/resolvePath.js";
 import { catchLinks } from "../helpers/catchLinks.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
@@ -92,7 +90,7 @@ export class RouterStore extends Store {
         let href = anchor.getAttribute("href");
 
         if (!/^https?:\/\/|^\//.test(href)) {
-          href = joinPath(history.location.pathname, href);
+          href = Router.joinPath([history.location.pathname, href]);
         }
 
         history.push(href);
@@ -221,11 +219,11 @@ export class RouterStore extends Store {
       let path = "";
       let options = {};
 
-      if (isObject(args[args.length - 1])) {
+      if (Type.isObject(args[args.length - 1])) {
         options = args.pop();
       }
 
-      path = resolvePath(history.location.pathname, joinPath(...args));
+      path = Router.resolvePath(history.location.pathname, Router.joinPath(...args));
 
       if (options.replace) {
         history.replace(path);
@@ -278,7 +276,7 @@ export async function preloadRoute(preload, { appContext, channelName }) {
       ...channel,
 
       global: (name) => {
-        if (!isString(name)) {
+        if (!Type.isString(name)) {
           throw new TypeError("Expected a string.");
         }
 
@@ -305,12 +303,12 @@ export async function preloadRoute(preload, { appContext, channelName }) {
 
     const result = preload(ctx);
 
-    if (!isFunction(result.then)) {
+    if (!Type.isFunction(result.then)) {
       throw new TypeError(`Preload function must return a Promise.`);
     }
 
     result.then((attributes) => {
-      if (attributes && !isObject(attributes)) {
+      if (attributes && !Type.isObject(attributes)) {
         throw new TypeError(`Preload function must return an attributes object or null/undefined. Got: ${attributes}`);
       }
 

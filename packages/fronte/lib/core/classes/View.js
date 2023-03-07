@@ -1,9 +1,10 @@
-import { isFunction, isPromise, isObservable, isMarkup } from "../helpers/typeChecking.js";
+import { Type } from "@frameworke/bedrocke";
 import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
 import { Inputs } from "./Inputs.js";
 import { Markup, m } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
+import { isMarkup } from "../helpers/typeChecking.js";
 
 export class View extends Connectable {
   static isView(value) {
@@ -222,7 +223,7 @@ export class View extends Connectable {
         }
 
         const start = () => {
-          if (isObservable(args.at(0))) {
+          if (Type.isObservable(args.at(0))) {
             const $merged = State.merge(...args, callback);
             return $merged.subscribe(() => undefined);
           } else {
@@ -332,10 +333,10 @@ export class View extends Connectable {
     }
 
     // Display loading content while setup promise pends.
-    if (isPromise(element)) {
+    if (Type.isPromise(element)) {
       let cleanup;
 
-      if (isFunction(this.loading)) {
+      if (Type.isFunction(this.loading)) {
         // Render contents from loading() while waiting for setup to resolve.
         const content = this.loading(m);
         assertUsable(content);
@@ -360,7 +361,7 @@ export class View extends Connectable {
     assertUsable(element);
     this.#element = element.init({ appContext, elementContext });
 
-    if (isFunction(this.#ref)) {
+    if (Type.isFunction(this.#ref)) {
       this.#ref(this.#element.node);
     }
   }

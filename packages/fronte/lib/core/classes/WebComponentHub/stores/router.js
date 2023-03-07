@@ -1,11 +1,9 @@
-import { Type } from "@frameworke/bedrocke";
+import { Type, Router } from "@frameworke/bedrocke";
 import { createBrowserHistory } from "history";
 import queryString from "query-string";
 
 import { Store } from "../../Store.js";
 import { State } from "../../State.js";
-import { resolvePath } from "../../../helpers/resolvePath.js";
-import { joinPath } from "../../../helpers/joinPath.js";
 
 export class RouterStore extends Store {
   setup(ctx) {
@@ -75,7 +73,7 @@ export class RouterStore extends Store {
         options = args.pop();
       }
 
-      path = resolvePath(history.location.pathname, joinPath(...args));
+      path = Router.resolvePath(history.location.pathname, Router.joinPath(...args));
 
       if (options.replace) {
         history.replace(path);

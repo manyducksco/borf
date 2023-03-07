@@ -19,11 +19,27 @@ export type MiddlewareFunction<ResponseBody, RequestBody> = (
 
 export class HTTPClient {
   #middleware = new List<MiddlewareFunction<any, any>>();
-  #fetch = (global ?? window)?.fetch?.bind?.(global ?? window);
+  #fetch: any;
+
+  #getDefaultFetch() {
+    if (global != null) {
+      return global.fetch?.bind(global);
+    }
+
+    if (window != null) {
+      return window.fetch?.bind(window);
+    }
+
+    throw new TypeError(
+      `HTTPClient is only supported in Node.js and web browsers. Unknown environment defines neither 'global' nor 'window'.`
+    );
+  }
 
   constructor(config?: HTTPClientConfig) {
     if (config?.fetch) {
       this.#fetch = config.fetch;
+    } else {
+      this.#fetch = this.#getDefaultFetch();
     }
   }
 

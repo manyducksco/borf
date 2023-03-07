@@ -1,11 +1,11 @@
-import { isObject, isArray } from "./typeChecking.js";
+import { Type } from "@frameworke/bedrocke";
 
 export function deepEqual(one, two) {
   if (one === two) {
     return true;
   }
 
-  if (isObject(one) && isObject(two)) {
+  if (Type.isObject(one) && Type.isObject(two)) {
     const keysOne = Object.keys(one);
     const keysTwo = Object.keys(two);
 
@@ -22,7 +22,7 @@ export function deepEqual(one, two) {
     return true;
   }
 
-  if (isArray(one) && isArray(two)) {
+  if (Type.isArray(one) && Type.isArray(two)) {
     if (one.length !== two.length) {
       return false;
     }

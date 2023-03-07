@@ -1,4 +1,4 @@
-import { isObservable, isArray } from "../helpers/typeChecking.js";
+import { Type } from "@frameworke/bedrocke";
 import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
 import { Markup } from "./Markup.js";
@@ -34,7 +34,7 @@ export class Repeat extends Connectable {
     if (!this.isConnected) {
       parent.insertBefore(this.#node, after?.nextSibling);
 
-      if (isObservable(this.#value)) {
+      if (Type.isObservable(this.#value)) {
         this.#subscription = this.#value.subscribe((value) => {
           this.#update(value);
         });
@@ -66,7 +66,7 @@ export class Repeat extends Connectable {
       return this.#cleanup();
     }
 
-    if (!isArray(value)) {
+    if (!Type.isArray(value)) {
       throw new TypeError(`Repeat expects an array. Got: ${typeof value}`);
     }
 

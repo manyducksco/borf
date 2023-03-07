@@ -1,4 +1,4 @@
-import { isObservable } from "../helpers/typeChecking.js";
+import { Type } from "@frameworke/bedrocke";
 import { Connectable } from "./Connectable.js";
 
 export class Text extends Connectable {
@@ -26,7 +26,7 @@ export class Text extends Connectable {
 
   async connect(parent, after = null) {
     if (!this.isConnected) {
-      if (isObservable(this.#value)) {
+      if (Type.isObservable(this.#value)) {
         this.#subscription = this.#value.subscribe((value) => {
           this.#update(value);
         });

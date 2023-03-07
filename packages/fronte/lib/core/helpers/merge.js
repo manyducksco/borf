@@ -1,11 +1,11 @@
-import { isObject } from "./typeChecking";
+import { Type } from "@frameworke/bedrocke";
 
 /**
  * Takes an old value and a new value.  Returns a merged copy if both are objects, otherwise returns the new value.
  */
 export function merge(one, two) {
-  if (isObject(one)) {
-    if (!isObject(two)) {
+  if (Type.isObject(one)) {
+    if (!Type.isObject(two)) {
       return two;
     }
 

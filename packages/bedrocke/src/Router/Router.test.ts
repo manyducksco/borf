@@ -52,3 +52,27 @@ test("add and match routes", (t) => {
 
   t.is(matchNone, undefined);
 });
+
+test("static joinPath: joins simple path fragments", (t) => {
+  t.is(Router.joinPath(["users", 5, "edit"]), "users/5/edit");
+  t.is(Router.joinPath(["/lots", "/of/", "/slashes/"]), "/lots/of/slashes");
+  t.is(Router.joinPath(["even/", "/more/", "slashes"]), "even/more/slashes");
+});
+
+test("static joinPath: resolves relative path segments", (t) => {
+  t.is(Router.joinPath(["users", 5, "edit", "../../12"]), "users/12");
+  t.is(Router.joinPath(["users", 15, "./edit"]), "users/15/edit");
+});
+
+test("static resolvePath: resolves relative paths", (t) => {
+  t.is(Router.resolvePath("/users/5", "."), "/users/5");
+  t.is(Router.resolvePath("/users/5/edit", ".."), "/users/5");
+  t.is(Router.resolvePath("/users/5/edit", "../../2/"), "/users/2");
+  t.is(Router.resolvePath("/users/5", "./edit"), "/users/5/edit");
+  t.is(Router.resolvePath("/users/5", "edit"), "/users/5/edit");
+  t.is(Router.resolvePath("/users/5/edit", "../delete"), "/users/5/delete");
+});
+
+test("static resolvePath: returns absolute paths", (t) => {
+  t.is(Router.resolvePath("/users/5", "/edit"), "/edit");
+});

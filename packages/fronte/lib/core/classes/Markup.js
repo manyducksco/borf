@@ -1,13 +1,6 @@
+import { Type } from "@frameworke/bedrocke";
 import { flatten } from "../helpers/flatten.js";
-import {
-  isArray,
-  isFunction,
-  isNumber,
-  isObservable,
-  isString,
-  isConnectable,
-  isObject,
-} from "../helpers/typeChecking.js";
+import { isConnectable } from "../helpers/typeChecking.js";
 import { View } from "./View.js";
 import { Text } from "./Text.js";
 import { HTML } from "./HTML.js";
@@ -28,7 +21,7 @@ export class Markup {
 
 export function m(element, attributes, ...children) {
   // If attributes isn't null or an object, consider it a child.
-  if (!isObject(attributes)) {
+  if (!Type.isObject(attributes)) {
     children.unshift(attributes);
     attributes = {};
   }
@@ -52,12 +45,12 @@ export function m(element, attributes, ...children) {
   }
 
   // HTML tag like "h1", "span"
-  if (isString(element)) {
+  if (Type.isString(element)) {
     return new Markup((config) => new HTML({ attributes, children, ...config, tag: element }));
   }
 
   // Anonymous view setup function.
-  if (isFunction(element)) {
+  if (Type.isFunction(element)) {
     return new Markup((config) => new View({ ...config, setup: element }));
   }
 
@@ -133,7 +126,7 @@ m.repeat = function repeat(value, renderFn, keyFn) {
  * Filter out falsy children and convert remaining ones to Markup instances.
  */
 export function formatChildren(children) {
-  if (!isArray(children)) {
+  if (!Type.isArray(children)) {
     children = [children];
   }
 
@@ -144,11 +137,11 @@ export function formatChildren(children) {
         return x;
       }
 
-      if (isFunction(x)) {
+      if (Type.isFunction(x)) {
         return new Markup((config) => new View({ ...config, setup: x }));
       }
 
-      if (isString(x) || isNumber(x) || isObservable(x)) {
+      if (Type.isString(x) || Type.isNumber(x) || Type.isObservable(x)) {
         return new Markup((config) => new Text({ config, value: x }));
       }
 

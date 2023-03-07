@@ -1,6 +1,6 @@
+import { Type } from "@frameworke/bedrocke";
 import { Store } from "../classes/Store.js";
 import { State } from "../classes/State.js";
-import { isString } from "../helpers/typeChecking.js";
 
 export class PageStore extends Store {
   static inputs = {};
@@ -14,7 +14,7 @@ export class PageStore extends Store {
 
     if (document) {
       ctx.observe($$title, (current) => {
-        if (isString(current)) {
+        if (Type.isString(current)) {
           document.title = current;
         }
       });

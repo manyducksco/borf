@@ -4,7 +4,7 @@ import woof, {
   makeGlobal,
   Bindable,
   Private,
-} from "@woofjs/client";
+} from "";
 
 type ExampleGlobalState = {};
 

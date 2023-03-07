@@ -1,6 +1,6 @@
+import { Type } from "@frameworke/bedrocke";
 import { State } from "../classes/State.js";
 import { Store } from "../classes/Store.js";
-import { isFunction, isArray } from "../helpers/typeChecking.js";
 
 export class LanguageStore extends Store {
   static about = "Manages translations.";
@@ -23,7 +23,7 @@ export class LanguageStore extends Store {
      */
     async function fetchTranslation(language) {
       if (!translations[language]) {
-        const translation = isFunction(options.fetchTranslation) && (await options.fetchTranslation(language));
+        const translation = Type.isFunction(options.fetchTranslation) && (await options.fetchTranslation(language));
 
         if (translation) {
           translations[language] = translation;
@@ -44,9 +44,9 @@ export class LanguageStore extends Store {
     }
 
     const currentLanguage =
-      (isFunction(options.default) && (await options.default({ useStore: ctx.useStore }))) ||
+      (Type.isFunction(options.default) && (await options.default({ useStore: ctx.useStore }))) ||
       options.default ||
-      (isArray(options.supported) && options.supported[0]);
+      (Type.isArray(options.supported) && options.supported[0]);
 
     if (currentLanguage != null) {
       $$language.set(currentLanguage);

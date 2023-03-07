@@ -1,10 +1,10 @@
-import { makeState } from "../makeState.js";
+import { State } from "./State.js";
 import { Inputs } from "./Inputs.js";
 
 test("the basics", () => {
   const plain = "value";
-  const readOnly = makeState(5).readable();
-  const writable = makeState({ write: "this" });
+  const readOnly = new State(5).readable();
+  const writable = new State({ write: "this" });
 
   const inputs = new Inputs({ inputs: { plain, readOnly, writable } });
 

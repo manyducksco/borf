@@ -1,8 +1,8 @@
 import produce from "immer";
 import OBSERVABLE from "symbol-observable";
+import { Type } from "@frameworke/bedrocke";
 import { READABLE, WRITABLE } from "../keys.js";
 import { deepEqual } from "../helpers/deepEqual.js";
-import { isFunction, isObject } from "../helpers/typeChecking.js";
 
 /**
  * A `.get()` and `.set()`-able data container. The primary mechanism for reactivity and data binding in Fronte.
@@ -92,7 +92,7 @@ export class State {
    * @param callback - A function. Receives the current state and either mutates it or returns a derived state.
    */
   update(callback) {
-    if (!isFunction(callback)) {
+    if (!Type.isFunction(callback)) {
       throw new TypeError(`Expected an update function. Got: ${typeof callback}`);
     }
 
@@ -120,7 +120,7 @@ export class State {
    * @returns Readable
    */
   as(transform) {
-    if (!isFunction(transform)) {
+    if (!Type.isFunction(transform)) {
       throw new TypeError(`Expected a transform function. Got: ${typeof transform}`);
     }
 
@@ -134,7 +134,7 @@ export class State {
    * @returns Subscription
    */
   subscribe(observer) {
-    if (!isObject(observer)) {
+    if (!Type.isObject(observer)) {
       observer = {
         next: observer,
         error: arguments[1],
@@ -218,7 +218,7 @@ class Readable {
    * @returns Subscription
    */
   subscribe(observer) {
-    if (!isObject(observer)) {
+    if (!Type.isObject(observer)) {
       observer = {
         next: observer,
         error: arguments[1],
@@ -275,7 +275,7 @@ class PolyReadable {
     this.#merge = args.pop();
     this.#readables = args;
 
-    if (!isFunction(this.#merge)) {
+    if (!Type.isFunction(this.#merge)) {
       throw new TypeError(`Expected a merge function as the final argument. Got: ${typeof this.#merge}`);
     }
   }
@@ -305,7 +305,7 @@ class PolyReadable {
    * @returns Readable
    */
   as(transform) {
-    if (!isFunction(transform)) {
+    if (!Type.isFunction(transform)) {
       throw new TypeError(`Expected a transform function. Got: ${typeof transform}`);
     }
 
@@ -319,7 +319,7 @@ class PolyReadable {
    * @returns Subscription
    */
   subscribe(observer) {
-    if (!isObject(observer)) {
+    if (!Type.isObject(observer)) {
       observer = {
         next: observer,
         error: arguments[1],
