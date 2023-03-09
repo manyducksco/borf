@@ -107,6 +107,8 @@ export class RouterStore extends Store {
      * the $path, $route, $params and $query states accordingly.
      */
     async function onRouteChange({ location }) {
+      ctx.log("onRouteChange", location);
+
       // Update query params if they've changed.
       if (location.search !== lastQuery) {
         lastQuery = location.search;
@@ -120,8 +122,11 @@ export class RouterStore extends Store {
         );
       }
 
-      // Skip remaining logic for apps with a top level view and no routes.
-      if (routes.length === 0) {
+      const matched = appContext.router.match(location.pathname);
+
+      ctx.log({ routes, location, matched });
+
+      if (!matched) {
         $$route.set(null);
         $$path.set(location.pathname);
         $$params.set({
@@ -130,88 +135,80 @@ export class RouterStore extends Store {
         return;
       }
 
-      const matched = appContext.router.match(location.pathname);
+      if (matched.meta.redirect != null) {
+        let path = matched.meta.redirect;
 
-      // const matched = matchRoute(routes, location.pathname);
+        for (const key in matched.params) {
+          path = path.replace(":" + key, matched.params[key]);
+        }
 
-      if (matched) {
-        if (matched.meta.redirect != null) {
-          let path = matched.meta.redirect;
+        history.replace(path);
+      } else {
+        $$path.set(matched.path);
+        $$params.set(matched.params);
 
-          for (const key in matched.params) {
-            path = path.replace(":" + key, matched.params[key]);
-          }
+        if (matched.pattern !== $$route.get()) {
+          $$route.set(matched.pattern);
 
-          history.replace(path);
-        } else {
-          $$path.set(matched.path);
-          $$params.set(matched.params);
+          const { layers } = matched.meta;
 
-          if (matched.pattern !== $$route.get()) {
-            $$route.set(matched.pattern);
+          // Diff and update route layers.
+          for (let i = 0; i < layers.length; i++) {
+            const matchedLayer = layers[i];
+            const activeLayer = activeLayers[i];
 
-            const { layers } = matched.meta;
+            if (activeLayer?.id !== matchedLayer.id) {
+              activeLayers = activeLayers.slice(0, i);
 
-            // Diff and update route layers.
-            for (let i = 0; i < layers.length; i++) {
-              const matchedLayer = layers[i];
-              const activeLayer = activeLayers[i];
+              const parentLayer = activeLayers[activeLayers.length - 1];
 
-              if (activeLayer?.id !== matchedLayer.id) {
-                activeLayers = activeLayers.slice(0, i);
-
-                const parentLayer = activeLayers[activeLayers.length - 1];
-
-                const mount = (view) => {
-                  requestAnimationFrame(() => {
-                    if (activeLayer && activeLayer.view.isConnected) {
-                      // Disconnect first mismatched active and remove remaining layers.
-                      activeLayer.view.disconnect();
-                    }
-
-                    if (parentLayer) {
-                      parentLayer.view.setChildren(view);
-                    } else {
-                      appContext.rootView.setChildren(view);
-                    }
-                  });
-                };
-
-                let redirected = false;
-                let preloadResult = {};
-
-                if (matchedLayer.preload) {
-                  preloadResult = await preloadRoute(matchedLayer.preload, {
-                    appContext,
-                    elementContext,
-                    channelName: `preload:${matchedLayer.path}`,
-                  });
-
-                  if (preloadResult.redirectPath) {
-                    // Redirect to other path.
-                    redirected = true;
-                    navigate(preloadResult.redirectPath, { replace: true });
+              const mount = (view) => {
+                requestAnimationFrame(() => {
+                  if (activeLayer && activeLayer.view.isConnected) {
+                    // Disconnect first mismatched active and remove remaining layers.
+                    activeLayer.view.disconnect();
                   }
+
+                  if (parentLayer) {
+                    parentLayer.view.setChildren(view);
+                  } else {
+                    appContext.rootView.setChildren(view);
+                  }
+                });
+              };
+
+              let redirected = false;
+              let preloadResult = {};
+
+              if (matchedLayer.preload) {
+                preloadResult = await preloadRoute(matchedLayer.preload, {
+                  appContext,
+                  elementContext,
+                  channelName: `preload:${matchedLayer.path}`,
+                });
+
+                if (preloadResult.redirectPath) {
+                  // Redirect to other path.
+                  redirected = true;
+                  navigate(preloadResult.redirectPath, { replace: true });
                 }
+              }
 
-                if (!redirected) {
-                  const view = matchedLayer.view.init({
-                    appContext,
-                    elementContext,
-                    attributes: preloadResult.attributes || {},
-                  });
+              if (!redirected) {
+                const view = matchedLayer.view.init({
+                  appContext,
+                  elementContext,
+                  attributes: preloadResult.attributes || {},
+                });
 
-                  mount(view);
+                mount(view);
 
-                  // Push and connect new active layer.
-                  activeLayers.push({ id: matchedLayer.id, view });
-                }
+                // Push and connect new active layer.
+                activeLayers.push({ id: matchedLayer.id, view });
               }
             }
           }
         }
-      } else {
-        ctx.warn('No route was matched. Consider adding a wildcard ("*") route or redirect to catch this.');
       }
     }
 

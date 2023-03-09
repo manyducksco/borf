@@ -39,7 +39,7 @@ export class Repeat extends Connectable {
           this.#update(value);
         });
       } else {
-        this.#update(value);
+        this.#update(this.#value);
       }
     }
   }

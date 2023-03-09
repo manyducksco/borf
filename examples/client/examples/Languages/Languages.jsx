@@ -4,14 +4,15 @@ import logLifecycle from "../../utils/logLifecycle";
 
 import styles from "./Languages.module.css";
 
-export class Languages extends View {
-  static inputs = {};
-
-  setup(ctx, m) {
+export const Languages = View.define({
+  label: "Languages",
+  inputs: {},
+  setup(ctx) {
     logLifecycle(ctx);
     const { t, setLanguage, $currentLanguage } = ctx.useStore("language");
 
     // TODO: Show a larger component with multiple translated strings to give a better example of what's actually happening here.
+    // Possibly something with a few pieces of textual information and an image, like an ID card view.
     return (
       <ExampleFrame title="Languages">
         <div>
@@ -49,5 +50,5 @@ export class Languages extends View {
         <p>{t("greeting")}</p>
       </ExampleFrame>
     );
-  }
-}
+  },
+});

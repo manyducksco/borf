@@ -33,7 +33,7 @@ export class Timer extends View {
       }
     };
 
-    ctx.afterConnect(() => {
+    ctx.onConnect(() => {
       lastTick = Date.now();
 
       tick();

@@ -60,7 +60,7 @@ class FlightBooker extends View {
               }}
             >
               {m.repeat(flightTypes, ($value) => {
-                const $selected = joinStates(
+                const $selected = State.merge(
                   $value,
                   $$flightType,
                   (x, y) => x === y

@@ -459,14 +459,14 @@ declare module "@frameworke/fronte" {
     ): Blueprint;
   }
 
-  type InputsConfig<I, IT = any> = {
-    [name in keyof I]: {
+  type InputsConfig = {
+    [name: string]: {
       /**
        * Fuzzy type checking is enabled during development when you specify a type.
        */
       type?: "string" | "number" | "function" | "object" | "array" | "boolean";
 
-      parse?: (value: unknown) => IT;
+      parse?: (value: unknown) => any;
 
       /**
        * Attribute description for viewer.
@@ -507,7 +507,7 @@ declare module "@frameworke/fronte" {
     /**
      *
      */
-    inputs?: InputsConfig<I>;
+    inputs?: InputsConfig;
 
     /**
      *
