@@ -527,7 +527,9 @@ declare module "@frameworke/fronte" {
 
     context: ViewContext<I>;
 
-    // Fake type for JSX attribute checking.
+    /**
+     * Fake type for JSX attribute checking.
+     */
     ___inputs: {
       [K in keyof I]: ReadableOrStatic<I[K]>;
     };
@@ -568,6 +570,7 @@ declare module "@frameworke/fronte" {
     inputs: Inputs<I>;
 
     useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+    useStore<S extends Store<any>>(store: S): S extends Store<infer U> ? U : unknown;
     useStore<S extends StoreConstructor<any>>(store: S): S extends StoreConstructor<any, infer U> ? U : unknown;
 
     /**
@@ -613,6 +616,8 @@ declare module "@frameworke/fronte" {
   }
 
   export class Store<I = any, Exports = any> {
+    static define<O extends DefineStoreOptions<any>>(options: O): Store<ReturnType<O["setup"]>>;
+
     abstract setup(ctx: StoreContext<I>): Exports;
   }
 
@@ -620,6 +625,7 @@ declare module "@frameworke/fronte" {
     inputs: Inputs<I>;
 
     useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+    useStore<S extends Store<any>>(store: S): S extends Store<infer U> ? U : unknown;
     useStore<S extends StoreConstructor<any>>(store: S): S extends StoreConstructor<any, infer U> ? U : unknown;
 
     /**
@@ -632,6 +638,28 @@ declare module "@frameworke/fronte" {
      */
     onDisconnect: (callback: () => void) => void;
   }
+
+  export type DefineStoreOptions<I> = {
+    /**
+     * A name to identify this store in the console and dev tools.
+     */
+    label?: string;
+
+    /**
+     * An explanation of this store.
+     */
+    about?: string;
+
+    /**
+     *
+     */
+    inputs?: InputsConfig;
+
+    /**
+     *
+     */
+    setup: StoreSetupFn<I>;
+  };
 
   /*==================================*\
   ||          Built-in Stores         ||

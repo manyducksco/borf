@@ -1,8 +1,7 @@
 import { Store, State } from "@frameworke/fronte";
 
-export class CounterStore extends Store {
-  static about = "Keeps a counter that increments by one each second.";
-
+export const CounterStore = Store.define({
+  about: "Keeps a counter that increments by one each second.",
   setup(ctx) {
     const $$current = new State(0);
 
@@ -18,5 +17,5 @@ export class CounterStore extends Store {
         $$current.set(0);
       },
     };
-  }
-}
+  },
+});

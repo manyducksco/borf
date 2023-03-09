@@ -5,7 +5,7 @@ import { MouseStore } from "../globals/MouseStore.js";
 
 const bestColor = "#ff0088";
 
-export class MouseFollowerExample extends View {
+export const MouseFollowerExample = View.define({
   setup(ctx, { when }) {
     const $$enabled = makeState(false);
     const $$color = makeState(bestColor);
@@ -76,11 +76,11 @@ export class MouseFollowerExample extends View {
         </div>
       </div>
     );
-  }
-}
+  },
+});
 
-class MouseFollower extends View {
-  static inputs = {
+const MouseFollower = View.define({
+  inputs: {
     color: {
       type: "string",
       required: true,
@@ -89,8 +89,7 @@ class MouseFollower extends View {
       type: "object",
       required: true,
     },
-  };
-
+  },
   setup(ctx) {
     const scale = makeSpring(0, {
       stiffness: 200,
@@ -118,5 +117,5 @@ class MouseFollower extends View {
         }}
       />
     );
-  }
-}
+  },
+});

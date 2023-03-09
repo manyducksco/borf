@@ -1,8 +1,7 @@
 import { Store, State } from "@frameworke/fronte";
 
-export class MouseStore extends Store {
-  static about = "Keeps the current mouse position.";
-
+export const MouseStore = Store.define({
+  about: "Keeps the current mouse position.",
   setup(ctx) {
     const $$position = new State({ x: 0, y: 0 });
 
@@ -17,5 +16,5 @@ export class MouseStore extends Store {
     return {
       $position: $$position.readable(),
     };
-  }
-}
+  },
+});

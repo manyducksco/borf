@@ -7,13 +7,13 @@ export class RenderOrderTest extends View {
 
     let interval;
 
-    ctx.afterConnect(() => {
+    ctx.onConnect(() => {
       interval = setInterval(() => {
         $$isTrue.update((t) => !t);
       }, 1000);
     });
 
-    ctx.beforeDisconnect(() => {
+    ctx.onDisconnect(() => {
       clearInterval(interval);
     });
 
