@@ -2,35 +2,83 @@ import { Type } from "@frameworke/bedrocke";
 import { State } from "../classes/State.js";
 import { Store } from "../classes/Store.js";
 
+class Language {
+  #tag;
+  #config;
+  #translation;
+
+  get tag() {
+    return this.#tag;
+  }
+
+  constructor(tag, config) {
+    this.#tag = tag;
+    this.#config = config;
+  }
+
+  async getTranslation() {
+    if (!this.#translation) {
+      // Translation can be an object of strings, a function that returns one, or an async function that resolves to one.
+      if (Type.isFunction(this.#config.translation)) {
+        const result = this.#config.translation();
+
+        if (Type.isPromise(result)) {
+          const resolved = await result;
+
+          Type.assertObject(
+            resolved,
+            `Translation promise of language '${
+              this.#tag
+            }' must resolve to an object of translated strings. Got type: %t, value: %v`
+          );
+
+          this.#translation = resolved;
+        } else if (Type.isObject(result)) {
+          this.#translation = result;
+        } else {
+          throw new TypeError(
+            `Translation function of '${this.#tag}' must return an object or promise. Got type: ${Type.of(
+              result
+            )}, value: ${result}`
+          );
+        }
+      } else if (Type.isObject(this.#config.translation)) {
+        this.#translation = this.#config.translation;
+      } else {
+        throw new TypeError(
+          `Translation of '${
+            this.#tag
+          }' must be an object of translated strings, a function that returns one, or an async function that resolves to one. Got type: ${Type.of(
+            this.#config.translation
+          )}, value: ${this.#config.translation}`
+        );
+      }
+    }
+
+    return this.#translation;
+  }
+}
+
 export const LanguageStore = Store.define({
   about: "Manages translations.",
   async setup(ctx) {
     const options = ctx.inputs.get();
+    const languages = new Map();
 
-    const supportedLanguages = Object.freeze(options.supported || []);
-    const translations = options.translations || {};
+    ctx.log({ options });
 
-    const $$language = new State();
-    const $$translation = new State({});
+    // Convert languages into Language instances.
+    Object.entries(options.languages || {}).forEach(([tag, config]) => {
+      languages.set(tag, new Language(tag, config));
+    });
+
+    ctx.log({ languages });
+
+    const $$language = new State(); // String
+    const $$translation = new State(); // Object
 
     // Fallback labels for missing state and data.
     const $noLanguageValue = new State("[NO LANGUAGE SET]").readable();
-
-    /**
-     * Retrieves the key-value store with translated strings for the requested language.
-     * Tries to load from cache first, fetching with `options.fetchTranslation` if there is none cached.
-     */
-    async function fetchTranslation(language) {
-      if (!translations[language]) {
-        const translation = Type.isFunction(options.fetchTranslation) && (await options.fetchTranslation(language));
-
-        if (translation) {
-          translations[language] = translation;
-        }
-      }
-
-      return translations[language];
-    }
 
     /**
      * Replaces {{placeholders}} with values in translated strings.
@@ -42,31 +90,37 @@ export const LanguageStore = Store.define({
       return template;
     }
 
-    const currentLanguage =
-      (Type.isFunction(options.default) && (await options.default({ useStore: ctx.useStore }))) ||
-      options.default ||
-      (Type.isArray(options.supported) && options.supported[0]);
+    // TODO: Determine and load default language.
+    const currentLanguage = options.currentLanguage
+      ? languages.get(options.currentLanguage)
+      : languages.get([...languages.keys()][0]);
 
     if (currentLanguage != null) {
-      $$language.set(currentLanguage);
+      const translation = await currentLanguage.getTranslation();
 
-      const translation = await fetchTranslation(currentLanguage);
+      $$language.set(currentLanguage.tag);
       $$translation.set(translation);
     }
 
     return {
       $currentLanguage: $$language.readable(),
-      supportedLanguages,
+      supportedLanguages: [...languages.keys()],
 
-      async setLanguage(language) {
-        if (!supportedLanguages.includes(language)) {
-          throw new Error(`Language '${language}' is not supported.`);
+      async setLanguage(tag) {
+        if (!languages.has(tag)) {
+          throw new Error(`Language '${tag}' is not supported.`);
         }
 
-        const translation = await fetchTranslation(language);
+        const lang = languages.get(tag);
 
-        $$language.set(language);
-        $$translation.set(translation);
+        try {
+          const translation = await lang.getTranslation();
+
+          $$language.set(tag);
+          $$translation.set(translation);
+        } catch (error) {
+          ctx.crash(error);
+        }
       },
 
       /**
@@ -75,7 +129,7 @@ export const LanguageStore = Store.define({
        * @param key - Key to the translated value.
        * @param values - A map of {{placeholder}} names and the values to replace them with.
        */
-      t(key, values = null) {
+      translate(key, values = null) {
         if ($$language.get() == null) {
           return $noLanguageValue;
         }

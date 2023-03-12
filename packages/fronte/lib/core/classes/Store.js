@@ -162,7 +162,7 @@ export class Store extends Connectable {
       },
 
       crash: (error) => {
-        appContext.crashCollector.crash(error);
+        appContext.crashCollector.crash({ error, component: this });
       },
     };
 
@@ -173,8 +173,8 @@ export class Store extends Connectable {
 
     try {
       exports = this.setup(ctx);
-    } catch (err) {
-      this.#channel.error(err);
+    } catch (error) {
+      appContext.crashCollector.crash({ error, component: this });
     }
 
     // Display loading content while setup promise pends.

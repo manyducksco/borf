@@ -90,8 +90,6 @@ export const RouterStore = Store.define({
         }
 
         history.push(href);
-
-        ctx.log(`Intercepted link to '${href}'`);
       });
     });
 
@@ -103,8 +101,6 @@ export const RouterStore = Store.define({
      * the $path, $route, $params and $query states accordingly.
      */
     async function onRouteChange({ location }) {
-      ctx.log("onRouteChange", location);
-
       // Update query params if they've changed.
       if (location.search !== lastQuery) {
         lastQuery = location.search;
@@ -119,8 +115,6 @@ export const RouterStore = Store.define({
       }
 
       const matched = appContext.router.match(location.pathname);
-
-      ctx.log({ location, matched });
 
       if (!matched) {
         $$pattern.set(null);

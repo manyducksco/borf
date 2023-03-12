@@ -9,7 +9,8 @@ export const Languages = View.define({
   inputs: {},
   setup(ctx) {
     logLifecycle(ctx);
-    const { t, setLanguage, $currentLanguage } = ctx.useStore("language");
+    const { translate, setLanguage, $currentLanguage } =
+      ctx.useStore("language");
 
     // TODO: Show a larger component with multiple translated strings to give a better example of what's actually happening here.
     // Possibly something with a few pieces of textual information and an image, like an ID card view.
@@ -47,7 +48,7 @@ export const Languages = View.define({
             日本語
           </button>
         </div>
-        <p>{t("greeting")}</p>
+        <p>{translate("greeting")}</p>
       </ExampleFrame>
     );
   },

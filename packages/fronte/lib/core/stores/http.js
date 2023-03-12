@@ -19,10 +19,10 @@ export const HTTPStore = Store.define({
 
 function getDefaultFetch() {
   if (window?.fetch) {
-    return window.fetch?.bind(window);
+    return window.fetch.bind(window);
   }
 
   if (global?.fetch) {
-    return global.fetch?.bind(window);
+    return global.fetch.bind(window);
   }
 }

@@ -276,13 +276,11 @@ export class App {
 
         Type.assertInstanceOf(Store, instance, "Value of 'exports' is not a valid store. Got type: %t, value: %v");
       } else {
-        instance = new store({ ...config, about: store.about, inputDefs: store.inputs });
+        instance = new store({ ...config, label: store.label, about: store.about, inputDefs: store.inputs });
       }
 
       // Add instance and mark as ready.
       this.#stores.set(key, { ...item, instance });
-
-      console.log(this.#stores.get(key));
     }
 
     const storeParent = document.createElement("div");
@@ -516,8 +514,6 @@ export class App {
           return router;
         },
       };
-
-      console.log(routes, router);
 
       route.extend(router);
     } else {

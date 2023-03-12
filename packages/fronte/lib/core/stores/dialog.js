@@ -68,6 +68,12 @@ export const DialogStore = Store.define({
       });
     });
 
+    ctx.onDisconnect(() => {
+      if (container.parentNode) {
+        document.body.removeChild(container);
+      }
+    });
+
     return {
       open: (view, inputs = {}) => {
         let markup;
