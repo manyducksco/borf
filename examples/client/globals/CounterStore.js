@@ -2,7 +2,7 @@ import { Store, State } from "@frameworke/fronte";
 
 export const CounterStore = Store.define({
   about: "Keeps a counter that increments by one each second.",
-  setup(ctx) {
+  setup: (ctx) => {
     const $$current = new State(0);
 
     ctx.onConnect(() => {

@@ -2,8 +2,9 @@ import { View } from "@frameworke/fronte";
 
 import styles from "./ExampleFrame.module.css";
 
-export class ExampleFrame extends View {
-  static inputs = {
+export const ExampleFrame = View.define({
+  label: "ExampleFrame",
+  inputs: {
     title: {
       type: "string",
     },
@@ -11,8 +12,7 @@ export class ExampleFrame extends View {
       type: "string",
       optional: true,
     },
-  };
-
+  },
   setup(ctx, m) {
     const { title, about } = ctx.inputs.get();
 
@@ -30,5 +30,5 @@ export class ExampleFrame extends View {
         <div class={styles.content}>{ctx.outlet()}</div>
       </article>
     );
-  }
-}
+  },
+});

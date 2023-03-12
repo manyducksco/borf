@@ -26,7 +26,7 @@ class Viewer {
   }
 
   #initView(View) {
-    return new Markup((config) => new View(config));
+    return new Markup((config) => new View({ setup: config.setup }).instantiate(config));
   }
 
   #initStore(Store) {

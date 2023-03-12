@@ -297,3 +297,117 @@ export default new Inspector(SomeView, {
 // Maybe it could be different types of specialized caches (HTTPClientCache, credential/auth caches, etc.)
 import { Cache } from "@frameworke/cache";
 ```
+
+## Aesthetics
+
+I'm struggling over whether it's a better idea to use classes or standalone functions. Standalone functions are more tree-shakeable and modular, but I feel like classes are easier to grasp conceptually, because all methods are grouped on one object, and the object itself aids understanding. A set of utility functions that happen to compose is a lot more abstract because the "object" is kind of imaginary in that scenario. This could just be in my mind and not really true for others.
+
+On the other hand, my taste keeps shifting between which aesthetic I prefer. As I write this I'm leaning more toward the factory function style.
+
+```js
+const SomeView = makeView({
+  inputs: {},
+  setup(ctx, m) {
+    const $$value = makeState(false);
+
+    const $value = mergeStates($$one, $$two, (x, y) => x + y);
+
+    return m("h1", $$value.readable());
+  },
+});
+
+// vs:
+
+const SomeView = new View({
+  inputs: {},
+  setup(ctx, m) {
+    const $$value = new State(false);
+
+    const $value = State.merge($$one, $$two, (x, y) => x + y);
+
+    return m("h1", $$value.readable());
+  },
+});
+```
+
+If I went with factory functions over classes, the library's exports would look like this:
+
+```js
+import {
+  makeApp,
+  makeView,
+  makeState,
+  mergeStates,
+  makeSpring,
+} from "@frameworke/fronte";
+
+import {
+  makeList,
+  makeHash,
+  makeHTTPClient,
+  makeObservable,
+  makePerSecondQueue,
+  makeRouter,
+  makeStateMachine,
+
+  // Type
+  isNumber,
+  assertNumber,
+  isObject,
+  assertObject,
+  isArray,
+  assertArray,
+  isArrayOf,
+  assertArrayOf,
+  /* ... */
+} from "@frameworke/bedrocke";
+
+// Or make type its own library
+
+import {
+  isNumber,
+  assertNumber,
+  isObject,
+  assertObject,
+  isArray,
+  assertArray,
+  isArrayOf,
+  assertArrayOf,
+  /* ... */
+} from "@frameworke/type";
+
+// Which can still be imported as one:
+
+import * as Type from "@frameworke/type";
+```
+
+Classes are a nice, uniform abstraction though. Every programmer should already understand how a class, instances of a class, static methods, etc. work through experience. Functions can take anything and return anything, so the freeform nature could make them less intuitive when trying to figure out the structure of a program.
+
+Classes are also used heavily in the JS standard library. Also you can extend built-in types through classes. Leaning into classes would be a good thing if I want the framework to feel like natural JS.
+
+```js
+const arr = new Array(); // instantiation
+Array.isArray([]); // static methods
+
+const map = new Map(); // new types are implemented as classes
+```
+
+## Thoughts
+
+```js
+// Creates a type (schema in Zod terms) to validate objects.
+const record = new Type({
+  id: Type.isNumber,
+  value: Type.isString,
+});
+
+// Result here is true because the object shape matches
+const result = record.isTypeOf({
+  id: 1,
+  value: "testing type matching",
+});
+
+// Can take a function if an object shape doesn't fit the bill.
+const func = new Type(Type.isFunction);
+func.isTypeOf(() => {});
+```

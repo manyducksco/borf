@@ -5,22 +5,25 @@ import { Inputs } from "./Inputs.js";
 import { Markup, m } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
 import { isMarkup } from "../helpers/typeChecking.js";
+import { KEY } from "../keys.js";
 
 export class View extends Connectable {
-  static isView(value) {
-    // View.isView() considers a subclass of View to be a "view"
-    // because framework users don't interact with instances directly.
-    return value?.prototype instanceof View;
-  }
-
   static define(config) {
     return class extends View {
       static about = config.about;
-      static inputs = config.inputs;
       static label = config.label;
+      static inputs = config.inputs;
 
       setup = config.setup;
     };
+  }
+
+  static isView(value) {
+    return value?.prototype instanceof View;
+  }
+
+  static isInstance(value) {
+    return value instanceof View;
   }
 
   label;
@@ -50,6 +53,7 @@ export class View extends Connectable {
   }
 
   constructor({
+    key,
     appContext,
     elementContext,
     channelPrefix = "view",
@@ -58,8 +62,14 @@ export class View extends Connectable {
     inputs = {},
     inputDefs,
     children = [],
-    setup, // This is passed in directly to `new View()` to turn a standalone setup function into a view.
+    setup,
   }) {
+    if (key !== KEY) {
+      throw new Error(
+        `When creating a new Store, use Store.define or extend the Store class. The constructor is intended for creating new instances within the framework.`
+      );
+    }
+
     super();
 
     this.label = label;
@@ -80,8 +90,6 @@ export class View extends Connectable {
       enableValidation: true, // TODO: Disable for production builds (unless specified in makeApp options).
     });
     this.#$$children = new State(children);
-
-    // console.log({ channelPrefix, label, inputs, inputDefs });
   }
 
   setup(ctx, m) {

@@ -1,11 +1,15 @@
 declare module "@frameworke/fronte" {
   import { History } from "history";
 
+  interface AddStoreOptions<I> {
+    inputs: I;
+  }
+
   export class WebComponentHub {
     constructor();
 
-    addStore(): void;
-    addElement(tag: string, component: View | Store): void;
+    addStore<I>(store: Store<I, any>, options: AddStoreOptions<I>): this;
+    addElement(tag: string, component: View | Store): this;
 
     register(): Promise<void>;
   }
@@ -14,7 +18,7 @@ declare module "@frameworke/fronte" {
   ||               App                ||
   \*==================================*/
 
-  interface AppOptions<A = any> {
+  interface AppOptions {
     /**
      * Options for debug system.
      */
@@ -59,21 +63,6 @@ declare module "@frameworke/fronte" {
        */
       history?: History;
     };
-
-    language?: {
-      supported: string[];
-      default?: string | (() => Promise<string | undefined>);
-      translations?: Record<string, Translation>;
-      fetchTranslation?: (ctx: any, language: string) => Promise<Translation>;
-    };
-
-    stores?: (StoreConstructor<any> | StoreConfig<any>)[];
-
-    preload?: RoutePreloadFn<A>;
-
-    view?: ViewLike;
-
-    routes?: RouteConfig[];
   }
 
   type Translation = Record<string, string | Translation>;
@@ -103,29 +92,152 @@ declare module "@frameworke/fronte" {
      * Disconnects the app.
      */
     disconnect(): Promise<void>;
+
+    /**
+     * Adds a new root view which is displayed by the app at all times.
+     * All routes added to the app will render inside this view's `ctx.outlet()`.
+     *
+     * @param view - A View or a standalone setup function.
+     */
+    addRootView<I>(view: ViewLike<I>): this;
+
+    /**
+     * Adds a new global store which will be available to every component within this App.
+     *
+     * @param store - A Store or a standalone setup function.
+     */
+    addStore<I>(store: StoreLike<I>): this;
+
+    /**
+     * Adds a new language the app can be translated into.
+     *
+     * @param tag - A valid BCP47 language tag, like `en-US`, `en-GB`, `ja`, etc.
+     * @param config - Language configuration.
+     */
+    addLanguage(tag: string, config: LanguageConfig): this;
+
+    /**
+     * Sets the initial language. The app will default to the first language added if this is not called.
+     */
+    setLanguage(tag: string): this;
+
+    /**
+     * Sets the initial language based on the user's locale.
+     * Falls back to `fallback` language if provided, otherwise falls back to the first language added.
+     *
+     * @param tag - Set to "auto" to autodetect the user's language.
+     * @param fallback - The language tag to default to if the app fails to detect an appropriate language.
+     */
+    setLanguage(tag: "auto", fallback?: string): this;
+
+    /**
+     * Adds a new pattern, a view to display while that pattern matches the current URL, and an optional function to configure nested routes and redirects.
+     * Route chaining allows you to add nested routes and redirects that are displayed within the `view`'s outlet while `pattern` matches the current URL.
+     *
+     * @param pattern - A URL pattern to match against the current URL.
+     * @param view - The view to display while `pattern` matches the current URL.
+     * @param extend - A callback that takes a router to configure nested routes and redirects.
+     */
+    addRoute<I>(pattern: string, view: ViewLike<I>, extend?: (sub: AppRouter) => void): this;
+
+    /**
+     * Adds a new pattern and a set of nested routes that are displayed without a layout `view`.
+     *
+     * @param pattern - A URL pattern to match against the current URL.
+     * @param view - Pass null to render subroutes without a parent view.
+     * @param extend - A callback that takes a router to configure nested routes and redirects.
+     */
+    addRoute(pattern: string, view: null, extend: (sub: AppRouter) => void): this;
+
+    /**
+     * Adds a new pattern that will redirect to a different path when matched.
+     *
+     * @param pattern - A URL pattern to match against the current URL.
+     * @param redirectPath - A path to redirect to when `pattern` matches the current URL.
+     */
+    addRedirect(pattern: string, redirectPath: string): this;
+
+    /**
+     * Adds a new pattern that will redirect to a different path when matched, as calculated by a callback function.
+     * Useful when you require more insight into the path that matched the pattern before deciding where to send the user.
+     *
+     * @param pattern - A URL pattern to match against the current URL.
+     * @param createPath - A function that generates a redirect path from the current URL match.
+     */
+    addRedirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
   }
 
-  /*==================================*\
-  ||             Routing              ||
-  \*==================================*/
+  // TODO: Is there a good way to represent infinitely nested recursive types?
+  /**
+   * An object where values are either a translated string or another nested Translation object.
+   */
+  type Translation = Record<string, string | Record<string, string | Record<string, string | Record<string, string>>>>;
 
-  interface RoutePreloadContext extends DebugChannel {
-    useStore<S extends StoreConstructor<any>>(store: S): ReturnType<S.setup>;
-    useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-
-    redirect(to: string): any;
+  interface LanguageConfig {
+    /**
+     * The translated strings for this language, or a callback function that returns them.
+     */
+    translation: Translation | (() => Translation) | (() => Promise<Translation>);
   }
 
-  interface RoutePreloadFn<T> {
-    (context: RoutePreloadContext): Promise<T>;
+  interface AppRouter {
+    /**
+     * Adds a new pattern, a view to display while that pattern matches the current URL, and an optional function to configure route chaining.
+     * Route chaining allows you to add nested routes and redirects that are displayed within the `view`'s outlet while `pattern` matches the current URL.
+     *
+     * @param pattern - A URL pattern to match against the current URL.
+     * @param view - The view to display while `pattern` matches the current URL.
+     * @param extend - A callback that takes a router object. Use this to append nested routes and redirects.
+     */
+    addRoute<I>(pattern: string, view: ViewLike<I>, extend?: (sub: AppRouter) => void): this;
+
+    /**
+     * Adds a new pattern and chains a set of nested routes that are displayed without a layout `view`.
+     *
+     * @param pattern - A URL pattern to match against the current URL.
+     * @param view - Pass null to render subroutes without a parent view.
+     * @param extend - A callback that takes a router object. Use this to append nested routes and redirects.
+     */
+    addRoute(pattern: string, view: null, extend: (sub: AppRouter) => void): this;
+
+    /**
+     * Adds a new pattern that will redirect to a different route when matched.
+     *
+     * @param pattern - A URL pattern to match against the current URL.
+     * @param redirectPath - A path to redirect to when `pattern` matches the current URL.
+     */
+    addRedirect(pattern: string, redirectPath: string): this;
+
+    /**
+     * Adds a new pattern that will redirect to a different route when matched, as calculated by a callback function.
+     * Useful when you require more insight into the path that matched the pattern before deciding where to send the user.
+     *
+     * @param pattern - A URL pattern to match against the current URL.
+     * @param createPath - A function that generates a redirect path from the current URL match.
+     */
+    addRedirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
   }
 
-  interface RouteConfig<T = any> {
+  interface RedirectContext {
+    /**
+     * The path as it appears in the URL bar.
+     */
     path: string;
-    redirect?: string;
-    preload?: RoutePreloadFn<T>;
-    view?: ViewLike<T>;
-    routes?: RouteConfig[];
+
+    /**
+     * The pattern that this path was matched with.
+     */
+    pattern: string;
+
+    /**
+     * Named route params parsed from `path`.
+     */
+    params: Record<string, string | number | undefined>;
+
+    /**
+     * Query params parsed from `path`.
+     */
+    query: Record<string, string | number | undefined>;
   }
 
   /*==================================*\
@@ -173,7 +285,7 @@ declare module "@frameworke/fronte" {
   ||          State / Bindings        ||
   \*==================================*/
 
-  export class State<T> extends Observable<T> {
+  export class State<T> extends Observable<T> implements Writable<T> {
     static isReadable<P>(value: unknown): value is Readable<P>;
     static isWritable<P>(value: unknown): value is Writable<P>;
     static isState<P>(value: unknown): value is State<P>;
@@ -252,21 +364,31 @@ declare module "@frameworke/fronte" {
     ): Readable<Result>;
   }
 
-  export class Readable<T> extends Observable<T> {
+  export interface Writable<T> extends Readable<T> {
     /**
-     * Returns the current value.
+     * Assigns a new value to the bound state.
+     *
+     * @param value - New value.
      */
-    get(): T;
+    set(value: T): void;
 
     /**
-     * Returns a new state whose value reflects the return value of `transform` when called with this state's value.
-     *
-     * @param transform - Function to convert the value of the current state into the value of a new state.
+     * Assigns a new value to the bound state through a callback function that takes the current value and returns a new one.
      */
-    as<R>(transform: (value: T) => R): Readable<R>;
+    update(callback: (value: T) => T): void;
+
+    /**
+     * Assigns a new value to the bound state through a callback function that takes the current value and mutates it to the desired value.
+     */
+    update(callback: (value: T) => void): void;
+
+    /**
+     * Creates a new read-only binding to this value.
+     */
+    readable(): Readable<T>;
   }
 
-  export class PolyReadable<T> extends Observable<T> {
+  export interface Readable<T> extends Observable<T> {
     /**
      * Returns the current value.
      */
@@ -294,47 +416,41 @@ declare module "@frameworke/fronte" {
      *
      * @see https://github.com/tc39/proposal-observable
      */
-    observe<Value>(
-      observable: Observable<Value>,
-      next?: (value: Value) => void,
+    observe<T>(
+      observable: Observable<T>,
+      next?: (value: T) => void,
       error?: (err: Error) => void,
       complete?: () => void
     ): void;
 
-    observe<ValueOne, ValueTwo>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      callback: (valueOne: ValueOne, valueTwo: ValueTwo) => void
+    observe<T1, T2>(
+      observableOne: Observable<T1>,
+      observableTwo: Observable<T2>,
+      callback: (valueOne: T1, valueTwo: T2) => void
     ): void;
 
-    observe<ValueOne, ValueTwo, ValueThree>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      callback: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => void
+    observe<T1, T2, T3>(
+      observableOne: Observable<T1>,
+      observableTwo: Observable<T2>,
+      observableThree: Observable<T3>,
+      callback: (valueOne: T1, valueTwo: T2, valueThree: T3) => void
     ): void;
 
-    observe<ValueOne, ValueTwo, ValueThree, ValueFour>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      observableFour: Observable<ValueFour>,
-      callback: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree, valueFour: ValueFour) => void
+    observe<T1, T2, T3, T4>(
+      observableOne: Observable<T1>,
+      observableTwo: Observable<T2>,
+      observableThree: Observable<T3>,
+      observableFour: Observable<T4>,
+      callback: (valueOne: T1, valueTwo: T2, valueThree: T3, valueFour: T4) => void
     ): void;
 
-    observe<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      observableFour: Observable<ValueFour>,
-      observableFive: Observable<ValueFive>,
-      callback: (
-        valueOne: ValueOne,
-        valueTwo: ValueTwo,
-        valueThree: ValueThree,
-        valueFour: ValueFour,
-        valueFive: ValueFive
-      ) => void
+    observe<T1, T2, T3, T4, T5>(
+      observableOne: Observable<T1>,
+      observableTwo: Observable<T2>,
+      observableThree: Observable<T3>,
+      observableFour: Observable<T4>,
+      observableFive: Observable<T5>,
+      callback: (valueOne: T1, valueTwo: T2, valueThree: T3, valueFour: T4, valueFive: T5) => void
     ): void;
   }
 
@@ -459,14 +575,12 @@ declare module "@frameworke/fronte" {
     ): Blueprint;
   }
 
-  type InputsConfig = {
-    [name: string]: {
+  type InputsConfig<T = any> = {
+    [name in keyof T]: {
       /**
-       * Fuzzy type checking is enabled during development when you specify a type.
+       * Validates input value at runtime. The app will crash if `validate` returns false or throws an Error.
        */
-      type?: "string" | "number" | "function" | "object" | "array" | "boolean";
-
-      parse?: (value: unknown) => any;
+      parse?: (value: unknown) => T[name];
 
       /**
        * Attribute description for viewer.
@@ -474,18 +588,18 @@ declare module "@frameworke/fronte" {
       about?: string;
 
       /**
-       * Default value.
+       * The default value if the input is not passed.
        */
-      default?: any;
+      default?: T[name];
 
       /**
-       * Allows writing back to attributes and passing writables to receive those changes in a parent view.
-       * Also known as two-way binding.
+       * Allows writing back to writable bindings to propagate changes up to a parent view. Also known as two-way binding.
+       * All bindings are only readable by default.
        */
       writable?: boolean;
 
       /**
-       * Allows a value to be omitted without a default value.
+       * Allows a value to be omitted without defining a default value.
        */
       optional?: boolean;
     };
@@ -493,7 +607,9 @@ declare module "@frameworke/fronte" {
 
   export type ViewLike<I> = ViewSetupFn<I> | View<I>;
 
-  export type DefineViewOptions<I> = {
+  export type ViewSetupFn<I = any> = (ctx: ViewContext<I>, m: MarkupFn) => Markup | null;
+
+  export type ViewConfig<I> = {
     /**
      * A name to identify this view in the console and dev tools.
      */
@@ -505,23 +621,25 @@ declare module "@frameworke/fronte" {
     about?: string;
 
     /**
-     *
+     * Values passed into this view, usually as HTML attributes.
      */
-    inputs?: InputsConfig;
+    inputs?: InputsConfig<I>;
 
     /**
-     *
+     * Returns elements to display while `setup` returns a pending Promise.
      */
     loading?: (m: MarkupFn) => Markup;
 
     /**
-     *
+     * Configures the view and returns elements to display.
      */
     setup: ViewSetupFn<I>;
   };
 
   export class View<I = any> extends Connectable {
-    static define<I>(options: DefineViewOptions<I>): View<I>;
+    static define<T extends ViewConfig<any, any>, I = { [K in keyof T["inputs"]]: T["inputs"][K] }>(
+      config: ViewConfig<I>
+    ): View<I>;
 
     constructor(config: ViewConfig<I>);
 
@@ -531,18 +649,8 @@ declare module "@frameworke/fronte" {
      * Fake type for JSX attribute checking.
      */
     ___inputs: {
-      [K in keyof I]: ReadableOrStatic<I[K]>;
+      [K in keyof I]: I[K] | Readable<I[K]>;
     };
-  }
-
-  type ReadableOrStatic<T> = T | Readable<T>;
-
-  export type ViewSetupFn<I = any> = (ctx: ViewContext<I>, m: MarkupFn) => Markup | null;
-
-  interface ViewConfig<I> {
-    label?: string;
-    inputs?: InputsConfig<I>;
-    setup: ViewSetupFn<I>;
   }
 
   interface Inputs<T> extends Readable<T> {
@@ -570,7 +678,7 @@ declare module "@frameworke/fronte" {
     inputs: Inputs<I>;
 
     useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-    useStore<S extends Store<any>>(store: S): S extends Store<infer U> ? U : unknown;
+    useStore<S extends Store<any>>(store: S): S extends Store<unknown, infer U> ? U : unknown;
     useStore<S extends StoreConstructor<any>>(store: S): S extends StoreConstructor<any, infer U> ? U : unknown;
 
     /**
@@ -609,23 +717,27 @@ declare module "@frameworke/fronte" {
     new (): Store<I, E>;
   }
 
-  interface StoreConfig<I, E = any> {
-    store: StoreConstructor<I, E>;
-    exports?: StoreConstructor<I, E> | Record<string, any>;
-    inputs?: I;
-  }
+  type StoreSetupFn<I, E> = (ctx: StoreContext<I>) => E;
 
   export class Store<I = any, Exports = any> {
-    static define<O extends DefineStoreOptions<any>>(options: O): Store<ReturnType<O["setup"]>>;
+    static define<
+      T extends StoreConfig<any, any>,
+      I = { [K in keyof T["inputs"]]: T["inputs"][K] },
+      E = ReturnType<T["setup"]>
+    >(config: StoreConfig<I, E>): Store<I, E>;
+
+    constructor<I, E>(config: StoreConfig<I, E>): Store<I, E>;
 
     abstract setup(ctx: StoreContext<I>): Exports;
   }
+
+  type StoreSetupFn<I, E> = (ctx: StoreContext<I>) => E;
 
   export interface StoreContext<I> extends DebugChannel, StateContext {
     inputs: Inputs<I>;
 
     useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-    useStore<S extends Store<any>>(store: S): S extends Store<infer U> ? U : unknown;
+    useStore<S extends Store<unknown, unknown>>(store: S): S extends Store<unknown, infer U> ? U : unknown;
     useStore<S extends StoreConstructor<any>>(store: S): S extends StoreConstructor<any, infer U> ? U : unknown;
 
     /**
@@ -639,7 +751,7 @@ declare module "@frameworke/fronte" {
     onDisconnect: (callback: () => void) => void;
   }
 
-  export type DefineStoreOptions<I> = {
+  export type StoreConfig<I, E> = {
     /**
      * A name to identify this store in the console and dev tools.
      */
@@ -651,14 +763,14 @@ declare module "@frameworke/fronte" {
     about?: string;
 
     /**
-     *
+     * Values passed into this store, usually as HTML attributes.
      */
-    inputs?: InputsConfig;
+    inputs?: InputsConfig<I>;
 
     /**
-     *
+     * Configures the store and returns object to export.
      */
-    setup: StoreSetupFn<I>;
+    setup: StoreSetupFn<I, E>;
   };
 
   /*==================================*\
@@ -742,12 +854,13 @@ declare module "@frameworke/fronte" {
     page: {
       $$title: Writable<string>;
       $visibility: Readable<"visible" | "hidden">;
+      $colorScheme: Readable<"light" | "dark">;
     };
     language: {
       $currentLanguage: Readable<string>;
       supportedLanguages: string[];
-      setLanguage(language: string): Promise<void>;
-      t(key: string, values?: Record<string, any>): Readable<string>;
+      setLanguage(tag: string): Promise<void>;
+      translate(key: string, values?: Record<string, any>): Readable<string>;
     };
   };
 

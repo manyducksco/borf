@@ -1,40 +1,29 @@
 import { App, View, Store, WebComponentHub } from "@frameworke/fronte";
 
-class WebComponentStore extends Store {
-  static inputs = {
-    initialValue: {},
-  };
+const WebComponentStore = Store.define({
+  inputs: {
+    initialValue: {
+      // TODO: Inputs with default values should be inferred as optional when passing.
+      default: "default",
+
+      // TODO: Inputs with 'optional: true' should be inferred as optional when passing.
+    },
+  },
 
   setup(ctx) {
     return {
       value: ctx.inputs.get("initialValue"),
+      speak: () => {
+        console.log("the value is", value);
+      },
     };
-  }
-}
-
-// class WebComponentView extends View {
-//   static inputs = {
-//     location: {
-//       type: "string",
-//       about: "A string to indicate where this instance is being rendered.",
-//     },
-//   };
-
-//   setup(ctx) {
-//     const { location } = ctx.inputs.get();
-
-//     const store = ctx.useStore(WebComponentStore);
-//     const http = ctx.useStore("http");
-//     // ctx.log({ store, http });
-
-//     return <h1>This is a web component. [location:{location}]</h1>;
-//   }
-// }
+  },
+});
 
 const WebComponentView = View.define({
   inputs: {
     location: {
-      type: "string",
+      default: "nowhere",
       about: "A string to indicate where this instance is being rendered.",
     },
   },
@@ -52,8 +41,7 @@ const WebComponentView = View.define({
 
 const hub = new WebComponentHub();
 
-hub.addStore({
-  store: WebComponentStore,
+hub.addStore(WebComponentStore, {
   inputs: { initialValue: "test" },
 });
 
@@ -93,86 +81,106 @@ timer.addEventListener("message", (event) => {
   console.log("message:", event.data);
 });
 
-const Examples = new App({
+const app = new App({
   debug: {
     filter: "*",
     log: true,
     warn: true,
     error: true,
   },
-  stores: [CounterStore, MouseStore],
-  view: AppLayout,
-  routes: [
-    {
-      path: "/examples",
-      routes: [
-        { path: "/spring-animation", view: SpringAnimation },
-        { path: "/languages", view: Languages },
-        { path: "/crash-handling", view: CrashHandling },
-        { path: "/counter-with-store", view: CounterWithStore },
-        { path: "/local-stores", view: LocalStores },
-        { path: "*", redirect: "./spring-animation" },
-      ],
-    },
-    {
-      path: "/7guis",
-      view: SevenGUIs,
-      routes: [
-        { path: "/counter", view: Counter },
-        { path: "/temp-converter", view: TempConverter },
-        { path: "/flight-booker", view: FlightBooker },
-        { path: "/timer", view: Timer },
-        { path: "/crud", view: CRUD },
-        { path: "/circle-drawer", view: CircleDrawer },
-        { path: "/cells", view: Cells },
-        { path: "*", redirect: "./counter" },
-      ],
-    },
-    {
-      path: "/router-test/one",
-      view: () => <h1>One</h1>,
-    },
-    { path: "/router-test/two", view: () => <h1>Two</h1> },
-    { path: "/router-test/*", redirect: "/router-test/one" },
-    {
-      path: "/nested",
-      view: (ctx) => {
-        return (
-          <div>
-            <h1>Nested Routes!</h1>
-            {ctx.outlet()}
-          </div>
-        );
-      },
-      routes: [
-        { path: "/one", view: () => <h1>NESTED #1</h1> },
-        { path: "/two", view: () => <h1>NESTED #2</h1> },
-        { path: "*", redirect: "./one" },
-      ],
-    },
-    {
-      path: "/tests",
-      routes: [{ path: "/render-order", view: RenderOrderTest }],
-    },
-    { path: "*", redirect: "./examples" },
-  ],
-  language: {
-    supported: ["en-US", "en-GB", "ja"],
-    default: "en-US",
-    translations: {
-      "en-US": {
-        greeting: "Hey",
-      },
-      "en-GB": {
-        greeting: "Greetings",
-      },
-      ja: {
-        greeting: "ようこそ",
-      },
-    },
-  },
 });
 
-// console.log(Examples.routes); // Metadata about route configuration
+app
+  .addLanguage("en-US", {
+    translation: {
+      greeting: "Sup",
+    },
+  })
+  .addLanguage("en-GB", {
+    // Use an async function to fetch translations from a server.
+    translation: async () => {
+      return Promise.resolve({
+        greeting: "Well met, traveller",
+      });
+    },
+  })
+  .addLanguage("ja", {
+    // Or pass a string which is assumed to be a path to a JSON file to be requested over HTTP?
+    translation: "/api/lang/ja.json",
+  })
+  .setLanguage("en-US")
+  .setLanguage("auto", { fallback: "en-US" })
+  .addStore(CounterStore)
+  .addStore(MouseStore)
+  .addRootView(AppLayout)
+  .addRoute("/examples", null, (sub) => {
+    sub
+      .addRoute("/spring-animation", SpringAnimation)
+      .addRoute("/languages", Languages)
+      .addRoute("/crash-handling", CrashHandling)
+      .addRoute("/counter-with-store", CounterWithStore)
+      .addRoute("/local-stores", LocalStores)
+      .addRedirect("*", "./spring-animation");
+  })
+  .addRoute("/7guis", SevenGUIs, (sub) => {
+    sub
+      .addRoute("/counter", Counter)
+      .addRoute("/temp-converter", TempConverter)
+      .addRoute("/flight-booker", FlightBooker)
+      .addRoute("/timer", Timer)
+      .addRoute("/crud", CRUD)
+      .addRoute("/circle-drawer", CircleDrawer)
+      .addRoute("/cells", Cells)
+      .addRedirect("*", "./counter");
+  })
+  .addRoute("/router-test/one", () => <h1>One</h1>)
+  .addRoute("/router-test/two", () => <h1>Two</h1>)
+  .addRedirect("/router-test/*", "/router-test/one")
+  .addRoute(
+    "/nested",
+    function view(ctx) {
+      return (
+        <div>
+          <h1>Nested Routes!</h1>
+          {ctx.outlet()}
+        </div>
+      );
+    },
+    function extend(sub) {
+      sub
+        .addRoute("/one", () => <h1>NESTED #1</h1>)
+        .addRoute("/two", () => <h1>NESTED #2</h1>)
+        .addRedirect("*", "./one");
+    }
+  )
+  .addRoute("/tests", null, (sub) => {
+    sub.addRoute("/render-order", RenderOrderTest);
+  })
+  .addRedirect("*", "./examples");
 
-Examples.connect("#app");
+app.connect("#app");
+
+// const { translate } = ctx.useStore("language");
+
+// translate("ui.menu.home"); // Readable<string>
+
+// backe:
+// const app = new App();
+
+// app.onGet("/some-route", (req, res) => {
+//   /* ... */
+// });
+
+// app.onPut("/some-route", (req, res) => {
+//   /* ... */
+// });
+
+// const router = new Router();
+
+// router.onGet("/some-route", (req, res) => {
+//   /* ... */
+// });
+
+// const app = new App();
+
+// app.addRouter(router);

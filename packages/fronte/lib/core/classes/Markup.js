@@ -6,6 +6,7 @@ import { Text } from "./Text.js";
 import { HTML } from "./HTML.js";
 import { Outlet } from "./Outlet.js";
 import { Repeat } from "./Repeat.js";
+import { KEY } from "../keys.js";
 
 export class Markup {
   #setup;
@@ -15,7 +16,7 @@ export class Markup {
   }
 
   init(config) {
-    return this.#setup(config);
+    return this.#setup({ ...config, key: KEY });
   }
 }
 

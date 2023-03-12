@@ -3,6 +3,7 @@ import { omit } from "../helpers/omit.js";
 import { Ref } from "./Ref.js";
 import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
+import { KEY } from "../keys.js";
 
 export class HTML extends Connectable {
   #node;

@@ -1,5 +1,6 @@
 import { Type, Router } from "@frameworke/bedrocke";
 
+import { KEY } from "../keys.js";
 import { merge } from "../helpers/merge.js";
 import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
@@ -13,6 +14,11 @@ import { Store } from "./Store.js";
 import { View } from "./View.js";
 import { m } from "./Markup.js";
 
+const DefaultRoot = View.define({
+  label: "root",
+  setup: (ctx) => ctx.outlet(),
+});
+
 export class App {
   #layerId = 0;
   #isConnected = false;
@@ -24,17 +30,15 @@ export class App {
     ["http", { store: HTTPStore }],
     ["language", { store: LanguageStore }],
   ]);
-  #routes = [];
+  #languages = new Map();
+  #rootView = DefaultRoot;
+  #currentLanguage;
   #appContext;
   #elementContext = {
     stores: new Map(),
   };
 
   #options = {
-    preload: null,
-    view: (ctx) => ctx.outlet(),
-    stores: [],
-    routes: [],
     debug: {
       filter: "*,-fronte:*",
       log: true,
@@ -44,7 +48,6 @@ export class App {
     router: {
       hash: false,
     },
-    language: {},
   };
 
   get isConnected() {
@@ -61,31 +64,14 @@ export class App {
     }
 
     // Merge options with defaults.
-    this.#options = merge(this.#options, options);
-
-    const router = new Router();
-
-    for (const route of this.#options.routes) {
-      this.#prepareRoute(route).forEach(({ pattern, meta }) => {
-        router.addRoute(pattern, meta);
-      });
-    }
-
-    for (const store of this.#options.stores) {
-      this.#stores.set(store, this.#prepareStore(store));
-    }
-
-    // Pass language options to language store.
-    const language = this.#stores.get("language");
-    this.#stores.set("language", { ...language, inputs: this.#options.language });
+    options = merge(this.#options, options);
 
     // Pass router store the inputs it needs to match routes.
     const routerStore = this.#stores.get("router");
     this.#stores.set("router", {
       ...routerStore,
       inputs: {
-        routes: this.#routes,
-        options: this.#options.router,
+        options: options.router,
       },
     });
 
@@ -106,20 +92,127 @@ export class App {
         // TODO: This is somehow leading to a Markup being passed as an HTML attribute.
         instance.connect(this.#appContext.rootElement);
       },
-      crashPage: this.#options.crashPage,
+      crashPage: options.crashPage,
     });
 
     // And finally create the appContext. This is the central config object accessible to all components.
     this.#appContext = {
       crashCollector,
-      debugHub: new DebugHub({ ...this.#options.debug, crashCollector }),
+      debugHub: new DebugHub({ ...options.debug, crashCollector }),
       stores: this.#stores,
-      options: this.#options,
+      options,
       rootElement: null,
       rootView: null,
-      router,
+      router: new Router(),
       // $dialogs - added by @dialog global
     };
+  }
+
+  addRootView(view) {
+    if (this.#rootView != DefaultRoot) {
+      this.#appContext.debugHub
+        .channel("woofe:App")
+        .warn(`Root view is already defined. The latest call will override previous root view.`);
+    }
+
+    if (Type.isFunction(view)) {
+      this.#rootView = View.define({ label: "root", setup: view });
+    } else if (View.isView(view)) {
+      this.#rootView = view;
+    } else {
+      throw new TypeError(`Expected a View or a standalone setup function. Got type: ${Type.of(view)}, value: ${view}`);
+    }
+
+    return this;
+  }
+
+  addRoute(pattern, view, extend) {
+    Type.assertString(pattern, "Pattern must be a string. Got type: %t, value: %v");
+
+    if (view === null) {
+      Type.assertFunction(extend, "An extend callback must be passed when `view` is null. Got type: %t, value: %v");
+    }
+
+    this.#prepareRoute({ pattern, view, extend }).forEach((route) => {
+      this.#appContext.router.addRoute(route.pattern, route.meta);
+    });
+
+    return this;
+  }
+
+  addRedirect(pattern, redirect) {
+    if (!Type.isFunction(redirect) && !Type.isString(redirect)) {
+      throw new TypeError(`Expected a redirect path or function. Got type: ${Type.of(redirect)}, value: ${redirect}`);
+    }
+
+    if (Type.isString(redirect)) {
+      // TODO: Crash app if redirect path doesn't match. Ideally prevent this before the app starts running.
+    }
+
+    this.#prepareRoute({ pattern, redirect }).forEach((route) => {
+      this.#appContext.router.addRoute(route.pattern, route.meta);
+    });
+
+    return this;
+  }
+
+  addStore(store, options) {
+    if (Type.isFunction(store)) {
+      store = Store.define({ setup: store });
+    }
+
+    Type.assert(Store.isStore(store), "Expected a Store or a standalone setup function. Got type: %t, value: %v");
+
+    this.#stores.set(store, this.#prepareStore(store, options));
+
+    return this;
+  }
+
+  addLanguage(tag, config) {
+    this.#languages.set(tag, config);
+
+    return this;
+  }
+
+  setLanguage(tag, fallback) {
+    if (tag === "auto") {
+      let tags = [];
+
+      if (typeof navigator === "object") {
+        if (navigator.languages?.length > 0) {
+          tags.push(...navigator.languages);
+        } else if (navigator.language) {
+          tags.push(navigator.language);
+        } else if (navigator.browserLanguage) {
+          tags.push(navigator.browserLanguage);
+        } else if (navigator.userLanguage) {
+          tags.push(navigator.userLanguage);
+        }
+      }
+
+      for (const tag of tags) {
+        if (this.#languages.has(tag)) {
+          // Found a matching language.
+          this.#currentLanguage = tag;
+          return this;
+        }
+      }
+
+      if (!this.#currentLanguage && fallback) {
+        if (this.#languages.has(fallback)) {
+          this.#currentLanguage = fallback;
+        }
+      }
+    } else {
+      // Tag is the actual tag to set.
+      if (this.#languages.has(tag)) {
+        this.#currentLanguage = tag;
+      } else {
+        throw new Error(`Language '${tag}' has not been added to this app yet.`);
+      }
+    }
+
+    return this;
   }
 
   /**
@@ -130,16 +223,24 @@ export class App {
   async connect(element) {
     if (Type.isString(element)) {
       element = document.querySelector(element);
+      Type.assertInstanceOf(Node, element, `Selector string '${element}' did not match any element.`);
     }
 
-    if (!(element instanceof Node)) {
-      throw new TypeError(`Expected a DOM node. Got: ${element}`);
-    }
+    Type.assertInstanceOf(Node, element, "Expected a DOM node or a selector string. Got type: %t, value: %v");
 
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
 
     appContext.rootElement = element;
+
+    // Pass language options to language store.
+    const language = this.#stores.get("language");
+    this.#stores.set("language", {
+      ...language,
+      inputs: {
+        languages: Object.fromEntries(this.#languages.entries()),
+      },
+    });
 
     // Initialize global stores.
     for (let [key, item] of this.#stores.entries()) {
@@ -151,6 +252,7 @@ export class App {
       const channelPrefix = Type.isString(key) ? "fronte:store" : "store";
       const label = Type.isString(key) ? key : store.label || store.name;
       const config = {
+        key: KEY,
         appContext,
         elementContext,
         channelPrefix,
@@ -168,25 +270,21 @@ export class App {
             about: exports.about,
             inputDefs: exports.inputs,
           });
-        }
-
-        if (Type.isFunction(exports)) {
+        } else if (Type.isFunction(exports)) {
           instance = new Store({ ...config, setup: exports });
-        }
-
-        if (Type.isObject(exports)) {
+        } else if (Type.isObject(exports)) {
           instance = new Store({ ...config, setup: () => exports });
         }
 
-        if (!instance || !(instance instanceof Store) || !Type.isObject(instance?.exports)) {
-          throw new TypeError(`Value of 'exports' didn't result in a usable store. Got: ${exports}`);
-        }
+        Type.assertInstanceOf(Store, instance, "Value of 'exports' is not a valid store. Got type: %t, value: %v");
       } else {
         instance = new store({ ...config, about: store.about, inputDefs: store.inputs });
       }
 
       // Add instance and mark as ready.
       this.#stores.set(key, { ...item, instance });
+
+      console.log(this.#stores.get(key));
     }
 
     const storeParent = document.createElement("div");
@@ -195,32 +293,20 @@ export class App {
     for (const { instance } of this.#stores.values()) {
       await instance.connectManual(storeParent);
 
-      if (!Type.isObject(instance.exports)) {
-        throw new TypeError(`Store setup functions must return an object. Got: ${instance.exports}`);
-      }
+      Type.assertObject(instance.exports, "Store setup function must return an object. Got type: %t, value: %v");
     }
 
     // Then the app-level preload function runs (if any), resolving to initial inputs for the app-level view.
     // The preload process for routes is handled by the @router global.
     return this.#preload().then(async (inputs) => {
       // Then the view is initialized and connected to root element.
-      if (Type.isFunction(this.#options.view)) {
-        appContext.rootView = new View({
-          appContext,
-          elementContext,
-          inputs,
-          setup: this.#options.view,
-          label: "app",
-        });
-      } else if (this.#options.view.prototype instanceof View) {
-        const view = this.#options.view;
-        appContext.rootView = new this.#options.view({
-          appContext,
-          elementContext,
-          inputs,
-          label: view.label ?? view.name ?? "app",
-        });
-      }
+
+      appContext.rootView = new this.#rootView({
+        key: KEY,
+        appContext,
+        elementContext,
+        inputs,
+      });
 
       appContext.rootView.connect(appContext.rootElement);
 
@@ -374,11 +460,11 @@ export class App {
    * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
    */
   #prepareRoute(route, layers = []) {
-    if (!Type.isObject(route) || !Type.isString(route.path)) {
-      throw new TypeError(`Route configs must be objects with a 'path' string property. Got: ${route}`);
+    if (!Type.isObject(route) || !Type.isString(route.pattern)) {
+      throw new TypeError(`Route configs must be objects with a 'pattern' string property. Got: ${route}`);
     }
 
-    const parts = Router.splitPath(route.path);
+    const parts = Router.splitPath(route.pattern);
 
     // Remove trailing wildcard for joining with nested routes.
     if (parts[parts.length - 1] === "*") {
@@ -388,14 +474,18 @@ export class App {
     const routes = [];
 
     if (route.redirect) {
-      let redirect = Router.resolvePath(...parts, route.redirect);
+      let redirect = route.redirect;
 
-      if (!redirect.startsWith("/")) {
-        redirect = "/" + redirect;
+      if (Type.isString(redirect)) {
+        redirect = Router.resolvePath(...parts, redirect);
+
+        if (!redirect.startsWith("/")) {
+          redirect = "/" + redirect;
+        }
       }
 
       routes.push({
-        pattern: route.path,
+        pattern: route.pattern,
         meta: {
           redirect,
         },
@@ -408,7 +498,7 @@ export class App {
     if (route.view && !View.isView(route.view) && !Type.isFunction(route.view)) {
       console.warn(route.view);
       throw new TypeError(
-        `Route '${route.path}' needs a setup function or a subclass of View for 'view'. Got: ${route.view}`
+        `Route '${route.pattern}' needs a setup function or a subclass of View for 'view'. Got: ${route.view}`
       );
     }
 
@@ -416,16 +506,28 @@ export class App {
     const layer = { id: this.#layerId++, view: markup };
 
     // Parse nested routes if they exist.
-    if (route.routes) {
-      for (const subroute of route.routes) {
-        const path = Router.joinPath([...parts, subroute.path]);
-        routes.push(...this.#prepareRoute({ ...subroute, path }, [...layers, layer]));
-      }
+    if (route.extend) {
+      const router = {
+        addRoute: (pattern, view, extend) => {
+          pattern = Router.joinPath([...parts, pattern]);
+          routes.push(...this.#prepareRoute({ pattern, view, extend }));
+          return router;
+        },
+        addRedirect: (pattern, redirect) => {
+          pattern = Router.joinPath([...parts, pattern]);
+          routes.push(...this.#prepareRoute({ pattern, redirect }));
+          return router;
+        },
+      };
+
+      console.log(routes, router);
+
+      route.extend(router);
     } else {
       routes.push({
-        pattern: route.path,
+        pattern: route.pattern,
         meta: {
-          path: route.path,
+          pattern: route.pattern,
           layers: [...layers, layer],
         },
       });

@@ -9,7 +9,7 @@ import { View } from "../classes/View.js";
  * Manages dialogs. Also known as modals.
  * TODO: Describe this better.
  */
-export class DialogStore extends Store {
+export const DialogStore = Store.define({
   setup(ctx) {
     const container = document.createElement("div");
     container.style.position = "fixed";
@@ -111,5 +111,5 @@ export class DialogStore extends Store {
         };
       },
     };
-  }
-}
+  },
+});

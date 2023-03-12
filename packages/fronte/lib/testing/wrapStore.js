@@ -6,6 +6,7 @@ import { makeMockDOMNode } from "./makeMockDOMNode.js";
 import { isString } from "../core/helpers/typeChecking.js";
 import { DebugHub } from "../core/classes/DebugHub.js";
 import { Store } from "../core/classes/Store.js";
+import { KEY } from "../core/keys.js";
 
 /**
  * Wraps a store in a test adapter that lets you call its lifecycle methods and access its exports.
@@ -90,6 +91,7 @@ export async function wrapStore(store, config = {}) {
   }
 
   instance = new store({
+    key: KEY,
     appContext,
     elementContext,
     inputs: config.inputs,

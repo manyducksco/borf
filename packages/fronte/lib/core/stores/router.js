@@ -4,25 +4,21 @@ import { Router, Type } from "@frameworke/bedrocke";
 import { Store } from "../classes/Store.js";
 import { State } from "../classes/State.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT, KEY } from "../keys.js";
 
-export class RouterStore extends Store {
-  static inputs = {
-    routes: {
-      type: "array",
-      about: "Routes to load for matching.",
-    },
+export const RouterStore = Store.define({
+  inputs: {
     options: {
       type: "object",
       about: "Router options passed through the 'router' field in the app config.",
     },
-  };
+  },
 
   setup(ctx) {
     const appContext = ctx[APP_CONTEXT];
     const elementContext = ctx[ELEMENT_CONTEXT];
 
-    const { routes, options } = ctx.inputs.get();
+    const { options } = ctx.inputs.get();
 
     let history;
 
@@ -35,21 +31,21 @@ export class RouterStore extends Store {
     }
 
     // Test redirects to make sure all possible redirect targets actually exist.
-    for (const route of routes) {
-      if (route.meta.redirect) {
-        const match = appContext.router.match(route.meta.redirect, {
-          willMatch(r) {
-            return r !== route;
-          },
-        });
+    // for (const route of routes) {
+    //   if (route.meta.redirect) {
+    //     const match = appContext.router.match(route.meta.redirect, {
+    //       willMatch(r) {
+    //         return r !== route;
+    //       },
+    //     });
 
-        if (!match) {
-          throw new Error(`Found a redirect to an undefined URL. From '${route.pattern}' to '${route.meta.redirect}'`);
-        }
-      }
-    }
+    //     if (!match) {
+    //       throw new Error(`Found a redirect to an undefined URL. From '${route.pattern}' to '${route.meta.redirect}'`);
+    //     }
+    //   }
+    // }
 
-    const $$route = new State("");
+    const $$pattern = new State("");
     const $$path = new State("");
     const $$params = new State({});
     const $$query = new State({});
@@ -124,10 +120,10 @@ export class RouterStore extends Store {
 
       const matched = appContext.router.match(location.pathname);
 
-      ctx.log({ routes, location, matched });
+      ctx.log({ location, matched });
 
       if (!matched) {
-        $$route.set(null);
+        $$pattern.set(null);
         $$path.set(location.pathname);
         $$params.set({
           wildcard: location.pathname,
@@ -147,8 +143,8 @@ export class RouterStore extends Store {
         $$path.set(matched.path);
         $$params.set(matched.params);
 
-        if (matched.pattern !== $$route.get()) {
-          $$route.set(matched.pattern);
+        if (matched.pattern !== $$pattern.get()) {
+          $$pattern.set(matched.pattern);
 
           const { layers } = matched.meta;
 
@@ -196,6 +192,7 @@ export class RouterStore extends Store {
 
               if (!redirected) {
                 const view = matchedLayer.view.init({
+                  key: KEY,
                   appContext,
                   elementContext,
                   attributes: preloadResult.attributes || {},
@@ -230,7 +227,7 @@ export class RouterStore extends Store {
     }
 
     return {
-      $route: $$route.readable(),
+      $pattern: $$pattern.readable(),
       $path: $$path.readable(),
       $params: $$params.readable(),
       $$query,
@@ -253,8 +250,8 @@ export class RouterStore extends Store {
        */
       navigate,
     };
-  }
-}
+  },
+});
 
 /**
  * Prepare data before a route is mounted using a preload function.

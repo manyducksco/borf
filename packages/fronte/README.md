@@ -74,62 +74,12 @@ Inside `index.html`:
 Inside `app.js`:
 
 ```tsx
-import { App, Store, View } from "https://cdn.skypack.dev/@frameworke/fronte";
-
-const Random = Store.define({
-  setup(ctx) {
-    return {
-      get value() {
-        return ~~(Math.random() * 100);
-      },
-    };
-  },
-});
-
-type SubViewInputs = {
-  onClick: () => void;
-};
-
-const SubView = View.define<SubViewInputs>({
-  inputs: {
-    onClick: {
-      type: "function",
-      required: true,
-    },
-  },
-
-  setup(ctx, m) {
-    const { onClick } = ctx.inputs.get();
-
-    return m("h1", { onClick }, ctx.outlet());
-  },
-});
-
-const Main = View.define({
-  setup(ctx, m) {
-    const http = ctx.useStore("http");
-    const random = ctx.useStore(Random);
-
-    function onClick() {
-      alert(`Today's random number is ${random.value}.`);
-    }
-
-    return m(SubView, { onClick }, "Hello World");
-  },
-});
+import { App } from "https://cdn.skypack.dev/@frameworke/fronte";
 
 const Hello = new App({
-  stores: [Random], // One global instance loaded here
-  view: Main, // Accessible in here
-});
-
-// Stores are also components, so this is equivalent to above:
-const Hello = new App({
-  view: () => (
-    <Random>
-      <App />
-    </Random>
-  ),
+  view: function setup(ctx, m) {
+    return m("h1", "Hello world!");
+  },
 });
 
 // Display this app inside the element with `id="app"`
@@ -172,23 +122,129 @@ and [@reach/router](https://reach.tech/router/).
 Route strings are a set of fragments separated by `/`. These fragments are of three types.
 
 - Static: `/this/is/static` and will match only when the route is exactly `/this/is/static`.
-- Dynamic: `/users/:id/edit` will match anything that fits the static parts of the route and stores the parts beginning
-  with `:` as named params. This can be anything, like `/users/123/edit` or `/users/BobJones/edit`. You can access these
-  values inside the view.
-- Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard`
-  param. Wildcards must be at the end of a route.
+- Dynamic: `/users/{id}/edit` will match anything that fits the static parts of the route and stores the parts enclosed in `{}` as named params. Named params will match anything, like `123` or `BobJones`. You can access these values inside the view.
+- Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` named param. `*` is valid only at the end of a route.
 
 ```js
-app.route("users/:id", function (ctx, h) {
-  // Get route params from router.
-  const { $params } = ctx.global("router");
+// Routes match a URL `pattern` and display a corresponding `view`.
+const Example = new App({
+  routes: [
+    // {#id} is a named param that matches a numeric value only.
+    { pattern: "/things", view: ThingIndex }
+    { pattern: "/things/{#id}", view: ThingDetails },
+    { pattern: "/things/{#id}/edit", view: ThingEdit },
 
-  // Get the live value of :id
-  const $id = $params.as((p) => p.id);
+    // {name} is a named param that accepts any value.
+    { pattern: "/people/{name}", view: PersonDetails },
 
-  // Render it into a <p> tag. The ID portion will update if the URL changes.
-  return h("p", "User's ID is ", $id);
+    // Wildcard patterns with nested routes can be used to namespace a set of routes.
+    {
+      pattern: "/things/*" ,
+      routes: [
+        { pattern: "/", view: ThingIndex }
+        { pattern: "/{#id}", view: ThingDetails },
+        { pattern: "/{#id}/edit", view: ThingEdit },
+        { pattern: "/{#id}/edit", view: ThingDelete }
+      ]
+    },
+  ]
+})
+
+// ALT: Router as a standalone object?
+const router = new Router([
+  { pattern: "/home", view: Home },
+  {
+    pattern: "/things",
+    view: ThingsLayout,
+    // Nest routers to render child routes inside a view with ctx.outlet()
+    router: new Router([
+      { pattern: "/", view: ThingIndex }
+      { pattern: "/{#id}", view: ThingDetails },
+      { pattern: "/{#id}/edit", view: ThingEdit },
+      { pattern: "/{#id}/edit", view: ThingDelete }
+    ])
+  },
+  { pattern: "*", redirect: "/home" }
+]);
+
+Router.fromRoutes([
+  { pattern: "/home", view: Home },
+  {
+    pattern: "/things/*",
+    router: Router.fromRoutes([
+      { pattern: "/", view: ThingIndex }
+      { pattern: "/{#id}", view: ThingDetails },
+      { pattern: "/{#id}/edit", view: ThingEdit },
+      { pattern: "/{#id}/edit", view: ThingDelete }
+    ])
+  },
+  { pattern: "*", redirect: "/home" }
+])
+
+// Routes can also be added after creation:
+router.addRoute({ pattern: "/users/{#id}", view: UserView });
+
+// For `backe`, the router has express-like helpers...
+router.get("/pattern/goes/here", /* ...middleware... */, (req, res) => {
+  return {
+    message: "JSON response!"
+  };
 });
+// ... which get parsed into the verbose config object style under the hood. You can also do it like so:
+router.addRoute({
+  pattern: "/users/{#id}",
+  method: "GET",
+  middleware: [/* ... */],
+  respond: (req, res) => {
+    return {
+      message: "JSON response!"
+    };
+  }
+});
+
+// Router is fully functional by itself and can be used outside of providing routes to the app.
+const match = router.match("/things/2/edit");
+// { path: "/things/2/edit", pattern: "/things/{#id}/edit", params: { id: 2 }, query: {}, view: ThingEdit, ... }
+
+// `router` can be any object that implements `.match(path: string): MatchedRoute`, so it can be reimplemented if special routing logic is needed.
+const app = new App({ router });
+
+// Anatomy of the `router` store:
+const ThingDetails = new View({
+  setup(ctx, m) {
+    // `router` store provides controls for and info about the router.
+    const router = ctx.useStore("router");
+
+    // Info about the current route is exported as a set of Readables. Query params are also Writable through $$query:
+    const { $path, $pattern, $params, $$query } = router;
+
+    // Functions are exported for navigation:
+    const { back, forward, navigate } = router;
+
+    back(); // Step back in the history to the previous route, if any.
+    back(-2); // Hit the back button twice.
+
+    forward(); // Step forward in the history to the next route, if any.
+    forward(4); // Hit the forward button 4 times.
+
+    navigate("/another/page"); // Navigate to another route within the same app.
+    navigate("https://www.example.com/another/site"); // Navigate to another domain entirely.
+
+    // Three ways to confirm with the user that they wish to navigate before actually doing it.
+    navigate("/another/page", { prompt: true });
+    navigate("/another/page", { prompt: "Are you sure you want to leave and go to /another/page?" });
+    navigate("/another/page", { prompt: PromptView });
+
+    // Get the live value of `{id}` from the current path.
+    const $id = $params.as((p) => p.id);
+
+    // Render it into a <p> tag. The ID portion will update if the URL changes.
+    return h("p", "User's ID is ", $id);
+  }
+});
+
+// How the framework creates an instance:
+const viewInstance = ThingDetails.instantiate({ appContext, elementContext, /* ... */ });
 ```
 
 > TODO: Describe nested routing

@@ -2,9 +2,8 @@ import { Type } from "@frameworke/bedrocke";
 import { State } from "../classes/State.js";
 import { Store } from "../classes/Store.js";
 
-export class LanguageStore extends Store {
-  static about = "Manages translations.";
-
+export const LanguageStore = Store.define({
+  about: "Manages translations.",
   async setup(ctx) {
     const options = ctx.inputs.get();
 
@@ -126,8 +125,8 @@ export class LanguageStore extends Store {
         });
       },
     };
-  }
-}
+  },
+});
 
 function resolve(object, key) {
   const parsed = String(key)

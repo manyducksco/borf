@@ -74,6 +74,24 @@ export class Type {
   }
 
   /**
+   * Throws a TypeError unless `condition` is truthy.
+   *
+   * @param condition - Value whose truthiness is in question.
+   * @param errorMessage - Optional message for the thrown TypeError.
+   */
+  static assert(condition: any, errorMessage?: string): void {
+    if (!condition) {
+      throw new TypeError(
+        formatError(
+          condition,
+          errorMessage ||
+            "Failed assertion. Value is not truthy. Got type: %t, value: %v"
+        )
+      );
+    }
+  }
+
+  /**
    * Returns true if `value` is an array.
    */
   static isArray(value: unknown): value is Array<unknown> {

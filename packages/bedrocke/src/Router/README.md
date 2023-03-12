@@ -7,9 +7,9 @@ Router is a low-level building block for matching strings that follow a URL-like
 ## Creating a Router
 
 ```js
-import { Router } from "bedrocke";
+import { Router } from "@woofe/bedrocke";
 
-const router = new Router();
+const Router = new Router();
 ```
 
 ## Adding Routes
@@ -17,7 +17,7 @@ const router = new Router();
 Call the `addRoute` method to register a new route. Routes take a pattern string and a `meta` object, which can contain anything you want to store that is relevant to the route. The following example shows a `meta` object that determines which view to display when the user edit pattern is matched.
 
 ```js
-router.addRoute("/users/{#id}/edit", { view: UserEditView });
+Router.addRoute("/users/{#id}/edit", { view: UserEditView });
 ```
 
 ## Matching Routes
@@ -25,7 +25,7 @@ router.addRoute("/users/{#id}/edit", { view: UserEditView });
 Call the `match` method to get the nearest match. Returns `undefined` if no routes match.
 
 ```js
-const match = router.match("/users/123/edit");
+const match = Router.match("/users/123/edit");
 
 if (match) {
   render(match.meta.view);
@@ -37,7 +37,7 @@ if (match) {
 The `match` method takes an optional `options` object which you can use to specify the conditions under which a route will match.
 
 ```js
-const match = router.match("/users/123/edit", {
+const match = Router.match("/users/123/edit", {
   willMatch: (route) => {
     // Only match a route that has a `view` defined in its meta object.
     return route.meta.view != null;

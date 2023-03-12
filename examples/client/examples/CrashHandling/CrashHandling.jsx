@@ -2,8 +2,8 @@ import { View } from "@frameworke/fronte";
 import logLifecycle from "../../utils/logLifecycle";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
-export class CrashHandling extends View {
-  setup(ctx, m) {
+export const CrashHandling = View.define({
+  setup(ctx) {
     logLifecycle(ctx);
 
     return (
@@ -19,5 +19,5 @@ export class CrashHandling extends View {
         </div>
       </ExampleFrame>
     );
-  }
-}
+  },
+});

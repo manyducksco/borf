@@ -1,5 +1,5 @@
 import { Type } from "@frameworke/bedrocke";
-import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
+import { KEY, APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 import { isMarkup } from "../helpers/typeChecking.js";
 import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
@@ -7,20 +7,22 @@ import { Inputs } from "./Inputs.js";
 import { Outlet } from "./Outlet.js";
 
 export class Store extends Connectable {
-  static isStore(value) {
-    // Store.isStore() considers a store class to be a "store",
-    // because framework users don't interact with instances directly.
-    return value?.prototype instanceof Store;
-  }
-
   static define(config) {
     return class extends Store {
       static about = config.about;
-      static inputs = config.inputs;
       static label = config.label;
+      static inputs = config.inputs;
 
       setup = config.setup;
     };
+  }
+
+  static isStore(value) {
+    return value?.prototype instanceof Store;
+  }
+
+  static isInstance(value) {
+    return value instanceof Store;
   }
 
   #node = document.createComment("Store");
@@ -42,6 +44,7 @@ export class Store extends Connectable {
   }
 
   constructor({
+    key,
     appContext,
     elementContext,
     channelPrefix = "store",
@@ -52,6 +55,12 @@ export class Store extends Connectable {
     children = [],
     setup, // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
   }) {
+    if (key !== KEY) {
+      throw new Error(
+        `Use Store.define or extend the Store class to create a new Store. The constructor is intended for use by the framework.`
+      );
+    }
+
     super();
 
     this.label = label;

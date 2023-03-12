@@ -2,9 +2,8 @@ import { Type } from "@frameworke/bedrocke";
 import { Store } from "../classes/Store.js";
 import { State } from "../classes/State.js";
 
-export class PageStore extends Store {
-  static inputs = {};
-
+export const PageStore = Store.define({
+  inputs: {},
   setup(ctx) {
     const $$title = new State(document?.title);
     const $$visibility = new State(document.visibilityState);
@@ -54,5 +53,5 @@ export class PageStore extends Store {
       $visibility: $$visibility.readable(),
       $orientation: $$orientation.readable(),
     };
-  }
-}
+  },
+});

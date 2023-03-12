@@ -69,7 +69,7 @@ export class CrashCollector {
   }
 }
 
-class DefaultCrashPage extends View {
+const DefaultCrashPage = View.define({
   setup(ctx, m) {
     const { message, error, componentName } = ctx.inputs.get();
 
@@ -127,5 +127,5 @@ class DefaultCrashPage extends View {
         m("p", "Please see the browser console for details."),
       ]
     );
-  }
-}
+  },
+});
