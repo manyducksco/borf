@@ -3,7 +3,7 @@ import { Type } from "@frameworke/bedrocke";
 import { DebugHub } from "../DebugHub.js";
 import { Store } from "../Store.js";
 import { HTTPStore } from "../../stores/http.js";
-import { PageStore } from "../../stores/page.js";
+import { DocumentStore } from "../../stores/document.js";
 
 import { DialogStore } from "./stores/dialog.js";
 import { RouterStore } from "./stores/router.js";
@@ -11,7 +11,7 @@ import { RouterStore } from "./stores/router.js";
 export class WebComponentHub {
   #stores = [
     { store: "http", exports: HTTPStore },
-    { store: "page", exports: PageStore },
+    { store: "document", exports: DocumentStore },
     { store: "dialog", exports: DialogStore },
     { store: "router", exports: RouterStore },
   ];

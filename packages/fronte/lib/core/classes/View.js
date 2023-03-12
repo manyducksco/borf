@@ -8,6 +8,12 @@ import { isMarkup } from "../helpers/typeChecking.js";
 
 export class View extends Connectable {
   static define(config) {
+    if (!config.label) {
+      console.trace(
+        `View is defined without a label. Setting a label is recommended to make debugging and error tracing easier.`
+      );
+    }
+
     return class extends View {
       static about = config.about;
       static label = config.label;

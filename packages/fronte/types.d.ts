@@ -583,6 +583,11 @@ declare module "@frameworke/fronte" {
       parse?: (value: unknown) => T[name];
 
       /**
+       * An example value to show what this input might take.
+       */
+      example: T[name];
+
+      /**
        * Attribute description for viewer.
        */
       about?: string;
@@ -851,10 +856,11 @@ declare module "@frameworke/fronte" {
        */
       head(url: string, options?: HTTPRequestOptions): HTTPRequest<void>;
     };
-    page: {
+    document: {
       $$title: Writable<string>;
       $visibility: Readable<"visible" | "hidden">;
-      $colorScheme: Readable<"light" | "dark">;
+      $orientation: Readable<"landscape" | "portrait">;
+      // $colorScheme: Readable<"light" | "dark">;
     };
     language: {
       $currentLanguage: Readable<string>;

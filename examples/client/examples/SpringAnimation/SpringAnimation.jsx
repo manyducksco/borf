@@ -3,9 +3,9 @@ import { ExampleFrame } from "../../views/ExampleFrame";
 
 import styles from "./SpringAnimation.module.css";
 
-export class SpringAnimation extends View {
-  static about = "Demonstrates the use of springs for animation.";
-  static inputs = {};
+export const SpringAnimation = View.define({
+  label: "SpringAnimation",
+  about: "Demonstrates the use of springs for animation.",
 
   setup(ctx, m) {
     const $$stiffness = new State(1549);
@@ -24,7 +24,7 @@ export class SpringAnimation extends View {
 
     ctx.observe($$stiffness, $$mass, $$damping, $$velocity, (s, m, d, v) => {
       codeRef.element.textContent = `
-const spring = makeSpring(0, {
+const spring = new Spring(0, {
   stiffness: ${s},
   mass: ${m},
   damping: ${d},
@@ -35,7 +35,7 @@ const spring = makeSpring(0, {
 
     return (
       <ExampleFrame title="Spring Animation">
-        <p>The shapes below are animated by the same spring.</p>
+        <p>The shapes below are animated by a single spring.</p>
 
         <Examples
           stiffness={$$stiffness}
@@ -117,24 +117,29 @@ const spring = makeSpring(0, {
         </pre>
       </ExampleFrame>
     );
-  }
-}
+  },
+});
 
-class Examples extends View {
-  static inputs = {
+const Examples = View.define({
+  label: "Examples",
+  inputs: {
     stiffness: {
-      type: "number",
+      about: "Amount of stiffness or tension in the spring.",
+      example: 800,
     },
     damping: {
-      damping: "number",
+      about: "Amount of smoothing. Affects the speed of transitions.",
+      example: 50,
     },
     mass: {
-      type: "number",
+      about: "How heavy the spring is.",
+      example: 4,
     },
     velocity: {
-      type: "number",
+      about: "How much force the spring's motion begins with.",
+      example: 15,
     },
-  };
+  },
 
   setup(ctx, m) {
     const $stiffness = ctx.inputs.readable("stiffness");
@@ -215,29 +220,30 @@ class Examples extends View {
         </div>
       </div>
     );
-  }
-}
+  },
+});
 
-class ControlGroup extends View {
-  static inputs = {
+const ControlGroup = View.define({
+  label: "ControlGroup",
+  inputs: {
     label: {
-      type: "string",
-      required: true,
+      about: "Name to display for this control",
+      example: "Velocity",
     },
     value: {
-      type: "number",
-      required: true,
+      about: "Current value for this control",
+      example: 12,
       writable: true,
     },
     min: {
-      type: "number",
-      required: true,
+      about: "The smallest allowed value",
+      example: 0,
     },
     max: {
-      type: "number",
-      required: true,
+      about: "The largest allowed value",
+      example: 100,
     },
-  };
+  },
 
   setup(ctx, m) {
     const $label = ctx.inputs.readable("label");
@@ -263,5 +269,5 @@ class ControlGroup extends View {
         />
       </div>
     );
-  }
-}
+  },
+});

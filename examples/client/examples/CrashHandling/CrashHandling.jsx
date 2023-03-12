@@ -3,6 +3,7 @@ import logLifecycle from "../../utils/logLifecycle";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 export const CrashHandling = View.define({
+  label: "CrashHandling",
   setup(ctx) {
     logLifecycle(ctx);
 

@@ -185,7 +185,7 @@ Router.fromRoutes([
 router.addRoute({ pattern: "/users/{#id}", view: UserView });
 
 // For `backe`, the router has express-like helpers...
-router.get("/pattern/goes/here", /* ...middleware... */, (req, res) => {
+router.onGet("/pattern/goes/here", /* ...middleware... */, (req, res) => {
   return {
     message: "JSON response!"
   };
@@ -202,6 +202,9 @@ router.addRoute({
   }
 });
 
+// Mount another router under a subpath.
+router.mountRouter("/other", otherRouter);
+
 // Router is fully functional by itself and can be used outside of providing routes to the app.
 const match = router.match("/things/2/edit");
 // { path: "/things/2/edit", pattern: "/things/{#id}/edit", params: { id: 2 }, query: {}, view: ThingEdit, ... }
@@ -209,8 +212,12 @@ const match = router.match("/things/2/edit");
 // `router` can be any object that implements `.match(path: string): MatchedRoute`, so it can be reimplemented if special routing logic is needed.
 const app = new App({ router });
 
+// Both are equivalent:
+app.mountRouter(router);
+app.mountRouter("/", router);
+
 // Anatomy of the `router` store:
-const ThingDetails = new View({
+const ThingDetails = View.define({
   setup(ctx, m) {
     // `router` store provides controls for and info about the router.
     const router = ctx.useStore("router");

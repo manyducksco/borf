@@ -2,13 +2,17 @@ import { View, Store, State } from "@frameworke/fronte";
 import { ExampleFrame } from "../../views/ExampleFrame";
 import logLifecycle from "../../utils/logLifecycle.js";
 
-export class LocalStores extends View {
+export const LocalStores = View.define({
+  label: "LocalStores",
   setup(ctx) {
     logLifecycle(ctx);
 
     return (
       <ExampleFrame title="Local State with Stores">
-        <p>You should be seeing "Instance 1" and "Instance 2" below this.</p>
+        <p>
+          You should be seeing "Hello from Instance 1" and "Hello from Instance
+          2" below this.
+        </p>
         <ul>
           <ExampleStore initialValue="Instance 1">
             <ValueDisplay />
@@ -20,28 +24,30 @@ export class LocalStores extends View {
         </ul>
       </ExampleFrame>
     );
-  }
-}
+  },
+});
 
-class ExampleStore extends Store {
-  static inputs = {
+const ExampleStore = Store.define({
+  label: "ExampleStore",
+  inputs: {
     initialValue: {
-      type: "string",
+      example: "A value.",
       default: "DEFAULT",
     },
-  };
+  },
 
   setup(ctx) {
     return {
       $$value: new State(ctx.inputs.get("initialValue")),
     };
-  }
-}
+  },
+});
 
-class ValueDisplay extends View {
+const ValueDisplay = View.define({
+  label: "ValueDisplay",
   setup(ctx) {
     const { $$value } = ctx.useStore(ExampleStore);
 
     return <li>Hello from {$$value}</li>;
-  }
-}
+  },
+});

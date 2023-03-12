@@ -31,17 +31,16 @@ export function m(element, attributes, ...children) {
 
   // Connectable objects like Views and Locals
   if (isConnectable(element)) {
-    return new Markup(
-      (config) =>
-        new element({
-          inputs: attributes,
-          children,
-          ...config,
-          label: element.label ?? element.name,
-          about: element.about,
-          inputDefs: element.inputs,
-        })
-    );
+    return new Markup((config) => {
+      return new element({
+        inputs: attributes,
+        children,
+        ...config,
+        label: config.label ?? element.label ?? element.name,
+        about: config.about ?? element.about,
+        inputDefs: element.inputs,
+      });
+    });
   }
 
   // HTML tag like "h1", "span"

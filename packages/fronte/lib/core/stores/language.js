@@ -60,19 +60,22 @@ class Language {
 }
 
 export const LanguageStore = Store.define({
+  label: "language",
   about: "Manages translations.",
   async setup(ctx) {
     const options = ctx.inputs.get();
     const languages = new Map();
-
-    ctx.log({ options });
 
     // Convert languages into Language instances.
     Object.entries(options.languages || {}).forEach(([tag, config]) => {
       languages.set(tag, new Language(tag, config));
     });
 
-    ctx.log({ languages });
+    ctx.log(
+      `This app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: ${[...languages.keys()].join(
+        ", "
+      )}`
+    );
 
     const $$language = new State(); // String
     const $$translation = new State(); // Object

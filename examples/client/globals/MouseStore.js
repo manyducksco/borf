@@ -1,7 +1,8 @@
 import { Store, State } from "@frameworke/fronte";
 
 export const MouseStore = Store.define({
-  about: "Keeps the current mouse position.",
+  label: "MouseStore",
+  about: "Tracks the mouse position.",
   setup: (ctx) => {
     const $$position = new State({ x: 0, y: 0 });
 

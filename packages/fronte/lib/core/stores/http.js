@@ -2,6 +2,7 @@ import { HTTPClient } from "@frameworke/bedrocke";
 import { Store } from "../classes/Store.js";
 
 export const HTTPStore = Store.define({
+  label: "http",
   about: "A nice HTTP client that auto-parses responses and supports middleware.",
   inputs: {
     fetch: {

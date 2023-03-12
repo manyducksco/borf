@@ -6,7 +6,8 @@ import { ExampleFrame } from "../../views/ExampleFrame/ExampleFrame.jsx";
 /**
  * Component with controls and a mapped label based on the state inside the service.
  */
-export class CounterWithStore extends View {
+export const CounterWithStore = View.define({
+  label: "CounterWithStore",
   setup(ctx) {
     logLifecycle(ctx);
 
@@ -27,8 +28,8 @@ export class CounterWithStore extends View {
         </div>
       </ExampleFrame>
     );
-  }
-}
+  },
+});
 
 /**
  * Second component with a view only. Displays the same information from the same service.

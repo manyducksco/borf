@@ -8,6 +8,12 @@ import { Outlet } from "./Outlet.js";
 
 export class Store extends Connectable {
   static define(config) {
+    if (!config.label) {
+      console.trace(
+        `Store is defined without a label. Setting a label is recommended to make debugging and error tracing easier.`
+      );
+    }
+
     return class extends Store {
       static about = config.about;
       static label = config.label;
@@ -24,6 +30,9 @@ export class Store extends Connectable {
   static isInstance(value) {
     return value instanceof Store;
   }
+
+  label;
+  about;
 
   #node = document.createComment("Store");
   #outlet;
@@ -282,7 +291,11 @@ export class Store extends Connectable {
   }
 
   async beforeConnect() {
-    this.#inputs.connect();
+    try {
+      this.#inputs.connect();
+    } catch (error) {
+      this.#appContext.crashCollector.crash({ error, component: this });
+    }
 
     // for (const callback of this.#lifecycleCallbacks.beforeConnect) {
     //   await callback();

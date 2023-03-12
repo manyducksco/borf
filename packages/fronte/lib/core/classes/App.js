@@ -4,7 +4,7 @@ import { merge } from "../helpers/merge.js";
 import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
 import { LanguageStore } from "../stores/language.js";
-import { PageStore } from "../stores/page.js";
+import { DocumentStore } from "../stores/document.js";
 import { RouterStore } from "../stores/router.js";
 import { CrashCollector } from "../classes/CrashCollector.js";
 
@@ -25,7 +25,7 @@ export class App {
   #stores = new Map([
     ["dialog", { store: DialogStore }],
     ["router", { store: RouterStore }],
-    ["page", { store: PageStore }],
+    ["document", { store: DocumentStore }],
     ["http", { store: HTTPStore }],
     ["language", { store: LanguageStore }],
   ]);
@@ -264,7 +264,7 @@ export class App {
         if (Store.isStore(exports)) {
           instance = new exports({
             ...config,
-            label: exports.label,
+            label: exports.label ?? config.label,
             about: exports.about,
             inputDefs: exports.inputs,
           });
@@ -301,6 +301,7 @@ export class App {
         appContext,
         elementContext,
         inputs,
+        label: this.#rootView.label || "root",
       });
 
       appContext.rootView.connect(appContext.rootElement);

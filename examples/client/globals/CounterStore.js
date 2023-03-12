@@ -1,7 +1,18 @@
 import { Store, State } from "@frameworke/fronte";
 
 export const CounterStore = Store.define({
-  about: "Keeps a counter that increments by one each second.",
+  label: "CounterStore",
+  about: "Keeps a counter that auto-increments each second.",
+  inputs: {
+    title: {
+      example: "test", // Infer type from example
+      default: "The Title",
+    },
+    // cat: {
+    //   example: { id: 5, name: "Bon", color: "#555" },
+    //   default: null,
+    // },
+  },
   setup: (ctx) => {
     const $$current = new State(0);
 

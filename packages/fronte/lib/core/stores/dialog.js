@@ -10,6 +10,7 @@ import { View } from "../classes/View.js";
  * TODO: Describe this better.
  */
 export const DialogStore = Store.define({
+  label: "dialog",
   setup(ctx) {
     const container = document.createElement("div");
     container.style.position = "fixed";

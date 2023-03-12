@@ -70,6 +70,7 @@ export class CrashCollector {
 }
 
 const DefaultCrashPage = View.define({
+  label: "DefaultCrashPage",
   setup(ctx, m) {
     const { message, error, componentName } = ctx.inputs.get();
 

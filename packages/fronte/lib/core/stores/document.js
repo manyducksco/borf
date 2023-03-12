@@ -2,8 +2,8 @@ import { Type } from "@frameworke/bedrocke";
 import { Store } from "../classes/Store.js";
 import { State } from "../classes/State.js";
 
-export const PageStore = Store.define({
-  inputs: {},
+export const DocumentStore = Store.define({
+  label: "document",
   setup(ctx) {
     const $$title = new State(document?.title);
     const $$visibility = new State(document.visibilityState);

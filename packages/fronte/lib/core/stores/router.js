@@ -7,6 +7,7 @@ import { catchLinks } from "../helpers/catchLinks.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
 export const RouterStore = Store.define({
+  label: "router",
   inputs: {
     options: {
       type: "object",
