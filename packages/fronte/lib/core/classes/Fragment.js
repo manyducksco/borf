@@ -1,4 +1,3 @@
-import { KEY } from "../keys.js";
 import { Connectable } from "./Connectable.js";
 
 /**

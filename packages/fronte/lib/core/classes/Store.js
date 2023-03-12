@@ -1,5 +1,5 @@
 import { Type } from "@frameworke/bedrocke";
-import { KEY, APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 import { isMarkup } from "../helpers/typeChecking.js";
 import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
@@ -44,7 +44,6 @@ export class Store extends Connectable {
   }
 
   constructor({
-    key,
     appContext,
     elementContext,
     channelPrefix = "store",
@@ -55,12 +54,6 @@ export class Store extends Connectable {
     children = [],
     setup, // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
   }) {
-    if (key !== KEY) {
-      throw new Error(
-        `Use Store.define or extend the Store class to create a new Store. The constructor is intended for use by the framework.`
-      );
-    }
-
     super();
 
     this.label = label;

@@ -4,7 +4,7 @@ import { Router, Type } from "@frameworke/bedrocke";
 import { Store } from "../classes/Store.js";
 import { State } from "../classes/State.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { APP_CONTEXT, ELEMENT_CONTEXT, KEY } from "../keys.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
 export const RouterStore = Store.define({
   inputs: {
@@ -192,7 +192,6 @@ export const RouterStore = Store.define({
 
               if (!redirected) {
                 const view = matchedLayer.view.init({
-                  key: KEY,
                   appContext,
                   elementContext,
                   attributes: preloadResult.attributes || {},

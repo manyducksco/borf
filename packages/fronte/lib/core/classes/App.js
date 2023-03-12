@@ -1,6 +1,5 @@
 import { Type, Router } from "@frameworke/bedrocke";
 
-import { KEY } from "../keys.js";
 import { merge } from "../helpers/merge.js";
 import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
@@ -252,7 +251,6 @@ export class App {
       const channelPrefix = Type.isString(key) ? "fronte:store" : "store";
       const label = Type.isString(key) ? key : store.label || store.name;
       const config = {
-        key: KEY,
         appContext,
         elementContext,
         channelPrefix,
@@ -302,7 +300,6 @@ export class App {
       // Then the view is initialized and connected to root element.
 
       appContext.rootView = new this.#rootView({
-        key: KEY,
         appContext,
         elementContext,
         inputs,

@@ -5,7 +5,6 @@ import { Inputs } from "./Inputs.js";
 import { Markup, m } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
 import { isMarkup } from "../helpers/typeChecking.js";
-import { KEY } from "../keys.js";
 
 export class View extends Connectable {
   static define(config) {
@@ -53,7 +52,6 @@ export class View extends Connectable {
   }
 
   constructor({
-    key,
     appContext,
     elementContext,
     channelPrefix = "view",
@@ -64,12 +62,6 @@ export class View extends Connectable {
     children = [],
     setup,
   }) {
-    if (key !== KEY) {
-      throw new Error(
-        `When creating a new Store, use Store.define or extend the Store class. The constructor is intended for creating new instances within the framework.`
-      );
-    }
-
     super();
 
     this.label = label;
