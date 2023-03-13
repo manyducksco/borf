@@ -1,4 +1,4 @@
-import { View, makeState, joinStates } from "@frameworke/fronte";
+import { View, makeState, joinStates } from "@borf/browser";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export class FormExample extends View {

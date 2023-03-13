@@ -1,4 +1,4 @@
-import { makeState, View } from "@frameworke/fronte";
+import { makeState, View } from "@borf/browser";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export class TwoWayBindExample extends View {

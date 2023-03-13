@@ -1,4 +1,4 @@
-import { App, View, Store, WebComponentHub } from "@frameworke/fronte";
+import { App, View, Store, WebComponentHub } from "@borf/browser";
 
 const WebComponentStore = Store.define({
   inputs: {

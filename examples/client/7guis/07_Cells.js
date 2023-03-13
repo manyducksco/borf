@@ -1,4 +1,4 @@
-import { View } from "@frameworke/fronte";
+import { View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class Cells extends View {

@@ -1,4 +1,4 @@
-import { View, makeState, joinStates, makeSpring } from "@frameworke/fronte";
+import { View, makeState, joinStates, makeSpring } from "@borf/browser";
 import { animate } from "popmotion";
 import logLifecycle from "../utils/logLifecycle.js";
 import { MouseStore } from "../globals/MouseStore.js";

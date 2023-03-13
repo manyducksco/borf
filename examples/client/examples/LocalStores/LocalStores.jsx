@@ -1,4 +1,4 @@
-import { View, Store, State } from "@frameworke/fronte";
+import { View, Store, State } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 import logLifecycle from "../../utils/logLifecycle.js";
 

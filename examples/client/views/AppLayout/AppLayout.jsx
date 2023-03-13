@@ -1,4 +1,4 @@
-import { View } from "@frameworke/fronte";
+import { View } from "@borf/browser";
 import { MouseStore } from "../../globals/MouseStore";
 import logLifecycle from "../../utils/logLifecycle";
 

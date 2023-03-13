@@ -1,4 +1,4 @@
-import { State, View } from "@frameworke/fronte";
+import { State, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 export class Timer extends View {

@@ -1,4 +1,4 @@
-import { View, makeSpring } from "@frameworke/fronte";
+import { View, makeSpring } from "@borf/browser";
 
 export class SpringExample extends View {
   static about = "Demonstrates the use of springs for animation.";

@@ -1,4 +1,4 @@
-import { View, makeState } from "@frameworke/fronte";
+import { View, makeState } from "@borf/browser";
 
 export class ComponentInputsExample extends View {
   static about = "Demonstrates passing inputs to a subview.";

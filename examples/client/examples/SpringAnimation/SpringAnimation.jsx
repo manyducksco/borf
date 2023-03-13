@@ -1,5 +1,10 @@
-import { View, Spring, State, Ref } from "@frameworke/fronte";
+import { View, Spring, State, Ref } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
+
+import { App } from "@borf/browser";
+import { App, Router } from "@borf/server";
+
+import { List, Hash } from "@borf/bedrock";
 
 import styles from "./SpringAnimation.module.css";
 

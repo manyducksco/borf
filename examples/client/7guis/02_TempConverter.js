@@ -1,4 +1,4 @@
-import { State, View } from "@frameworke/fronte";
+import { State, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class TempConverter extends View {

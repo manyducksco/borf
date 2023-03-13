@@ -1,4 +1,4 @@
-import { View } from "@frameworke/fronte";
+import { View } from "@borf/browser";
 
 class SevenGUIs extends View {
   setup(ctx) {

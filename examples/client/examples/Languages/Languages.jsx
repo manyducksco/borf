@@ -1,4 +1,4 @@
-import { View, State } from "@frameworke/fronte";
+import { View, State } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 import logLifecycle from "../../utils/logLifecycle";
 

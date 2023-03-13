@@ -1,4 +1,4 @@
-import { Store, State } from "@frameworke/fronte";
+import { Store, State } from "@borf/browser";
 
 export const MouseStore = Store.define({
   label: "MouseStore",

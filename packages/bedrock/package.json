@@ -1,0 +1,44 @@
+{
+  "name": "@borf/bedrock",
+  "version": "1.0.1",
+  "description": "A toolbox of building-block classes for all JS programs.",
+  "main": "lib/index.js",
+  "type": "module",
+  "sideEffects": false,
+  "repository": "https://github.com/manyducksco/frameworke",
+  "scripts": {
+    "test": "tsc && ava",
+    "test:observable": "tsc && node lib/verify-observable.js",
+    "test:watch": "ava --watch",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "prepublishOnly": "tsc"
+  },
+  "exports": {
+    ".": {
+      "import": "./lib/index.js"
+    }
+  },
+  "keywords": [],
+  "author": "tony@manyducks.co",
+  "license": "ISC",
+  "devDependencies": {
+    "@ava/typescript": "^3.0.1",
+    "ava": "^5.2.0",
+    "es-observable-tests": "^0.3.0",
+    "jest": "^29.4.2",
+    "ts-jest": "^29.0.5",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "symbol-observable": "^4.0.0"
+  },
+  "ava": {
+    "typescript": {
+      "rewritePaths": {
+        "src/": "lib/"
+      },
+      "compile": false
+    }
+  }
+}

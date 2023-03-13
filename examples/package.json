@@ -23,10 +23,10 @@
   "author": "tony@manyducks.co",
   "license": "MIT",
   "devDependencies": {
-    "@frameworke/fronte": "file:../packages/fronte",
-    "@frameworke/backe": "file:../packages/backe",
-    "@frameworke/builde": "file:../packages/builde",
-    "@frameworke/bedrocke": "file:../packages/bedrocke",
+    "@borf/browser": "file:../packages/browser",
+    "@borf/server": "file:../packages/server",
+    "@borf/build": "file:../packages/build",
+    "@borf/bedrock": "file:../packages/bedrock",
     "popmotion": "^11.0.5",
     "stylefire": "^7.0.3"
   },

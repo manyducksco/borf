@@ -1,4 +1,4 @@
-import { View, makeState, makeSpring } from "@frameworke/fronte";
+import { View, makeState, makeSpring } from "@borf/browser";
 import logLifecycle from "../utils/logLifecycle.js";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];
