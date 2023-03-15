@@ -1,5 +1,5 @@
 import { Type } from "../Type/Type.js";
-import { List } from "./List/List.js";
+import { List } from "../List/List.js";
 
 /*====================*\
 ||       Client       ||

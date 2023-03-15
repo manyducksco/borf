@@ -1,11 +1,8 @@
-import type { Observer, Subscription } from "../../Observable/Observable";
+import type { Observer, Subscription } from "../Observable/Observable";
 
 import Symbol_observable from "symbol-observable";
-import {
-  Observable,
-  SubscriptionObserver,
-} from "../../Observable/Observable.js";
-import { cloneDeep } from "../../helpers/cloneDeep.js";
+import { Observable, SubscriptionObserver } from "../Observable/Observable.js";
+import { cloneDeep } from "../helpers/cloneDeep.js";
 
 interface ListOptions<T> {
   /**

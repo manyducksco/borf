@@ -35,7 +35,7 @@
     }
   },
   "dependencies": {
-    "@frameworke/bedrocke": "^1.0.1",
+    "@borf/bedrock": "^1.0.1",
     "fetch-ponyfill": "^7.1.0",
     "history": "^5.3.0",
     "immer": "^9.0.15",
