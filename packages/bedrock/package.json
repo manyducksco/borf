@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "type": "module",
   "sideEffects": false,
-  "repository": "https://github.com/manyducksco/borf/tree/master/packages/bedrock",
+  "repository": "https://github.com/manyducksco/borf/tree/main/packages/bedrock",
   "scripts": {
     "test": "tsc && ava",
     "test:observable": "tsc && node lib/verify-observable.js",
