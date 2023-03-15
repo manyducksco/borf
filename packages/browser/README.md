@@ -1,27 +1,14 @@
-# 🖥 Frameworke: Fronte
+# 🖥 Borf: Browser
 
-![bundle size](https://img.shields.io/bundlephobia/minzip/@frameworke/fronte?style=flat&label=gzipped%20size)
+![bundle size](https://img.shields.io/bundlephobia/minzip/@borf/browser?style=flat&label=gzipped%20size)
 
-Fronte is the frontend (browser) component of Frameworke. It handles [routing](#routing), [global](#globals) state, components (called [views](#views)) and [data binding](#state), all out of the box, aiming to cover the common needs of modern web apps.
-
-## Terms
-
-- App
-- Component (anything you write that plugs into woofe)
-  - View
-  - Store
-- Inputs (any values you pass to a Component, equivalent to HTML attributes)
-- Markup (any HTML element or component returned from a View)
-- State -> Readable / Writable (dynamic data containers with different levels of access)
-
-- Author (developer using woofe)
-- User (end user of the app)
+This is the front-end (browser) component of Frameworke. It handles [routing](#routing), components (two types; [views](#views) and [stores](#stores)) and [data binding](#state), all out of the box, aiming to cover the common needs of modern web apps.
 
 ## Installation
 
 ### CDN
 
-Woof includes everything you need to make a fully functioning web app by importing the `woofe` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running in a browser without configuring a build step.
+Browser includes everything you need to make a fully functioning web app by importing the `@borf/browser` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running in a browser without configuring a build step.
 
 ```js
 import { ... } from "https://cdn.skypack.dev/@frameworke/fronte";
