@@ -1,22 +1,22 @@
-# Frameworke
+# Borf
 
-This is a monorepo for Frameworke, a full stack JS framework. It is managed using [lerna](https://lerna.js.org/).
+This is a monorepo for Borf, a full stack JS framework. It is managed using [lerna](https://lerna.js.org/).
 
 ## Framework Goals
 
+- Be fully featured for modern web apps (components, routing, logging, error handling, state management, HTTP client)
 - Be relatively lightweight on the front-end (<30kb gzipped)
-- Support common needs without relying on third party libraries (routing, state management, unit testing, logging)
 
 ## Core Packages
 
-- [`@frameworke/fronte`](./packages/fronte/README.md): Front-end framework which runs in the browser. Create single page apps that run in the browser.
-- [`@frameworke/backe`](./packages/backe/README.md): Back-end framework which runs on the server. Create APIs or server-rendered pages.
+- [`@borf/browser`](./packages/browser/README.md): Front-end framework which runs in the browser.
+- [`@borf/server`](./packages/server/README.md): Back-end framework which runs on the server.
 
 ## Utility Packages
 
-- [`@frameworke/builde`](./packages/builde/README.md): Build-system-in-a-box for Frameworke projects.
-- [`@frameworke/inspecte`](./packages/inspecte/README.md): Visual testing and development environment for `@frameworke/fronte` components.
-- [`@frameworke/bedrocke`](./packages/bedrocke/README.md): A supplement to the JS standard library, with useful building block types for all JS code (not just Frameworke).
+- [`@borf/build`](./packages/build/README.md): Build-system-in-a-box for Borf projects.
+- [`@borf/inspect`](./packages/inspect/README.md): Visual testing and development environment for `@borf/browser` components.
+- [`@borf/bedrock`](./packages/bedrock/README.md): A supplement to the JS standard library, with useful building block types for all JS code (not just Borf).
 
 ## Resources
 
@@ -24,7 +24,7 @@ This is a monorepo for Frameworke, a full stack JS framework. It is managed usin
 
 ## Possible Size Optimizations
 
-The total gzipped size of `@frameworke/fronte` is currently 26.5 kB. This could be reduced further by removing dependencies and narrowing some functionality.
+The total gzipped size of `@borf/browser` is currently 26.5 kB. This could be reduced further by removing dependencies and narrowing some functionality.
 
 These are the current third party dependencies and what they do:
 
