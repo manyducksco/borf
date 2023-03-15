@@ -411,3 +411,19 @@ const result = record.isTypeOf({
 const func = new Type(Type.isFunction);
 func.isTypeOf(() => {});
 ```
+
+###
+
+```js
+import { Builder } from "@borf/build";
+
+export default Builder.define({
+  client: {
+    entry: "./client/client.js",
+    gzip: true,
+  },
+  server: {
+    entry: "./server/server.js",
+  },
+});
+```
