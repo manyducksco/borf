@@ -1,4 +1,4 @@
-import { Type } from "Type/Type";
+import { Type } from "../Type/Type.js";
 
 export type RouteMatch<T = Record<string, any>> = {
   /**
@@ -77,7 +77,7 @@ export class Router<T = any> {
    */
   static joinPath(parts: { toString(): string }[]): string {
     Type.assertArrayOf(
-      Type.isString,
+      (part) => Type.isFunction(part?.toString),
       parts,
       "Expected `parts` to be an array of objects with a .toString() method. Got type: %t, value: %v"
     );

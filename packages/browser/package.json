@@ -6,7 +6,7 @@
   "types": "types.d.ts",
   "type": "module",
   "sideEffects": false,
-  "repository": "https://github.com/manyducksco/frameworke",
+  "repository": "https://github.com/manyducksco/borf",
   "scripts": {
     "test": "jest",
     "test:watch": "npm run test -- --watch",
