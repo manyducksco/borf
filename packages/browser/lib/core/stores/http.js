@@ -1,4 +1,4 @@
-import { HTTPClient } from "../../../../bedrock/lib";
+import { HTTPClient } from "@borf/bedrock";
 import { Store } from "../classes/Store.js";
 
 export const HTTPStore = Store.define({

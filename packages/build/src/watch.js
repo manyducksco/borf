@@ -16,7 +16,7 @@ import log from "./utils/log.js";
 import { generateScopedClassName } from "./utils/generateScopedClassName.js";
 import { writeClientFiles } from "./utils/writeClientFiles.js";
 import { writeStaticFiles } from "./utils/writeStaticFiles.js";
-import { makeTimer } from "./utils/timer.js";
+import { makeTimer } from "./utils/Timer.js";
 
 export async function watch(projectRoot, buildOptions) {
   /**
@@ -29,7 +29,7 @@ export async function watch(projectRoot, buildOptions) {
   let woofConfig = {};
 
   try {
-    woofConfig = (await import(path.join(projectRoot, "builde.config.js")))
+    woofConfig = (await import(path.join(projectRoot, "borf.build.js")))
       .default;
   } catch {}
 

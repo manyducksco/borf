@@ -1,4 +1,4 @@
-import { Type } from "../../../../bedrock/lib";
+import { Type } from "@borf/bedrock";
 import { Connectable } from "./Connectable.js";
 import { Markup } from "./Markup.js";
 

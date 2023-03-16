@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { program } from "@ratwizard/cli";
-import { build, watch } from "./lib/index.js";
+import { Builder } from "./lib/index.js";
 
 program
   .option("-w, --watch", {
@@ -30,10 +30,14 @@ program
       relativeBundlePaths: options.relativeBundlePaths || false,
     };
 
+    // TODO: Read project build config and pass that object to Builder:
+    const builder = new Builder(/* config */);
+
     if (options.watch) {
-      await watch(process.cwd(), buildOptions);
+      const watcher = builder.watch(process.cwd(), buildOptions);
+      // watcher.cancel();
     } else {
-      await build(process.cwd(), buildOptions);
+      await builder.build(process.cwd(), buildOptions);
     }
   })
   .run(process.argv);

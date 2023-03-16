@@ -1,4 +1,4 @@
-import { Type } from "../../../../bedrock/lib";
+import { Type } from "@borf/bedrock";
 
 export function deepEqual(one, two) {
   if (one === two) {

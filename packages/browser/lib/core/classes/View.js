@@ -1,4 +1,4 @@
-import { Type } from "../../../../bedrock/lib";
+import { Type } from "@borf/bedrock";
 import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
 import { Inputs } from "./Inputs.js";

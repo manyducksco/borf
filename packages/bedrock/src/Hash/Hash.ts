@@ -200,6 +200,17 @@ export class Hash<K, V> extends Map<K, V> {
     return new Hash(copied, this.#options);
   }
 
+  // merge(other: Map<K, V>): Hash<K, V> {
+  //   return new Hash<K, V>([...this.entries(), ...other.entries()]);
+  // }
+
+  // mergeClone(other: Map<K, V>): Hash<K, V> {
+  //   return new Hash<K, V>([
+  //     ...this.clone().entries(),
+  //     ...new Hash(other).clone().entries(),
+  //   ]);
+  // }
+
   /**
    * Returns this hash's contents as a standard JS Map object.
    */

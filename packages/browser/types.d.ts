@@ -856,11 +856,11 @@ declare module "@borf/browser" {
        */
       head(url: string, options?: HTTPRequestOptions): HTTPRequest<void>;
     };
-    document: {
+    page: {
       $$title: Writable<string>;
       $visibility: Readable<"visible" | "hidden">;
       $orientation: Readable<"landscape" | "portrait">;
-      // $colorScheme: Readable<"light" | "dark">;
+      $colorScheme: Readable<"light" | "dark">;
     };
     language: {
       $currentLanguage: Readable<string>;

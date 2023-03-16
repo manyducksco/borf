@@ -1,13 +1,13 @@
 {
-  "name": "@woofjs/examples",
+  "name": "@borf/examples",
   "version": "0.3.0",
-  "description": "Woof development examples",
+  "description": "Borf development examples",
   "private": true,
   "type": "module",
   "scripts": {
     "start:prod": "node server/app.js",
-    "start": "builde --watch",
-    "build": "builde --minify --compress",
+    "start": "bbuild --watch",
+    "build": "bbuild --minify --compress",
     "viewer": "woofe-viewer ./client",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
@@ -23,12 +23,10 @@
   "author": "tony@manyducks.co",
   "license": "MIT",
   "devDependencies": {
-    "@borf/browser": "file:../packages/browser",
-    "@borf/server": "file:../packages/server",
-    "@borf/build": "file:../packages/build",
     "@borf/bedrock": "file:../packages/bedrock",
-    "popmotion": "^11.0.5",
-    "stylefire": "^7.0.3"
+    "@borf/browser": "file:../packages/browser",
+    "@borf/build": "file:../packages/build",
+    "@borf/server": "file:../packages/server"
   },
   "dependencies": {
     "ramda": "^0.28.0"

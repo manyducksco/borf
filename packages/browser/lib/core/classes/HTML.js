@@ -1,4 +1,4 @@
-import { Type } from "../../../../bedrock/lib";
+import { Type } from "@borf/bedrock";
 import { omit } from "../helpers/omit.js";
 import { Ref } from "./Ref.js";
 import { State } from "./State.js";

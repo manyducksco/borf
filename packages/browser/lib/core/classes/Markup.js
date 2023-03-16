@@ -1,4 +1,4 @@
-import { Type } from "../../../../bedrock/lib";
+import { Type } from "@borf/bedrock";
 import { flatten } from "../helpers/flatten.js";
 import { isConnectable } from "../helpers/typeChecking.js";
 import { View } from "./View.js";

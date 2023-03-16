@@ -1,6 +1,6 @@
 import produce from "immer";
 import OBSERVABLE from "symbol-observable";
-import { Type } from "../../../../bedrock/lib";
+import { Type } from "@borf/bedrock";
 import { READABLE, WRITABLE } from "../keys.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 

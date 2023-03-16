@@ -3,32 +3,34 @@
 Add a `dialog` global to handle dialogs (modals) by passing a view.
 
 ```js
-class ExampleView extends View {
+const ExampleView = View.define({
   setup(ctx) {
     const dialog = ctx.useStore("dialog");
+
+    const infoDialog = dialog.create(DialogView, {
+      closeOnClickAway: true,
+    });
 
     return (
       <button
         onclick={() => {
-          const close = dialog.open(DialogView, {
-            closeOnClickAway: true,
-            inputs: {
-              message: "This is a message from where the dialog was shown.",
-            },
+          // Pass inputs when opening dialog.
+          infoDialog.show({
+            message: "This is a message from where the dialog was shown.",
           });
 
-          // Call function to close the dialog.
-          close();
+          // Close the dialog.
+          infoDialog.hide();
         }}
       >
         Show Dialog
       </button>
     );
-  }
-}
+  },
+});
 
-class DialogView extends View {
-  static inputs = {
+const DialogView = View.define({
+  inputs: {
     open: {
       type: "boolean",
       about: "Dialog open/closed state.",
@@ -39,7 +41,7 @@ class DialogView extends View {
       type: "string",
       default: "THIS IS THE DEFAULT MESSAGE",
     },
-  };
+  },
 
   setup(ctx) {
     const $message = ctx.inputs.readable("message");
@@ -57,6 +59,6 @@ class DialogView extends View {
         </button>
       </div>
     );
-  }
-}
+  },
+});
 ```

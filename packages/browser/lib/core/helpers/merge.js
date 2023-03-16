@@ -1,4 +1,4 @@
-import { Type } from "../../../../bedrock/lib";
+import { Type } from "@borf/bedrock";
 
 /**
  * Takes an old value and a new value.  Returns a merged copy if both are objects, otherwise returns the new value.

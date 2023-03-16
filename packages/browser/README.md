@@ -11,25 +11,23 @@ This is the front-end (browser) component of Frameworke. It handles [routing](#r
 Browser includes everything you need to make a fully functioning web app by importing the `@borf/browser` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running in a browser without configuring a build step.
 
 ```js
-import { ... } from "https://cdn.skypack.dev/@frameworke/fronte";
-import { ... } from "https://unpkg.com/@frameworke/fronte";
+import { ... } from "https://cdn.skypack.dev/@borf/browser";
+import { ... } from "https://unpkg.com/@borf/browser";
 ```
 
 ### NPM
 
-You can also get `@frameworke/fronte` from npm. Best used in combination with `@frameworke/builde` which adds support for JSX, a dev server with auto-reload, optimized production builds and more. Run this in your project directory:
+You can also get `@borf/browser` from npm. Best used in combination with `@borf/build` which adds support for JSX, a dev server with auto-reload, optimized production builds and more. Run this in your project directory:
 
 ```
-$ npm i -D @frameworke/builde @frameworke/fronte
+$ npm i -D @borf/build @borf/browser
 ```
 
 And the imports will look like this:
 
 ```js
-import { ... } from "@frameworke/fronte";
+import { ... } from "@borf/browser";
 ```
-
-See the [@frameworke/builde]() docs for configuration tips.
 
 ## Hello World
 
@@ -46,7 +44,7 @@ Inside `index.html`:
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Woofe Demo</title>
+    <title>Borf Demo</title>
   </head>
   <body>
     <main id="app">
@@ -61,7 +59,7 @@ Inside `index.html`:
 Inside `app.js`:
 
 ```tsx
-import { App } from "https://cdn.skypack.dev/@frameworke/fronte";
+import { App } from "https://cdn.skypack.dev/@borf/browser";
 
 const Hello = new App({
   view: function setup(ctx, m) {
@@ -95,113 +93,41 @@ Now when you visit the page the document should look something like this:
 
 ## Routing
 
-Routes are used to separate your app into distinct pages displayed according to the current URL.
+Most web apps today are what's known as an SPA, or single-page app, consisting of one HTML page with links to a handful of JS files containing the bundled app code. The code on this one page uses browser APIs to manipulate the document, simulating navigation between multiple "pages", but retaining all JavaScript state because no actual reloads take place.
 
-You'll notice that even a simple Hello World requires us to set up a route. Routing is central to what the web is. By
-following this convention several things users expect from a web app will just work out of the box; back and forward
-buttons, sharable URLs, bookmarks, etc.
+Routes determine which view is shown based on the current URL.
 
-Routing in Woof is heavily inspired by [choo.js](https://www.choo.io/docs/routing)
-and [@reach/router](https://reach.tech/router/).
+By building an app around routes, lots of things we expect from a web app will just work; back and forward buttons, sharable URLs, bookmarks, etc.
+
+Routing in Borf is aesthetically inspired by [choo.js](https://www.choo.io/docs/routing)
+with technical inspiration from [@reach/router](https://reach.tech/router/), as routes are matched by highest specificity regardless of the order they were registered in. This avoids a lot of confusing situations that come up with route matching in order-based routers like `express`.
 
 ### Route Matching
 
-Route strings are a set of fragments separated by `/`. These fragments are of three types.
+Route patterns are a set of fragments separated by `/`. These fragments are of three types.
 
 - Static: `/this/is/static` and will match only when the route is exactly `/this/is/static`.
 - Dynamic: `/users/{id}/edit` will match anything that fits the static parts of the route and stores the parts enclosed in `{}` as named params. Named params will match anything, like `123` or `BobJones`. You can access these values inside the view.
 - Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` named param. `*` is valid only at the end of a route.
 
 ```js
-// Routes match a URL `pattern` and display a corresponding `view`.
-const Example = new App({
-  routes: [
+import { PersonDetails, ThingIndex, ThingDetails, ThingEdit, ThingDelete } from "./components.js";
+
+const app = new App();
+
+app
+  // {name} is a named param that accepts any value.
+  .addRoute("/people/{name}", PersonDetails)
+
+  // Routes can be nested. A `null` component creates a route that acts as a namespace for a set of subroutes.
+  .addRoute("/things", null, (sub) => {
+    sub.addRoute("/", ThingIndex);
+
     // {#id} is a named param that matches a numeric value only.
-    { pattern: "/things", view: ThingIndex }
-    { pattern: "/things/{#id}", view: ThingDetails },
-    { pattern: "/things/{#id}/edit", view: ThingEdit },
-
-    // {name} is a named param that accepts any value.
-    { pattern: "/people/{name}", view: PersonDetails },
-
-    // Wildcard patterns with nested routes can be used to namespace a set of routes.
-    {
-      pattern: "/things/*" ,
-      routes: [
-        { pattern: "/", view: ThingIndex }
-        { pattern: "/{#id}", view: ThingDetails },
-        { pattern: "/{#id}/edit", view: ThingEdit },
-        { pattern: "/{#id}/edit", view: ThingDelete }
-      ]
-    },
-  ]
-})
-
-// ALT: Router as a standalone object?
-const router = new Router([
-  { pattern: "/home", view: Home },
-  {
-    pattern: "/things",
-    view: ThingsLayout,
-    // Nest routers to render child routes inside a view with ctx.outlet()
-    router: new Router([
-      { pattern: "/", view: ThingIndex }
-      { pattern: "/{#id}", view: ThingDetails },
-      { pattern: "/{#id}/edit", view: ThingEdit },
-      { pattern: "/{#id}/edit", view: ThingDelete }
-    ])
-  },
-  { pattern: "*", redirect: "/home" }
-]);
-
-Router.fromRoutes([
-  { pattern: "/home", view: Home },
-  {
-    pattern: "/things/*",
-    router: Router.fromRoutes([
-      { pattern: "/", view: ThingIndex }
-      { pattern: "/{#id}", view: ThingDetails },
-      { pattern: "/{#id}/edit", view: ThingEdit },
-      { pattern: "/{#id}/edit", view: ThingDelete }
-    ])
-  },
-  { pattern: "*", redirect: "/home" }
-])
-
-// Routes can also be added after creation:
-router.addRoute({ pattern: "/users/{#id}", view: UserView });
-
-// For `backe`, the router has express-like helpers...
-router.onGet("/pattern/goes/here", /* ...middleware... */, (req, res) => {
-  return {
-    message: "JSON response!"
-  };
-});
-// ... which get parsed into the verbose config object style under the hood. You can also do it like so:
-router.addRoute({
-  pattern: "/users/{#id}",
-  method: "GET",
-  middleware: [/* ... */],
-  respond: (req, res) => {
-    return {
-      message: "JSON response!"
-    };
-  }
-});
-
-// Mount another router under a subpath.
-router.mountRouter("/other", otherRouter);
-
-// Router is fully functional by itself and can be used outside of providing routes to the app.
-const match = router.match("/things/2/edit");
-// { path: "/things/2/edit", pattern: "/things/{#id}/edit", params: { id: 2 }, query: {}, view: ThingEdit, ... }
-
-// `router` can be any object that implements `.match(path: string): MatchedRoute`, so it can be reimplemented if special routing logic is needed.
-const app = new App({ router });
-
-// Both are equivalent:
-app.mountRouter(router);
-app.mountRouter("/", router);
+    sub.addRoute("/{#id}", ThingDetails);
+    sub.addRoute("/{#id}/edit", ThingEdit);
+    sub.addRoute("/{#id}/delete", ThingDelete);
+  });
 
 // Anatomy of the `router` store:
 const ThingDetails = View.define({
@@ -233,33 +159,32 @@ const ThingDetails = View.define({
     const $id = $params.as((p) => p.id);
 
     // Render it into a <p> tag. The ID portion will update if the URL changes.
-    return h("p", "User's ID is ", $id);
-  }
+    return m("p", "User's ID is ", $id);
+  },
 });
-
-// How the framework creates an instance:
-const viewInstance = ThingDetails.instantiate({ appContext, elementContext, /* ... */ });
 ```
-
-> TODO: Describe nested routing
 
 ## State
 
-In a woof app, there are two types of stateful objects; [views](#views) and [globals](#globals). These two share some common methods for storing
-variables in _state_ and creating observable bindings. Views wire up those bindings to DOM nodes. Globals can keep shared
-state by exporting bindings of their own for use in many views.
-
-When the values stored in state change, anything observing those bindings is immediately notified and updated to match.
+In a Borf app, all data that changes is stored in a State. All interested parties observe that State and update themselves automatically. Borf has no virtual DOM or re-rendering. Everything is just a side effect of a State change.
 
 ```js
-import { View, State } from "@frameworke/fronte";
+import { View, State } from "@borf/browser";
 
+/**
+ * Displays a timer that shows an ever-incrementing count of seconds elapsed.
+ * Also displays a button to reset the timer to 0.
+ */
 const Timer = View.define({
+  label: "TimerExample",
   setup(ctx) {
-    // Binding naming conventions.
-    // Prepend $$ for writable bindings and $ for readable ones.
-    // Consider: one $ for a one-way binding, two $ for a two-way binding
+    // Use regular variables to store data. Setup is only called once, so this function scope is here for the lifetime of the view.
+    let interval = null;
+
+    // the $$ naming convention indicates a binding is writable (supports .set, .update, ...)
     const $$seconds = new State(0);
+
+    // the $ naming convention denotes a read-only binding
     const $seconds = $$seconds.readable();
 
     function increment() {
@@ -271,14 +196,21 @@ const Timer = View.define({
     }
 
     // Increment once per second after the view is connected to the DOM.
-    ctx.afterConnect(function () {
-      setInterval(increment, 1000);
+    ctx.onConnect(function () {
+      interval = setInterval(increment, 1000);
+    });
+
+    // Stop incrementing when the view is disconnected.
+    ctx.onDisconnect(function () {
+      clearInterval(interval);
     });
 
     return (
-      <div>
-        <input type="text" value={$seconds} disabled />
-        <button onclick={reset}>Reset Counter</button>
+      <div class="timer">
+        <span>{$seconds}</span>
+
+        {/* Button calls reset() when clicked */}
+        <button onclick={reset}>Reset</button>
       </div>
     );
   },
@@ -291,20 +223,22 @@ Views are reusable modules with their own markup and logic. You can define a vie
 times as you need. Views can take inputs that set their default state and establish data bindings.
 
 ```jsx
-const Example = makeView((ctx) => {
-  return (
-    <div>
-      <h1>{ctx.inputs.get("title")}</h1>
-      <p>This is a reusable view.</p>
-    </div>
-  );
+const Example = View.define({
+  setup: (ctx) => {
+    return (
+      <div>
+        <h1>{ctx.inputs.get("title")}</h1>
+        <p>This is a reusable view.</p>
+      </div>
+    );
+  },
 });
 
 // Views can be mounted directly on a route.
-app.route("example", Example);
+app.addRoute("/example", Example);
 
 // They can also be used inside another view.
-app.route("other", (ctx) => {
+app.addRoute("/other", (ctx) => {
   return (
     <div>
       <Example title="In Another View" />
@@ -318,628 +252,138 @@ app.route("other", (ctx) => {
 Views receive a context object they may use to translate state and lifecycle into DOM nodes.
 
 ```js
-const Example = makeView((ctx, m) => {
-  // Access globals by name.
-  const global = ctx.global("name");
+const Example = View.define({
+  setup: (ctx, m) => {
+    // Access the built-in stores by name
+    const http = ctx.useStore("http");
+    const page = ctx.useStore("page");
+    const router = ctx.useStore("router");
+    const dialog = ctx.useStore("dialog");
+    const language = ctx.useStore("language");
 
-  const local = ctx.local("name");
+    // Access custom stores by reference
+    const some = ctx.useStore(SomeStore);
+    const other = ctx.useStore(OtherStore);
 
-  /*=================================*\
-  ||             Logging             ||
-  \*=================================*/
+    /*=================================*\
+    ||             Logging             ||
+    \*=================================*/
 
-  ctx.log("Something happened.");
-  ctx.warn("Something happened!");
-  ctx.error("SOMETHING HAPPENED!!!!");
+    ctx.log("Something happened.");
+    ctx.warn("Something happened!");
+    ctx.error("SOMETHING HAPPENED!!!!");
+    ctx.crash(new Error("FUBAR"));
 
-  /*=================================*\
-  ||              State              ||
-  \*=================================*/
+    /*=================================*\
+    ||              State              ||
+    \*=================================*/
 
-  // Creates a writable (two-way) binding with a default value.
-  const $$title = makeState("The Default Title");
+    // Creates a writable (two-way) binding with a default value.
+    const $$title = new State("The Default Title");
 
-  // Runs a callback function each time a state changes (or any observable emits a value).
-  ctx.observe($$title, (title) => {
-    console.log("title attribute changed to " + title);
-  });
+    // Runs a callback function each time a state changes (or any observable emits a value).
+    ctx.observe($$title, (title) => {
+      console.log("title attribute changed to " + title);
+    });
 
-  // Merge two or more bindings into a single binding.
-  const $formattedTitle = ctx.merge($$title, global.$uppercase, (title, uppercase) => {
-    if (uppercase) {
-      return title.toUpperCase();
-    }
+    // Merge two or more bindings into a single binding.
+    const $formattedTitle = State.merge($$title, some.$uppercase, (title, uppercase) => {
+      if (uppercase) {
+        return title.toUpperCase();
+      }
 
-    return title;
-  });
+      return title;
+    });
 
-  /*=================================*\
-  ||            Lifecycle            ||
-  \*=================================*/
+    /*=================================*\
+    ||            Lifecycle            ||
+    \*=================================*/
 
-  ctx.isConnected; // true if view is connected
+    ctx.isConnected; // true if view is connected
 
-  ctx.beforeConnect(() => {
-    // Runs when the view is about to be (but is not yet) added to the page.
-  });
+    ctx.onConnect(() => {
+      // Runs after the view is added to the page.
+    });
 
-  ctx.animateIn(async () => {});
+    ctx.onDisconnect(() => {
+      // Runs after the view is removed from the page.
+    });
 
-  ctx.afterConnect(() => {
-    // Runs after the view is added to the page.
-  });
+    ctx.animateIn(async () => {});
 
-  ctx.beforeDisconnect(() => {
-    // Runs when the view is about to be (but is not yet) removed from the page.
-  });
+    ctx.animateOut(async () => {});
 
-  ctx.animateOut(async () => {});
+    /*=================================*\
+    ||      Rendering & Children       ||
+    \*=================================*/
 
-  ctx.afterDisconnect(() => {
-    // Runs after the view is removed from the page.
-  });
+    m.when();
+    m.unless();
+    m.observe();
+    m.repeat();
 
-  /*=================================*\
-  ||      Rendering & Children       ||
-  \*=================================*/
-
-  m.when();
-  m.unless();
-  m.observe();
-  m.repeat();
-
-  //   m.ul($items, { class: "list-class" }, (ctx) => {
-  //     const $value = ctx.attrs.readable("value");
-  //
-  //     return <li>{$value}</li>;
-  //   });
-
-  // Render children inside a `<div class="container">`
-  return m("div", { class: "container" }, ctx.outlet());
+    // Render children inside a `<div class="container">`
+    return m("div", { class: "container" }, ctx.outlet());
+  },
 });
 ```
 
 ### Templating
 
-```jsx
-const Example = makeView(function (ctx, h) {
-  return h("section", [
-    h("h1", "Item List"),
-    h("p", { style: "color: red" }, "Below is a list of items."),
-    h("ul", [
-      h("li", "Item 1"),
-      h("li", { class: "active" }, "Item 2"),
-      h("li", "Item 3"),
-      h("li", "Item 4"),
-      h("li", "Item 5"),
-      h("li", "Item 6"),
-    ]),
-  ]);
-});
+Templating is how you create elements. There are two ways to do it; first is calling the `m`arkup function which is passed as the second argument to `setup`.
+
+The markup function has these signatures:
+
+```js
+m(tagname, [attributes, ][...children])
+m(view, [inputs, ][...children])
 ```
-
-That view renders the following HTML.
-
-```html
-<section>
-  <h1>Item List</h1>
-  <p style="color: red">Below is a list of items.</p>
-  <ul>
-    <li>Item 1</li>
-    <li class="active">Item 2</li>
-    <li>Item 3</li>
-    <li>Item 4</li>
-    <li>Item 5</li>
-    <li>Item 6</li>
-  </ul>
-</section>
-```
-
-#### Using JSX
-
-Woof supports JSX with the help of `@woofjs/build`, so if you want to write your views as HTML to begin with you can do that. However, it's important to understand how `h` works because that's ultimately what the JSX compiles down to.
-
-> Note that Woof uses a `class` attribute like HTML rather than `className` like React.
 
 ```jsx
-const Example = makeView(function (ctx) {
-  return (
-    <section>
-      <h1>Item List</h1>
-      <p style="color: red">Below is a list of items.</p>
-      <ul>
-        <li>Item 1</li>
-        <li class="active">Item 2</li>
-        <li>Item 3</li>
-        <li>Item 4</li>
-        <li>Item 5</li>
-        <li>Item 6</li>
-      </ul>
-    </section>
-  );
+const Example = View.define({
+  label: "ExampleView",
+  setup: (ctx, m) => {
+    return m("section", [
+      m("h1", "Item List"),
+      m("p", { style: "color: red" }, "Below is a list of items."),
+      m("ul", [
+        m("li", "Item 1"),
+        m("li", { class: "active" }, "Item 2"),
+        m("li", "Item 3"),
+        m("li", "Item 4"),
+        m("li", "Item 5"),
+        m("li", "Item 6"),
+      ]),
+    ]);
+  },
 });
 ```
 
-### Using views
+The second is using JSX. You can do this when building with `@borf/build`, but it won't work out of the box in a browser.
 
-```js
-const Example = makeView((ctx, h) => {
-  return h(Subview);
-});
+> Note that Borf uses a `class` attribute like HTML rather than `className` like React.
 
-const Subview = makeView((ctx, h) => {
-  return h("h1", "Hello from inside another view!");
-});
-```
-
-When using subviews, you can pass them inputs just like you can with HTML elements. The Example views in
-the following code will display `<h1>Hello world!</h1>`.
-
-```js
-const Example = makeView((ctx, h) => {
-  return h(Subview, { name: "world" });
-});
-
-const Subview = makeView((ctx, h) => {
-  const { name } = ctx.attrs;
-
-  return h("h1", "Hello ", name, "!");
-});
-```
-
-The same thing with JSX:
-
-```js
-const Example = makeView((ctx) => {
-  return <Subview name="world" />;
-});
-
-const Subview = makeView((ctx) => {
-  const { name } = ctx.attrs;
-
-  return <h1>Hello {name}!</h1>;
-});
-```
-
-### Helpers
-
-Helpers supply the control flow you would expect when creating dynamic views, like conditionals and loops.
-
-#### Conditionals (`when` and `unless`)
-
-- `ctx.when($binding, element)`
-
-- `ctx.unless($binding, element)`
-
-The `when` helper displays the element only when the bound value is truthy, while `unless` displays the element only when
-the bound value is falsy. The condition can be a plain value, a $binding, or the name of a view state key to bind to.
-
-```js
-const Example = makeView((ctx, h) => {
-  const $$on = ctx.state(false);
-
-  function toggle() {
-    $$on.update((on) => !on);
-  }
-
-  return (
-    <div>
-      {ctx.when($$on, <h1>Is On</h1>)}
-      {ctx.unless($$on, <h1>Is Off</h1>)}
-
-      <button onclick={toggle}>Toggle</button>
-    </div>
-  );
-});
-```
-
-#### Pattern Matching (`match`)
-
-- `ctx.match($binding, cases)`
-
-Renders the first matching case from the value of a binding.
-
-```js
-const Example = makeView((ctx, h) => {
-  const $$tab = ctx.state("home");
-
-  // Displays a set of tabs and content for the most recently clicked tab.
-  return (
-    <main>
-      <nav class="tabs">
+```jsx
+const Example = View.define({
+  label: "ExampleView",
+  setup: (ctx, m) => {
+    return (
+      <section>
+        <h1>Item List</h1>
+        <p style="color: red">Below is a list of items.</p>
         <ul>
-          <li>
-            <button class="tab-button" onclick={() => $$tab.set("home")}>
-              Home
-            </button>
-          </li>
-          <li>
-            <button class="tab-button" onclick={() => $$tab.set("photos")}>
-              Photos
-            </button>
-          </li>
-          <li>
-            <button class="tab-button" onclick={() => $$tab.set("contacts")}>
-              Contacts
-            </button>
-          </li>
+          <li>Item 1</li>
+          <li class="active">Item 2</li>
+          <li>Item 3</li>
+          <li>Item 4</li>
+          <li>Item 5</li>
+          <li>Item 6</li>
         </ul>
-      </nav>
-
-      <div class="content">
-        {ctx.match($$tab, [
-          ["home", <HomeContent />],
-          ["photos", <PhotosContent />],
-          ["contacts", <ContactsContent />],
-          <NoTabContent />, // Fallback content if none of the cases match.
-        ])}
-      </div>
-    </main>
-  );
-});
-```
-
-The `cases` structure is a 2D array of `[value, result]` (followed by an optional `fallback` item) where:
-
-- `value` can be either a literal or a condition function: `(value) => boolean`
-- `result` can be either a renderable element or a render function returning a renderable element: `(value) => element`
-- `fallback` can be either a renderable element or a render function returning a renderable element: `(value) => element`
-
-```js
-ctx.match($$tab, [
-  // Do unnecessary processing on the tab name to determine if it's the one.
-  // Has the same result as the "home" literal in the example above.
-  [(tab) => tab.toUpperCase() === "HOME", <HomeContent />],
-
-  // Pass "PHOTOS!" as the `title` attribute when rendering <PhotosContent>.
-  ["photos", (tab) => <PhotosContent title={tab.toUpperCase() + "!"} />],
-
-  ["contacts", <ContactsContent />],
-
-  // Fallback: passes the tab name to <NoTabContent>, presumably to tell the user the unknown tab.
-  (tab) => <NoTabContent tabName={tab} />,
-]);
-```
-
-#### Looping
-
-- `ctx.repeat($binding, callback)`
-
-Repeats a render callback once for each item in an array.
-
-```js
-const Example = makeView((ctx, h) => {
-  const $$list = ctx.state(["one", "two", "three"]);
-
-  return h(
-    "ul",
-
-    // Render once for each item in $$list. Updates when $$list changes.
-    ctx.repeat($$list, function ($item, $index) {
-      // Return an <li> that contains the current value of this list item.
-      return h("li", $item);
-    })
-  );
-});
-```
-
-The `repeat` function uses keys to identify which items have been changed, added or removed. By default, `repeat` uses
-the value itself as a key. You must specify a key yourself if your array might have two or more identical values. If
-you're looping through an array of objects with unique IDs, you will usually want to use the object's ID as the key.
-
-If you'd like to specify the key you can pass a function as the third argument:
-
-```js
-// Use the list item's `id` field as the key.
-ctx.repeat($list, View, (item, index) => item.id);
-```
-
-#### Children &amp; Other Elements
-
-- `ctx.outlet()`
-
-Renders elements from state to DOM, optionally through the use of a render callback to convert the value into something
-renderable. Called anew every time the value changes.
-
-Renders `children` if called without any arguments.
-
-```js
-const Example = makeView((ctx, h) => {
-  ctx.defaultState = {
-    value: "one",
-  };
-
-  return h(
-    "div",
-
-    // Displays the return value of the function each time the value changes.
-    ctx.outlet("value", (value) => {
-      return h("span", value, "!!!");
-    })
-  );
-});
-```
-
-## Dynamic Classes
-
-Dynamic classes are also supported. Pass an object where the keys are the class names, and the classes are added to
-the element while the values are truthy. The values can be \$states if you want to toggle classes dynamically.
-
-```jsx
-const Example = makeView((ctx, h) => {
-  return h(
-    "div",
-    {
-      class: {
-        // Always includes "container" class
-        container: true,
-
-        // Includes "active" class when '$isActive' attribute is truthy
-        active: ctx.attrs.$isActive,
-      },
-    },
-    ctx.outlet()
-  );
-});
-```
-
-Multiple classes:
-
-```jsx
-const Example = makeView((ctx, h) => {
-  return h(
-    "div",
-    {
-      class: ["one", "two"],
-    },
-    ctx.outlet()
-  );
-});
-```
-
-A combination:
-
-```jsx
-const Example = makeView((ctx) => {
-  // The 'container' class is always included while the ones
-  // inside the object are shown if their value is truthy.
-  return (
-    <div
-      class={[
-        "container",
-        {
-          active: ctx.attrs.$isActive,
-        },
-      ]}
-    >
-      {ctx.outlet()}
-    </div>
-  );
-});
-```
-
-## Globals
-
-Globals are a great way to share state and logic between multiple views. Sometimes you have components in different
-hierarchies that don't easily support typical data binding, such as when you need to access the same data from multiple
-routes.
-
-Globals are singletons, meaning only one copy of that global exists per app, and all `.global(name)` calls get the
-same instance of `name`.
-
-The following example shows a counter with one page to display the number and another to modify it. Both routes share
-data through a `counter` global.
-
-```js
-// The `counter` global holds the current count and provides methods for incrementing and decrementing.
-app.global("counter", function (ctx) {
-  const $$count = ctx.state(0);
-
-  return {
-    $current: $$count.readable(), // Exports a read only version that can only be changed through the methods.
-
-    increment() {
-      $$count.update((current) => current + 1);
-    },
-
-    decrement() {
-      $$count.update((current) => current - 1);
-    },
-  };
-});
-
-app.route("/counter", function () {
-  return (
-    <div>
-      <h1>World's Most Inconvenient Counter Demo</h1>
-      <a href="/counter/view">See the number</a>
-      <a href="/counter/controls">Change the number</a>
-    </div>
-  );
-});
-
-// The window route displays the count but doesn't let the user change it.
-app.route("/counter/window", function (ctx) {
-  const { $current } = ctx.global("counter");
-
-  return <h1>The Count is Now {$current}</h1>;
-});
-
-// The controls route lets the user change the count but doesn't display it.
-app.route("/counter/controls", function (ctx) {
-  const { increment, decrement } = ctx.global("counter");
-
-  return (
-    <div>
-      <button onclick={increment}>Increment</button>
-      <button onclick={decrement}>Decrement</button>
-    </div>
-  );
-});
-```
-
-### Global Context
-
-```js
-app.global("example", function (ctx) {
-  // Access other globals by the name they were registered under.
-  // The globals being accessed must have been registered before this one or the app will throw an error.
-  const global = ctx.global("name");
-
-  const $$title = ctx.state("THE TITLE");
-
-  ctx.merge();
-
-  // Runs a callback function each time a state changes (or any observable emits a value).
-  ctx.observe($$title, (title) => {
-    console.log("title attribute changed to " + title);
-  });
-
-  // Print debug messages
-  ctx.name = "example"; // Prefix messages in the console to make tracing easier at a glance.
-  ctx.log("Something happened.");
-  ctx.warn("Something happened!");
-  ctx.error("SOMETHING HAPPENED!!!!");
-
-  ctx.beforeConnect(() => {
-    // Runs when the global is about to be (but is not yet) initialized, before any routing occurs.
-  });
-
-  ctx.afterConnect(() => {
-    // Runs after the app is connected, initial route has been matched, and the first window is added to the page.
-  });
-  // Globals live for the lifetime of the app, so they have no disconnect hooks.
-
-  // All globals must return an object.
-  return {};
-});
-```
-
-# Utilities
-
-This library also includes some utilities to help with really common tasks in frontend development:
-
-- useRef
-- makeDebounce
-- makeTransitions
-
-## Ref
-
-Refs are functions that store a value when called with one, and return the last stored value when called with no arguments. Pass a ref as the `ref` attribute on any HTML element to store a reference to that element's DOM node once it's rendered to the page.
-
-```js
-import { makeView, makeRef } from "@woofjs/client";
-
-const Example = makeView((ctx) => {
-  const divRef = makeRef();
-
-  ctx.afterConnect(() => {
-    console.log("rendered element", divRef());
-  });
-
-  return <div ref={divRef} />;
-});
-```
-
-## Debounce
-
-Frequently in UI programming, you have events coming in constantly but only want to perform an action when they are done. For example, a search input that which waits 300ms after the user has stopped typing before making an API call.
-
-Debouncing lets you call a function any number of times, but only the most recent call will actually execute when that time limit elapses.
-
-```js
-const debounced = makeDebounce(300, (value) => {
-  console.log("debounced:", value);
-});
-
-debounced(1);
-debounced(2);
-debounced(3); // Only this one will fire, after 300 milliseconds
-
-// Or take config object to support additional advanced options:
-const debounced = makeDebounce({
-  timeout: 300,
-  immediate: true,
-  callback: (value) => {
-    console.log("debounced:", value);
+      </section>
+    );
   },
 });
-
-// If no callback is passed, a function is returned that takes and queues another function.
-// Use this when you may have more than one function that should share a single queue.
-const debounce = makeDebounce(300);
-
-debounce(() => {
-  console.log("debounced: 1");
-});
-debounce(() => {
-  console.log("debounced: 2");
-});
-debounce(() => {
-  console.log("debounced: 3"); // Only this one will run.
-});
 ```
-
-## Transitions
-
-Defines a set of transitions for an element. Returns a function that applies these transitions to a given element.
-
-```jsx
-import { makeView, makeTransitions } from "@woofjs/client";
-import { animate } from "popmotion";
-
-// TODO: Change names to `enter` and `exit` since `in` causes weird syntax highlighting in some editors since it's a keyword.
-const animated = makeTransitions({
-  // Fade opacity from 0 to 1 when the element enters.
-  enter: (ctx) => {
-    animate({
-      from: 0,
-      to: 1,
-      duration: 300,
-      onUpdate: (current) => {
-        ctx.node.style.opacity = current;
-      },
-      onComplete: () => {
-        ctx.node.style.opacity = 1;
-        ctx.done();
-      },
-    });
-  },
-
-  // Fade opacity from 1 to 0 when the element exits.
-  exit: (ctx) => {
-    animate({
-      from: 1,
-      to: 0,
-      duration: 300,
-      onUpdate: (current) => {
-        ctx.node.style.opacity = current;
-      },
-      onComplete: () => {
-        ctx.node.style.opacity = 1;
-        ctx.done();
-      },
-    });
-  },
-});
-
-const ExampleView = makeView((ctx, h) => {
-  return h("section", [
-    h("header", h("h1", "Animated List Items")),
-
-    // Animate each list item as it enters and exits.
-    ctx.repeat("items", ($item) => {
-      return animated(h("li", $item));
-    }),
-  ]);
-});
-```
-
-> TODO: Outline transition ctx.get, ctx.set and $transition attribute for transitioning views.
-
-## Testing
-
-See [the testing README](./lib/testing/README.md).
 
 ---
 

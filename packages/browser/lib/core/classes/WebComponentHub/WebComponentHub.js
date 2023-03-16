@@ -1,9 +1,9 @@
-import { Type } from "../../../../../bedrock/lib";
+import { Type } from "@borf/bedrock";
 
 import { DebugHub } from "../DebugHub.js";
 import { Store } from "../Store.js";
 import { HTTPStore } from "../../stores/http.js";
-import { DocumentStore } from "../../stores/document.js";
+import { PageStore } from "../../stores/page.js";
 
 import { DialogStore } from "./stores/dialog.js";
 import { RouterStore } from "./stores/router.js";
@@ -11,7 +11,7 @@ import { RouterStore } from "./stores/router.js";
 export class WebComponentHub {
   #stores = [
     { store: "http", exports: HTTPStore },
-    { store: "document", exports: DocumentStore },
+    { store: "page", exports: PageStore },
     { store: "dialog", exports: DialogStore },
     { store: "router", exports: RouterStore },
   ];
@@ -99,7 +99,7 @@ export class WebComponentHub {
   /**
    * Registers stores and elements so they will take effect on the page.
    */
-  async register() {
+  async connect() {
     const { rootElement } = this.#appContext;
     const { stores } = this.#elementContext;
 

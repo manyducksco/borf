@@ -1,4 +1,4 @@
-import { Type } from "../../../../bedrock/lib";
+import { Type } from "@borf/bedrock";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 import { isMarkup } from "../helpers/typeChecking.js";
 import { State } from "./State.js";

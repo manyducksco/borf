@@ -1,10 +1,10 @@
-import { Type, Router } from "../../../../bedrock/lib";
+import { Type, Router } from "@borf/bedrock";
 
 import { merge } from "../helpers/merge.js";
 import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
 import { LanguageStore } from "../stores/language.js";
-import { DocumentStore } from "../stores/document.js";
+import { PageStore } from "../stores/page.js";
 import { RouterStore } from "../stores/router.js";
 import { CrashCollector } from "./CrashCollector.js";
 
@@ -25,7 +25,7 @@ export class App {
   #stores = new Map([
     ["dialog", { store: DialogStore }],
     ["router", { store: RouterStore }],
-    ["document", { store: DocumentStore }],
+    ["page", { store: PageStore }],
     ["http", { store: HTTPStore }],
     ["language", { store: LanguageStore }],
   ]);

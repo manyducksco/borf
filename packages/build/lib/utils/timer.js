@@ -1,25 +1,40 @@
-export function niceTime(milliseconds) {
-  if (milliseconds > 1000) {
-    return (milliseconds / 1000).toFixed(1) + "s";
-  }
-
-  return milliseconds + "ms";
-}
-
-export function makeTimer() {
-  let started = performance.now();
-
-  return function end() {
-    const ms = performance.now() - started;
-
-    if (ms < 1) {
-      return Math.round(ms * 1000) + "µs";
+export class Timer {
+    static format(ms) {
+        if (ms % 1 > 0 && ms < 1) {
+            return Math.round(ms * 1000) + "µs";
+        }
+        if (ms < 1000) {
+            return Math.round(ms) + "ms";
+        }
+        if (ms < 60000) {
+            return (ms / 1000).toFixed(1) + "s";
+        }
+        return (ms / 60000).toFixed(1) + "m";
     }
-
-    if (ms < 1000) {
-      return Math.round(ms) + "ms";
+    #startedAt = this.#getNow();
+    #getNow() {
+        if (performance != null) {
+            return performance.now();
+        }
+        return Date.now();
     }
-
-    return (ms / 1000).toFixed(1) + "s";
-  };
+    /**
+     * Returns total time elapsed since last reset in milliseconds.
+     */
+    get elapsed() {
+        return this.#getNow() - this.#startedAt;
+    }
+    /**
+     * Returns the timer duration formatted as a string.
+     */
+    format() {
+        return Timer.format(this.elapsed);
+    }
+    /**
+     * Resets timer duration to 0.
+     */
+    reset() {
+        this.#startedAt = this.#getNow();
+    }
 }
+//# sourceMappingURL=Timer.js.map

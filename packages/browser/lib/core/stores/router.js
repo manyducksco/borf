@@ -1,6 +1,6 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory } from "history";
-import { Router, Type } from "../../../../bedrock/lib";
+import { Router, Type } from "@borf/bedrock";
 import { Store } from "../classes/Store.js";
 import { State } from "../classes/State.js";
 import { catchLinks } from "../helpers/catchLinks.js";

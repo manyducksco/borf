@@ -1,4 +1,4 @@
-import { Type, Router } from "../../../../../../bedrock/lib";
+import { Type, Router } from "@borf/bedrock";
 import { createBrowserHistory } from "history";
 import queryString from "query-string";
 
