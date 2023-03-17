@@ -1,10 +1,10 @@
-// import { Builder } from "@borf/build";
+import { Builder } from "@borf/build";
 
-export default {
-  client: {
-    entry: "./client/app.jsx",
+export default Builder.configure({
+  browser: {
+    entry: "./browser/app.jsx",
   },
   server: {
     entry: "./server/app.js",
   },
-};
+});
