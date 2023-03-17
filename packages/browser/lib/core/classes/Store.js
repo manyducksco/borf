@@ -135,6 +135,52 @@ export class Store extends Connectable {
         }
       },
 
+      subscribe: (observable, observer) => {
+        if (!Type.isObject(observer)) {
+          observer = {
+            next: observer,
+            error: arguments[2],
+            complete: arguments[3],
+          };
+        }
+
+        let observables = [];
+
+        if (Type.isArray(observable)) {
+          observables = observable;
+        } else {
+          observables.push(observable);
+        }
+
+        if (observables.length === 0) {
+          throw new TypeError(`Expected at least one observable.`);
+        }
+
+        const start = () => {
+          if (observables.length > 1) {
+            // TODO: Have State.merge forward errors to subscribers.
+            return State.merge(observables, observer.next).subscribe({
+              error: observer.error,
+              complete: observer.complete,
+            });
+          } else {
+            return observables[0].subscribe(observer);
+          }
+        };
+
+        if (this.isConnected) {
+          // If called when the view is connected, we assume this code is in a lifecycle hook
+          // where it will be triggered at some point again after the view is reconnected.
+          this.#activeSubscriptions.push(start());
+        } else {
+          // This should only happen if called in the body of the view.
+          // This code is not always re-run between when a view is disconnected and reconnected.
+          this.#lifecycleCallbacks.onConnect.push(() => {
+            this.#activeSubscriptions.push(start());
+          });
+        }
+      },
+
       useStore: (store) => {
         const name = store?.name || store;
 

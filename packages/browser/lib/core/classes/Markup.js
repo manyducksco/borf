@@ -4,8 +4,6 @@ import { isConnectable } from "../helpers/typeChecking.js";
 import { View } from "./View.js";
 import { Text } from "./Text.js";
 import { HTML } from "./HTML.js";
-import { Outlet } from "./Outlet.js";
-import { Repeat } from "./Repeat.js";
 
 export class Markup {
   #setup;
@@ -56,70 +54,6 @@ export function m(element, attributes, ...children) {
   console.log({ element, attributes, children });
   throw new TypeError(`Unexpected arguments to m()`);
 }
-
-m.when = function when(value, then, otherwise) {
-  then = formatChildren(then);
-  otherwise = formatChildren(otherwise);
-
-  return new Markup((config) => {
-    return new Outlet({
-      ...config,
-      value,
-      renderFn: (value) => {
-        if (value) {
-          return then;
-        }
-
-        if (otherwise) {
-          return otherwise;
-        }
-
-        return null;
-      },
-    });
-  });
-};
-
-m.unless = function unless(value, then) {
-  then = formatChildren(then);
-
-  return new Markup((config) => {
-    return new Outlet({
-      ...config,
-      value,
-      renderFn: (value) => {
-        if (!value) {
-          return then;
-        }
-
-        return null;
-      },
-    });
-  });
-};
-
-m.observe = function observe(value, renderFn) {
-  return new Markup((config) => {
-    return new Outlet({
-      ...config,
-      value,
-      renderFn: renderFn,
-    });
-  });
-};
-
-m.repeat = function repeat(value, renderFn, keyFn) {
-  return new Markup((config) => {
-    return new Repeat({
-      ...config,
-      attributes: {
-        value,
-        renderFn,
-        keyFn,
-      },
-    });
-  });
-};
 
 /**
  * Filter out falsy children and convert remaining ones to Markup instances.

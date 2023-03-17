@@ -2,15 +2,16 @@ import { Type } from "@borf/bedrock";
 import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
 import { Inputs } from "./Inputs.js";
-import { Markup, m } from "./Markup.js";
+import { Markup, m, formatChildren } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
+import { Repeat } from "./Repeat.js";
 import { isMarkup } from "../helpers/typeChecking.js";
 
 export class View extends Connectable {
   static define(config) {
     if (!config.label) {
       console.trace(
-        `View is defined without a label. Setting a label is recommended to make debugging and error tracing easier.`
+        `View is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
       );
     }
 
@@ -31,16 +32,84 @@ export class View extends Connectable {
     return value instanceof View;
   }
 
+  /**
+   * Takes a `value` which can be static or readable. When `value` is truthy, display `then` content. When `value` is falsy, display `otherwise` content.
+   *
+   * @param value
+   * @param then
+   * @param otherwise
+   */
+  static when(value, then, otherwise) {
+    then = formatChildren(then);
+    otherwise = formatChildren(otherwise);
+
+    return new Markup((config) => {
+      return new Outlet({
+        ...config,
+        value,
+        renderFn: (value) => {
+          if (value) {
+            return then;
+          }
+
+          if (otherwise) {
+            return otherwise;
+          }
+
+          return null;
+        },
+      });
+    });
+  }
+
+  static unless(value, then) {
+    then = formatChildren(then);
+
+    return new Markup((config) => {
+      return new Outlet({
+        ...config,
+        value,
+        renderFn: (value) => {
+          if (!value) {
+            return then;
+          }
+
+          return null;
+        },
+      });
+    });
+  }
+
+  static observe(value, renderFn) {
+    return new Markup((config) => {
+      return new Outlet({
+        ...config,
+        value,
+        renderFn: renderFn,
+      });
+    });
+  }
+
+  static repeat(value, renderFn, keyFn) {
+    return new Markup((config) => {
+      return new Repeat({
+        ...config,
+        attributes: {
+          value,
+          renderFn,
+          keyFn,
+        },
+      });
+    });
+  }
+
   label;
   about;
 
   #lifecycleCallbacks = {
-    // beforeConnect: [],
     animateIn: [],
-    onConnect: [],
-
-    // beforeDisconnect: [],
     animateOut: [],
+    onConnect: [],
     onDisconnect: [],
   };
   #activeSubscriptions = [];
@@ -85,7 +154,7 @@ export class View extends Connectable {
     this.#inputs = new Inputs({
       inputs,
       definitions: inputDefs,
-      enableValidation: true, // TODO: Disable for production builds (unless specified in makeApp options).
+      enableValidation: true, // TODO: Disable for production builds (unless specified in app options).
     });
     this.#$$children = new State(children);
   }
@@ -112,16 +181,7 @@ export class View extends Connectable {
 
       if (!wasConnected) {
         await this.#initialize(parent, after); // Run setup() to configure the view.
-
         this.#inputs.connect();
-
-        // for (const callback of this.#lifecycleCallbacks.beforeConnect) {
-        //   try {
-        //     callback();
-        //   } catch (error) {
-        //     this.#appContext.crashCollector.crash({ error, component: this });
-        //   }
-        // }
       }
 
       if (this.#element) {
@@ -163,14 +223,6 @@ export class View extends Connectable {
     }
 
     return new Promise(async (resolve) => {
-      // for (const callback of this.#lifecycleCallbacks.beforeDisconnect) {
-      //   try {
-      //     callback();
-      //   } catch (error) {
-      //     this.#appContext.crashCollector.crash({ error, component: this });
-      //   }
-      // }
-
       if (this.#lifecycleCallbacks.animateOut.length > 0) {
         try {
           const ctx = { node: this.node };
@@ -235,6 +287,52 @@ export class View extends Connectable {
           } else {
             const $merged = State.merge(...args, () => undefined);
             return $merged.subscribe(callback);
+          }
+        };
+
+        if (this.isConnected) {
+          // If called when the view is connected, we assume this code is in a lifecycle hook
+          // where it will be triggered at some point again after the view is reconnected.
+          this.#activeSubscriptions.push(start());
+        } else {
+          // This should only happen if called in the body of the view.
+          // This code is not always re-run between when a view is disconnected and reconnected.
+          this.#lifecycleCallbacks.onConnect.push(() => {
+            this.#activeSubscriptions.push(start());
+          });
+        }
+      },
+
+      subscribe: (observable, observer) => {
+        if (!Type.isObject(observer)) {
+          observer = {
+            next: observer,
+            error: arguments[2],
+            complete: arguments[3],
+          };
+        }
+
+        let observables = [];
+
+        if (Type.isArray(observable)) {
+          observables = observable;
+        } else {
+          observables.push(observable);
+        }
+
+        if (observables.length === 0) {
+          throw new TypeError(`Expected at least one observable.`);
+        }
+
+        const start = () => {
+          if (observables.length > 1) {
+            // TODO: Have State.merge forward errors to subscribers.
+            return State.merge(observables, observer.next).subscribe({
+              error: observer.error,
+              complete: observer.complete,
+            });
+          } else {
+            return observables[0].subscribe(observer);
           }
         };
 

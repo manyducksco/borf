@@ -12,7 +12,7 @@ export class DebugHub {
 
   constructor(options = {}, _console = window?.console || global?.console) {
     // Using the setter to generate an initial matcher.
-    this.filter = options.filter || "*,-fronte:*";
+    this.filter = options.filter || "*,-borf:*";
     this.#console = _console;
     this.#options = options;
   }

@@ -309,6 +309,10 @@ class HTTPRequest<ResponseBody, RequestBody> {
     return this.getBody();
   }
 
+  set body(data) {
+    this.setBody(data!);
+  }
+
   /* ----- Query Params ----- */
 
   getQuery(name?: string) {

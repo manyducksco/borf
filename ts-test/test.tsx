@@ -1,10 +1,37 @@
-import woof, {
-  h,
-  makeView,
-  makeGlobal,
-  Bindable,
-  Private,
-} from "";
+import { View, State } from "@borf/browser";
+
+const RepeatExample = View.define({
+  setup: (ctx) => {
+    const $$items = new State([1, 2, 3, 4, 5]);
+    const $$crap = new State("woop");
+    const $$isGood = new State(false);
+
+    const $merged = State.merge([$$items, $$crap], (first, second) => {
+      return first + second;
+    })
+
+    return (
+      <ul>
+        {View.repeat($$items, (ctx) => {
+          return <li>{ctx.inputs.readable("item")}</li>;
+        })}
+
+        {View.subscribe($$items, (items) => {
+          return "okay";
+        })}
+
+        {View.subscribe([$$items, $$crap, $$isGood], (items, crap, isGood) => {
+          return "okay";
+        })}
+    State.merge([$first, $second], (first, second) => {
+
+    })
+        {View.when($$isGood, <span>Is good</span>, <span>Is not good</span>)}
+        {View.unless($$isGood, <span>In fact, is bad</span>)}
+      </ul>
+    );
+  },
+});
 
 type ExampleGlobalState = {};
 

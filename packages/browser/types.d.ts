@@ -299,7 +299,7 @@ declare module "@borf/browser" {
     get(): T;
 
     /**
-     * Returns a new state whose value reflects the return value of `transform` when called with this state's value.
+     * Returns a new state whose value reflects the value of this state when passed through a `transform` function.
      *
      * @param transform - Function to convert the value of the current state into the value of a new state.
      */
@@ -327,41 +327,17 @@ declare module "@borf/browser" {
      */
     readable(): Readable<T>;
 
-    static merge<ValueOne, ValueTwo, Result>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      merge: (valueOne: ValueOne, valueTwo: ValueTwo) => Result
-    ): Readable<Result>;
-
-    static merge<ValueOne, ValueTwo, ValueThree, Result>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      merge: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => Result
-    ): Readable<Result>;
-
-    static merge<ValueOne, ValueTwo, ValueThree, ValueFour, Result>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      observableFour: Observable<ValueFour>,
-      merge: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree, valueFour: ValueFour) => Result
-    ): Readable<Result>;
-
-    static merge<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive, Result>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      observableFour: Observable<ValueFour>,
-      observableFive: Observable<ValueFive>,
-      merge: (
-        valueOne: ValueOne,
-        valueTwo: ValueTwo,
-        valueThree: ValueThree,
-        valueFour: ValueFour,
-        valueFive: ValueFive
-      ) => Result
-    ): Readable<Result>;
+    /**
+     * Subscribes to multiple observables, passing the values of each to a callback that returns the resulting value of a new state.
+     *
+     * @param observable
+     * @param callback
+     */
+    static merge<
+      O extends [...Observable<any>],
+      V = { [K in keyof O]: O[K] extends Observable<infer U> ? U : never },
+      R
+    >(observables: [...O], callback: (...values: V) => R): Readable<R>;
   }
 
   export interface Writable<T> extends Readable<T> {
@@ -416,41 +392,22 @@ declare module "@borf/browser" {
      *
      * @see https://github.com/tc39/proposal-observable
      */
-    observe<T>(
+    subscribe<T>(
       observable: Observable<T>,
       next?: (value: T) => void,
       error?: (err: Error) => void,
       complete?: () => void
     ): void;
 
-    observe<T1, T2>(
-      observableOne: Observable<T1>,
-      observableTwo: Observable<T2>,
-      callback: (valueOne: T1, valueTwo: T2) => void
-    ): void;
-
-    observe<T1, T2, T3>(
-      observableOne: Observable<T1>,
-      observableTwo: Observable<T2>,
-      observableThree: Observable<T3>,
-      callback: (valueOne: T1, valueTwo: T2, valueThree: T3) => void
-    ): void;
-
-    observe<T1, T2, T3, T4>(
-      observableOne: Observable<T1>,
-      observableTwo: Observable<T2>,
-      observableThree: Observable<T3>,
-      observableFour: Observable<T4>,
-      callback: (valueOne: T1, valueTwo: T2, valueThree: T3, valueFour: T4) => void
-    ): void;
-
-    observe<T1, T2, T3, T4, T5>(
-      observableOne: Observable<T1>,
-      observableTwo: Observable<T2>,
-      observableThree: Observable<T3>,
-      observableFour: Observable<T4>,
-      observableFive: Observable<T5>,
-      callback: (valueOne: T1, valueTwo: T2, valueThree: T3, valueFour: T4, valueFive: T5) => void
+    /**
+     * Subscribes to multiple observables, passing the values of each to a callback when changes occur.
+     *
+     * @param observable
+     * @param callback
+     */
+    subscribe<O extends [...Observable<any>], V = { [K in keyof O]: O[K] extends Observable<infer U> ? U : never }>(
+      observables: [...O],
+      callback: (...values: V) => void
     ): void;
   }
 
@@ -486,7 +443,7 @@ declare module "@borf/browser" {
     toString(): string;
   }
 
-  export type FronteElement = Markup | ToStringable | Observable<ToStringable>;
+  export type Renderable = Markup | ToStringable | Observable<ToStringable>;
 
   /**
    * Creates an instance of an HTML element or view.
@@ -495,84 +452,16 @@ declare module "@borf/browser" {
     <Tag extends keyof JSX.IntrinsicElements>(
       tag: Tag,
       attributes: JSX.IntrinsicElements[Tag],
-      ...children: FronteElement[]
-    ): Blueprint;
+      ...children: Renderable[]
+    ): Markup;
 
-    (tag: string, attributes: Record<string, any>, ...children: FronteElement[]): Blueprint;
+    (tag: string, attributes: Record<string, any>, ...children: Renderable[]): Markup;
 
-    (tag: string, ...children: FronteElement[]): Blueprint;
+    (tag: string, ...children: Renderable[]): Markup;
 
-    (view: View<any, any>, ...children: FronteElement[]): Blueprint;
+    (view: View<any>, ...children: Renderable[]): Markup;
 
-    <Attrs>(view: View<Attrs, any>, inputs: Attrs, ...children: FronteElement[]): Blueprint;
-
-    /**
-     * Displays `element` when `value` is truthy.
-     */
-    when(value: Observable<any>, element: FronteElement): Blueprint;
-
-    /**
-     * Displays `element` when `value` is truthy and `otherwise`... otherwise.
-     */
-    when(value: Observable<any>, element: FronteElement, otherwise: FronteElement): Blueprint;
-
-    /**
-     * Displays `element` when `value` is falsy.
-     */
-    unless(value: Observable<any>, element: FronteElement): Blueprint;
-
-    observe<Value>(observable: Observable<Value>, callback: (value: Value) => FronteElement | null): Blueprint;
-
-    observe<ValueOne, ValueTwo>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      callback: (valueOne: ValueOne, valueTwo: ValueTwo) => FronteElement | null
-    ): Blueprint;
-
-    observe<ValueOne, ValueTwo, ValueThree>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      callback: (valueOne: ValueOne, valueTwo: ValueTwo, valueThree: ValueThree) => FronteElement | null
-    ): Blueprint;
-
-    observe<ValueOne, ValueTwo, ValueThree, ValueFour>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      observableFour: Observable<ValueFour>,
-      callback: (
-        valueOne: ValueOne,
-        valueTwo: ValueTwo,
-        valueThree: ValueThree,
-        valueFour: ValueFour
-      ) => FronteElement | null
-    ): Blueprint;
-
-    observe<ValueOne, ValueTwo, ValueThree, ValueFour, ValueFive>(
-      observableOne: Observable<ValueOne>,
-      observableTwo: Observable<ValueTwo>,
-      observableThree: Observable<ValueThree>,
-      observableFour: Observable<ValueFour>,
-      observableFive: Observable<ValueFive>,
-      callback: (
-        valueOne: ValueOne,
-        valueTwo: ValueTwo,
-        valueThree: ValueThree,
-        valueFour: ValueFour,
-        valueFive: ValueFive
-      ) => FronteElement | null
-    ): Blueprint;
-
-    /**
-     * Repeats an element for each item in `value`. Value must be iterable.
-     * The `render` function takes bindings to the item and index and returns an element to render.
-     */
-    repeat<Value>(
-      value: Value[] | Observable<Value[]>,
-      render: ($value: Readable<Value>, $index: Readable<number>) => FronteElement,
-      key?: (value: Value, index: number) => any
-    ): Blueprint;
+    <I>(view: View<I>, inputs: I, ...children: Renderable[]): Markup;
   }
 
   type InputsConfig<T = any> = {
@@ -641,10 +530,62 @@ declare module "@borf/browser" {
     setup: ViewSetupFn<I>;
   };
 
+  type RepeatSetupFn<T> = (ctx: ViewContext<{ item: T; index: number }>) => Markup;
+
   export class View<I = any> extends Connectable {
     static define<T extends ViewConfig<any, any>, I = { [K in keyof T["inputs"]]: T["inputs"][K] }>(
       config: ViewConfig<I>
     ): View<I>;
+
+    static isView<I = any>(value: unknown): value is View<I>;
+
+    /**
+     * Displays `element` when `value` is truthy.
+     */
+    static when(value: Observable<any>, element: Renderable): Markup;
+
+    /**
+     * Displays `element` when `value` is truthy and `otherwise`... otherwise.
+     */
+    static when(value: Observable<any>, element: Renderable, otherwise: Renderable): Markup;
+
+    /**
+     * Displays `element` when `value` is falsy.
+     */
+    static unless(value: Observable<any>, element: Renderable): Markup;
+
+    /**
+     * Repeats an element for each item in `value`. Value must be iterable.
+     * The `render` function takes bindings to the item and index and returns an element to render.
+     */
+    static repeat<T>(
+      value: T[] | Observable<T[]>,
+      setup: RepeatSetupFn<T>,
+      key?: (value: T, index: number) => any
+    ): Markup;
+
+    /**
+     * Subscribes to an observable, passing each new value to a callback that returns content to render.
+     *
+     * NOTE: This tears down and rebuilds DOM nodes each and every time the value changes.
+     *
+     * @param observable
+     * @param callback
+     */
+    static subscribe<T>(observable: Observable<T>, callback: (value: T) => Renderable | null): Markup;
+
+    /**
+     * Subscribes to multiple observables, passing the values of each to a callback that returns content to render.
+     *
+     * NOTE: This tears down and rebuilds DOM nodes each and every time an observable's value changes.
+     *
+     * @param observable
+     * @param callback
+     */
+    static subscribe<
+      O extends [...Observable<any>],
+      V = { [K in keyof O]: O[K] extends Observable<infer U> ? U : never }
+    >(observables: [...O], callback: (...values: V) => Renderable | null): Markup;
 
     constructor(config: ViewConfig<I>);
 
@@ -782,92 +723,113 @@ declare module "@borf/browser" {
   ||          Built-in Stores         ||
   \*==================================*/
 
+  type DialogStore = {
+    open<Attrs extends DialogViewAttrs>(view: View<Attrs>, options?: DialogOptions<Attrs>): Dialog<Attrs>;
+    open<Attrs extends DialogViewAttrs>(fn: ViewSetupFn<Attrs>, options?: DialogOptions<Attrs>): Dialog<Attrs>;
+  };
+
+  type RouterStore = {
+    $pattern: Readable<string>;
+    $path: Readable<string>;
+    $params: Readable<{ [name: string]: unknown }>;
+    $$query: Writable<{ [name: string]: unknown }>;
+
+    back: (steps?: number) => void;
+    forward: (steps?: number) => void;
+    navigate: (path: string, options?: { replace?: boolean }) => void;
+  };
+
+  type HTTPStore = {
+    /**
+     * Add middleware to the HTTP service for all requests.
+     * Middleware can intercept outgoing requests and modify incoming responses.
+     *
+     * @param middleware - Async middleware function.
+     */
+    use(middleware: HTTPMiddleware): HTTPStore;
+
+    /**
+     * Make an HTTP request to `url` with any `method`.
+     *
+     * @param method - HTTP method.
+     * @param url - Request endpoint.
+     */
+    request<ResBody, ReqBody = any>(
+      method: string,
+      url: string,
+      options?: HTTPRequestOptions<ReqBody>
+    ): HTTPRequest<ResBody>;
+
+    /**
+     * Make an HTTP `GET` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
+    get<ResBody = any>(url: string, options?: HTTPRequestOptions<void>): HTTPRequest<ResBody>;
+
+    /**
+     * Make an HTTP `PUT` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
+    put<ResBody = any, ReqBody = any>(url: string, options?: HTTPRequestOptions<ReqBody>): HTTPRequest<ResBody>;
+
+    /**
+     * Make an HTTP `PATCH` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
+    patch<ResBody = any, ReqBody = any>(url: string, options?: HTTPRequestOptions<ReqBody>): HTTPRequest<ResBody>;
+
+    /**
+     * Make an HTTP `POST` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
+    post<ResBody = any, ReqBody = any>(url: string, options?: HTTPRequestOptions<ReqBody>): HTTPRequest<ResBody>;
+
+    /**
+     * Make an HTTP `DELETE` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
+    delete<ResBody = any>(url: string, options?: HTTPRequestOptions<void>): HTTPRequest<ResBody>;
+
+    /**
+     * Make an HTTP `HEAD` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
+    head(url: string, options?: HTTPRequestOptions): HTTPRequest<void>;
+
+    /**
+     * Make an HTTP `OPTIONS` request to `url`.
+     *
+     * @param url - Request endpoint.
+     */
+    options(url: string, options?: HTTPRequestOptions): HTTPRequest<void>;
+  };
+
+  type PageStore = {
+    $$title: Writable<string>;
+    $visibility: Readable<"visible" | "hidden">;
+    $orientation: Readable<"landscape" | "portrait">;
+    $colorScheme: Readable<"light" | "dark">;
+  };
+
+  type LanguageStore = {
+    $currentLanguage: Readable<string>;
+    supportedLanguages: string[];
+    setLanguage(tag: string): Promise<void>;
+    translate(key: string, values?: Record<string, any>): Readable<string>;
+  };
+
   export type BuiltInStores = {
-    dialog: {
-      open<Attrs extends DialogViewAttrs>(view: View<Attrs>, options?: DialogOptions<Attrs>): Dialog<Attrs>;
-      open<Attrs extends DialogViewAttrs>(fn: ViewSetupFn<Attrs>, options?: DialogOptions<Attrs>): Dialog<Attrs>;
-    };
-    router: {
-      $route: Readable<string>;
-      $path: Readable<string>;
-      $params: Readable<{ [name: string]: unknown }>;
-      $$query: Writable<{ [name: string]: unknown }>;
-
-      back: (steps?: number) => void;
-      forward: (steps?: number) => void;
-      navigate: (path: string, options?: { replace?: boolean }) => void;
-    };
-    http: {
-      /**
-       * Add middleware to the HTTP service for all requests.
-       * Middleware can intercept outgoing requests and modify incoming responses.
-       *
-       * @param middleware - Async middleware function.
-       */
-      use(middleware: HTTPMiddleware): GlobalHTTP;
-
-      /**
-       * Make an HTTP request to `url` with any `method`.
-       *
-       * @param method - HTTP method.
-       * @param url - Request endpoint.
-       */
-      request<ResBody>(method: string, url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
-
-      /**
-       * Make an HTTP `GET` request to `url`.
-       *
-       * @param url - Request endpoint.
-       */
-      get<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
-
-      /**
-       * Make an HTTP `PUT` request to `url`.
-       *
-       * @param url - Request endpoint.
-       */
-      put<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
-
-      /**
-       * Make an HTTP `PATCH` request to `url`.
-       *
-       * @param url - Request endpoint.
-       */
-      patch<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
-
-      /**
-       * Make an HTTP `POST` request to `url`.
-       *
-       * @param url - Request endpoint.
-       */
-      post<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
-
-      /**
-       * Make an HTTP `DELETE` request to `url`.
-       *
-       * @param url - Request endpoint.
-       */
-      delete<ResBody = any>(url: string, options?: HTTPRequestOptions): HTTPRequest<ResBody>;
-
-      /**
-       * Make an HTTP `HEAD` request to `url`.
-       *
-       * @param url - Request endpoint.
-       */
-      head(url: string, options?: HTTPRequestOptions): HTTPRequest<void>;
-    };
-    page: {
-      $$title: Writable<string>;
-      $visibility: Readable<"visible" | "hidden">;
-      $orientation: Readable<"landscape" | "portrait">;
-      $colorScheme: Readable<"light" | "dark">;
-    };
-    language: {
-      $currentLanguage: Readable<string>;
-      supportedLanguages: string[];
-      setLanguage(tag: string): Promise<void>;
-      translate(key: string, values?: Record<string, any>): Readable<string>;
-    };
+    dialog: DialogStore;
+    router: RouterStore;
+    http: HTTPStore;
+    page: PageStore;
+    language: LanguageStore;
   };
 
   /* ----- Dialog ----- */

@@ -1,6 +1,6 @@
 import type { BuildOptions } from "esbuild";
 
-import { merge } from "lodash";
+import { merge } from "lodash-es";
 
 export function makeConfig(options?: BuildOptions): BuildOptions {
   const defaults = {

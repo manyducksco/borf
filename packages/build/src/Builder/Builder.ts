@@ -32,11 +32,22 @@ export interface BuilderConfig {
     entry: string;
 
     /**
-     * Options passed directly to esbuild when creating the client bundle.
+     * Path to the browser app's index.html file. This is the file the browser requests when a user visits your app.
+     * Links to bundled files are added as part of the build step.
+     *
+     * Defaults to `index.html` in your static path (`/static` by default).
+     */
+    index?: string; // TODO: Or should index.html be the app entry point, vite style?
+
+    /**
+     * Options passed directly to esbuild.
      */
     esbuild?: BuildOptions;
 
-    postcss?: any;
+    /**
+     * Options for PostCSS, which runs as part of the build.
+     */
+    postcss?: any; // TODO: Obtain proper types
   };
 
   /**
@@ -95,25 +106,34 @@ export class Builder {
     this.#projectRoot = projectRoot;
     this.#config = config;
 
+    console.log({ projectRoot, config });
+
     if (config.browser) {
-      this.#browserEntryPath = path.resolve(config.browser.entry, projectRoot);
+      this.#browserEntryPath = path.join(projectRoot, config.browser.entry);
     }
 
     if (config.server) {
-      this.#serverEntryPath = path.resolve(config.server.entry, projectRoot);
+      this.#serverEntryPath = path.join(projectRoot, config.server.entry);
     }
 
     if (config.static) {
-      this.#staticPath = path.resolve(config.static.path, projectRoot);
+      this.#staticPath = path.join(projectRoot, config.static.path);
     } else {
-      this.#staticPath = path.resolve("static", projectRoot);
+      this.#staticPath = path.join(projectRoot, "static");
     }
 
     if (config.output) {
-      this.#outputPath = path.resolve(config.output.path, projectRoot);
+      this.#outputPath = path.join(projectRoot, config.output.path);
     } else {
-      this.#outputPath = path.resolve("output", projectRoot);
+      this.#outputPath = path.join(projectRoot, "output");
     }
+
+    console.log(
+      this.#browserEntryPath,
+      this.#serverEntryPath,
+      this.#staticPath,
+      this.#outputPath
+    );
   }
 
   /**
@@ -210,7 +230,7 @@ export class Builder {
    * Ensures that output directories exist and removes any existing files.
    */
   async clean() {
-    await fs.emptyDir(this.#projectRoot);
+    await fs.emptyDir(this.#outputPath);
     log.build("cleaned build folder");
   }
 }

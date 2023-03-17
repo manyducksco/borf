@@ -39,7 +39,7 @@ export class App {
 
   #options = {
     debug: {
-      filter: "*,-fronte:*",
+      filter: "*,-borf:*",
       log: true,
       warn: true,
       error: true,
@@ -88,7 +88,6 @@ export class App {
           elementContext: this.#elementContext,
         });
 
-        // TODO: This is somehow leading to a Markup being passed as an HTML attribute.
         instance.connect(this.#appContext.rootElement);
       },
       crashPage: options.crashPage,
@@ -110,7 +109,7 @@ export class App {
   addRootView(view) {
     if (this.#rootView != DefaultRoot) {
       this.#appContext.debugHub
-        .channel("woofe:App")
+        .channel("borf:App")
         .warn(`Root view is already defined. The latest call will override previous root view.`);
     }
 
