@@ -25,9 +25,16 @@ type TypeNames =
 type Factory<T> = { new (): T };
 
 /**
+ * Represents the shape of an object.
+ */
+type Shape = {
+  [name: string]: (value: unknown) => boolean;
+};
+
+/**
  * Unified type checking utilities for JavaScript.
  */
-export class Type {
+export class Type<S extends Shape> {
   /**
    * Extends `typeof` operator with more specific and useful type distinctions.
    */
@@ -810,6 +817,32 @@ export class Type {
         errorMessage ?? "Expected null or undefined. Got type: %t, value: %v"
       )
     );
+  }
+
+  #shape: S;
+
+  constructor(shape: S) {
+    this.#shape = shape;
+  }
+
+  /**
+   * Determines if an object matches the shape of this custom type.
+   */
+  isTypeOf(value: unknown): value is S {
+    return false; // TODO: Implement.
+  }
+
+  assertTypeOf(value: unknown): value is S {
+    if (!this.isTypeOf(value)) {
+      throw new TypeError(
+        formatError(
+          value,
+          "Expected value to match shape. Got type: %t, value: %v"
+        )
+      );
+    }
+
+    return true;
   }
 }
 

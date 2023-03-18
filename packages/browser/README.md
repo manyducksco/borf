@@ -2,22 +2,25 @@
 
 ![bundle size](https://img.shields.io/bundlephobia/minzip/@borf/browser?style=flat&label=gzipped%20size)
 
-This is the front-end (browser) component of Frameworke. It handles [routing](#routing), components (two types; [views](#views) and [stores](#stores)) and [data binding](#state), all out of the box, aiming to cover the common needs of modern web apps.
+This is the front-end (browser) component of [Borf](https://www.borfjs.com). It handles [routing](#routing), components (two types; [views](#views) and [stores](#stores)) and [data binding](#state), all out of the box, aiming to cover the common needs of modern web apps while striking a balance between features and size.
 
 ## Installation
 
 ### CDN
 
-Browser includes everything you need to make a fully functioning web app by importing the `@borf/browser` module from a CDN. We recommend Skypack or Unpkg, as shown below. This is the fastest way to get up and running in a browser without configuring a build step.
+This package includes everything you need to make a fully functioning web app by importing the `@borf/browser` module from a CDN. This is the fastest way to get code running in a browser with no compilation or bundling.
 
 ```js
+// Using Skypack:
 import { ... } from "https://cdn.skypack.dev/@borf/browser";
+
+// Using unpkg:
 import { ... } from "https://unpkg.com/@borf/browser";
 ```
 
 ### NPM
 
-You can also get `@borf/browser` from npm. Best used in combination with `@borf/build` which adds support for JSX, a dev server with auto-reload, optimized production builds and more. Run this in your project directory:
+Most projects will install `@borf/browser` from npm. Best used in combination with `@borf/build` which adds support for JSX, a dev server with auto-reload, optimized production builds and more. Run this in your project directory:
 
 ```
 $ npm i -D @borf/build @borf/browser
@@ -58,17 +61,28 @@ Inside `index.html`:
 
 Inside `app.js`:
 
-```tsx
+```js
 import { App } from "https://cdn.skypack.dev/@borf/browser";
 
-const Hello = new App({
-  view: function setup(ctx, m) {
-    return m("h1", "Hello world!");
-  },
+const app = new App();
+
+// A root view is always displayed while the app is connected.
+app.addRootView((ctx, m) => {
+  return m("h1", "Hello world!");
 });
 
 // Display this app inside the element with `id="app"`
-Hello.connect("#app");
+app.connect("#app");
+```
+
+Most methods on App are chainable, so you could condense the above example thus:
+
+```js
+new App()
+  .addRootView((ctx, m) => {
+    return m("h1", "Hello world!");
+  })
+  .connect("#app");
 ```
 
 Now when you visit the page the document should look something like this:
@@ -93,22 +107,25 @@ Now when you visit the page the document should look something like this:
 
 ## Routing
 
-Most web apps today are what's known as an SPA, or single-page app, consisting of one HTML page with links to a handful of JS files containing the bundled app code. The code on this one page uses browser APIs to manipulate the document, simulating navigation between multiple "pages", but retaining all JavaScript state because no actual reloads take place.
+Most web apps today are what's known as an SPA, or single-page app, consisting of one HTML page with links to bundled app code. This code uses browser APIs to simulate navigation between multiple "pages" by swapping out page content based on the URL, but retains all JavaScript state that would normally be lost between page loads because no actual page loads take place. Despite the illusion of moving around the app, you never actually leave that one HTML page. This technique is generally known as client-side routing.
 
-Routes determine which view is shown based on the current URL.
+`@borf/browser` makes heavy use of client-side routing. You can define as many routes as you have views, and the URL will determine which one the app shows at any given time.
 
 By building an app around routes, lots of things we expect from a web app will just work; back and forward buttons, sharable URLs, bookmarks, etc.
 
 Routing in Borf is aesthetically inspired by [choo.js](https://www.choo.io/docs/routing)
-with technical inspiration from [@reach/router](https://reach.tech/router/), as routes are matched by highest specificity regardless of the order they were registered in. This avoids a lot of confusing situations that come up with route matching in order-based routers like `express`.
+with technical inspiration from [@reach/router](https://reach.tech/router/), as routes are matched by highest specificity regardless of the order they were registered. This avoids some confusing situations that come up with order-based routers like that of `express`. On the other hand, order-based routers can support regular expressions as patterns which Borf's router cannot.
 
-### Route Matching
+### Route Patterns
 
-Route patterns are a set of fragments separated by `/`. These fragments are of three types.
+Routes are identified by strings called patterns. A pattern defines the shape the path must match, with special placeholders for variables that appear within the route. Values matched by those placeholders are exposed for use in your code. Below are some examples of patterns and how they work.
 
-- Static: `/this/is/static` and will match only when the route is exactly `/this/is/static`.
-- Dynamic: `/users/{id}/edit` will match anything that fits the static parts of the route and stores the parts enclosed in `{}` as named params. Named params will match anything, like `123` or `BobJones`. You can access these values inside the view.
-- Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that as a `wildcard` named param. `*` is valid only at the end of a route.
+- Static: `/this/is/static` has no params and will match only when the route is exactly `/this/is/static`.
+- Numeric params: `/users/{#id}/edit` has the named param `{#id}` which matches numbers only, such as `123` or `52`. The resulting value will be parsed as a number.
+- Generic params: `/users/{name}` has the named param `{name}` which matches anything in that position in the path. The resulting value will be a string.
+- Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that in params as `wildcard`. `*` is valid only at the end of a route.
+
+Now, here are some route examples in the context of an app:
 
 ```js
 import { PersonDetails, ThingIndex, ThingDetails, ThingEdit, ThingDelete } from "./components.js";
@@ -116,23 +133,24 @@ import { PersonDetails, ThingIndex, ThingDetails, ThingEdit, ThingDelete } from 
 const app = new App();
 
 app
-  // {name} is a named param that accepts any value.
   .addRoute("/people/{name}", PersonDetails)
 
-  // Routes can be nested. A `null` component creates a route that acts as a namespace for a set of subroutes.
+  // Routes can be nested. Also, a `null` component with subroutes acts as a namespace for those subroutes.
+  // Passing a view instead of `null` results in subroutes being rendered inside that view wherever `ctx.outlet()` is called.
   .addRoute("/things", null, (sub) => {
-    sub.addRoute("/", ThingIndex);
-
-    // {#id} is a named param that matches a numeric value only.
-    sub.addRoute("/{#id}", ThingDetails);
-    sub.addRoute("/{#id}/edit", ThingEdit);
-    sub.addRoute("/{#id}/delete", ThingDelete);
+    sub.addRoute("/", ThingIndex); // matches `/things`
+    sub.addRoute("/{#id}", ThingDetails); // matches `/things/{#id}`
+    sub.addRoute("/{#id}/edit", ThingEdit); // matches `/things/{#id}/edit`
+    sub.addRoute("/{#id}/delete", ThingDelete); // matches `/things/{#id}/delete`
   });
+```
 
-// Anatomy of the `router` store:
+As you can infer from the code above, once a route matches a pattern the corresponding view is displayed. Params can be accessed inside those views through the built-in `router` store:
+
+```js
 const ThingDetails = View.define({
   setup(ctx, m) {
-    // `router` store provides controls for and info about the router.
+    // `router` store allows you to work with the router from inside the app.
     const router = ctx.useStore("router");
 
     // Info about the current route is exported as a set of Readables. Query params are also Writable through $$query:
@@ -142,12 +160,12 @@ const ThingDetails = View.define({
     const { back, forward, navigate } = router;
 
     back(); // Step back in the history to the previous route, if any.
-    back(-2); // Hit the back button twice.
+    back(2); // Hit the back button twice.
 
     forward(); // Step forward in the history to the next route, if any.
     forward(4); // Hit the forward button 4 times.
 
-    navigate("/another/page"); // Navigate to another route within the same app.
+    navigate("/things/152"); // Navigate to another path within the same app.
     navigate("https://www.example.com/another/site"); // Navigate to another domain entirely.
 
     // Three ways to confirm with the user that they wish to navigate before actually doing it.
@@ -155,18 +173,18 @@ const ThingDetails = View.define({
     navigate("/another/page", { prompt: "Are you sure you want to leave and go to /another/page?" });
     navigate("/another/page", { prompt: PromptView });
 
-    // Get the live value of `{id}` from the current path.
+    // Get the live value of `{#id}` from the current path.
     const $id = $params.as((p) => p.id);
 
     // Render it into a <p> tag. The ID portion will update if the URL changes.
-    return m("p", "User's ID is ", $id);
+    return m("p", "Thing's ID is ", $id);
   },
 });
 ```
 
 ## State
 
-In a Borf app, all data that changes is stored in a State. All interested parties observe that State and update themselves automatically. Borf has no virtual DOM or re-rendering. Everything is just a side effect of a State change.
+In a Borf app, all data that changes is stored in a State. All interested parties subscribe to that State and update themselves automatically. Borf has no virtual DOM or re-rendering. Components render once, and everything beyond that is a side effect of a State change.
 
 ```js
 import { View, State } from "@borf/browser";
@@ -188,10 +206,12 @@ const Timer = View.define({
     const $seconds = $$seconds.readable();
 
     function increment() {
+      // Update uses a function to derive a new value from the current one.
       $$seconds.update((value) => value + 1);
     }
 
     function reset() {
+      // Set replaces the current value with a new one.
       $$seconds.set(0);
     }
 
@@ -219,8 +239,7 @@ const Timer = View.define({
 
 ## Views
 
-Views are reusable modules with their own markup and logic. You can define a view once and reuse it as many
-times as you need. Views can take inputs that set their default state and establish data bindings.
+Views are a type of component that displays DOM nodes. If you've used components in React, Angular, Vue, or others, this is pretty much what you're used to. You can define a view once and reuse it anywhere you want as many times as you want.
 
 ```jsx
 const Example = View.define({
@@ -234,10 +253,10 @@ const Example = View.define({
   },
 });
 
-// Views can be mounted directly on a route.
+// Views can be mounted directly on a route
 app.addRoute("/example", Example);
 
-// They can also be used inside another view.
+// They can also be used inside another view
 app.addRoute("/other", (ctx) => {
   return (
     <div>
@@ -282,12 +301,12 @@ const Example = View.define({
     const $$title = new State("The Default Title");
 
     // Runs a callback function each time a state changes (or any observable emits a value).
-    ctx.observe($$title, (title) => {
+    ctx.subscribe($$title, (title) => {
       console.log("title attribute changed to " + title);
     });
 
     // Merge two or more bindings into a single binding.
-    const $formattedTitle = State.merge($$title, some.$uppercase, (title, uppercase) => {
+    const $formattedTitle = State.merge([$$title, some.$uppercase], (title, uppercase) => {
       if (uppercase) {
         return title.toUpperCase();
       }

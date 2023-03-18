@@ -1,6 +1,6 @@
-import { makeApp, makeRouter, html } from "@borf/server";
+import { App, Store, Router, html } from "@borf/server";
 
-const app = makeApp({
+const app = new App({
   debug: {
     filter: "*",
   },
@@ -13,32 +13,36 @@ app.static();
 app.fallback();
 // app.fallback("/some/weird/place/index.html");
 
-const exampleGlobal = function () {
-  let timesCalled = 0;
+const ExampleStore = Store.define({
+  setup: () => {
+    let timesCalled = 0;
 
-  return {
-    call: () => {
-      timesCalled++;
-      return timesCalled;
-    },
-  };
-};
+    return {
+      call: () => {
+        timesCalled++;
+        return timesCalled;
+      },
+    };
+  },
+});
 
-const asyncGlobal = async function () {
-  let waitFor = 50 + Math.random() * 100;
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        call: () => {
-          return waitFor;
-        },
-      });
-    }, waitFor);
-  });
-};
+const AsyncStore = Store.define({
+  setup: async () => {
+    let waitFor = 50 + Math.random() * 100;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          call: () => {
+            return waitFor;
+          },
+        });
+      }, waitFor);
+    });
+  },
+});
 
-app.global("example", exampleGlobal);
-app.global("async", asyncGlobal);
+app.addStore(ExampleStore);
+app.addStore(AsyncStore);
 
 app.use(async (ctx) => {
   ctx.response.headers.set("X-MIDDLEWARE-OUTLINE", "mrrp");
@@ -48,7 +52,7 @@ app.use(async (ctx) => {
   ctx.response.headers.set("X-TIMER", end - start + "ms");
 });
 
-app.post(
+app.onPost(
   "/full-test",
   (ctx) => {
     ctx.response.headers.set("X-MIDDLEWARE-INLINE", "RUFF");
@@ -88,25 +92,25 @@ app.post(
   }
 );
 
-const router = makeRouter();
-router.get("/test", () => {
+const router = new Router();
+router.onGet("/test", () => {
   return "FROM ROUTER";
 });
 
-app.mount(router);
-app.mount("/router", router);
+app.addRouter(router);
+app.addRouter("/router", router);
 
-app.get("/hello", (ctx) => {
+app.onGet("/hello", (ctx) => {
   return "Hello world.";
 });
 
-app.get("/hello-json", () => {
+app.onGet("/hello-json", () => {
   return {
     message: "Hello from the server!",
   };
 });
 
-app.get("/hello-html", function () {
+app.onGet("/hello-html", function () {
   return html`
     <!DOCTYPE html>
     <head>

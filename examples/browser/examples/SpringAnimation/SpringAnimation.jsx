@@ -1,11 +1,6 @@
 import { View, Spring, State, Ref } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
-import { App } from "@borf/browser";
-import { App, Router } from "@borf/server";
-
-import { List, Hash } from "@borf/bedrock";
-
 import styles from "./SpringAnimation.module.css";
 
 export const SpringAnimation = View.define({
@@ -27,8 +22,10 @@ export const SpringAnimation = View.define({
 
     const codeRef = new Ref();
 
-    ctx.observe($$stiffness, $$mass, $$damping, $$velocity, (s, m, d, v) => {
-      codeRef.element.textContent = `
+    ctx.subscribe(
+      [$$stiffness, $$mass, $$damping, $$velocity],
+      (s, m, d, v) => {
+        codeRef.element.textContent = `
 const spring = new Spring(0, {
   stiffness: ${s},
   mass: ${m},
@@ -36,7 +33,8 @@ const spring = new Spring(0, {
   velocity: ${v}
 })
       `;
-    });
+      }
+    );
 
     return (
       <ExampleFrame title="Spring Animation">

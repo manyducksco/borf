@@ -24,15 +24,15 @@ export const AppLayout = View.define({
     logLifecycle(ctx);
 
     const router = ctx.useStore("router");
-    const doc = ctx.useStore("document");
+    const page = ctx.useStore("page");
     const mouse = ctx.useStore(MouseStore);
 
     // Display current mouse coordinates as tab title
     ctx.observe(mouse.$position, (pos) => {
-      doc.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
+      page.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
     });
 
-    ctx.observe(doc.$visibility, (status) => {
+    ctx.observe(page.$visibility, (status) => {
       ctx.log(`visibility: ${status}`);
     });
 

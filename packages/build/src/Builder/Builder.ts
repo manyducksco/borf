@@ -1,6 +1,8 @@
 import type { BuildOptions, BuildIncremental, BuildResult } from "esbuild";
 
 import path from "node:path";
+import EventEmitter from "node:events";
+import http from "node:http";
 import fs from "fs-extra";
 import pako from "pako";
 import superbytes from "superbytes";
@@ -12,11 +14,19 @@ import imageminJpegtran from "imagemin-jpegtran";
 import imageminSvgo from "imagemin-svgo";
 import esbuild from "esbuild";
 import stylePlugin from "esbuild-style-plugin";
+import ip from "ip";
+import httpProxy from "http-proxy";
+import send from "send";
+import chokidar from "chokidar";
+import nodemon from "nodemon";
+import getPort from "get-port";
 
 import log from "../utils/log.js";
 import { Timer } from "../utils/Timer.js";
 import { makeConfig } from "../utils/esbuildConfig.js";
 import { generateScopedClassName } from "../utils/generateScopedClassName.js";
+import { makeTimeoutTrigger } from "../utils/makeTimeoutTrigger.js";
+import { makeExposedPromise } from "../utils/makeExposedPromise.js";
 
 /**
  * Config object with options that determine how an app is built.
@@ -106,8 +116,6 @@ export class Builder {
     this.#projectRoot = projectRoot;
     this.#config = config;
 
-    console.log({ projectRoot, config });
-
     if (config.browser) {
       this.#browserEntryPath = path.join(projectRoot, config.browser.entry);
     }
@@ -127,13 +135,6 @@ export class Builder {
     } else {
       this.#outputPath = path.join(projectRoot, "output");
     }
-
-    console.log(
-      this.#browserEntryPath,
-      this.#serverEntryPath,
-      this.#staticPath,
-      this.#outputPath
-    );
   }
 
   /**
@@ -224,7 +225,287 @@ export class Builder {
   /**
    *
    */
-  watch() {}
+  async watch() {
+    await this.clean();
+
+    const isProduction = process.env.NODE_ENV === "production";
+    const optimizeConfig = Object.assign(
+      {
+        minify: "production",
+        compress: "production",
+      },
+      this.#config.optimize
+    );
+
+    const buildOptions = {
+      minify:
+        optimizeConfig.minify === "production"
+          ? isProduction
+          : optimizeConfig.minify,
+      compress:
+        optimizeConfig.compress === "production"
+          ? isProduction
+          : optimizeConfig.compress,
+    };
+
+    /**
+     * 1. Watch server, client and static folders.
+     * 2. Trigger esbuild on server when server files change.
+     * 3. Trigger esbuild on client when client files change.
+     * 4. Trigger build on static files when they change.
+     */
+
+    // Emits build events.
+    const events = new EventEmitter();
+
+    // Track which files exist for cleanup when builds are updated.
+    const ctx: Record<string, CopiedFile[]> = {
+      clientFiles: [],
+      serverFiles: [],
+      staticFiles: [],
+    };
+
+    /*============================*\
+    ||           Static           ||
+    \*============================*/
+
+    const updateStaticFiles = async () => {
+      const end = new Timer();
+
+      for (const file of ctx.staticFiles) {
+        try {
+          fs.unlinkSync(file.path);
+        } catch (err: any) {
+          log.static("<red>" + err.code + ":</red>", err.message);
+        }
+      }
+
+      ctx.staticFiles = await writeStaticFiles({
+        projectRoot: this.#projectRoot,
+        staticPath: this.#staticPath,
+        buildPath: this.#outputPath,
+        buildStaticPath: path.join(this.#outputPath, "static"),
+        clientEntryPath: this.#browserEntryPath!,
+        buildOptions,
+      });
+
+      if (ctx.staticFiles.length > 0) {
+        log.static("built in", "%c" + end.format());
+      }
+    };
+
+    const staticWatcher = chokidar.watch([`${this.#staticPath}/**/*`], {
+      persistent: true,
+      ignoreInitial: true,
+    });
+
+    staticWatcher.on("all", updateStaticFiles);
+    events.on("client built", updateStaticFiles);
+
+    if (this.#browserEntryPath == null) {
+      await updateStaticFiles();
+    }
+
+    /*============================*\
+    ||          Browser           ||
+    \*============================*/
+
+    if (this.#browserEntryPath) {
+      const clientPath = path.dirname(this.#browserEntryPath);
+
+      const clientWatcher = chokidar.watch(
+        [`${clientPath}/**/*`, `${this.#staticPath}/index.html`],
+        {
+          persistent: true,
+          ignoreInitial: true,
+        }
+      );
+
+      const updateClientFiles = async (clientBundle: BuildIncremental) => {
+        for (const file of ctx.clientFiles) {
+          fs.unlinkSync(file.path);
+        }
+
+        ctx.clientFiles = await writeClientFiles({
+          clientBundle,
+          projectRoot: this.#projectRoot,
+          staticPath: this.#staticPath,
+          buildStaticPath: path.join(this.#outputPath, "static"),
+          clientEntryPath: this.#browserEntryPath!,
+          buildOptions,
+          isDevelopment: !isProduction,
+        });
+      };
+
+      let clientBundle: BuildIncremental;
+
+      const buildClient = async () => {
+        const end = new Timer();
+
+        if (clientBundle) {
+          try {
+            const incremental = await clientBundle.rebuild();
+
+            await updateClientFiles(incremental);
+            events.emit("client built");
+
+            log.client("rebuilt in", "%c" + end.format());
+          } catch (err) {}
+        } else {
+          try {
+            clientBundle = await esbuild.build({
+              ...makeConfig({
+                entryPoints: [this.#browserEntryPath!],
+                entryNames: "[dir]/client.[hash]",
+                outdir: path.join(this.#outputPath, "static"),
+                minify: buildOptions.minify,
+                plugins: [
+                  stylePlugin({
+                    postcss: {
+                      plugins: this.#config.browser?.postcss?.plugins || [],
+                    },
+                    cssModulesOptions: {
+                      generateScopedName: generateScopedClassName,
+                    },
+                  }),
+                ],
+              }),
+              incremental: true,
+            });
+
+            await updateClientFiles(clientBundle);
+            events.emit("client built");
+
+            log.client("built in", "%c" + end.format());
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      };
+
+      const triggerBuild = makeTimeoutTrigger(buildClient, 100);
+
+      clientWatcher.on("all", triggerBuild);
+
+      await buildClient();
+    }
+
+    /*============================*\
+    ||           Server           ||
+    \*============================*/
+
+    let serverPort;
+
+    if (this.#serverEntryPath) {
+      const hold = makeExposedPromise<void>();
+
+      const serverPath = path.dirname(this.#serverEntryPath);
+      serverPort = await getPort();
+
+      nodemon({
+        script: this.#serverEntryPath,
+        watch: [path.join(serverPath, "**", "*")],
+        stdout: false,
+        env: {
+          PORT: serverPort,
+        },
+      })
+        .on("start", () => {
+          setTimeout(() => {
+            hold.resolve();
+          }, 100);
+        })
+        .on("stdout", (buffer) => {
+          log.server(buffer.toString());
+        })
+        .on("stderr", (buffer) => {
+          log.server("<red>ERROR:</red>", buffer.toString());
+        })
+        .on("quit", () => {
+          log.server("server has quit");
+        })
+        .on("restart", () => {
+          log.server("* restarted *");
+        });
+
+      // Wait until server starts to proceed.
+      await hold;
+    }
+
+    /*============================*\
+  ||        Proxy Server        ||
+  \*============================*/
+
+    const proxy =
+      serverPort != null
+        ? httpProxy.createProxyServer({
+            target: {
+              host: "localhost",
+              port: serverPort,
+            },
+          })
+        : null;
+
+    const devProxy = http.createServer((req, res) => {
+      if (req.method === "GET" && req.url === "/_bundle") {
+        res.writeHead(200, {
+          "Cache-Control": "no-cache",
+          "Content-Type": "text/event-stream",
+          Connection: "keep-alive",
+        });
+
+        res.write(`retry: ${10000}\n\n`);
+
+        const update = () => {
+          res.write("data: time to reload\n\n");
+        };
+
+        events.on("client built", update);
+
+        res.on("close", () => {
+          events.off("client built", update);
+        });
+      } else if (proxy) {
+        proxy.web(req, res);
+      } else if (this.#browserEntryPath) {
+        // Serve static files for client-only apps.
+        const stream = send(req, req.url!, {
+          root: path.join(this.#outputPath, "static"),
+          maxAge: 0,
+        });
+
+        stream.on("error", function onError(err) {
+          res.writeHead(err.status);
+          res.end();
+        });
+
+        stream.pipe(res);
+      }
+    });
+
+    devProxy.on("error", (err) => {
+      console.error(err);
+    });
+
+    if (proxy) {
+      devProxy.on("upgrade", (req, socket, head) => {
+        proxy.ws(req, socket, head);
+      });
+    }
+
+    const devServerPort = await getPort({
+      port: [4000, 4001, 4002, 4003, 4004, 4005],
+    });
+
+    devProxy.listen(devServerPort, () => {
+      log.proxy(
+        "app is running at",
+        `%chttp://localhost:${devServerPort}`,
+        "and",
+        `%chttp://${ip.address()}:${devServerPort}`
+      );
+    });
+  }
 
   /**
    * Ensures that output directories exist and removes any existing files.

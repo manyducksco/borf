@@ -3,7 +3,7 @@ import { App, View, Store, WebComponentHub } from "@borf/browser";
 const WebComponentStore = Store.define({
   inputs: {
     initialValue: {
-      // TODO: Inputs with default values should be inferred as optional when passing.
+      // TODO: Inputs with default values should be inferred as optional.
       default: "default",
 
       // TODO: Inputs with 'optional: true' should be inferred as optional when passing.
@@ -47,7 +47,7 @@ hub.addStore(WebComponentStore, {
 
 hub.addElement("web-component-view", WebComponentView);
 
-hub.register();
+hub.connect();
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";

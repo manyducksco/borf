@@ -12,40 +12,43 @@ program
     description: "Watch for changes and rebuild automatically.",
     boolean: true,
   })
-  .option("--minify", {
-    description:
-      "Reduce bundle size at the cost of readability; recommended for production builds. Only affects the client app.",
-    boolean: true,
+  .option("-c, --config <path>", {
+    description: "Build with a specific config file.",
   })
-  .option("--compress", {
-    description: "Pre-compress assets with GZIP compression during build.",
-    boolean: true,
-  })
-  .option("--relative-bundle-paths", {
-    description:
-      "Use paths relative to index.html for importing client bundle files instead of the default absolute paths.",
-    key: "relativeBundlePaths",
-    boolean: true,
+  .option("--production", {
+    description: "Build for production with optimizations enabled.",
   })
   .action(async ({ options }) => {
-    const buildOptions = {
-      minify: options.minify || false,
-      compress: options.compress || false,
-      relativeBundlePaths: options.relativeBundlePaths || false,
-    };
-
-    const builder = await getProjectBuilder(process.cwd());
+    const builder = await getProjectBuilder(process.cwd(), options.config);
 
     if (options.watch) {
-      const watcher = builder.watch(process.cwd(), buildOptions);
-      // watcher.cancel();
+      await builder.watch();
     } else {
-      await builder.build(process.cwd(), buildOptions);
+      await builder.build();
     }
   })
   .run(process.argv);
 
-async function getProjectBuilder(projectRoot) {
+async function getProjectBuilder(projectRoot, configPath) {
+  if (configPath) {
+    const imported = await import(configPath);
+    const config = imported.default;
+
+    if (Type.isObject(config)) {
+      return new Builder(projectRoot, config);
+    }
+
+    if (Type.isInstanceOf(Builder, config)) {
+      return new Builder(projectRoot, config.config);
+    }
+
+    throw new TypeError(
+      `Build config must return a config object. Got type: ${Type.of(
+        config
+      )}, value: ${config}`
+    );
+  }
+
   const contents = await fs.readdir(projectRoot);
   const regexp = /^borf\.build\.js/i;
 

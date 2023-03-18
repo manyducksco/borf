@@ -1,4 +1,4 @@
-# ☁️ Frameworke: Backe
+# ☁️ Borf: Server
 
 > CAUTION: This package is extremely early in development. Breaking changes are expected and not all documented features are implemented yet.
 
@@ -9,12 +9,12 @@ Support your client-side app with an API or create a dynamic server-rendered app
 ## Basics and Routing
 
 ```js
-import { App } from "@frameworke/backe";
+import { App } from "@borf/server";
 import { ExampleStore } from "./globals/ExampleStore";
 
-const app = new App({
-  stores: [ExampleStore],
-});
+const app = new App();
+
+app.addStore(ExampleStore);
 
 const corsDefaults = {
   allowOrigin: ["*"],
@@ -38,13 +38,8 @@ app.static("/static/path", "/path/to/actual/dir"); // Add custom static director
 app.fallback(); // Fallback to index.html for capable requests to support client side routing.
 app.fallback("/some/weird/index.html"); // Specify your own index.html fallback path.
 
-// Share logic and state between handlers with globals.
-// Each service is created once per request.
-// Two API calls will use two different instances, but all middleware in the same API call will use one instance.
-app.global("example", example);
-
 // Create API routes with functions named after HTTP methods (`get`, `post`, `delete`, etc.)
-app.get("/some-route", function (ctx) {
+app.onGet("/some-route", function (ctx) {
   const example = ctx.global("example");
 
   ctx.response.headers.set("name", "value");
@@ -137,7 +132,7 @@ app.use(async (ctx) => {
 });
 
 // Express-style verb methods to handle routes. Pictured with multiple middleware functions.
-app.get(
+app.onGet(
   "/some/url",
   (ctx) => {
     const auth = ctx.global("auth");
@@ -176,15 +171,15 @@ app.get(
 If you have many routes and you want to separate them into different files, use a Router. This has the same routing and component mounting options as the server.
 
 ```js
-import { makeRouter } from "growle";
+import { Router } from "@borf/server";
 
-const router = makeRouter();
+const router = new Router();
 
-router.get("/", () => {
+router.onGet("/", () => {
   return "OK"; // Return a body
 });
 
-router.get("manual/json", (ctx) => {
+router.onGet("manual/json", (ctx) => {
   ctx.response.headers.set("content-type", "application/json");
 
   return JSON.stringify({
@@ -192,7 +187,7 @@ router.get("manual/json", (ctx) => {
   });
 });
 
-router.get("auto/json", () => {
+router.onGet("auto/json", () => {
   return {
     message: "This is returned as an object, so content-type is inferred as application/json",
   };
@@ -206,8 +201,8 @@ Then import this into the main server file and `.mount` it.
 ```js
 import routes from "./router.js";
 
-app.mount(routes);
-app.mount("/sub", routes); // To mount routes under a sub path.
+app.addRouter(routes);
+app.addRouter("/sub", routes); // To mount routes under a sub path.
 ```
 
 ## Server Rendered Pages
@@ -216,71 +211,6 @@ Instead of JSON, you can return elements to render using `h()` or JSX. This retu
 
 ```js
 
-```
-
-### Server Components
-
-The server supports function components similar to `woofe`. The biggest difference is that the attributes here are passed as a plain object rather than a state, and there are no lifecycle methods. Server components are run once to generate a chunk of HTML.
-
-```js
-export function Header(attrs, self) {
-  return (
-    <header>
-      <h1>{attrs.title}</h1>
-    </header>
-  );
-}
-```
-
-And then use it in a page:
-
-```js
-import { Header } from "./views/Header";
-
-app.get("/home", (ctx) => {
-  return (
-    <main>
-      <Header title="Welcome!" />
-      <p>This is the home page.</p>
-    </main>
-  );
-});
-```
-
-It's also possible to create an async component if you need to load data before rendering.
-
-```js
-export async function UserCard(attrs, self) {
-  const db = self.getService("db");
-  const user = await db("users").where("id", attrs.userId);
-
-  return (
-    <div>
-      <h3>{user.name}</h3>
-      <p>{user.bio}</p>
-
-      <a href={`/users/${attrs.userId}/more`}>More Info</a>
-    </div>
-  );
-}
-```
-
-These can be used in exactly the same way as non-async components, but the server will wait to respond until all async components have resolved. Async components can keep data fetching closer to where the data is needed, though too many async components can slow down response time. Data can also be fetched at the top level of a route and passed down to components as attributes.
-
-```js
-import { Header } from "./views/Header";
-import { UserCard } from "./views/UserCard";
-
-app.get("/users/:userId", (ctx) => {
-  const { userId } = ctx.request.params;
-
-  return (
-    <main>
-      <Header title="User" />
-      <UserCard userId={userId} />
-    </main>
-  );
-});
 ```
 
 ---
