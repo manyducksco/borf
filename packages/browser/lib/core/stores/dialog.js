@@ -29,7 +29,7 @@ export const DialogStore = Store.define({
     let activeDialogs = [];
 
     // Diff dialogs when value is updated, adding and removing dialogs as necessary.
-    ctx.observe($$dialogs, (dialogs) => {
+    ctx.subscribe($$dialogs, (dialogs) => {
       requestAnimationFrame(() => {
         let removed = [];
         let added = [];

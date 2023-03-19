@@ -45,7 +45,7 @@ export class DynamicListExample extends View {
           <div class="flex-center">
             <input type="text" value={$$inputValue} />
             <button
-              disabled={$$inputValue.as((v) => v.trim() === "")}
+              disabled={$$inputValue.map((v) => v.trim() === "")}
               onclick={() => {
                 // Add the current input value to the list and clear it.
                 $$shoppingList.update((current) => {
@@ -84,7 +84,7 @@ class Item extends View {
 
     return (
       <li
-        style={{ opacity, transform: x.as((x) => `translateX(${x}px)`) }}
+        style={{ opacity, transform: x.map((x) => `translateX(${x}px)`) }}
         onclick={onclick}
       >
         {$value}

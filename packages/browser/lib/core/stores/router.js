@@ -55,7 +55,7 @@ export const RouterStore = Store.define({
     let isRouteChange = false;
 
     // Update URL when query changes
-    ctx.observe($$query, (current) => {
+    ctx.subscribe($$query, (current) => {
       // No-op if this is triggered by a route change.
       if (isRouteChange) {
         isRouteChange = false;

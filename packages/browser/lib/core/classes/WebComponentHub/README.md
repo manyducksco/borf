@@ -1,7 +1,7 @@
 # Web Components
 
 ```jsx
-import { Store, View, WebComponentHub } from "@frameworke/fronte";
+import { Store, View, WebComponentHub } from "@borf/browser";
 
 const hub = new WebComponentHub();
 

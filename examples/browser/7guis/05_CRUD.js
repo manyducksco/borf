@@ -17,8 +17,7 @@ class CRUD extends View {
     const $$filterPrefix = new State("");
 
     const $filteredPeople = State.merge(
-      $$people,
-      $$filterPrefix,
+      [$$people, $$filterPrefix],
       (people, prefix) => {
         if (prefix.trim() === "") {
           return people;
@@ -71,7 +70,7 @@ class CRUD extends View {
     }
 
     // Update fields when selection changes.
-    ctx.observe($$selectedId, (id) => {
+    ctx.subscribe($$selectedId, (id) => {
       const person = $$people.get().find((p) => p.id === id);
 
       if (person) {
@@ -88,16 +87,18 @@ class CRUD extends View {
           </div>
           <div>
             <select
-              size={$filteredPeople.as((fp) => Math.max(fp.length, 2))}
+              size={$filteredPeople.map((fp) => Math.max(fp.length, 2))}
               value={$$selectedId.readable()}
               onchange={(e) => {
                 $$selectedId.set(Number(e.target.value));
               }}
             >
-              {m.repeat($filteredPeople, ($person) => {
-                const $id = $person.as((p) => p.id);
-                const $name = $person.as((p) => p.name);
-                const $surname = $person.as((p) => p.surname);
+              {View.repeat($filteredPeople, (ctx) => {
+                const $person = ctx.inputs.readable("item");
+
+                const $id = $person.map((p) => p.id);
+                const $name = $person.map((p) => p.name);
+                const $surname = $person.map((p) => p.surname);
 
                 return (
                   <option value={$id}>

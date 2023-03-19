@@ -1,22 +1,11 @@
 # 🖥 Borf: Browser
 
-![bundle size](https://img.shields.io/bundlephobia/minzip/@borf/browser?style=flat&label=gzipped%20size)
+![bundle size](https://img.shields.io/bundlephobia/min/@borf/browser)
+![bundle size](https://img.shields.io/bundlephobia/minzip/@borf/browser)
 
 This is the front-end (browser) component of [Borf](https://www.borfjs.com). It handles [routing](#routing), components (two types; [views](#views) and [stores](#stores)) and [data binding](#state), all out of the box, aiming to cover the common needs of modern web apps while striking a balance between features and size.
 
 ## Installation
-
-### CDN
-
-This package includes everything you need to make a fully functioning web app by importing the `@borf/browser` module from a CDN. This is the fastest way to get code running in a browser with no compilation or bundling.
-
-```js
-// Using Skypack:
-import { ... } from "https://cdn.skypack.dev/@borf/browser";
-
-// Using unpkg:
-import { ... } from "https://unpkg.com/@borf/browser";
-```
 
 ### NPM
 
@@ -30,6 +19,18 @@ And the imports will look like this:
 
 ```js
 import { ... } from "@borf/browser";
+```
+
+### CDN
+
+This package includes everything you need to make a fully functioning web app by importing the `@borf/browser` module from a CDN. This is the fastest way to get code running in a browser with no compilation or bundling.
+
+```js
+// Using Skypack:
+import { ... } from "https://cdn.skypack.dev/@borf/browser";
+
+// Using unpkg:
+import { ... } from "https://unpkg.com/@borf/browser";
 ```
 
 ## Hello World
@@ -103,7 +104,309 @@ Now when you visit the page the document should look something like this:
 </html>
 ```
 
-> TODO: Summarize and link to sections to learn more about what was demonstrated: [views](#views), [routing](#routing), etc.
+## Views
+
+In our Hello World example above, you saw a piece of code that looked like this:
+
+```js
+app.addRootView((ctx, m) => {
+  return m("h1", "Hello world!");
+});
+```
+
+That is a View, or more specifically a `setup` function for one. We could refactor this slightly to make it a standalone View:
+
+```js
+import { View } from "@borf/browser";
+
+const HelloWorld = View.define({
+  setup: (ctx, m) => {
+    return m("h1", "Hello world!");
+  },
+});
+
+// This time we're passing in a whole View.
+app.addRootView(HelloWorld);
+```
+
+Views are what most other JS frameworks call a component; a reusable chunk of markup and logic that takes attributes/props/inputs/etc and returns what's going to be displayed to the user. As you might expect if you have experience with React, Views can be used just like typical HTML elements.
+
+```js
+app.addRootView((ctx, m) => {
+  return m("div", [
+    m("p", "This is the message:"),
+
+    // Views are passed to `m` in place of an HTML tag.
+    m(HelloWorld),
+  ]);
+});
+```
+
+Which renders the equivalent to the following HTML:
+
+```html
+<div>
+  <p>This is the message:</p>
+  <h1>Hello world!</h1>
+</div>
+```
+
+### Templating
+
+Templating is how you create elements. There are two ways to do it; first is calling the `m`arkup function which is passed as the second argument to `setup`.
+
+The markup function has these signatures:
+
+```js
+m(tagname, [attributes, ][...children])
+m(view, [inputs, ][...children])
+```
+
+```jsx
+const ListItem = View.define({
+  inputs: {
+    active: {
+      default: false,
+    },
+  },
+  setup: (ctx, m) => {
+    const $active = ctx.inputs.readable("active");
+
+    return m(
+      "li",
+      {
+        // 'active' class only applied while `active` input is true.
+        class: { active: $active },
+      },
+      ctx.children()
+    );
+  },
+});
+
+const ExampleList = View.define({
+  setup: (ctx, m) => {
+    return m("section", [
+      m("h1", { class: "heading" }, "Item List"),
+      m("p", { style: "color: red" }, "Below is a list of items."),
+      m("ul", [
+        m(ListItem, "Item 1"),
+        m(ListItem, { active: true }, "Item 2"),
+        m(ListItem, "Item 3"),
+        m(ListItem, "Item 4"),
+        m(ListItem, "Item 5"),
+        m(ListItem, "Item 6"),
+      ]),
+    ]);
+  },
+});
+```
+
+The second is using JSX. You can do this when building with `@borf/build`, but it won't work out of the box in a browser.
+
+> Note that Borf uses a `class` attribute like HTML rather than `className` like React.
+
+```jsx
+const Example = View.define({
+  label: "ExampleView",
+  setup: (ctx, m) => {
+    return (
+      <section>
+        <h1 class="heading">Item List</h1>
+        <p style="color: red">Below is a list of items.</p>
+        <ul>
+          <ListItem>Item 1</ListItem>
+          <ListItem active>Item 2</ListItem>
+          <ListItem>Item 3</ListItem>
+          <ListItem>Item 4</ListItem>
+          <ListItem>Item 5</ListItem>
+          <ListItem>Item 6</ListItem>
+        </ul>
+      </section>
+    );
+  },
+});
+```
+
+### Special Views
+
+```js
+View.when(value, <h1>Value is truthy</h1>, <h1>Value is falsy</h1>);
+View.unless(value, <h1>Value is not truthy</h1>);
+
+View.repeat(array, (ctx, m) => {
+  const $item = ctx.inputs.readable("item");
+  const $name = $item.map((x) => x.name);
+
+  return m("li", $name);
+});
+
+View.subscribe(observable, (value) => {
+  return; /* render something */
+});
+View.subscribe([observable1, observable2], (value1, value2) => {
+  return; /* render something */
+});
+```
+
+### Full View Example
+
+```js
+const Example = View.define({
+  label: "ExampleView",  // Recommended. What this view is called for console and dev tools purposes.
+  about: "Demonstrates all options and methods of a View.",
+  inputs: {
+    someValue: {
+      about: "An optional string input with validation.",
+      assert: (x) => {
+        if (typeof x !== "string") {
+          throw new TypeError(`Must be a string.`);
+        }
+        return true;
+      },
+      optional: true,
+    }
+    otherValue: {
+      about: "Another string input with a default value.",
+      default: "<no-value>"
+    }
+  },
+  setup: (ctx, m) => {
+    // Access the built-in stores by name
+    const http = ctx.useStore("http");
+    const page = ctx.useStore("page");
+    const router = ctx.useStore("router");
+    const dialog = ctx.useStore("dialog");
+    const language = ctx.useStore("language");
+
+    // Access custom stores by reference
+    const some = ctx.useStore(SomeStore);
+    const other = ctx.useStore(OtherStore);
+
+    /*=================================*\
+    ||             Logging             ||
+    \*=================================*/
+
+    ctx.log("Something happened.");
+    ctx.warn("Something happened!");
+    ctx.error("SOMETHING HAPPENED!!!!");
+    ctx.crash(new Error("FUBAR"));
+
+    /*=================================*\
+    ||              State              ||
+    \*=================================*/
+
+    // Using State to create an observable for 'subscribe'. See later in this README for details.
+    const $$title = new State("The Default Title");
+
+    // Subscribes to an observable while this view is connected.
+    ctx.subscribe($$title, (title) => {
+      ctx.log("title attribute changed to " + title);
+    });
+
+    /*=================================*\
+    ||            Lifecycle            ||
+    \*=================================*/
+
+    ctx.isConnected; // true if view is connected
+
+    ctx.onConnect(() => {
+      // Runs after the view is added to the page.
+    });
+
+    ctx.onDisconnect(() => {
+      // Runs after the view is removed from the page.
+    });
+
+    /*=================================*\
+    ||            Animation            ||
+    \*=================================*/
+
+    // Using a Spring to animate translateY % of container element.
+    const spring = new Spring(100);
+
+    ctx.animateIn(async () => {
+      return spring.to(0); // Returns a promise that resolves after Spring value transitions to 1.
+    });
+
+    ctx.animateOut(async () => {
+      return spring.to(100); // View is not completely removed until this promise resolves.
+    });
+
+    /*=================================*\
+    ||      Rendering & Children       ||
+    \*=================================*/
+
+    // Render children inside a `<div class="container">`
+    return m(
+      "div",
+      {
+        class: "container",
+        style: {
+          transform: spring.map(x => `translateY(${x}%)`)
+        }
+      },
+      ctx.outlet()
+    );
+  },
+});
+```
+
+## Stores
+
+The other kind of component is a Store. Stores return an object which can be accessed by any subcomponent. Let's refactor the Hello World example.
+
+```js
+import { App, View, Store } from "@borf/browser";
+
+const app = new App();
+
+// Stores, like views, have to be instantiated to be used.
+const MessageStore = Store.define({
+  setup: (ctx) => {
+    return {
+      message: "Hello world!",
+    };
+  },
+});
+
+const HelloWorld = View.define({
+  setup: (ctx, m) => {
+    // Where this call gets its instance depends on how we instantiate the store.
+    const store = ctx.useStore(MessageStore);
+
+    return m("h1", store.message);
+  },
+});
+```
+
+Now that we have a store, there are two ways to make it available in the `HelloWorld` view.
+
+### Option 1: Global Store
+
+Passing a Store to `app.addStore()` will create one instance and make that instance available to all components in the app.
+
+```js
+// Add the store to make it available to any component in this app.
+app.addStore(MessageStore);
+
+// HelloWorld can access MessageStore from the app.
+app.addRootView(HelloWorld);
+```
+
+### Option 2: Local Store
+
+Using a Store inside a View will create one instance and make that instance available to subcomponents only.
+
+If you've ever worked on an app of sufficient size, you know that scoping state to specific parts of the app is extremely helpful.
+
+```js
+app.addRootView((ctx, m) => {
+  return m(MessageStore, [
+    // MessageStore is available to subcomponents.
+    m(HelloWorld),
+  ]);
+});
+```
 
 ## Routing
 
@@ -174,7 +477,7 @@ const ThingDetails = View.define({
     navigate("/another/page", { prompt: PromptView });
 
     // Get the live value of `{#id}` from the current path.
-    const $id = $params.as((p) => p.id);
+    const $id = $params.map((p) => p.id);
 
     // Render it into a <p> tag. The ID portion will update if the URL changes.
     return m("p", "Thing's ID is ", $id);
@@ -232,173 +535,6 @@ const Timer = View.define({
         {/* Button calls reset() when clicked */}
         <button onclick={reset}>Reset</button>
       </div>
-    );
-  },
-});
-```
-
-## Views
-
-Views are a type of component that displays DOM nodes. If you've used components in React, Angular, Vue, or others, this is pretty much what you're used to. You can define a view once and reuse it anywhere you want as many times as you want.
-
-```jsx
-const Example = View.define({
-  setup: (ctx) => {
-    return (
-      <div>
-        <h1>{ctx.inputs.get("title")}</h1>
-        <p>This is a reusable view.</p>
-      </div>
-    );
-  },
-});
-
-// Views can be mounted directly on a route
-app.addRoute("/example", Example);
-
-// They can also be used inside another view
-app.addRoute("/other", (ctx) => {
-  return (
-    <div>
-      <Example title="In Another View" />
-    </div>
-  );
-});
-```
-
-### View Context
-
-Views receive a context object they may use to translate state and lifecycle into DOM nodes.
-
-```js
-const Example = View.define({
-  setup: (ctx, m) => {
-    // Access the built-in stores by name
-    const http = ctx.useStore("http");
-    const page = ctx.useStore("page");
-    const router = ctx.useStore("router");
-    const dialog = ctx.useStore("dialog");
-    const language = ctx.useStore("language");
-
-    // Access custom stores by reference
-    const some = ctx.useStore(SomeStore);
-    const other = ctx.useStore(OtherStore);
-
-    /*=================================*\
-    ||             Logging             ||
-    \*=================================*/
-
-    ctx.log("Something happened.");
-    ctx.warn("Something happened!");
-    ctx.error("SOMETHING HAPPENED!!!!");
-    ctx.crash(new Error("FUBAR"));
-
-    /*=================================*\
-    ||              State              ||
-    \*=================================*/
-
-    // Creates a writable (two-way) binding with a default value.
-    const $$title = new State("The Default Title");
-
-    // Runs a callback function each time a state changes (or any observable emits a value).
-    ctx.subscribe($$title, (title) => {
-      console.log("title attribute changed to " + title);
-    });
-
-    // Merge two or more bindings into a single binding.
-    const $formattedTitle = State.merge([$$title, some.$uppercase], (title, uppercase) => {
-      if (uppercase) {
-        return title.toUpperCase();
-      }
-
-      return title;
-    });
-
-    /*=================================*\
-    ||            Lifecycle            ||
-    \*=================================*/
-
-    ctx.isConnected; // true if view is connected
-
-    ctx.onConnect(() => {
-      // Runs after the view is added to the page.
-    });
-
-    ctx.onDisconnect(() => {
-      // Runs after the view is removed from the page.
-    });
-
-    ctx.animateIn(async () => {});
-
-    ctx.animateOut(async () => {});
-
-    /*=================================*\
-    ||      Rendering & Children       ||
-    \*=================================*/
-
-    m.when();
-    m.unless();
-    m.observe();
-    m.repeat();
-
-    // Render children inside a `<div class="container">`
-    return m("div", { class: "container" }, ctx.outlet());
-  },
-});
-```
-
-### Templating
-
-Templating is how you create elements. There are two ways to do it; first is calling the `m`arkup function which is passed as the second argument to `setup`.
-
-The markup function has these signatures:
-
-```js
-m(tagname, [attributes, ][...children])
-m(view, [inputs, ][...children])
-```
-
-```jsx
-const Example = View.define({
-  label: "ExampleView",
-  setup: (ctx, m) => {
-    return m("section", [
-      m("h1", "Item List"),
-      m("p", { style: "color: red" }, "Below is a list of items."),
-      m("ul", [
-        m("li", "Item 1"),
-        m("li", { class: "active" }, "Item 2"),
-        m("li", "Item 3"),
-        m("li", "Item 4"),
-        m("li", "Item 5"),
-        m("li", "Item 6"),
-      ]),
-    ]);
-  },
-});
-```
-
-The second is using JSX. You can do this when building with `@borf/build`, but it won't work out of the box in a browser.
-
-> Note that Borf uses a `class` attribute like HTML rather than `className` like React.
-
-```jsx
-const Example = View.define({
-  label: "ExampleView",
-  setup: (ctx, m) => {
-    return (
-      <section>
-        <h1>Item List</h1>
-        <p style="color: red">Below is a list of items.</p>
-        <ul>
-          <li>Item 1</li>
-          <li class="active">Item 2</li>
-          <li>Item 3</li>
-          <li>Item 4</li>
-          <li>Item 5</li>
-          <li>Item 6</li>
-        </ul>
-      </section>
     );
   },
 });

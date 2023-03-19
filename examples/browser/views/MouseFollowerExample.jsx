@@ -14,8 +14,8 @@ export const MouseFollowerExample = View.define({
 
     const mouse = ctx.useStore(MouseStore);
 
-    const $disabled = $$enabled.as((t) => !t);
-    const $isNotBestColor = $$color.as(
+    const $disabled = $$enabled.map((t) => !t);
+    const $isNotBestColor = $$color.map(
       (hex) => hex.toLowerCase() !== bestColor
     );
 
@@ -69,7 +69,7 @@ export const MouseFollowerExample = View.define({
           )}
 
           <button onclick={() => $$enabled.update((t) => !t)}>
-            {$$enabled.as((t) =>
+            {$$enabled.map((t) =>
               t ? "Turn Off Follower" : "Turn On Follower"
             )}
           </button>

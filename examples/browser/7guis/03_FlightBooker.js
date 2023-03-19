@@ -59,10 +59,11 @@ class FlightBooker extends View {
                 $$flightType.set(e.target.value);
               }}
             >
-              {m.repeat(flightTypes, ($value) => {
+              {View.repeat(flightTypes, (ctx) => {
+                const $value = ctx.inputs.readable("item");
+
                 const $selected = State.merge(
-                  $value,
-                  $$flightType,
+                  [$value, $$flightType],
                   (x, y) => x === y
                 );
 
@@ -90,7 +91,7 @@ class FlightBooker extends View {
             <input
               type="text"
               value={$$returnDate}
-              disabled={$$flightType.as((t) => t === "one-way flight")}
+              disabled={$$flightType.map((t) => t === "one-way flight")}
               pattern={/^\d{2}\.\d{2}\.\d{4}$/}
               oninput={(e) => {
                 $$returnDateIsValid.set(!e.target.validity.patternMismatch);
@@ -99,7 +100,7 @@ class FlightBooker extends View {
           </div>
 
           <div>
-            <button disabled={$formIsValid.as(flipped)}>Book</button>
+            <button disabled={$formIsValid.map(flipped)}>Book</button>
           </div>
         </form>
       </ExampleFrame>

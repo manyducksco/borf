@@ -8,9 +8,10 @@ import { Outlet } from "./Outlet.js";
 
 export class Store extends Connectable {
   static define(config) {
+    // TODO: Disable this when built for production.
     if (!config.label) {
       console.trace(
-        `Store is defined without a label. Setting a label is recommended to make debugging and error tracing easier.`
+        `Store is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
       );
     }
 
@@ -105,36 +106,9 @@ export class Store extends Connectable {
 
       inputs: this.#inputs.api,
 
-      observe: (...args) => {
-        let callback = args.pop();
-
-        if (args.length === 0) {
-          throw new TypeError(`Observe requires at least one observable.`);
-        }
-
-        const start = () => {
-          if (Type.isObservable(args.at(0))) {
-            const $merged = State.merge(...args, callback);
-            return $merged.subscribe(() => undefined);
-          } else {
-            const $merged = State.merge(...args, () => undefined);
-            return $merged.subscribe(callback);
-          }
-        };
-
-        if (this.#isConnected) {
-          // If called when the view is connected, we assume this code is in a lifecycle hook
-          // where it will be triggered at some point again after the view is reconnected.
-          this.#activeSubscriptions.push(start());
-        } else {
-          // This should only happen if called in the body of the view.
-          // This code is not always re-run between when a view is disconnected and reconnected.
-          this.#lifecycleCallbacks.onConnect.push(() => {
-            this.#activeSubscriptions.push(start());
-          });
-        }
-      },
-
+      /**
+       * Takes an observable or array of observables. The observer receives each of their values as arguments whenever any observable receives a new value.
+       */
       subscribe: (observable, observer) => {
         if (!Type.isObject(observer)) {
           observer = {

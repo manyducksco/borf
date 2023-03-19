@@ -11,7 +11,7 @@ import { makeStaticFileCache } from "./helpers/makeStaticFileCache.js";
 import { makeListener } from "./helpers/makeListener.js";
 
 const IS_DEV = process.env.NODE_ENV !== "production";
-const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), process.env.WOOF_STATIC_PATH || "build/static");
+const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), process.env.WOOF_STATIC_PATH || "output/static");
 
 /**
  * Cache that serves from an in-memory list of static files.

@@ -16,7 +16,7 @@ class TempConverter extends View {
     };
 
     const $celsius = $$celsius.readable();
-    const $fahrenheit = $celsius.as((c) => c * (9 / 5) + 32);
+    const $fahrenheit = $celsius.map((c) => c * (9 / 5) + 32);
 
     return (
       <ExampleFrame title="2. Temperature Converter">

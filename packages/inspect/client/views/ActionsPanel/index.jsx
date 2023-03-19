@@ -16,7 +16,7 @@ export default makeView((ctx, h) => {
   const $$actionLog = makeState([]);
   const $actionsCalled = $actionLog.as((log) => log.length > 0);
 
-  ctx.observe($currentView, (view) => {
+  ctx.subscribe($currentView, (view) => {
     // if (view) {
     //   $actionLog.proxy(view.actions.$log);
     // } else {

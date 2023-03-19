@@ -9,12 +9,12 @@ export class ToggleExample extends View {
     logLifecycle(ctx);
 
     const $$active = makeState(false);
-    const $status = $$active.as((t) => (t ? "ON" : "OFF"));
+    const $status = $$active.map((t) => (t ? "ON" : "OFF"));
 
     return (
       <div class="example">
         <h3>
-          Dynamic classes and <code>.as()</code>
+          Dynamic classes and <code>.map()</code>
         </h3>
         <div
           class={{ active: $$active }} // class "active" is applied while binding holds a truthy value

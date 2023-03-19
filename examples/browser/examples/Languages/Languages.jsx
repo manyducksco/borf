@@ -22,13 +22,18 @@ export const Languages = View.define({
     return (
       <ExampleFrame title="Languages">
         <div>
-          {m.repeat(supportedLanguages, ($tag) => {
+          {View.repeat(supportedLanguages, (ctx) => {
+            const $tag = ctx.inputs.readable("value");
+
+            ctx.subscribe($tag, (value) => {
+              ctx.log(value);
+            });
+
             return (
               <button
                 class={{
                   [styles.active]: State.merge(
-                    $currentLanguage,
-                    $tag,
+                    [$currentLanguage, $tag],
                     (lang, tag) => {
                       return lang === tag;
                     }
@@ -38,7 +43,7 @@ export const Languages = View.define({
                   setLanguage($tag.get());
                 }}
               >
-                {$tag.as((t) => languageLabels[t])}
+                {$tag.map((t) => languageLabels[t])}
               </button>
             );
           })}

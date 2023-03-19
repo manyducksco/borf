@@ -4,7 +4,7 @@ import logLifecycle from "../utils/logLifecycle.js";
 export class ConditionalExample extends View {
   setup(ctx, m) {
     const $$show = makeState(false);
-    const $label = $$show.as((t) => (t ? "Hide Text" : "Show Text"));
+    const $label = $$show.map((t) => (t ? "Hide Text" : "Show Text"));
 
     logLifecycle(ctx);
 
@@ -25,7 +25,7 @@ export class ConditionalExample extends View {
             {$label}
           </button>
 
-          {m.when($$show, <Message />)}
+          {View.when($$show, <Message />)}
         </div>
       </div>
     );
@@ -46,7 +46,7 @@ class Message extends View {
           display: "inline-block",
           paddingLeft: "0.5rem",
           opacity: opacity,
-          transform: y.as((y) => `translateY(${y}px)`),
+          transform: y.map((y) => `translateY(${y}px)`),
         }}
       >
         Hello there!

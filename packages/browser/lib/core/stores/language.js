@@ -171,7 +171,7 @@ export const LanguageStore = Store.define({
           }
         }
 
-        return $$translation.as((t) => {
+        return $$translation.map((t) => {
           let result = resolve(t, key) || `[NO TRANSLATION: ${key}]`;
 
           if (values) {

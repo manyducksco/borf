@@ -245,9 +245,9 @@ export class App {
       const { store, inputs, exports } = item;
 
       // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
-      // Built-in globals get an additional 'fronte:' prefix so it's clear messages are from the framework.
-      // 'fronte:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
-      const channelPrefix = Type.isString(key) ? "fronte:store" : "store";
+      // Built-in globals get an additional 'borf:' prefix so it's clear messages are from the framework.
+      // 'borf:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
+      const channelPrefix = Type.isString(key) ? "borf:store" : "store";
       const label = Type.isString(key) ? key : store.label || store.name;
       const config = {
         appContext,
@@ -356,7 +356,7 @@ export class App {
 
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
-    const channel = appContext.debugHub.channel("fronte:app:preload");
+    const channel = appContext.debugHub.channel("borf:app:preload");
 
     return new Promise((resolve) => {
       let resolved = false;

@@ -25,7 +25,7 @@ describe("new State", () => {
 
   test("transforms with 'as'", () => {
     const $$value = new State(5);
-    const $doubled = $$value.as((x) => x * 2);
+    const $doubled = $$value.map((x) => x * 2);
 
     expect($doubled.get()).toBe(10);
 
@@ -35,14 +35,14 @@ describe("new State", () => {
 
     // Throws an error if no transform function is passed.
     expect(() => {
-      $$value.as();
+      $$value.map();
     }).toThrow();
   });
 
   test("chained transforms with 'as'", () => {
     const $$value = new State(5);
-    const $once = $$value.as((x) => x * 2);
-    const $twice = $once.as((x) => x * 2);
+    const $once = $$value.map((x) => x * 2);
+    const $twice = $once.map((x) => x * 2);
     const next = jest.fn();
 
     expect($once.get()).toBe(10);
@@ -69,7 +69,7 @@ describe("new State", () => {
 
     // Throws an error if no transform function is passed.
     expect(() => {
-      $twice.as();
+      $twice.map();
     }).toThrow();
   });
 
@@ -244,7 +244,7 @@ describe("State.merge", () => {
     const $$two = new State(2);
 
     const $joined = State.merge($$one, $$two, (one, two) => one + two);
-    const $doubled = $joined.as((x) => x * 2);
+    const $doubled = $joined.map((x) => x * 2);
 
     expect($doubled.get()).toBe(6);
 
@@ -253,7 +253,7 @@ describe("State.merge", () => {
     expect($doubled.get()).toBe(12);
 
     expect(() => {
-      $joined.as();
+      $joined.map();
     }).toThrow();
   });
 });

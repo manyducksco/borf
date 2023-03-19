@@ -10,7 +10,7 @@ export class Repeat extends Connectable {
   #connectedItems = [];
   #appContext;
   #elementContext;
-  #renderFn;
+  #markup;
   #keyFn;
 
   get node() {
@@ -23,10 +23,10 @@ export class Repeat extends Connectable {
     this.#appContext = appContext;
     this.#elementContext = elementContext;
 
-    const { value, renderFn, keyFn } = attributes;
+    const { value, markup, keyFn } = attributes;
 
     this.#value = value;
-    this.#renderFn = renderFn;
+    this.#markup = markup;
     this.#keyFn = keyFn || ((x) => x);
   }
 
@@ -96,17 +96,15 @@ export class Repeat extends Connectable {
         const $$value = new State(potential.value);
         const $$index = new State(potential.index);
 
-        const element = this.#renderFn($$value.readable(), $$index.readable());
-
-        if (!(element instanceof Markup)) {
-          throw new TypeError(`Repeat function must return an element.`);
-        }
-
         newItems[potential.index] = {
           key: potential.key,
           $$value,
           $$index,
-          view: element.init({ appContext: this.#appContext, elementContext: this.#elementContext }),
+          view: this.#markup.init({
+            appContext: this.#appContext,
+            elementContext: this.#elementContext,
+            inputs: { value: $$value, index: $$index },
+          }),
         };
       }
     }

@@ -433,8 +433,8 @@ export class Builder {
     }
 
     /*============================*\
-  ||        Proxy Server        ||
-  \*============================*/
+    ||        Proxy Server        ||
+    \*============================*/
 
     const proxy =
       serverPort != null

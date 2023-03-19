@@ -80,7 +80,7 @@ export class View extends Connectable {
     });
   }
 
-  static observe(value, renderFn) {
+  static subscribe(value, renderFn) {
     return new Markup((config) => {
       return new Outlet({
         ...config,
@@ -90,13 +90,38 @@ export class View extends Connectable {
     });
   }
 
-  static repeat(value, renderFn, keyFn) {
+  static repeat(value, view, keyFn) {
+    let markup;
+
+    if (Type.isFunction(view)) {
+      markup = new Markup((config) => {
+        const RepeatItem = View.define({
+          label: "repeat",
+          inputs: {
+            value: {},
+            index: {},
+          },
+          setup: view,
+        });
+
+        return new RepeatItem({ ...config, channelPrefix: "borf:view" });
+      });
+    } else if (View.isView(view)) {
+      markup = new Markup((config) => {
+        return new view({ ...config });
+      });
+    } else {
+      throw new TypeError(
+        `View.repeat requires a setup function or view. Got type: ${Type.of(setup)}, value: ${setup}`
+      );
+    }
+
     return new Markup((config) => {
       return new Repeat({
         ...config,
         attributes: {
           value,
-          renderFn,
+          markup,
           keyFn,
         },
       });
@@ -271,38 +296,8 @@ export class View extends Connectable {
       inputs: this.#inputs.api,
 
       /**
-       * Takes one or more observables followed by a callback function that receives their values as arguments when any of the observables change.
+       * Takes an observable or array of observables. The observer receives each of their values as arguments whenever any observable receives a new value.
        */
-      observe: (...args) => {
-        let callback = args.pop();
-
-        if (args.length === 0) {
-          throw new TypeError(`Expected at least one observable.`);
-        }
-
-        const start = () => {
-          if (Type.isObservable(args.at(0))) {
-            const $merged = State.merge(...args, callback);
-            return $merged.subscribe(() => undefined);
-          } else {
-            const $merged = State.merge(...args, () => undefined);
-            return $merged.subscribe(callback);
-          }
-        };
-
-        if (this.isConnected) {
-          // If called when the view is connected, we assume this code is in a lifecycle hook
-          // where it will be triggered at some point again after the view is reconnected.
-          this.#activeSubscriptions.push(start());
-        } else {
-          // This should only happen if called in the body of the view.
-          // This code is not always re-run between when a view is disconnected and reconnected.
-          this.#lifecycleCallbacks.onConnect.push(() => {
-            this.#activeSubscriptions.push(start());
-          });
-        }
-      },
-
       subscribe: (observable, observer) => {
         if (!Type.isObject(observer)) {
           observer = {
@@ -326,6 +321,7 @@ export class View extends Connectable {
 
         const start = () => {
           if (observables.length > 1) {
+            console.log({ observables, observer });
             // TODO: Have State.merge forward errors to subscribers.
             return State.merge(observables, observer.next).subscribe({
               error: observer.error,

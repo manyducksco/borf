@@ -12,7 +12,7 @@ export const CounterWithStore = View.define({
     logLifecycle(ctx);
 
     const counter = ctx.useStore(CounterStore);
-    const $label = counter.$current.as((n) => `the number is: ${n}`);
+    const $label = counter.$current.map((n) => `the number is: ${n}`);
 
     return (
       <ExampleFrame title="Shared State with Stores">

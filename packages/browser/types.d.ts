@@ -303,7 +303,7 @@ declare module "@borf/browser" {
      *
      * @param transform - Function to convert the value of the current state into the value of a new state.
      */
-    as<R>(transform: (value: T) => R): Readable<R>;
+    map<R>(transform: (value: T) => R): Readable<R>;
 
     /**
      * Assigns a new value to the bound state.
@@ -375,7 +375,7 @@ declare module "@borf/browser" {
      *
      * @param transform - Function to convert the value of the current state into the value of a new state.
      */
-    as<R>(transform: (value: T) => R): Readable<R>;
+    map<R>(transform: (value: T) => R): Readable<R>;
   }
 
   /**

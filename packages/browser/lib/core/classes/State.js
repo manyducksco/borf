@@ -12,11 +12,12 @@ export class State {
   /**
    * Merges two or more observables into a single readable state.
    *
-   * @param args - Two or more observables followed by a merge function.
-   * @returns PolyReadable
+   * @param observables - An array of observables to merge.
+   * @param callback - A function that receives the observable values and returns a merged value.
+   * @returns Readable
    */
-  static merge(...args) {
-    return new PolyReadable(...args);
+  static merge(observables, callback) {
+    return new PolyReadable(observables, callback);
   }
 
   /**
@@ -116,10 +117,10 @@ export class State {
    * Derives a new state whose value is equal to this State's current value as run through a `transform` function.
    * Think of this like `map` for State.
    *
-   * @param transform - A function. Receives the current value and returns a derived value for the new Readable.
+   * @param transform - A function that receives the current value and returns a value for the new Readable.
    * @returns Readable
    */
-  as(transform) {
+  map(transform) {
     if (!Type.isFunction(transform)) {
       throw new TypeError(`Expected a transform function. Got: ${typeof transform}`);
     }
@@ -201,11 +202,11 @@ class Readable {
    * Derives a new state whose value is equal to this State's current value as run through a `transform` function.
    * Think of this like `map` for State.
    *
-   * @param transform - A function. Receives the current value and returns a derived value for the new Readable.
+   * @param transform - A function that receives the current value and returns a value for the new Readable.
    * @returns Readable
    */
-  as(transform) {
-    return this.#writable.as((value) => {
+  map(transform) {
+    return this.#writable.map((value) => {
       const transformed = this.#transform(value);
       return transform(transformed);
     });
@@ -226,9 +227,15 @@ class Readable {
       };
     }
 
-    return this.#writable.subscribe((value) => {
-      const transformed = this.#transform(value);
-      observer.next(transformed);
+    return this.#writable.subscribe({
+      next: (value) => {
+        if (observer.next) {
+          const transformed = this.#transform(value);
+          observer.next(transformed);
+        }
+      },
+      error: observer.error,
+      complete: observer.complete,
     });
   }
 
@@ -271,9 +278,9 @@ class PolyReadable {
    *
    * @param args - Two or more state bindings to merge followed by a merge function.
    */
-  constructor(...args) {
-    this.#merge = args.pop();
-    this.#readables = args;
+  constructor(observables, callback) {
+    this.#merge = callback;
+    this.#readables = observables;
 
     if (!Type.isFunction(this.#merge)) {
       throw new TypeError(`Expected a merge function as the final argument. Got: ${typeof this.#merge}`);
@@ -291,6 +298,7 @@ class PolyReadable {
     if (this.#isObserving) {
       value = this.#currentValue;
     } else {
+      // TODO: This will only work with Readables. Find a way to make this compatible with any observable.
       value = this.#merge(...this.#readables.map((s) => s.get()));
     }
 
@@ -301,10 +309,10 @@ class PolyReadable {
    * Derives a new state whose value is equal to this State's current value as run through a `transform` function.
    * Think of this like `map` for State.
    *
-   * @param transform - A function. Receives the current value and returns a derived value for the new Readable.
+   * @param transform - A function that receives the current value and returns a value for the new Readable.
    * @returns Readable
    */
-  as(transform) {
+  map(transform) {
     if (!Type.isFunction(transform)) {
       throw new TypeError(`Expected a transform function. Got: ${typeof transform}`);
     }
@@ -360,7 +368,7 @@ class PolyReadable {
       this.#currentValue = value;
 
       for (const observer of this.#observers) {
-        observer.next(this.#currentValue);
+        observer.next?.(this.#currentValue);
       }
     }
   }

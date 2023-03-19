@@ -83,8 +83,8 @@ export class Spring {
     return this.#$$value.get();
   }
 
-  as(fn) {
-    return this.#$$value.as(fn);
+  map(fn) {
+    return this.#$$value.map(fn);
   }
 
   subscribe(...args) {

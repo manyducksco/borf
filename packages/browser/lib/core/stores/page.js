@@ -13,7 +13,7 @@ export const PageStore = Store.define({
     /* ----- Title and Visibility ----- */
 
     if (document) {
-      ctx.observe($$title, (current) => {
+      ctx.subscribe($$title, (current) => {
         if (Type.isString(current)) {
           document.title = current;
         }

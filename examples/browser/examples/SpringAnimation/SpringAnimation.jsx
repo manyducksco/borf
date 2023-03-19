@@ -31,7 +31,7 @@ const spring = new Spring(0, {
   mass: ${m},
   damping: ${d},
   velocity: ${v}
-})
+});
       `;
       }
     );
@@ -179,7 +179,7 @@ const Examples = View.define({
               height: 24,
               borderRadius: "50%",
               backgroundColor: "red",
-              transform: spring.as((x) => `translateX(${x * 160 - 80}%)`),
+              transform: spring.map((x) => `translateX(${x * 160 - 80}%)`),
             }}
           />
         </div>
@@ -190,7 +190,7 @@ const Examples = View.define({
               position: "absolute",
               inset: "0 0.5rem",
               backgroundColor: "orange",
-              transform: spring.as(
+              transform: spring.map(
                 (current) => `translateY(${90 - (1 - current) * 60}%)`
               ),
             }}
@@ -204,7 +204,7 @@ const Examples = View.define({
               width: 36,
               height: 36,
               backgroundColor: "purple",
-              transform: spring.as((x) => `scale(${0.5 + x * 1})`),
+              transform: spring.map((x) => `scale(${0.5 + x * 1})`),
             }}
           />
         </div>
@@ -217,7 +217,7 @@ const Examples = View.define({
               height: 60,
               backgroundColor: "white",
               transformOrigin: "bottom center",
-              transform: spring.as((x) => `rotate(${45 + x * -90}deg)`),
+              transform: spring.map((x) => `rotate(${45 + x * -90}deg)`),
             }}
           />
         </div>

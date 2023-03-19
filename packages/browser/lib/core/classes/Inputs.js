@@ -257,7 +257,7 @@ class InputsAPI {
     }
 
     if (Type.isString(args[0])) {
-      return this.#values.as((current) => current[args[0]]);
+      return this.#values.map((current) => current[args[0]]);
     }
 
     throw new TypeError(
@@ -287,8 +287,8 @@ class InputsAPI {
     return new WritableInput(this, key);
   }
 
-  as(transform) {
-    return this.#values.as(transform);
+  map(transform) {
+    return this.#values.map(transform);
   }
 
   subscribe(...args) {
@@ -340,11 +340,11 @@ class WritableInput {
   }
 
   readable() {
-    return this.#api.as((current) => current[this.#key]);
+    return this.#api.map((current) => current[this.#key]);
   }
 
-  as(fn) {
-    return this.#api.as((current) => fn(current[this.#key]));
+  map(fn) {
+    return this.#api.map((current) => fn(current[this.#key]));
   }
 
   subscribe(...args) {

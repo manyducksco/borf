@@ -28,11 +28,11 @@ export const AppLayout = View.define({
     const mouse = ctx.useStore(MouseStore);
 
     // Display current mouse coordinates as tab title
-    ctx.observe(mouse.$position, (pos) => {
+    ctx.subscribe(mouse.$position, (pos) => {
       page.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
     });
 
-    ctx.observe(page.$visibility, (status) => {
+    ctx.subscribe(page.$visibility, (status) => {
       ctx.log(`visibility: ${status}`);
     });
 
@@ -41,7 +41,7 @@ export const AppLayout = View.define({
         <a
           href={href}
           class={{
-            [styles.active]: router.$path.as((x) => x.startsWith(href)),
+            [styles.active]: router.$path.map((x) => x.startsWith(href)),
           }}
         >
           {label}

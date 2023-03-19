@@ -45,7 +45,7 @@ export class Timer extends View {
           <div>
             Elapsed Time: <progress max={$$duration} value={$$elapsed} />
           </div>
-          <div>{$$elapsed.as((seconds) => seconds.toFixed(1))}</div>
+          <div>{$$elapsed.map((seconds) => seconds.toFixed(1))}</div>
           <div>
             Duration:{" "}
             <input

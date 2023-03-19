@@ -2,7 +2,7 @@ import { View, makeState, joinStates } from "@borf/browser";
 import logLifecycle from "../utils/logLifecycle.js";
 
 export class FormExample extends View {
-  setup(ctx, m) {
+  setup(ctx) {
     const $$firstName = makeState("");
     const $$lastName = makeState("");
     const $$age = makeState(18);
@@ -31,9 +31,9 @@ export class FormExample extends View {
         return errors;
       }
     );
-    const $hasErrors = $errors.as((e) => e.length > 0);
+    const $hasErrors = $errors.map((e) => e.length > 0);
 
-    ctx.observe($hasErrors, $errors, (hasErrors, errors) => {
+    ctx.subscribe([$hasErrors, $errors], (hasErrors, errors) => {
       ctx.log("hasErrors?", hasErrors);
       if (hasErrors) {
         ctx.log("errors", errors);
@@ -55,9 +55,10 @@ export class FormExample extends View {
 
           <button disabled={$hasErrors}>Submit</button>
 
-          {m.when(
+          {View.when(
             $hasErrors,
-            m.repeat($errors, ($error) => {
+            View.repeat($errors, (ctx) => {
+              const $error = ctx.inputs.readable("item");
               return <div style="color:red">{$error}</div>;
             })
           )}

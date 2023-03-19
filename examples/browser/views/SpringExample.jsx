@@ -19,7 +19,7 @@ export class SpringExample extends View {
             height: 36,
             borderRadius: "50%",
             backgroundColor: "red",
-            transform: spring.as((current) => `translateX(${current}px)`), // Use the spring's value as the X coordinate of this marker.
+            transform: spring.map((current) => `translateX(${current}px)`), // Use the spring's value as the X coordinate of this marker.
           }}
         />
         <button

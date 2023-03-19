@@ -19,7 +19,7 @@ export class TwoWayBindExample extends View {
           {/* number value gets converted back to number */}
           <p
             style={{
-              fontSize: $$size.as((s) => s + "px"),
+              fontSize: $$size.map((s) => s + "px"),
             }}
           >
             {$$text}
