@@ -5,7 +5,7 @@
 
 Bedrock is a toolbox of classes that adds useful new types and expands on some of JavaScript's built-in ones. Bedrock is a supplement to the JS standard library. It includes things that don't necessarily need to be built into the language, but are still useful building blocks for many different kinds of projects.
 
-Bedrock is fully tree-shakeable. That means if you bundle your scripts (with a tool like [Webpack](https://webpack.js.org/) or [@borf/build]()), only classes you actually use will add to your bundle size.
+Bedrock is fully tree-shakeable. That means if you bundle your scripts (with a tool like [Webpack](https://webpack.js.org/) or [@borf/build](https://www.npmjs.com/package/@borf/build)), only classes you actually use will add to your bundle size.
 
 ## What's in it?
 
