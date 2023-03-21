@@ -131,6 +131,8 @@ app.addRootView(HelloWorld);
 
 Views are what most other JS frameworks call a component; a reusable chunk of markup and logic that takes attributes/props/inputs/etc and returns what's going to be displayed to the user. As you might expect if you have experience with React, Views can be used just like typical HTML elements.
 
+> Borf has two types of components; Views and Stores. Views deal with displaying DOM nodes and handling user input, while Stores manage shared state that is accessible to multiple components. Stores are explained in more depth later in this README.
+
 ```js
 app.addRootView((ctx, m) => {
   return m("div", [
@@ -229,10 +231,18 @@ const Example = View.define({
 
 ### Special Views
 
-```js
+> TODO: Describe better. The following is a rough draft.
+
+The `View` class includes a few helpers for conditional rendering, loops and rendering based on observables. Unlike views created with `View.define`, these views can be used inline.
+
+These special views take an observable (or a static value) as a first argument.
+
+```jsx
+// Conditional:
 View.when(value, <h1>Value is truthy</h1>, <h1>Value is falsy</h1>);
 View.unless(value, <h1>Value is not truthy</h1>);
 
+// Looping:
 View.repeat(array, (ctx, m) => {
   const $item = ctx.inputs.readable("item");
   const $name = $item.map((x) => x.name);
@@ -240,11 +250,78 @@ View.repeat(array, (ctx, m) => {
   return m("li", $name);
 });
 
+// Observables:
 View.subscribe(observable, (value) => {
   return; /* render something */
 });
 View.subscribe([observable1, observable2], (value1, value2) => {
   return; /* render something */
+});
+
+// Full example:
+const Example = View.define({
+  inputs: {
+    header: {
+      default: "This is the default header",
+    },
+  },
+
+  setup: (ctx) => {
+    const $header = ctx.inputs.readable("header");
+    const $showContent = new State(false);
+    const $names = new State(["one", "two", "three"]);
+
+    // How it looks with `m` function:
+    return m("section", [
+      m("header", [
+        View.subscribe($header, (text) => {
+          // This doesn't make any sense because you could just pass $header directly, but whatever.
+          return m("h1", text);
+        }),
+      ]),
+
+      View.when($showContent, m("p", "This content is only shown while showContent is true.")),
+      View.unless($showContent, m("p", "Content is hidden.")),
+
+      m(
+        "ul",
+        View.repeat($names, (ctx) => {
+          const $name = ctx.inputs.readable("value");
+          const $index = ctx.inputs.readable("index");
+
+          return m("li", `#${$index}: ${$name}`);
+        })
+      ),
+    ]);
+
+    // How it looks with JSX:
+    return (
+      <section>
+        <header>
+          {View.subscribe($header, (text) => {
+            // This doesn't make any sense because you could just pass $header directly, but whatever.
+            return <h1>{text}</h1>;
+          })}
+        </header>
+
+        {View.when($showContent, <p>This content is only shown while showContent is true.</p>)}
+        {View.unless($showContent, <p>Content is hidden.</p>)}
+
+        <ul>
+          {View.repeat($names, (ctx) => {
+            const $name = ctx.inputs.readable("value");
+            const $index = ctx.inputs.readable("index");
+
+            return (
+              <li>
+                #{$index}: {$name}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    );
+  },
 });
 ```
 
@@ -421,7 +498,7 @@ with technical inspiration from [@reach/router](https://reach.tech/router/), as 
 
 ### Route Patterns
 
-Routes are identified by strings called patterns. A pattern defines the shape the path must match, with special placeholders for variables that appear within the route. Values matched by those placeholders are exposed for use in your code. Below are some examples of patterns and how they work.
+Routes are defined with strings called patterns. A pattern defines the shape the URL path must match, with special placeholders for variables that appear within the route. Values matched by those placeholders are parsed out and exposed to your code (`router` store, `$params` readable). Below are some examples of patterns and how they work.
 
 - Static: `/this/is/static` has no params and will match only when the route is exactly `/this/is/static`.
 - Numeric params: `/users/{#id}/edit` has the named param `{#id}` which matches numbers only, such as `123` or `52`. The resulting value will be parsed as a number.
@@ -448,7 +525,7 @@ app
   });
 ```
 
-As you can infer from the code above, once a route matches a pattern the corresponding view is displayed. Params can be accessed inside those views through the built-in `router` store:
+As you may have inferred from the code above, when the URL matches a pattern the corresponding view is displayed. If we visit `/people/john`, we will see the `PersonDetails` view and the params will be `{ name: "john" }`. Params can be accessed inside those views through the built-in `router` store.
 
 ```js
 const ThingDetails = View.define({
@@ -487,7 +564,7 @@ const ThingDetails = View.define({
 
 ## State
 
-In a Borf app, all data that changes is stored in a State. All interested parties subscribe to that State and update themselves automatically. Borf has no virtual DOM or re-rendering. Components render once, and everything beyond that is a side effect of a State change.
+In a Borf app, all data that changes is stored in a State. All interested parties subscribe to that State and update themselves automatically. Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a State change.
 
 ```js
 import { View, State } from "@borf/browser";
