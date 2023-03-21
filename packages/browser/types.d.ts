@@ -5,13 +5,16 @@ declare module "@borf/browser" {
     inputs: I;
   }
 
-  export class WebComponentHub {
+  /**
+   * Registers views as HTML custom elements. All elements on a hub have access to any stores on that hub.
+   */
+  export class ElementHub {
     constructor();
 
     addStore<I>(store: Store<I, any>, options: AddStoreOptions<I>): this;
     addElement(tag: string, component: View | Store): this;
 
-    register(): Promise<void>;
+    connect(): Promise<void>;
   }
 
   /*==================================*\
@@ -27,24 +30,24 @@ declare module "@borf/browser" {
        * Determines which debug channels are printed. Supports multiple filters with commas,
        * a prepended `-` to exclude a channel and wildcards to match partial channels.
        *
-       * @example "service:*,-service:test" // matches everything starting with "service" except "service:test"
+       * @example "store:*,-store:test" // matches everything starting with "store" except "store:test"
        */
       filter?: string | RegExp;
 
       /**
        * Print log messages when true. Default: true for development builds, false for production builds.
        */
-      log?: boolean;
+      log?: boolean | "development";
 
       /**
        * Print warn messages when true. Default: true for development builds, false for production builds.
        */
-      warn?: boolean;
+      warn?: boolean | "development";
 
       /**
        * Print error messages when true. Default: true.
        */
-      error?: boolean;
+      error?: boolean | "development";
     };
 
     /**

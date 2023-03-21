@@ -8,7 +8,7 @@ import { PageStore } from "../../stores/page.js";
 import { DialogStore } from "./stores/dialog.js";
 import { RouterStore } from "./stores/router.js";
 
-export class WebComponentHub {
+export class ElementHub {
   #stores = [
     { store: "http", exports: HTTPStore },
     { store: "page", exports: PageStore },
@@ -121,12 +121,12 @@ export class WebComponentHub {
 
         customElements.define(
           element.tag,
-          class extends FronteWebComponent {
+          class extends BorfCustomElement {
             component = element.component;
 
             static get observedAttributes() {
               if (element.component.inputs) {
-                return Object.keys(element.component.inputs); // Subscribe to changes on all defined attributes.
+                return Object.keys(element.component.inputs); // Subscribe to changes on all defined inputs.
               } else {
                 return [];
               }
@@ -141,7 +141,7 @@ export class WebComponentHub {
   }
 }
 
-class FronteWebComponent extends HTMLElement {
+class BorfCustomElement extends HTMLElement {
   component;
   instance;
 

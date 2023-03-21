@@ -1,9 +1,9 @@
 # Web Components
 
 ```jsx
-import { Store, View, WebComponentHub } from "@borf/browser";
+import { Store, View, ElementHub } from "@borf/browser";
 
-const hub = new WebComponentHub();
+const hub = new ElementHub();
 
 // Create a store that holds a title.
 class TitleStore extends Store {

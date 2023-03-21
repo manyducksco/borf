@@ -63,7 +63,16 @@ export default Builder.configure({
   server: {
     entry: "./server/app.ts",
   },
-  static: "./static",
+  static: {
+    path: "./static",
+  },
+  output: {
+    path: "./output",
+  },
+  optimize: {
+    minify: true,
+    compress: "production",
+  },
 });
 ```
 

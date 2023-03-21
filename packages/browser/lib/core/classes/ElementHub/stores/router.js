@@ -5,8 +5,9 @@ import queryString from "query-string";
 import { Store } from "../../Store.js";
 import { State } from "../../State.js";
 
-export class RouterStore extends Store {
-  setup(ctx) {
+export const RouterStore = Store.define({
+  label: "router",
+  setup: (ctx) => {
     const history = createBrowserHistory();
     let cancel;
 
@@ -98,5 +99,5 @@ export class RouterStore extends Store {
 
       navigate,
     };
-  }
-}
+  },
+});

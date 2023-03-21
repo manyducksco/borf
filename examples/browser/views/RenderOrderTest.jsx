@@ -2,7 +2,7 @@ import { State, View } from "@borf/browser";
 import { ExampleFrame } from "./ExampleFrame";
 
 export class RenderOrderTest extends View {
-  setup(ctx, m) {
+  setup(ctx) {
     const $$isTrue = new State(true);
 
     let interval;

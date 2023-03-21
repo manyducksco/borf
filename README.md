@@ -6,6 +6,7 @@ This is a monorepo for Borf, a full stack JS framework. It is managed using [ler
 
 - Be fully featured for modern web apps (components, routing, logging, error handling, state management, HTTP client)
 - Be relatively lightweight on the front-end (<30kb gzipped)
+- Answer the question "can we just chain a bunch of observables together to make an app?"
 
 ## Core Packages
 

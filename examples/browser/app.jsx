@@ -160,6 +160,76 @@ app
 
 app.connect("#app");
 
+// Is 'add' in front of everything ugly? Or is it clear, because everything starts with a verb?
+//
+// app
+//   .language("en-US", {
+//     strings: {
+//       greeting: "Sup",
+//     },
+//   })
+//   .language("en-GB", {
+//     // Use an async function to fetch translations from a server.
+//     strings: async () => {
+//       return Promise.resolve({
+//         greeting: "Well met, traveller",
+//       });
+//     },
+//   })
+//   .language("ja", {
+//     // Or pass a string which is assumed to be a path to a JSON file to be requested over HTTP?
+//     strings: "/api/lang/ja.json",
+//   })
+//   .setLanguage("en-US")
+//   .setLanguage("auto", { fallback: "en-US" })
+//   .store(CounterStore)
+//   .store(MouseStore)
+//   .rootView(AppLayout)
+//   .route("/examples", null, (sub) => {
+//     sub
+//       .route("/spring-animation", SpringAnimation)
+//       .route("/languages", Languages)
+//       .route("/crash-handling", CrashHandling)
+//       .route("/counter-with-store", CounterWithStore)
+//       .route("/local-stores", LocalStores)
+//       .redirect("*", "./spring-animation");
+//   })
+//   .route("/7guis", SevenGUIs, (sub) => {
+//     sub
+//       .route("/counter", Counter)
+//       .route("/temp-converter", TempConverter)
+//       .route("/flight-booker", FlightBooker)
+//       .route("/timer", Timer)
+//       .route("/crud", CRUD)
+//       .route("/circle-drawer", CircleDrawer)
+//       .route("/cells", Cells)
+//       .redirect("*", "./counter");
+//   })
+//   .route("/router-test/one", () => <h1>One</h1>)
+//   .route("/router-test/two", () => <h1>Two</h1>)
+//   .redirect("/router-test/*", "/router-test/one")
+//   .route(
+//     "/nested",
+//     function view(ctx) {
+//       return (
+//         <div>
+//           <h1>Nested Routes!</h1>
+//           {ctx.outlet()}
+//         </div>
+//       );
+//     },
+//     function extend(sub) {
+//       sub
+//         .route("/one", () => <h1>NESTED #1</h1>)
+//         .route("/two", () => <h1>NESTED #2</h1>)
+//         .redirect("*", "./one");
+//     }
+//   )
+//   .route("/tests", null, (sub) => {
+//     sub.route("/render-order", RenderOrderTest);
+//   })
+//   .redirect("*", "./examples");
+
 // const { translate } = ctx.useStore("language");
 
 // translate("ui.menu.home"); // Readable<string>
