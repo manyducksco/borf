@@ -12,8 +12,9 @@
     "prepublishOnly": "tsc"
   },
   "exports": {
-    ".": "./lib/index.js",
-    "./testing": "./lib/testing/index.js"
+    ".": {
+      "import": "./lib/index.js"
+    }
   },
   "keywords": [],
   "author": "morgan@manyducks.co",

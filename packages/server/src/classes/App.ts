@@ -90,8 +90,8 @@ export class App extends Router {
   }
 
   /**
-   * Sets a fallback file to serve when the server has no handlers for a route.
-   * Usually this is the app's `index.html` which lets the browser attempt to handle those routes with client side routing.
+   * Sets a fallback file to serve when a route has no handlers.
+   * Usually, this file is the app's `index.html` which lets the browser app attempt to handle it with client side routing.
    *
    * @param filename - The name of the file in your `static` directory to use as a fallback.
    */
