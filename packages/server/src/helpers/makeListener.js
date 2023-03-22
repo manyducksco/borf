@@ -3,10 +3,10 @@ import send from "send";
 import { isString, isTemplate, isFunction } from "./typeChecking.js";
 import { matchRoute } from "./routing.js";
 import { parseFormBody } from "./parseFormBody.js";
-import { EventSource } from "../objects/EventSource.js";
+import { EventSource } from "../classes/EventSource.js";
 import { Request } from "../objects/Request.js";
 import { Response } from "../objects/Response.js";
-import { Headers } from "../objects/Headers.js";
+import { Headers } from "../classes/Headers.js";
 
 /**
  * Returns a request handler callback for a node `http` server.

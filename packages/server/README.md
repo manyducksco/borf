@@ -29,14 +29,14 @@ const corsOptions = {
   maxAge: 99999999999999999, // (in seconds) Access-Control-Max-Age
 };
 
-app.cors(); // Allow all methods on all origins.
-app.cors(corsOptions); // Use specified options.
+app.addCORS(); // Allow all methods on all origins.
+app.addCORS(corsOptions); // Use specified options.
 
-app.static(); // Add default static directory (client bundle output)
-app.static("/static/path", "/path/to/actual/dir"); // Add custom static directory
+app.addFallback(); // Fallback to index.html for capable requests to support client side routing.
+app.addFallback("/some/weird/index.html"); // Specify your own index.html fallback path.
 
-app.fallback(); // Fallback to index.html for capable requests to support client side routing.
-app.fallback("/some/weird/index.html"); // Specify your own index.html fallback path.
+app.addStaticFiles(); // Add default static directory (client bundle output)
+app.addStaticFiles("/static/path", "/path/to/actual/dir"); // Add custom static directory
 
 // Create API routes with functions named after HTTP methods (`get`, `post`, `delete`, etc.)
 app.onGet("/some-route", function (ctx) {
@@ -54,20 +54,22 @@ app.onGet("/some-route", function (ctx) {
 // Server-sent events. The connection stays open until the source is closed.
 // This connection is initiated client-side with EventSource.
 // see: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events
-app.eventSource("/events", (ctx) => {
-  // Send a message with content 'whatever'.
-  ctx.send("whatever");
+app.onGet("/events", (ctx) => {
+  return new EventSource((src) => {
+    // Send a message with content 'whatever'.
+    src.send("whatever");
 
-  // Send a 'ping' event.
-  ctx.emit("ping");
+    // Send a 'ping' event.
+    src.emit("ping");
 
-  // Send a 'usermessage' event with some data. JS objects will be serialized to JSON automatically.
-  ctx.emit("usermessage", {
-    userId: 1,
-    text: "Hello!",
+    // Send a 'usermessage' event with some data. JS objects will be serialized to JSON automatically.
+    src.emit("usermessage", {
+      userId: 1,
+      text: "Hello!",
+    });
+
+    src.close();
   });
-
-  ctx.close();
 });
 
 // Listen for HTTP requests on localhost at specified port number.
@@ -134,16 +136,16 @@ app.use(async (ctx) => {
 // Express-style verb methods to handle routes. Pictured with multiple middleware functions.
 app.onGet(
   "/some/url",
-  (ctx) => {
-    const auth = ctx.global("auth");
+  (req, ctx) => {
+    const auth = ctx.useStore(AuthStore);
     // Admin check. Presume `auth` is added by an auth middleware that runs before this.
     if (!auth.isAdmin) {
       return ctx.redirect("/other/path");
     }
   },
-  (ctx) => {
+  (req, ctx) => {
     // Analytics.
-    ctx.global("analytics").pageView(request.location.pathname);
+    ctx.useStore(AnalyticsStore).pageView(request.location.pathname);
     return ctx.next();
   },
   (ctx) => {
@@ -179,8 +181,8 @@ router.onGet("/", () => {
   return "OK"; // Return a body
 });
 
-router.onGet("manual/json", (ctx) => {
-  ctx.response.headers.set("content-type", "application/json");
+router.onGet("manual/json", (req, ctx) => {
+  ctx.setHeader("content-type", "application/json");
 
   return JSON.stringify({
     message: "This is returned as string, but content-type is set to application/json",

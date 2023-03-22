@@ -829,9 +829,12 @@ export class Type<S extends Shape> {
    * Determines if an object matches the shape of this custom type.
    */
   isTypeOf(value: unknown): value is S {
-    return false; // TODO: Implement.
+    return false; // TODO: Implement nested type validation.
   }
 
+  /**
+   * Like `isTypeOf`, but throws an error if value does not match the shape.
+   */
   assertTypeOf(value: unknown): value is S {
     if (!this.isTypeOf(value)) {
       throw new TypeError(

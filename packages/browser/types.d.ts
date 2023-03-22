@@ -675,12 +675,10 @@ declare module "@borf/browser" {
       E = ReturnType<T["setup"]>
     >(config: StoreConfig<I, E>): Store<I, E>;
 
-    constructor<I, E>(config: StoreConfig<I, E>): Store<I, E>;
+    constructor(config: StoreConfig<I, Exports>);
 
-    abstract setup(ctx: StoreContext<I>): Exports;
+    setup(ctx: StoreContext<I>): Exports;
   }
-
-  type StoreSetupFn<I, E> = (ctx: StoreContext<I>) => E;
 
   export interface StoreContext<I> extends DebugChannel, StateContext {
     inputs: Inputs<I>;

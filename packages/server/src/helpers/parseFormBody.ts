@@ -1,18 +1,28 @@
+import type { IncomingMessage } from "node:http";
+
 import busboy from "busboy";
+
+interface FormFile {
+  name: string;
+  type: string;
+  buffer: Buffer;
+}
 
 /**
  * Parses incoming request bodies encoded as form data.
  */
-export async function parseFormBody(req) {
-  return new Promise((resolve, reject) => {
+export async function parseFormBody(req: IncomingMessage) {
+  type FormData = Record<string, string | FormFile[]>;
+
+  return new Promise<FormData>((resolve, reject) => {
     const bb = busboy({ headers: req.headers });
 
-    const form = {};
+    const form: FormData = {};
 
     bb.on("file", (name, file, info) => {
       const { filename, mimeType } = info;
 
-      const buffers = [];
+      const buffers: Buffer[] = [];
 
       file
         .on("data", (data) => {
@@ -25,11 +35,14 @@ export async function parseFormBody(req) {
             form[name] = [];
           }
 
-          form[name].push({
-            name: filename,
-            type: mimeType,
-            buffer: Buffer.concat(buffers),
-          });
+          const array = form[name];
+          if (Array.isArray(array)) {
+            array.push({
+              name: filename,
+              type: mimeType,
+              buffer: Buffer.concat(buffers),
+            });
+          }
         });
     });
 

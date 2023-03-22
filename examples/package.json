@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "start:prod": "node server/app.js",
-    "start": "bbuild --watch",
-    "build": "bbuild --minify --compress",
+    "start": "borf-build --watch",
+    "build": "borf-build",
     "viewer": "woofe-viewer ./client",
     "test": "jest",
     "test:watch": "npm run test -- --watch",

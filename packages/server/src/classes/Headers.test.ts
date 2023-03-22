@@ -1,6 +1,7 @@
+import test from "ava";
 import { Headers } from "./Headers.js";
 
-test("constructor", () => {
+test("constructor", (t) => {
   const arrayHeaders = new Headers([
     ["Content-Type", "application/json"],
     ["Accept", "text/html"],
@@ -11,17 +12,17 @@ test("constructor", () => {
     Accept: "text/html",
   });
 
-  expect(arrayHeaders.toJSON()).toStrictEqual({
+  t.deepEqual(arrayHeaders.toJSON(), {
     "content-type": "application/json",
     accept: "text/html",
   });
 
-  expect(objectHeaders.toJSON()).toStrictEqual({
+  t.deepEqual(objectHeaders.toJSON(), {
     "content-type": "application/json",
     accept: "text/html",
   });
 });
 
-// test("append", () => {
+// test("append", (t) => {
 //   const headers = new Headers();
 // });

@@ -1,4 +1,4 @@
-import { isTemplate, isPromise, isArray } from "./helpers/typeChecking.js";
+import { isTemplate, isPromise } from "./helpers/typeChecking.js";
 
 /**
  * Renders HTML from a tagged template literal.
@@ -13,7 +13,7 @@ import { isTemplate, isPromise, isArray } from "./helpers/typeChecking.js";
  *   return html`<span class="fancy">${text}</span>`
  * }
  */
-export function html(strings, ...values) {
+export function html(strings: TemplateStringsArray, ...values: unknown[]) {
   const template = {
     async render() {
       let rendered = "";
@@ -27,7 +27,7 @@ export function html(strings, ...values) {
             nextValue = await nextValue;
           }
 
-          const nextValues = isArray(nextValue) ? nextValue : [nextValue];
+          const nextValues = Array.isArray(nextValue) ? nextValue : [nextValue];
 
           for (const value of nextValues) {
             if (isTemplate(value)) {
@@ -52,7 +52,7 @@ export function html(strings, ...values) {
           }
         }
         return mindent;
-      }, null);
+      }, 0);
 
       // Strip minimum indentation from each indented line.
       if (mindent !== null) {

@@ -180,7 +180,7 @@ const ListItem = View.define({
         // 'active' class only applied while `active` input is true.
         class: { active: $active },
       },
-      ctx.children()
+      ctx.outlet()
     );
   },
 });
@@ -528,7 +528,7 @@ app
 As you may have inferred from the code above, when the URL matches a pattern the corresponding view is displayed. If we visit `/people/john`, we will see the `PersonDetails` view and the params will be `{ name: "john" }`. Params can be accessed inside those views through the built-in `router` store.
 
 ```js
-const ThingDetails = View.define({
+const PersonDetails = View.define({
   setup(ctx, m) {
     // `router` store allows you to work with the router from inside the app.
     const router = ctx.useStore("router");
@@ -553,11 +553,11 @@ const ThingDetails = View.define({
     navigate("/another/page", { prompt: "Are you sure you want to leave and go to /another/page?" });
     navigate("/another/page", { prompt: PromptView });
 
-    // Get the live value of `{#id}` from the current path.
-    const $id = $params.map((p) => p.id);
+    // Get the live value of `{name}` from the current path.
+    const $name = $params.map((p) => p.name);
 
-    // Render it into a <p> tag. The ID portion will update if the URL changes.
-    return m("p", "Thing's ID is ", $id);
+    // Render it into a <p> tag. The name portion will update if the URL changes.
+    return m("p", "The person is:", $name);
   },
 });
 ```
@@ -585,18 +585,13 @@ const Timer = View.define({
     // the $ naming convention denotes a read-only binding
     const $seconds = $$seconds.readable();
 
-    function increment() {
-      // Update uses a function to derive a new value from the current one.
-      $$seconds.update((value) => value + 1);
-    }
-
-    function reset() {
-      // Set replaces the current value with a new one.
-      $$seconds.set(0);
-    }
-
     // Increment once per second after the view is connected to the DOM.
     ctx.onConnect(function () {
+      function increment() {
+        // Update uses a function to derive a new value from the current one.
+        $$seconds.update((value) => value + 1);
+      }
+
       interval = setInterval(increment, 1000);
     });
 
@@ -609,8 +604,14 @@ const Timer = View.define({
       <div class="timer">
         <span>{$seconds}</span>
 
-        {/* Button calls reset() when clicked */}
-        <button onclick={reset}>Reset</button>
+        <button
+          onclick={() => {
+            // Set replaces the current value with a new one.
+            $$seconds.set(0);
+          }}
+        >
+          Reset
+        </button>
       </div>
     );
   },

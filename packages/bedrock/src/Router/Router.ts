@@ -153,6 +153,10 @@ export class Router<T = any> {
 
   #routes: Route<T>[] = [];
 
+  get routes() {
+    return this.#routes;
+  }
+
   /**
    * Adds a new route that can be matched against when calling `match`.
    *

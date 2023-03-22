@@ -21,12 +21,12 @@ import chokidar from "chokidar";
 import nodemon from "nodemon";
 import getPort from "get-port";
 
-import log from "../utils/log.js";
-import { Timer } from "../utils/Timer.js";
-import { makeConfig } from "../utils/esbuildConfig.js";
-import { generateScopedClassName } from "../utils/generateScopedClassName.js";
-import { makeTimeoutTrigger } from "../utils/makeTimeoutTrigger.js";
-import { makeExposedPromise } from "../utils/makeExposedPromise.js";
+import log from "./log.js";
+import { Timer } from "./Timer.js";
+import { makeConfig } from "./esbuildConfig.js";
+import { generateScopedClassName } from "./generateScopedClassName.js";
+import { makeTimeoutTrigger } from "./makeTimeoutTrigger.js";
+import { makeExposedPromise } from "./makeExposedPromise.js";
 
 /**
  * Config object with options that determine how an app is built.
@@ -76,9 +76,7 @@ export interface BuilderConfig {
 
   output?: {
     path: string;
-  };
 
-  optimize?: {
     /**
      * Strips and minimizes assets during build to reduce bundle size.
      * Highly recommended for production builds. Defaults to "production".
@@ -144,23 +142,23 @@ export class Builder {
     await this.clean();
 
     const isProduction = process.env.NODE_ENV === "production";
-    const optimizeConfig = Object.assign(
+    const outputConfig = Object.assign(
       {
         minify: "production",
         compress: "production",
       },
-      this.#config.optimize
+      this.#config.output
     );
 
     const buildOptions = {
       minify:
-        optimizeConfig.minify === "production"
+        outputConfig.minify === "production"
           ? isProduction
-          : optimizeConfig.minify,
+          : outputConfig.minify,
       compress:
-        optimizeConfig.compress === "production"
+        outputConfig.compress === "production"
           ? isProduction
-          : optimizeConfig.compress,
+          : outputConfig.compress,
     };
 
     /*============================*\
@@ -199,7 +197,7 @@ export class Builder {
         buildOptions,
       });
 
-      log.client("built in", "%c" + timer.format());
+      log.client("built in", "%c" + timer.formatted);
     }
 
     /*============================*\
@@ -218,7 +216,7 @@ export class Builder {
     });
 
     if (staticFiles.length > 0) {
-      log.static("built in", "%c" + end.format());
+      log.static("built in", "%c" + end.formatted);
     }
   }
 
@@ -229,31 +227,24 @@ export class Builder {
     await this.clean();
 
     const isProduction = process.env.NODE_ENV === "production";
-    const optimizeConfig = Object.assign(
+    const outputConfig = Object.assign(
       {
         minify: "production",
         compress: "production",
       },
-      this.#config.optimize
+      this.#config.output
     );
 
     const buildOptions = {
       minify:
-        optimizeConfig.minify === "production"
+        outputConfig.minify === "production"
           ? isProduction
-          : optimizeConfig.minify,
+          : outputConfig.minify,
       compress:
-        optimizeConfig.compress === "production"
+        outputConfig.compress === "production"
           ? isProduction
-          : optimizeConfig.compress,
+          : outputConfig.compress,
     };
-
-    /**
-     * 1. Watch server, client and static folders.
-     * 2. Trigger esbuild on server when server files change.
-     * 3. Trigger esbuild on client when client files change.
-     * 4. Trigger build on static files when they change.
-     */
 
     // Emits build events.
     const events = new EventEmitter();
@@ -290,7 +281,7 @@ export class Builder {
       });
 
       if (ctx.staticFiles.length > 0) {
-        log.static("built in", "%c" + end.format());
+        log.static("built in", "%c" + end.formatted);
       }
     };
 
@@ -349,7 +340,7 @@ export class Builder {
             await updateClientFiles(incremental);
             events.emit("client built");
 
-            log.client("rebuilt in", "%c" + end.format());
+            log.client("rebuilt in", "%c" + end.formatted);
           } catch (err) {}
         } else {
           try {
@@ -376,7 +367,7 @@ export class Builder {
             await updateClientFiles(clientBundle);
             events.emit("client built");
 
-            log.client("built in", "%c" + end.format());
+            log.client("built in", "%c" + end.formatted);
           } catch (err) {
             console.error(err);
           }
@@ -616,11 +607,11 @@ export async function writeClientFiles({
       $("head").append(`
         <script>
           const events = new EventSource("/_bundle");
-    
+
           events.addEventListener("message", (message) => {
             window.location.reload();
           });
-    
+
           window.addEventListener("beforeunload", () => {
             events.close();
           });

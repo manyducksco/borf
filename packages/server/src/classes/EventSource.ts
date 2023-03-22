@@ -1,8 +1,14 @@
+import type { ServerResponse } from "http";
+
 import EventEmitter from "events";
 
+type EventSourceCallback = (ctx: EventSourceContext) => void;
+
 export class EventSource {
-  constructor(fn) {
-    this.fn = fn;
+  #callback: EventSourceCallback;
+
+  constructor(callback: EventSourceCallback) {
+    this.#callback = callback;
   }
 
   /**
@@ -10,7 +16,7 @@ export class EventSource {
    *
    * @param res - An instance of http.ServerResponse.
    */
-  start(res) {
+  start(res: ServerResponse) {
     res.writeHead(200, {
       "Cache-Control": "no-cache",
       "Content-Type": "text/event-stream",
@@ -28,23 +34,23 @@ export class EventSource {
       ctx.emit("close");
     });
 
-    this.fn(ctx);
+    this.#callback(ctx);
   }
 }
 
 class EventSourceContext extends EventEmitter {
-  #res = null;
+  #res: ServerResponse;
 
-  constructor(res) {
+  constructor(res: ServerResponse) {
     super();
     this.#res = res;
   }
 
-  send(data) {
+  send<T>(data: T) {
     this.#res.write(`data: ${data}\n\n`);
   }
 
-  emit(event, data) {
+  emit(event: string, data?: any) {
     this.#res.write(`event: ${event}\ndata: ${data}\n\n`);
     return true;
   }

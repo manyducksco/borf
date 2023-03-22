@@ -1,4 +1,10 @@
+/**
+ * Times operations in code. Includes the ability to format duration into nearest unit of time for display.
+ */
 export class Timer {
+  /**
+   * Formats a number of milliseconds into a string for display. Rounds to nearest unit.
+   */
   static format(ms: number) {
     if (ms % 1 > 0 && ms < 1) {
       return Math.round(ms * 1000) + "µs";
@@ -15,7 +21,7 @@ export class Timer {
     return (ms / 60000).toFixed(1) + "m";
   }
 
-  #startedAt = this.#getNow();
+  #startedAt = this.#getNow(); // Start timer when instantiated.
 
   #getNow() {
     if (performance != null) {
@@ -26,16 +32,16 @@ export class Timer {
   }
 
   /**
-   * Returns total time elapsed since last reset in milliseconds.
+   * Total time elapsed since last reset in milliseconds.
    */
   get elapsed() {
     return this.#getNow() - this.#startedAt;
   }
 
   /**
-   * Returns the timer duration formatted as a string.
+   * Timer duration formatted as a string.
    */
-  format() {
+  get formatted() {
     return Timer.format(this.elapsed);
   }
 
@@ -44,5 +50,12 @@ export class Timer {
    */
   reset() {
     this.#startedAt = this.#getNow();
+  }
+
+  /**
+   * Timer duration formatted as a string.
+   */
+  toString() {
+    return this.formatted;
   }
 }

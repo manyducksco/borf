@@ -1,4 +1,5 @@
-import { App, View, Store, WebComponentHub } from "@borf/browser";
+import { Type } from "@borf/bedrock";
+import { App, View, Store, ElementHub } from "@borf/browser";
 
 const WebComponentStore = Store.define({
   inputs: {
@@ -25,6 +26,7 @@ const WebComponentView = View.define({
     location: {
       default: "nowhere",
       about: "A string to indicate where this instance is being rendered.",
+      assert: Type.assertString,
     },
   },
 
@@ -39,7 +41,7 @@ const WebComponentView = View.define({
   },
 });
 
-const hub = new WebComponentHub();
+const hub = new ElementHub();
 
 hub.addStore(WebComponentStore, {
   inputs: { initialValue: "test" },
@@ -159,98 +161,3 @@ app
   .addRedirect("*", "./examples");
 
 app.connect("#app");
-
-// Is 'add' in front of everything ugly? Or is it clear, because everything starts with a verb?
-//
-// app
-//   .language("en-US", {
-//     strings: {
-//       greeting: "Sup",
-//     },
-//   })
-//   .language("en-GB", {
-//     // Use an async function to fetch translations from a server.
-//     strings: async () => {
-//       return Promise.resolve({
-//         greeting: "Well met, traveller",
-//       });
-//     },
-//   })
-//   .language("ja", {
-//     // Or pass a string which is assumed to be a path to a JSON file to be requested over HTTP?
-//     strings: "/api/lang/ja.json",
-//   })
-//   .setLanguage("en-US")
-//   .setLanguage("auto", { fallback: "en-US" })
-//   .store(CounterStore)
-//   .store(MouseStore)
-//   .rootView(AppLayout)
-//   .route("/examples", null, (sub) => {
-//     sub
-//       .route("/spring-animation", SpringAnimation)
-//       .route("/languages", Languages)
-//       .route("/crash-handling", CrashHandling)
-//       .route("/counter-with-store", CounterWithStore)
-//       .route("/local-stores", LocalStores)
-//       .redirect("*", "./spring-animation");
-//   })
-//   .route("/7guis", SevenGUIs, (sub) => {
-//     sub
-//       .route("/counter", Counter)
-//       .route("/temp-converter", TempConverter)
-//       .route("/flight-booker", FlightBooker)
-//       .route("/timer", Timer)
-//       .route("/crud", CRUD)
-//       .route("/circle-drawer", CircleDrawer)
-//       .route("/cells", Cells)
-//       .redirect("*", "./counter");
-//   })
-//   .route("/router-test/one", () => <h1>One</h1>)
-//   .route("/router-test/two", () => <h1>Two</h1>)
-//   .redirect("/router-test/*", "/router-test/one")
-//   .route(
-//     "/nested",
-//     function view(ctx) {
-//       return (
-//         <div>
-//           <h1>Nested Routes!</h1>
-//           {ctx.outlet()}
-//         </div>
-//       );
-//     },
-//     function extend(sub) {
-//       sub
-//         .route("/one", () => <h1>NESTED #1</h1>)
-//         .route("/two", () => <h1>NESTED #2</h1>)
-//         .redirect("*", "./one");
-//     }
-//   )
-//   .route("/tests", null, (sub) => {
-//     sub.route("/render-order", RenderOrderTest);
-//   })
-//   .redirect("*", "./examples");
-
-// const { translate } = ctx.useStore("language");
-
-// translate("ui.menu.home"); // Readable<string>
-
-// backe:
-// const app = new App();
-
-// app.onGet("/some-route", (req, res) => {
-//   /* ... */
-// });
-
-// app.onPut("/some-route", (req, res) => {
-//   /* ... */
-// });
-
-// const router = new Router();
-
-// router.onGet("/some-route", (req, res) => {
-//   /* ... */
-// });
-
-// const app = new App();
-
-// app.addRouter(router);

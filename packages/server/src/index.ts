@@ -1,3 +1,7 @@
 export { html } from "./html.js";
-export { makeApp } from "./makeApp.js";
-export { makeRouter } from "./makeRouter.js";
+export { App } from "./classes/App.js";
+export { Router } from "./classes/Router.js";
+
+// TODO
+// - Store
+// - View?
