@@ -1,10 +1,12 @@
+import type { RequestContext } from "./App/makeRequestListener";
+
 import { Type, Router as BedrockRouter } from "@borf/bedrock";
 import { Request } from "./Request.js";
 import { Response } from "./Response.js";
 
 type NextCallback = () => Promise<void>;
 
-type RouteHandler = <T>(req: Request, res: Response, next: NextCallback) => T;
+type RouteHandler = <T>(ctx: RequestContext) => T;
 
 export type Route = {
   verb: string;

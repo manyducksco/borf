@@ -1,4 +1,4 @@
-import type { AppContext } from "./App";
+import type { AppContext } from "./App/App";
 import type { DebugChannel } from "./DebugHub";
 import type { Factory } from "../commonTypes";
 
@@ -8,8 +8,14 @@ interface Subscription {
   unsubscribe(): void;
 }
 
-type StoreSetupFn<E> = (ctx: StoreContext) => E;
-type StoreConstructor<E> = Factory<Store<E>, StoreConfig<E>>;
+export type StoreSetupFn<E> = (ctx: StoreContext) => E;
+export type StoreConstructor<E> = { new (options: StoreConfig): Store<E>; label?: string; about?: string };
+
+export interface StoreRegistration<E> {
+  store: StoreConstructor<E>;
+  lifecycle: "app" | "request";
+  instance?: Store<E>;
+}
 
 interface StoreDefinition<E> {
   label?: string;
@@ -35,12 +41,12 @@ interface StoreContext extends DebugChannel {
   crash(error: Error): void;
 }
 
-interface StoreConfig<E> {
+interface StoreConfig {
   appContext: AppContext;
+  lifecycle?: "app" | "request";
   channelPrefix?: string;
   label?: string;
   about?: string;
-  setup?: StoreSetupFn<E>; // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
 }
 
 export class Store<E> {
@@ -66,6 +72,7 @@ export class Store<E> {
 
   label?: string;
   about?: string;
+  lifecycle?: "app" | "request";
 
   exports?: E;
 
@@ -78,19 +85,10 @@ export class Store<E> {
   #channel;
   #isConnected = false;
 
-  constructor({
-    appContext,
-    channelPrefix = "store",
-    label = "<anonymous>",
-    about,
-    setup, // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
-  }: StoreConfig<E>) {
+  constructor({ appContext, lifecycle, channelPrefix = "store", label = "<anonymous>", about }: StoreConfig) {
     this.label = label;
     this.about = about;
-
-    if (setup) {
-      this.setup = setup;
-    }
+    this.lifecycle = lifecycle;
 
     this.#appContext = appContext;
     this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
@@ -112,6 +110,12 @@ export class Store<E> {
           const _store = appContext.stores.get(store);
 
           if (_store) {
+            if (_store.lifecycle === "request" && this.lifecycle === "app") {
+              throw new Error(
+                `Store '${name}' is a request-lifecycle store, which can't be accessed by app-lifecycle store '${this.label}'.`
+              );
+            }
+
             if (!_store.instance) {
               throw new Error(
                 `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before other stores that access it.`

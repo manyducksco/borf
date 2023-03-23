@@ -3,7 +3,7 @@ import { Headers } from "./Headers.js";
 interface ResponseConfig<Body> {
   status?: number;
   headers?: Headers;
-  body: Body;
+  body?: Body;
 }
 
 /**
@@ -12,7 +12,7 @@ interface ResponseConfig<Body> {
 export class Response<Body = unknown> {
   status = 200;
   headers = new Headers();
-  body: Body;
+  body?: Body;
 
   constructor({ status, headers, body }: ResponseConfig<Body>) {
     if (status) {

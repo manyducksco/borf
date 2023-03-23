@@ -1,4 +1,12 @@
-import { isTemplate, isPromise } from "./helpers/typeChecking.js";
+import { Type } from "@borf/bedrock";
+
+interface HTMLTemplate {
+  render(): Promise<string>;
+}
+
+export function isHTML(value: unknown): value is HTMLTemplate {
+  return Type.isObject(value) && Type.isFunction(value.render);
+}
 
 /**
  * Renders HTML from a tagged template literal.
@@ -14,7 +22,7 @@ import { isTemplate, isPromise } from "./helpers/typeChecking.js";
  * }
  */
 export function html(strings: TemplateStringsArray, ...values: unknown[]) {
-  const template = {
+  return {
     async render() {
       let rendered = "";
 
@@ -23,14 +31,14 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]) {
         let nextValue = values.shift();
 
         if (nextValue) {
-          if (isPromise(nextValue)) {
+          if (Type.isPromise(nextValue)) {
             nextValue = await nextValue;
           }
 
           const nextValues = Array.isArray(nextValue) ? nextValue : [nextValue];
 
           for (const value of nextValues) {
-            if (isTemplate(value)) {
+            if (isHTML(value)) {
               rendered += String(await value.render());
             } else {
               rendered += String(value);
@@ -67,10 +75,4 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]) {
       return rendered.trim().replace(/\\n/g, "\n");
     },
   };
-
-  Object.defineProperty(template, "isTemplate", {
-    value: true,
-  });
-
-  return template;
 }

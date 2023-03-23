@@ -14,7 +14,7 @@ export class Request<Body = never> {
   params: Record<string, string | number | boolean>;
   query: Record<string, string | number | boolean>;
   headers: Headers;
-  body?: Body;
+  body: RequestBody<Body>;
   socket: Socket;
 
   /**
@@ -31,6 +31,8 @@ export class Request<Body = never> {
     this.path = route.path;
     this.params = route.params;
     this.query = route.query;
+
+    this.body = new RequestBody(req);
   }
 
   // get protocol() {
@@ -40,4 +42,22 @@ export class Request<Body = never> {
 
   //   return index !== -1 ? header.substring(0, index).trim() : header.trim();
   // }
+}
+
+class RequestBody<T> {
+  #req;
+
+  constructor(req: IncomingMessage) {
+    this.#req = req;
+  }
+
+  async json() {}
+
+  async form() {}
+
+  async text() {}
+
+  async buffer() {}
+
+  async stream() {}
 }

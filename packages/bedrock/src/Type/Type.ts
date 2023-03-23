@@ -727,7 +727,9 @@ export class Type<S extends Shape> {
   /**
    * Returns true if `value` is a plain JavaScript object.
    */
-  static isObject(value: unknown): value is object {
+  static isObject(
+    value: unknown
+  ): value is Record<string | number | symbol, unknown> {
     return value != null && typeof value === "object" && !Array.isArray(value);
   }
 
