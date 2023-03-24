@@ -1,4 +1,5 @@
 import type { IncomingMessage, RequestListener } from "node:http";
+import type { Stream } from "node:stream";
 import type { AppContext } from "./App";
 import type { DebugChannel } from "classes/DebugHub";
 import type { StoreConstructor, StoreRegistration } from "classes/Store";
@@ -120,7 +121,7 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
       });
 
       const request = new Request(req, matched);
-      const response = new Response({ headers });
+      const response = new Response<any>({ headers });
 
       const ctx: RequestContext = {
         // cache: {}, // TODO: Users can make a request-lifecycle store for this.
@@ -191,7 +192,7 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
           ctx.response.body = await ctx.response.body.render();
         } else if (Type.isString(ctx.response.body)) {
           ctx.response.headers.set("content-type", "text/plain");
-        } else if (Type.isFunction(ctx.response.body.pipe)) {
+        } else if (Type.isFunction((ctx.response.body as any).pipe)) {
           // Is a stream; handled below
           bodyIsStream = true;
         } else if (!ctx.response.headers.has("content-type")) {
@@ -203,10 +204,10 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
       res.writeHead(ctx.response.status, ctx.response.headers.toJSON());
 
       if (bodyIsStream) {
-        ctx.response.body.pipe(res);
+        (ctx.response.body as Stream).pipe(res);
       } else {
         if (ctx.response.body != null) {
-          res.write(Buffer.from(ctx.response.body));
+          res.write(Buffer.from(ctx.response.body as Buffer | string | any[]));
         }
 
         res.end();

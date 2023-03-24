@@ -5,7 +5,7 @@ import fs from "node:fs/promises";
 import { program } from "@ratwizard/cli";
 import { Type } from "@borf/bedrock";
 import { Builder } from "./lib/index.js";
-import log from "./lib/utils/log.js";
+import log from "./lib/log.js";
 
 program
   .option("-w, --watch", {

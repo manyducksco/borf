@@ -1,56 +1,58 @@
-import { makeApp, makeRouter, html } from "@borf/server";
+import { App, Router, Store, html } from "@borf/server";
 
-const app = makeApp({
+const app = new App({
   debug: {
     filter: "*",
   },
 });
 const PORT = process.env.PORT || 4000;
 
-app.cors();
-app.static();
-// app.static("/files", "/path/to/files/dir");
-app.fallback();
-// app.fallback("/some/weird/place/index.html");
+app.addCORS();
+app.addStaticFiles();
+// app.addStaticFiles("/files", "/path/to/files/dir");
+app.addFallback();
+// app.addFallback("/some/weird/place/index.html");
 
-// const ExampleStore = Store.define({
-//   setup: () => {
-//     let timesCalled = 0;
+const ExampleStore = Store.define({
+  label: "ExampleStore",
+  setup: () => {
+    let timesCalled = 0;
 
-//     return {
-//       call: () => {
-//         timesCalled++;
-//         return timesCalled;
-//       },
-//     };
-//   },
-// });
-
-// const AsyncStore = Store.define({
-//   setup: async () => {
-//     let waitFor = 50 + Math.random() * 100;
-//     return new Promise((resolve) => {
-//       setTimeout(() => {
-//         resolve({
-//           call: () => {
-//             return waitFor;
-//           },
-//         });
-//       }, waitFor);
-//     });
-//   },
-// });
-
-// app.addStore(ExampleStore);
-// app.addStore(AsyncStore);
-
-app.use(async (ctx) => {
-  ctx.response.headers.set("X-MIDDLEWARE-OUTLINE", "mrrp");
-  const start = performance.now();
-  await ctx.next();
-  const end = performance.now();
-  ctx.response.headers.set("X-TIMER", end - start + "ms");
+    return {
+      call: () => {
+        timesCalled++;
+        return timesCalled;
+      },
+    };
+  },
 });
+
+const AsyncStore = Store.define({
+  label: "AsyncStore",
+  setup: async () => {
+    let waitFor = 50 + Math.random() * 100;
+    return new Promise()((resolve) => {
+      setTimeout(() => {
+        resolve({
+          call: () => {
+            return waitFor;
+          },
+        });
+      }, waitFor);
+    });
+  },
+});
+
+app.addStore(ExampleStore);
+app.addStore(AsyncStore);
+
+// app.use(async (ctx) => {
+//   ctx.response.headers.set("X-MIDDLEWARE-OUTLINE", "mrrp");
+//   const start = performance.now();
+//   await ctx.next();
+//   const end = performance.now();
+//   ctx.response.headers.set("X-TIMER", end - start + "ms");
+// });
 
 app.onPost(
   "/full-test",
@@ -59,8 +61,8 @@ app.onPost(
     return ctx.next();
   },
   (ctx) => {
-    const exampleGlobal = ctx.global("example");
-    const asyncGlobal = ctx.global("async");
+    const exampleGlobal = ctx.useStore(ExampleStore);
+    const asyncGlobal = ctx.useStore(AsyncStore);
 
     ctx.response.headers.set(
       "X-GLOBAL-CALLS",
@@ -81,6 +83,13 @@ app.onPost(
       "X-GLOBAL-ASYNC",
       `Async Global waited ${asyncGlobal.call()} ms.`
     );
+
+    // ctx.setHeaders({
+    //   "X-GLOBAL-CALLS": `Example Global called ${exampleGlobal.call()} times.`,
+    //   "X-REQUEST-METHOD": `This is some CTX info: ${ctx.request.method}.`,
+    //   "X-REQUEST-BODY": `This is some CTX info: ${ctx.request.body?.hello}.`,
+    //   "X-GLOBAL-ASYNC": `Async Global waited ${asyncGlobal.call()} ms.`,
+    // });
 
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -131,6 +140,6 @@ async function AsyncHeader(...children) {
 }
 
 // Listen for HTTP requests on localhost at specified port number.
-app.listen(PORT).then((info) => {
-  console.log(`connected on port ${info.port}`);
+app.start(PORT).then((info) => {
+  console.log("started server", info);
 });

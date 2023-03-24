@@ -19,6 +19,7 @@ app.addStore(ExampleStore);
 const corsDefaults = {
   allowOrigin: ["*"],
   allowMethods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+  allowCredentials: false,
 };
 
 const corsOptions = {
@@ -73,7 +74,7 @@ app.onGet("/events", (ctx) => {
 });
 
 // Listen for HTTP requests on localhost at specified port number.
-app.listen(4000).then((info) => {
+app.start(4000).then((info) => {
   console.log(`connected on port ${info.port}`);
 });
 ```
@@ -136,21 +137,21 @@ app.use(async (ctx) => {
 // Express-style verb methods to handle routes. Pictured with multiple middleware functions.
 app.onGet(
   "/some/url",
-  (req, ctx) => {
+  (ctx) => {
     const auth = ctx.useStore(AuthStore);
     // Admin check. Presume `auth` is added by an auth middleware that runs before this.
     if (!auth.isAdmin) {
       return ctx.redirect("/other/path");
     }
   },
-  (req, ctx) => {
+  (ctx) => {
     // Analytics.
     ctx.useStore(AnalyticsStore).pageView(request.location.pathname);
     return ctx.next();
   },
   (ctx) => {
     // Response time recorder.
-    const timer = ctx.global("timing").createTimer(request.location.pathname);
+    const timer = ctx.useStore(TimingStore).createTimer(request.location.pathname);
 
     timer.start();
     await ctx.next();

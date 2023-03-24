@@ -1,8 +1,8 @@
 import type { DebugOptions } from "classes/DebugHub";
 import type { Cache } from "classes/StaticCache";
-import type { Factory } from "commonTypes";
 import type { StoreConstructor, StoreRegistration } from "classes/Store";
 
+import path from "node:path";
 import { createServer } from "node:http";
 import { Type } from "@borf/bedrock";
 import { NoCache, StaticCache } from "../StaticCache.js";
@@ -14,6 +14,9 @@ import { Store } from "../Store.js";
 
 import { makeRequestListener, RequestListener } from "./makeRequestListener.js";
 
+// TODO: Use project config output paths
+const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), "output/static");
+
 export interface AppContext {
   debugHub: DebugHub;
   crashCollector: CrashCollector;
@@ -21,13 +24,22 @@ export interface AppContext {
   stores: Map<StoreConstructor<unknown>, StoreRegistration<unknown>>;
   corsOptions?: CORSOptions;
   fallback?: string;
+  environment?: "development" | "production";
 }
 
 /**
  * Options for initializing the app.
  */
 interface AppOptions {
+  /**
+   * Logging options.
+   */
   debug?: DebugOptions;
+
+  /**
+   * Pass a value to override NODE_ENV environment variable.
+   */
+  environment?: "development" | "production";
 }
 
 /**
@@ -79,6 +91,7 @@ export class App extends Router {
       warn: "development",
       error: true,
     },
+    environment: process.env.NODE_ENV === "production" ? "production" : "development",
   };
 
   #server = createServer();
@@ -102,7 +115,7 @@ export class App extends Router {
     super();
     this.#options = merge(this.#options, options ?? {});
 
-    if (process.env.NODE_ENV === "production") {
+    if (this.#options.environment === "production") {
       this.#cache = new NoCache();
     } else {
       this.#cache = new StaticCache();
@@ -112,7 +125,7 @@ export class App extends Router {
   /**
    * Configure how the app handles CORS requests.
    */
-  addCORS(options: Partial<CORSOptions>) {
+  addCORS(options?: Partial<CORSOptions>) {
     this.#corsEnabled = true;
     Object.assign(this.#corsOptions, options);
 
@@ -136,12 +149,17 @@ export class App extends Router {
    * @param prefix - Route pattern under which to serve files from `source`.
    * @param filesDir - Directory on disk where files exist to be served from `prefix`.
    */
-  addStaticFiles(prefix: string, filesDir: string) {
+  addStaticFiles(prefix = "/", filesDir = DEFAULT_STATIC_SOURCE) {
+    Type.assertString(prefix, "Expected prefix to be a string. Got type: %t, value: %v");
+    Type.assertString(filesDir, "Expected filesDir to be a string. Got type: %t, value: %v");
+
     this.#cache.addEntry({ path: prefix, source: filesDir });
     return this;
   }
 
-  addStore(store: StoreConstructor<unknown>, options: AddStoreOptions) {
+  addStore(store: StoreConstructor<unknown>, options: AddStoreOptions = {}) {
+    Type.assertExtends(Store)(store);
+
     this.#stores.set(store, {
       store,
       lifecycle: options.lifecycle || "app",
@@ -163,13 +181,11 @@ export class App extends Router {
     const now = performance.now();
     const port = options?.port || Number(process.env.PORT);
 
-    const isProduction = process.env.NODE_ENV === "production";
-
     const debugHub = new DebugHub(this.#options.debug);
     const crashCollector = new CrashCollector({
       onCrash: (entry) => {},
       onReport: (entry) => {},
-      sendStackTrace: !isProduction,
+      sendStackTrace: this.#options.environment === "development",
     });
 
     const appContext: AppContext = {
@@ -179,6 +195,7 @@ export class App extends Router {
       staticCache: this.#cache,
       fallback: this.#fallback,
       stores: this.#stores,
+      environment: this.#options.environment,
     };
 
     // Initialize app-lifecycle stores.

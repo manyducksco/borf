@@ -208,11 +208,3 @@ export class Store<E> {
     }
   }
 }
-
-// const Test = Store.define({
-//   setup: (ctx) => {
-//     return { message: "test" };
-//   },
-// });
-
-// const t = new Test({});

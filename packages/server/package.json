@@ -1,13 +1,12 @@
 {
   "name": "@borf/server",
-  "version": "0.11.7",
+  "version": "0.12.0",
   "description": "Back-end routing, middleware and state management.",
   "main": "./lib/index.js",
   "type": "module",
   "scripts": {
     "test": "ava",
     "test:watch": "ava --watch",
-    "test:coverage": "npm run test -- --coverage",
     "build": "tsc",
     "prepublishOnly": "tsc"
   },
