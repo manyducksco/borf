@@ -472,12 +472,12 @@ declare module "@borf/browser" {
       /**
        * Validates input value at runtime. The app will crash if `validate` returns false or throws an Error.
        */
-      parse?: (value: unknown) => T[name];
+      assert?: (value: unknown) => boolean;
 
       /**
        * An example value to show what this input might take.
        */
-      example: T[name];
+      example?: T[name];
 
       /**
        * Attribute description for viewer.
@@ -504,7 +504,7 @@ declare module "@borf/browser" {
 
   export type ViewLike<I> = ViewSetupFn<I> | View<I>;
 
-  export type ViewSetupFn<I = any> = (ctx: ViewContext<I>, m: MarkupFn) => Markup | null;
+  export type ViewSetupFn<I = any> = (ctx: ViewContext<I>, m: MarkupFn) => Markup | null | Promise<Markup | null>;
 
   export type ViewConfig<I> = {
     /**
@@ -536,9 +536,10 @@ declare module "@borf/browser" {
   type RepeatSetupFn<T> = (ctx: ViewContext<{ item: T; index: number }>) => Markup;
 
   export class View<I = any> extends Connectable {
-    static define<T extends ViewConfig<any, any>, I = { [K in keyof T["inputs"]]: T["inputs"][K] }>(
+    static define<T extends ViewConfig<any>, I = { [K in keyof T["inputs"]]: T["inputs"][K] }>(
       config: ViewConfig<I>
     ): View<I>;
+    static define<I>(config: ViewConfig<I>): View<I>;
 
     static isView<I = any>(value: unknown): value is View<I>;
 
@@ -984,8 +985,8 @@ declare module "@borf/browser" {
   }
 }
 
-declare module "woofe/viewer" {
-  import { ViewLike, GlobalLike } from "woofe";
+declare module "@borf/browser/viewer" {
+  import { ViewLike, GlobalLike } from "@borf/browser";
 
   export interface ViewerConfig<A = any> {
     globals?: { name: string; global: GlobalLike }[];
@@ -1088,7 +1089,7 @@ declare namespace JSX {
 
     /**
      * CSS classes to be applied to this element. In addition to the standard space-separated list of class names,
-     * this attribute is expanded in Woof to also support a class map object with class names as keys and booleans as values.
+     * this attribute is expanded in Borf to also support a class map object with class names as keys and booleans as values.
      * Class names in a class map will be applied to the element while their values are true. Also supports an
      * array of strings and class maps.
      *

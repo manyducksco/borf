@@ -1,11 +1,13 @@
-import { Type } from "@borf/bedrock";
+function isObject<T = { [name: string]: any }>(value: unknown): value is T {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
 
-export function deepEqual(one, two) {
+export function deepEqual(one: any, two: any) {
   if (one === two) {
     return true;
   }
 
-  if (Type.isObject(one) && Type.isObject(two)) {
+  if (isObject(one) && isObject(two)) {
     const keysOne = Object.keys(one);
     const keysTwo = Object.keys(two);
 
@@ -22,7 +24,7 @@ export function deepEqual(one, two) {
     return true;
   }
 
-  if (Type.isArray(one) && Type.isArray(two)) {
+  if (Array.isArray(one) && Array.isArray(two)) {
     if (one.length !== two.length) {
       return false;
     }

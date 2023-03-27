@@ -1,6 +1,7 @@
-import { merge } from "./merge";
+import test from "ava";
+import { merge } from "./merge.js";
 
-test("merges nested objects", () => {
+test("merges nested objects", (t) => {
   const original = {
     number: 1,
     object: {
@@ -29,7 +30,7 @@ test("merges nested objects", () => {
 
   const merged = merge(original, target);
 
-  expect(merged).toStrictEqual({
+  t.deepEqual(merged, {
     number: 2,
     object: {
       oldProp: "unchanged",

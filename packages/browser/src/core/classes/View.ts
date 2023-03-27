@@ -1,3 +1,6 @@
+import type { InputValues, InputDefinitions } from "./Inputs.js";
+import type { Renderable } from "./Markup.js";
+
 import { Type } from "@borf/bedrock";
 import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
@@ -7,8 +10,50 @@ import { Outlet } from "./Outlet.js";
 import { Repeat } from "./Repeat.js";
 import { isMarkup } from "../helpers/typeChecking.js";
 
-export class View extends Connectable {
-  static define(config) {
+export type ViewConstructor<I> = {
+  new (options: ViewOptions<I>): View<I>;
+};
+
+export type ViewSetupFunction<I> = (ctx: ViewContext<I>) => Renderable;
+
+export type Viewable<I> = ViewConstructor<I> | ViewSetupFunction<I>;
+
+type ViewOptions<I> = {
+  appContext: unknown;
+  elementContext: unknown;
+  channelPrefix?: string;
+  label?: string;
+  about?: string;
+  inputs?: InputValues<I>;
+  inputDefs?: InputDefinitions<I>;
+  children?: Renderable[];
+  setup?: ViewSetupFunction<I>; // This is passed in directly to `new View()` to turn a standalone setup function into a view.
+};
+
+type ViewDefinition<I> = {
+  /**
+   * Name to identify this view in the console and dev tools.
+   */
+  label?: string;
+
+  /**
+   * Explanation of this view.
+   */
+  about?: string;
+
+  /**
+   * Values passed into this view, usually as HTML attributes.
+   */
+  inputs?: InputDefinitions<I>;
+
+  /**
+   * Configures the view and returns elements to render.
+   */
+  setup: ViewSetupFunction<I>;
+};
+
+export class View<Inputs = {}> extends Connectable {
+  static define(config: ViewDefinition) {
     if (!config.label) {
       console.trace(
         `View is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
@@ -80,7 +125,7 @@ export class View extends Connectable {
     });
   }
 
-  static subscribe(value, renderFn) {
+  static observe(value, renderFn) {
     return new Markup((config) => {
       return new Outlet({
         ...config,
@@ -90,7 +135,7 @@ export class View extends Connectable {
     });
   }
 
-  static repeat(value, view, keyFn) {
+  static forEach(value, view, keyFn) {
     let markup;
 
     if (Type.isFunction(view)) {

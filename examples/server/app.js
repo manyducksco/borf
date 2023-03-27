@@ -31,7 +31,7 @@ const AsyncStore = Store.define({
   label: "AsyncStore",
   setup: async () => {
     let waitFor = 50 + Math.random() * 100;
-    return new Promise()((resolve) => {
+    return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
           call: () => {

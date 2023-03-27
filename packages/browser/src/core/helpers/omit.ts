@@ -6,9 +6,9 @@
  * @param keys - An array of keys to omit.
  * @param object - An object to clone without the omitted keys.
  */
-export function omit(keys, object) {
-  const process = (object) => {
-    const newObject = {};
+export function omit<O extends Record<any, any>>(keys: (keyof O)[], object: O): Record<any, any> {
+  const process = (object: Record<any, any>) => {
+    const newObject: Record<any, any> = {};
 
     for (const key in object) {
       if (!keys.includes(key)) {
@@ -25,3 +25,5 @@ export function omit(keys, object) {
 
   return process(object);
 }
+
+const value = omit(["one", "three"], { one: 1, two: 2, three: 3 });

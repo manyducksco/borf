@@ -1,3 +1,9 @@
+import type { DebugOptions } from "./DebugHub.js";
+import type { StopFunction } from "./Writable.js";
+import type { InputValues } from "./Inputs.js";
+import type { StoreConstructor, StoreSetupFunction, Storable } from "./Store.js";
+import type { ViewConstructor, ViewSetupFunction, Viewable } from "./View.js";
+
 import { Type, Router } from "@borf/bedrock";
 
 import { merge } from "../helpers/merge.js";
@@ -13,6 +19,135 @@ import { Store } from "./Store.js";
 import { View } from "./View.js";
 import { m } from "./Markup.js";
 
+interface AddStoreOptions<I> {
+  inputs?: InputValues<I>;
+}
+
+interface AppOptions {
+  /**
+   * Options for the debug system.
+   */
+  debug?: DebugOptions;
+
+  /**
+   * Options to configure how routing works.
+   */
+  router?: {
+    /**
+     * Use hash-based routing if true.
+     */
+    hash?: boolean;
+
+    /**
+     * A history object from the `history` package.
+     *
+     * @see https://www.npmjs.com/package/history
+     */
+    history?: History;
+  };
+}
+
+export interface AppContext {
+  crashCollector: CrashCollector;
+  debugHub: DebugHub;
+  router: Router;
+  stores: Map<BuiltInStores | StoreRegistration["store"], StoreRegistration>;
+  options: AppOptions;
+  rootElement?: Node;
+  rootView?: ViewConstructor<{}>;
+}
+
+export interface ElementContext {
+  stores: Map<StoreRegistration["store"], StoreRegistration>;
+}
+
+export interface ElementContext {}
+
+export type BuiltInStores = "http" | "router" | "page" | "language" | "dialog";
+
+// TODO: Is there a good way to represent infinitely nested recursive types?
+/**
+ * An object where values are either a translated string or another nested Translation object.
+ */
+type Translation = Record<string, string | Record<string, string | Record<string, string | Record<string, string>>>>;
+
+interface LanguageConfig {
+  /**
+   * The translated strings for this language, or a callback function that returns them.
+   */
+  translation: Translation | (() => Translation) | (() => Promise<Translation>);
+}
+
+/**
+ * TODO: Needs a different name?
+ */
+interface StoreRegistration<I = any> {
+  store: StoreConstructor<I, any>;
+  exports?: StoreConstructor<I, any>;
+  inputs?: InputValues<I>;
+  instance?: Store<I, any>;
+}
+
+interface AppRouter {
+  /**
+   * Adds a new pattern, a view to display while that pattern matches the current URL, and an optional function to configure route chaining.
+   * Route chaining allows you to add nested routes and redirects that are displayed within the `view`'s outlet while `pattern` matches the current URL.
+   *
+   * @param pattern - A URL pattern to match against the current URL.
+   * @param view - The view to display while `pattern` matches the current URL.
+   * @param extend - A callback that takes a router object. Use this to append nested routes and redirects.
+   */
+  addRoute<I>(pattern: string, view: Viewable<I>, extend?: (sub: AppRouter) => void): this;
+
+  /**
+   * Adds a new pattern and chains a set of nested routes that are displayed without a layout `view`.
+   *
+   * @param pattern - A URL pattern to match against the current URL.
+   * @param view - Pass null to render subroutes without a parent view.
+   * @param extend - A callback that takes a router object. Use this to append nested routes and redirects.
+   */
+  addRoute(pattern: string, view: null, extend: (sub: AppRouter) => void): this;
+
+  /**
+   * Adds a new pattern that will redirect to a different route when matched.
+   *
+   * @param pattern - A URL pattern to match against the current URL.
+   * @param redirectPath - A path to redirect to when `pattern` matches the current URL.
+   */
+  addRedirect(pattern: string, redirectPath: string): this;
+
+  /**
+   * Adds a new pattern that will redirect to a different route when matched, as calculated by a callback function.
+   * Useful when you require more insight into the path that matched the pattern before deciding where to send the user.
+   *
+   * @param pattern - A URL pattern to match against the current URL.
+   * @param createPath - A function that generates a redirect path from the current URL match.
+   */
+  addRedirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
+}
+
+interface RedirectContext {
+  /**
+   * The path as it appears in the URL bar.
+   */
+  path: string;
+
+  /**
+   * The pattern that this path was matched with.
+   */
+  pattern: string;
+
+  /**
+   * Named route params parsed from `path`.
+   */
+  params: Record<string, string | number | undefined>;
+
+  /**
+   * Query params parsed from `path`.
+   */
+  query: Record<string, string | number | undefined>;
+}
+
 const DefaultRoot = View.define({
   label: "root",
   setup: (ctx) => ctx.outlet(),
@@ -21,23 +156,24 @@ const DefaultRoot = View.define({
 export class App {
   #layerId = 0;
   #isConnected = false;
-  #activeSubscriptions = [];
-  #stores = new Map([
+  #stopCallbacks: StopFunction[] = [];
+  // #activeSubscriptions = [];
+  #stores = new Map<BuiltInStores | StoreRegistration["store"], StoreRegistration>([
     ["dialog", { store: DialogStore }],
     ["router", { store: RouterStore }],
     ["page", { store: PageStore }],
     ["http", { store: HTTPStore }],
     ["language", { store: LanguageStore }],
   ]);
-  #languages = new Map();
+  #languages = new Map<string, LanguageConfig>();
   #rootView = DefaultRoot;
-  #currentLanguage;
-  #appContext;
-  #elementContext = {
+  #currentLanguage?: string;
+  #appContext: AppContext;
+  #elementContext: ElementContext = {
     stores: new Map(),
   };
 
-  #options = {
+  #options: AppOptions = {
     debug: {
       filter: "*,-borf:*",
       log: true,
@@ -53,7 +189,7 @@ export class App {
     return this.#isConnected;
   }
 
-  constructor(options) {
+  constructor(options: AppOptions = {}) {
     if (!options) {
       options = {};
     }
@@ -66,7 +202,7 @@ export class App {
     options = merge(this.#options, options);
 
     // Pass router store the inputs it needs to match routes.
-    const routerStore = this.#stores.get("router");
+    const routerStore = this.#stores.get("router")!;
     this.#stores.set("router", {
       ...routerStore,
       inputs: {
@@ -88,9 +224,9 @@ export class App {
           elementContext: this.#elementContext,
         });
 
-        instance.connect(this.#appContext.rootElement);
+        instance.connect(this.#appContext.rootElement!);
       },
-      crashPage: options.crashPage,
+      // crashPage: options.crashPage,
     });
 
     // And finally create the appContext. This is the central config object accessible to all components.
@@ -99,14 +235,18 @@ export class App {
       debugHub: new DebugHub({ ...options.debug, crashCollector }),
       stores: this.#stores,
       options,
-      rootElement: null,
-      rootView: null,
       router: new Router(),
       // $dialogs - added by @dialog global
     };
   }
 
-  addRootView(view) {
+  /**
+   * Adds a new root view which is displayed by the app at all times.
+   * All routes added to the app will render inside this view's `ctx.outlet()`.
+   *
+   * @param view - A View or a standalone setup function.
+   */
+  addRootView(view: ViewConstructor<{}> | ViewSetupFunction<{}>) {
     if (this.#rootView != DefaultRoot) {
       this.#appContext.debugHub
         .channel("borf:App")
@@ -124,37 +264,12 @@ export class App {
     return this;
   }
 
-  addRoute(pattern, view, extend) {
-    Type.assertString(pattern, "Pattern must be a string. Got type: %t, value: %v");
-
-    if (view === null) {
-      Type.assertFunction(extend, "An extend callback must be passed when `view` is null. Got type: %t, value: %v");
-    }
-
-    this.#prepareRoute({ pattern, view, extend }).forEach((route) => {
-      this.#appContext.router.addRoute(route.pattern, route.meta);
-    });
-
-    return this;
-  }
-
-  addRedirect(pattern, redirect) {
-    if (!Type.isFunction(redirect) && !Type.isString(redirect)) {
-      throw new TypeError(`Expected a redirect path or function. Got type: ${Type.of(redirect)}, value: ${redirect}`);
-    }
-
-    if (Type.isString(redirect)) {
-      // TODO: Crash app if redirect path doesn't match. Ideally prevent this before the app starts running.
-    }
-
-    this.#prepareRoute({ pattern, redirect }).forEach((route) => {
-      this.#appContext.router.addRoute(route.pattern, route.meta);
-    });
-
-    return this;
-  }
-
-  addStore(store, options) {
+  /**
+   * Adds a new global store which will be available to every component within this App.
+   *
+   * @param store - A Store or a standalone setup function.
+   */
+  addStore<I>(store: Storable<I, any>, options: AddStoreOptions<I>) {
     if (Type.isFunction(store)) {
       store = Store.define({ setup: store });
     }
@@ -166,25 +281,47 @@ export class App {
     return this;
   }
 
-  addLanguage(tag, config) {
+  /**
+   * Adds a new language the app can be translated into.
+   *
+   * @param tag - A valid BCP47 language tag, like `en-US`, `en-GB`, `ja`, etc.
+   * @param config - Language configuration.
+   */
+  addLanguage(tag: string, config: LanguageConfig) {
     this.#languages.set(tag, config);
 
     return this;
   }
 
-  setLanguage(tag, fallback) {
+  /**
+   * Sets the initial language. The app will default to the first language added if this is not called.
+   */
+  setLanguage(tag: string): this;
+
+  /**
+   * Sets the initial language based on the user's locale.
+   * Falls back to `fallback` language if provided, otherwise falls back to the first language added.
+   *
+   * @param tag - Set to "auto" to autodetect the user's language.
+   * @param fallback - The language tag to default to if the app fails to detect an appropriate language.
+   */
+  setLanguage(tag: "auto", fallback?: string): this;
+
+  setLanguage(tag: string, fallback?: string) {
     if (tag === "auto") {
       let tags = [];
 
       if (typeof navigator === "object") {
-        if (navigator.languages?.length > 0) {
-          tags.push(...navigator.languages);
-        } else if (navigator.language) {
-          tags.push(navigator.language);
-        } else if (navigator.browserLanguage) {
-          tags.push(navigator.browserLanguage);
-        } else if (navigator.userLanguage) {
-          tags.push(navigator.userLanguage);
+        const nav = navigator as any;
+
+        if (nav.languages?.length > 0) {
+          tags.push(...nav.languages);
+        } else if (nav.language) {
+          tags.push(nav.language);
+        } else if (nav.browserLanguage) {
+          tags.push(nav.browserLanguage);
+        } else if (nav.userLanguage) {
+          tags.push(nav.userLanguage);
         }
       }
 
@@ -214,14 +351,82 @@ export class App {
   }
 
   /**
+   * Adds a new pattern, a view to display while that pattern matches the current URL, and an optional function to configure nested routes and redirects.
+   * Route chaining allows you to add nested routes and redirects that are displayed within the `view`'s outlet while `pattern` matches the current URL.
+   *
+   * @param pattern - A URL pattern to match against the current URL.
+   * @param view - The view to display while `pattern` matches the current URL.
+   * @param extend - A callback that takes a router to configure nested routes and redirects.
+   */
+  addRoute<I>(pattern: string, view: Viewable<I>, subroutes?: (sub: AppRouter) => void): this;
+
+  /**
+   * Adds a new pattern and a set of nested routes that are displayed without a layout `view`.
+   *
+   * @param pattern - A URL pattern to match against the current URL.
+   * @param view - Pass null to render subroutes without a parent view.
+   * @param extend - A callback that takes a router to configure nested routes and redirects.
+   */
+  addRoute(pattern: string, view: null, subroutes: (sub: AppRouter) => void): this;
+
+  addRoute<I>(pattern: string, view: Viewable<I> | null, subroutes?: (sub: AppRouter) => void) {
+    Type.assertString(pattern, "Pattern must be a string. Got type: %t, value: %v");
+
+    if (view === null) {
+      Type.assertFunction(subroutes, "Sub routes must be defined when `view` is null.");
+    }
+
+    this.#prepareRoute({ pattern, view, subroutes }).forEach((route) => {
+      this.#appContext.router.addRoute(route.pattern, route.meta);
+    });
+
+    return this;
+  }
+
+  /**
+   * Adds a new pattern that will redirect to a different path when matched.
+   *
+   * @param pattern - A URL pattern to match against the current URL.
+   * @param redirectPath - A path to redirect to when `pattern` matches the current URL.
+   */
+  addRedirect(pattern: string, redirectPath: string): this;
+
+  /**
+   * Adds a new pattern that will redirect to a different path when matched, as calculated by a callback function.
+   * Useful when you require more insight into the path that matched the pattern before deciding where to send the user.
+   *
+   * @param pattern - A URL pattern to match against the current URL.
+   * @param createPath - A function that generates a redirect path from the current URL match.
+   */
+  addRedirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
+
+  addRedirect(pattern: string, redirect: string | ((ctx: RedirectContext) => string)) {
+    if (!Type.isFunction(redirect) && !Type.isString(redirect)) {
+      throw new TypeError(`Expected a redirect path or function. Got type: ${Type.of(redirect)}, value: ${redirect}`);
+    }
+
+    if (Type.isString(redirect)) {
+      // TODO: Crash app if redirect path doesn't match. Ideally prevent this before the app starts running.
+    }
+
+    this.#prepareRoute({ pattern, redirect }).forEach((route) => {
+      this.#appContext.router.addRoute(route.pattern, route.meta);
+    });
+
+    return this;
+  }
+
+  /**
    * Initializes globals and connects the app as a child of `element`.
    *
    * @param element - A selector string or a DOM node to attach to. If a string, follows the same format as that taken by `document.querySelector`.
    */
-  async connect(element) {
-    if (Type.isString(element)) {
-      element = document.querySelector(element);
-      Type.assertInstanceOf(Node, element, `Selector string '${element}' did not match any element.`);
+  async connect(selector: string | Node) {
+    let element: Element | null = null;
+
+    if (Type.isString(selector)) {
+      element = document.querySelector(selector);
+      Type.assertInstanceOf(Node, element, `Selector string '${selector}' did not match any element.`);
     }
 
     Type.assertInstanceOf(Node, element, "Expected a DOM node or a selector string. Got type: %t, value: %v");
@@ -229,10 +434,10 @@ export class App {
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
 
-    appContext.rootElement = element;
+    appContext.rootElement = element!;
 
     // Pass language options to language store.
-    const language = this.#stores.get("language");
+    const language = this.#stores.get("language")!;
     this.#stores.set("language", {
       ...language,
       inputs: {
@@ -286,9 +491,9 @@ export class App {
 
     // beforeConnect is the first opportunity to configure globals before anything else happens.
     for (const { instance } of this.#stores.values()) {
-      await instance.connectManual(storeParent);
+      await instance!.connectManual(storeParent);
 
-      Type.assertObject(instance.exports, "Store setup function must return an object. Got type: %t, value: %v");
+      Type.assertObject(instance!.exports, "Store setup function must return an object. Got type: %t, value: %v");
     }
 
     // Then the app-level preload function runs (if any), resolving to initial inputs for the app-level view.
@@ -324,7 +529,7 @@ export class App {
 
       // Send beforeDisconnect signal to stores.
       for (const { instance } of this.#stores.values()) {
-        await instance.beforeDisconnect();
+        await instance!.beforeDisconnect();
       }
 
       // Remove the root view from the page (runs teardown callbacks on all connected views).
@@ -341,7 +546,7 @@ export class App {
 
       // Send final afterDisconnect signal to stores.
       for (const { instance } of this.#stores.values()) {
-        await instance.afterDisconnect();
+        await instance!.afterDisconnect();
       }
     }
   }

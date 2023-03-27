@@ -1,29 +1,62 @@
+import type { CrashCollector } from "./CrashCollector";
+
 import colorHash from "simple-color-hash";
+
+export type DebugOptions = {
+  /**
+   * Determines which debug channels are printed. Supports multiple filters with commas,
+   * a prepended `-` to exclude a channel and wildcards to match partial channels.
+   *
+   * @example "store:*,-store:test" // matches everything starting with "store" except "store:test"
+   */
+  filter?: string | RegExp;
+
+  /**
+   * Print log messages when true. Default: true for development builds, false for production builds.
+   */
+  log?: boolean | "development";
+
+  /**
+   * Print warn messages when true. Default: true for development builds, false for production builds.
+   */
+  warn?: boolean | "development";
+
+  /**
+   * Print error messages when true. Default: true.
+   */
+  error?: boolean | "development";
+};
 
 /**
  * The central trunk from which all channels branch.
  * Changing the filter here determines what kind of messages are printed across the app.
  */
 export class DebugHub {
-  #filter;
+  #filter: string | RegExp = "*,-borf:*";
   #matcher;
   #console;
   #options;
 
-  constructor(options = {}, _console = window?.console || global?.console) {
-    // Using the setter to generate an initial matcher.
-    this.filter = options.filter || "*,-borf:*";
+  constructor(
+    options: DebugOptions & { crashCollector: CrashCollector },
+    _console = window?.console || global?.console
+  ) {
+    if (options.filter) {
+      this.#filter = options.filter;
+    }
+
+    this.#matcher = makeMatcher(this.#filter);
     this.#console = _console;
     this.#options = options;
   }
 
-  channel(name) {
+  channel(name: string) {
     assertNameFormat(name);
 
     const _console = this.#console;
     const options = this.#options;
 
-    const match = (value) => {
+    const match = (value: string) => {
       return this.#matcher(value);
     };
 
@@ -59,7 +92,7 @@ export class DebugHub {
 
 const noOp = () => {};
 
-function hash(value) {
+function hash(value: string) {
   return colorHash({
     str: value,
     sat: { min: 0.35, max: 0.55 },
@@ -67,23 +100,25 @@ function hash(value) {
   });
 }
 
-function assertNameFormat(name) {
+function assertNameFormat(name: string) {
   if (name.includes(",")) {
     throw new Error(`Channel names cannot contain commas. Got: ${name}`);
   }
 }
+
+type MatcherFunction = (value: string) => boolean;
 
 /**
  * Parses a filter string into a match function.
  *
  * @param pattern - A string or regular expression that specifies a pattern for names of debug channels you want to display.
  */
-export function makeMatcher(pattern) {
+export function makeMatcher(pattern: string | RegExp) {
   if (pattern instanceof RegExp) {
-    return (value) => pattern.test(value);
+    return (value: string) => pattern.test(value);
   }
 
-  const matchers = {
+  const matchers: Record<"positive" | "negative", MatcherFunction[]> = {
     positive: [],
     negative: [],
   };
@@ -94,7 +129,7 @@ export function makeMatcher(pattern) {
     .filter((p) => p !== "");
 
   for (let part of parts) {
-    let section = "positive";
+    let section: "positive" | "negative" = "positive";
 
     if (part.startsWith("-")) {
       section = "negative";
@@ -116,7 +151,7 @@ export function makeMatcher(pattern) {
     }
   }
 
-  return function (name) {
+  return function (name: string) {
     const { positive, negative } = matchers;
 
     // Matching any negative matcher disqualifies.

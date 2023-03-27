@@ -1,10 +1,10 @@
 /**
  * References the raw HTMLElement of a view when passed as its `ref` attribute.
  */
-export class Ref {
-  static isRef(value) {
+export class Ref<T = HTMLElement> {
+  static isRef<T>(value: unknown): value is Ref<T> {
     return value instanceof Ref;
   }
 
-  element;
+  element!: T;
 }

@@ -1,7 +1,7 @@
 /**
  * Recursively flattens a nested array to one level.
  */
-export function flatten(arr) {
+export function flatten(arr: any[]): any[] {
   const flattened = [];
 
   for (const item of arr) {

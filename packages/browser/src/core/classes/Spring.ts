@@ -1,12 +1,18 @@
-import { State } from "./State.js";
-import { OBSERVABLE, READABLE } from "../keys.js";
+import { Readable, Writable } from "./Writable.js";
 
-export class Spring {
-  static isSpring(value) {
+interface SpringOptions {
+  mass?: number;
+  stiffness?: number;
+  damping?: number;
+  velocity?: number;
+}
+
+export class Spring extends Readable<number> {
+  static isSpring(value: unknown): value is Spring {
     return value instanceof Spring;
   }
 
-  #$$value;
+  #current;
 
   #mass;
   #stiffness;
@@ -14,10 +20,12 @@ export class Spring {
   #velocity;
 
   #nextId = 0;
-  #currentAnimationId;
+  #currentAnimationId?: number;
 
-  constructor(initialValue = 0, options = {}) {
-    this.#$$value = new State(initialValue);
+  constructor(initialValue = 0, options: SpringOptions = {}) {
+    super(initialValue);
+
+    this.#current = new Writable(initialValue);
 
     this.#mass = options.mass ?? 1;
     this.#stiffness = options.stiffness ?? 100;
@@ -25,19 +33,19 @@ export class Spring {
     this.#velocity = options.velocity ?? 0;
   }
 
-  async snapTo(value) {
-    this.#currentAnimationId = null;
-    this.#$$value.set(value);
+  async snapTo(value: number) {
+    this.#currentAnimationId = undefined;
+    this.#current.value = value;
   }
 
-  async to(value, options) {
+  async to(value: number, options?: SpringOptions) {
     // Act like snap if user prefers reduced motion.
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mediaQuery.matches) {
       return this.snapTo(value);
     }
 
-    return new Promise((resolve) => {
+    return new Promise<void>((resolve) => {
       const id = this.#nextId++;
       const amplitude = makeAmplitudeMeasurer();
       const solver = new SpringSolver({
@@ -47,7 +55,7 @@ export class Spring {
         velocity: options?.velocity ?? this.#velocity,
       });
       const startTime = Date.now();
-      const startValue = this.#$$value.get();
+      const startValue = this.#current.value;
 
       const step = () => {
         if (this.#currentAnimationId !== id) {
@@ -58,12 +66,12 @@ export class Spring {
         const elapsedTime = Date.now() - startTime;
         const proportion = solver.solve(elapsedTime / 1000);
 
-        this.#$$value.set(startValue + (value - startValue) * proportion);
+        this.#current.value = startValue + (value - startValue) * proportion;
 
         // End animation when amplitude falls below threshold.
         amplitude.sample(proportion);
         if (amplitude.value && amplitude.value < 0.001) {
-          this.#currentAnimationId = null;
+          this.#currentAnimationId = undefined;
         }
 
         window.requestAnimationFrame(step);
@@ -74,58 +82,45 @@ export class Spring {
     });
   }
 
-  async animate(startValue, endValue) {
-    this.#$$value.set(startValue);
+  async animate(startValue: number, endValue: number) {
+    this.#current.value = startValue;
     return this.to(endValue);
   }
 
-  get() {
-    return this.#$$value.get();
+  get value() {
+    return this.#current.value;
   }
 
-  map(fn) {
-    return this.#$$value.map(fn);
+  map<R>(transform: (value: number) => R): Readable<R> {
+    return this.#current.map(transform);
   }
 
-  subscribe(...args) {
-    return this.#$$value.subscribe(...args);
-  }
-
-  [OBSERVABLE]() {
-    return this;
-  }
-
-  [READABLE]() {
-    return this;
-  }
-}
-
-class StaticReadable {
-  #value;
-
-  constructor(value) {
-    this.#value = value;
-  }
-
-  get() {
-    return this.#value;
+  observe(callback: (value: number) => void) {
+    return this.#current.observe(callback);
   }
 }
 
 class SpringSolver {
-  constructor({ mass, stiffness, damping, velocity }) {
-    this.$mass = State.isReadable(mass) ? mass : new StaticReadable(mass);
-    this.$stiffness = State.isReadable(stiffness) ? stiffness : new StaticReadable(stiffness);
-    this.$damping = State.isReadable(damping) ? damping : new StaticReadable(damping);
-    this.$velocity = State.isReadable(velocity) ? velocity : new StaticReadable(velocity);
+  $mass: Readable<number>;
+  $stiffness: Readable<number>;
+  $damping: Readable<number>;
+  $velocity: Readable<number>;
+
+  constructor({ mass, stiffness, damping, velocity }: Required<SpringOptions>) {
+    this.$mass = new Readable(mass);
+    this.$stiffness = new Readable(stiffness);
+    this.$damping = new Readable(damping);
+    this.$velocity = new Readable(velocity);
+
+    console.log(this.$stiffness);
   }
 
-  solve(t) {
+  solve(t: number) {
     // Getting the variables each time allows the values to change as the spring is animating.
-    const mass = this.$mass.get();
-    const stiffness = this.$stiffness.get();
-    const damping = this.$damping.get();
-    const velocity = this.$velocity.get();
+    const mass = this.$mass.value;
+    const stiffness = this.$stiffness.value;
+    const damping = this.$damping.value;
+    const velocity = this.$velocity.value;
 
     const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
     const undampedAngularFreq = Math.sqrt(stiffness / mass);
@@ -153,11 +148,11 @@ class SpringSolver {
 }
 
 function makeAmplitudeMeasurer() {
-  const samples = [];
+  const samples: number[] = [];
   const resolution = 30;
 
   return {
-    sample(value) {
+    sample(value: number) {
       samples.push(value);
 
       while (samples.length > resolution) {

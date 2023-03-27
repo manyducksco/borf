@@ -1,19 +1,40 @@
 import { View } from "./View.js";
+import { Store } from "./Store.js";
 import { Markup } from "./Markup.js";
+
+/**
+ * Options passed when creating a new CrashCollector.
+ */
+type CrashCollectorOptions = {
+  disconnectApp: () => void;
+  connectView: (markup: Markup) => void;
+  crashPage?: any;
+  enableCrashPage?: boolean;
+};
+
+type ErrorReport = {
+  error: Error;
+  severity: "report" | "crash";
+};
+
+type CrashOptions = {
+  error: Error;
+  component: View<any> | Store<any, any>;
+};
 
 /**
  * Collects errors and unmounts the app if necessary.
  */
 export class CrashCollector {
-  #errors = [];
+  #errors: ErrorReport[] = [];
   #disconnectApp; // Callback to disconnect the app.
   #connectView;
   #enableCrashPage; // Whether to show a crash page or just unmount to a white screen.
-  #crashPage = DefaultCrashPage;
+  #crashPage: any = DefaultCrashPage;
 
   #isCrashed = false;
 
-  constructor({ disconnectApp, connectView, crashPage, enableCrashPage = true }) {
+  constructor({ disconnectApp, connectView, crashPage, enableCrashPage = true }: CrashCollectorOptions) {
     this.#disconnectApp = disconnectApp;
     this.#connectView = connectView;
     this.#enableCrashPage = enableCrashPage;
@@ -23,7 +44,7 @@ export class CrashCollector {
     }
   }
 
-  setCrashPage(view) {
+  setCrashPage(view: View) {
     if (!View.isView(view)) {
       throw new TypeError(`Expected a view. Got: ${view}`);
     }
@@ -31,7 +52,7 @@ export class CrashCollector {
     this.#crashPage = view;
   }
 
-  crash({ error, component }) {
+  crash({ error, component }: CrashOptions) {
     // Crash the entire app, unmounting everything and displaying an error page.
     this.#errors.push({ error, severity: "crash" });
 
@@ -63,7 +84,7 @@ export class CrashCollector {
     throw error;
   }
 
-  report(error) {
+  report(error: Error) {
     // Report an error without crashing the entire app.
     this.#errors.push({ error, severity: "report" });
   }

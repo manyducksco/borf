@@ -2,6 +2,8 @@ import { Type } from "@borf/bedrock";
 import { Connectable } from "./Connectable.js";
 import { Markup } from "./Markup.js";
 
+// type Renderable = string | number | View<any> | Store<any>;
+
 /**
  * Displays dynamic children without a parent element.
  */

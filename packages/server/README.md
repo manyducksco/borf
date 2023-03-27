@@ -41,7 +41,7 @@ app.addStaticFiles("/static/path", "/path/to/actual/dir"); // Add custom static 
 
 // Create API routes with functions named after HTTP methods (`get`, `post`, `delete`, etc.)
 app.onGet("/some-route", function (ctx) {
-  const example = ctx.global("example");
+  const example = ctx.useStore(ExampleStore);
 
   ctx.response.headers.set("name", "value");
   ctx.response.statusCode = 200;
@@ -81,10 +81,12 @@ app.start(4000).then((info) => {
 
 ## Middleware
 
+> TODO: This section is no longer accurate.
+
 ```js
 // Mount middleware to run for every request.
 app.use(async (ctx) => {
-  const timer = ctx.global("timing").createTimer(ctx.req.path);
+  const timer = ctx.useStore(TimingStore).createTimer(ctx.req.path);
 
   timer.start();
   await ctx.next();

@@ -1,10 +1,10 @@
-import { State } from "./State.js";
+import { Readable, Writable } from "./Writable.js";
 import { Inputs } from "./Inputs.js";
 
 test("the basics", () => {
   const plain = "value";
-  const readOnly = new State(5).readable();
-  const writable = new State({ write: "this" });
+  const readOnly = new Readable(5);
+  const writable = new Writable({ write: "this" });
 
   const inputs = new Inputs({ inputs: { plain, readOnly, writable } });
 
@@ -19,7 +19,7 @@ test("the basics", () => {
   inputs.api.set("writable", { write: "that" });
 
   expect(inputs.api.get("writable")).toStrictEqual({ write: "that" });
-  expect(writable.get()).toStrictEqual({ write: "that" });
+  expect(writable.value).toStrictEqual({ write: "that" });
 
   expect(() => {
     inputs.api.update((current) => {

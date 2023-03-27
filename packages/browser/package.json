@@ -3,14 +3,13 @@
   "version": "0.40.0",
   "description": "Front-end components, routing and state management.",
   "main": "lib/index.js",
-  "types": "types.d.ts",
   "type": "module",
   "sideEffects": false,
   "repository": "https://github.com/manyducksco/borf",
   "scripts": {
-    "test": "jest",
+    "test": "ava",
     "test:watch": "npm run test -- --watch",
-    "test:coverage": "npm run test -- --coverage"
+    "build": "tsc"
   },
   "keywords": [
     "web app",
@@ -44,14 +43,23 @@
     "symbol-observable": "^4.0.0"
   },
   "devDependencies": {
+    "@ava/typescript": "^4.0.0",
     "@types/jest": "^28.1.6",
+    "@types/sinon": "^10.0.13",
+    "ava": "^5.2.0",
     "csstype": "^3.1.0",
     "es-jest": "^2.0.0",
     "jest": "^28.1.3",
-    "jest-environment-jsdom": "^28.1.3"
+    "jest-environment-jsdom": "^28.1.3",
+    "sinon": "^15.0.3",
+    "typescript": "^5.0.2"
   },
-  "jest": {
-    "preset": "es-jest",
-    "testEnvironment": "jsdom"
+  "ava": {
+    "typescript": {
+      "rewritePaths": {
+        "src/": "lib/"
+      },
+      "compile": "tsc"
+    }
   }
 }
