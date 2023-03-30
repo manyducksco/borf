@@ -1,14 +1,21 @@
 import { Type } from "@borf/bedrock";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 import { isMarkup } from "../helpers/typeChecking.js";
+import { type StoreRegistration } from "./App.js";
 import { Connectable } from "./Connectable.js";
 import { Inputs, type InputValues, type InputDefinitions, type InputsAPI } from "./Inputs.js";
 import { Outlet } from "./Outlet.js";
-import { type Renderable } from "./Markup.js";
+import { m, type Markup, type MarkupFunction, type Renderable } from "./Markup.js";
 import { type AppContext, type ElementContext, type BuiltInStores } from "./App.js";
 import { Readable, Writable, type StopFunction } from "./Writable.js";
+import { BORF_ENV } from "../env.js";
 
-type StoreOptions<I, O> = {
+/* ----- Types ----- */
+
+/**
+ * General options passed when instantiating both Views and Stores.
+ */
+export interface ComponentOptions<I> {
   appContext: AppContext;
   elementContext: ElementContext;
   channelPrefix?: string;
@@ -16,10 +23,16 @@ type StoreOptions<I, O> = {
   about?: string;
   inputs?: InputValues<I>;
   inputDefs?: InputDefinitions<I>;
-  children?: unknown[];
-  setup?: StoreSetupFunction<I, O>; // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
-};
+  children?: Markup[];
+}
 
+export interface StoreOptions<I, O> extends ComponentOptions<I> {
+  setup?: StoreSetupFunction<I, O>; // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
+}
+
+/**
+ * Methods available on the context object in both Views and Stores.
+ */
 export interface ComponentContext<I> {
   log(...args: any[]): void;
   warn(...args: any[]): void;
@@ -31,7 +44,7 @@ export interface ComponentContext<I> {
   observe<T>(readable: Readable<T>, callback: (value: T) => void): void;
   observe<T extends Readable<any>[], V = { [K in keyof T]: T[K] extends Readable<infer U> ? U : never }>(
     readables: [...T],
-    callback: (...value: V) => void
+    callback: (...value: V[]) => void
   ): void;
 
   useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
@@ -87,14 +100,34 @@ type StoreDefinition<I, O> = {
   setup: StoreSetupFunction<I, O>;
 };
 
-export class Store<Inputs = {}, Outputs extends Record<string, any> = any> extends Connectable {
+/* ----- Store ----- */
+
+export class Store<Inputs = {}, Outputs extends object = any> extends Connectable {
+  // Infer D from `config`. Infer I and O from D.
+  // This one infers the correct types within the definition code
+  // as long as an inputs type arg is not passed:
   static define<
-    T extends StoreDefinition<any, any>,
-    I = { [K in keyof T["inputs"]]: T["inputs"][K] },
-    O extends Record<string, any> = ReturnType<T["setup"]>
-  >(config: StoreDefinition<I, O>): StoreConstructor<I, O> {
+    D extends StoreDefinition<any, any>,
+    I = { [K in keyof D["inputs"]]: D["inputs"][K] },
+    O extends object = ReturnType<D["setup"]>
+  >(config: StoreDefinition<I, O>): StoreConstructor<I, O>;
+
+  // TODO: Pass I, infer D from I and O from D.
+  // It seems I can currently only infer the inputs or the outputs.
+  static define<
+    I = {},
+    D extends StoreDefinition<I, any> = StoreDefinition<I, any>,
+    O extends object = D extends StoreDefinition<I, infer U> ? U : unknown
+  >(config: D): StoreConstructor<I, O>;
+
+  // Infer D from `config`. Infer I and O from D.
+  static define<
+    D extends StoreDefinition<I, any>,
+    I = { [K in keyof D["inputs"]]: D["inputs"][K] },
+    O extends object = ReturnType<D["setup"]>
+  >(config: D) {
     // TODO: Disable this when built for production.
-    if (!config.label) {
+    if (BORF_ENV === "development" && !config.label) {
       console.trace(
         `Store is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
       );
@@ -120,6 +153,8 @@ export class Store<Inputs = {}, Outputs extends Record<string, any> = any> exten
   label;
   about;
   outputs!: Outputs;
+
+  loading?: (m: MarkupFunction) => Markup;
 
   #node = document.createComment("Store");
   #outlet;
@@ -162,9 +197,14 @@ export class Store<Inputs = {}, Outputs extends Record<string, any> = any> exten
     this.#appContext = appContext;
     this.#elementContext = {
       ...elementContext,
+
+      // Add self to elementContext.stores
       stores: new Map([
         ...elementContext.stores.entries(),
-        [this.constructor, { store: this.constructor, instance: this }],
+        [
+          this.constructor as StoreConstructor<any, any>,
+          { store: this.constructor as StoreConstructor<any, any>, instance: this } as StoreRegistration<any>,
+        ],
       ]),
     };
 
@@ -186,7 +226,8 @@ export class Store<Inputs = {}, Outputs extends Record<string, any> = any> exten
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
 
-    const ctx: StoreContext<Inputs, Outputs> = {
+    // Omit log methods which we will add later.
+    const ctx: Omit<StoreContext<Inputs, Outputs>, "log" | "warn" | "error"> = {
       [APP_CONTEXT]: appContext,
       [ELEMENT_CONTEXT]: elementContext,
 
@@ -283,13 +324,14 @@ export class Store<Inputs = {}, Outputs extends Record<string, any> = any> exten
       },
     };
 
-    // Add debug channel methods.
+    // Transplant log methods from debug channel.
     Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(this.#channel));
 
     let outputs: unknown;
 
     try {
-      outputs = this.setup(ctx);
+      // Cast back to full StoreContext.
+      outputs = this.setup(ctx as StoreContext<Inputs, Outputs>);
     } catch (error) {
       if (error instanceof Error) {
         appContext.crashCollector.crash({ error, component: this });
@@ -348,11 +390,7 @@ export class Store<Inputs = {}, Outputs extends Record<string, any> = any> exten
     throw new Error(`This store needs a setup function.`);
   }
 
-  // loading(m: MarkupFunction): Markup {
-
-  // }
-
-  setChildren(children: Renderable[]) {
+  setChildren(children: Markup[]) {
     this.#$$children.value = children;
   }
 

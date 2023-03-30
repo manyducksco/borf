@@ -1,22 +1,18 @@
-import type { DebugOptions } from "./DebugHub.js";
-import type { StopFunction } from "./Writable.js";
-import type { InputValues } from "./Inputs.js";
-import type { StoreConstructor, StoreSetupFunction, Storable } from "./Store.js";
-import type { ViewConstructor, ViewSetupFunction, Viewable } from "./View.js";
-
 import { Type, Router } from "@borf/bedrock";
 
 import { merge } from "../helpers/merge.js";
 import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
-import { LanguageStore } from "../stores/language.js";
+import { LanguageStore, type LanguageConfig } from "../stores/language.js";
 import { PageStore } from "../stores/page.js";
-import { RouterStore } from "../stores/router.js";
+import { RouterStore, type RouterOptions } from "../stores/router.js";
 import { CrashCollector } from "./CrashCollector.js";
 
-import { DebugHub } from "./DebugHub.js";
-import { Store } from "./Store.js";
-import { View } from "./View.js";
+import { DebugHub, type DebugOptions } from "./DebugHub.js";
+import { type StopFunction } from "./Writable.js";
+import { type InputValues } from "./Inputs.js";
+import { Store, type StoreConstructor, type Storable, StoreSetupFunction } from "./Store.js";
+import { View, type ViewConstructor, type Viewable, ViewSetupFunction } from "./View.js";
 import { m } from "./Markup.js";
 
 interface AddStoreOptions<I> {
@@ -32,19 +28,7 @@ interface AppOptions {
   /**
    * Options to configure how routing works.
    */
-  router?: {
-    /**
-     * Use hash-based routing if true.
-     */
-    hash?: boolean;
-
-    /**
-     * A history object from the `history` package.
-     *
-     * @see https://www.npmjs.com/package/history
-     */
-    history?: History;
-  };
+  router?: RouterOptions;
 }
 
 export interface AppContext {
@@ -53,35 +37,23 @@ export interface AppContext {
   router: Router;
   stores: Map<BuiltInStores | StoreRegistration["store"], StoreRegistration>;
   options: AppOptions;
-  rootElement?: Node;
-  rootView?: ViewConstructor<{}>;
+  rootElement?: HTMLElement;
+  rootView?: View<{}>;
 }
 
 export interface ElementContext {
   stores: Map<StoreRegistration["store"], StoreRegistration>;
+  isSVG?: boolean;
 }
 
 export interface ElementContext {}
 
 export type BuiltInStores = "http" | "router" | "page" | "language" | "dialog";
 
-// TODO: Is there a good way to represent infinitely nested recursive types?
 /**
- * An object where values are either a translated string or another nested Translation object.
+ * An object kept in App for each store registered with `addStore`.
  */
-type Translation = Record<string, string | Record<string, string | Record<string, string | Record<string, string>>>>;
-
-interface LanguageConfig {
-  /**
-   * The translated strings for this language, or a callback function that returns them.
-   */
-  translation: Translation | (() => Translation) | (() => Promise<Translation>);
-}
-
-/**
- * TODO: Needs a different name?
- */
-interface StoreRegistration<I = any> {
+export interface StoreRegistration<I = any> {
   store: StoreConstructor<I, any>;
   exports?: StoreConstructor<I, any>;
   inputs?: InputValues<I>;
@@ -95,18 +67,18 @@ interface AppRouter {
    *
    * @param pattern - A URL pattern to match against the current URL.
    * @param view - The view to display while `pattern` matches the current URL.
-   * @param extend - A callback that takes a router object. Use this to append nested routes and redirects.
+   * @param subroutes - A callback that takes a router object. Use this to append nested routes and redirects.
    */
-  addRoute<I>(pattern: string, view: Viewable<I>, extend?: (sub: AppRouter) => void): this;
+  addRoute<I>(pattern: string, view: Viewable<I>, subroutes?: (router: AppRouter) => void): this;
 
   /**
    * Adds a new pattern and chains a set of nested routes that are displayed without a layout `view`.
    *
    * @param pattern - A URL pattern to match against the current URL.
    * @param view - Pass null to render subroutes without a parent view.
-   * @param extend - A callback that takes a router object. Use this to append nested routes and redirects.
+   * @param subroutes - A callback that takes a router object. Use this to append nested routes and redirects.
    */
-  addRoute(pattern: string, view: null, extend: (sub: AppRouter) => void): this;
+  addRoute(pattern: string, view: null, subroutes: (router: AppRouter) => void): this;
 
   /**
    * Adds a new pattern that will redirect to a different route when matched.
@@ -246,7 +218,7 @@ export class App {
    *
    * @param view - A View or a standalone setup function.
    */
-  addRootView(view: ViewConstructor<{}> | ViewSetupFunction<{}>) {
+  addRootView(view: Viewable<{}>) {
     if (this.#rootView != DefaultRoot) {
       this.#appContext.debugHub
         .channel("borf:App")
@@ -254,9 +226,9 @@ export class App {
     }
 
     if (Type.isFunction(view)) {
-      this.#rootView = View.define({ label: "root", setup: view });
+      this.#rootView = View.define({ label: "root", setup: view as ViewSetupFunction<{}> });
     } else if (View.isView(view)) {
-      this.#rootView = view;
+      this.#rootView = view as ViewConstructor<{}>;
     } else {
       throw new TypeError(`Expected a View or a standalone setup function. Got type: ${Type.of(view)}, value: ${view}`);
     }
@@ -264,19 +236,35 @@ export class App {
     return this;
   }
 
+  addStore(config: StoreRegistration): this;
+
   /**
    * Adds a new global store which will be available to every component within this App.
    *
    * @param store - A Store or a standalone setup function.
    */
-  addStore<I>(store: Storable<I, any>, options: AddStoreOptions<I>) {
-    if (Type.isFunction(store)) {
-      store = Store.define({ setup: store });
+  addStore<I>(store: Storable<I, any> | StoreRegistration, options?: AddStoreOptions<I>) {
+    let config: StoreRegistration | undefined;
+
+    if (Store.isStore(store)) {
+      config = { store: store as StoreConstructor<I, any>, ...options };
+    } else if (Type.isFunction(store)) {
+      config = { store: Store.define({ setup: store as StoreSetupFunction<any, any> }) };
+    } else if (Type.isObject(store)) {
+      config = store as StoreRegistration;
+    } else {
+      throw new TypeError(
+        `Expected a Store or Store registration object. Got type: ${Type.of(store)}, value: ${store}`
+      );
     }
 
-    Type.assert(Store.isStore(store), "Expected a Store or a standalone setup function. Got type: %t, value: %v");
+    Type.assertExtends(
+      Store,
+      store,
+      "Expected a Store, store config object or a standalone setup function. Got type: %t, value: %v"
+    );
 
-    this.#stores.set(store, this.#prepareStore(store, options));
+    this.#stores.set(config.store, config);
 
     return this;
   }
@@ -369,10 +357,10 @@ export class App {
    */
   addRoute(pattern: string, view: null, subroutes: (sub: AppRouter) => void): this;
 
-  addRoute<I>(pattern: string, view: Viewable<I> | null, subroutes?: (sub: AppRouter) => void) {
+  addRoute(pattern: string, view: Viewable<unknown> | null, subroutes?: (sub: AppRouter) => void) {
     Type.assertString(pattern, "Pattern must be a string. Got type: %t, value: %v");
 
-    if (view === null) {
+    if (view != null) {
       Type.assertFunction(subroutes, "Sub routes must be defined when `view` is null.");
     }
 
@@ -417,19 +405,19 @@ export class App {
   }
 
   /**
-   * Initializes globals and connects the app as a child of `element`.
+   * Initializes and connects the app as a child of `element`.
    *
    * @param element - A selector string or a DOM node to attach to. If a string, follows the same format as that taken by `document.querySelector`.
    */
   async connect(selector: string | Node) {
-    let element: Element | null = null;
+    let element: HTMLElement | null = null;
 
     if (Type.isString(selector)) {
       element = document.querySelector(selector);
-      Type.assertInstanceOf(Node, element, `Selector string '${selector}' did not match any element.`);
+      Type.assertInstanceOf(HTMLElement, element, `Selector string '${selector}' did not match any element.`);
     }
 
-    Type.assertInstanceOf(Node, element, "Expected a DOM node or a selector string. Got type: %t, value: %v");
+    Type.assertInstanceOf(HTMLElement, element, "Expected a DOM node or a selector string. Got type: %t, value: %v");
 
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
@@ -473,7 +461,7 @@ export class App {
             inputDefs: exports.inputs,
           });
         } else if (Type.isFunction(exports)) {
-          instance = new Store({ ...config, setup: exports });
+          instance = new Store({ ...config, setup: exports as StoreSetupFunction<any, any> });
         } else if (Type.isObject(exports)) {
           instance = new Store({ ...config, setup: () => exports });
         }
@@ -493,31 +481,26 @@ export class App {
     for (const { instance } of this.#stores.values()) {
       await instance!.connectManual(storeParent);
 
-      Type.assertObject(instance!.exports, "Store setup function must return an object. Got type: %t, value: %v");
+      Type.assertObject(instance!.outputs, "Store setup function must return an object. Got type: %t, value: %v");
     }
 
-    // Then the app-level preload function runs (if any), resolving to initial inputs for the app-level view.
-    // The preload process for routes is handled by the @router global.
-    return this.#preload().then(async (inputs) => {
-      // Then the view is initialized and connected to root element.
+    // Then the view is initialized and connected to root element.
 
-      appContext.rootView = new this.#rootView({
-        appContext,
-        elementContext,
-        inputs,
-        label: this.#rootView.label || "root",
-      });
-
-      appContext.rootView.connect(appContext.rootElement);
-
-      // Then stores receive the connected signal. This notifies `router` to start listening for route changes.
-      for (const { instance } of this.#stores.values()) {
-        await instance.afterConnect();
-      }
-
-      // The app is now connected.
-      this.#isConnected = true;
+    appContext.rootView = new this.#rootView({
+      appContext,
+      elementContext,
+      label: this.#rootView.label || "root",
     });
+
+    appContext.rootView.connect(appContext.rootElement);
+
+    // Then stores receive the connected signal. This notifies `router` to start listening for route changes.
+    for (const { instance } of this.#stores.values()) {
+      instance!.afterConnect();
+    }
+
+    // The app is now connected.
+    this.#isConnected = true;
   }
 
   /**
@@ -533,124 +516,22 @@ export class App {
       }
 
       // Remove the root view from the page (runs teardown callbacks on all connected views).
-      await appContext.rootView.disconnect();
+      await appContext.rootView!.disconnect();
 
       // The app is considered disconnected at this point.
       this.#isConnected = false;
 
-      // Unsubscribe from all active subscriptions.
-      while (this.#activeSubscriptions.length > 0) {
-        const sub = this.#activeSubscriptions.shift();
-        sub.unsubscribe();
+      // Stop all observers.
+      for (const stop of this.#stopCallbacks) {
+        stop();
       }
+      this.#stopCallbacks = [];
 
       // Send final afterDisconnect signal to stores.
       for (const { instance } of this.#stores.values()) {
-        await instance!.afterDisconnect();
+        instance!.afterDisconnect();
       }
     }
-  }
-
-  /**
-   * Runs top level preload callback before the app is connected.
-   */
-  async #preload() {
-    if (!this.#options.preload) {
-      return {};
-    }
-
-    const appContext = this.#appContext;
-    const elementContext = this.#elementContext;
-    const channel = appContext.debugHub.channel("borf:app:preload");
-
-    return new Promise((resolve) => {
-      let resolved = false;
-
-      const ctx = {
-        ...channel,
-
-        useStore: (store) => {
-          const name = store?.name || store;
-
-          if (elementContext.stores.has(store)) {
-            if (appContext.stores.has(store)) {
-              // Warn if shadowing a global, just in case this isn't intended.
-              channel.warn(`Using local store '${name}' which shadows global store '${name}'.`);
-            }
-
-            return elementContext.stores.get(store).instance.exports;
-          }
-
-          if (appContext.stores.has(store)) {
-            const _store = appContext.stores.get(store);
-
-            if (!_store.instance) {
-              throw new Error(
-                `Store '${name}' was accessed before it was set up. Make sure '${name}' appears earlier in the 'stores' array than other stores that access it.`
-              );
-            }
-
-            return _store.instance.exports;
-          }
-
-          throw new Error(`Store '${name}' is not registered on this app.`);
-        },
-
-        /**
-         * Redirect to another route instead of loading this one.
-         * @param {string} to - Redirect path (e.g. `/login`)
-         */
-        redirect: (to) => {
-          if (!resolved) {
-            // The @router global will start the app at this path when connected.
-            appContext.redirectPath = to;
-            resolve();
-            resolved = true;
-          }
-        },
-      };
-
-      const result = this.#options.preload(ctx);
-
-      if (!Type.isPromise(result)) {
-        throw new TypeError(`Preload function must return a Promise.`);
-      }
-
-      result.then((attributes) => {
-        if (attributes && !Type.isObject(attributes)) {
-          throw new TypeError(
-            `Preload function must return an attributes object or null/undefined. Got: ${attributes}`
-          );
-        }
-
-        if (!resolved) {
-          resolve(attributes);
-          resolved = true;
-        }
-      });
-    });
-  }
-
-  #prepareStore(store) {
-    if (Store.isStore(store)) {
-      store = { store };
-    }
-
-    // Allow overrides of built in stores.
-    if (Type.isString(store.store)) {
-      if (!store.exports) {
-        throw new Error(`Tried to override '${store.store}' store without passing a value for 'exports'.`);
-      }
-
-      store = { ...store };
-
-      store.store = store.exports;
-      store.exports = undefined;
-    }
-
-    store.ready = false;
-
-    return store;
   }
 
   /**
@@ -659,7 +540,15 @@ export class App {
    * @param route - Route config object.
    * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
    */
-  #prepareRoute(route, layers = []) {
+  #prepareRoute(
+    route: {
+      pattern: string;
+      redirect?: string | ((ctx: RedirectContext) => void);
+      view?: Viewable<unknown> | null;
+      subroutes?: (router: AppRouter) => void;
+    },
+    layers = []
+  ) {
     if (!Type.isObject(route) || !Type.isString(route.pattern)) {
       throw new TypeError(`Route configs must be objects with a 'pattern' string property. Got: ${route}`);
     }
@@ -677,7 +566,7 @@ export class App {
       let redirect = route.redirect;
 
       if (Type.isString(redirect)) {
-        redirect = Router.resolvePath(...parts, redirect);
+        redirect = Router.resolvePath(Router.joinPath(parts), redirect);
 
         if (!redirect.startsWith("/")) {
           redirect = "/" + redirect;
@@ -694,23 +583,34 @@ export class App {
       return routes;
     }
 
-    // Make sure the `view` is the correct type if passed.
-    if (route.view && !View.isView(route.view) && !Type.isFunction(route.view)) {
+    let view: ViewConstructor<unknown> | undefined;
+
+    if (!route.view) {
+      view = View.define({
+        label: route.pattern,
+        setup: (ctx) => ctx.outlet(),
+      });
+    } else if (typeof route.view === "function") {
+      view = View.define({
+        label: route.pattern,
+        setup: route.view as ViewSetupFunction<unknown>,
+      });
+    } else if (!View.isView(view)) {
       console.warn(route.view);
       throw new TypeError(
         `Route '${route.pattern}' needs a setup function or a subclass of View for 'view'. Got: ${route.view}`
       );
     }
 
-    const markup = m(route.view || ((ctx) => ctx.outlet()));
+    const markup = m(view);
     const layer = { id: this.#layerId++, view: markup };
 
     // Parse nested routes if they exist.
-    if (route.extend) {
-      const router = {
-        addRoute: (pattern, view, extend) => {
+    if (route.subroutes) {
+      const router: AppRouter = {
+        addRoute: (pattern: string, view: Viewable<any> | null, subroutes: (router: AppRouter) => void) => {
           pattern = Router.joinPath([...parts, pattern]);
-          routes.push(...this.#prepareRoute({ pattern, view, extend }));
+          routes.push(...this.#prepareRoute({ pattern, view, subroutes }));
           return router;
         },
         addRedirect: (pattern, redirect) => {
@@ -720,7 +620,7 @@ export class App {
         },
       };
 
-      route.extend(router);
+      route.subroutes(router);
     } else {
       routes.push({
         pattern: route.pattern,

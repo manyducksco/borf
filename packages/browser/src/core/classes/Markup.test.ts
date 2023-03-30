@@ -2,18 +2,18 @@ import { m, Markup } from "./Markup.js";
 import { View } from "./View.js";
 
 test("a", () => {
-  class SomeView extends View {
-    static inputs = {
+  const SomeView = View.define({
+    inputs: {
       value: {
-        type: "string",
+        example: "Hello World",
         default: "Default",
       },
-    };
+    },
 
     setup(ctx, m) {
-      return m("span", ctx.inputs.readable("value"));
-    }
-  }
+      return m("span", ctx.inputs.$("value"));
+    },
+  });
 
   const stringMarkup = m("div", { class: "test" }, "Hello");
   const viewMarkup = m(SomeView, { value: "Hello" });

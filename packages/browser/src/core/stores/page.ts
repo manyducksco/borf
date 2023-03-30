@@ -1,30 +1,34 @@
 import { Type } from "@borf/bedrock";
 import { Store } from "../classes/Store.js";
-import { State } from "../classes/State.js";
+import { Writable } from "../classes/Writable.js";
+
+type ScreenOrientation = "landscape" | "portrait";
+type ColorScheme = "light" | "dark";
 
 export const PageStore = Store.define({
   label: "page",
+
   setup(ctx) {
-    const $$title = new State(document?.title);
-    const $$visibility = new State(document.visibilityState);
-    const $$orientation = new State();
-    const $$colorScheme = new State();
+    const $$title = new Writable(document?.title);
+    const $$visibility = new Writable(document?.visibilityState);
+    const $$orientation = new Writable<ScreenOrientation>("landscape");
+    const $$colorScheme = new Writable<ColorScheme>("light");
 
     /* ----- Title and Visibility ----- */
 
     if (document) {
-      ctx.subscribe($$title, (current) => {
+      ctx.observe($$title, (current) => {
         if (Type.isString(current)) {
           document.title = current;
         }
       });
 
       document.addEventListener("visibilitychange", () => {
-        $$visibility.set(document.visibilityState);
+        $$visibility.value = document.visibilityState;
       });
 
       window.addEventListener("focus", () => {
-        $$visibility.set("visible");
+        $$visibility.value = "visible";
       });
     }
 
@@ -32,8 +36,8 @@ export const PageStore = Store.define({
 
     const landscapeQuery = window.matchMedia("(orientation: landscape)");
 
-    function onOrientationChange(e) {
-      $$orientation.set(e.matches ? "landscape" : "portrait");
+    function onOrientationChange(e: MediaQueryList | MediaQueryListEvent) {
+      $$orientation.value = e.matches ? "landscape" : "portrait";
     }
 
     // Read initial orientation.
@@ -43,8 +47,8 @@ export const PageStore = Store.define({
 
     const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-    function onColorChange(e) {
-      $$colorScheme.set(e.matches ? "dark" : "light");
+    function onColorChange(e: MediaQueryList | MediaQueryListEvent) {
+      $$colorScheme.value = e.matches ? "dark" : "light";
     }
 
     // Read initial color scheme.
@@ -66,9 +70,9 @@ export const PageStore = Store.define({
 
     return {
       $$title,
-      $visibility: $$visibility.readable(),
-      $orientation: $$orientation.readable(),
-      $colorScheme: $$colorScheme.readable(),
+      $visibility: $$visibility.toReadable(),
+      $orientation: $$orientation.toReadable(),
+      $colorScheme: $$colorScheme.toReadable(),
     };
   },
 });

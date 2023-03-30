@@ -1,4 +1,4 @@
-import { View } from "./View.js";
+import { View, ViewConstructor } from "./View.js";
 import { Store } from "./Store.js";
 import { Markup } from "./Markup.js";
 
@@ -22,6 +22,12 @@ type CrashOptions = {
   component: View<any> | Store<any, any>;
 };
 
+type CrashPageInputs = {
+  message: string;
+  error: Error;
+  componentName: string;
+};
+
 /**
  * Collects errors and unmounts the app if necessary.
  */
@@ -30,7 +36,7 @@ export class CrashCollector {
   #disconnectApp; // Callback to disconnect the app.
   #connectView;
   #enableCrashPage; // Whether to show a crash page or just unmount to a white screen.
-  #crashPage: any = DefaultCrashPage;
+  #crashPage: ViewConstructor<CrashPageInputs> = DefaultCrashPage;
 
   #isCrashed = false;
 
@@ -44,7 +50,7 @@ export class CrashCollector {
     }
   }
 
-  setCrashPage(view: View) {
+  setCrashPage(view: ViewConstructor<CrashPageInputs>) {
     if (!View.isView(view)) {
       throw new TypeError(`Expected a view. Got: ${view}`);
     }
@@ -90,7 +96,7 @@ export class CrashCollector {
   }
 }
 
-const DefaultCrashPage = View.define({
+const DefaultCrashPage = View.define<CrashPageInputs>({
   label: "DefaultCrashPage",
   setup(ctx, m) {
     const { message, error, componentName } = ctx.inputs.get();

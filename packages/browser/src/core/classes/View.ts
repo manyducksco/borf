@@ -1,34 +1,42 @@
-import type { InputValues, InputDefinitions } from "./Inputs.js";
-import type { Renderable } from "./Markup.js";
-
 import { Type } from "@borf/bedrock";
-import { State } from "./State.js";
 import { Connectable } from "./Connectable.js";
-import { Inputs } from "./Inputs.js";
-import { Markup, m, formatChildren } from "./Markup.js";
+import { Inputs, InputValues, type InputDefinitions } from "./Inputs.js";
+import { Markup, m, type MarkupFunction, type Renderable } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
-import { Repeat } from "./Repeat.js";
+import { ForEach } from "./ForEach.js";
 import { isMarkup } from "../helpers/typeChecking.js";
+import { Readable, StopFunction, Writable } from "./Writable.js";
+import { BuiltInStores } from "./App.js";
+import { type Ref } from "./Ref.js";
+import { ComponentOptions, type ComponentContext, type StoreConstructor } from "./Store.js";
+import { BORF_ENV } from "../env.js";
 
 export type ViewConstructor<I> = {
   new (options: ViewOptions<I>): View<I>;
+
+  label?: string;
+  about?: string;
+  inputs?: InputDefinitions<I>;
 };
 
-export type ViewSetupFunction<I> = (ctx: ViewContext<I>) => Renderable;
+export interface ViewContext<I> extends ComponentContext<I> {
+  animateIn: (callback: () => Promise<void>) => void;
+  animateOut: (callback: () => Promise<void>) => void;
+  outlet: () => Markup;
+}
+
+export type ViewSetupFunction<I> = (ctx: ViewContext<I>, m: MarkupFunction) => Renderable;
 
 export type Viewable<I> = ViewConstructor<I> | ViewSetupFunction<I>;
 
-type ViewOptions<I> = {
-  appContext: unknown;
-  elementContext: unknown;
-  channelPrefix?: string;
-  label?: string;
-  about?: string;
-  inputs?: InputValues<I>;
-  inputDefs?: InputDefinitions<I>;
-  children?: Renderable[];
+/**
+ * Options passed when instantiating a View.
+ */
+interface ViewOptions<I> extends ComponentOptions<I> {
   setup?: ViewSetupFunction<I>; // This is passed in directly to `new View()` to turn a standalone setup function into a view.
-};
+
+  inputs?: InputValues<I> & { ref?: Ref<HTMLElement> };
+}
 
 type ViewDefinition<I> = {
   /**
@@ -53,14 +61,20 @@ type ViewDefinition<I> = {
 };
 
 export class View<Inputs = {}> extends Connectable {
-  static define(config: ViewDefinition) {
-    if (!config.label) {
+  static define<D extends ViewDefinition<any>, I = { [K in keyof D["inputs"]]: D["inputs"][K] }>(
+    config: ViewDefinition<I>
+  ): ViewConstructor<I>;
+
+  static define<I>(config: ViewDefinition<I>): ViewConstructor<I>;
+
+  static define<I>(config: ViewDefinition<I>): ViewConstructor<I> {
+    if (BORF_ENV === "development" && !config.label) {
       console.trace(
         `View is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
       );
     }
 
-    return class extends View {
+    return class extends View<I> {
       static about = config.about;
       static label = config.label;
       static inputs = config.inputs;
@@ -69,30 +83,23 @@ export class View<Inputs = {}> extends Connectable {
     };
   }
 
-  static isView(value) {
+  static isView<I = unknown>(value: any): value is ViewConstructor<I> {
     return value?.prototype instanceof View;
   }
 
-  static isInstance(value) {
+  static isInstance<I = unknown>(value: any): value is View<I> {
     return value instanceof View;
   }
 
   /**
-   * Takes a `value` which can be static or readable. When `value` is truthy, display `then` content. When `value` is falsy, display `otherwise` content.
-   *
-   * @param value
-   * @param then
-   * @param otherwise
+   * Takes a Readable `value`. When `value` is truthy, display `then` content. When `value` is falsy, display `otherwise` content.
    */
-  static when(value, then, otherwise) {
-    then = formatChildren(then);
-    otherwise = formatChildren(otherwise);
-
+  static when(value: Readable<any>, then?: Renderable, otherwise?: Renderable) {
     return new Markup((config) => {
       return new Outlet({
         ...config,
         value,
-        renderFn: (value) => {
+        render: (value) => {
           if (value) {
             return then;
           }
@@ -107,14 +114,15 @@ export class View<Inputs = {}> extends Connectable {
     });
   }
 
-  static unless(value, then) {
-    then = formatChildren(then);
-
+  /**
+   * Takes a Readable `value`. When `value` is falsy, display `then` content.
+   */
+  static unless(value: Readable<any>, then: Renderable) {
     return new Markup((config) => {
       return new Outlet({
         ...config,
         value,
-        renderFn: (value) => {
+        render: (value) => {
           if (!value) {
             return then;
           }
@@ -125,28 +133,41 @@ export class View<Inputs = {}> extends Connectable {
     });
   }
 
-  static observe(value, renderFn) {
+  static observe<T>(readable: Readable<T>, render: (value: T) => Renderable) {
     return new Markup((config) => {
       return new Outlet({
         ...config,
-        value,
-        renderFn: renderFn,
+        value: readable,
+        render,
       });
     });
   }
 
-  static forEach(value, view, keyFn) {
-    let markup;
+  /**
+   * Displays an instance of `view` for each item in `values`. Dynamically adds and removes views as items change.
+   * For complex objects with an ID, define a `key` function to select that ID.
+   * Object identity (`===`) will be used for comparison if no `key` function is passed.
+   *
+   * TODO: Describe or link to docs where keying is explained.
+   */
+  static forEach<T>(
+    readable: Readable<Iterable<T>>,
+    view: Viewable<{ value: T; index: number }>,
+    key: (value: T, index: number) => string | number
+  ) {
+    let markup: Markup;
 
     if (Type.isFunction(view)) {
       markup = new Markup((config) => {
-        const RepeatItem = View.define({
+        type ItemInputs = { value: T; index: number };
+
+        const RepeatItem = View.define<ItemInputs>({
           label: "repeat",
           inputs: {
             value: {},
             index: {},
           },
-          setup: view,
+          setup: view as ViewSetupFunction<ItemInputs>,
         });
 
         return new RepeatItem({ ...config, channelPrefix: "borf:view" });
@@ -156,19 +177,15 @@ export class View<Inputs = {}> extends Connectable {
         return new view({ ...config });
       });
     } else {
-      throw new TypeError(
-        `View.repeat requires a setup function or view. Got type: ${Type.of(setup)}, value: ${setup}`
-      );
+      throw new TypeError(`View.forEach requires a setup function or view. Got type: ${Type.of(view)}, value: ${view}`);
     }
 
     return new Markup((config) => {
-      return new Repeat({
+      return new ForEach<T>({
         ...config,
-        attributes: {
-          value,
-          markup,
-          keyFn,
-        },
+        readable,
+        markup,
+        key,
       });
     });
   }
@@ -176,16 +193,23 @@ export class View<Inputs = {}> extends Connectable {
   label;
   about;
 
-  #lifecycleCallbacks = {
+  loading?: (m: MarkupFunction) => Markup;
+
+  #lifecycleCallbacks: {
+    animateIn: (() => Promise<unknown>)[];
+    animateOut: (() => Promise<unknown>)[];
+    onConnect: (() => void)[];
+    onDisconnect: (() => void)[];
+  } = {
     animateIn: [],
     animateOut: [],
     onConnect: [],
     onDisconnect: [],
   };
-  #activeSubscriptions = [];
+  #stopCallbacks: StopFunction[] = [];
   #channel;
   #inputs;
-  #element;
+  #element?: Connectable;
   #$$children;
 
   #appContext;
@@ -193,7 +217,7 @@ export class View<Inputs = {}> extends Connectable {
   #ref;
 
   get node() {
-    return this.#element?.node;
+    return this.#element!.node;
   }
 
   constructor({
@@ -202,11 +226,11 @@ export class View<Inputs = {}> extends Connectable {
     channelPrefix = "view",
     label = "<anonymous>",
     about,
-    inputs = {},
+    inputs,
     inputDefs,
     children = [],
     setup,
-  }) {
+  }: ViewOptions<Inputs>) {
     super();
 
     this.label = label;
@@ -218,7 +242,7 @@ export class View<Inputs = {}> extends Connectable {
 
     this.#appContext = appContext;
     this.#elementContext = elementContext;
-    this.#ref = inputs.ref;
+    this.#ref = inputs?.ref;
 
     this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
     this.#inputs = new Inputs({
@@ -226,15 +250,15 @@ export class View<Inputs = {}> extends Connectable {
       definitions: inputDefs,
       enableValidation: true, // TODO: Disable for production builds (unless specified in app options).
     });
-    this.#$$children = new State(children);
+    this.#$$children = new Writable(children);
   }
 
-  setup(ctx, m) {
+  setup(ctx: ViewContext<Inputs>, m: MarkupFunction) {
     throw new Error(`This view needs a setup function.`);
   }
 
-  setChildren(children) {
-    this.#$$children.set(children);
+  setChildren(children: Markup[]) {
+    this.#$$children.value = children;
   }
 
   /**
@@ -245,8 +269,8 @@ export class View<Inputs = {}> extends Connectable {
    * @param parent - DOM node under which this view should be connected as a child.
    * @param after - A child node under `parent` after which this view should be connected.
    */
-  async connect(parent, after = null) {
-    return new Promise(async (resolve) => {
+  async connect(parent: Node, after?: Node) {
+    return new Promise<void>(async (resolve) => {
       const wasConnected = this.isConnected;
 
       if (!wasConnected) {
@@ -261,11 +285,13 @@ export class View<Inputs = {}> extends Connectable {
       if (!wasConnected) {
         if (this.#lifecycleCallbacks.animateIn.length > 0) {
           try {
-            const ctx = { node: this.node };
-
-            await Promise.all(this.#lifecycleCallbacks.animateIn.map((callback) => callback(ctx)));
+            await Promise.all(this.#lifecycleCallbacks.animateIn.map((callback) => callback()));
           } catch (error) {
-            this.#appContext.crashCollector.crash({ error, component: this });
+            if (error instanceof Error) {
+              this.#appContext.crashCollector.crash({ error, component: this });
+            } else {
+              throw error;
+            }
           }
         }
 
@@ -274,7 +300,11 @@ export class View<Inputs = {}> extends Connectable {
             try {
               callback();
             } catch (error) {
-              this.#appContext.crashCollector.crash({ error, component: this });
+              if (error instanceof Error) {
+                this.#appContext.crashCollector.crash({ error, component: this });
+              } else {
+                throw error;
+              }
             }
           }
 
@@ -292,13 +322,16 @@ export class View<Inputs = {}> extends Connectable {
       return Promise.resolve();
     }
 
-    return new Promise(async (resolve) => {
+    return new Promise<void>(async (resolve) => {
       if (this.#lifecycleCallbacks.animateOut.length > 0) {
         try {
-          const ctx = { node: this.node };
-          await Promise.all(this.#lifecycleCallbacks.animateOut.map((callback) => callback(ctx)));
+          await Promise.all(this.#lifecycleCallbacks.animateOut.map((callback) => callback()));
         } catch (error) {
-          this.#appContext.crashCollector.crash({ error, component: this });
+          if (error instanceof Error) {
+            this.#appContext.crashCollector.crash({ error, component: this });
+          } else {
+            throw error;
+          }
         }
       }
 
@@ -311,14 +344,18 @@ export class View<Inputs = {}> extends Connectable {
           try {
             callback();
           } catch (error) {
-            this.#appContext.crashCollector.crash({ error, component: this });
+            if (error instanceof Error) {
+              this.#appContext.crashCollector.crash({ error, component: this });
+            } else {
+              throw error;
+            }
           }
         }
 
-        for (const subscription of this.#activeSubscriptions) {
-          subscription.unsubscribe();
+        for (const stop of this.#stopCallbacks) {
+          stop();
         }
-        this.#activeSubscriptions = [];
+        this.#stopCallbacks = [];
 
         resolve();
       }, 0);
@@ -333,110 +370,105 @@ export class View<Inputs = {}> extends Connectable {
    * @param parent - DOM node to connect loading content to.
    * @param after - Sibling DOM node directly after which this view's node should appear.
    */
-  async #initialize(parent, after) {
+  async #initialize(parent: Node, after?: Node) {
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
 
-    const ctx = {
+    // Omit log methods which we will add later.
+    const ctx: Omit<ViewContext<Inputs>, "log" | "warn" | "error"> = {
       inputs: this.#inputs.api,
 
-      /**
-       * Takes an observable or array of observables. The observer receives each of their values as arguments whenever any observable receives a new value.
-       */
-      subscribe: (observable, observer) => {
-        if (!Type.isObject(observer)) {
-          observer = {
-            next: observer,
-            error: arguments[2],
-            complete: arguments[3],
-          };
-        }
+      observe: (readable: Readable<any> | Readable<any>[], callback: (...args: any[]) => void) => {
+        const readables: Readable<any>[] = [];
 
-        let observables = [];
-
-        if (Type.isArray(observable)) {
-          observables = observable;
+        if (Type.isArrayOf(Type.isInstanceOf(Readable), readable)) {
+          readables.push(...readable);
         } else {
-          observables.push(observable);
+          readables.push(readable);
         }
 
-        if (observables.length === 0) {
-          throw new TypeError(`Expected at least one observable.`);
+        if (readables.length === 0) {
+          throw new TypeError(`Expected at least one readable.`);
         }
 
-        const start = () => {
-          if (observables.length > 1) {
-            console.log({ observables, observer });
-            // TODO: Have State.merge forward errors to subscribers.
-            return State.merge(observables, observer.next).subscribe({
-              error: observer.error,
-              complete: observer.complete,
-            });
+        const start = (): StopFunction => {
+          if (readables.length > 1) {
+            return Readable.merge(readables, callback).observe(() => {});
           } else {
-            return observables[0].subscribe(observer);
+            return readables[0].observe(callback);
           }
         };
 
         if (this.isConnected) {
           // If called when the view is connected, we assume this code is in a lifecycle hook
           // where it will be triggered at some point again after the view is reconnected.
-          this.#activeSubscriptions.push(start());
+          this.#stopCallbacks.push(start());
         } else {
           // This should only happen if called in the body of the view.
           // This code is not always re-run between when a view is disconnected and reconnected.
           this.#lifecycleCallbacks.onConnect.push(() => {
-            this.#activeSubscriptions.push(start());
+            this.#stopCallbacks.push(start());
           });
         }
       },
 
-      /**
-       * Returns the nearest matching store instance.
-       *
-       * @param store - A store class to access, or the name of a built-in store.
-       */
-      useStore: (store) => {
-        const name = store?.name || store;
+      useStore: (nameOrStore: BuiltInStores | StoreConstructor<any, any>) => {
+        if (typeof nameOrStore === "string") {
+          const name = nameOrStore;
 
-        if (elementContext.stores.has(store)) {
+          if (appContext.stores.has(name)) {
+            const _store = appContext.stores.get(name)!;
+
+            if (!_store.instance) {
+              throw new Error(
+                `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
+              );
+            }
+
+            return _store.instance.outputs;
+          }
+        } else {
+          const store = nameOrStore;
+          const name = store?.name || store;
+
+          if (elementContext.stores.has(store)) {
+            if (appContext.stores.has(store)) {
+              // Warn if shadowing a global, just in case this isn't intended.
+              this.#channel.warn(`Using local store '${name}' which shadows global store '${name}'.`);
+            }
+
+            return elementContext.stores.get(store)!.instance!.outputs;
+          }
+
           if (appContext.stores.has(store)) {
-            // Warn if shadowing a global, just in case this isn't intended.
-            this.#channel.warn(`Using local store '${name}' which shadows global store '${name}'.`);
+            const _store = appContext.stores.get(store)!;
+
+            if (!_store.instance) {
+              throw new Error(
+                `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
+              );
+            }
+
+            return _store.instance.outputs;
           }
 
-          return elementContext.stores.get(store).instance.exports;
+          throw new Error(`Store '${name}' is not registered on this app.`);
         }
-
-        if (appContext.stores.has(store)) {
-          const _store = appContext.stores.get(store);
-
-          if (!_store.instance) {
-            throw new Error(
-              `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
-            );
-          }
-
-          return _store.instance.exports;
-        }
-
-        console.log(store, [...elementContext.stores.entries()]);
-
-        throw new Error(`Store '${name}' is not registered on this app.`);
       },
 
-      animateIn: (callback) => {
+      animateIn: (callback: () => Promise<void>) => {
         this.#lifecycleCallbacks.animateIn.push(callback);
       },
 
-      animateOut: (callback) => {
+      animateOut: (callback: () => Promise<void>) => {
         this.#lifecycleCallbacks.animateOut.push(callback);
       },
 
-      onConnect: (callback) => {
+      onConnect: (callback: () => void) => {
         this.#lifecycleCallbacks.onConnect.push(callback);
       },
 
-      onDisconnect: (callback) => {
+      onDisconnect: (callback: () => void) => {
         this.#lifecycleCallbacks.onDisconnect.push(callback);
       },
 
@@ -444,7 +476,7 @@ export class View<Inputs = {}> extends Connectable {
         return new Markup((config) => new Outlet({ ...config, value: this.#$$children }));
       },
 
-      crash: (error) => {
+      crash: (error: Error) => {
         appContext.crashCollector.crash({ error, component: this });
       },
     };
@@ -455,7 +487,7 @@ export class View<Inputs = {}> extends Connectable {
       get: () => this.isConnected,
     });
 
-    const assertUsable = (element) => {
+    const assertUsable = (element: unknown): element is Markup => {
       if (element === undefined) {
         throw new TypeError(`Views must return a markup element, or null to render nothing. Returned undefined.`);
       }
@@ -467,14 +499,20 @@ export class View<Inputs = {}> extends Connectable {
           throw new TypeError(`Views must return a markup element, or null to render nothing. Returned ${element}.`);
         }
       }
+
+      return true;
     };
 
     let element;
 
     try {
-      element = this.setup(ctx, m);
+      element = this.setup(ctx as ViewContext<Inputs>, m);
     } catch (error) {
-      appContext.crashCollector.crash({ error, component: this });
+      if (error instanceof Error) {
+        appContext.crashCollector.crash({ error, component: this });
+      } else {
+        throw error;
+      }
     }
 
     // Display loading content while setup promise pends.
@@ -495,7 +533,11 @@ export class View<Inputs = {}> extends Connectable {
       try {
         element = await element;
       } catch (error) {
-        appContext.crashCollector.crash({ error, component: this });
+        if (error instanceof Error) {
+          appContext.crashCollector.crash({ error, component: this });
+        } else {
+          throw error;
+        }
       }
 
       if (cleanup) {
@@ -503,11 +545,12 @@ export class View<Inputs = {}> extends Connectable {
       }
     }
 
-    assertUsable(element);
-    this.#element = element.init({ appContext, elementContext });
+    if (assertUsable(element)) {
+      this.#element = element.init({ appContext, elementContext });
 
-    if (Type.isFunction(this.#ref)) {
-      this.#ref(this.#element.node);
+      if (Type.isFunction(this.#ref)) {
+        this.#ref(this.#element.node);
+      }
     }
   }
 }

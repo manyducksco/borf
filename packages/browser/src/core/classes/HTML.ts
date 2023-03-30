@@ -1,8 +1,19 @@
 import { Type } from "@borf/bedrock";
 import { omit } from "../helpers/omit.js";
 import { Ref } from "./Ref.js";
-import { State } from "./State.js";
+
+import { Readable, Writable, type StopFunction } from "./Writable.js";
 import { Connectable } from "./Connectable.js";
+import { type AppContext, type ElementContext } from "./App.js";
+import { Markup } from "./Markup.js";
+
+type HTMLOptions = {
+  appContext: AppContext;
+  elementContext: ElementContext;
+  tag: string;
+  attributes?: any;
+  children?: Markup[];
+};
 
 export class HTML extends Connectable {
   #node;
@@ -10,13 +21,13 @@ export class HTML extends Connectable {
   #children;
   #appContext;
   #elementContext;
-  #activeSubscriptions = [];
+  #stopCallbacks: StopFunction[] = [];
 
   get node() {
     return this.#node;
   }
 
-  constructor({ tag, attributes, children, appContext, elementContext }) {
+  constructor({ tag, attributes, children, appContext, elementContext }: HTMLOptions) {
     super();
 
     elementContext = { ...elementContext };
@@ -33,7 +44,7 @@ export class HTML extends Connectable {
       this.#node = document.createElement(tag);
     }
 
-    const normalizedAttrs = {};
+    const normalizedAttrs: Record<string, any> = {};
 
     for (const key in attributes) {
       const normalized = key.toLowerCase();
@@ -53,17 +64,17 @@ export class HTML extends Connectable {
       if (Ref.isRef(normalizedAttrs.ref)) {
         normalizedAttrs.ref.element = this.#node;
       } else {
-        throw new Error("Expected an instance of Ref. Got: " + attrs.ref);
+        throw new Error("Expected an instance of Ref. Got: " + attributes.ref);
       }
     }
 
     this.#attributes = omit(["ref"], normalizedAttrs);
-    this.#children = children.map((c) => c.init({ appContext, elementContext }));
+    this.#children = children?.map((c) => c.init({ appContext, elementContext })) ?? [];
     this.#appContext = appContext;
     this.#elementContext = elementContext;
   }
 
-  setChildren(children) {
+  setChildren(children: Markup[]) {
     if (this.isConnected) {
       for (const child of this.#children) {
         child.disconnect();
@@ -80,93 +91,86 @@ export class HTML extends Connectable {
       }
     }
 
-    applyAttrs(this.#node, this.#attributes, this.#activeSubscriptions);
-    if (this.#attributes.style) applyStyles(this.#node, this.#attributes.style, this.#activeSubscriptions);
-    if (this.#attributes.class) applyClasses(this.#node, this.#attributes.class, this.#activeSubscriptions);
+    applyAttrs(this.#node, this.#attributes, this.#stopCallbacks);
+    if (this.#attributes.style) applyStyles(this.#node, this.#attributes.style, this.#stopCallbacks);
+    if (this.#attributes.class) applyClasses(this.#node, this.#attributes.class, this.#stopCallbacks);
   }
 
-  connect(parent, after = null) {
+  async connect(parent: Node, after?: Node) {
     if (!this.isConnected) {
       for (const child of this.#children) {
         child.connect(this.#node);
       }
 
-      applyAttrs(this.#node, this.#attributes, this.#activeSubscriptions);
-      if (this.#attributes.style) applyStyles(this.#node, this.#attributes.style, this.#activeSubscriptions);
-      if (this.#attributes.class) applyClasses(this.#node, this.#attributes.class, this.#activeSubscriptions);
+      applyAttrs(this.#node, this.#attributes, this.#stopCallbacks);
+      if (this.#attributes.style) applyStyles(this.#node, this.#attributes.style, this.#stopCallbacks);
+      if (this.#attributes.class) applyClasses(this.#node, this.#attributes.class, this.#stopCallbacks);
     }
 
-    parent.insertBefore(this.#node, after?.nextSibling);
+    parent.insertBefore(this.#node, after?.nextSibling ?? null);
   }
 
-  disconnect() {
+  async disconnect() {
     if (this.isConnected) {
       for (const child of this.#children) {
         child.disconnect();
       }
 
-      this.#node.parentNode.removeChild(this.#node);
+      this.#node.parentNode!.removeChild(this.#node);
 
-      while (this.#activeSubscriptions.length > 0) {
-        this.#activeSubscriptions.shift().unsubscribe();
+      for (const stop of this.#stopCallbacks) {
+        stop();
       }
+      this.#stopCallbacks = [];
     }
   }
 }
 
-function applyAttrs(element, attrs, subscriptions) {
+function applyAttrs(element: HTMLElement | SVGElement, attrs: Record<string, unknown>, stopCallbacks: StopFunction[]) {
   for (const key in attrs) {
     const value = attrs[key];
 
     // Bind or set value depending on its type.
-    if (key === "value") {
-      if (State.isReadable(value)) {
-        subscriptions.push(
-          value.subscribe((current) => {
+    if (key === "value" && element instanceof HTMLInputElement) {
+      if (Readable.isReadable(value)) {
+        stopCallbacks.push(
+          value.observe((current) => {
             element.value = String(current);
           })
         );
 
-        if (State.isWritable(value)) {
-          const listener = (e) => {
-            const updated = toTypeOf(value.get(), e.target.value);
-            value.set(updated);
+        if (Writable.isWritable(value)) {
+          const listener: EventListener = (e) => {
+            const updated = toTypeOf(value.value, (e.currentTarget as HTMLInputElement).value);
+            value.value = updated;
           };
 
           element.addEventListener("input", listener);
 
-          subscriptions.push({
-            unsubscribe: () => {
-              element.removeEventListener("input", listener);
-            },
+          stopCallbacks.push(() => {
+            element.removeEventListener("input", listener);
           });
         }
-      } else if (Type.isObservable(value)) {
-        subscriptions.push(
-          value.subscribe((current) => {
-            element.value = String(current);
-          })
-        );
       } else {
         element.value = String(value);
       }
     } else if (eventAttrs.includes(key.toLowerCase())) {
       const eventName = key.slice(2).toLowerCase();
-      const listener = Type.isObservable(attrs[key]) ? (e) => attrs[key].get()(e) : attrs[key];
+      const listener: (e: Event) => void = Readable.isReadable<(e: Event) => void>(value)
+        ? (e: Event) => value.value(e)
+        : (value as (e: Event) => void);
 
       element.addEventListener(eventName, listener);
 
-      subscriptions.push({
-        unsubscribe: () => {
-          element.removeEventListener(eventName, listener);
-        },
+      stopCallbacks.push(() => {
+        element.removeEventListener(eventName, listener);
       });
     } else if (!privateAttrs.includes(key)) {
       const isBoolean = booleanAttrs.includes(key);
 
-      if (Type.isObservable(value)) {
-        subscriptions.push(
-          value.subscribe((current) => {
+      if (Readable.isReadable(value)) {
+        stopCallbacks.push(
+          value.observe((current) => {
             if (current) {
               element.setAttribute(key, isBoolean ? "" : current.toString());
             } else {
@@ -181,35 +185,37 @@ function applyAttrs(element, attrs, subscriptions) {
   }
 }
 
-function applyStyles(element, styles, subscriptions) {
-  const propSubscriptions = [];
+function applyStyles(element: HTMLElement | SVGElement, styles: Record<string, any>, stopCallbacks: StopFunction[]) {
+  const propStopCallbacks: StopFunction[] = [];
 
-  if (Type.isObservable(styles)) {
-    let unapply;
+  if (Readable.isReadable<object>(styles)) {
+    let unapply: () => void;
 
-    const subscription = styles.subscribe((current) => {
+    const stop = styles.observe((current) => {
       requestAnimationFrame(() => {
         if (Type.isFunction(unapply)) {
           unapply();
         }
-        element.style = null;
-        unapply = applyStyles(element, current, subscriptions);
+        element.style.cssText = "";
+        unapply = applyStyles(element, current, stopCallbacks);
       });
     });
 
-    subscriptions.push(subscription);
-    propSubscriptions.push(subscription);
-  } else if (Type.isString(styles)) {
-    element.style = styles;
+    stopCallbacks.push(stop);
+    propStopCallbacks.push(stop);
   } else if (Type.isObject(styles)) {
+    styles = styles as Record<string, any>;
+
     for (const key in styles) {
       const value = styles[key];
-      const setProperty = key.startsWith("--")
-        ? (key, value) => element.style.setProperty(key, value)
-        : (key, value) => (element.style[key] = value);
+      // const setProperty = key.startsWith("--")
+      //   ? (key: string, value: string | null) => element.style.setProperty(key, value)
+      //   : (key: string, value: string | null) => (element.style[key] = value);
 
-      if (Type.isObservable(value)) {
-        const subscription = value.subscribe((current) => {
+      const setProperty = (key: string, value: string | null) => element.style.setProperty(key, value);
+
+      if (Readable.isReadable<any>(value)) {
+        const stop = value.observe((current) => {
           if (current) {
             setProperty(key, current);
           } else {
@@ -217,8 +223,8 @@ function applyStyles(element, styles, subscriptions) {
           }
         });
 
-        subscriptions.push(subscription);
-        propSubscriptions.push(subscription);
+        stopCallbacks.push(stop);
+        propStopCallbacks.push(stop);
       } else if (Type.isString(value)) {
         setProperty(key, value);
       } else if (Type.isNumber(value)) {
@@ -232,39 +238,39 @@ function applyStyles(element, styles, subscriptions) {
   }
 
   return function unapply() {
-    for (const subscription of propSubscriptions) {
-      subscription.unsubscribe();
-      subscriptions.splice(subscriptions.indexOf(subscription), 1);
+    for (const stop of propStopCallbacks) {
+      stop();
+      stopCallbacks.splice(stopCallbacks.indexOf(stop), 1);
     }
   };
 }
 
-function applyClasses(element, classes, subscriptions) {
-  const classSubscriptions = [];
+function applyClasses(element: HTMLElement | SVGElement, classes: unknown, stopCallbacks: StopFunction[]) {
+  const classStopCallbacks: StopFunction[] = [];
 
-  if (Type.isObservable(classes)) {
-    let unapply;
+  if (Readable.isReadable(classes)) {
+    let unapply: () => void;
 
-    const subscription = classes.subscribe((current) => {
+    const stop = classes.observe((current) => {
       requestAnimationFrame(() => {
         if (Type.isFunction(unapply)) {
           unapply();
         }
         element.removeAttribute("class");
-        unapply = applyClasses(element, current, subscriptions);
+        unapply = applyClasses(element, current, stopCallbacks);
       });
     });
 
-    subscriptions.push(subscription);
-    classSubscriptions.push(subscription);
+    stopCallbacks.push(stop);
+    classStopCallbacks.push(stop);
   } else {
     const mapped = getClassMap(classes);
 
     for (const name in mapped) {
       const value = mapped[name];
 
-      if (Type.isObservable(value)) {
-        const subscription = value.subscribe((current) => {
+      if (Readable.isReadable(value)) {
+        const stop = value.observe((current) => {
           if (current) {
             element.classList.add(name);
           } else {
@@ -272,8 +278,8 @@ function applyClasses(element, classes, subscriptions) {
           }
         });
 
-        subscriptions.push(subscription);
-        classSubscriptions.push(subscription);
+        stopCallbacks.push(stop);
+        classStopCallbacks.push(stop);
       } else if (value) {
         element.classList.add(name);
       }
@@ -281,15 +287,15 @@ function applyClasses(element, classes, subscriptions) {
   }
 
   return function unapply() {
-    for (const subscription of classSubscriptions) {
-      subscription.unsubscribe();
-      subscriptions.splice(subscriptions.indexOf(subscription), 1);
+    for (const stop of classStopCallbacks) {
+      stop();
+      stopCallbacks.splice(stopCallbacks.indexOf(stop), 1);
     }
   };
 }
 
-function getClassMap(classes) {
-  let mapped = {};
+function getClassMap(classes: unknown) {
+  let mapped: Record<string, boolean> = {};
 
   if (Type.isString(classes)) {
     // Support multiple classes in one string like HTML.
@@ -314,7 +320,7 @@ function getClassMap(classes) {
  * Attempts to convert `source` to the same type as `target`.
  * Returns `source` as-is if conversion is not possible.
  */
-function toTypeOf(target, source) {
+function toTypeOf<T>(target: T, source: unknown): T | unknown {
   const type = typeof target;
 
   if (type === "string") {

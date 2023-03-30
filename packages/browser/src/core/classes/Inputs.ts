@@ -1,14 +1,18 @@
-import type { ObserveCallback, StopFunction } from "./Writable.js";
-
 import produce from "immer";
 import { Type } from "@borf/bedrock";
-import { Writable, Readable, READABLE, WRITABLE } from "./Writable.js";
+import { Writable, Readable, READABLE, type ObserveCallback, type StopFunction } from "./Writable.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 
+/**
+ * Input values passed to the component.
+ */
 export type InputValues<T = {}> = {
   [K in keyof T]: T[K] | Readable<T[K]> | Writable<T[K]>;
 };
 
+/**
+ * Defines which inputs a component can take and their properties.
+ */
 export type InputDefinitions<T> = {
   [K in keyof T]: InputDefinition<T[K]>;
 };
@@ -46,6 +50,9 @@ type InputDefinition<T> = {
   optional?: boolean;
 };
 
+/**
+ * Options passed when instantiating Inputs.
+ */
 interface InputsOptions<T> {
   inputs?: InputValues<T>;
   definitions?: InputDefinitions<T>;
@@ -171,6 +178,9 @@ export class Inputs<T> {
   }
 }
 
+/**
+ * Options passed when instantiating InputsAPI.
+ */
 type InputsAPIOptions<T> = {
   $$inputs: Writable<T>;
   definitions?: InputDefinitions<T>;
@@ -313,14 +323,14 @@ export class InputsAPI<T> {
   }
 
   /**
-   * Gets the whole inputs object as a Readable.
-   */
-  getReadable(): Readable<T>;
-
-  /**
    * Gets a Readable binding to the input called `name`.
    */
   getReadable<K extends keyof T>(name: K): Readable<T[K]>;
+
+  /**
+   * Gets the whole inputs object as a Readable.
+   */
+  getReadable(): Readable<T>;
 
   getReadable(name?: keyof T) {
     if (name) {
@@ -328,6 +338,14 @@ export class InputsAPI<T> {
     } else {
       return this.#inputs.toReadable();
     }
+  }
+
+  /**
+   * Gets a Readable binding to the input called `name`.
+   * Shorthand for `.getReadable(name)`.
+   */
+  $<K extends keyof T>(name: K): Readable<T[K]> {
+    return this.getReadable(name);
   }
 
   /**
@@ -362,6 +380,14 @@ export class InputsAPI<T> {
     } else {
       return this.#inputs;
     }
+  }
+
+  /**
+   * Gets a Writable binding to the input called `name`.
+   * Shorthand for `.getWritable(name)`.
+   */
+  $$<K extends keyof T>(name: K): Writable<T[K]> {
+    return this.getWritable(name);
   }
 
   map<N>(transform: (value: T) => N): Readable<N> {

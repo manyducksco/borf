@@ -1,15 +1,14 @@
-import type { Connectable } from "./Connectable";
-import type { AppContext, ElementContext } from "./App";
-import type { ViewConstructor, ViewSetupFunction } from "./View";
-import type { StoreConstructor } from "./Store";
-import type { InputValues } from "./Inputs.js";
-
 import { Type } from "@borf/bedrock";
-import { flatten } from "../helpers/flatten.js";
 import { isConnectable } from "../helpers/typeChecking.js";
+import { type Connectable } from "./Connectable.js";
+import { type AppContext, type ElementContext } from "./App.js";
+import { type ViewConstructor, type ViewSetupFunction } from "./View.js";
+import { type StoreConstructor } from "./Store.js";
+import { type InputValues } from "./Inputs.js";
 import { View } from "./View.js";
 import { Text } from "./Text.js";
 import { HTML } from "./HTML.js";
+import { Readable } from "./Writable.js";
 
 export interface MarkupConfig {
   appContext: AppContext;
@@ -23,6 +22,11 @@ export interface MarkupConfig {
  * These are all the items considered valid to pass as children to any element.
  */
 export type Renderable = string | number | Markup | false | null | undefined;
+
+/**
+ * Creates markup nodes that can be displayed by a View.
+ */
+export type MarkupFunction = typeof m;
 
 /**
  * DOM node factory. This is where things go to be converted into a Connectable.
@@ -42,6 +46,8 @@ export class Markup<C extends MarkupConfig = MarkupConfig> {
 /**
  * Creates markup for an HTML element.
  */
+
+// TODO: Use JSX element types to suggest attributes.
 // export function m<T extends string>(
 //   tagname: T,
 //   attributes?: JSX.IntrinsicElements[T],
@@ -66,9 +72,13 @@ export function m<I>(view: ViewConstructor<I>, inputs?: InputValues<I>, ...child
 /**
  * Creates markup for a Store.
  */
-export function m<I, O>(store: StoreConstructor<I, O>, inputs?: InputValues<I>, ...children: Renderable[]): Markup;
+export function m<I, O extends object = {}>(
+  store: StoreConstructor<I, O>,
+  inputs?: InputValues<I>,
+  ...children: Renderable[]
+): Markup;
 
-export function m<I, O>(
+export function m<I, O extends object = {}>(
   element: string | ViewSetupFunction<I> | ViewConstructor<I> | StoreConstructor<I, O>,
   attributes?: InputValues<any>,
   ...children: Renderable[]
@@ -80,30 +90,34 @@ export function m<I, O>(
   }
 
   // Filter out falsy children and convert remaining ones to Markup instances.
-  children = formatChildren(children);
+  const formattedChildren = formatChildren(children);
 
   // Connectable objects like Views and Locals
   if (isConnectable(element)) {
+    const component = element as ViewConstructor<unknown> | StoreConstructor<unknown, any>;
+
     return new Markup((config) => {
-      return new element({
+      return new component({
         inputs: attributes,
-        children,
+        children: formattedChildren,
         ...config,
-        label: config.label ?? element.label ?? element.name,
-        about: config.about ?? element.about,
-        inputDefs: element.inputs,
+        label: config.label ?? component.label ?? component.name,
+        about: config.about ?? component.about,
+        inputDefs: component.inputs,
       });
     });
   }
 
   // HTML tag like "h1", "span"
   if (Type.isString(element)) {
-    return new Markup((config) => new HTML({ attributes, children, ...config, tag: element }));
+    return new Markup((config) => new HTML({ attributes, children: formattedChildren, ...config, tag: element }));
   }
 
   // Anonymous view setup function.
   if (Type.isFunction(element)) {
-    return new Markup((config) => new View<any>({ ...config, setup: element }));
+    return new Markup(
+      (config) => new View<any>({ ...config, children: formattedChildren, setup: element as ViewSetupFunction<any> })
+    );
   }
 
   console.log({ element, attributes, children });
@@ -111,14 +125,15 @@ export function m<I, O>(
 }
 
 /**
- * Filter out falsy children and convert remaining ones to Markup instances.
+ * Filters out falsy children and converts remaining ones to Markup instances.
  */
-export function formatChildren(children: unknown[]) {
+export function formatChildren(children: Renderable | Renderable[]): Markup[] {
   if (!Type.isArray(children)) {
     children = [children];
   }
 
-  return flatten(children)
+  return children
+    .flat(Infinity)
     .filter((x) => x !== null && x !== undefined && x !== false)
     .map((x) => {
       if (x instanceof Markup) {
@@ -126,14 +141,12 @@ export function formatChildren(children: unknown[]) {
       }
 
       if (Type.isFunction(x)) {
-        return new Markup((config) => new View({ ...config, setup: x }));
+        return new Markup((config) => new View({ ...config, setup: x as ViewSetupFunction<unknown> }));
       }
 
-      if (Type.isString(x) || Type.isNumber(x) || Type.isObservable(x)) {
+      if (Type.isString(x) || Type.isNumber(x) || Readable.isReadable(x)) {
         return new Markup((config) => new Text({ ...config, value: x }));
       }
-
-      console.trace(x);
 
       throw new TypeError(`Unexpected child type. Got: ${x}`);
     });

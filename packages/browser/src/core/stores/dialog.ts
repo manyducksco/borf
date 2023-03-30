@@ -1,9 +1,11 @@
 import { Type } from "@borf/bedrock";
-import { APP_CONTEXT } from "../keys.js";
-import { State } from "../classes/State.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
+import { Writable } from "../classes/Writable.js";
 import { Store } from "../classes/Store.js";
-import { Markup } from "../classes/Markup.js";
-import { View } from "../classes/View.js";
+import { Markup, type MarkupConfig } from "../classes/Markup.js";
+import { View, Viewable, ViewSetupFunction } from "../classes/View.js";
+import { type Connectable } from "../classes/Connectable.js";
+import { InputValues } from "core/classes/Inputs.js";
 
 /**
  * Manages dialogs. Also known as modals.
@@ -11,6 +13,7 @@ import { View } from "../classes/View.js";
  */
 export const DialogStore = Store.define({
   label: "dialog",
+
   setup(ctx) {
     const container = document.createElement("div");
     container.style.position = "fixed";
@@ -24,15 +27,15 @@ export const DialogStore = Store.define({
      * A first-in-last-out queue of dialogs. The last one appears on top.
      * This way if a dialog opens another dialog the new dialog stacks.
      */
-    const $$dialogs = new State([]);
+    const $$dialogs = new Writable<Connectable[]>([]);
 
-    let activeDialogs = [];
+    let activeDialogs: Connectable[] = [];
 
     // Diff dialogs when value is updated, adding and removing dialogs as necessary.
-    ctx.subscribe($$dialogs, (dialogs) => {
+    ctx.observe($$dialogs, (dialogs) => {
       requestAnimationFrame(() => {
-        let removed = [];
-        let added = [];
+        let removed: Connectable[] = [];
+        let added: Connectable[] = [];
 
         for (const dialog of activeDialogs) {
           if (!dialogs.includes(dialog)) {
@@ -75,12 +78,22 @@ export const DialogStore = Store.define({
       }
     });
 
+    interface DialogInputs {
+      open: boolean;
+    }
+
+    interface DialogConfig extends MarkupConfig {
+      inputs: {
+        open: Writable<boolean>;
+      };
+    }
+
     return {
-      open: (view, inputs = {}) => {
-        let markup;
+      open: <I extends DialogInputs>(view: Viewable<I>, inputs?: InputValues<Omit<I, "open">>) => {
+        let markup: Markup<DialogConfig> | undefined;
 
         if (Type.isFunction(view)) {
-          markup = new Markup((config) => new View({ ...config, setup: view }));
+          markup = new Markup((config) => new View({ ...config, setup: view as ViewSetupFunction<any> }));
         } else if (View.isView(view)) {
           markup = new Markup((config) => new view(config));
         }
@@ -89,17 +102,18 @@ export const DialogStore = Store.define({
           throw new TypeError(`Expected a view or setup function. Got: ${view}`);
         }
 
-        const $$open = new State(true);
+        const $$open = new Writable(true);
 
-        let instance = markup.init({
+        let instance: Connectable | undefined = markup.init({
           appContext: ctx[APP_CONTEXT],
+          elementContext: ctx[ELEMENT_CONTEXT],
           inputs: { ...inputs, open: $$open },
         });
         $$dialogs.update((current) => {
-          current.push(instance);
+          current.push(instance!);
         });
 
-        const openSubscription = $$open.subscribe((value) => {
+        const stop = $$open.observe((value) => {
           if (!value) {
             close();
           }
@@ -108,13 +122,13 @@ export const DialogStore = Store.define({
         return function close() {
           $$dialogs.update((current) => {
             current.splice(
-              current.findIndex((v) => v === view),
+              current.findIndex((x) => x === instance),
               1
             );
           });
-          instance = null;
+          instance = undefined;
 
-          openSubscription.unsubscribe();
+          stop();
         };
       },
     };

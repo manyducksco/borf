@@ -1,17 +1,30 @@
 import { Type } from "@borf/bedrock";
-import { State } from "../classes/State.js";
 import { Store } from "../classes/Store.js";
+import { Readable, Writable } from "../classes/Writable.js";
+
+// TODO: Is there a good way to represent infinitely nested recursive types?
+/**
+ * An object where values are either a translated string or another nested Translation object.
+ */
+type Translation = Record<string, string | Record<string, string | Record<string, string | Record<string, string>>>>;
+
+export interface LanguageConfig {
+  /**
+   * The translated strings for this language, or a callback function that returns them.
+   */
+  translation: Translation | (() => Translation) | (() => Promise<Translation>);
+}
 
 class Language {
   #tag;
   #config;
-  #translation;
+  #translation?: Translation;
 
   get tag() {
     return this.#tag;
   }
 
-  constructor(tag, config) {
+  constructor(tag: string, config: LanguageConfig) {
     this.#tag = tag;
     this.#config = config;
   }
@@ -59,15 +72,23 @@ class Language {
   }
 }
 
-export const LanguageStore = Store.define({
+interface LanguageStoreInputs {
+  languages: {
+    [tag: string]: LanguageConfig;
+  };
+  currentLanguage: string;
+}
+
+export const LanguageStore = Store.define<LanguageStoreInputs>({
   label: "language",
   about: "Manages translations.",
+
   async setup(ctx) {
     const options = ctx.inputs.get();
-    const languages = new Map();
+    const languages = new Map<string, Language>();
 
     // Convert languages into Language instances.
-    Object.entries(options.languages || {}).forEach(([tag, config]) => {
+    Object.entries(options.languages).forEach(([tag, config]) => {
       languages.set(tag, new Language(tag, config));
     });
 
@@ -77,16 +98,16 @@ export const LanguageStore = Store.define({
       )}`
     );
 
-    const $$language = new State(); // String
-    const $$translation = new State(); // Object
+    const $$language = new Writable<string | undefined>(undefined);
+    const $$translation = new Writable<Translation | undefined>(undefined);
 
     // Fallback labels for missing state and data.
-    const $noLanguageValue = new State("[NO LANGUAGE SET]").readable();
+    const $noLanguageValue = new Readable("[NO LANGUAGE SET]");
 
     /**
      * Replaces {{placeholders}} with values in translated strings.
      */
-    function replaceMustaches(template, values) {
+    function replaceMustaches(template: string, values: Record<string, Stringable>) {
       for (const name in values) {
         template = template.replace(`{{${name}}}`, String(values[name]));
       }
@@ -101,28 +122,30 @@ export const LanguageStore = Store.define({
     if (currentLanguage != null) {
       const translation = await currentLanguage.getTranslation();
 
-      $$language.set(currentLanguage.tag);
-      $$translation.set(translation);
+      $$language.value = currentLanguage.tag;
+      $$translation.value = translation;
     }
 
     return {
-      $currentLanguage: $$language.readable(),
+      $currentLanguage: $$language.toReadable(),
       supportedLanguages: [...languages.keys()],
 
-      async setLanguage(tag) {
+      async setLanguage(tag: string) {
         if (!languages.has(tag)) {
           throw new Error(`Language '${tag}' is not supported.`);
         }
 
-        const lang = languages.get(tag);
+        const lang = languages.get(tag)!;
 
         try {
           const translation = await lang.getTranslation();
 
-          $$language.set(tag);
-          $$translation.set(translation);
+          $$language.value = tag;
+          $$translation.value = translation;
         } catch (error) {
-          ctx.crash(error);
+          if (error instanceof Error) {
+            ctx.crash(error);
+          }
         }
       },
 
@@ -132,26 +155,26 @@ export const LanguageStore = Store.define({
        * @param key - Key to the translated value.
        * @param values - A map of {{placeholder}} names and the values to replace them with.
        */
-      translate(key, values = null) {
-        if ($$language.get() == null) {
+      translate(key: string, values?: Record<string, Readable<Stringable>>) {
+        if (!$$language.value) {
           return $noLanguageValue;
         }
 
         if (values) {
-          const observableValues = {};
+          const readableValues: Record<string, Readable<any>> = {};
 
-          for (const [key, value] of Object.entries(values)) {
-            if (typeof value?.subscribe === "function") {
-              observableValues[key] = value;
+          for (const [key, value] of Object.entries<Readable<any>>(values)) {
+            if (typeof value?.observe === "function") {
+              readableValues[key] = value;
             }
           }
 
           // This looks extremely weird, but it creates a joined state
           // that contains the translation with interpolated observable values.
-          const observableEntries = Object.entries(observableValues);
-          if (observableEntries.length > 0) {
-            const merge = (t, ...entryValues) => {
-              const entries = entryValues.map((_, i) => observableEntries[i]);
+          const readableEntries = Object.entries(readableValues);
+          if (readableEntries.length > 0) {
+            return Readable.merge([$$translation, ...readableEntries.map((x) => x[1])], (t, ...entryValues) => {
+              const entries = entryValues.map((_, i) => readableEntries[i]);
               const mergedValues = {
                 ...values,
               };
@@ -163,11 +186,7 @@ export const LanguageStore = Store.define({
 
               const result = resolve(t, key) || `[NO TRANSLATION: ${key}]`;
               return replaceMustaches(result, mergedValues);
-            };
-
-            const joinArgs = [...observableEntries.map((x) => x[1]), merge];
-
-            return State.merge($$translation, ...joinArgs);
+            });
           }
         }
 
@@ -185,14 +204,14 @@ export const LanguageStore = Store.define({
   },
 });
 
-function resolve(object, key) {
+function resolve(object: any, key: string) {
   const parsed = String(key)
     .split(/[\.\[\]]/)
     .filter((part) => part.trim() !== "");
   let value = object;
 
   while (parsed.length > 0) {
-    const part = parsed.shift();
+    const part = parsed.shift()!;
 
     if (value != null) {
       value = value[part];

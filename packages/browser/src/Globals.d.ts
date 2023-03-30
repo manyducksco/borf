@@ -7,3 +7,10 @@ declare module "simple-color-hash" {
 
   export default function colorHash(options: HashOptions): string;
 }
+
+/**
+ * Any object with a toString method that returns a string.
+ */
+declare interface Stringable {
+  toString(): string;
+}

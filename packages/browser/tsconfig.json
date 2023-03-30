@@ -6,7 +6,7 @@
     "rootDir": "src",
     "moduleResolution": "node",
     "baseUrl": "src",
-    "allowJs": true,
+    "allowJs": false,
     "checkJs": false,
     "declaration": true,
     "sourceMap": true,

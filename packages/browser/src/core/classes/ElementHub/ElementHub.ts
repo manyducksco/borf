@@ -1,12 +1,20 @@
 import { Type } from "@borf/bedrock";
 
 import { DebugHub } from "../DebugHub.js";
-import { Store } from "../Store.js";
+import { type View } from "../View.js";
+import { Store, StoreConstructor } from "../Store.js";
 import { HTTPStore } from "../../stores/http.js";
 import { PageStore } from "../../stores/page.js";
 
 import { DialogStore } from "./stores/dialog.js";
 import { RouterStore } from "./stores/router.js";
+import { type BuiltInStores } from "../App.js";
+
+type StoreRegistration = {
+  store: BuiltInStores | StoreConstructor<any, any>;
+  exports?: StoreConstructor<any, any>;
+  instance?: Store<any, any>;
+};
 
 export class ElementHub {
   #stores = [
@@ -33,9 +41,9 @@ export class ElementHub {
   /**
    * Registers a new store for all elements on this hub.
    */
-  addStore(store) {
+  addStore(store: StoreConstructor<any, any>) {
     if (Type.isClass(store)) {
-      this.#stores.push({ store, instance: undefined });
+      this.#stores.push({ store: store as StoreConstructor<any, any>, instance: undefined });
     } else if (Type.isObject(store)) {
       this.#stores.push({ ...store, instance: undefined });
     } else {
@@ -44,7 +52,7 @@ export class ElementHub {
 
     if (this.#isConnected) {
       // TODO: Set the store up if it isn't already.
-      let config;
+      let config: StoreRegistration;
 
       if (Store.isStore(store)) {
         config = { store, instance: undefined };
@@ -92,7 +100,11 @@ export class ElementHub {
   /**
    * Registers a new HTML custom element implemented as a view or store.
    */
-  addElement(tag, component) {
+  addElement(tag: string, component: View<any> | Store<any, any>) {
+    if (!tag.includes("-")) {
+      throw new Error(`Custom element names are required to have a dash ('-') character in them. Got: ${tag}`);
+    }
+
     this.#elements.push({ tag, component, defined: false });
   }
 
