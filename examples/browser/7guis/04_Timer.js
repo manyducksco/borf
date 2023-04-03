@@ -1,12 +1,12 @@
-import { State, View } from "@borf/browser";
+import { Writable, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 export class Timer extends View {
   static label = "7guis:Timer";
 
   setup(ctx) {
-    const $$duration = new State(10); // duration in seconds
-    const $$elapsed = new State(0); // elapsed time in seconds
+    const $$duration = new Writable(10); // duration in seconds
+    const $$elapsed = new Writable(0); // elapsed time in seconds
 
     let lastTick = null;
 

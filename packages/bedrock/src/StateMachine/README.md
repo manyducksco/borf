@@ -26,20 +26,20 @@ light.signalsOf("green"); // ["NEXT", "OFF"]
 
 // ----- Signal Transitions ----- //
 
-const changed = light.signal("NEXT"); // red -> green
+const changed = light.send("NEXT"); // red -> green
 // changed = true
 
-light.signal("NEXT", (changed, newValue, oldValue) => {
+light.send("NEXT", (changed, newValue, oldValue) => {
   // Callback is called synchronously. Use it to inspect the results of the signal.
 });
 
-light.signal("NEXT"); // green -> yellow
-light.signal("NEXT"); // yellow -> red
-light.signal("OFF"); // red -> offline
-light.signal("NEXT"); // offline -> offline (offline doesn't respond to this signal)
-light.signal("NEXT"); // ...
-light.signal("ON"); // offline -> red (back online)
-light.signal("NEXT"); // red -> green
+light.send("NEXT"); // green -> yellow
+light.send("NEXT"); // yellow -> red
+light.send("OFF"); // red -> offline
+light.send("NEXT"); // offline -> offline (offline doesn't respond to this signal)
+light.send("NEXT"); // ...
+light.send("ON"); // offline -> red (back online)
+light.send("NEXT"); // red -> green
 
 // ----- Observability ----- //
 

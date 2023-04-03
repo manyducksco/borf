@@ -1,11 +1,11 @@
-import { State, View } from "@borf/browser";
+import { Writable, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class TempConverter extends View {
   static label = "7guis:TempConverter";
 
   setup(ctx) {
-    const $$celsius = new State(10);
+    const $$celsius = new Writable(10);
 
     const setCelsius = (c) => {
       $$celsius.set(c);
@@ -15,7 +15,7 @@ class TempConverter extends View {
       $$celsius.set((f - 32) * (5 / 9));
     };
 
-    const $celsius = $$celsius.readable();
+    const $celsius = $$celsius.toReadable();
     const $fahrenheit = $celsius.map((c) => c * (9 / 5) + 32);
 
     return (

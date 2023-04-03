@@ -1,9 +1,4 @@
-import Symbol_observable from "symbol-observable";
-import {
-  Observable,
-  Observer,
-  Subscription,
-} from "../Observable/Observable.js";
+import { PubSub } from "../PubSub/PubSub.js";
 
 interface StateConfig<S, T extends string> {
   signals: Partial<Record<T, S>>;
@@ -18,7 +13,7 @@ export class StateMachine<
 > {
   #currentState: S;
   #states: Record<S, StateConfig<S, T>>;
-  #observers: ((state: S) => void)[] = [];
+  #pubsub = new PubSub<S>();
 
   constructor(initialState: S, states: Record<S, StateConfig<S, T>>) {
     this.#currentState = initialState;
@@ -55,7 +50,7 @@ export class StateMachine<
     if (nextState != null && nextState !== this.#currentState) {
       const oldState = this.#currentState;
       this.#currentState = nextState;
-      this.#observers.forEach((callback) => callback(nextState));
+      this.#pubsub.publish(nextState);
 
       if (callback) {
         callback(true, nextState, oldState);
@@ -71,37 +66,10 @@ export class StateMachine<
     }
   }
 
-  [Symbol_observable]() {
-    return this;
-  }
-
   /**
-   * Subscribes to the state with an observer.
+   * Subscribe to state changes with a `callback` function. Returns an unsubscribe function.
    */
-  subscribe(observer: Observer<S>): Subscription;
-
-  /**
-   * Subscribes to the state with callbacks.
-   */
-  subscribe(
-    onNext?: (value: S) => void,
-    onError?: (error: Error) => void,
-    onComplete?: () => void
-  ): Subscription;
-
-  subscribe(...args: any[]) {
-    return new Observable((observer) => {
-      observer.next(this.#currentState);
-
-      const update = (state: S) => {
-        observer.next(state);
-      };
-
-      this.#observers.push(update);
-
-      return () => {
-        this.#observers.splice(this.#observers.indexOf(update), 1);
-      };
-    }).subscribe(...args);
+  subscribe(callback: (state: S) => void) {
+    return this.#pubsub.subscribe(callback);
   }
 }

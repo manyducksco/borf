@@ -52,13 +52,13 @@ test("works", (t) => {
 
   let received: string[] = [];
 
-  const sub = light.subscribe((state) => {
+  const unsubscribe = light.subscribe((state) => {
     received.push(state);
   });
 
   light.signal("NEXT"); // yellow -> red
 
-  sub.unsubscribe();
+  unsubscribe();
 
   light.signal("NEXT"); // red -> green
   t.is(light.state, "green");

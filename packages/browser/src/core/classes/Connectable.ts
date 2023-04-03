@@ -1,16 +1,17 @@
 /**
- * Base class for components that can be connected to the DOM.
+ * Base class for framework elements that can be connected to the DOM.
  */
 export class Connectable {
-  get node(): Node {
-    return null as any; // Override me. Should return a DOM node.
+  static isConnectable(value: any): value is Connectable {
+    return value != null && value.prototype instanceof Connectable;
+  }
+
+  get node(): Node | undefined {
+    return undefined; // Override me. Should return a DOM node when the component is connected.
   }
 
   get isConnected() {
-    if (this.node) {
-      return (this.node as Node)?.parentNode != null;
-    }
-    return false;
+    return this.node?.parentNode != null;
   }
 
   async connect(parent: Node, after: Node | null = null) {

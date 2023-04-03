@@ -1,11 +1,10 @@
 import { Type } from "@borf/bedrock";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
-import { isMarkup } from "../helpers/typeChecking.js";
 import { type StoreRegistration } from "./App.js";
 import { Connectable } from "./Connectable.js";
 import { Inputs, type InputValues, type InputDefinitions, type InputsAPI } from "./Inputs.js";
 import { Outlet } from "./Outlet.js";
-import { m, type Markup, type MarkupFunction, type Renderable } from "./Markup.js";
+import { m, Markup, type MarkupFunction } from "./Markup.js";
 import { type AppContext, type ElementContext, type BuiltInStores } from "./App.js";
 import { Readable, Writable, type StopFunction } from "./Writable.js";
 import { BORF_ENV } from "../env.js";
@@ -353,7 +352,7 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
         if (content !== null) {
           // m() returns a Markup with something in it. Either an HTML tag, a view setup function or a connectable class.
           // Markup.init(config) is called, which passes config stuff to the connectable's constructor.
-          if (!isMarkup(content)) {
+          if (!Markup.isMarkup(content)) {
             throw new TypeError(
               `loading() must return a markup element, or null to render nothing. Returned ${content}.`
             );

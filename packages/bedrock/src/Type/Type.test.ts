@@ -1,7 +1,5 @@
 import test from "ava";
-import Symbol_observable from "symbol-observable";
 import { Type } from "./Type.js";
-import { Observable } from "../Observable/Observable.js";
 import { Hash } from "../Hash/Hash.js";
 
 test("isArray, assertArray", (t) => {
@@ -250,34 +248,6 @@ test("isSet, assertSet", (t) => {
   t.notThrows(() => Type.assertSet(new Set()));
   t.throws(() => Type.assertSet(new Map()));
   t.throws(() => Type.assertSet(undefined));
-});
-
-test("isObservable, assertObservable", (t) => {
-  // Bedrocke observables are observable.
-  t.assert(Type.isObservable(Observable.of([1, 2, 3])));
-
-  // Arbitrary objects that implement the Observable protocol are observable.
-  const observable = {
-    [Symbol_observable]() {
-      return this;
-    },
-
-    subscribe(...args: any[]) {
-      return {
-        unsubscribe() {},
-      };
-    },
-  };
-
-  t.assert(Type.isObservable(observable));
-
-  // Non-observable objects are non-observable.
-  t.assert(!Type.isObservable(1));
-  t.assert(!Type.isObservable("random string"));
-
-  t.notThrows(() => Type.assertObservable(observable));
-  t.throws(() => Type.assertObservable(1));
-  t.throws(() => Type.assertObservable("random string"));
 });
 
 test("isIterable, assertIterable", (t) => {

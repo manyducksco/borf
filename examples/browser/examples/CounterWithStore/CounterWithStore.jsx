@@ -34,10 +34,12 @@ export const CounterWithStore = View.define({
 /**
  * Second component with a view only. Displays the same information from the same service.
  */
-class CounterViewLabel extends View {
+const CounterViewLabel = View.define({
+  label: "CounterViewLabel",
+
   setup(ctx) {
     const { $current } = ctx.useStore(CounterStore);
 
     return <h1>{$current}</h1>;
-  }
-}
+  },
+});

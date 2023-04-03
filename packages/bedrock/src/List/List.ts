@@ -1,7 +1,4 @@
-import type { Observer, Subscription } from "../Observable/Observable";
-
-import Symbol_observable from "symbol-observable";
-import { Observable, SubscriptionObserver } from "../Observable/Observable.js";
+import { PubSub } from "../PubSub/PubSub.js";
 import { cloneDeep } from "../helpers/cloneDeep.js";
 
 interface ListOptions<T> {
@@ -27,14 +24,7 @@ interface ListOptions<T> {
  */
 export class List<T> extends Array<T> {
   #options: ListOptions<T>;
-  #observers: SubscriptionObserver<this>[] = [];
-  #observable = new Observable<this>((observer) => {
-    this.#observers.push(observer);
-
-    return () => {
-      this.#observers.splice(this.#observers.indexOf(observer), 1);
-    };
-  });
+  #pubsub = new PubSub<List<T>>();
 
   static isList(value: unknown) {
     return value instanceof List;
@@ -82,12 +72,6 @@ export class List<T> extends Array<T> {
     }
   }
 
-  #broadcast() {
-    for (const observer of this.#observers) {
-      observer.next(this);
-    }
-  }
-
   /**
    * Adds `items` to the end of this list.
    *
@@ -100,7 +84,7 @@ export class List<T> extends Array<T> {
     this.#validate(...items);
     const length = super.push(...items);
     this.sort();
-    this.#broadcast();
+    this.#pubsub.publish(this);
 
     return length;
   }
@@ -117,7 +101,7 @@ export class List<T> extends Array<T> {
       super.sort(compareFn);
     }
 
-    this.#broadcast();
+    this.#pubsub.publish(this);
     return this;
   }
 
@@ -168,7 +152,7 @@ export class List<T> extends Array<T> {
    */
   append(...items: T[]) {
     this.push(...items);
-    this.#broadcast();
+    this.#pubsub.publish(this);
     return this;
   }
 
@@ -177,7 +161,7 @@ export class List<T> extends Array<T> {
    */
   prepend(...items: T[]) {
     this.unshift(...items);
-    this.#broadcast();
+    this.#pubsub.publish(this);
     return this;
   }
 
@@ -199,7 +183,7 @@ export class List<T> extends Array<T> {
       this.splice(index, 1);
     }
 
-    this.#broadcast();
+    this.#pubsub.publish(this);
     return this;
   }
 
@@ -219,7 +203,7 @@ export class List<T> extends Array<T> {
       }
     }
 
-    this.#broadcast();
+    this.#pubsub.publish(this);
     return this;
   }
 
@@ -231,7 +215,7 @@ export class List<T> extends Array<T> {
    */
   insertAt(index: number, ...items: T[]) {
     this.splice(index, 0, ...items);
-    this.#broadcast();
+    this.#pubsub.publish(this);
     return this;
   }
 
@@ -243,7 +227,7 @@ export class List<T> extends Array<T> {
    */
   removeAt(index: number, count: number = 1) {
     this.splice(index, count);
-    this.#broadcast();
+    this.#pubsub.publish(this);
     return this;
   }
 
@@ -255,7 +239,7 @@ export class List<T> extends Array<T> {
       this.pop();
     }
 
-    this.#broadcast();
+    this.#pubsub.publish(this);
     return this;
   }
 
@@ -272,7 +256,7 @@ export class List<T> extends Array<T> {
       }
     }
 
-    this.#broadcast();
+    this.#pubsub.publish(this);
     return this;
   }
 
@@ -458,18 +442,10 @@ export class List<T> extends Array<T> {
     return Array.from(this);
   }
 
-  [Symbol_observable]() {
-    return this.#observable;
-  }
-
-  subscribe(
-    onNext?: (next: T) => void,
-    onError?: (error: Error) => void,
-    onComplete?: () => void
-  ): Subscription;
-  subscribe(observer: Observer<T>): Subscription;
-
-  subscribe(...args: any[]): Subscription {
-    return this.#observable.subscribe(...args);
+  /**
+   * Subscribes to changes. Called with the list whenever the list is modified.
+   */
+  subscribe(callback: (latest: List<T>) => void) {
+    return this.#pubsub.subscribe(callback);
   }
 }

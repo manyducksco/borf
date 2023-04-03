@@ -22,7 +22,7 @@ type ValuesOfReadables<T extends Readable<any>[]> = { [K in keyof T]: T[K] exten
 /**
  * Read-only observable state container.
  *
- * Using the `$name` convention for instance names (one '$' to indicate readability) matches Borf's code style and may help with code clarity.
+ * Using the `$name` convention for instance names (one '$' to indicate readability) may help with code clarity.
  */
 export class Readable<T> {
   [READABLE] = true;
@@ -86,6 +86,13 @@ export class Readable<T> {
   }
 
   /**
+   * Returns the current value of this Readable. Equivalent to accessing `value`.
+   */
+  get(): T {
+    return this.value;
+  }
+
+  /**
    * Takes a function and calls it with `value` whenever `value` changes.
    * Returns a new Readable containing the latest return value of your transform function.
    *
@@ -138,6 +145,10 @@ class MappedReadable<O, T> extends Readable<T> {
     return this.#transform(this.#readable.value);
   }
 
+  get() {
+    return this.value;
+  }
+
   map<N>(transform: (value: T) => N): Readable<N> {
     return new MappedReadable<T, N>(this, transform);
   }
@@ -183,6 +194,10 @@ class MergedReadable<Rs extends Readable<any>[], T> extends Readable<T> {
     } else {
       return this.#merge(...(this.#readables.map((s) => s.value) as ValuesOfReadables<Rs>));
     }
+  }
+
+  get() {
+    return this.value;
   }
 
   map<R>(transform: (value: T) => R): Readable<R> {
@@ -268,7 +283,7 @@ class MergedReadable<Rs extends Readable<any>[], T> extends Readable<T> {
 /**
  * Read-write observable state container.
  *
- * Using the `$$name` convention for instance names (two '$' to indicate readability + writability) matches Borf's code style and may help with code clarity.
+ * Using the `$$name` convention for instance names (two '$' to indicate both readability + writability) may help with code clarity.
  */
 export class Writable<T> extends Readable<T> {
   [READABLE] = true;
@@ -305,6 +320,17 @@ export class Writable<T> extends Readable<T> {
       this.#value = newValue;
       this.#notifyObservers();
     }
+  }
+
+  get() {
+    return this.value;
+  }
+
+  /**
+   * Replaces the current value with `newValue`. Equivalent to `writable.value = newValue`.
+   */
+  set(newValue: T) {
+    this.value = newValue;
   }
 
   map<N>(transform: (value: T) => N): Readable<N> {

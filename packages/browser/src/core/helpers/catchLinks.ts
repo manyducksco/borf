@@ -16,13 +16,11 @@ export function catchLinks(root: HTMLElement, callback: (anchor: HTMLAnchorEleme
       return null;
     }
 
-    const isAnchor = node instanceof HTMLAnchorElement;
-
-    if (!isAnchor || node.href === undefined) {
+    if (node.localName !== "a" || (node as any).href === undefined) {
       return traverse(node.parentNode as HTMLElement | null);
     }
 
-    return node;
+    return node as HTMLAnchorElement;
   }
 
   function handler(e: MouseEvent) {
@@ -30,7 +28,7 @@ export function catchLinks(root: HTMLElement, callback: (anchor: HTMLAnchorEleme
       return;
     }
 
-    const anchor = traverse(e.currentTarget as HTMLElement);
+    const anchor = traverse(e.target as HTMLElement);
 
     if (!anchor) {
       return;

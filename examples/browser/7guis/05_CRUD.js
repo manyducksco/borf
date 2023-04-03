@@ -1,20 +1,20 @@
-import { State, View } from "@borf/browser";
+import { Writable, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class CRUD extends View {
   static label = "7guis:CRUD";
 
   setup(ctx, m) {
-    const $$people = new State([
+    const $$people = new Writable([
       { id: 1, name: "Hans", surname: "Emil" },
       { id: 2, name: "Max", surname: "Mustermann" },
       { id: 3, name: "Roman", surname: "Tisch" },
     ]);
-    const $$nextId = new State(4);
-    const $$selectedId = new State(1);
-    const $$nameInput = new State("");
-    const $$surnameInput = new State("");
-    const $$filterPrefix = new State("");
+    const $$nextId = new Writable(4);
+    const $$selectedId = new Writable(1);
+    const $$nameInput = new Writable("");
+    const $$surnameInput = new Writable("");
+    const $$filterPrefix = new Writable("");
 
     const $filteredPeople = State.merge(
       [$$people, $$filterPrefix],

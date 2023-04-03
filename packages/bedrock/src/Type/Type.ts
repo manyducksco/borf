@@ -1,6 +1,3 @@
-import Symbol_observable from "symbol-observable";
-import { Observable } from "../Observable/Observable.js";
-
 type TypeNames =
   // These values can be returned by `typeof`.
   | "string"
@@ -16,7 +13,6 @@ type TypeNames =
   | "array"
   | "class"
   | "promise"
-  | "observable"
   | "NaN";
 
 /**
@@ -68,10 +64,6 @@ export class Type<S extends Shape> {
 
         if (Type.isPromise(value)) {
           return "promise";
-        }
-
-        if (Type.isObservable(value)) {
-          return "observable";
         }
 
         return type;
@@ -630,51 +622,6 @@ export class Type<S extends Shape> {
       formatError(
         value,
         errorMessage ?? "Expected a Set. Got type: %t, value: %v"
-      )
-    );
-  }
-
-  /**
-   * Returns true if `value` implements the Observable protocol.
-   */
-  static isObservable<T>(value: any): value is Observable<T> {
-    if (value == null) {
-      return false;
-    }
-
-    // Must have a [Symbol.observable] function that returns an Observable.
-    if (!Type.isFunction(value[Symbol_observable])) {
-      return false;
-    }
-
-    const observable = value[Symbol_observable]();
-
-    // Observable must implement the observable protocol.
-    if (!Type.isFunction(observable.subscribe)) {
-      return false;
-    }
-
-    // We have to assume subscribe() returns a valid subscription.
-    // We can't call it to make sure because we don't want to cause side effects.
-    return true;
-  }
-
-  /**
-   * Throws a TypeError unless `value` implements the Observable protocol.
-   */
-  static assertObservable<T>(
-    value: any,
-    errorMessage?: string
-  ): value is Observable<T> {
-    if (Type.isObservable(value)) {
-      return true;
-    }
-
-    throw new TypeError(
-      formatError(
-        value,
-        errorMessage ??
-          "Expected an object that implements the observable protocol. Got type: %t, value: %v"
       )
     );
   }

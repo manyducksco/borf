@@ -1,4 +1,4 @@
-import { Type, Router } from "@borf/bedrock";
+import { Router } from "@borf/bedrock";
 import { createBrowserHistory } from "history";
 import queryString, { type ParsedQuery } from "query-string";
 

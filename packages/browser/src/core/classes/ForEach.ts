@@ -4,6 +4,8 @@ import { Markup, type MarkupConfig } from "./Markup.js";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type InputValues } from "./Inputs.js";
 
+// ----- Types ----- //
+
 interface ForEachOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
@@ -18,6 +20,8 @@ type ConnectedItem<T> = {
   $$index: Writable<number>;
   connectable: Connectable;
 };
+
+// ----- Code ----- //
 
 export class ForEach<T> extends Connectable {
   #node = document.createComment("ForEach");

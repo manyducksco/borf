@@ -28,11 +28,11 @@ export const AppLayout = View.define({
     const mouse = ctx.useStore(MouseStore);
 
     // Display current mouse coordinates as tab title
-    ctx.subscribe(mouse.$position, (pos) => {
+    ctx.observe(mouse.$position, (pos) => {
       page.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
     });
 
-    ctx.subscribe(page.$visibility, (status) => {
+    ctx.observe(page.$visibility, (status) => {
       ctx.log(`visibility: ${status}`);
     });
 

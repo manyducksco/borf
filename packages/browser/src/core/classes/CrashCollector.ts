@@ -1,20 +1,16 @@
-import { View, ViewConstructor } from "./View.js";
+import { View } from "./View.js";
 import { Store } from "./Store.js";
-import { Markup } from "./Markup.js";
 
-/**
- * Options passed when creating a new CrashCollector.
- */
-type CrashCollectorOptions = {
-  disconnectApp: () => void;
-  connectView: (markup: Markup) => void;
-  crashPage?: any;
-  enableCrashPage?: boolean;
-};
+// ----- Types ----- //
 
-type ErrorReport = {
+type ErrorContext = {
   error: Error;
-  severity: "report" | "crash";
+  severity: "error" | "crash";
+
+  /**
+   * Label for the component where the error occurred.
+   */
+  componentLabel: string;
 };
 
 type CrashOptions = {
@@ -22,138 +18,59 @@ type CrashOptions = {
   component: View<any> | Store<any, any>;
 };
 
-type CrashPageInputs = {
-  message: string;
-  error: Error;
-  componentName: string;
-};
+type ErrorCallback = (ctx: ErrorContext) => void;
+
+// ----- Code ----- //
 
 /**
- * Collects errors and unmounts the app if necessary.
+ * Receives errors that occur in components.
  */
 export class CrashCollector {
-  #errors: ErrorReport[] = [];
-  #disconnectApp; // Callback to disconnect the app.
-  #connectView;
-  #enableCrashPage; // Whether to show a crash page or just unmount to a white screen.
-  #crashPage: ViewConstructor<CrashPageInputs> = DefaultCrashPage;
+  #errors: ErrorContext[] = [];
+  #errorCallbacks: ErrorCallback[] = [];
 
-  #isCrashed = false;
+  onError(callback: ErrorCallback) {
+    this.#errorCallbacks.push(callback);
 
-  constructor({ disconnectApp, connectView, crashPage, enableCrashPage = true }: CrashCollectorOptions) {
-    this.#disconnectApp = disconnectApp;
-    this.#connectView = connectView;
-    this.#enableCrashPage = enableCrashPage;
-
-    if (crashPage) {
-      this.setCrashPage(crashPage);
-    }
+    return () => {
+      this.#errorCallbacks = this.#errorCallbacks.filter((x) => x !== callback);
+    };
   }
 
-  setCrashPage(view: ViewConstructor<CrashPageInputs>) {
-    if (!View.isView(view)) {
-      throw new TypeError(`Expected a view. Got: ${view}`);
-    }
-
-    this.#crashPage = view;
-  }
-
+  /**
+   * Reports an unrecoverable error that requires crashing the whole app.
+   */
   crash({ error, component }: CrashOptions) {
-    // Crash the entire app, unmounting everything and displaying an error page.
-    this.#errors.push({ error, severity: "crash" });
+    const ctx: ErrorContext = {
+      error,
+      severity: "crash",
+      componentLabel: getComponentLabel(component),
+    };
 
-    // The app can only be disconnected once.
-    if (this.#isCrashed) return;
-
-    this.#disconnectApp();
-
-    if (this.#enableCrashPage) {
-      const markup = new Markup((config) => {
-        return new this.#crashPage({
-          ...config,
-          channelPrefix: "crash",
-          label: this.#crashPage.label || this.#crashPage.name,
-          about: this.#crashPage.about,
-          inputs: {
-            message: error.message,
-            error: error,
-            componentName: component.label,
-          },
-          inputDefs: this.#crashPage.inputs,
-        });
-      });
-      this.#connectView(markup);
+    this.#errors.push(ctx);
+    for (const callback of this.#errorCallbacks) {
+      callback(ctx);
     }
 
-    this.#isCrashed = true;
-
-    throw error;
+    throw error; // Throws the error so developer can work with the stack trace in the console.
   }
 
-  report(error: Error) {
-    // Report an error without crashing the entire app.
-    this.#errors.push({ error, severity: "report" });
+  /**
+   * Reports a recoverable error.
+   */
+  error({ error, component }: CrashOptions) {
+    const ctx: ErrorContext = {
+      error,
+      severity: "error",
+      componentLabel: getComponentLabel(component),
+    };
+
+    this.#errors.push(ctx);
+    for (const callback of this.#errorCallbacks) {
+      callback(ctx);
+    }
   }
 }
 
-const DefaultCrashPage = View.define<CrashPageInputs>({
-  label: "DefaultCrashPage",
-  setup(ctx, m) {
-    const { message, error, componentName } = ctx.inputs.get();
-
-    return m(
-      "div",
-      {
-        style: {
-          backgroundColor: "#880000",
-          color: "#fff",
-          padding: "2rem",
-          position: "fixed",
-          inset: 0,
-          fontSize: "20px",
-        },
-      },
-      [
-        m("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
-
-        m(
-          "p",
-          { style: { marginBottom: "0.25rem" } },
-          m("span", { style: { fontFamily: "monospace" } }, componentName),
-          " says:"
-        ),
-
-        m(
-          "blockquote",
-          {
-            style: {
-              backgroundColor: "#991111",
-              padding: "0.25em",
-              borderRadius: "6px",
-              fontFamily: "monospace",
-              marginBottom: "1rem",
-            },
-          },
-          m(
-            "span",
-            {
-              style: {
-                display: "inline-block",
-                backgroundColor: "red",
-                padding: "0.1em 0.4em",
-                marginRight: "0.5em",
-                borderRadius: "4px",
-                fontSize: "0.9em",
-                fontWeight: "bold",
-              },
-            },
-            error.name
-          ),
-          message
-        ),
-
-        m("p", "Please see the browser console for details."),
-      ]
-    );
-  },
-});
+const getComponentLabel = (component: View<any> | Store<any, any>) =>
+  View.isView(component) ? "anonymous view" : Store.isStore(component) ? "anonymous store" : "anonymous component";

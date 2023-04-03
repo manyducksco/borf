@@ -61,6 +61,7 @@ export class HTML extends Connectable {
 
     // Set ref if present.
     if (normalizedAttrs.ref) {
+      console.log("REF", normalizedAttrs.ref);
       if (Ref.isRef(normalizedAttrs.ref)) {
         normalizedAttrs.ref.element = this.#node;
       } else {
@@ -208,11 +209,11 @@ function applyStyles(element: HTMLElement | SVGElement, styles: Record<string, a
 
     for (const key in styles) {
       const value = styles[key];
-      // const setProperty = key.startsWith("--")
-      //   ? (key: string, value: string | null) => element.style.setProperty(key, value)
-      //   : (key: string, value: string | null) => (element.style[key] = value);
 
-      const setProperty = (key: string, value: string | null) => element.style.setProperty(key, value);
+      // Set style property or attribute.
+      const setProperty = key.startsWith("--")
+        ? (key: string, value: string | null) => element.style.setProperty(key, value)
+        : (key: string, value: string | null) => (element.style[key as any] = value ?? "");
 
       if (Readable.isReadable<any>(value)) {
         const stop = value.observe((current) => {

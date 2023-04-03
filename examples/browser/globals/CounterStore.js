@@ -1,4 +1,4 @@
-import { Store, State } from "@borf/browser";
+import { Store, Writable } from "@borf/browser";
 
 export const CounterStore = Store.define({
   label: "CounterStore",
@@ -14,7 +14,7 @@ export const CounterStore = Store.define({
     // },
   },
   setup: (ctx) => {
-    const $$current = new State(0);
+    const $$current = new Writable(0);
 
     ctx.onConnect(() => {
       setInterval(() => {
@@ -23,7 +23,7 @@ export const CounterStore = Store.define({
     });
 
     return {
-      $current: $$current.readable(),
+      $current: $$current.toReadable(),
       reset() {
         $$current.set(0);
       },

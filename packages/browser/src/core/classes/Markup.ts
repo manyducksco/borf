@@ -1,6 +1,5 @@
 import { Type } from "@borf/bedrock";
-import { isConnectable } from "../helpers/typeChecking.js";
-import { type Connectable } from "./Connectable.js";
+import { Connectable } from "./Connectable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type ViewConstructor, type ViewSetupFunction } from "./View.js";
 import { type StoreConstructor } from "./Store.js";
@@ -32,6 +31,10 @@ export type MarkupFunction = typeof m;
  * DOM node factory. This is where things go to be converted into a Connectable.
  */
 export class Markup<C extends MarkupConfig = MarkupConfig> {
+  static isMarkup<C extends MarkupConfig = MarkupConfig>(value: unknown): value is Markup<C> {
+    return value instanceof Markup;
+  }
+
   #setup;
 
   constructor(setup: (config: C) => Connectable) {
@@ -57,17 +60,25 @@ export class Markup<C extends MarkupConfig = MarkupConfig> {
 /**
  * Creates markup for a custom HTML element.
  */
-export function m(tagname: string, attributes?: any, ...children: Renderable[]): Markup;
+export function m(tagname: string, attributes?: any, ...children: (Renderable | Renderable[])[]): Markup;
 
 /**
  * Creates markup for a View, as defined by a setup function.
  */
-export function m<I>(setup: ViewSetupFunction<I>, inputs?: InputValues<I>, ...children: Renderable[]): Markup;
+export function m<I>(
+  setup: ViewSetupFunction<I>,
+  inputs?: InputValues<I>,
+  ...children: (Renderable | Renderable[])[]
+): Markup;
 
 /**
  * Creates markup for a View.
  */
-export function m<I>(view: ViewConstructor<I>, inputs?: InputValues<I>, ...children: Renderable[]): Markup;
+export function m<I>(
+  view: ViewConstructor<I>,
+  inputs?: InputValues<I>,
+  ...children: (Renderable | Renderable[])[]
+): Markup;
 
 /**
  * Creates markup for a Store.
@@ -75,25 +86,33 @@ export function m<I>(view: ViewConstructor<I>, inputs?: InputValues<I>, ...child
 export function m<I, O extends object = {}>(
   store: StoreConstructor<I, O>,
   inputs?: InputValues<I>,
-  ...children: Renderable[]
+  ...children: (Renderable | Renderable[])[]
 ): Markup;
 
 export function m<I, O extends object = {}>(
   element: string | ViewSetupFunction<I> | ViewConstructor<I> | StoreConstructor<I, O>,
   attributes?: InputValues<any>,
-  ...children: Renderable[]
+  ...children: (Renderable | Renderable[])[]
 ) {
+  if (!children) {
+    children = [];
+  }
+
+  if (!Type.isArray(children)) {
+    children = [children];
+  }
+
   // If attributes isn't null or an object, consider it a child.
   if (!Type.isObject(attributes)) {
-    children.unshift(attributes);
+    children.unshift(attributes as Renderable);
     attributes = {};
   }
 
   // Filter out falsy children and convert remaining ones to Markup instances.
-  const formattedChildren = formatChildren(children);
+  const formattedChildren = formatChildren(children.flat(Infinity) as Renderable[]);
 
   // Connectable objects like Views and Locals
-  if (isConnectable(element)) {
+  if (Connectable.isConnectable(element)) {
     const component = element as ViewConstructor<unknown> | StoreConstructor<unknown, any>;
 
     return new Markup((config) => {
@@ -136,7 +155,7 @@ export function formatChildren(children: Renderable | Renderable[]): Markup[] {
     .flat(Infinity)
     .filter((x) => x !== null && x !== undefined && x !== false)
     .map((x) => {
-      if (x instanceof Markup) {
+      if (Markup.isMarkup(x)) {
         return x;
       }
 

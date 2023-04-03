@@ -4,7 +4,7 @@ export const DialogStore = Store.define({
   label: "dialog",
   setup: (ctx) => {
     return {
-      makeDialog() {
+      open() {
         ctx.warn("Not yet implemented for web components.");
       },
     };

@@ -15,7 +15,15 @@ import { Store, type StoreConstructor, type Storable, StoreSetupFunction } from 
 import { View, type ViewConstructor, type Viewable, ViewSetupFunction } from "./View.js";
 import { m } from "./Markup.js";
 
+// ----- Types ----- //
+
+/**
+ * Options passed when registering a store with `addStore`.
+ */
 interface AddStoreOptions<I> {
+  /**
+   * Inputs to pass to this store when it is created.
+   */
   inputs?: InputValues<I>;
 }
 
@@ -34,9 +42,7 @@ interface AppOptions {
 export interface AppContext {
   crashCollector: CrashCollector;
   debugHub: DebugHub;
-  router: Router;
   stores: Map<BuiltInStores | StoreRegistration["store"], StoreRegistration>;
-  options: AppOptions;
   rootElement?: HTMLElement;
   rootView?: View<{}>;
 }
@@ -46,8 +52,9 @@ export interface ElementContext {
   isSVG?: boolean;
 }
 
-export interface ElementContext {}
-
+/**
+ * Stores provided by the app. Accessible in components by these names with `ctx.useStore(name)`.
+ */
 export type BuiltInStores = "http" | "router" | "page" | "language" | "dialog";
 
 /**
@@ -120,16 +127,24 @@ interface RedirectContext {
   query: Record<string, string | number | undefined>;
 }
 
+// ----- Code ----- //
+
+/**
+ * The default root view. This is used when no root view is provided to the app.
+ * It does nothing but render routes.
+ */
 const DefaultRoot = View.define({
   label: "root",
   setup: (ctx) => ctx.outlet(),
 });
 
-export class App {
+/**
+ * A Borf browser app, complete with routes, stores, and multiple language support.
+ */
+export class App implements AppRouter {
   #layerId = 0;
   #isConnected = false;
   #stopCallbacks: StopFunction[] = [];
-  // #activeSubscriptions = [];
   #stores = new Map<BuiltInStores | StoreRegistration["store"], StoreRegistration>([
     ["dialog", { store: DialogStore }],
     ["router", { store: RouterStore }],
@@ -148,15 +163,22 @@ export class App {
   #options: AppOptions = {
     debug: {
       filter: "*,-borf:*",
-      log: true,
-      warn: true,
-      error: true,
+      log: "development", // Only print logs in development.
+      warn: "development", // Only print warnings in development.
+      error: true, // Always print errors.
     },
     router: {
       hash: false,
     },
   };
 
+  // Routes are prepared by the app and added to this router,
+  // which is passed to and used by the `router` store to handle navigation.
+  #router = new Router();
+
+  /**
+   * Whether the app is connected to the DOM.
+   */
   get isConnected() {
     return this.#isConnected;
   }
@@ -182,23 +204,32 @@ export class App {
       },
     });
 
-    // options.crashPage can be
-    // - boolean; true to enable, false to disable
-    // - "onlyDev"; enable when running locally but disable for production builds
-    // - a view; crash page view
-
     // Crash collector is used by components to handle crashes and errors.
-    const crashCollector = new CrashCollector({
-      disconnectApp: () => this.disconnect(),
-      connectView: (markup) => {
-        const instance = markup.init({
+    const crashCollector = new CrashCollector();
+
+    // When an error of "crash" severity is reported by a component,
+    // the app is disconnected and a crash page is connected.
+    crashCollector.onError(async ({ error, severity, componentLabel }) => {
+      // Disconnect app and connect crash page on "crash" severity.
+      if (severity === "crash") {
+        await this.disconnect();
+
+        const instance = new DefaultCrashPage({
           appContext: this.#appContext,
           elementContext: this.#elementContext,
+          channelPrefix: "crash",
+          label: DefaultCrashPage.label || DefaultCrashPage.name,
+          about: DefaultCrashPage.about,
+          inputs: {
+            message: error.message,
+            error: error,
+            componentLabel,
+          },
+          inputDefs: DefaultCrashPage.inputs,
         });
 
         instance.connect(this.#appContext.rootElement!);
-      },
-      // crashPage: options.crashPage,
+      }
     });
 
     // And finally create the appContext. This is the central config object accessible to all components.
@@ -206,9 +237,7 @@ export class App {
       crashCollector,
       debugHub: new DebugHub({ ...options.debug, crashCollector }),
       stores: this.#stores,
-      options,
-      router: new Router(),
-      // $dialogs - added by @dialog global
+      // $dialogs - added by dialog store
     };
   }
 
@@ -222,7 +251,7 @@ export class App {
     if (this.#rootView != DefaultRoot) {
       this.#appContext.debugHub
         .channel("borf:App")
-        .warn(`Root view is already defined. The latest call will override previous root view.`);
+        .warn(`Root view is already defined. Only the final addRootView call will take effect.`);
     }
 
     if (Type.isFunction(view)) {
@@ -270,7 +299,7 @@ export class App {
   }
 
   /**
-   * Adds a new language the app can be translated into.
+   * Adds a new language translation to the app.
    *
    * @param tag - A valid BCP47 language tag, like `en-US`, `en-GB`, `ja`, etc.
    * @param config - Language configuration.
@@ -360,12 +389,12 @@ export class App {
   addRoute(pattern: string, view: Viewable<unknown> | null, subroutes?: (sub: AppRouter) => void) {
     Type.assertString(pattern, "Pattern must be a string. Got type: %t, value: %v");
 
-    if (view != null) {
+    if (view == null) {
       Type.assertFunction(subroutes, "Sub routes must be defined when `view` is null.");
     }
 
     this.#prepareRoute({ pattern, view, subroutes }).forEach((route) => {
-      this.#appContext.router.addRoute(route.pattern, route.meta);
+      this.#router.addRoute(route.pattern, route.meta);
     });
 
     return this;
@@ -398,7 +427,7 @@ export class App {
     }
 
     this.#prepareRoute({ pattern, redirect }).forEach((route) => {
-      this.#appContext.router.addRoute(route.pattern, route.meta);
+      this.#router.addRoute(route.pattern, route.meta);
     });
 
     return this;
@@ -430,6 +459,16 @@ export class App {
       ...language,
       inputs: {
         languages: Object.fromEntries(this.#languages.entries()),
+      },
+    });
+
+    // Pass route options to router store.
+    const router = this.#stores.get("router")!;
+    this.#stores.set("router", {
+      ...router,
+      inputs: {
+        options: this.#options.router,
+        router: this.#router,
       },
     });
 
@@ -490,6 +529,7 @@ export class App {
       appContext,
       elementContext,
       label: this.#rootView.label || "root",
+      about: this.#rootView.about,
     });
 
     appContext.rootView.connect(appContext.rootElement);
@@ -590,13 +630,16 @@ export class App {
         label: route.pattern,
         setup: (ctx) => ctx.outlet(),
       });
-    } else if (typeof route.view === "function") {
+    } else if (View.isView(route.view)) {
+      view = route.view;
+    } else if (Type.isFunction(route.view) && !Type.isClass(route.view)) {
       view = View.define({
         label: route.pattern,
         setup: route.view as ViewSetupFunction<unknown>,
       });
-    } else if (!View.isView(view)) {
-      console.warn(route.view);
+    }
+
+    if (!View.isView(view)) {
       throw new TypeError(
         `Route '${route.pattern}' needs a setup function or a subclass of View for 'view'. Got: ${route.view}`
       );
@@ -634,3 +677,71 @@ export class App {
     return routes;
   }
 }
+
+type CrashPageInputs = {
+  message: string;
+  error: Error;
+  componentLabel: string;
+};
+
+const DefaultCrashPage = View.define<CrashPageInputs>({
+  label: "DefaultCrashPage",
+  setup(ctx, m) {
+    const { message, error, componentLabel } = ctx.inputs.get();
+
+    return m(
+      "div",
+      {
+        style: {
+          backgroundColor: "#880000",
+          color: "#fff",
+          padding: "2rem",
+          position: "fixed",
+          inset: 0,
+          fontSize: "20px",
+        },
+      },
+      [
+        m("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
+
+        m(
+          "p",
+          { style: { marginBottom: "0.25rem" } },
+          m("span", { style: { fontFamily: "monospace" } }, componentLabel),
+          " says:"
+        ),
+
+        m(
+          "blockquote",
+          {
+            style: {
+              backgroundColor: "#991111",
+              padding: "0.25em",
+              borderRadius: "6px",
+              fontFamily: "monospace",
+              marginBottom: "1rem",
+            },
+          },
+          m(
+            "span",
+            {
+              style: {
+                display: "inline-block",
+                backgroundColor: "red",
+                padding: "0.1em 0.4em",
+                marginRight: "0.5em",
+                borderRadius: "4px",
+                fontSize: "0.9em",
+                fontWeight: "bold",
+              },
+            },
+            error.name
+          ),
+          message
+        ),
+
+        m("p", "Please see the browser console for details."),
+      ]
+    );
+  },
+});

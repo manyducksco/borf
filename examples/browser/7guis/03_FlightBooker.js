@@ -1,4 +1,4 @@
-import { State, View } from "@borf/browser";
+import { Writable, Readable, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 const flightTypes = ["one-way flight", "return flight"];
@@ -32,14 +32,14 @@ class FlightBooker extends View {
   static label = "7guis:FlightBooker";
 
   setup(ctx, m) {
-    const $$flightType = new State(flightTypes[0]);
-    const $$startDate = new State(formatDate(new Date()));
-    const $$returnDate = new State(formatDate(new Date()));
-    const $$startDateIsValid = new State(true);
-    const $$returnDateIsValid = new State(true);
+    const $$flightType = new Writable(flightTypes[0]);
+    const $$startDate = new Writable(formatDate(new Date()));
+    const $$returnDate = new Writable(formatDate(new Date()));
+    const $$startDateIsValid = new Writable(true);
+    const $$returnDateIsValid = new Writable(true);
 
     // Concatenate date states and convert through a function into a new state.
-    const $formIsValid = State.merge(
+    const $formIsValid = Readable.merge(
       $$startDateIsValid,
       $$returnDateIsValid,
       (x, y) => x && y
@@ -59,8 +59,8 @@ class FlightBooker extends View {
                 $$flightType.set(e.target.value);
               }}
             >
-              {View.repeat(flightTypes, (ctx) => {
-                const $value = ctx.inputs.readable("item");
+              {View.forEach(new Readable(flightTypes), (ctx) => {
+                const $value = ctx.inputs.$("value");
 
                 const $selected = State.merge(
                   [$value, $$flightType],

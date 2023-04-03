@@ -14,8 +14,12 @@ Bedrock is fully tree-shakeable. That means if you bundle your scripts (with a t
 - [Type](./src/Type/README.md) (type checking swiss army knife)
 - [Hash](./src/Hash/README.md) (extension of Map)
 - [List](./srcList/README.md) (extension of Array)
-- [Observable](./src/Observable/README.md) (implementation of the long awaited TC39 Observable proposal)
 - [StateMachine](./src/StateMachine/README.md) (implementation of a finite state machine)
+
+### Pub/sub and events
+
+- [PubSub](./src/PubSub/README.md) (simple publish/subscribe mechanism)
+- [EventEmitter](./src/EventEmitter/README.md) (listen for and emit named events with data)
 
 ### HTTP requests and route matching
 

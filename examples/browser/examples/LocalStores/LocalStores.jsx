@@ -1,4 +1,4 @@
-import { View, Store, State } from "@borf/browser";
+import { View, Store, Writable } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 import logLifecycle from "../../utils/logLifecycle.js";
 
@@ -38,7 +38,7 @@ const ExampleStore = Store.define({
 
   setup(ctx) {
     return {
-      $$value: new State(ctx.inputs.get("initialValue")),
+      $$value: new Writable(ctx.inputs.get("initialValue")),
     };
   },
 });

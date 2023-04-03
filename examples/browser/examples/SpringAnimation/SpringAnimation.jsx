@@ -1,4 +1,4 @@
-import { View, Spring, State, Ref } from "@borf/browser";
+import { View, Spring, Writable, Ref } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 import styles from "./SpringAnimation.module.css";
@@ -8,24 +8,22 @@ export const SpringAnimation = View.define({
   about: "Demonstrates the use of springs for animation.",
 
   setup(ctx, m) {
-    const $$stiffness = new State(1549);
-    const $$mass = new State(7);
-    const $$damping = new State(83);
-    const $$velocity = new State(14);
+    const $$stiffness = new Writable(1549);
+    const $$mass = new Writable(7);
+    const $$damping = new Writable(83);
+    const $$velocity = new Writable(14);
 
     const preset = (stiffness, mass, damping, velocity) => () => {
-      $$stiffness.set(stiffness);
-      $$mass.set(mass);
-      $$damping.set(damping);
-      $$velocity.set(velocity);
+      $$stiffness.value = stiffness;
+      $$mass.value = mass;
+      $$damping.value = damping;
+      $$velocity.value = velocity;
     };
 
     const codeRef = new Ref();
 
-    ctx.subscribe(
-      [$$stiffness, $$mass, $$damping, $$velocity],
-      (s, m, d, v) => {
-        codeRef.element.textContent = `
+    ctx.observe([$$stiffness, $$mass, $$damping, $$velocity], (s, m, d, v) => {
+      codeRef.element.textContent = `
 const spring = new Spring(0, {
   stiffness: ${s},
   mass: ${m},
@@ -33,8 +31,7 @@ const spring = new Spring(0, {
   velocity: ${v}
 });
       `;
-      }
-    );
+    });
 
     return (
       <ExampleFrame title="Spring Animation">

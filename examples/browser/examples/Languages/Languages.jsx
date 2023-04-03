@@ -1,4 +1,4 @@
-import { View, State } from "@borf/browser";
+import { View } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 import logLifecycle from "../../utils/logLifecycle";
 
@@ -22,28 +22,19 @@ export const Languages = View.define({
     return (
       <ExampleFrame title="Languages">
         <div>
-          {View.repeat(supportedLanguages, (ctx) => {
-            const $tag = ctx.inputs.readable("value");
-
-            ctx.subscribe($tag, (value) => {
-              ctx.log(value);
-            });
-
+          {supportedLanguages.map((tag) => {
             return (
               <button
                 class={{
-                  [styles.active]: State.merge(
-                    [$currentLanguage, $tag],
-                    (lang, tag) => {
-                      return lang === tag;
-                    }
-                  ),
+                  [styles.active]: $currentLanguage.map((lang) => {
+                    return lang === tag;
+                  }),
                 }}
                 onclick={() => {
-                  setLanguage($tag.get());
+                  setLanguage(tag);
                 }}
               >
-                {$tag.map((t) => languageLabels[t])}
+                {languageLabels[tag]}
               </button>
             );
           })}

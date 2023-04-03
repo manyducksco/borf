@@ -8,7 +8,7 @@ import { Writable } from "../classes/Writable.js";
 import { catchLinks } from "../helpers/catchLinks.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
-// TODO: Clean up or reinstate commented code. I've commented out things I'm not sure we need that have type issues.
+// ----- Types ----- //
 
 export interface RouterOptions {
   /**
@@ -26,6 +26,7 @@ export interface RouterOptions {
 
 interface RouterInputs {
   options: RouterOptions;
+  router: Router;
 }
 
 interface RouterLayer<I = any> {
@@ -39,11 +40,16 @@ interface ParsedParams {
 
 interface ParsedQuery extends ParsedParams {}
 
+// ----- Code ----- //
+
 export const RouterStore = Store.define<RouterInputs>({
   label: "router",
   inputs: {
     options: {
       about: "Router options passed through the 'router' field in the app config.",
+    },
+    router: {
+      about: "An instance of Router with the app's routes preloaded.",
     },
   },
 
@@ -51,7 +57,7 @@ export const RouterStore = Store.define<RouterInputs>({
     const appContext = ctx[APP_CONTEXT];
     const elementContext = ctx[ELEMENT_CONTEXT];
 
-    const { options } = ctx.inputs.get();
+    const { options, router } = ctx.inputs.get();
 
     let history: History;
 
@@ -107,16 +113,13 @@ export const RouterStore = Store.define<RouterInputs>({
     });
 
     ctx.onConnect(() => {
-      // if (appContext.redirectPath) {
-      //   history.replace({ pathname: appContext.redirectPath });
-      //   appContext.redirectPath = null;
-      // }
-
       history.listen(onRouteChange);
       onRouteChange(history);
 
       catchLinks(appContext.rootElement!, (anchor) => {
         let href = anchor.getAttribute("href")!;
+
+        ctx.log("caught link click to:", href);
 
         if (!/^https?:\/\/|^\//.test(href)) {
           href = Router.joinPath([history.location.pathname, href]);
@@ -145,7 +148,9 @@ export const RouterStore = Store.define<RouterInputs>({
         });
       }
 
-      const matched = appContext.router.match(location.pathname);
+      const matched = router.match(location.pathname);
+
+      ctx.log({ location, matched });
 
       if (!matched) {
         $$pattern.value = null;
@@ -183,53 +188,29 @@ export const RouterStore = Store.define<RouterInputs>({
 
               const parentLayer = activeLayers[activeLayers.length - 1];
 
-              const mount = (view: View<any>) => {
-                requestAnimationFrame(() => {
-                  if (activeLayer && activeLayer.view.isConnected) {
-                    // Disconnect first mismatched active and remove remaining layers.
-                    activeLayer.view.disconnect();
-                  }
+              const view = matchedLayer.view.init({
+                appContext,
+                elementContext,
+                // inputs: preloadResult.inputs || {},
+              });
 
-                  const markup = new Markup(() => view);
+              requestAnimationFrame(() => {
+                if (activeLayer && activeLayer.view.isConnected) {
+                  // Disconnect first mismatched active and remove remaining layers.
+                  activeLayer.view.disconnect();
+                }
 
-                  if (parentLayer) {
-                    parentLayer.view.setChildren([markup]);
-                  } else {
-                    appContext.rootView!.setChildren([markup]);
-                  }
-                });
-              };
+                const markup = new Markup(() => view);
 
-              let redirected = false;
-              // let preloadResult = {};
+                if (parentLayer) {
+                  parentLayer.view.setChildren([markup]);
+                } else {
+                  appContext.rootView!.setChildren([markup]);
+                }
+              });
 
-              // TODO: Can we remove preload if we have async setup functions?
-              // if (matchedLayer.preload) {
-              //   preloadResult = await preloadRoute(matchedLayer.preload, {
-              //     appContext,
-              //     elementContext,
-              //     channelName: `preload:${matchedLayer.path}`,
-              //   });
-
-              //   if (preloadResult.redirectPath) {
-              //     // Redirect to other path.
-              //     redirected = true;
-              //     navigate(preloadResult.redirectPath, { replace: true });
-              //   }
-              // }
-
-              if (!redirected) {
-                const view = matchedLayer.view.init({
-                  appContext,
-                  elementContext,
-                  // inputs: preloadResult.inputs || {},
-                });
-
-                mount(view);
-
-                // Push and connect new active layer.
-                activeLayers.push({ id: matchedLayer.id, view });
-              }
+              // Push and connect new active layer.
+              activeLayers.push({ id: matchedLayer.id, view });
             }
           }
         }
@@ -291,64 +272,3 @@ export const RouterStore = Store.define<RouterInputs>({
     };
   },
 });
-
-/**
- * Prepare data before a route is mounted using a preload function.
- *
- * The preload function can return an object that will be passed to the mounted view as attributes.
- *
- * @param preload - Function that defines preload loading for a route.
- * @param mount - Function that takes a component instance and connects it to the DOM.
- */
-// export async function preloadRoute(preload, { appContext, channelName }) {
-//   return new Promise((resolve) => {
-//     const channel = appContext.debugHub.channel(channelName);
-//     let resolved = false;
-
-//     const ctx = {
-//       ...channel,
-
-//       global: (name) => {
-//         if (!Type.isString(name)) {
-//           throw new TypeError("Expected a string.");
-//         }
-
-//         if (appContext.globals[name]) {
-//           return appContext.globals[name].exports;
-//         }
-
-//         throw new Error(`Global '${name}' is not registered on this app.`);
-//       },
-
-//       /**
-//        * Redirect to another route instead of loading this one.
-//        * @param {string} to - Redirect path (e.g. `/login`)
-//        */
-//       redirect(to) {
-//         if (!resolved) {
-//           resolve({
-//             redirectPath: to,
-//           });
-//           resolved = true;
-//         }
-//       },
-//     };
-
-//     const result = preload(ctx);
-
-//     if (!Type.isFunction(result.then)) {
-//       throw new TypeError(`Preload function must return a Promise.`);
-//     }
-
-//     result.then((attributes) => {
-//       if (attributes && !Type.isObject(attributes)) {
-//         throw new TypeError(`Preload function must return an attributes object or null/undefined. Got: ${attributes}`);
-//       }
-
-//       if (!resolved) {
-//         resolve({ attributes });
-//         resolved = true;
-//       }
-//     });
-//   });
-// }

@@ -1,31 +1,24 @@
+import test from "ava";
+import sinon from "sinon";
 import { CrashCollector } from "./CrashCollector.js";
-import { View } from "./View.js";
 
-test("works", () => {
-  const disconnectApp = jest.fn();
-  const connectView = jest.fn();
+test("works", (t) => {
+  const disconnectApp = sinon.fake();
 
-  const HelpfulCrashPage = View.define({
-    setup(ctx, m) {
-      return m("div", [m("h1", "Something Happened"), m("p", "Something happened.")]);
-    },
+  const collector = new CrashCollector();
+
+  collector.onError((ctx) => {
+    if (ctx.severity === "crash") {
+      disconnectApp();
+    }
   });
 
-  const collector = new CrashCollector({
-    disconnectApp,
-    connectView,
-    crashPage: HelpfulCrashPage,
-    enableCrashPage: true,
-  });
+  collector.error({ error: new Error("This is an error that doesn't unmount the app."), component: null as any });
 
-  collector.report(new Error("This is an error that doesn't unmount the app."));
-
-  expect(disconnectApp).not.toHaveBeenCalled();
-  expect(connectView).not.toHaveBeenCalled();
+  t.assert(disconnectApp.called === false);
 
   collector.crash({ error: new Error("This unmounts the app."), component: null as any });
 
   // App disconnects and crash page connects.
-  expect(disconnectApp).toHaveBeenCalledTimes(1);
-  expect(connectView).toHaveBeenCalledTimes(1);
+  t.assert(disconnectApp.calledOnce);
 });

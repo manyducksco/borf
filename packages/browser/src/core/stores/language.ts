@@ -2,6 +2,8 @@ import { Type } from "@borf/bedrock";
 import { Store } from "../classes/Store.js";
 import { Readable, Writable } from "../classes/Writable.js";
 
+// ----- Types ----- //
+
 // TODO: Is there a good way to represent infinitely nested recursive types?
 /**
  * An object where values are either a translated string or another nested Translation object.
@@ -15,69 +17,14 @@ export interface LanguageConfig {
   translation: Translation | (() => Translation) | (() => Promise<Translation>);
 }
 
-class Language {
-  #tag;
-  #config;
-  #translation?: Translation;
-
-  get tag() {
-    return this.#tag;
-  }
-
-  constructor(tag: string, config: LanguageConfig) {
-    this.#tag = tag;
-    this.#config = config;
-  }
-
-  async getTranslation() {
-    if (!this.#translation) {
-      // Translation can be an object of strings, a function that returns one, or an async function that resolves to one.
-      if (Type.isFunction(this.#config.translation)) {
-        const result = this.#config.translation();
-
-        if (Type.isPromise(result)) {
-          const resolved = await result;
-
-          Type.assertObject(
-            resolved,
-            `Translation promise of language '${
-              this.#tag
-            }' must resolve to an object of translated strings. Got type: %t, value: %v`
-          );
-
-          this.#translation = resolved;
-        } else if (Type.isObject(result)) {
-          this.#translation = result;
-        } else {
-          throw new TypeError(
-            `Translation function of '${this.#tag}' must return an object or promise. Got type: ${Type.of(
-              result
-            )}, value: ${result}`
-          );
-        }
-      } else if (Type.isObject(this.#config.translation)) {
-        this.#translation = this.#config.translation;
-      } else {
-        throw new TypeError(
-          `Translation of '${
-            this.#tag
-          }' must be an object of translated strings, a function that returns one, or an async function that resolves to one. Got type: ${Type.of(
-            this.#config.translation
-          )}, value: ${this.#config.translation}`
-        );
-      }
-    }
-
-    return this.#translation;
-  }
-}
-
 interface LanguageStoreInputs {
   languages: {
     [tag: string]: LanguageConfig;
   };
   currentLanguage: string;
 }
+
+// ----- Code ----- //
 
 export const LanguageStore = Store.define<LanguageStoreInputs>({
   label: "language",
@@ -221,4 +168,61 @@ function resolve(object: any, key: string) {
   }
 
   return value;
+}
+
+class Language {
+  #tag;
+  #config;
+  #translation?: Translation;
+
+  get tag() {
+    return this.#tag;
+  }
+
+  constructor(tag: string, config: LanguageConfig) {
+    this.#tag = tag;
+    this.#config = config;
+  }
+
+  async getTranslation() {
+    if (!this.#translation) {
+      // Translation can be an object of strings, a function that returns one, or an async function that resolves to one.
+      if (Type.isFunction(this.#config.translation)) {
+        const result = this.#config.translation();
+
+        if (Type.isPromise(result)) {
+          const resolved = await result;
+
+          Type.assertObject(
+            resolved,
+            `Translation promise of language '${
+              this.#tag
+            }' must resolve to an object of translated strings. Got type: %t, value: %v`
+          );
+
+          this.#translation = resolved;
+        } else if (Type.isObject(result)) {
+          this.#translation = result;
+        } else {
+          throw new TypeError(
+            `Translation function of '${this.#tag}' must return an object or promise. Got type: ${Type.of(
+              result
+            )}, value: ${result}`
+          );
+        }
+      } else if (Type.isObject(this.#config.translation)) {
+        this.#translation = this.#config.translation;
+      } else {
+        throw new TypeError(
+          `Translation of '${
+            this.#tag
+          }' must be an object of translated strings, a function that returns one, or an async function that resolves to one. Got type: ${Type.of(
+            this.#config.translation
+          )}, value: ${this.#config.translation}`
+        );
+      }
+    }
+
+    return this.#translation;
+  }
 }

@@ -4,12 +4,13 @@ import { Inputs, InputValues, type InputDefinitions } from "./Inputs.js";
 import { Markup, m, type MarkupFunction, type Renderable } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
 import { ForEach } from "./ForEach.js";
-import { isMarkup } from "../helpers/typeChecking.js";
 import { Readable, StopFunction, Writable } from "./Writable.js";
 import { BuiltInStores } from "./App.js";
 import { type Ref } from "./Ref.js";
 import { ComponentOptions, type ComponentContext, type StoreConstructor } from "./Store.js";
 import { BORF_ENV } from "../env.js";
+
+// ----- Types ----- //
 
 export type ViewConstructor<I> = {
   new (options: ViewOptions<I>): View<I>;
@@ -59,6 +60,8 @@ type ViewDefinition<I> = {
    */
   setup: ViewSetupFunction<I>;
 };
+
+// ----- Code ----- //
 
 export class View<Inputs = {}> extends Connectable {
   static define<D extends ViewDefinition<any>, I = { [K in keyof D["inputs"]]: D["inputs"][K] }>(
@@ -217,7 +220,7 @@ export class View<Inputs = {}> extends Connectable {
   #ref;
 
   get node() {
-    return this.#element!.node;
+    return this.#element?.node;
   }
 
   constructor({
@@ -248,7 +251,7 @@ export class View<Inputs = {}> extends Connectable {
     this.#inputs = new Inputs({
       inputs,
       definitions: inputDefs,
-      enableValidation: true, // TODO: Disable for production builds (unless specified in app options).
+      enableValidation: BORF_ENV === "development", // TODO: Disable for production builds (unless specified in app options).
     });
     this.#$$children = new Writable(children);
   }
@@ -495,7 +498,7 @@ export class View<Inputs = {}> extends Connectable {
       if (element !== null) {
         // m() returns a Markup with something in it. Either an HTML tag, a view setup function or a connectable class.
         // Markup.init(config) is called, which passes config stuff to the connectable's constructor.
-        if (!isMarkup(element)) {
+        if (!Markup.isMarkup(element)) {
           throw new TypeError(`Views must return a markup element, or null to render nothing. Returned ${element}.`);
         }
       }

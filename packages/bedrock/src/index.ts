@@ -1,7 +1,8 @@
 export { Type } from "./Type/Type.js";
 export { Hash } from "./Hash/Hash.js";
 export { List } from "./List/List.js";
-export { Observable } from "./Observable/Observable.js";
+export { PubSub } from "./PubSub/PubSub.js";
+export { EventEmitter } from "./EventEmitter/EventEmitter.js";
 export { Router, RouteMatch } from "./Router/Router.js";
 export { StateMachine } from "./StateMachine/StateMachine.js";
 export { BatchQueue } from "./BatchQueue/BatchQueue.js";

@@ -1,9 +1,9 @@
-import { State, View } from "@borf/browser";
+import { Writable, View } from "@borf/browser";
 import { ExampleFrame } from "./ExampleFrame";
 
 export class RenderOrderTest extends View {
   setup(ctx) {
-    const $$isTrue = new State(true);
+    const $$isTrue = new Writable(true);
 
     let interval;
 

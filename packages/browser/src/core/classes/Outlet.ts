@@ -3,7 +3,6 @@ import { Connectable } from "./Connectable.js";
 import { formatChildren, Markup, type Renderable } from "./Markup.js";
 import { Readable, type StopFunction } from "./Writable.js";
 import { type AppContext, type ElementContext } from "./App.js";
-import { isMarkup } from "../helpers/typeChecking.js";
 
 // type Renderable = string | number | View<any> | Store<any>;
 
@@ -20,8 +19,9 @@ function isRenderable(value: unknown): value is Renderable {
     value === false ||
     typeof value === "string" ||
     typeof value === "number" ||
-    isMarkup(value) ||
-    Readable.isReadable(value)
+    Markup.isMarkup(value) ||
+    Readable.isReadable(value) ||
+    Type.isArrayOf(isRenderable, value)
   );
 }
 
@@ -75,7 +75,11 @@ export class Outlet<T> extends Connectable {
         );
       }
 
-      this.#update(newValue);
+      if (Array.isArray(newValue)) {
+        this.#update(...newValue);
+      } else {
+        this.#update(newValue);
+      }
     };
 
     if (Readable.isReadable<T>(this.#value)) {
@@ -98,7 +102,7 @@ export class Outlet<T> extends Connectable {
   }
 
   setChildren(children: Renderable[]) {
-    console.warn("Called setChildren on an outlet, which doesn't support setting children.");
+    this.#update(...children);
   }
 
   #cleanup() {
@@ -117,13 +121,10 @@ export class Outlet<T> extends Connectable {
     const formattedChildren = formatChildren(children);
 
     for (const child of formattedChildren) {
-      let previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
-      let view =
-        child instanceof Markup
-          ? child.init({ appContext: this.#appContext, elementContext: this.#elementContext })
-          : child;
+      const previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
+      const view = child.init({ appContext: this.#appContext, elementContext: this.#elementContext });
 
-      view.connect(this.#node.parentNode!, previous);
+      view.connect(this.node.parentNode!, previous);
 
       this.#connectedViews.push(view);
     }

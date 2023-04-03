@@ -1,55 +1,54 @@
-import { Type } from "@borf/bedrock";
-import { App, View, Store, ElementHub } from "@borf/browser";
+import { App } from "@borf/browser";
 
-const WebComponentStore = Store.define({
-  inputs: {
-    initialValue: {
-      // TODO: Inputs with default values should be inferred as optional.
-      default: "default",
+// const WebComponentStore = Store.define({
+//   inputs: {
+//     initialValue: {
+//       // TODO: Inputs with default values should be inferred as optional.
+//       default: "default",
 
-      // TODO: Inputs with 'optional: true' should be inferred as optional when passing.
-    },
-  },
+//       // TODO: Inputs with 'optional: true' should be inferred as optional when passing.
+//     },
+//   },
 
-  setup(ctx) {
-    return {
-      value: ctx.inputs.get("initialValue"),
-      speak: () => {
-        console.log("the value is", value);
-      },
-    };
-  },
-});
+//   setup(ctx) {
+//     return {
+//       value: ctx.inputs.get("initialValue"),
+//       speak: () => {
+//         console.log("the value is", value);
+//       },
+//     };
+//   },
+// });
 
-const WebComponentView = View.define({
-  inputs: {
-    location: {
-      default: "nowhere",
-      about: "A string to indicate where this instance is being rendered.",
-      assert: Type.assertString,
-    },
-  },
+// const WebComponentView = View.define({
+//   inputs: {
+//     location: {
+//       default: "nowhere",
+//       about: "A string to indicate where this instance is being rendered.",
+//       assert: Type.assertString,
+//     },
+//   },
 
-  setup(ctx) {
-    const { location } = ctx.inputs.get();
+//   setup(ctx) {
+//     const { location } = ctx.inputs.get();
 
-    const store = ctx.useStore(WebComponentStore);
-    const http = ctx.useStore("http");
-    // ctx.log({ store, http });
+//     const store = ctx.useStore(WebComponentStore);
+//     const http = ctx.useStore("http");
+//     // ctx.log({ store, http });
 
-    return <h1>This is a web component. [location:{location}]</h1>;
-  },
-});
+//     return <h1>This is a web component. [location:{location}]</h1>;
+//   },
+// });
 
-const hub = new ElementHub();
+// const hub = new ElementHub();
 
-hub.addStore(WebComponentStore, {
-  inputs: { initialValue: "test" },
-});
+// hub.addStore(WebComponentStore, {
+//   inputs: { initialValue: "test" },
+// });
 
-hub.addElement("web-component-view", WebComponentView);
+// hub.addElement("web-component-view", WebComponentView);
 
-hub.connect();
+// hub.connect();
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
@@ -115,8 +114,8 @@ app
   .addStore(CounterStore)
   .addStore(MouseStore)
   .addRootView(AppLayout)
-  .addRoute("/examples", null, (sub) => {
-    sub
+  .addRoute("/examples", null, (subrouter) => {
+    subrouter
       .addRoute("/spring-animation", SpringAnimation)
       .addRoute("/languages", Languages)
       .addRoute("/crash-handling", CrashHandling)
@@ -124,8 +123,8 @@ app
       .addRoute("/local-stores", LocalStores)
       .addRedirect("*", "./spring-animation");
   })
-  .addRoute("/7guis", SevenGUIs, (sub) => {
-    sub
+  .addRoute("/7guis", SevenGUIs, (subrouter) => {
+    subrouter
       .addRoute("/counter", Counter)
       .addRoute("/temp-converter", TempConverter)
       .addRoute("/flight-booker", FlightBooker)

@@ -1,51 +1,69 @@
 import { Type } from "@borf/bedrock";
 
 import { DebugHub } from "../DebugHub.js";
-import { type View } from "../View.js";
+import { ViewConstructor, type View } from "../View.js";
 import { Store, StoreConstructor } from "../Store.js";
 import { HTTPStore } from "../../stores/http.js";
 import { PageStore } from "../../stores/page.js";
 
 import { DialogStore } from "./stores/dialog.js";
 import { RouterStore } from "./stores/router.js";
-import { type BuiltInStores } from "../App.js";
+import { type BuiltInStores, type AppContext, type ElementContext } from "../App.js";
+import { type InputValues } from "../Inputs.js";
+import { CrashCollector } from "../CrashCollector.js";
 
-type StoreRegistration = {
+type StoreRegistration<I = any> = {
   store: BuiltInStores | StoreConstructor<any, any>;
-  exports?: StoreConstructor<any, any>;
-  instance?: Store<any, any>;
+  exports?: StoreConstructor<I, any>;
+  instance?: Store<I, any>;
+  inputs?: InputValues<I>;
+};
+
+type ElementRegistration = {
+  tag: string;
+  component: ViewConstructor<any> | StoreConstructor<any, any>;
+  defined: boolean;
 };
 
 export class ElementHub {
-  #stores = [
+  #stores: StoreRegistration[] = [
     { store: "http", exports: HTTPStore },
     { store: "page", exports: PageStore },
     { store: "dialog", exports: DialogStore },
     { store: "router", exports: RouterStore },
   ];
-  #elements = [];
+  #elements: ElementRegistration[] = [];
   #isConnected = false;
 
-  #appContext = {
-    debugHub: new DebugHub(),
-    stores: new Map(),
-    rootElement: {
-      insertBefore: () => {},
-      removeChild: () => {},
-    },
-  };
+  #appContext: AppContext;
   #elementContext = {
     stores: new Map(),
   };
 
+  constructor() {
+    const crashCollector = new CrashCollector();
+    const debugHub = new DebugHub({ crashCollector });
+
+    // Log error to console on component's channel.
+    crashCollector.onError(({ error, componentLabel }) => {
+      debugHub.channel(componentLabel).error(error);
+    });
+
+    this.#appContext = {
+      crashCollector,
+      debugHub: new DebugHub({ crashCollector }),
+      stores: new Map(),
+    };
+  }
+
   /**
    * Registers a new store for all elements on this hub.
    */
-  addStore(store: StoreConstructor<any, any>) {
+  addStore(store: StoreConstructor<any, any> | StoreRegistration) {
     if (Type.isClass(store)) {
       this.#stores.push({ store: store as StoreConstructor<any, any>, instance: undefined });
     } else if (Type.isObject(store)) {
-      this.#stores.push({ ...store, instance: undefined });
+      this.#stores.push({ ...(store as StoreRegistration), instance: undefined });
     } else {
       throw new TypeError(`Expected a store class or a store config object. Got: ${store}`);
     }
@@ -55,14 +73,14 @@ export class ElementHub {
       let config: StoreRegistration;
 
       if (Store.isStore(store)) {
-        config = { store, instance: undefined };
+        config = { store: store as StoreConstructor<any, any>, instance: undefined };
       } else if (Type.isObject(store)) {
-        config = { ...store, instance: undefined };
+        config = { ...(store as StoreRegistration), instance: undefined };
       } else {
         throw new Error(`Expected a Store or a config object. Got: ${store}`);
       }
 
-      let C;
+      let C: StoreConstructor<any, any>;
 
       if (Type.isString(config.store)) {
         if (config.exports == null) {
@@ -90,7 +108,7 @@ export class ElementHub {
         appContext: this.#appContext,
         elementContext: this.#elementContext,
         inputs: config.inputs,
-        inputDefs: config.store.inputs,
+        inputDefs: typeof config.store !== "string" ? config.store.inputs : undefined,
       });
 
       this.#elementContext.stores.set(config.store, { ...config, instance });
@@ -100,7 +118,7 @@ export class ElementHub {
   /**
    * Registers a new HTML custom element implemented as a view or store.
    */
-  addElement(tag: string, component: View<any> | Store<any, any>) {
+  addElement(tag: string, component: ViewConstructor<any> | StoreConstructor<any, any>) {
     if (!tag.includes("-")) {
       throw new Error(`Custom element names are required to have a dash ('-') character in them. Got: ${tag}`);
     }
@@ -112,8 +130,9 @@ export class ElementHub {
    * Registers stores and elements so they will take effect on the page.
    */
   async connect() {
-    const { rootElement } = this.#appContext;
     const { stores } = this.#elementContext;
+
+    const rootElement = document.createElement("div"); // Connect stores to dummy div that never gets mounted.
 
     for (const [_, config] of stores.entries()) {
       await config.instance.connect(rootElement);
@@ -154,19 +173,21 @@ export class ElementHub {
 }
 
 class BorfCustomElement extends HTMLElement {
-  component;
-  instance;
+  appContext!: AppContext;
+  elementContext!: ElementContext;
+  component!: ViewConstructor<any> | StoreConstructor<any, any>;
+  instance!: View<any> | Store<any, any>;
 
   connectedCallback() {
     // Unpack the NamedNodeMap into a plain object.
     const initialValues = Object.values(this.attributes).reduce((obj, attr) => {
       obj[attr.localName] = attr.value;
       return obj;
-    }, {});
+    }, {} as Record<string, string>);
 
     this.instance = new this.component({
-      appContext,
-      elementContext,
+      appContext: this.appContext,
+      elementContext: this.elementContext,
       inputs: initialValues, // TODO: Update attributes when `attributeChangedCallback` runs.
       inputDefs: this.component.inputs,
       channelPrefix: "element",
