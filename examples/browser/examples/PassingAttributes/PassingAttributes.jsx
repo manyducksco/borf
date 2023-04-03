@@ -82,7 +82,7 @@ class SubView extends View {
   setup(ctx) {
     logLifecycle(ctx);
 
-    const $$message = ctx.inputs.writable("message");
+    const $$message = ctx.inputs.$$("message");
 
     return (
       <div>

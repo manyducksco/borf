@@ -99,8 +99,8 @@ const MouseFollower = View.define({
     ctx.animateIn(() => scale.to(1));
     ctx.animateOut(() => scale.to(0));
 
-    const $color = ctx.inputs.readable("color");
-    const $position = ctx.inputs.readable("position");
+    const $color = ctx.inputs.$("color");
+    const $position = ctx.inputs.$("position");
 
     return (
       <div

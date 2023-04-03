@@ -5,7 +5,13 @@ import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
 import { LanguageStore, type LanguageConfig } from "../stores/language.js";
 import { PageStore } from "../stores/page.js";
-import { RouterStore, type RouterOptions } from "../stores/router.js";
+import {
+  RouterStore,
+  type RouterOptions,
+  type RouteLayer,
+  type RouteConfig,
+  type RedirectContext,
+} from "../stores/router.js";
 import { CrashCollector } from "./CrashCollector.js";
 
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
@@ -103,28 +109,6 @@ interface AppRouter {
    * @param createPath - A function that generates a redirect path from the current URL match.
    */
   addRedirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
-}
-
-interface RedirectContext {
-  /**
-   * The path as it appears in the URL bar.
-   */
-  path: string;
-
-  /**
-   * The pattern that this path was matched with.
-   */
-  pattern: string;
-
-  /**
-   * Named route params parsed from `path`.
-   */
-  params: Record<string, string | number | undefined>;
-
-  /**
-   * Query params parsed from `path`.
-   */
-  query: Record<string, string | number | undefined>;
 }
 
 // ----- Code ----- //
@@ -575,7 +559,7 @@ export class App implements AppRouter {
   }
 
   /**
-   * Parses a route into a data structure appropriate for route matching.
+   * Parses a route definition object into a set of matchable routes.
    *
    * @param route - Route config object.
    * @param layers - Array of parent layers. Passed when this function calls itself on nested routes.
@@ -600,7 +584,7 @@ export class App implements AppRouter {
       parts.pop();
     }
 
-    const routes = [];
+    const routes: RouteConfig[] = [];
 
     if (route.redirect) {
       let redirect = route.redirect;
@@ -646,7 +630,7 @@ export class App implements AppRouter {
     }
 
     const markup = m(view);
-    const layer = { id: this.#layerId++, view: markup };
+    const layer: RouteLayer = { id: this.#layerId++, markup };
 
     // Parse nested routes if they exist.
     if (route.subroutes) {

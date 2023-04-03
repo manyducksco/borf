@@ -402,6 +402,8 @@ export class View<Inputs = {}> extends Connectable {
           }
         };
 
+        console.log({ readables, callback, isConnected: this.isConnected });
+
         if (this.isConnected) {
           // If called when the view is connected, we assume this code is in a lifecycle hook
           // where it will be triggered at some point again after the view is reconnected.

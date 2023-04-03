@@ -23,6 +23,14 @@ export const SpringAnimation = View.define({
     const codeRef = new Ref();
 
     ctx.observe([$$stiffness, $$mass, $$damping, $$velocity], (s, m, d, v) => {
+      if (!codeRef.element) {
+        // TODO: observe is being called before the <code> element is even initialized.
+        // Also all the values here are undefined. This should not be happening
+        // until everything has been mounted, and all values should be defined since they
+        // have a starting value. Something is weird with Readable.merge or ctx.observe.
+        ctx.log("codeRef not set yet", codeRef.element, { s, m, d, v });
+      }
+
       codeRef.element.textContent = `
 const spring = new Spring(0, {
   stiffness: ${s},
@@ -142,10 +150,10 @@ const Examples = View.define({
   },
 
   setup(ctx, m) {
-    const $stiffness = ctx.inputs.readable("stiffness");
-    const $mass = ctx.inputs.readable("mass");
-    const $damping = ctx.inputs.readable("damping");
-    const $velocity = ctx.inputs.readable("velocity");
+    const $stiffness = ctx.inputs.$("stiffness");
+    const $mass = ctx.inputs.$("mass");
+    const $damping = ctx.inputs.$("damping");
+    const $velocity = ctx.inputs.$("velocity");
 
     const spring = new Spring(0, {
       stiffness: $stiffness,
@@ -246,11 +254,11 @@ const ControlGroup = View.define({
   },
 
   setup(ctx, m) {
-    const $label = ctx.inputs.readable("label");
-    const $min = ctx.inputs.readable("min");
-    const $max = ctx.inputs.readable("max");
+    const $label = ctx.inputs.$("label");
+    const $min = ctx.inputs.$("min");
+    const $max = ctx.inputs.$("max");
 
-    const $$value = ctx.inputs.writable("value");
+    const $$value = ctx.inputs.$$("value");
 
     return (
       <div class={styles.controlGroup}>

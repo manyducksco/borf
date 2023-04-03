@@ -8,35 +8,39 @@ test("basic functionality test", (t) => {
   const $x = $readable.map((v) => v.toUpperCase());
   const $y = new Readable($$writable);
 
-  const $merged = Readable.merge([$x, $y], (x, y) => {
+  const merge = sinon.fake((x: string, y: string) => {
+    console.log({ x, y });
     return x + y;
   });
+
+  const $merged = Readable.merge([$x, $y], merge);
 
   t.is($merged.value, "TESTwritable");
 
   const observer = sinon.fake();
-  const stop = $$writable.observe(observer);
+  const stop = $$writable.observe(observer); // Observer is called immediately with the current value.
 
-  $$writable.value = "new value";
-  $$writable.value = "new value 2";
+  $$writable.value = "new value"; // First observed change (second call)
+  $$writable.value = "new value 2"; // Second observed change (third call)
 
   t.is($$writable.value, "new value 2");
   t.is($merged.value, "TESTnew value 2");
 
   stop();
 
-  $$writable.value = "can you hear me now?";
+  $$writable.value = "can you hear me now?"; // Sets value but is not observed.
 
-  t.is($$writable.value, "new value 2");
-  t.is($merged.value, "TESTnew value 2");
+  t.is($$writable.value, "can you hear me now?");
+  t.is($merged.value, "TESTcan you hear me now?");
 
+  console.log(observer.getCalls().map((call) => call.args));
   t.assert(observer.calledThrice);
   observer.calledOnceWith("writable");
   observer.calledOnceWith("new value");
   observer.calledOnceWith("new value 2");
 });
 
-test("stores and returns a value", (t) => {
+test("Writable: stores and returns a value", (t) => {
   const $$value = new Writable(5);
 
   t.is($$value.value, 5);
@@ -46,7 +50,7 @@ test("stores and returns a value", (t) => {
   t.is($$value.value, 12);
 });
 
-test("converts to readable", (t) => {
+test("Writable: converts to readable", (t) => {
   const $$value = new Writable(5);
   const $readable = $$value.toReadable();
 
@@ -58,7 +62,7 @@ test("converts to readable", (t) => {
   t.is($readable.value, 72);
 });
 
-test("transforms with 'map'", (t) => {
+test("Writable: transforms with 'map'", (t) => {
   const $$number = new Writable(5);
   const $doubled = $$number.map((x) => x * 2);
 
@@ -69,7 +73,7 @@ test("transforms with 'map'", (t) => {
   t.is($doubled.value, 20);
 });
 
-test("chained transforms with 'map'", (t) => {
+test("Writable -> Readable -> Readable: chained transforms with 'map'", (t) => {
   const $$number = new Writable(5);
   const $doubled = $$number.map((x) => x * 2);
   const $quadrupled = $doubled.map((x) => x * 2);
@@ -97,7 +101,7 @@ test("chained transforms with 'map'", (t) => {
   t.assert(observer.calledTwice);
 });
 
-test("can update state by mutating (immer)", (t) => {
+test("Writable: can update state by mutating (immer)", (t) => {
   const $$numbers = new Writable(["one", "two", "three"]);
 
   const original = $$numbers.value;
@@ -171,9 +175,6 @@ test("Readable.merge", (t) => {
 
   t.is($first.value, 48);
   t.is($second.value, 56);
-
-  expect(joinFirst).toHaveBeenCalledTimes(3);
-  expect(joinSecond).toHaveBeenCalledTimes(4);
 
   t.assert(joinFirst.calledThrice);
   t.is(joinSecond.getCalls().length, 4);

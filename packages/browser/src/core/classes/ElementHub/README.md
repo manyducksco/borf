@@ -6,13 +6,13 @@ import { Store, View, ElementHub } from "@borf/browser";
 const hub = new ElementHub();
 
 // Create a store that holds a title.
-class TitleStore extends Store {
+const TitleStore = Store.define({
   setup(ctx) {
     return {
       title: "This is the Title",
     };
-  }
-}
+  },
+});
 
 // Make that store global, available to all web components.
 hub.addStore(TitleStore);
@@ -21,7 +21,7 @@ hub.addStore(TitleStore);
 hub.addElement("title-store", TitleStore);
 
 // Create a view that displays the title from the store.
-class TitleView extends View {
+const TitleView = View.define({
   // If setup can be async, does this remove the need for router preload?
   async setup(ctx, m) {
     const { title } = ctx.useStore(TitleStore);
@@ -35,16 +35,16 @@ class TitleView extends View {
 
   // TODO: Make setup async and have some other function to render while it's setting up.
   // Loading is active while setup returns a Promise and that promise is pending.
-  loading(m) {
+  loading() {
     return <h1>Loading...</h1>;
   }
-}
+});
 
 // Define the view as a <title-view> element that will be rendered whenever you use that tag on the page.
 hub.addElement("title-view", TitleView);
 
 // Registers elements and stores, activating ones currently in the DOM.
-hub.register().then(() => {
+hub.connect().then(() => {
   console.log("Hub elements are now registered.");
 });
 ```
@@ -66,5 +66,5 @@ One downside is that JSX is still going to require transpiling, so you need to u
 
 ## Known Issues
 
-- As of this writing, web component tags used in a Fronte app will still use global stores instead of those of the app. This might be fine though, since you can still use the element class directly if you want to load it as a View rather than as a web component. Each invocation style lives in its own little world.
-- The async `setup` with `loading()` function scheme will be a little weird to pull off for Stores in web components. Elements may need to put themselves in some kind of queue to wait for certain stores to be registered before displaying.
+- As of this writing, web component tags used in an App will still use global stores instead of those of the app. This might be fine though, since you can still use the element class directly if you want to load it as a View rather than as a web component. Each invocation style lives in its own little world.
+- Connecting the hub is async, and elements are registered last. This is so they have access to the stores that may have async setup functions. Depending on which stores are loaded, all custom elements may take a second to initialize.

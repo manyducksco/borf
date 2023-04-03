@@ -58,7 +58,7 @@ export class FormExample extends View {
           {View.when(
             $hasErrors,
             View.repeat($errors, (ctx) => {
-              const $error = ctx.inputs.readable("item");
+              const $error = ctx.inputs.$("item");
               return <div style="color:red">{$error}</div>;
             })
           )}

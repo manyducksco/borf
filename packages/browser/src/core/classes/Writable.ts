@@ -115,7 +115,7 @@ export class Readable<T> {
     }
 
     const observers = this.#observers;
-
+    callback(this.value); // Make initial call with current value.
     observers.push(callback);
 
     return function stop() {
@@ -340,6 +340,7 @@ export class Writable<T> extends Readable<T> {
   observe(callback: ObserveCallback<T>): StopFunction {
     const observers = this.#observers;
 
+    callback(this.value);
     observers.push(callback);
 
     return function stop() {

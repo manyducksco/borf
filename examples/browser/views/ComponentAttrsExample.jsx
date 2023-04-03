@@ -31,7 +31,7 @@ class SubComponent extends View {
   };
 
   setup(ctx) {
-    const $$message = ctx.inputs.writable("message");
+    const $$message = ctx.inputs.$$("message");
 
     return (
       <div>

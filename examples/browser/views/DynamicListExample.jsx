@@ -76,7 +76,7 @@ class Item extends View {
     ctx.animateIn(() => Promise.all([opacity.to(1), x.to(0)]));
     ctx.animateOut(() => Promise.all([opacity.to(0), x.to(-10)]));
 
-    const $value = ctx.inputs.readable("value");
+    const $value = ctx.inputs.$("value");
 
     const onclick = () => {
       alert($value.get());

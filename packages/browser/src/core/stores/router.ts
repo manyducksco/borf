@@ -1,7 +1,7 @@
 import queryString from "query-string";
 import { createHashHistory, createBrowserHistory, type History, type Listener } from "history";
 import { Router } from "@borf/bedrock";
-import { View } from "../classes/View.js";
+import { type View } from "../classes/View.js";
 import { Store } from "../classes/Store.js";
 import { Markup } from "../classes/Markup.js";
 import { Writable } from "../classes/Writable.js";
@@ -24,12 +24,57 @@ export interface RouterOptions {
   history?: History;
 }
 
-interface RouterInputs {
-  options: RouterOptions;
-  router: Router;
+export interface RouteConfig {
+  pattern: string;
+  meta: {
+    redirect?: string | ((ctx: RedirectContext) => void);
+    pattern?: string;
+    layers?: RouteLayer[];
+  };
 }
 
-interface RouterLayer<I = any> {
+export interface RouteLayer {
+  id: number;
+  markup: Markup;
+}
+
+/**
+ * Properties passed to a redirect function.
+ */
+export interface RedirectContext {
+  /**
+   * The path as it appears in the URL bar.
+   */
+  path: string;
+
+  /**
+   * The pattern that this path was matched with.
+   */
+  pattern: string;
+
+  /**
+   * Named route params parsed from `path`.
+   */
+  params: Record<string, string | number | undefined>;
+
+  /**
+   * Query params parsed from `path`.
+   */
+  query: Record<string, string | number | boolean | undefined>;
+}
+
+/**
+ * Inputs passed to the RouterStore when the app is connected.
+ */
+interface RouterInputs {
+  options: RouterOptions;
+  router: Router<RouteConfig["meta"]>;
+}
+
+/**
+ * An active route layer whose markup has been initialized into a view.
+ */
+interface ActiveLayer<I = {}> {
   id: number;
   view: View<I>;
 }
@@ -119,8 +164,6 @@ export const RouterStore = Store.define<RouterInputs>({
       catchLinks(appContext.rootElement!, (anchor) => {
         let href = anchor.getAttribute("href")!;
 
-        ctx.log("caught link click to:", href);
-
         if (!/^https?:\/\/|^\//.test(href)) {
           href = Router.joinPath([history.location.pathname, href]);
         }
@@ -129,7 +172,7 @@ export const RouterStore = Store.define<RouterInputs>({
       });
     });
 
-    let activeLayers: RouterLayer[] = [];
+    let activeLayers: ActiveLayer[] = [];
     let lastQuery: string;
 
     /**
@@ -150,8 +193,6 @@ export const RouterStore = Store.define<RouterInputs>({
 
       const matched = router.match(location.pathname);
 
-      ctx.log({ location, matched });
-
       if (!matched) {
         $$pattern.value = null;
         $$path.value = location.pathname;
@@ -162,13 +203,22 @@ export const RouterStore = Store.define<RouterInputs>({
       }
 
       if (matched.meta.redirect != null) {
-        let path = matched.meta.redirect;
+        if (typeof matched.meta.redirect === "string") {
+          let path = matched.meta.redirect;
 
-        for (const key in matched.params) {
-          path = path.replace(":" + key, matched.params[key]);
+          for (const key in matched.params) {
+            path = path.replace(":" + key, matched.params[key].toString());
+          }
+
+          // TODO: Update this code to work with new `{param}` style. Looks like it's still for `:params`
+
+          history.replace(path);
+        } else if (typeof matched.meta.redirect === "function") {
+          // TODO: Implement redirect by function.
+          throw new Error(`Redirect functions aren't implemented yet.`);
+        } else {
+          throw new TypeError(`Redirect must either be a path string or a function.`);
         }
-
-        history.replace(path);
       } else {
         $$path.value = matched.path;
         $$params.value = matched.params;
@@ -176,7 +226,7 @@ export const RouterStore = Store.define<RouterInputs>({
         if (matched.pattern !== $$pattern.value) {
           $$pattern.value = matched.pattern;
 
-          const { layers } = matched.meta;
+          const layers = matched.meta.layers!;
 
           // Diff and update route layers.
           for (let i = 0; i < layers.length; i++) {
@@ -188,15 +238,11 @@ export const RouterStore = Store.define<RouterInputs>({
 
               const parentLayer = activeLayers[activeLayers.length - 1];
 
-              const view = matchedLayer.view.init({
-                appContext,
-                elementContext,
-                // inputs: preloadResult.inputs || {},
-              });
+              const view = matchedLayer.markup.init({ appContext, elementContext }) as View;
 
               requestAnimationFrame(() => {
                 if (activeLayer && activeLayer.view.isConnected) {
-                  // Disconnect first mismatched active and remove remaining layers.
+                  // Disconnect first mismatched active layer.
                   activeLayer.view.disconnect();
                 }
 
@@ -264,6 +310,7 @@ export const RouterStore = Store.define<RouterInputs>({
        * Navigates to another route.
        *
        * @example
+       * navigate("/login"); // navigate to `/login`
        * navigate(["/users", 215], { replace: true }); // replace current history entry with `/users/215`
        *
        * @param args - One or more path segments optionally followed by an options object.

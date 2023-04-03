@@ -129,6 +129,9 @@ export function m<I, O extends object = {}>(
 
   // HTML tag like "h1", "span"
   if (Type.isString(element)) {
+    if (element === "code") {
+      console.log("found code", { element, attributes, children: formattedChildren });
+    }
     return new Markup((config) => new HTML({ attributes, children: formattedChildren, ...config, tag: element }));
   }
 

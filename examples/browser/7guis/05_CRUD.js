@@ -93,8 +93,8 @@ class CRUD extends View {
                 $$selectedId.set(Number(e.target.value));
               }}
             >
-              {View.repeat($filteredPeople, (ctx) => {
-                const $person = ctx.inputs.readable("item");
+              {View.forEach($filteredPeople, (ctx) => {
+                const $person = ctx.inputs.$("value");
 
                 const $id = $person.map((p) => p.id);
                 const $name = $person.map((p) => p.name);
