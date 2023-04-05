@@ -4,10 +4,11 @@ import { CounterStore } from "../../globals/CounterStore.js";
 import { ExampleFrame } from "../../views/ExampleFrame/ExampleFrame.jsx";
 
 /**
- * Component with controls and a mapped label based on the state inside the service.
+ * Component with controls and a mapped label based on a readable inside a store.
  */
 export const CounterWithStore = View.define({
   label: "CounterWithStore",
+
   setup(ctx) {
     logLifecycle(ctx);
 
@@ -32,7 +33,7 @@ export const CounterWithStore = View.define({
 });
 
 /**
- * Second component with a view only. Displays the same information from the same service.
+ * Second component that displays the same information from the same store.
  */
 const CounterViewLabel = View.define({
   label: "CounterViewLabel",

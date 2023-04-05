@@ -1,4 +1,4 @@
-import type { CrashCollector } from "./CrashCollector";
+import type { CrashCollector } from "./CrashCollector.js";
 
 import colorHash from "simple-color-hash";
 

@@ -402,8 +402,6 @@ export class View<Inputs = {}> extends Connectable {
           }
         };
 
-        console.log({ readables, callback, isConnected: this.isConnected });
-
         if (this.isConnected) {
           // If called when the view is connected, we assume this code is in a lifecycle hook
           // where it will be triggered at some point again after the view is reconnected.
@@ -450,7 +448,7 @@ export class View<Inputs = {}> extends Connectable {
 
             if (!_store.instance) {
               throw new Error(
-                `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
+                `Store '${name}' was accessed before it was set up. Make sure '${name}' is added before other stores that access it.`
               );
             }
 
@@ -553,8 +551,9 @@ export class View<Inputs = {}> extends Connectable {
     if (assertUsable(element)) {
       this.#element = element.init({ appContext, elementContext });
 
-      if (Type.isFunction(this.#ref)) {
-        this.#ref(this.#element.node);
+      if (this.#ref) {
+        // TODO: Rework Ref types if a basic Node can be stored in one. This may not always be an HTMLElement.
+        this.#ref.element = this.#element.node as HTMLElement;
       }
     }
   }

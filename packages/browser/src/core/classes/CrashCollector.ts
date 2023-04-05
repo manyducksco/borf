@@ -29,11 +29,15 @@ export class CrashCollector {
   #errors: ErrorContext[] = [];
   #errorCallbacks: ErrorCallback[] = [];
 
+  /**
+   * Registers a callback to receive all errors that pass through the CrashCollector.
+   * Returns a function that cancels this listener when called.
+   */
   onError(callback: ErrorCallback) {
     this.#errorCallbacks.push(callback);
 
     return () => {
-      this.#errorCallbacks = this.#errorCallbacks.filter((x) => x !== callback);
+      this.#errorCallbacks.splice(this.#errorCallbacks.indexOf(callback), 1);
     };
   }
 
@@ -72,5 +76,14 @@ export class CrashCollector {
   }
 }
 
-const getComponentLabel = (component: View<any> | Store<any, any>) =>
-  View.isView(component) ? "anonymous view" : Store.isStore(component) ? "anonymous store" : "anonymous component";
+function getComponentLabel(component: View<any> | Store<any, any>) {
+  if (View.isView(component)) {
+    return component.label ?? "anonymous view";
+  }
+
+  if (Store.isStore(component)) {
+    return component.label ?? "anonymous store";
+  }
+
+  return "anonymous component";
+}

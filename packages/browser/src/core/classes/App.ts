@@ -13,7 +13,6 @@ import {
   type RedirectContext,
 } from "../stores/router.js";
 import { CrashCollector } from "./CrashCollector.js";
-
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
 import { type StopFunction } from "./Writable.js";
 import { type InputValues } from "./Inputs.js";
@@ -226,12 +225,12 @@ export class App implements AppRouter {
   }
 
   /**
-   * Adds a new root view which is displayed by the app at all times.
+   * Sets a root view, which is displayed by the app at all times.
    * All routes added to the app will render inside this view's `ctx.outlet()`.
    *
    * @param view - A View or a standalone setup function.
    */
-  addRootView(view: Viewable<{}>) {
+  setRootView(view: Viewable<{}>) {
     if (this.#rootView != DefaultRoot) {
       this.#appContext.debugHub
         .channel("borf:App")
