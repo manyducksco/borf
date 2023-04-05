@@ -68,7 +68,7 @@ import { App } from "https://cdn.skypack.dev/@borf/browser";
 const app = new App();
 
 // A root view is always displayed while the app is connected.
-app.addRootView((ctx, m) => {
+app.setRootView((ctx, m) => {
   return m("h1", "Hello world!");
 });
 
@@ -80,7 +80,7 @@ Most methods on App are chainable, so you could condense the above example thus:
 
 ```js
 new App()
-  .addRootView((ctx, m) => {
+  .setRootView((ctx, m) => {
     return m("h1", "Hello world!");
   })
   .connect("#app");
@@ -109,7 +109,7 @@ Now when you visit the page the document should look something like this:
 In our Hello World example above, you saw a piece of code that looked like this:
 
 ```js
-app.addRootView((ctx, m) => {
+app.setRootView((ctx, m) => {
   return m("h1", "Hello world!");
 });
 ```
@@ -126,7 +126,7 @@ const HelloWorld = View.define({
 });
 
 // This time we're passing in a whole View.
-app.addRootView(HelloWorld);
+app.setRootView(HelloWorld);
 ```
 
 Views are what most other JS frameworks call a component; a reusable chunk of markup and logic that takes attributes/props/inputs/etc and returns what's going to be displayed to the user. As you might expect if you have experience with React, Views can be used just like typical HTML elements.
@@ -134,7 +134,7 @@ Views are what most other JS frameworks call a component; a reusable chunk of ma
 > Borf has two types of components; Views and Stores. Views deal with displaying DOM nodes and handling user input, while Stores manage shared state that is accessible to multiple components. Stores are explained in more depth later in this README.
 
 ```js
-app.addRootView((ctx, m) => {
+app.setRootView((ctx, m) => {
   return m("div", [
     m("p", "This is the message:"),
 
@@ -466,8 +466,8 @@ Passing a Store to `app.addStore()` will create one instance and make that insta
 // Add the store to make it available to any component in this app.
 app.addStore(MessageStore);
 
-// HelloWorld can access MessageStore from the app.
-app.addRootView(HelloWorld);
+// HelloWorld view can access MessageStore since it's part of the same app.
+app.setRootView(HelloWorld);
 ```
 
 ### Option 2: Local Store
@@ -477,11 +477,18 @@ Using a Store inside a View will create one instance and make that instance avai
 If you've ever worked on an app of sufficient size, you know that scoping state to specific parts of the app is extremely helpful.
 
 ```js
-app.addRootView((ctx, m) => {
+app.setRootView((ctx, m) => {
   return m(MessageStore, [
     // MessageStore is available to subcomponents.
     m(HelloWorld),
   ]);
+
+  // If you're using JSX:
+  return (
+    <MessageStore>
+      <HelloWorld />
+    </MessageStore>
+  );
 });
 ```
 
@@ -562,28 +569,31 @@ const PersonDetails = View.define({
 });
 ```
 
-## State
+## State: Readables and Writables
 
-In a Borf app, all data that changes is stored in a State. All interested parties subscribe to that State and update themselves automatically. Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a State change.
+In a Borf app, all data that changes is stored in a Readable or a Writable. All interested parties subscribe to that value and update themselves automatically. Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a state change.
+
+Typically, you'll be creating a `Writable` when you need to store a value that will change. Creating a `Readable` directly is rare, as `Readable` values are usually derived from a `Writable`, either explicitly with `.toReadable()` or implicitly as a result of an operation like `.map()`.
 
 ```js
-import { View, State } from "@borf/browser";
+import { View, Readable, Writable } from "@borf/browser";
 
 /**
  * Displays a timer that shows an ever-incrementing count of seconds elapsed.
  * Also displays a button to reset the timer to 0.
  */
 const Timer = View.define({
-  label: "TimerExample",
   setup(ctx) {
     // Use regular variables to store data. Setup is only called once, so this function scope is here for the lifetime of the view.
     let interval = null;
 
     // the $$ naming convention indicates a binding is writable (supports .set, .update, ...)
-    const $$seconds = new State(0);
+    const $$seconds = new Writable(0);
 
     // the $ naming convention denotes a read-only binding
-    const $seconds = $$seconds.readable();
+    // $seconds will always have the same value as $$seconds and can't be directly written.
+    const $seconds = $$seconds.toReadable();
+    const $seconds = new Readable($$seconds); // This is another way to do the same thing.
 
     // Increment once per second after the view is connected to the DOM.
     ctx.onConnect(function () {
@@ -617,6 +627,8 @@ const Timer = View.define({
   },
 });
 ```
+
+> TODO: Explain Readable.merge()
 
 ---
 
