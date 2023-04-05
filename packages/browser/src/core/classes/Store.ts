@@ -1,4 +1,4 @@
-import { Type } from "@borf/bedrock";
+import { Type, Timer } from "@borf/bedrock";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 import { type StoreRegistration } from "./App.js";
 import { Connectable } from "./Connectable.js";
@@ -7,7 +7,6 @@ import { Outlet } from "./Outlet.js";
 import { m, Markup, type MarkupFunction } from "./Markup.js";
 import { type AppContext, type ElementContext, type BuiltInStores } from "./App.js";
 import { Readable, Writable, type StopFunction } from "./Writable.js";
-import { BORF_ENV } from "../env.js";
 
 /* ----- Types ----- */
 
@@ -126,7 +125,7 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
     O extends object = ReturnType<D["setup"]>
   >(config: D) {
     // TODO: Disable this when built for production.
-    if (BORF_ENV === "development" && !config.label) {
+    if (!config.label) {
       console.trace(
         `Store is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
       );
@@ -164,6 +163,7 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
   #stopCallbacks: StopFunction[] = [];
   #isConnected = false;
   #channel;
+  #logger;
   #inputs;
   #$$children;
   #appContext: AppContext;
@@ -207,7 +207,10 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
       ]),
     };
 
-    this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
+    const channelName = `${channelPrefix}:${label}`;
+    this.#channel = appContext.debugHub.channel(channelName);
+    this.#logger = appContext.debugHub.logger(channelName);
+
     this.#$$children = new Writable(children);
     this.#inputs = new Inputs({
       inputs,
@@ -215,7 +218,7 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
       enableValidation: true,
     });
     this.#outlet = new Outlet({
-      value: this.#$$children,
+      readable: this.#$$children,
       appContext: this.#appContext,
       elementContext: this.#elementContext,
     });
@@ -390,10 +393,13 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
   }
 
   setChildren(children: Markup[]) {
+    this.#logger.log("updating children", children);
+
     this.#$$children.value = children;
   }
 
   async connect(parent: Node, after?: Node) {
+    const timer = new Timer();
     const wasConnected = this.isConnected;
 
     if (!wasConnected) {
@@ -407,9 +413,12 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
     if (!wasConnected) {
       this.afterConnect();
     }
+
+    this.#logger.log("connected in " + timer.formatted);
   }
 
   async disconnect() {
+    const timer = new Timer();
     const wasConnected = this.isConnected;
 
     if (!wasConnected) {
@@ -422,25 +431,31 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
     if (!wasConnected) {
       this.afterDisconnect();
     }
+
+    this.#logger.log("disconnected in " + timer.formatted);
   }
 
   /**
    * Connects the store without running lifecycle callbacks.
    */
   async connectManual(parent: Node, after?: Node) {
+    const timer = new Timer();
     await this.#initialize(parent, after);
     await this.beforeConnect();
 
     await super.connect(parent, after);
     await this.#outlet.connect(parent, after);
+    this.#logger.log("connected in " + timer.formatted);
   }
 
   /**
    * Disconnects the store without running lifecycle callbacks.
    */
   async disconnectManual() {
+    const timer = new Timer();
     await this.#outlet.disconnect();
     await super.disconnect();
+    this.#logger.log("connected in " + timer.formatted);
   }
 
   async beforeConnect() {

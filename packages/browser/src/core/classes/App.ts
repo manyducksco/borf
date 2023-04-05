@@ -1,4 +1,4 @@
-import { Type, Router } from "@borf/bedrock";
+import { Type, Router, Timer } from "@borf/bedrock";
 
 import { merge } from "../helpers/merge.js";
 import { DialogStore } from "../stores/dialog.js";
@@ -42,12 +42,18 @@ interface AppOptions {
    * Options to configure how routing works.
    */
   router?: RouterOptions;
+
+  /**
+   * Configures the app based on the environment it's running in.
+   */
+  mode?: "development" | "production";
 }
 
 export interface AppContext {
   crashCollector: CrashCollector;
   debugHub: DebugHub;
   stores: Map<BuiltInStores | StoreRegistration["store"], StoreRegistration>;
+  mode: "development" | "production";
   rootElement?: HTMLElement;
   rootView?: View<{}>;
 }
@@ -142,6 +148,7 @@ export class App implements AppRouter {
   #elementContext: ElementContext = {
     stores: new Map(),
   };
+  #logger;
 
   #options: AppOptions = {
     debug: {
@@ -153,6 +160,7 @@ export class App implements AppRouter {
     router: {
       hash: false,
     },
+    mode: "production",
   };
 
   // Routes are prepared by the app and added to this router,
@@ -218,10 +226,12 @@ export class App implements AppRouter {
     // And finally create the appContext. This is the central config object accessible to all components.
     this.#appContext = {
       crashCollector,
-      debugHub: new DebugHub({ ...options.debug, crashCollector }),
+      debugHub: new DebugHub({ ...options.debug, crashCollector, mode: options.mode! }),
       stores: this.#stores,
+      mode: options.mode!,
       // $dialogs - added by dialog store
     };
+    this.#logger = this.#appContext.debugHub.logger("App");
   }
 
   /**
@@ -431,6 +441,8 @@ export class App implements AppRouter {
 
     Type.assertInstanceOf(HTMLElement, element, "Expected a DOM node or a selector string. Got type: %t, value: %v");
 
+    const timer = new Timer();
+
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
 
@@ -454,6 +466,8 @@ export class App implements AppRouter {
         router: this.#router,
       },
     });
+
+    this.#logger.log(`total routes: ${this.#router.routes.length}`);
 
     // Initialize global stores.
     for (let [key, item] of this.#stores.entries()) {
@@ -499,7 +513,6 @@ export class App implements AppRouter {
 
     const storeParent = document.createElement("div");
 
-    // beforeConnect is the first opportunity to configure globals before anything else happens.
     for (const { instance } of this.#stores.values()) {
       await instance!.connectManual(storeParent);
 
@@ -524,6 +537,8 @@ export class App implements AppRouter {
 
     // The app is now connected.
     this.#isConnected = true;
+
+    this.#logger.log("connected in " + timer.formatted);
   }
 
   /**

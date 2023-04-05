@@ -1,6 +1,5 @@
-import type { CrashCollector } from "./CrashCollector.js";
-
 import colorHash from "simple-color-hash";
+import { type CrashCollector } from "./CrashCollector.js";
 
 export type DebugOptions = {
   /**
@@ -27,6 +26,11 @@ export type DebugOptions = {
   error?: boolean | "development";
 };
 
+type DebugHubOptions = DebugOptions & {
+  crashCollector: CrashCollector;
+  mode: "development" | "production";
+};
+
 /**
  * The central trunk from which all channels branch.
  * Changing the filter here determines what kind of messages are printed across the app.
@@ -37,10 +41,7 @@ export class DebugHub {
   #console;
   #options;
 
-  constructor(
-    options: DebugOptions & { crashCollector: CrashCollector },
-    _console = window?.console || global?.console
-  ) {
+  constructor(options: DebugHubOptions, _console = window?.console || global?.console) {
     if (options.filter) {
       this.#filter = options.filter;
     }
@@ -50,11 +51,17 @@ export class DebugHub {
     this.#options = options;
   }
 
+  /**
+   * Returns a debug channel labelled by `name`. Used for logging from components.
+   */
   channel(name: string) {
     assertNameFormat(name);
 
     const _console = this.#console;
     const options = this.#options;
+
+    const label = `%c${name}`;
+    const labelStyles = `color:${hash(label)};font-weight:bold`;
 
     const match = (value: string) => {
       return this.#matcher(value);
@@ -63,17 +70,50 @@ export class DebugHub {
     return {
       get log() {
         if (options.log === false || !match(name)) return noOp;
-        else return _console.log.bind(_console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
+        else return _console.log.bind(_console, label, labelStyles);
       },
 
       get warn() {
         if (options.warn === false || !match(name)) return noOp;
-        else return _console.warn.bind(_console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
+        else return _console.warn.bind(_console, label, labelStyles);
       },
 
       get error() {
         if (options.error === false || !match(name)) return noOp;
-        else return _console.error.bind(_console, `%c[${name}]`, `color:${hash(name)};font-weight:bold`);
+        else return _console.error.bind(_console, label, labelStyles);
+      },
+    };
+  }
+
+  /**
+   * Returns a framework logger. These messages are by default not printed at all unless the app is in development mode.
+   */
+  logger(name: string) {
+    const _console = this.#console;
+    const options = this.#options;
+
+    const enabled = options.mode === "development";
+    const label = `%c// ${name}`;
+    const labelStyles = `color:#888`;
+
+    const match = (value: string) => {
+      return this.#matcher(value);
+    };
+
+    return {
+      get log() {
+        if (!enabled || options.log === false || !match(name)) return noOp;
+        else return _console.log.bind(_console, label, labelStyles);
+      },
+
+      get warn() {
+        if (!enabled || options.warn === false || !match(name)) return noOp;
+        else return _console.warn.bind(_console, label, labelStyles);
+      },
+
+      get error() {
+        if (!enabled || options.error === false || !match(name)) return noOp;
+        else return _console.error.bind(_console, label, labelStyles);
       },
     };
   }

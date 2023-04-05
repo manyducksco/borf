@@ -101,6 +101,7 @@ export const RouterStore = Store.define<RouterInputs>({
   setup(ctx) {
     const appContext = ctx[APP_CONTEXT];
     const elementContext = ctx[ELEMENT_CONTEXT];
+    const logger = appContext.debugHub.logger("borf:store:router");
 
     const { options, router } = ctx.inputs.get();
 
@@ -202,6 +203,8 @@ export const RouterStore = Store.define<RouterInputs>({
         return;
       }
 
+      logger.log(`matched route '${matched.pattern}'`);
+
       if (matched.meta.redirect != null) {
         if (typeof matched.meta.redirect === "string") {
           let path = matched.meta.redirect;
@@ -212,6 +215,7 @@ export const RouterStore = Store.define<RouterInputs>({
 
           // TODO: Update this code to work with new `{param}` style. Looks like it's still for `:params`
 
+          logger.log(`redirecting to '${path}'`);
           history.replace(path);
         } else if (typeof matched.meta.redirect === "function") {
           // TODO: Implement redirect by function.
@@ -234,6 +238,9 @@ export const RouterStore = Store.define<RouterInputs>({
             const activeLayer = activeLayers[i];
 
             if (activeLayer?.id !== matchedLayer.id) {
+              logger.log(
+                `layer at level ${i} will be disconnected (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`
+              );
               activeLayers = activeLayers.slice(0, i);
 
               const parentLayer = activeLayers[activeLayers.length - 1];

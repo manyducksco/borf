@@ -59,13 +59,8 @@ export class HTML extends Connectable {
       }
     }
 
-    if (tag === "code") {
-      console.log("initializing code HTML", { tag, attributes, children, normalizedAttrs });
-    }
-
     // Set ref if present.
     if (normalizedAttrs.ref) {
-      console.log("REF", normalizedAttrs.ref);
       if (Ref.isRef(normalizedAttrs.ref)) {
         normalizedAttrs.ref.element = this.#node;
       } else {

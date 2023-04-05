@@ -7,7 +7,7 @@ export function makeConfig(options?: BuildOptions): BuildOptions {
     bundle: true,
     sourcemap: true,
     write: false,
-    target: "es2018",
+    target: "es2022",
     format: "iife",
     loader: {
       ".js": "jsx",

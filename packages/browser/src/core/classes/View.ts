@@ -1,4 +1,4 @@
-import { Type } from "@borf/bedrock";
+import { Type, Timer } from "@borf/bedrock";
 import { Connectable } from "./Connectable.js";
 import { Inputs, InputValues, type InputDefinitions } from "./Inputs.js";
 import { Markup, m, type MarkupFunction, type Renderable } from "./Markup.js";
@@ -8,7 +8,6 @@ import { Readable, StopFunction, Writable } from "./Writable.js";
 import { BuiltInStores } from "./App.js";
 import { type Ref } from "./Ref.js";
 import { ComponentOptions, type ComponentContext, type StoreConstructor } from "./Store.js";
-import { BORF_ENV } from "../env.js";
 
 // ----- Types ----- //
 
@@ -71,7 +70,7 @@ export class View<Inputs = {}> extends Connectable {
   static define<I>(config: ViewDefinition<I>): ViewConstructor<I>;
 
   static define<I>(config: ViewDefinition<I>): ViewConstructor<I> {
-    if (BORF_ENV === "development" && !config.label) {
+    if (!config.label) {
       console.trace(
         `View is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
       );
@@ -101,7 +100,7 @@ export class View<Inputs = {}> extends Connectable {
     return new Markup((config) => {
       return new Outlet({
         ...config,
-        value,
+        readable: value,
         render: (value) => {
           if (value) {
             return then;
@@ -124,7 +123,7 @@ export class View<Inputs = {}> extends Connectable {
     return new Markup((config) => {
       return new Outlet({
         ...config,
-        value,
+        readable: value,
         render: (value) => {
           if (!value) {
             return then;
@@ -140,7 +139,7 @@ export class View<Inputs = {}> extends Connectable {
     return new Markup((config) => {
       return new Outlet({
         ...config,
-        value: readable,
+        readable: readable,
         render,
       });
     });
@@ -211,6 +210,7 @@ export class View<Inputs = {}> extends Connectable {
   };
   #stopCallbacks: StopFunction[] = [];
   #channel;
+  #logger;
   #inputs;
   #element?: Connectable;
   #$$children;
@@ -247,12 +247,16 @@ export class View<Inputs = {}> extends Connectable {
     this.#elementContext = elementContext;
     this.#ref = inputs?.ref;
 
-    this.#channel = appContext.debugHub.channel(`${channelPrefix}:${label}`);
+    const channelName = `${channelPrefix}:${label}`;
+    this.#channel = appContext.debugHub.channel(channelName);
+    this.#logger = appContext.debugHub.logger(channelName);
+
     this.#inputs = new Inputs({
       inputs,
       definitions: inputDefs,
-      enableValidation: BORF_ENV === "development", // TODO: Disable for production builds (unless specified in app options).
+      enableValidation: appContext.mode === "production", // TODO: Disable for production builds (unless specified in app options).
     });
+
     this.#$$children = new Writable(children);
   }
 
@@ -261,6 +265,7 @@ export class View<Inputs = {}> extends Connectable {
   }
 
   setChildren(children: Markup[]) {
+    this.#logger.log("updating children", children);
     this.#$$children.value = children;
   }
 
@@ -273,6 +278,8 @@ export class View<Inputs = {}> extends Connectable {
    * @param after - A child node under `parent` after which this view should be connected.
    */
   async connect(parent: Node, after?: Node) {
+    const timer = new Timer();
+
     return new Promise<void>(async (resolve) => {
       const wasConnected = this.isConnected;
 
@@ -311,6 +318,7 @@ export class View<Inputs = {}> extends Connectable {
             }
           }
 
+          this.#logger.log(`connected in ${timer.formatted}`);
           resolve();
         }, 0);
       }
@@ -476,7 +484,7 @@ export class View<Inputs = {}> extends Connectable {
       },
 
       outlet: () => {
-        return new Markup((config) => new Outlet({ ...config, value: this.#$$children }));
+        return new Markup((config) => new Outlet({ ...config, readable: this.#$$children }));
       },
 
       crash: (error: Error) => {

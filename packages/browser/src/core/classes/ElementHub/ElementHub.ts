@@ -42,7 +42,7 @@ export class ElementHub {
 
   constructor() {
     const crashCollector = new CrashCollector();
-    const debugHub = new DebugHub({ crashCollector });
+    const debugHub = new DebugHub({ crashCollector, mode: "production" });
 
     // Log error to console on component's channel.
     crashCollector.onError(({ error, componentLabel }) => {
@@ -50,8 +50,9 @@ export class ElementHub {
     });
 
     this.#appContext = {
+      mode: "production",
       crashCollector,
-      debugHub: new DebugHub({ crashCollector }),
+      debugHub,
       stores: new Map(),
     };
   }

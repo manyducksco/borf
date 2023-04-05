@@ -111,8 +111,6 @@ class SpringSolver {
     this.$stiffness = new Readable(stiffness);
     this.$damping = new Readable(damping);
     this.$velocity = new Readable(velocity);
-
-    console.log(this.$stiffness);
   }
 
   solve(t: number) {

@@ -9,8 +9,8 @@ import { type AppContext, type ElementContext } from "./App.js";
 interface OutletOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
+  readable: Readable<T>;
   render?: (value: T) => Renderable;
-  value?: T | Readable<T>;
 }
 
 function isRenderable(value: unknown): value is Renderable {
@@ -32,21 +32,23 @@ export class Outlet<T> extends Connectable {
   #node = document.createComment("Outlet");
   #connectedViews: Connectable[] = [];
   #stopCallback?: StopFunction;
-  #value;
+  #readable;
   #render?: (value: T) => Renderable;
   #appContext;
   #elementContext;
+  #logger;
 
   get node() {
     return this.#node;
   }
 
-  constructor({ value, render, appContext, elementContext }: OutletOptions<T>) {
+  constructor({ readable, render, appContext, elementContext }: OutletOptions<T>) {
     super();
 
-    this.#value = value;
+    this.#readable = readable;
     this.#appContext = appContext;
     this.#elementContext = elementContext;
+    this.#logger = appContext.debugHub.logger("outlet");
 
     if (render) {
       this.#render = render;
@@ -60,7 +62,7 @@ export class Outlet<T> extends Connectable {
 
     parent.insertBefore(this.node, after?.nextSibling ?? null);
 
-    const update = (value: T) => {
+    this.#stopCallback = this.#readable.observe((value: T) => {
       let newValue: unknown;
 
       if (this.#render) {
@@ -80,13 +82,7 @@ export class Outlet<T> extends Connectable {
       } else {
         this.#update(newValue);
       }
-    };
-
-    if (Readable.isReadable<T>(this.#value)) {
-      this.#stopCallback = this.#value.observe(update);
-    } else {
-      update(this.#value!);
-    }
+    });
   }
 
   async disconnect() {
@@ -96,13 +92,13 @@ export class Outlet<T> extends Connectable {
     }
 
     if (this.isConnected) {
-      this.#node.parentNode!.removeChild(this.node);
+      this.#node.parentNode!.removeChild(this.#node);
       this.#cleanup();
     }
   }
 
   setChildren(children: Renderable[]) {
-    this.#update(...children);
+    throw new Error(`setChildren is not supported on Outlets because they get their contents from a Readable`);
   }
 
   #cleanup() {
@@ -113,6 +109,8 @@ export class Outlet<T> extends Connectable {
 
   #update(...children: Renderable[]) {
     this.#cleanup();
+
+    this.#logger.log("updating children", children);
 
     if (children == null || !this.isConnected) {
       return;

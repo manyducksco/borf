@@ -1,4 +1,4 @@
-import type { BuildOptions, BuildIncremental, BuildResult } from "esbuild";
+import type { BuildOptions, BuildResult } from "esbuild";
 
 import path from "node:path";
 import EventEmitter from "node:events";
@@ -169,7 +169,7 @@ export class Builder {
       const timer = new Timer();
       const browserConfig = this.#config.browser!;
 
-      const clientBundle = await esbuild.build(
+      const ctx = await esbuild.context(
         makeConfig({
           entryPoints: [this.#browserEntryPath],
           entryNames: "[dir]/client.[hash]",
@@ -188,6 +188,8 @@ export class Builder {
         })
       );
 
+      const clientBundle = await ctx.rebuild();
+
       await writeClientFiles({
         clientBundle,
         projectRoot: this.#projectRoot,
@@ -198,6 +200,8 @@ export class Builder {
       });
 
       log.client("built in", "%c" + timer.formatted);
+
+      ctx.dispose();
     }
 
     /*============================*\
@@ -312,7 +316,7 @@ export class Builder {
         }
       );
 
-      const updateClientFiles = async (clientBundle: BuildIncremental) => {
+      const updateClientFiles = async (clientBundle: BuildResult) => {
         for (const file of ctx.clientFiles) {
           fs.unlinkSync(file.path);
         }
@@ -328,7 +332,27 @@ export class Builder {
         });
       };
 
-      let clientBundle: BuildIncremental;
+      const ctx = await esbuild.context({
+        ...makeConfig({
+          entryPoints: [this.#browserEntryPath!],
+          entryNames: "[dir]/client.[hash]",
+          outdir: path.join(this.#outputPath, "static"),
+          minify: buildOptions.minify,
+          plugins: [
+            stylePlugin({
+              postcss: {
+                plugins: this.#config.browser?.postcss?.plugins || [],
+              },
+              cssModulesOptions: {
+                generateScopedName: generateScopedClassName,
+              },
+            }),
+          ],
+        }),
+        incremental: true,
+      });
+
+      let clientBundle: BuildResult;
 
       const buildClient = async () => {
         const end = new Timer();

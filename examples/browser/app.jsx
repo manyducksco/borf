@@ -66,6 +66,7 @@ const app = new App({
     warn: true,
     error: true,
   },
+  mode: import.meta.env.MODE,
 });
 
 // ----- Language Support ----- //

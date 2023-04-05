@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "start:prod": "node server/app.js",
-    "start": "borf-build --watch",
-    "build": "borf-build",
+    "start": "vite",
+    "build": "vite build",
     "viewer": "woofe-viewer ./client",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
@@ -26,7 +26,8 @@
     "@borf/bedrock": "file:../packages/bedrock",
     "@borf/browser": "file:../packages/browser",
     "@borf/build": "file:../packages/build",
-    "@borf/server": "file:../packages/server"
+    "@borf/server": "file:../packages/server",
+    "vite": "^4.2.1"
   },
   "dependencies": {
     "ramda": "^0.28.0"
