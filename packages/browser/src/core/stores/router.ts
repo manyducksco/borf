@@ -1,4 +1,3 @@
-import queryString from "query-string";
 import { createHashHistory, createBrowserHistory, type History, type Listener } from "history";
 import { Router } from "@borf/bedrock";
 import { type View } from "../classes/View.js";
@@ -186,10 +185,7 @@ export const RouterStore = Store.define<RouterInputs>({
         lastQuery = location.search;
 
         isRouteChange = true;
-        $$query.value = queryString.parse(location.search, {
-          parseBooleans: true,
-          parseNumbers: true,
-        });
+        $$query.value = Router.parseQuery(location.search);
       }
 
       const matched = router.match(location.pathname);

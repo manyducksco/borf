@@ -29,7 +29,7 @@ Bedrock is fully tree-shakeable. That means if you bundle your scripts (with a t
 ### Queue processing
 
 - [BatchQueue](./src/BatchQueue/README.md) (async queue with cap on total active promises)
-- [PerSecondQueue](./src/PerSecondQueue/README.md) (async queue with cap on # of promises awaited per second)
+- [ThrottleQueue](./src/ThrottleQueue/README.md) (async queue with cap on # of promises awaited per second)
 
 ### Other Utilities
 

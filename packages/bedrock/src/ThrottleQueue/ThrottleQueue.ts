@@ -1,9 +1,9 @@
 import { Type } from "../Type/Type.js";
 import { List } from "../List/List.js";
 
-type PerSecondQueueEvent = "resolve" | "reject" | "complete";
+type ThrottleQueueEvent = "resolve" | "reject" | "complete";
 
-export class PerSecondQueue<T, R> {
+export class ThrottleQueue<T, R> {
   #queue: T[] = [];
   #pending: Promise<R>[] = [];
 
@@ -14,7 +14,7 @@ export class PerSecondQueue<T, R> {
   // Array of timestamps of recently started items in old -> new order
   #timestamps = new List<number>();
 
-  #listeners: Record<PerSecondQueueEvent, ((...args: any[]) => void)[]> = {
+  #listeners: Record<ThrottleQueueEvent, ((...args: any[]) => void)[]> = {
     resolve: [],
     reject: [],
     complete: [],
@@ -53,7 +53,7 @@ export class PerSecondQueue<T, R> {
   /**
    * Subscribes to an event with a callback.
    */
-  on(event: PerSecondQueueEvent, callback: (...args: any[]) => void) {
+  on(event: ThrottleQueueEvent, callback: (...args: any[]) => void) {
     this.#log({ method: "on", event, callback });
     this.#listeners[event].push(callback);
   }
@@ -158,7 +158,7 @@ export class PerSecondQueue<T, R> {
   #emit(event: "reject", item: T, error: Error): void;
   #emit(event: "complete"): void;
 
-  #emit(event: PerSecondQueueEvent, ...args: unknown[]) {
+  #emit(event: ThrottleQueueEvent, ...args: unknown[]) {
     this.#log({
       method: "#emit",
       event,

@@ -1,6 +1,5 @@
 import { Router } from "@borf/bedrock";
 import { createBrowserHistory } from "history";
-import queryString, { type ParsedQuery } from "query-string";
 
 import { Store } from "../../Store.js";
 import { Writable } from "../../Writable.js";
@@ -22,7 +21,7 @@ export const RouterStore = Store.define({
     const $$pattern = new Writable<string | null>(null);
     const $$path = new Writable("");
     const $$params = new Writable({});
-    const $$query = new Writable<ParsedQuery<string | number | boolean>>({});
+    const $$query = new Writable<ReturnType<typeof Router.parseQuery>>({});
 
     let lastQuery: string;
     let isRouteChange = false;
@@ -54,10 +53,7 @@ export const RouterStore = Store.define({
           lastQuery = location.search;
 
           isRouteChange = true;
-          $$query.value = queryString.parse(location.search, {
-            parseBooleans: true,
-            parseNumbers: true,
-          });
+          $$query.value = Router.parseQuery(location.search);
         }
 
         $$pattern.value = "";

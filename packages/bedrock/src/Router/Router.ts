@@ -151,6 +151,34 @@ export class Router<T = any> {
     return Router.joinPath([resolved, part]);
   }
 
+  static parseQuery(query: string): Record<string, string | number | boolean> {
+    if (!query) return {};
+
+    const entries = query
+      .split("&")
+      .filter((x) => x.trim() !== "")
+      .map((entry) => {
+        const [key, value] = entry.split("=").map((x) => x.trim());
+
+        if (value.toLowerCase() === "true") {
+          return [key, true] as const;
+        }
+
+        if (value.toLowerCase() === "false") {
+          return [key, false] as const;
+        }
+
+        // Return value as a number if it parses as one.
+        if (!isNaN(Number(value))) {
+          return [key, Number(value)] as const;
+        }
+
+        return [key, value] as const;
+      });
+
+    return Object.fromEntries(entries);
+  }
+
   #routes: Route<T>[] = [];
 
   get routes() {
@@ -267,7 +295,7 @@ export class Router<T = any> {
             })
             .join("/"),
         params,
-        query: this.#parseQueryParams(query),
+        query: Router.parseQuery(query),
         meta: route.meta,
       };
     }
@@ -359,33 +387,5 @@ export class Router<T = any> {
     }
 
     return fragments;
-  }
-
-  #parseQueryParams(query: string): Record<string, string | number | boolean> {
-    if (!query) return {};
-
-    const entries = query
-      .split("&")
-      .filter((x) => x.trim() !== "")
-      .map((entry) => {
-        const [key, value] = entry.split("=").map((x) => x.trim());
-
-        if (value.toLowerCase() === "true") {
-          return [key, true] as const;
-        }
-
-        if (value.toLowerCase() === "false") {
-          return [key, false] as const;
-        }
-
-        // Return value as a number if it parses as one.
-        if (!isNaN(Number(value))) {
-          return [key, Number(value)] as const;
-        }
-
-        return [key, value] as const;
-      });
-
-    return Object.fromEntries(entries);
   }
 }

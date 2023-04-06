@@ -1,9 +1,9 @@
 import test from "ava";
 import { sleep } from "../helpers/sleep.js";
 import { Type } from "../Type/Type.js";
-import { PerSecondQueue } from "./PerSecondQueue.js";
+import { ThrottleQueue } from "./ThrottleQueue.js";
 
-test("PerSecondQueue", (t) => {
+test("ThrottleQueue", (t) => {
   return new Promise((resolve) => {
     t.plan(43); // 10 in-queue, 10 on resolve, 1 on complete.
     t.timeout(2000);
@@ -12,7 +12,7 @@ test("PerSecondQueue", (t) => {
     let started = 0;
     let finished = 0;
 
-    const queue = new PerSecondQueue(3, async (item: number) => {
+    const queue = new ThrottleQueue(3, async (item: number) => {
       t.assert(running <= 3); // Never over 3 pending at one time.
 
       started++;

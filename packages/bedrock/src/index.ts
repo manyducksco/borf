@@ -6,6 +6,6 @@ export { EventEmitter } from "./EventEmitter/EventEmitter.js";
 export { Router, RouteMatch } from "./Router/Router.js";
 export { StateMachine } from "./StateMachine/StateMachine.js";
 export { BatchQueue } from "./BatchQueue/BatchQueue.js";
-export { PerSecondQueue } from "./PerSecondQueue/PerSecondQueue.js";
+export { ThrottleQueue } from "./ThrottleQueue/ThrottleQueue.js";
 export { HTTPClient } from "./HTTPClient/HTTPClient.js";
 export { Timer } from "./Timer/Timer.js";
