@@ -1,4 +1,4 @@
-import { Type } from "@borf/bedrock";
+import { Timer, Type } from "@borf/bedrock";
 import { Connectable } from "./Connectable.js";
 import { formatChildren, Markup, type Renderable } from "./Markup.js";
 import { Readable, type StopFunction } from "./Writable.js";
@@ -98,7 +98,8 @@ export class Outlet<T> extends Connectable {
   }
 
   setChildren(children: Renderable[]) {
-    throw new Error(`setChildren is not supported on Outlets because they get their contents from a Readable`);
+    // If this is ever called, the framework is broken.
+    throw new Error(`setChildren is not supported for Outlets because they get their contents from a Readable`);
   }
 
   #cleanup() {
@@ -109,8 +110,6 @@ export class Outlet<T> extends Connectable {
 
   #update(...children: Renderable[]) {
     this.#cleanup();
-
-    this.#logger.log("updating children", children);
 
     if (children == null || !this.isConnected) {
       return;

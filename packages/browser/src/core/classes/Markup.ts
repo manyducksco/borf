@@ -51,7 +51,7 @@ export class Markup<C extends MarkupConfig = MarkupConfig> {
  */
 
 // TODO: Use JSX element types to suggest attributes.
-// export function m<T extends string>(
+// export function m<T extends keyof JSX.IntrinsicElements>(
 //   tagname: T,
 //   attributes?: JSX.IntrinsicElements[T],
 //   ...children: Renderable[]
@@ -60,7 +60,7 @@ export class Markup<C extends MarkupConfig = MarkupConfig> {
 /**
  * Creates markup for a custom HTML element.
  */
-export function m(tagname: string, attributes?: any, ...children: (Renderable | Renderable[])[]): Markup;
+export function m(tag: string, attributes?: any, ...children: (Renderable | Renderable[])[]): Markup;
 
 /**
  * Creates markup for a View, as defined by a setup function.

@@ -93,8 +93,8 @@ export class DebugHub {
     const options = this.#options;
 
     const enabled = options.mode === "development";
-    const label = `%c// ${name}`;
-    const labelStyles = `color:#888`;
+    const label = `%c${name}`;
+    const labelStyles = `color:${hash(label)};font-weight:bold`;
 
     const match = (value: string) => {
       return this.#matcher(value);
@@ -103,7 +103,7 @@ export class DebugHub {
     return {
       get log() {
         if (!enabled || options.log === false || !match(name)) return noOp;
-        else return _console.log.bind(_console, label, labelStyles);
+        else return _console.info.bind(_console, label, labelStyles);
       },
 
       get warn() {

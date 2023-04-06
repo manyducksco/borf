@@ -19,11 +19,11 @@ export const HTTPStore = Store.define({
 });
 
 function getDefaultFetch() {
-  if (window?.fetch) {
+  if (typeof window !== "undefined" && window.fetch) {
     return window.fetch.bind(window);
   }
 
-  if (global?.fetch) {
-    return global.fetch.bind(window);
+  if (typeof global !== "undefined" && global.fetch) {
+    return global.fetch.bind(global);
   }
 }

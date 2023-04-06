@@ -1,5 +1,4 @@
 import { View, makeState, makeSpring } from "@borf/browser";
-import logLifecycle from "../utils/logLifecycle.js";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];
 
@@ -7,8 +6,6 @@ export class DynamicListExample extends View {
   setup(ctx, { repeat }) {
     const $$shoppingList = makeState(initialList);
     const $$inputValue = makeState("");
-
-    logLifecycle(ctx);
 
     const getSorted = () => {
       return $$shoppingList

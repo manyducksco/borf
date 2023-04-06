@@ -318,7 +318,7 @@ const SomeView = makeView({
 
 // vs:
 
-const SomeView = new View({
+const SomeView = View.define({
   inputs: {},
   setup(ctx, m) {
     const $$value = new State(false);
@@ -328,6 +328,26 @@ const SomeView = new View({
     return m("h1", $$value.readable());
   },
 });
+
+// vs:
+
+// Just a function?
+const SomeView = defineView({
+  inputs: {},
+  setup(ctx, m) {
+    const $$value = new Writable(false);
+    const $value = Readable.merge([$$one, $$two], (x, y) => x + y);
+
+    return m("h1", $$value.toReadable());
+  },
+});
+
+const SomeView: ViewSetupFunction<Inputs> = (ctx, m) => {
+  const $$value = new Writable(false);
+  const $value = Readable.merge([$$one, $$two], (x, y) => x + y);
+
+  return m("h1", $$value.toReadable());
+};
 ```
 
 If I went with factory functions over classes, the library's exports would look like this:
@@ -412,7 +432,7 @@ const func = new Type(Type.isFunction);
 func.isTypeOf(() => {});
 ```
 
-###
+### Builder Config
 
 ```js
 import { Builder } from "@borf/build";
@@ -426,4 +446,17 @@ export default Builder.define({
     entry: "./server/server.js",
   },
 });
+```
+
+### Render Methodology
+
+```
+HTML Elements \
+   Components  --> Markup -> Connectable
+
+Concepts in the user's realm are Views and Stores and HTML elements. Through the `m` function (or JSX), these objects are transmuted into Markup, an intermediary "template" that can produce instances of itself in actual DOM nodes. That instance is stored in a container called a Connectable, which can be `connect`ed to and `disconnect`ed from the DOM.
+
+Woven throughout this web of DOM node factories and switches are the readables and writables that animate the switches.
+
+An app is data hydraulics, where the state is hydraulic fluid getting pushed around by the user to make things happen. The developer chooses where it flows and how the force is applied, but the user applies the force to move the app.
 ```

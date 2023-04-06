@@ -1,13 +1,10 @@
 import { makeState, View } from "@borf/browser";
-import logLifecycle from "../utils/logLifecycle.js";
 
 export class ToggleExample extends View {
   static about =
     "Displays a div that toggles a class when clicked and a label based on the current status.";
 
   setup(ctx) {
-    logLifecycle(ctx);
-
     const $$active = makeState(false);
     const $status = $$active.map((t) => (t ? "ON" : "OFF"));
 

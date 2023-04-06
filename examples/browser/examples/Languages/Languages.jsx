@@ -1,6 +1,5 @@
 import { View } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
-import logLifecycle from "../../utils/logLifecycle";
 
 import styles from "./Languages.module.css";
 
@@ -13,7 +12,6 @@ const languageLabels = {
 export const Languages = View.define({
   label: "Languages",
   setup(ctx, m) {
-    logLifecycle(ctx);
     const { translate, setLanguage, supportedLanguages, $currentLanguage } =
       ctx.useStore("language");
 

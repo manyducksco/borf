@@ -1,5 +1,10 @@
-function isObject<T = { [name: string]: any }>(value: unknown): value is T {
-  return value != null && typeof value === "object" && !Array.isArray(value);
+function isPlainObject<T = { [name: string]: any }>(value: any): value is T {
+  return (
+    value != null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.getPrototypeOf({})
+  );
 }
 
 export function deepEqual(one: any, two: any) {
@@ -7,7 +12,7 @@ export function deepEqual(one: any, two: any) {
     return true;
   }
 
-  if (isObject(one) && isObject(two)) {
+  if (isPlainObject(one) && isPlainObject(two)) {
     const keysOne = Object.keys(one);
     const keysTwo = Object.keys(two);
 

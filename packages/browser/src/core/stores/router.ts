@@ -238,13 +238,10 @@ export const RouterStore = Store.define<RouterInputs>({
             const activeLayer = activeLayers[i];
 
             if (activeLayer?.id !== matchedLayer.id) {
-              logger.log(
-                `layer at level ${i} will be disconnected (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`
-              );
+              logger.log(`replacing layer at level ${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
               activeLayers = activeLayers.slice(0, i);
 
               const parentLayer = activeLayers[activeLayers.length - 1];
-
               const view = matchedLayer.markup.init({ appContext, elementContext }) as View;
 
               requestAnimationFrame(() => {

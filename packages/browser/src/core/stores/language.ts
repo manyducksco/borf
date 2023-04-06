@@ -1,6 +1,7 @@
 import { Type } from "@borf/bedrock";
 import { Store } from "../classes/Store.js";
 import { Readable, Writable } from "../classes/Writable.js";
+import { APP_CONTEXT } from "../keys.js";
 
 // ----- Types ----- //
 
@@ -33,16 +34,17 @@ export const LanguageStore = Store.define<LanguageStoreInputs>({
   async setup(ctx) {
     const options = ctx.inputs.get();
     const languages = new Map<string, Language>();
+    const logger = ctx[APP_CONTEXT].debugHub.logger(`borf:store:language`);
 
     // Convert languages into Language instances.
     Object.entries(options.languages).forEach(([tag, config]) => {
       languages.set(tag, new Language(tag, config));
     });
 
-    ctx.log(
-      `This app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: ${[...languages.keys()].join(
-        ", "
-      )}`
+    logger.log(
+      `app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join(
+        "', '"
+      )}'`
     );
 
     const $$language = new Writable<string | undefined>(undefined);
@@ -67,6 +69,8 @@ export const LanguageStore = Store.define<LanguageStoreInputs>({
       : languages.get([...languages.keys()][0]);
 
     if (currentLanguage != null) {
+      logger.log(`current language is '${currentLanguage.tag}'`);
+
       const translation = await currentLanguage.getTranslation();
 
       $$language.value = currentLanguage.tag;
@@ -89,6 +93,8 @@ export const LanguageStore = Store.define<LanguageStoreInputs>({
 
           $$language.value = tag;
           $$translation.value = translation;
+
+          logger.log("set language to " + tag);
         } catch (error) {
           if (error instanceof Error) {
             ctx.crash(error);

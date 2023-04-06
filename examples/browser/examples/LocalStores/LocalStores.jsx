@@ -1,12 +1,9 @@
 import { View, Store, Writable } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
-import logLifecycle from "../../utils/logLifecycle.js";
 
 export const LocalStores = View.define({
   label: "LocalStores",
   setup(ctx) {
-    logLifecycle(ctx);
-
     return (
       <ExampleFrame title="Local State with Stores">
         <p>

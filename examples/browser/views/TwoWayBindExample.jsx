@@ -1,12 +1,9 @@
 import { makeState, View } from "@borf/browser";
-import logLifecycle from "../utils/logLifecycle.js";
 
 export class TwoWayBindExample extends View {
   setup(ctx) {
     const $$text = makeState("edit me");
     const $$size = makeState(18);
-
-    logLifecycle(ctx);
 
     return (
       <div class="example">

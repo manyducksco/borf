@@ -9,9 +9,8 @@
     "start": "vite",
     "build": "vite build",
     "viewer": "woofe-viewer ./client",
-    "test": "jest",
-    "test:watch": "npm run test -- --watch",
-    "test:coverage": "npm run test -- --coverage",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -27,7 +26,11 @@
     "@borf/browser": "file:../packages/browser",
     "@borf/build": "file:../packages/build",
     "@borf/server": "file:../packages/server",
-    "vite": "^4.2.1"
+    "@vitest/browser": "^0.29.8",
+    "@vitest/ui": "^0.29.8",
+    "vite": "^4.2.1",
+    "vitest": "^0.29.8",
+    "webdriverio": "^8.6.9"
   },
   "dependencies": {
     "ramda": "^0.28.0"

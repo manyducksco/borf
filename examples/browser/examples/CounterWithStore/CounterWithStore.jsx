@@ -1,5 +1,4 @@
 import { View } from "@borf/browser";
-import logLifecycle from "../../utils/logLifecycle.js";
 import { CounterStore } from "../../globals/CounterStore.js";
 import { ExampleFrame } from "../../views/ExampleFrame/ExampleFrame.jsx";
 
@@ -10,8 +9,6 @@ export const CounterWithStore = View.define({
   label: "CounterWithStore",
 
   setup(ctx) {
-    logLifecycle(ctx);
-
     const counter = ctx.useStore(CounterStore);
     const $label = counter.$current.map((n) => `the number is: ${n}`);
 

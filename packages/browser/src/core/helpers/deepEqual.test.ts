@@ -14,3 +14,16 @@ test("deep equality of two values", (t) => {
   t.is(deepEqual("string1", "string2"), false);
   t.is(deepEqual({}, []), false);
 });
+
+test("class instances are compared by identity", (t) => {
+  class Test {
+    value: number;
+
+    constructor(value: number) {
+      this.value = value;
+    }
+  }
+
+  t.is(deepEqual({ value: 1 }, { value: 1 }), true);
+  t.is(deepEqual(new Test(1), new Test(1)), false);
+});

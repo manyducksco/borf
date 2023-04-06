@@ -1,13 +1,10 @@
 import { View, makeState, joinStates } from "@borf/browser";
-import logLifecycle from "../utils/logLifecycle.js";
 
 export class FormExample extends View {
   setup(ctx) {
     const $$firstName = makeState("");
     const $$lastName = makeState("");
     const $$age = makeState(18);
-
-    logLifecycle(ctx);
 
     const $errors = joinStates(
       $$firstName,

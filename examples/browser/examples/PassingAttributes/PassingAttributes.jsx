@@ -1,6 +1,5 @@
 import { View, State } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
-import logLifecycle from "../../utils/logLifecycle.js";
 
 import styles from "./PassingAttributes.module.css";
 
@@ -24,8 +23,6 @@ export const PassingAttributes = View.define({
   //   },
   // },
   setup(ctx, m) {
-    logLifecycle(ctx);
-
     const $$message = new State("Hello");
 
     return (
@@ -47,7 +44,6 @@ export const PassingAttributes = View.define({
 //   static about = "Demonstrates passing attributes to a subview.";
 
 //   setup(ctx, m) {
-//     logLifecycle(ctx);
 
 //     const $$message = new State("Hello");
 
@@ -80,8 +76,6 @@ class SubView extends View {
   };
 
   setup(ctx) {
-    logLifecycle(ctx);
-
     const $$message = ctx.inputs.$$("message");
 
     return (

@@ -1,5 +1,4 @@
 import { joinStates, makeState, View } from "@borf/browser";
-import logLifecycle from "../utils/logLifecycle.js";
 
 export class HTTPRequestExample extends View {
   setup(ctx) {
@@ -7,8 +6,6 @@ export class HTTPRequestExample extends View {
     const $$message = makeState("");
 
     const http = ctx.useStore("http");
-
-    logLifecycle(ctx);
 
     const $label = joinStates($$loading, $$message, (loading, message) => {
       if (loading) {

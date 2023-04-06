@@ -1,6 +1,5 @@
 import { View, makeState, joinStates, makeSpring } from "@borf/browser";
 import { animate } from "popmotion";
-import logLifecycle from "../utils/logLifecycle.js";
 import { MouseStore } from "../globals/MouseStore.js";
 
 const bestColor = "#ff0088";
@@ -9,8 +8,6 @@ export const MouseFollowerExample = View.define({
   setup(ctx, { when }) {
     const $$enabled = makeState(false);
     const $$color = makeState(bestColor);
-
-    logLifecycle(ctx);
 
     const mouse = ctx.useStore(MouseStore);
 

@@ -1,6 +1,5 @@
 import { View } from "@borf/browser";
 import { MouseStore } from "../../globals/MouseStore";
-import logLifecycle from "../../utils/logLifecycle";
 
 import styles from "./AppLayout.module.css";
 
@@ -20,8 +19,6 @@ export const AppLayout = View.define({
     // await new Promise((resolve) => {
     //   setTimeout(resolve, 400);
     // });
-
-    logLifecycle(ctx);
 
     const router = ctx.useStore("router");
     const page = ctx.useStore("page");

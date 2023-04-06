@@ -1,12 +1,9 @@
 import { View, makeState, makeSpring } from "@borf/browser";
-import logLifecycle from "../utils/logLifecycle.js";
 
 export class ConditionalExample extends View {
   setup(ctx, m) {
     const $$show = makeState(false);
     const $label = $$show.map((t) => (t ? "Hide Text" : "Show Text"));
-
-    logLifecycle(ctx);
 
     return (
       <div class="example">
