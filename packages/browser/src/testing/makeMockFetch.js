@@ -1,5 +1,4 @@
-import { matchRoute, parseRoute, sortRoutes } from "../core/helpers/routing.js";
-import { isFunction } from "../core/helpers/typeChecking.js";
+import { Router, Type } from "@borf/bedrock";
 
 const { Response } = require("fetch-ponyfill")();
 
@@ -34,15 +33,14 @@ const { Response } = require("fetch-ponyfill")();
  *   });
  */
 export function makeMockFetch(fn) {
+  const router = new Router();
   let routes = [];
   const calls = [];
 
   const ctx = {
     handle(method, url, handler) {
-      routes.push({
+      router.addRoute(url, {
         method,
-        url,
-        fragments: parseRoute(url).fragments,
         handler,
       });
 
@@ -72,13 +70,11 @@ export function makeMockFetch(fn) {
 
   fn(ctx);
 
-  routes = sortRoutes(routes);
-
   function fetch(url, options = {}) {
     return new Promise((resolve, reject) => {
       const method = (options.method || "get").toLowerCase();
-      const matched = matchRoute(routes, url, {
-        willMatch: (route) => route.method === method,
+      const matched = router.match(url, {
+        willMatch: (route) => route.meta.method === method,
       });
 
       if (matched == null) {
@@ -89,7 +85,7 @@ export function makeMockFetch(fn) {
       let body;
 
       if (options.headers) {
-        if (!isFunction(options.headers.entries)) {
+        if (!Type.isFunction(options.headers.entries)) {
           options.headers = new Headers(options.headers);
         }
 
@@ -128,7 +124,7 @@ export function makeMockFetch(fn) {
 
       const result = matched.data.handler(ctx);
 
-      if (result && isFunction(result.then)) {
+      if (result && Type.isFunction(result.then)) {
         result.then((body) => {
           if (body) {
             if (!ctx.response.headers["content-type"]) {

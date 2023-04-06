@@ -1,4 +1,4 @@
-import { Readable, StopFunction } from "./Writable";
+import { Readable, type StopFunction } from "./Writable.js";
 import { Connectable } from "./Connectable.js";
 
 interface Stringable {

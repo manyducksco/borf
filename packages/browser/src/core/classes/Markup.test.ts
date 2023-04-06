@@ -1,7 +1,8 @@
+import test from "ava";
 import { m, Markup } from "./Markup.js";
 import { View } from "./View.js";
 
-test("a", () => {
+test("a", (t) => {
   const SomeView = View.define({
     inputs: {
       value: {
@@ -21,7 +22,7 @@ test("a", () => {
     return m("div");
   });
 
-  expect(stringMarkup instanceof Markup).toBe(true);
-  expect(viewMarkup instanceof Markup).toBe(true);
-  expect(fnMarkup instanceof Markup).toBe(true);
+  t.assert(stringMarkup instanceof Markup);
+  t.assert(viewMarkup instanceof Markup);
+  t.assert(fnMarkup instanceof Markup);
 });

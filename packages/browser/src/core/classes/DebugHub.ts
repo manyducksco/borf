@@ -41,7 +41,7 @@ export class DebugHub {
   #console;
   #options;
 
-  constructor(options: DebugHubOptions, _console = window?.console || global?.console) {
+  constructor(options: DebugHubOptions, _console = getDefaultConsole()) {
     if (options.filter) {
       this.#filter = options.filter;
     }
@@ -129,6 +129,16 @@ export class DebugHub {
 }
 
 /* ----- Helpers ----- */
+
+function getDefaultConsole() {
+  if (typeof window !== "undefined" && window.console) {
+    return window.console;
+  }
+
+  if (typeof global !== "undefined" && global.console) {
+    return global.console;
+  }
+}
 
 const noOp = () => {};
 

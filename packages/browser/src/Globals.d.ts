@@ -8,6 +8,8 @@ declare module "simple-color-hash" {
   export default function colorHash(options: HashOptions): string;
 }
 
+declare const global = any;
+
 /**
  * Any object with a toString method that returns a string.
  */

@@ -22,12 +22,3 @@ This is a monorepo for Borf, a full stack JS framework. It is managed using [ler
 ## Resources
 
 - [Example Project](./examples/README.md)
-
-## Possible Size Optimizations
-
-The total gzipped size of `@borf/browser` is currently 26.5 kB. This could be reduced further by removing dependencies and narrowing some functionality.
-
-These are the current third party dependencies and what they do:
-
-- [`query-string`](https://bundlephobia.com/package/query-string@7.1.1) for comprehensive query string parsing support. Adds 2.3 kB to gzipped size.
-  - Users can edit query params and user input is the wild west, so this is not that large for the utility it offers.

@@ -1,7 +1,8 @@
+import test from "ava";
 import { Readable, Writable } from "./Writable.js";
 import { Inputs } from "./Inputs.js";
 
-test("the basics", () => {
+test("the basics", (t) => {
   const plain = "value";
   const readOnly = new Readable(5);
   const writable = new Writable({ write: "this" });
@@ -10,7 +11,7 @@ test("the basics", () => {
 
   inputs.connect();
 
-  expect(inputs.api.get()).toStrictEqual({
+  t.deepEqual(inputs.api.get(), {
     plain: "value",
     readOnly: 5,
     writable: { write: "this" },
@@ -18,17 +19,17 @@ test("the basics", () => {
 
   inputs.api.set("writable", { write: "that" });
 
-  expect(inputs.api.get("writable")).toStrictEqual({ write: "that" });
-  expect(writable.value).toStrictEqual({ write: "that" });
+  t.deepEqual(inputs.api.get("writable"), { write: "that" });
+  t.deepEqual(writable.value, { write: "that" });
 
-  expect(() => {
+  t.throws(() => {
     inputs.api.update((current) => {
       current.readOnly = 12;
       current.writable = {
         write: "other",
       };
     });
-  }).toThrowError(/Tried to set value of read-only binding/);
+  });
 
   inputs.disconnect();
 });

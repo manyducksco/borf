@@ -1,11 +1,10 @@
+import test from "ava";
 import { View } from "./View.js";
 
-describe("define", () => {
-  test("returns a view", () => {
-    const Test = View.define({
-      setup: (ctx, m) => m("span", "hello"),
-    });
-
-    expect(View.isView(Test));
+test("define: returns a view", (t) => {
+  const Test = View.define({
+    setup: (ctx, m) => m("span", "hello"),
   });
+
+  t.assert(View.isView(Test));
 });

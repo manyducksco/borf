@@ -1,43 +1,42 @@
+import test from "ava";
 import { makeMatcher } from "./DebugHub.js";
 
-describe("makeMatch", () => {
-  test("correctly parses filter string or regex", () => {
-    const matchOne = makeMatcher("*"); // Allow everything
-    const matchTwo = makeMatcher("test:*"); // Only allow things starting with 'test:'
-    const matchThree = makeMatcher("*,-test:*"); // Allow everything, but exclude channels starting with 'test:'
-    const matchFour = makeMatcher(/^test:|name$/); // starts with 'test:' or ends with 'name'
-    const matchFive = makeMatcher("jwioefnm234,test:one");
+test("makeMatcher correctly parses filter string or regex", (t) => {
+  const matchOne = makeMatcher("*"); // Allow everything
+  const matchTwo = makeMatcher("test:*"); // Only allow things starting with 'test:'
+  const matchThree = makeMatcher("*,-test:*"); // Allow everything, but exclude channels starting with 'test:'
+  const matchFour = makeMatcher(/^test:|name$/); // starts with 'test:' or ends with 'name'
+  const matchFive = makeMatcher("jwioefnm234,test:one");
 
-    const nameOne = "test:one";
-    const nameTwo = "jwioefnm234";
-    const nameThree = "other:name";
-    const nameFour = "test:allowed";
+  const nameOne = "test:one";
+  const nameTwo = "jwioefnm234";
+  const nameThree = "other:name";
+  const nameFour = "test:allowed";
 
-    expect(matchOne(nameOne)).toBe(true);
-    expect(matchOne(nameTwo)).toBe(true);
-    expect(matchOne(nameThree)).toBe(true);
-    expect(matchOne(nameFour)).toBe(true);
+  t.truthy(matchOne(nameOne));
+  t.truthy(matchOne(nameTwo));
+  t.truthy(matchOne(nameThree));
+  t.truthy(matchOne(nameFour));
 
-    expect(matchTwo(nameOne)).toBe(true);
-    expect(matchTwo(nameTwo)).toBe(false);
-    expect(matchTwo(nameThree)).toBe(false);
-    expect(matchTwo(nameFour)).toBe(true);
+  t.truthy(matchTwo(nameOne));
+  t.falsy(matchTwo(nameTwo));
+  t.falsy(matchTwo(nameThree));
+  t.truthy(matchTwo(nameFour));
 
-    expect(matchThree(nameOne)).toBe(false);
-    expect(matchThree(nameTwo)).toBe(true);
-    expect(matchThree(nameThree)).toBe(true);
-    expect(matchThree(nameFour)).toBe(false);
+  t.falsy(matchThree(nameOne));
+  t.truthy(matchThree(nameTwo));
+  t.truthy(matchThree(nameThree));
+  t.falsy(matchThree(nameFour));
 
-    expect(matchFour(nameOne)).toBe(true);
-    expect(matchFour(nameTwo)).toBe(false);
-    expect(matchFour(nameThree)).toBe(true);
-    expect(matchFour(nameFour)).toBe(true);
+  t.truthy(matchFour(nameOne));
+  t.falsy(matchFour(nameTwo));
+  t.truthy(matchFour(nameThree));
+  t.truthy(matchFour(nameFour));
 
-    expect(matchFive(nameOne)).toBe(true);
-    expect(matchFive(nameTwo)).toBe(true);
-    expect(matchFive(nameThree)).toBe(false);
-    expect(matchFive(nameFour)).toBe(false);
-  });
+  t.truthy(matchFive(nameOne));
+  t.truthy(matchFive(nameTwo));
+  t.falsy(matchFive(nameThree));
+  t.falsy(matchFive(nameFour));
 });
 
 // describe("makeDebug", () => {
