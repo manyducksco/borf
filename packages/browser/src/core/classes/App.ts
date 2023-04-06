@@ -19,6 +19,7 @@ import { type InputValues } from "./Inputs.js";
 import { Store, type StoreConstructor, type Storable, StoreSetupFunction } from "./Store.js";
 import { View, type ViewConstructor, type Viewable, ViewSetupFunction } from "./View.js";
 import { m } from "./Markup.js";
+import { type BuiltInStores } from "../types.js";
 
 // ----- Types ----- //
 
@@ -52,7 +53,7 @@ interface AppOptions {
 export interface AppContext {
   crashCollector: CrashCollector;
   debugHub: DebugHub;
-  stores: Map<BuiltInStores | StoreRegistration["store"], StoreRegistration>;
+  stores: Map<keyof BuiltInStores | StoreRegistration["store"], StoreRegistration>;
   mode: "development" | "production";
   rootElement?: HTMLElement;
   rootView?: View<{}>;
@@ -62,11 +63,6 @@ export interface ElementContext {
   stores: Map<StoreRegistration["store"], StoreRegistration>;
   isSVG?: boolean;
 }
-
-/**
- * Stores provided by the app. Accessible in components by these names with `ctx.useStore(name)`.
- */
-export type BuiltInStores = "http" | "router" | "page" | "language" | "dialog";
 
 /**
  * An object kept in App for each store registered with `addStore`.
@@ -134,7 +130,7 @@ export class App implements AppRouter {
   #layerId = 0;
   #isConnected = false;
   #stopCallbacks: StopFunction[] = [];
-  #stores = new Map<BuiltInStores | StoreRegistration["store"], StoreRegistration>([
+  #stores = new Map<keyof BuiltInStores | StoreRegistration["store"], StoreRegistration>([
     ["dialog", { store: DialogStore }],
     ["router", { store: RouterStore }],
     ["page", { store: PageStore }],
@@ -257,6 +253,8 @@ export class App implements AppRouter {
 
     return this;
   }
+
+  addStore<I>(store: Storable<I, any>, options?: AddStoreOptions<I>): this;
 
   addStore(config: StoreRegistration): this;
 

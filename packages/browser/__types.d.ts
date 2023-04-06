@@ -472,7 +472,7 @@ declare module "@borf/browser" {
       /**
        * Validates input value at runtime. The app will crash if `validate` returns false or throws an Error.
        */
-      assert?: (value: unknown) => boolean;
+      assert?(value: unknown): value is T[name];
 
       /**
        * An example value to show what this input might take.

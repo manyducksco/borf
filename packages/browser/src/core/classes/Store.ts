@@ -5,10 +5,11 @@ import { Connectable } from "./Connectable.js";
 import { Inputs, type InputValues, type InputDefinitions, type InputsAPI } from "./Inputs.js";
 import { Outlet } from "./Outlet.js";
 import { m, Markup, type MarkupFunction } from "./Markup.js";
-import { type AppContext, type ElementContext, type BuiltInStores } from "./App.js";
+import { type AppContext, type ElementContext } from "./App.js";
 import { Readable, Writable, type StopFunction } from "./Writable.js";
+import { type BuiltInStores } from "../types.js";
 
-/* ----- Types ----- */
+// ----- Types ----- //
 
 /**
  * General options passed when instantiating both Views and Stores.
@@ -72,7 +73,7 @@ export type StoreConstructor<I, O extends Record<string, any>> = {
   inputs?: InputDefinitions<I>;
 };
 
-export type StoreSetupFunction<I, O> = (ctx: StoreContext<I, O>) => O;
+export type StoreSetupFunction<I, O> = (ctx: StoreContext<I, O>) => O | Promise<O>;
 
 export type Storable<I, O extends Record<string, any>> = StoreConstructor<I, O> | StoreSetupFunction<I, O>;
 
@@ -98,17 +99,17 @@ type StoreDefinition<I, O> = {
   setup: StoreSetupFunction<I, O>;
 };
 
-/* ----- Store ----- */
+// ----- Code ----- //
 
 export class Store<Inputs = {}, Outputs extends object = any> extends Connectable {
   // Infer D from `config`. Infer I and O from D.
   // This one infers the correct types within the definition code
   // as long as an inputs type arg is not passed:
-  static define<
-    D extends StoreDefinition<any, any>,
-    I = { [K in keyof D["inputs"]]: D["inputs"][K] },
-    O extends object = ReturnType<D["setup"]>
-  >(config: StoreDefinition<I, O>): StoreConstructor<I, O>;
+  // static define<
+  //   D extends StoreDefinition<any, any>,
+  //   I = { [K in keyof D["inputs"]]: D["inputs"][K] },
+  //   O extends object = ReturnType<D["setup"]>
+  // >(config: StoreDefinition<I, O>): StoreConstructor<I, O>;
 
   // TODO: Pass I, infer D from I and O from D.
   // It seems I can currently only infer the inputs or the outputs.
@@ -269,7 +270,7 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
         }
       },
 
-      useStore: (nameOrStore: BuiltInStores | StoreConstructor<any, any>) => {
+      useStore: (nameOrStore: keyof BuiltInStores | StoreConstructor<any, any>) => {
         if (typeof nameOrStore === "string") {
           const name = nameOrStore;
 
@@ -388,7 +389,7 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
     this.outputs = outputs as Outputs;
   }
 
-  setup(ctx: StoreContext<Inputs, Outputs>): Outputs {
+  setup(ctx: StoreContext<Inputs, Outputs>): Outputs | Promise<Outputs> {
     throw new Error(`This store needs a setup function.`);
   }
 

@@ -1,5 +1,5 @@
 import { Type } from "@borf/bedrock";
-import { Store } from "../classes/Store.js";
+import { Store, StoreContext } from "../classes/Store.js";
 import { Readable, Writable } from "../classes/Writable.js";
 import { APP_CONTEXT } from "../keys.js";
 
@@ -25,14 +25,25 @@ interface LanguageStoreInputs {
   currentLanguage: string;
 }
 
+const ExampleLanguages: { [tag: string]: LanguageConfig } = {};
+
 // ----- Code ----- //
 
-export const LanguageStore = Store.define<LanguageStoreInputs>({
+export const LanguageStore = Store.define({
   label: "language",
   about: "Manages translations.",
+  inputs: {
+    languages: {
+      // assert: Type.isObject,
+      example: ExampleLanguages,
+    },
+    currentLanguage: {
+      example: "en-US",
+    },
+  },
 
   async setup(ctx) {
-    const options = ctx.inputs.get();
+    const options = ctx.inputs.get() as LanguageStoreInputs;
     const languages = new Map<string, Language>();
     const logger = ctx[APP_CONTEXT].debugHub.logger(`borf:store:language`);
 

@@ -8,12 +8,13 @@ import { PageStore } from "../../stores/page.js";
 
 import { DialogStore } from "./stores/dialog.js";
 import { RouterStore } from "./stores/router.js";
-import { type BuiltInStores, type AppContext, type ElementContext } from "../App.js";
+import { type AppContext, type ElementContext } from "../App.js";
 import { type InputValues } from "../Inputs.js";
+import { type BuiltInStores } from "../../types.js";
 import { CrashCollector } from "../CrashCollector.js";
 
 type StoreRegistration<I = any> = {
-  store: BuiltInStores | StoreConstructor<any, any>;
+  store: keyof BuiltInStores | StoreConstructor<any, any>;
   exports?: StoreConstructor<I, any>;
   instance?: Store<I, any>;
   inputs?: InputValues<I>;

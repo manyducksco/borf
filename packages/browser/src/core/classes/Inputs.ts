@@ -14,40 +14,38 @@ export type InputValues<T = {}> = {
  * Defines which inputs a component can take and their properties.
  */
 export type InputDefinitions<T> = {
-  [K in keyof T]: InputDefinition<T[K]>;
-};
+  [K in keyof T]: {
+    /**
+     * Validates input value at runtime. The app will crash if `validate` returns false or throws an Error.
+     */
+    assert?(value: unknown): value is T[K];
 
-type InputDefinition<T> = {
-  /**
-   * Validates input value at runtime. The app will crash if `validate` returns false or throws an Error.
-   */
-  assert?: (value: unknown) => boolean;
+    /**
+     * An example value to show what this input might take.
+     */
+    example?: T[K];
 
-  /**
-   * An example value to show what this input might take.
-   */
-  example?: T;
+    /**
+     * Attribute description for viewer.
+     */
+    about?: string;
 
-  /**
-   * Attribute description for viewer.
-   */
-  about?: string;
+    /**
+     * The default value if the input is not passed.
+     */
+    default?: T[K];
 
-  /**
-   * The default value if the input is not passed.
-   */
-  default?: T;
+    /**
+     * Allows writing back to writable bindings to propagate changes up to a parent view. Also known as two-way binding.
+     * All bindings are only readable by default.
+     */
+    writable?: boolean;
 
-  /**
-   * Allows writing back to writable bindings to propagate changes up to a parent view. Also known as two-way binding.
-   * All bindings are only readable by default.
-   */
-  writable?: boolean;
-
-  /**
-   * Allows a value to be omitted without defining a default value.
-   */
-  optional?: boolean;
+    /**
+     * Allows a value to be omitted without defining a default value.
+     */
+    optional?: boolean;
+  };
 };
 
 /**

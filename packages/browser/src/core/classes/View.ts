@@ -5,7 +5,7 @@ import { Markup, m, type MarkupFunction, type Renderable } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
 import { ForEach } from "./ForEach.js";
 import { Readable, StopFunction, Writable } from "./Writable.js";
-import { BuiltInStores } from "./App.js";
+import { type BuiltInStores } from "../types.js";
 import { type Ref } from "./Ref.js";
 import { ComponentOptions, type ComponentContext, type StoreConstructor } from "./Store.js";
 
@@ -25,7 +25,7 @@ export interface ViewContext<I> extends ComponentContext<I> {
   outlet: () => Markup;
 }
 
-export type ViewSetupFunction<I> = (ctx: ViewContext<I>, m: MarkupFunction) => Renderable;
+export type ViewSetupFunction<I> = (ctx: ViewContext<I>, m: MarkupFunction) => Renderable | Promise<Renderable>;
 
 export type Viewable<I> = ViewConstructor<I> | ViewSetupFunction<I>;
 
@@ -423,7 +423,7 @@ export class View<Inputs = {}> extends Connectable {
         }
       },
 
-      useStore: (nameOrStore: BuiltInStores | StoreConstructor<any, any>) => {
+      useStore: (nameOrStore: keyof BuiltInStores | StoreConstructor<any, any>) => {
         if (typeof nameOrStore === "string") {
           const name = nameOrStore;
 
