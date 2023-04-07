@@ -188,7 +188,7 @@ type InputsAPIOptions<T> = {
 /**
  * Provides a State-like API for accessing attribute data.
  */
-export class InputsAPI<T> {
+export class InputsAPI<T> extends Readable<T> {
   [READABLE] = true;
 
   #inputs;
@@ -198,6 +198,8 @@ export class InputsAPI<T> {
   #enableValidation;
 
   constructor(options: InputsAPIOptions<T>) {
+    super(options.$$inputs);
+
     this.#inputs = options.$$inputs;
     this.#definitions = options.definitions;
     this.#readables = options.readables;
@@ -386,13 +388,13 @@ export class InputsAPI<T> {
     return this.getWritable(name);
   }
 
-  map<N>(transform: (value: T) => N): Readable<N> {
-    return this.#inputs.map(transform);
-  }
+  // map<N>(transform: (value: T) => N): Readable<N> {
+  //   return this.#inputs.map(transform);
+  // }
 
-  observe(callback: (value: T) => void): StopFunction {
-    return this.#inputs.observe(callback);
-  }
+  // observe(callback: (value: T) => void): StopFunction {
+  //   return this.#inputs.observe(callback);
+  // }
 }
 
 /**

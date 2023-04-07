@@ -102,11 +102,6 @@ type StoreDefinition<I, O> = {
 
 // ----- Code ----- //
 
-export function createStore<I = any>(setup: StoreSetupFunction<I, any>) {
-  type O = ReturnType<typeof setup>;
-  return null as any as StoreConstructor<I, O>;
-}
-
 export class Store<Inputs = {}, Outputs extends Record<string, any> = Record<string, any>> extends Connectable {
   // Full inference using Zod schemas in input config.
   static define<

@@ -17,6 +17,8 @@ export type ViewConstructor<I> = {
   label?: string;
   about?: string;
   inputs?: InputDefinitions<I>;
+
+  // __inputValues: InputValues<I>;
 };
 
 export interface ViewContext<I> extends ComponentContext<I> {
