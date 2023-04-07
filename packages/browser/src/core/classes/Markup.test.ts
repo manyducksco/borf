@@ -6,7 +6,7 @@ test("a", (t) => {
   const SomeView = View.define({
     inputs: {
       value: {
-        example: "Hello World",
+        // example: "Hello World",
         default: "Default",
       },
     },
