@@ -7,6 +7,16 @@ import { View, Viewable, ViewSetupFunction } from "../classes/View.js";
 import { type Connectable } from "../classes/Connectable.js";
 import { InputValues } from "core/classes/Inputs.js";
 
+interface DialogInputs {
+  open: boolean;
+}
+
+interface DialogConfig extends MarkupConfig {
+  inputs: {
+    open: Writable<boolean>;
+  };
+}
+
 /**
  * Manages dialogs. Also known as modals.
  * TODO: Describe this better.
@@ -77,16 +87,6 @@ export const DialogStore = Store.define({
         document.body.removeChild(container);
       }
     });
-
-    interface DialogInputs {
-      open: boolean;
-    }
-
-    interface DialogConfig extends MarkupConfig {
-      inputs: {
-        open: Writable<boolean>;
-      };
-    }
 
     return {
       open: <I extends DialogInputs>(view: Viewable<I>, inputs?: InputValues<Omit<I, "open">>) => {

@@ -1,8 +1,9 @@
 import { Type, Timer } from "@borf/bedrock";
+import type z from "zod";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 import { type StoreRegistration } from "./App.js";
 import { Connectable } from "./Connectable.js";
-import { Inputs, type InputValues, type InputDefinitions, type InputsAPI } from "./Inputs.js";
+import { Inputs, type InputValues, type InputDefinitions, type InputDefinition, type InputsAPI } from "./Inputs.js";
 import { Outlet } from "./Outlet.js";
 import { m, Markup, type MarkupFunction } from "./Markup.js";
 import { type AppContext, type ElementContext } from "./App.js";
@@ -60,7 +61,7 @@ export interface ComponentContext<I> {
   onDisconnect(callback: () => void): void;
 }
 
-export interface StoreContext<I, O> extends ComponentContext<I> {
+export interface StoreContext<I> extends ComponentContext<I> {
   [APP_CONTEXT]: AppContext;
   [ELEMENT_CONTEXT]: ElementContext;
 }
@@ -73,7 +74,7 @@ export type StoreConstructor<I, O extends Record<string, any>> = {
   inputs?: InputDefinitions<I>;
 };
 
-export type StoreSetupFunction<I, O> = (ctx: StoreContext<I, O>) => O | Promise<O>;
+export type StoreSetupFunction<I, O> = (ctx: StoreContext<I>) => O | Promise<O>;
 
 export type Storable<I, O extends Record<string, any>> = StoreConstructor<I, O> | StoreSetupFunction<I, O>;
 
@@ -101,30 +102,27 @@ type StoreDefinition<I, O> = {
 
 // ----- Code ----- //
 
-export class Store<Inputs = {}, Outputs extends object = any> extends Connectable {
-  // Infer D from `config`. Infer I and O from D.
-  // This one infers the correct types within the definition code
-  // as long as an inputs type arg is not passed:
-  // static define<
-  //   D extends StoreDefinition<any, any>,
-  //   I = { [K in keyof D["inputs"]]: D["inputs"][K] },
-  //   O extends object = ReturnType<D["setup"]>
-  // >(config: StoreDefinition<I, O>): StoreConstructor<I, O>;
+export function createStore<I = any>(setup: StoreSetupFunction<I, any>) {
+  type O = ReturnType<typeof setup>;
+  return null as any as StoreConstructor<I, O>;
+}
 
-  // TODO: Pass I, infer D from I and O from D.
-  // It seems I can currently only infer the inputs or the outputs.
+export class Store<Inputs = {}, Outputs extends Record<string, any> = Record<string, any>> extends Connectable {
+  // Full inference using Zod schemas in input config.
   static define<
-    I = {},
-    D extends StoreDefinition<I, any> = StoreDefinition<I, any>,
-    O extends object = D extends StoreDefinition<I, infer U> ? U : unknown
-  >(config: D): StoreConstructor<I, O>;
-
-  // Infer D from `config`. Infer I and O from D.
-  static define<
-    D extends StoreDefinition<I, any>,
-    I = { [K in keyof D["inputs"]]: D["inputs"][K] },
+    D extends StoreDefinition<any, any>,
+    I = {
+      [K in keyof D["inputs"]]: D["inputs"][K] extends InputDefinition<any>
+        ? D["inputs"][K]["schema"] extends z.ZodSchema<infer U>
+          ? U
+          : any
+        : D;
+    },
     O extends object = ReturnType<D["setup"]>
-  >(config: D) {
+  >(config: StoreDefinition<I, O>): StoreConstructor<I, O extends Promise<infer U> ? U : O>;
+
+  // Infer D from `config`. Infer I and O from D.
+  static define<I, O extends object>(config: StoreDefinition<I, O>) {
     // TODO: Disable this when built for production.
     if (!config.label) {
       console.trace(
@@ -230,7 +228,7 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
     const elementContext = this.#elementContext;
 
     // Omit log methods which we will add later.
-    const ctx: Omit<StoreContext<Inputs, Outputs>, "log" | "warn" | "error"> = {
+    const ctx: Omit<StoreContext<Inputs>, "log" | "warn" | "error"> = {
       [APP_CONTEXT]: appContext,
       [ELEMENT_CONTEXT]: elementContext,
 
@@ -334,7 +332,7 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
 
     try {
       // Cast back to full StoreContext.
-      outputs = this.setup(ctx as StoreContext<Inputs, Outputs>);
+      outputs = this.setup(ctx as StoreContext<Inputs>);
     } catch (error) {
       if (error instanceof Error) {
         appContext.crashCollector.crash({ error, component: this });
@@ -389,7 +387,7 @@ export class Store<Inputs = {}, Outputs extends object = any> extends Connectabl
     this.outputs = outputs as Outputs;
   }
 
-  setup(ctx: StoreContext<Inputs, Outputs>): Outputs | Promise<Outputs> {
+  setup(ctx: StoreContext<Inputs>): Outputs | Promise<Outputs> {
     throw new Error(`This store needs a setup function.`);
   }
 

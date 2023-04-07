@@ -1,4 +1,5 @@
 import produce from "immer";
+import type z from "zod";
 import { Type } from "@borf/bedrock";
 import { Writable, Readable, READABLE, type ObserveCallback, type StopFunction } from "./Writable.js";
 import { deepEqual } from "../helpers/deepEqual.js";
@@ -10,42 +11,39 @@ export type InputValues<T = {}> = {
   [K in keyof T]: T[K] | Readable<T[K]> | Writable<T[K]>;
 };
 
+export type InputDefinition<T> = {
+  /**
+   * Attribute description for viewer.
+   */
+  about?: string;
+
+  /**
+   * The default value if the input is not passed.
+   */
+  default?: T;
+
+  /**
+   * Allows writing back to writable bindings to propagate changes up to a parent view. Also known as two-way binding.
+   * All bindings are only readable by default.
+   */
+  writable?: boolean;
+
+  /**
+   * Allows a value to be omitted without defining a default value.
+   */
+  optional?: boolean;
+
+  /**
+   * Zod schema for input validation. TypeScript types are inferred automatically from this schema.
+   */
+  schema?: z.ZodSchema<T>;
+};
+
 /**
  * Defines which inputs a component can take and their properties.
  */
 export type InputDefinitions<T> = {
-  [K in keyof T]: {
-    /**
-     * Validates input value at runtime. The app will crash if `validate` returns false or throws an Error.
-     */
-    assert?(value: unknown): value is T[K];
-
-    /**
-     * An example value to show what this input might take.
-     */
-    example?: T[K];
-
-    /**
-     * Attribute description for viewer.
-     */
-    about?: string;
-
-    /**
-     * The default value if the input is not passed.
-     */
-    default?: T[K];
-
-    /**
-     * Allows writing back to writable bindings to propagate changes up to a parent view. Also known as two-way binding.
-     * All bindings are only readable by default.
-     */
-    writable?: boolean;
-
-    /**
-     * Allows a value to be omitted without defining a default value.
-     */
-    optional?: boolean;
-  };
+  [K in keyof T]: InputDefinition<T[K]>;
 };
 
 /**
@@ -467,21 +465,19 @@ function assertValidItem<T>(name: keyof T, value: unknown, definitions?: InputDe
     throw new TypeError(`Attribute '${String(name)}' is not defined, but a value was passed. Got: ${value}`);
   }
 
-  if (!def.assert) {
+  if (!def.schema) {
     return; // All values are allowed when no assert function is specified.
   }
 
-  // Type can be a custom validator function taking the item value and returning a boolean.
-  if (!Type.isFunction(def.assert)) {
-    throw new TypeError(`'assert' field must be a function. Got type: ${Type.of(def.assert)}, value: ${def.assert}`);
-  }
-
   try {
-    const valid = def.assert(value);
+    const result = def.schema.safeParse(value);
 
-    if (!valid) {
+    if (!result.success) {
+      console.error(result.error); // TODO: Remove this.
       throw new TypeError(`Input '${String(name)}' failed type assertion. Got: ${value}`);
     }
+
+    // TODO: Use parsed value from zod schema.
   } catch (error) {
     if (error instanceof Error) {
       // TODO: Crash app through crashCollector.

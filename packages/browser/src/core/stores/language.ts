@@ -1,5 +1,5 @@
 import { Type } from "@borf/bedrock";
-import { Store, StoreContext } from "../classes/Store.js";
+import { Store } from "../classes/Store.js";
 import { Readable, Writable } from "../classes/Writable.js";
 import { APP_CONTEXT } from "../keys.js";
 
@@ -25,27 +25,27 @@ interface LanguageStoreInputs {
   currentLanguage: string;
 }
 
-const ExampleLanguages: { [tag: string]: LanguageConfig } = {};
-
 // ----- Code ----- //
 
 export const LanguageStore = Store.define({
   label: "language",
-  about: "Manages translations.",
+  about: "Manages translations",
+
   inputs: {
     languages: {
-      // assert: Type.isObject,
-      example: ExampleLanguages,
+      about: "Languages supported by the app (as added with App.addLanguage)",
+      // schema: z.record(z.object({ translation: z.any() })),
     },
     currentLanguage: {
-      example: "en-US",
+      about: "Default language to load on startup",
+      // schema: z.string(),
     },
   },
 
   async setup(ctx) {
     const options = ctx.inputs.get() as LanguageStoreInputs;
     const languages = new Map<string, Language>();
-    const logger = ctx[APP_CONTEXT].debugHub.logger(`borf:store:language`);
+    const logger = ctx[APP_CONTEXT].debugHub.logger("borf:store:language");
 
     // Convert languages into Language instances.
     Object.entries(options.languages).forEach(([tag, config]) => {

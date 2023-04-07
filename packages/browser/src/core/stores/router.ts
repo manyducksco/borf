@@ -84,10 +84,19 @@ interface ParsedParams {
 
 interface ParsedQuery extends ParsedParams {}
 
+interface NavigateOptions {
+  /**
+   * Replace the current item in the history stack instead of adding a new one.
+   * The back button will send the user to the page they visited before this.
+   */
+  replace?: boolean;
+}
+
 // ----- Code ----- //
 
-export const RouterStore = Store.define<RouterInputs>({
+export const RouterStore = Store.define({
   label: "router",
+
   inputs: {
     options: {
       about: "Router options passed through the 'router' field in the app config.",
@@ -102,7 +111,7 @@ export const RouterStore = Store.define<RouterInputs>({
     const elementContext = ctx[ELEMENT_CONTEXT];
     const logger = appContext.debugHub.logger("borf:store:router");
 
-    const { options, router } = ctx.inputs.get();
+    const { options, router } = ctx.inputs.get() as RouterInputs;
 
     let history: History;
 
@@ -234,7 +243,7 @@ export const RouterStore = Store.define<RouterInputs>({
             const activeLayer = activeLayers[i];
 
             if (activeLayer?.id !== matchedLayer.id) {
-              logger.log(`replacing layer at level ${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
+              logger.log(`replacing layer@${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
               activeLayers = activeLayers.slice(0, i);
 
               const parentLayer = activeLayers[activeLayers.length - 1];
@@ -262,14 +271,6 @@ export const RouterStore = Store.define<RouterInputs>({
         }
       }
     };
-
-    interface NavigateOptions {
-      /**
-       * Replace the current item in the history stack instead of adding a new one.
-       * The back button will send the user to the page they visited before this.
-       */
-      replace?: boolean;
-    }
 
     function navigate(path: Stringable, options?: NavigateOptions): void;
     function navigate(fragments: Stringable[], options?: NavigateOptions): void;
