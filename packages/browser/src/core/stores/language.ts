@@ -39,6 +39,7 @@ export const LanguageStore = Store.define({
     currentLanguage: {
       about: "Default language to load on startup",
       // schema: z.string(),
+      optional: true,
     },
   },
 

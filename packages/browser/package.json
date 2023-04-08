@@ -3,6 +3,7 @@
   "version": "0.41.0",
   "description": "Front-end components, routing and state management.",
   "main": "lib/index.js",
+  "types": "./index.d.ts",
   "type": "module",
   "sideEffects": false,
   "repository": "https://github.com/manyducksco/borf",
@@ -22,16 +23,19 @@
   "license": "MIT",
   "exports": {
     ".": {
-      "import": "./lib/index.js"
+      "import": "./lib/index.js",
+      "types": "./index.d.ts"
     },
     "./testing": {
       "import": "./lib/testing/index.js"
     },
     "./jsx-runtime": {
-      "import": "./lib/jsx/jsx-runtime.js"
+      "import": "./lib/jsx/jsx-runtime.js",
+      "types": "./jsx-runtime.d.ts"
     },
     "./jsx-dev-runtime": {
-      "import": "./lib/jsx/jsx-dev-runtime.js"
+      "import": "./lib/jsx/jsx-dev-runtime.js",
+      "types": "./jsx-dev-runtime.d.ts"
     }
   },
   "dependencies": {

@@ -77,6 +77,9 @@ export class CrashCollector {
 }
 
 function getComponentLabel(component: View<any> | Store<any, any>) {
+  // console.log({ component, isView: View.isView(component), isStore: Store.isStore(component) });
+
+  // TODO: These functions aren't returning true when they should be.
   if (View.isView(component)) {
     return component.label ?? "anonymous view";
   }
@@ -85,5 +88,5 @@ function getComponentLabel(component: View<any> | Store<any, any>) {
     return component.label ?? "anonymous store";
   }
 
-  return "anonymous component";
+  return component.label ?? "anonymous component";
 }

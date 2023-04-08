@@ -18,7 +18,7 @@ export type ViewConstructor<I> = {
   about?: string;
   inputs?: InputDefinitions<I>;
 
-  // __inputValues: InputValues<I>;
+  __inputTypes: InputValues<I>;
 };
 
 export interface ViewContext<I> extends ComponentContext<I> {
@@ -65,11 +65,7 @@ type ViewDefinition<I> = {
 // ----- Code ----- //
 
 export class View<Inputs = {}> extends Connectable {
-  static define<D extends ViewDefinition<any>, I = { [K in keyof D["inputs"]]: D["inputs"][K] }>(
-    config: ViewDefinition<I>
-  ): ViewConstructor<I>;
-
-  static define<I>(config: ViewDefinition<I>): ViewConstructor<I>;
+  declare ___inputTypes: InputValues<Inputs>;
 
   static define<I>(config: ViewDefinition<I>): ViewConstructor<I> {
     if (!config.label) {
@@ -84,7 +80,11 @@ export class View<Inputs = {}> extends Connectable {
       static inputs = config.inputs;
 
       setup = config.setup;
-    };
+    } as any;
+  }
+
+  static defineDialog<I>(config: ViewDefinition<I & { open: boolean }>) {
+    return View.define(config);
   }
 
   static isView<I = unknown>(value: any): value is ViewConstructor<I> {

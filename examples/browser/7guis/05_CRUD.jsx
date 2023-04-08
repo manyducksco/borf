@@ -1,4 +1,4 @@
-import { Writable, View } from "@borf/browser";
+import { Readable, Writable, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 class CRUD extends View {
@@ -16,7 +16,7 @@ class CRUD extends View {
     const $$surnameInput = new Writable("");
     const $$filterPrefix = new Writable("");
 
-    const $filteredPeople = State.merge(
+    const $filteredPeople = Readable.merge(
       [$$people, $$filterPrefix],
       (people, prefix) => {
         if (prefix.trim() === "") {
@@ -70,7 +70,7 @@ class CRUD extends View {
     }
 
     // Update fields when selection changes.
-    ctx.subscribe($$selectedId, (id) => {
+    ctx.observe($$selectedId, (id) => {
       const person = $$people.get().find((p) => p.id === id);
 
       if (person) {
@@ -88,7 +88,7 @@ class CRUD extends View {
           <div>
             <select
               size={$filteredPeople.map((fp) => Math.max(fp.length, 2))}
-              value={$$selectedId.readable()}
+              value={$$selectedId.toReadable()}
               onchange={(e) => {
                 $$selectedId.set(Number(e.target.value));
               }}

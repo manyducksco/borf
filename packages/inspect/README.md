@@ -1,27 +1,27 @@
-# 🐕🪟 @woofjs/window
+# 🪟 @borf/inspect
 
-Develop components in isolation and poke at their state while they run to see what blows up. `@woofjs/window` is a
-debugger and playground for `@woofjs/client` views.
+Develop components in isolation and poke at their state while they run to see what blows up. `@borf/inspect` is a
+debugger and playground for `@borf/browser` Views.
 
 ## How to Use
 
-First, install this package in your Woof project as a dev dependency.
+First, install this package in your Borf project as a dev dependency.
 
 ```
-npm i --save-dev @woofjs/window
+npm i --save-dev @borf/inspect
 ```
 
-Installing this package makes the `woof-window` command available in `package.json` scripts.
+Installing this package makes the `borf-inspect` command available in `package.json` scripts.
 
 ```json
 {
   "scripts": {
-    "window": "woof-window start ./path/to/client.js"
+    "window": "borf-inspect start ./path/to/client.js"
   }
 }
 ```
 
-Inside your project, you can create `<Name>.window.js` files for each of your views. Here is an example view:
+Inside your project, you can create `<Name>.inspector.js` files for each of your views. Here is an example view:
 
 ```js
 // MyHeader.jsx
@@ -52,7 +52,7 @@ export function MyHeader(ctx) {
 }
 ```
 
-And here is a hypothetical window to test it:
+And here is a hypothetical inspector to test it:
 
 ```js
 // MyHeader.window.jsx
@@ -69,30 +69,20 @@ const mockHTTP = makeMockHTTP((ctx) => {
   });
 });
 
-export default makeWindow(MyHeader, {
+export default new Inspector(MyHeader, {
   setup: function (ctx) {
     // Register mocks for globals MyHeader expects to use.
     ctx.global("http", mockHTTP);
   },
-
-  description: "A dumb header that makes an API call to get the user's name.",
-
-  // Panes offer slightly different points of view when looking at a view through a window.
-  // Panes are state snapshots for testing various conditions in the view.
-  panes: [
-    {
-      name: "Defaults",
-      description: "Default state, no modifications.",
-      state: {},
-    },
-    {
-      name: "Custom Greeting",
-      description:
-        "Custom greetings allow customization for different languages.",
-      state: { greeting: "Yo" },
-    },
-  ],
-});
+})
+  .addPreset("Defaults", {
+    about: "Default state, no modifications.",
+    inputs: {},
+  })
+  .addPreset("Custom Greeting", {
+    about: "Custom greetings allow customization for different languages.",
+    inputs: { greeting: "Yo" },
+  });
 ```
 
 ## Commands

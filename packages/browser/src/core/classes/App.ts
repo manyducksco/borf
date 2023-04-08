@@ -138,7 +138,7 @@ export class App implements AppRouter {
     ["language", { store: LanguageStore }],
   ]);
   #languages = new Map<string, LanguageConfig>();
-  #rootView = DefaultRoot;
+  #rootView: ViewConstructor<any> = DefaultRoot;
   #currentLanguage?: string;
   #appContext: AppContext;
   #elementContext: ElementContext = {

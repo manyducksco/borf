@@ -40,8 +40,7 @@ class FlightBooker extends View {
 
     // Concatenate date states and convert through a function into a new state.
     const $formIsValid = Readable.merge(
-      $$startDateIsValid,
-      $$returnDateIsValid,
+      [$$startDateIsValid, $$returnDateIsValid],
       (x, y) => x && y
     );
 
@@ -62,7 +61,7 @@ class FlightBooker extends View {
               {View.forEach(new Readable(flightTypes), (ctx) => {
                 const $value = ctx.inputs.$("value");
 
-                const $selected = State.merge(
+                const $selected = Readable.merge(
                   [$value, $$flightType],
                   (x, y) => x === y
                 );
