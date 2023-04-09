@@ -1,8 +1,9 @@
 import { Type } from "@borf/bedrock";
 
 import { DebugHub } from "../DebugHub.js";
-import { ViewConstructor, type View } from "../View.js";
-import { Store, StoreConstructor } from "../Store.js";
+import { type Connectable } from "../Connectable.js";
+import { type Component } from "../Component.js";
+import { Store, type StoreInstance } from "../Store.js";
 import { HTTPStore } from "../../stores/http.js";
 import { PageStore } from "../../stores/page.js";
 
@@ -14,15 +15,15 @@ import { type BuiltInStores } from "../../types.js";
 import { CrashCollector } from "../CrashCollector.js";
 
 type StoreRegistration<I = any> = {
-  store: keyof BuiltInStores | StoreConstructor<any, any>;
-  exports?: StoreConstructor<I, any>;
-  instance?: Store<I, any>;
+  store: keyof BuiltInStores | Store<any, any>;
+  exports?: Store<I, any>;
+  instance?: StoreInstance<I, any>;
   inputs?: InputValues<I>;
 };
 
 type ElementRegistration = {
   tag: string;
-  component: ViewConstructor<any> | StoreConstructor<any, any>;
+  component: Component<any>;
   defined: boolean;
 };
 
@@ -61,9 +62,9 @@ export class ElementHub {
   /**
    * Registers a new store for all elements on this hub.
    */
-  addStore(store: StoreConstructor<any, any> | StoreRegistration) {
+  addStore(store: Store<any, any> | StoreRegistration) {
     if (Type.isClass(store)) {
-      this.#stores.push({ store: store as StoreConstructor<any, any>, instance: undefined });
+      this.#stores.push({ store: store as Store<any, any>, instance: undefined });
     } else if (Type.isObject(store)) {
       this.#stores.push({ ...(store as StoreRegistration), instance: undefined });
     } else {
@@ -75,14 +76,14 @@ export class ElementHub {
       let config: StoreRegistration;
 
       if (Store.isStore(store)) {
-        config = { store: store as StoreConstructor<any, any>, instance: undefined };
+        config = { store: store as Store<any, any>, instance: undefined };
       } else if (Type.isObject(store)) {
         config = { ...(store as StoreRegistration), instance: undefined };
       } else {
         throw new Error(`Expected a Store or a config object. Got: ${store}`);
       }
 
-      let C: StoreConstructor<any, any>;
+      let exportedStore: Store<any, any>;
 
       if (Type.isString(config.store)) {
         if (config.exports == null) {
@@ -93,24 +94,26 @@ export class ElementHub {
           throw new TypeError(`Store config 'exports' must be a store class. Got: ${config.exports}`);
         }
 
-        C = config.exports;
+        exportedStore = config.exports;
       } else if (Store.isStore(config.store)) {
         if (config.exports && !Store.isStore(config.exports)) {
           throw new TypeError(`Store config 'exports' must be a store class. Got: ${config.exports}`);
         }
 
-        C = config.exports || config.store;
+        exportedStore = config.exports || config.store;
       } else {
         throw new TypeError(
           `config.stores must contain only store classes or store config objects. Got: ${config.store}`
         );
       }
 
-      const instance = new C({
+      console.log({ appContext: this.#appContext });
+
+      const instance = exportedStore.create({
         appContext: this.#appContext,
         elementContext: this.#elementContext,
         inputs: config.inputs,
-        inputDefs: typeof config.store !== "string" ? config.store.inputs : undefined,
+        // inputDefs: typeof config.store !== "string" ? config.store.inputs : undefined,
       });
 
       this.#elementContext.stores.set(config.store, { ...config, instance });
@@ -120,7 +123,7 @@ export class ElementHub {
   /**
    * Registers a new HTML custom element implemented as a view or store.
    */
-  addElement(tag: string, component: ViewConstructor<any> | StoreConstructor<any, any>) {
+  addElement(tag: string, component: Component<any>) {
     if (!tag.includes("-")) {
       throw new Error(`Custom element names are required to have a dash ('-') character in them. Got: ${tag}`);
     }
@@ -132,7 +135,9 @@ export class ElementHub {
    * Registers stores and elements so they will take effect on the page.
    */
   async connect() {
-    const { stores } = this.#elementContext;
+    const appContext = this.#appContext;
+    const elementContext = this.#elementContext;
+    const { stores } = elementContext;
 
     const rootElement = document.createElement("div"); // Connect stores to dummy div that never gets mounted.
 
@@ -156,6 +161,8 @@ export class ElementHub {
           element.tag,
           class extends BorfCustomElement {
             component = element.component;
+            appContext = appContext;
+            elementContext = elementContext;
 
             static get observedAttributes() {
               if (element.component.inputs) {
@@ -177,8 +184,8 @@ export class ElementHub {
 class BorfCustomElement extends HTMLElement {
   appContext!: AppContext;
   elementContext!: ElementContext;
-  component!: ViewConstructor<any> | StoreConstructor<any, any>;
-  instance!: View<any> | Store<any, any>;
+  component!: Component<any>;
+  instance!: Connectable;
 
   connectedCallback() {
     // Unpack the NamedNodeMap into a plain object.
@@ -187,13 +194,11 @@ class BorfCustomElement extends HTMLElement {
       return obj;
     }, {} as Record<string, string>);
 
-    this.instance = new this.component({
+    this.instance = this.component.create({
       appContext: this.appContext,
       elementContext: this.elementContext,
       inputs: initialValues, // TODO: Update attributes when `attributeChangedCallback` runs.
-      inputDefs: this.component.inputs,
       channelPrefix: "element",
-      label: this.component.label || this.localName,
     });
 
     const shadow = this.attachShadow({ mode: "open" });

@@ -1,4 +1,4 @@
-import { Store } from "../../core/classes/Store.js";
+import { Store } from "../../core/classes/Store.old.js";
 
 export class MockDialogStore extends Store {
   static label = "mock:dialog";

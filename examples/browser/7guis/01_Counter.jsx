@@ -1,8 +1,8 @@
 import { Writable, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-class Counter extends View {
-  static label = "7guis:Counter";
+export default new View({
+  label: "7guis:Counter",
 
   setup(ctx) {
     const $$count = new Writable(0);
@@ -21,7 +21,5 @@ class Counter extends View {
         </div>
       </ExampleFrame>
     );
-  }
-}
-
-export default Counter;
+  },
+});

@@ -1,7 +1,7 @@
 import { View, Store, Writable } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
-export const LocalStores = View.define({
+export const LocalStores = new View({
   label: "LocalStores",
   setup(ctx) {
     return (
@@ -24,7 +24,7 @@ export const LocalStores = View.define({
   },
 });
 
-const ExampleStore = Store.define({
+const ExampleStore = new Store({
   label: "ExampleStore",
   inputs: {
     initialValue: {
@@ -40,7 +40,7 @@ const ExampleStore = Store.define({
   },
 });
 
-const ValueDisplay = View.define({
+const ValueDisplay = new View({
   label: "ValueDisplay",
   setup(ctx) {
     const { $$value } = ctx.useStore(ExampleStore);

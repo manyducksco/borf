@@ -1,8 +1,9 @@
 import { Store, Writable } from "@borf/browser";
 
-export const MouseStore = Store.define({
+export const MouseStore = new Store({
   label: "MouseStore",
   about: "Tracks the mouse position.",
+
   setup: (ctx) => {
     const $$position = new Writable({ x: 0, y: 0 });
 

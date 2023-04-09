@@ -27,7 +27,7 @@ interface LanguageStoreInputs {
 
 // ----- Code ----- //
 
-export const LanguageStore = Store.define({
+export const LanguageStore = new Store({
   label: "language",
   about: "Manages translations",
 

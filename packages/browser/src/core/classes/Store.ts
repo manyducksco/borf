@@ -1,336 +1,225 @@
-import { Type, Timer } from "@borf/bedrock";
 import type z from "zod";
-import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
-import { type StoreRegistration } from "./App.js";
-import { Connectable } from "./Connectable.js";
-import { Inputs, type InputValues, type InputDefinitions, type InputDefinition, type InputsAPI } from "./Inputs.js";
+import { Type, Timer } from "@borf/bedrock";
+import { Markup, m, type MarkupFunction, formatChildren } from "./Markup.js";
 import { Outlet } from "./Outlet.js";
-import { m, Markup, type MarkupFunction } from "./Markup.js";
-import { type AppContext, type ElementContext } from "./App.js";
-import { Readable, Writable, type StopFunction } from "./Writable.js";
-import { type BuiltInStores } from "../types.js";
+import { type InputDefinition } from "./Inputs.js";
+import {
+  Component,
+  ComponentContext,
+  type CreateComponentConfig,
+  type ComponentContextConfig,
+  type ComponentContextControls,
+  type ComponentDefinition,
+  ComponentInstance,
+  type ComponentInstanceConfig,
+} from "./Component.js";
+import { type DebugChannel } from "./DebugHub.js";
+import { type StoreRegistration } from "./App.js";
 
 // ----- Types ----- //
 
-/**
- * General options passed when instantiating both Views and Stores.
- */
-export interface ComponentOptions<I> {
-  appContext: AppContext;
-  elementContext: ElementContext;
-  channelPrefix?: string;
-  label?: string;
-  about?: string;
-  inputs?: InputValues<I>;
-  inputDefs?: InputDefinitions<I>;
-  children?: Markup[];
-}
+export type StoreSetupFunction<I, O> = (ctx: StoreContext<I>, m: MarkupFunction) => O;
 
-export interface StoreOptions<I, O> extends ComponentOptions<I> {
-  setup?: StoreSetupFunction<I, O>; // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
-}
+export type Storable<I, O> = Store<I, O> | StoreSetupFunction<I, O>;
 
-/**
- * Methods available on the context object in both Views and Stores.
- */
-export interface ComponentContext<I> {
-  log(...args: any[]): void;
-  warn(...args: any[]): void;
-  error(...args: any[]): void;
-  crash(error: Error): void;
-
-  inputs: InputsAPI<I>;
-
-  observe<T>(readable: Readable<T>, callback: (value: T) => void): void;
-  observe<T extends Readable<any>[], V = { [K in keyof T]: T[K] extends Readable<infer U> ? U : never }>(
-    readables: [...T],
-    callback: (...value: V[]) => void
-  ): void;
-
-  useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-  useStore<S extends StoreConstructor<any, any>>(store: S): S extends StoreConstructor<any, infer U> ? U : never;
-
+interface StoreDefinition<I, O> extends ComponentDefinition<I> {
   /**
-   * Registers a callback to run after the component is connected to the DOM.
-   */
-  onConnect(callback: () => void): void;
-
-  /**
-   * Registers a callback to run after the component is removed from the DOM.
-   */
-  onDisconnect(callback: () => void): void;
-}
-
-export interface StoreContext<I> extends ComponentContext<I> {
-  [APP_CONTEXT]: AppContext;
-  [ELEMENT_CONTEXT]: ElementContext;
-}
-
-export type StoreConstructor<I, O extends Record<string, any>> = {
-  new (options: StoreOptions<I, O>): Store<I, O>;
-
-  label?: string;
-  about?: string;
-  inputs?: InputDefinitions<I>;
-};
-
-export type StoreSetupFunction<I, O> = (ctx: StoreContext<I>) => O | Promise<O>;
-
-export type Storable<I, O extends Record<string, any>> = StoreConstructor<I, O> | StoreSetupFunction<I, O>;
-
-type StoreDefinition<I, O> = {
-  /**
-   * Name to identify this store in the console and dev tools.
-   */
-  label?: string;
-
-  /**
-   * Explanation of this store.
-   */
-  about?: string;
-
-  /**
-   * Values passed into this store, usually as HTML attributes.
-   */
-  inputs?: InputDefinitions<I>;
-
-  /**
-   * Configures the store and returns object to export.
+   * Configures the store and returns an exports object.
    */
   setup: StoreSetupFunction<I, O>;
-};
+}
 
-// ----- Code ----- //
+interface CreateStoreConfig<I> extends CreateComponentConfig<I> {}
 
-export class Store<Inputs = {}, Outputs extends Record<string, any> = Record<string, any>> extends Connectable {
+/*================================*\
+||           View Object          ||
+\*================================*/
+
+/**
+ * A visual component that expresses part of your app in DOM nodes.
+ */
+export class Store<I, O> extends Component<I> {
+  definition: StoreDefinition<I, O>;
+
+  constructor(definition: StoreDefinition<I, O>) {
+    super(definition);
+
+    this.definition = definition;
+  }
+
+  create(config: CreateStoreConfig<I>): StoreInstance<I, O> {
+    return new StoreInstance({
+      ...config,
+      setup: this.definition.setup,
+      component: this,
+      inputDefs: this.definition.inputs,
+      children: config.children ?? [],
+    });
+  }
+
+  // ----- Static ----- //
+
   // Full inference using Zod schemas in input config.
-  static define<
-    D extends StoreDefinition<any, any>,
-    I = {
-      [K in keyof D["inputs"]]: D["inputs"][K] extends InputDefinition<any>
-        ? D["inputs"][K]["schema"] extends z.ZodSchema
-          ? z.infer<D["inputs"][K]["schema"]>
-          : never
-        : never;
-    },
-    O extends object = ReturnType<D["setup"]>
-  >(config: StoreDefinition<I, O>): StoreConstructor<I, O extends Promise<infer U> ? U : O>;
+  // static define<
+  //   D extends StoreDefinition<any, any>,
+  //   I = {
+  //     [K in keyof D["inputs"]]: D["inputs"][K] extends InputDefinition<any>
+  //       ? D["inputs"][K]["schema"] extends z.ZodType
+  //         ? z.infer<D["inputs"][K]["schema"]>
+  //         : never
+  //       : never;
+  //   },
+  //   O extends object = ReturnType<D["setup"]>
+  // >(definition: StoreDefinition<I, O>): Store<I, O extends Promise<infer U> ? U : O>;
 
-  // Infer D from `config`. Infer I and O from D.
-  static define<I, O extends object>(config: StoreDefinition<I, O>) {
-    // TODO: Disable this when built for production.
-    if (!config.label) {
-      console.trace(
-        `Store is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
-      );
-    }
+  // static define<I, O extends object>(definition: StoreDefinition<I, O>) {
+  //   if (!definition.label) {
+  //     console.trace(
+  //       `Store is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
+  //     );
+  //   }
 
-    return class extends Store<I, O> {
-      static about = config.about;
-      static label = config.label;
-      static inputs = config.inputs;
+  //   return new Store(definition) as any;
+  // }
 
-      setup = config.setup;
-    };
-  }
-
-  static isStore<I, O extends Record<string, any>>(value: any): value is Store<I, O> {
-    return value?.prototype instanceof Store;
-  }
-
-  static isInstance<I, O extends Record<string, any>>(value: any): value is Store<I, O> {
+  static isStore<I = unknown, O = unknown>(value: any): value is Store<I, O> {
     return value instanceof Store;
   }
+}
 
-  label;
-  about;
-  outputs!: Outputs;
+/*================================*\
+||          Setup Context         ||
+\*================================*/
 
-  loading?: (m: MarkupFunction) => Markup;
+interface StoreContextConfig<I> extends ComponentContextConfig<I> {}
 
-  #node = document.createComment("Store");
-  #outlet;
-  #lifecycleCallbacks: Record<"onConnect" | "onDisconnect", (() => void)[]> = {
-    onConnect: [],
-    onDisconnect: [],
-  };
-  #stopCallbacks: StopFunction[] = [];
-  #isConnected = false;
-  #channel;
-  #logger;
-  #inputs;
-  #$$children;
-  #appContext: AppContext;
-  #elementContext: ElementContext;
+export class StoreContext<I> extends ComponentContext<I> {
+  constructor(config: StoreContextConfig<I>) {
+    super(config);
+  }
+}
+
+/*================================*\
+||            Instance            ||
+\*================================*/
+
+export interface StoreInstanceConfig<I, O> extends ComponentInstanceConfig<I> {
+  setup: StoreSetupFunction<I, O>;
+}
+
+export class StoreInstance<I, O> extends ComponentInstance<I> {
+  config: StoreInstanceConfig<I, O>;
+  context: StoreContext<I>;
+  outlet: Outlet<any>;
+  contextControls!: ComponentContextControls<I>;
+  debugChannel: DebugChannel;
+  logger: DebugChannel;
+  outputs?: O;
 
   get node() {
-    return this.#node;
+    return this.outlet.node;
   }
 
-  constructor({
-    appContext,
-    elementContext,
-    channelPrefix = "store",
-    label = "<anonymous>",
-    about,
-    inputs,
-    inputDefs,
-    children = [],
-    setup, // This is passed in directly to `new Store()` to turn a standalone setup function into a store.
-  }: StoreOptions<Inputs, Outputs>) {
-    super();
+  constructor(config: StoreInstanceConfig<I, O>) {
+    super(config);
 
-    this.label = label;
-    this.about = about;
+    this.config = {
+      ...config,
+      elementContext: {
+        ...config.elementContext,
 
-    if (setup) {
-      this.setup = setup;
+        // Add self to elementContext.stores
+        stores: new Map([
+          ...config.elementContext.stores.entries(),
+          [
+            config.component as Store<any, any>,
+            { store: config.component as Store<any, any>, instance: this } as StoreRegistration<any>,
+          ],
+        ]),
+      },
+    };
+
+    const channelName = `${config.channelPrefix ?? "store"}:${config.component.label}`;
+    this.debugChannel = config.appContext.debugHub.channel(channelName);
+    this.logger = config.appContext.debugHub.logger(channelName);
+
+    this.context = new StoreContext({
+      ...config,
+      debugChannel: this.debugChannel,
+      $$children: this.$$children,
+      setControls: (contextControls) => {
+        this.contextControls = contextControls;
+      },
+    });
+
+    this.outlet = new Outlet({
+      readable: this.$$children,
+      appContext: config.appContext,
+      elementContext: config.elementContext,
+    });
+  }
+
+  /**
+   * Connects this view to the DOM, running lifecycle hooks if it wasn't already connected.
+   * Calling this on a view that is already connected can reorder it or move it to a different
+   * place in the DOM without re-triggering lifecycle hooks.
+   *
+   * @param parent - DOM node under which this view should be connected as a child.
+   * @param after - A child node under `parent` after which this view should be connected.
+   */
+  async connect(parent: Node, after?: Node) {
+    const timer = new Timer();
+    const wasConnected = this.isConnected;
+
+    if (!wasConnected) {
+      await this.#initialize(parent, after); // Run setup() to configure the view.
+      this.contextControls.inputs.connect();
     }
 
-    this.#appContext = appContext;
-    this.#elementContext = {
-      ...elementContext,
+    this.outlet.connect(parent, after);
 
-      // Add self to elementContext.stores
-      stores: new Map([
-        ...elementContext.stores.entries(),
-        [
-          this.constructor as StoreConstructor<any, any>,
-          { store: this.constructor as StoreConstructor<any, any>, instance: this } as StoreRegistration<any>,
-        ],
-      ]),
-    };
+    if (!wasConnected) {
+      this.contextControls.connect();
+    }
 
-    const channelName = `${channelPrefix}:${label}`;
-    this.#channel = appContext.debugHub.channel(channelName);
-    this.#logger = appContext.debugHub.logger(channelName);
-
-    this.#$$children = new Writable(children);
-    this.#inputs = new Inputs({
-      inputs,
-      definitions: inputDefs,
-      enableValidation: true,
-    });
-    this.#outlet = new Outlet({
-      readable: this.#$$children,
-      appContext: this.#appContext,
-      elementContext: this.#elementContext,
-    });
+    this.logger.log(`connected in ${timer.formatted}`);
   }
 
+  /**
+   * Disconnects this view from the DOM and runs lifecycle hooks.
+   */
+  async disconnect() {
+    if (!this.isConnected) {
+      return Promise.resolve();
+    }
+
+    const timer = new Timer();
+
+    this.outlet.disconnect();
+    this.contextControls.disconnect();
+    this.contextControls.inputs.disconnect();
+
+    this.logger.log("disconnected in " + timer.formatted);
+  }
+
+  /**
+   * Prepares this view to be connected, handling loading state if necessary.
+   *
+   * @param parent - DOM node to connect loading content to.
+   * @param after - Sibling DOM node directly after which this view's node should appear.
+   */
   async #initialize(parent: Node, after?: Node) {
-    const appContext = this.#appContext;
-    const elementContext = this.#elementContext;
-
-    // Omit log methods which we will add later.
-    const ctx: Omit<StoreContext<Inputs>, "log" | "warn" | "error"> = {
-      [APP_CONTEXT]: appContext,
-      [ELEMENT_CONTEXT]: elementContext,
-
-      inputs: this.#inputs.api,
-
-      observe: (readable: Readable<any> | Readable<any>[], callback: (...args: any[]) => void) => {
-        const readables: Readable<any>[] = [];
-
-        if (Type.isArrayOf(Type.isInstanceOf(Readable), readable)) {
-          readables.push(...readable);
-        } else {
-          readables.push(readable);
-        }
-
-        if (readables.length === 0) {
-          throw new TypeError(`Expected at least one readable.`);
-        }
-
-        const start = (): StopFunction => {
-          if (readables.length > 1) {
-            return Readable.merge(readables, callback).observe(() => {});
-          } else {
-            return readables[0].observe(callback);
-          }
-        };
-
-        if (this.isConnected) {
-          // If called when the view is connected, we assume this code is in a lifecycle hook
-          // where it will be triggered at some point again after the view is reconnected.
-          this.#stopCallbacks.push(start());
-        } else {
-          // This should only happen if called in the body of the view.
-          // This code is not always re-run between when a view is disconnected and reconnected.
-          this.#lifecycleCallbacks.onConnect.push(() => {
-            this.#stopCallbacks.push(start());
-          });
-        }
-      },
-
-      useStore: (nameOrStore: keyof BuiltInStores | StoreConstructor<any, any>) => {
-        if (typeof nameOrStore === "string") {
-          const name = nameOrStore;
-
-          if (appContext.stores.has(name)) {
-            const _store = appContext.stores.get(name)!;
-
-            if (!_store.instance) {
-              throw new Error(
-                `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
-              );
-            }
-
-            return _store.instance.outputs;
-          }
-        } else {
-          const store = nameOrStore;
-          const name = store?.name || store;
-
-          if (elementContext.stores.has(store)) {
-            if (appContext.stores.has(store)) {
-              // Warn if shadowing a global, just in case this isn't intended.
-              this.#channel.warn(`Using local store '${name}' which shadows global store '${name}'.`);
-            }
-
-            return elementContext.stores.get(store)!.instance!.outputs;
-          }
-
-          if (appContext.stores.has(store)) {
-            const _store = appContext.stores.get(store)!;
-
-            if (!_store.instance) {
-              throw new Error(
-                `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
-              );
-            }
-
-            return _store.instance.outputs;
-          }
-
-          throw new Error(`Store '${name}' is not registered on this app.`);
-        }
-      },
-
-      onConnect: (callback: () => void) => {
-        this.#lifecycleCallbacks.onConnect.push(callback);
-      },
-
-      onDisconnect: (callback: () => void) => {
-        this.#lifecycleCallbacks.onDisconnect.push(callback);
-      },
-
-      crash: (error: Error) => {
-        appContext.crashCollector.crash({ error, component: this });
-      },
-    };
-
-    // Transplant log methods from debug channel.
-    Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(this.#channel));
+    const { appContext, elementContext } = this.config;
 
     let outputs: unknown;
 
     try {
-      // Cast back to full StoreContext.
-      outputs = this.setup(ctx as StoreContext<Inputs>);
+      outputs = this.config.setup(this.context, m);
     } catch (error) {
       if (error instanceof Error) {
-        appContext.crashCollector.crash({ error, component: this });
+        appContext.crashCollector.crash({ error, component: this.config.component });
+      } else {
+        throw error;
       }
     }
 
@@ -340,7 +229,7 @@ export class Store<Inputs = {}, Outputs extends Record<string, any> = Record<str
 
       if (Type.isFunction(this.loading)) {
         // Render contents from loading() while waiting for setup to resolve.
-        const content = this.loading(m);
+        const content = formatChildren(this.loading(m))[0];
 
         if (content === undefined) {
           throw new TypeError(`loading() must return a markup element, or null to render nothing. Returned undefined.`);
@@ -366,7 +255,9 @@ export class Store<Inputs = {}, Outputs extends Record<string, any> = Record<str
         outputs = await outputs;
       } catch (error) {
         if (error instanceof Error) {
-          appContext.crashCollector.crash({ error, component: this });
+          appContext.crashCollector.crash({ error, component: this.config.component });
+        } else {
+          throw error;
         }
       }
 
@@ -379,111 +270,6 @@ export class Store<Inputs = {}, Outputs extends Record<string, any> = Record<str
       throw new TypeError(`A store setup function must return an object. Got: ${outputs}`);
     }
 
-    this.outputs = outputs as Outputs;
-  }
-
-  setup(ctx: StoreContext<Inputs>): Outputs | Promise<Outputs> {
-    throw new Error(`This store needs a setup function.`);
-  }
-
-  setChildren(children: Markup[]) {
-    this.#logger.log("updating children", children);
-
-    this.#$$children.value = children;
-  }
-
-  async connect(parent: Node, after?: Node) {
-    const timer = new Timer();
-    const wasConnected = this.isConnected;
-
-    if (!wasConnected) {
-      await this.#initialize(parent, after);
-      await this.beforeConnect();
-    }
-
-    await super.connect(parent, after);
-    await this.#outlet.connect(parent, after);
-
-    if (!wasConnected) {
-      this.afterConnect();
-    }
-
-    this.#logger.log("connected in " + timer.formatted);
-  }
-
-  async disconnect() {
-    const timer = new Timer();
-    const wasConnected = this.isConnected;
-
-    if (!wasConnected) {
-      await this.beforeDisconnect();
-    }
-
-    await this.#outlet.disconnect();
-    await super.disconnect();
-
-    if (!wasConnected) {
-      this.afterDisconnect();
-    }
-
-    this.#logger.log("disconnected in " + timer.formatted);
-  }
-
-  /**
-   * Connects the store without running lifecycle callbacks.
-   */
-  async connectManual(parent: Node, after?: Node) {
-    const timer = new Timer();
-    await this.#initialize(parent, after);
-    await this.beforeConnect();
-
-    await super.connect(parent, after);
-    await this.#outlet.connect(parent, after);
-    this.#logger.log("connected in " + timer.formatted);
-  }
-
-  /**
-   * Disconnects the store without running lifecycle callbacks.
-   */
-  async disconnectManual() {
-    const timer = new Timer();
-    await this.#outlet.disconnect();
-    await super.disconnect();
-    this.#logger.log("connected in " + timer.formatted);
-  }
-
-  async beforeConnect() {
-    try {
-      this.#inputs.connect();
-    } catch (error) {
-      if (error instanceof Error) {
-        this.#appContext.crashCollector.crash({ error, component: this });
-      }
-    }
-  }
-
-  afterConnect() {
-    this.#isConnected = true;
-
-    for (const callback of this.#lifecycleCallbacks.onConnect) {
-      callback();
-    }
-  }
-
-  async beforeDisconnect() {
-    for (const stop of this.#stopCallbacks) {
-      stop();
-    }
-    this.#stopCallbacks = [];
-
-    this.#inputs.disconnect();
-  }
-
-  afterDisconnect() {
-    this.#isConnected = false;
-
-    for (const callback of this.#lifecycleCallbacks.onDisconnect) {
-      callback();
-    }
+    this.outputs = outputs as O;
   }
 }

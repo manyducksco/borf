@@ -2,7 +2,7 @@ import { View } from "@borf/browser";
 
 import styles from "./ExampleFrame.module.css";
 
-export const ExampleFrame = View.define({
+export const ExampleFrame = new View({
   label: "ExampleFrame",
   inputs: {
     title: {

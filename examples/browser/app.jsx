@@ -30,7 +30,7 @@ import Cells from "./7guis/07_Cells";
 // Views and stores can be added to an ElementHub to use them as custom HTML elements.
 // This is a good option if you want to sprinkle in views to enhance a regular HTML & CSS website.
 
-const WebComponentView = View.define({
+const WebComponentView = new View({
   inputs: {
     location: {
       default: "nowhere",

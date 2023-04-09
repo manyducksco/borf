@@ -1,6 +1,6 @@
 import { View } from "@borf/browser";
 
-class SevenGUIs extends View {
+export default new View({
   setup(ctx) {
     return (
       <div>
@@ -13,7 +13,5 @@ class SevenGUIs extends View {
         <div>{ctx.outlet()}</div>
       </div>
     );
-  }
-}
-
-export default SevenGUIs;
+  },
+});

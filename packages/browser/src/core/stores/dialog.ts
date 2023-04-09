@@ -21,7 +21,7 @@ interface DialogConfig extends MarkupConfig {
  * Manages dialogs. Also known as modals.
  * TODO: Describe this better.
  */
-export const DialogStore = Store.define({
+export const DialogStore = new Store({
   label: "dialog",
 
   setup(ctx) {
@@ -93,9 +93,9 @@ export const DialogStore = Store.define({
         let markup: Markup<DialogConfig> | undefined;
 
         if (Type.isFunction(view)) {
-          markup = new Markup((config) => new View({ ...config, setup: view as ViewSetupFunction<any> }));
+          markup = new Markup((config) => new View({ setup: view as ViewSetupFunction<any> }).create(config));
         } else if (View.isView(view)) {
-          markup = new Markup((config) => new view(config));
+          markup = new Markup((config) => view.create(config));
         }
 
         if (!markup) {

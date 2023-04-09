@@ -5,7 +5,7 @@ import { Writable } from "../classes/Writable.js";
 type ScreenOrientation = "landscape" | "portrait";
 type ColorScheme = "light" | "dark";
 
-export const PageStore = Store.define({
+export const PageStore = new Store({
   label: "page",
 
   setup(ctx) {

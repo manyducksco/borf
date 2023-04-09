@@ -1,8 +1,8 @@
 import { View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-class Cells extends View {
-  static label = "7guis:Cells";
+export default new View({
+  label: "7guis:Cells",
 
   setup(ctx) {
     return (
@@ -10,7 +10,5 @@ class Cells extends View {
         <div></div>
       </ExampleFrame>
     );
-  }
-}
-
-export default Cells;
+  },
+});

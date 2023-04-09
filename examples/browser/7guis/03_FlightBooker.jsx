@@ -28,8 +28,8 @@ function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
-class FlightBooker extends View {
-  static label = "7guis:FlightBooker";
+export default new View({
+  label: "7guis:FlightBooker",
 
   setup(ctx, m) {
     const $$flightType = new Writable(flightTypes[0]);
@@ -104,7 +104,5 @@ class FlightBooker extends View {
         </form>
       </ExampleFrame>
     );
-  }
-}
-
-export default FlightBooker;
+  },
+});

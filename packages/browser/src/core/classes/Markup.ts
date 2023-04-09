@@ -1,10 +1,10 @@
 import { Type } from "@borf/bedrock";
 import { Connectable } from "./Connectable.js";
 import { type AppContext, type ElementContext } from "./App.js";
-import { type ViewConstructor, type ViewSetupFunction } from "./View.js";
-import { type StoreConstructor } from "./Store.js";
+import { type Store } from "./Store.js";
 import { type InputValues } from "./Inputs.js";
-import { View } from "./View.js";
+import { Component } from "./Component.js";
+import { View, type ViewSetupFunction } from "./View.js";
 import { Text } from "./Text.js";
 import { HTML } from "./HTML.js";
 import { Readable } from "./Writable.js";
@@ -74,23 +74,19 @@ export function m<I>(
 /**
  * Creates markup for a View.
  */
-export function m<I>(
-  view: ViewConstructor<I>,
-  inputs?: InputValues<I>,
-  ...children: (Renderable | Renderable[])[]
-): Markup;
+export function m<I>(view: View<I>, inputs?: InputValues<I>, ...children: (Renderable | Renderable[])[]): Markup;
 
 /**
  * Creates markup for a Store.
  */
 export function m<I, O extends object = {}>(
-  store: StoreConstructor<I, O>,
+  store: Store<I, O>,
   inputs?: InputValues<I>,
   ...children: (Renderable | Renderable[])[]
 ): Markup;
 
 export function m<I, O extends object = {}>(
-  element: string | ViewSetupFunction<I> | ViewConstructor<I> | StoreConstructor<I, O>,
+  element: string | ViewSetupFunction<I> | View<I> | Store<I, O>,
   attributes?: InputValues<any>,
   ...children: (Renderable | Renderable[])[]
 ) {
@@ -112,17 +108,12 @@ export function m<I, O extends object = {}>(
   const formattedChildren = formatChildren(children.flat(Infinity) as Renderable[]);
 
   // Connectable objects like Views and Locals
-  if (Connectable.isConnectable(element)) {
-    const component = element as ViewConstructor<unknown> | StoreConstructor<unknown, any>;
-
+  if (Component.isComponent(element)) {
     return new Markup((config) => {
-      return new component({
+      return element.create({
         inputs: attributes,
         children: formattedChildren,
         ...config,
-        label: config.label ?? component.label ?? component.name,
-        about: config.about ?? component.about,
-        inputDefs: component.inputs,
       });
     });
   }
@@ -134,8 +125,11 @@ export function m<I, O extends object = {}>(
 
   // Anonymous view setup function.
   if (Type.isFunction(element)) {
-    return new Markup(
-      (config) => new View<any>({ ...config, children: formattedChildren, setup: element as ViewSetupFunction<any> })
+    return new Markup((config) =>
+      new View({ label: config.label, setup: element as ViewSetupFunction<any> }).create({
+        ...config,
+        children: formattedChildren,
+      })
     );
   }
 
@@ -160,7 +154,7 @@ export function formatChildren(children: Renderable | Renderable[]): Markup[] {
       }
 
       if (Type.isFunction(x)) {
-        return new Markup((config) => new View({ ...config, setup: x as ViewSetupFunction<unknown> }));
+        return new Markup((config) => new View({ setup: x as ViewSetupFunction<unknown> }).create(config));
       }
 
       if (Type.isString(x) || Type.isNumber(x) || Readable.isReadable(x)) {

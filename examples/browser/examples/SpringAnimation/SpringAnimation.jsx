@@ -3,7 +3,7 @@ import { ExampleFrame } from "../../views/ExampleFrame";
 
 import styles from "./SpringAnimation.module.css";
 
-export const SpringAnimation = View.define({
+export const SpringAnimation = new View({
   label: "SpringAnimation",
   about: "Demonstrates the use of springs for animation.",
 
@@ -128,7 +128,7 @@ const spring = new Spring(0, {
   },
 });
 
-const Examples = View.define({
+const Examples = new View({
   label: "Examples",
   inputs: {
     stiffness: {
@@ -231,7 +231,7 @@ const Examples = View.define({
   },
 });
 
-const ControlGroup = View.define({
+const ControlGroup = new View({
   label: "ControlGroup",
   inputs: {
     label: {

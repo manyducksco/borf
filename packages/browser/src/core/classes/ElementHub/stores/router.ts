@@ -12,7 +12,7 @@ interface NavigateOptions {
   replace?: boolean;
 }
 
-export const RouterStore = Store.define({
+export const RouterStore = new Store({
   label: "router",
   setup: (ctx) => {
     const history = createBrowserHistory();

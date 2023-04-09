@@ -3,7 +3,7 @@ import { m, Markup } from "./Markup.js";
 import { View } from "./View.js";
 
 test("a", (t) => {
-  const SomeView = View.define({
+  const SomeView = new View({
     inputs: {
       value: {
         // example: "Hello World",

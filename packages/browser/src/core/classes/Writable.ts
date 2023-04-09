@@ -17,7 +17,9 @@ export type StopFunction = () => void;
 /**
  * Extracts value types from an array of Readables.
  */
-type ValuesOfReadables<T extends Readable<any>[]> = { [K in keyof T]: T[K] extends Readable<infer U> ? U : never };
+export type ValuesOfReadables<T extends Readable<any>[]> = {
+  [K in keyof T]: T[K] extends Readable<infer U> ? U : never;
+};
 
 /**
  * Read-only observable state container.

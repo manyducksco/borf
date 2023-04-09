@@ -1,8 +1,8 @@
 import { View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-class CircleDrawer extends View {
-  static label = "7guis:CircleDrawer";
+export default new View({
+  label: "7guis:CircleDrawer",
 
   setup(ctx) {
     return (
@@ -10,7 +10,5 @@ class CircleDrawer extends View {
         <div></div>
       </ExampleFrame>
     );
-  }
-}
-
-export default CircleDrawer;
+  },
+});

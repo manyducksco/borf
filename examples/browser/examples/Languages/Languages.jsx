@@ -9,7 +9,7 @@ const languageLabels = {
   ja: "日本語",
 };
 
-export const Languages = View.define({
+export const Languages = new View({
   label: "Languages",
   setup(ctx, m) {
     const { translate, setLanguage, supportedLanguages, $currentLanguage } =

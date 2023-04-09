@@ -1,6 +1,6 @@
 import { Store } from "../../Store.js";
 
-export const DialogStore = Store.define({
+export const DialogStore = new Store({
   label: "dialog",
   setup: (ctx) => {
     return {

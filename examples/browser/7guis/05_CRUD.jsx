@@ -1,8 +1,8 @@
 import { Readable, Writable, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-class CRUD extends View {
-  static label = "7guis:CRUD";
+export default new View({
+  label: "7guis:CRUD",
 
   setup(ctx, m) {
     const $$people = new Writable([
@@ -120,7 +120,5 @@ class CRUD extends View {
         </div>
       </ExampleFrame>
     );
-  }
-}
-
-export default CRUD;
+  },
+});

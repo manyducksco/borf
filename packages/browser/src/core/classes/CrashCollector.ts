@@ -1,5 +1,4 @@
-import { View } from "./View.js";
-import { Store } from "./Store.js";
+import { Component } from "./Component.js";
 
 // ----- Types ----- //
 
@@ -15,7 +14,7 @@ type ErrorContext = {
 
 type CrashOptions = {
   error: Error;
-  component: View<any> | Store<any, any>;
+  component: Component<any>;
 };
 
 type ErrorCallback = (ctx: ErrorContext) => void;
@@ -76,17 +75,6 @@ export class CrashCollector {
   }
 }
 
-function getComponentLabel(component: View<any> | Store<any, any>) {
-  // console.log({ component, isView: View.isView(component), isStore: Store.isStore(component) });
-
-  // TODO: These functions aren't returning true when they should be.
-  if (View.isView(component)) {
-    return component.label ?? "anonymous view";
-  }
-
-  if (Store.isStore(component)) {
-    return component.label ?? "anonymous store";
-  }
-
+function getComponentLabel(component: Component<any>) {
   return component.label ?? "anonymous component";
 }

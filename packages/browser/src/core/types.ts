@@ -3,9 +3,9 @@ import { type DialogStore } from "./stores/dialog.js";
 import { type LanguageStore } from "./stores/language.js";
 import { type PageStore } from "./stores/page.js";
 import { type RouterStore } from "./stores/router.js";
-import { type StoreConstructor } from "./classes/Store.js";
+import { type Store } from "./classes/Store.js";
 
-type StoreOutput<T> = T extends StoreConstructor<any, infer O> ? (O extends Promise<infer U> ? U : O) : unknown;
+type StoreOutput<T> = T extends Store<any, infer O> ? (O extends Promise<infer U> ? U : O) : unknown;
 
 export interface BuiltInStores {
   http: StoreOutput<typeof HTTPStore>;

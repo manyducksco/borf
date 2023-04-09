@@ -4,6 +4,7 @@ import { type InputDefinitions, type InputValues, Inputs, InputsAPI } from "./In
 import { type DebugChannel } from "./DebugHub.js";
 import { type Renderable, type Markup, type MarkupFunction } from "./Markup.js";
 import { Writable, Readable, type ValuesOfReadables, type StopFunction } from "./Writable.js";
+import { Store } from "./Store.js";
 import { type BuiltInStores } from "../types.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
 
@@ -47,10 +48,12 @@ export interface CreateComponentConfig<I> {
 export abstract class Component<I> {
   label;
   about;
+  inputs;
 
   constructor(definition: ComponentDefinition<I>) {
     this.label = definition.label ?? "(anonymous)";
     this.about = definition.about;
+    this.inputs = definition.inputs;
   }
 
   create(config: CreateComponentConfig<I>): Connectable {
@@ -211,7 +214,7 @@ export class ComponentContext<I> implements DebugChannel {
         return _store.instance.outputs;
       }
     } else {
-      const name = store.name || store;
+      const name = store.label;
 
       if (elementContext.stores.has(store)) {
         if (appContext.stores.has(store)) {

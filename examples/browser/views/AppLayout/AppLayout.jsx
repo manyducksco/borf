@@ -3,7 +3,7 @@ import { MouseStore } from "../../globals/MouseStore";
 
 import styles from "./AppLayout.module.css";
 
-export const AppLayout = View.define({
+export const AppLayout = new View({
   label: "🐕",
   about:
     "Top level layout for the app. All other routes are rendered in this one's ctx.outlet()",

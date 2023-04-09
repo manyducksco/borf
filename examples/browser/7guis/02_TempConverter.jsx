@@ -1,8 +1,8 @@
 import { Writable, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-class TempConverter extends View {
-  static label = "7guis:TempConverter";
+export default new View({
+  label: "7guis:TempConverter",
 
   setup(ctx) {
     const $$celsius = new Writable(10);
@@ -40,7 +40,5 @@ class TempConverter extends View {
         Fahrenheit
       </ExampleFrame>
     );
-  }
-}
-
-export default TempConverter;
+  },
+});

@@ -1,6 +1,6 @@
 import { Markup } from "../core/classes/Markup.js";
-import { Store } from "../core/classes/Store.js";
-import { View } from "../core/classes/View.js";
+import { Store } from "../core/classes/Store.old.js";
+import { View } from "../core/classes/View.old.js";
 
 export function makeViewer(component, config = {}) {
   return new Viewer(component, config);

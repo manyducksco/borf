@@ -16,8 +16,8 @@ import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
 import { type StopFunction } from "./Writable.js";
 import { type InputValues } from "./Inputs.js";
-import { Store, type StoreConstructor, type Storable, StoreSetupFunction } from "./Store.js";
-import { View, type ViewConstructor, type Viewable, ViewSetupFunction } from "./View.js";
+import { Store, type Storable, type StoreSetupFunction, StoreInstance } from "./Store.js";
+import { View, type ViewInstance, type Viewable, type ViewSetupFunction } from "./View.js";
 import { m } from "./Markup.js";
 import { type BuiltInStores } from "../types.js";
 
@@ -56,7 +56,7 @@ export interface AppContext {
   stores: Map<keyof BuiltInStores | StoreRegistration["store"], StoreRegistration>;
   mode: "development" | "production";
   rootElement?: HTMLElement;
-  rootView?: View<{}>;
+  rootView?: ViewInstance<{}>;
 }
 
 export interface ElementContext {
@@ -68,10 +68,10 @@ export interface ElementContext {
  * An object kept in App for each store registered with `addStore`.
  */
 export interface StoreRegistration<I = any> {
-  store: StoreConstructor<I, any>;
-  exports?: StoreConstructor<I, any>;
+  store: Store<I, any>;
+  exports?: Store<I, any>;
   inputs?: InputValues<I>;
-  instance?: Store<I, any>;
+  instance?: StoreInstance<I, any>;
 }
 
 interface AppRouter {
@@ -118,7 +118,7 @@ interface AppRouter {
  * The default root view. This is used when no root view is provided to the app.
  * It does nothing but render routes.
  */
-const DefaultRoot = View.define({
+const DefaultRoot = new View({
   label: "root",
   setup: (ctx) => ctx.outlet(),
 });
@@ -138,7 +138,7 @@ export class App implements AppRouter {
     ["language", { store: LanguageStore }],
   ]);
   #languages = new Map<string, LanguageConfig>();
-  #rootView: ViewConstructor<any> = DefaultRoot;
+  #rootView: View<any> = DefaultRoot;
   #currentLanguage?: string;
   #appContext: AppContext;
   #elementContext: ElementContext = {
@@ -201,18 +201,15 @@ export class App implements AppRouter {
       if (severity === "crash") {
         await this.disconnect();
 
-        const instance = new DefaultCrashPage({
+        const instance = DefaultCrashPage.create({
           appContext: this.#appContext,
           elementContext: this.#elementContext,
           channelPrefix: "crash",
-          label: DefaultCrashPage.label || DefaultCrashPage.name,
-          about: DefaultCrashPage.about,
           inputs: {
             message: error.message,
             error: error,
             componentLabel,
           },
-          inputDefs: DefaultCrashPage.inputs,
         });
 
         instance.connect(this.#appContext.rootElement!);
@@ -244,9 +241,9 @@ export class App implements AppRouter {
     }
 
     if (Type.isFunction(view)) {
-      this.#rootView = View.define({ label: "root", setup: view as ViewSetupFunction<{}> });
+      this.#rootView = new View({ label: "root", setup: view as ViewSetupFunction<{}> });
     } else if (View.isView(view)) {
-      this.#rootView = view as ViewConstructor<{}>;
+      this.#rootView = view as View<{}>;
     } else {
       throw new TypeError(`Expected a View or a standalone setup function. Got type: ${Type.of(view)}, value: ${view}`);
     }
@@ -267,9 +264,9 @@ export class App implements AppRouter {
     let config: StoreRegistration | undefined;
 
     if (Store.isStore(store)) {
-      config = { store: store as StoreConstructor<I, any>, ...options };
+      config = { store: store as Store<I, any>, ...options };
     } else if (Type.isFunction(store)) {
-      config = { store: Store.define({ setup: store as StoreSetupFunction<any, any> }) };
+      config = { store: new Store({ setup: store as StoreSetupFunction<any, any> }) };
     } else if (Type.isObject(store)) {
       config = store as StoreRegistration;
     } else {
@@ -278,7 +275,7 @@ export class App implements AppRouter {
       );
     }
 
-    Type.assertExtends(
+    Type.assertInstanceOf(
       Store,
       store,
       "Expected a Store, store config object or a standalone setup function. Got type: %t, value: %v"
@@ -475,7 +472,7 @@ export class App implements AppRouter {
       // Built-in globals get an additional 'borf:' prefix so it's clear messages are from the framework.
       // 'borf:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
       const channelPrefix = Type.isString(key) ? "borf:store" : "store";
-      const label = Type.isString(key) ? key : store.label || store.name;
+      const label = Type.isString(key) ? key : store.label ?? "(anonymous)";
       const config = {
         appContext,
         elementContext,
@@ -484,25 +481,20 @@ export class App implements AppRouter {
         inputs,
       };
 
-      let instance;
+      let instance: StoreInstance<any, any> | undefined;
 
       if (exports) {
         if (Store.isStore(exports)) {
-          instance = new exports({
-            ...config,
-            label: exports.label ?? config.label,
-            about: exports.about,
-            inputDefs: exports.inputs,
-          });
+          instance = exports.create(config);
         } else if (Type.isFunction(exports)) {
-          instance = new Store({ ...config, setup: exports as StoreSetupFunction<any, any> });
+          instance = new Store({ label, setup: exports }).create(config);
         } else if (Type.isObject(exports)) {
-          instance = new Store({ ...config, setup: () => exports });
+          instance = new Store({ label, setup: () => exports }).create(config);
         }
 
         Type.assertInstanceOf(Store, instance, "Value of 'exports' is not a valid store. Got type: %t, value: %v");
       } else {
-        instance = new store({ ...config, label: store.label, about: store.about, inputDefs: store.inputs });
+        instance = store.create(config);
       }
 
       // Add instance and mark as ready.
@@ -512,26 +504,24 @@ export class App implements AppRouter {
     const storeParent = document.createElement("div");
 
     for (const { instance } of this.#stores.values()) {
-      await instance!.connectManual(storeParent);
+      await instance!.connect(storeParent);
 
       Type.assertObject(instance!.outputs, "Store setup function must return an object. Got type: %t, value: %v");
     }
 
     // Then the view is initialized and connected to root element.
 
-    appContext.rootView = new this.#rootView({
+    appContext.rootView = this.#rootView.create({
       appContext,
       elementContext,
-      label: this.#rootView.label || "root",
-      about: this.#rootView.about,
     });
 
-    appContext.rootView.connect(appContext.rootElement);
+    appContext.rootView!.connect(appContext.rootElement);
 
     // Then stores receive the connected signal. This notifies `router` to start listening for route changes.
-    for (const { instance } of this.#stores.values()) {
-      instance!.afterConnect();
-    }
+    // for (const { instance } of this.#stores.values()) {
+    //   instance!.afterConnect();
+    // }
 
     // The app is now connected.
     this.#isConnected = true;
@@ -547,9 +537,9 @@ export class App implements AppRouter {
       const appContext = this.#appContext;
 
       // Send beforeDisconnect signal to stores.
-      for (const { instance } of this.#stores.values()) {
-        await instance!.beforeDisconnect();
-      }
+      // for (const { instance } of this.#stores.values()) {
+      //   await instance!.beforeDisconnect();
+      // }
 
       // Remove the root view from the page (runs teardown callbacks on all connected views).
       await appContext.rootView!.disconnect();
@@ -565,7 +555,7 @@ export class App implements AppRouter {
 
       // Send final afterDisconnect signal to stores.
       for (const { instance } of this.#stores.values()) {
-        instance!.afterDisconnect();
+        await instance!.disconnect();
       }
     }
   }
@@ -619,26 +609,24 @@ export class App implements AppRouter {
       return routes;
     }
 
-    let view: ViewConstructor<unknown> | undefined;
+    let view: View<unknown> | undefined;
 
     if (!route.view) {
-      view = View.define({
+      view = new View({
         label: route.pattern,
         setup: (ctx) => ctx.outlet(),
       });
     } else if (View.isView(route.view)) {
       view = route.view;
     } else if (Type.isFunction(route.view) && !Type.isClass(route.view)) {
-      view = View.define({
+      view = new View({
         label: route.pattern,
         setup: route.view as ViewSetupFunction<unknown>,
       });
     }
 
     if (!View.isView(view)) {
-      throw new TypeError(
-        `Route '${route.pattern}' needs a setup function or a subclass of View for 'view'. Got: ${route.view}`
-      );
+      throw new TypeError(`Route '${route.pattern}' needs a setup function or a View. Got: ${route.view}`);
     }
 
     const markup = m(view);
@@ -680,7 +668,7 @@ type CrashPageInputs = {
   componentLabel: string;
 };
 
-const DefaultCrashPage = View.define<CrashPageInputs>({
+const DefaultCrashPage = new View<CrashPageInputs>({
   label: "DefaultCrashPage",
   setup(ctx, m) {
     const { message, error, componentLabel } = ctx.inputs.get();

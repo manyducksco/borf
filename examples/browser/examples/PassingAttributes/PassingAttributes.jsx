@@ -1,9 +1,9 @@
-import { View, State } from "@borf/browser";
+import { View, Writable } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 import styles from "./PassingAttributes.module.css";
 
-export const PassingAttributes = View.define({
+export const PassingAttributes = new View({
   label: "PassingAttributes",
   about: "Demonstrates passing attributes to a subview.",
   // inputs: {
@@ -23,7 +23,7 @@ export const PassingAttributes = View.define({
   //   },
   // },
   setup(ctx, m) {
-    const $$message = new State("Hello");
+    const $$message = new Writable("Hello");
 
     return (
       <ExampleFrame>
@@ -62,18 +62,17 @@ export const PassingAttributes = View.define({
 //   }
 // }
 
-class SubView extends View {
-  static about =
-    "Demonstrates working with attribute bindings passed from a superview.";
-
-  static inputs = {
+const SubView = new View({
+  about:
+    "Demonstrates working with attribute bindings passed from a superview.",
+  inputs: {
     message: {
       type: "string",
       required: true, // Throws an error if this input isn't passed.
       writable: true, // Allows this view to write back to a writable binding.
       // Without 'writable: true', writable bindings will be read-only when passed.
     },
-  };
+  },
 
   setup(ctx) {
     const $$message = ctx.inputs.$$("message");
@@ -91,5 +90,5 @@ class SubView extends View {
         </button>
       </div>
     );
-  }
-}
+  },
+});

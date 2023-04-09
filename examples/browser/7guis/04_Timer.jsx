@@ -1,8 +1,8 @@
 import { Writable, View } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export class Timer extends View {
-  static label = "7guis:Timer";
+export default new View({
+  label: "7guis:Timer",
 
   setup(ctx) {
     const $$duration = new Writable(10); // duration in seconds
@@ -68,7 +68,5 @@ export class Timer extends View {
         </div>
       </ExampleFrame>
     );
-  }
-}
-
-export default Timer;
+  },
+});

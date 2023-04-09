@@ -1,5 +1,5 @@
 import { DebugHub } from "../../core/classes/DebugHub.js";
-import { Store } from "../../core/classes/Store.js";
+import { Store } from "../../core/classes/Store.old.js";
 import { HTTPStore } from "../../core/stores/http.js";
 import { makeMockFetch } from "../makeMockFetch.js";
 

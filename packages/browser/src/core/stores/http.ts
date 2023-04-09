@@ -2,7 +2,7 @@ import { HTTPClient } from "@borf/bedrock";
 import { Store } from "../classes/Store.js";
 
 // TODO: Types are not being inferred because of how `define` is written.
-export const HTTPStore = Store.define({
+export const HTTPStore = new Store({
   label: "http",
   about: "A nice HTTP client that auto-parses responses and supports middleware.",
   inputs: {

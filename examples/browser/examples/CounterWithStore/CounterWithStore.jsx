@@ -5,7 +5,7 @@ import { ExampleFrame } from "../../views/ExampleFrame/ExampleFrame.jsx";
 /**
  * Component with controls and a mapped label based on a readable inside a store.
  */
-export const CounterWithStore = View.define({
+export const CounterWithStore = new View({
   label: "CounterWithStore",
 
   setup(ctx) {
@@ -32,7 +32,7 @@ export const CounterWithStore = View.define({
 /**
  * Second component that displays the same information from the same store.
  */
-const CounterViewLabel = View.define({
+const CounterViewLabel = new View({
   label: "CounterViewLabel",
 
   setup(ctx) {

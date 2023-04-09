@@ -1,7 +1,7 @@
 import { Writable, View } from "@borf/browser";
 import { ExampleFrame } from "./ExampleFrame";
 
-export class RenderOrderTest extends View {
+export const RenderOrderTest = new View({
   setup(ctx) {
     const $$isTrue = new Writable(true);
 
@@ -34,19 +34,13 @@ export class RenderOrderTest extends View {
         </ul>
       </ExampleFrame>
     );
-  }
-}
+  },
+});
 
-class SubView extends View {
-  // static inputs = {
-  //   value: {
-  //     type: ["string", "number"], // TODO: Support array of types as a kind of union type
-  //   },
-  // };
-
+const SubView = new View({
   setup(ctx) {
     const { value } = ctx.inputs.get();
 
     return <li>{value}</li>;
-  }
-}
+  },
+});

@@ -1,6 +1,6 @@
 import { createHashHistory, createBrowserHistory, type History, type Listener } from "history";
 import { Router } from "@borf/bedrock";
-import { type View } from "../classes/View.js";
+import { type ViewInstance } from "../classes/View.js";
 import { Store } from "../classes/Store.js";
 import { Markup } from "../classes/Markup.js";
 import { Writable } from "../classes/Writable.js";
@@ -75,7 +75,7 @@ interface RouterInputs {
  */
 interface ActiveLayer<I = {}> {
   id: number;
-  view: View<I>;
+  view: ViewInstance<I>;
 }
 
 interface ParsedParams {
@@ -94,7 +94,7 @@ interface NavigateOptions {
 
 // ----- Code ----- //
 
-export const RouterStore = Store.define({
+export const RouterStore = new Store({
   label: "router",
 
   inputs: {
@@ -247,7 +247,7 @@ export const RouterStore = Store.define({
               activeLayers = activeLayers.slice(0, i);
 
               const parentLayer = activeLayers[activeLayers.length - 1];
-              const view = matchedLayer.markup.init({ appContext, elementContext }) as View;
+              const view = matchedLayer.markup.init({ appContext, elementContext }) as unknown as ViewInstance<any>;
 
               requestAnimationFrame(() => {
                 if (activeLayer && activeLayer.view.isConnected) {
