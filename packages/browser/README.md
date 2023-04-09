@@ -92,7 +92,7 @@ Now when you visit the page the document should look something like this:
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Fronte Demo</title>
+    <title>Borf Demo</title>
   </head>
   <body>
     <main id="app">
@@ -119,7 +119,7 @@ That is a View, or more specifically a `setup` function for one. We could refact
 ```js
 import { View } from "@borf/browser";
 
-const HelloWorld = View.define({
+const HelloWorld = new View({
   setup: (ctx, m) => {
     return m("h1", "Hello world!");
   },
@@ -165,7 +165,7 @@ m(view, [inputs, ][...children])
 ```
 
 ```jsx
-const ListItem = View.define({
+const ListItem = new View({
   inputs: {
     active: {
       default: false,
@@ -185,7 +185,7 @@ const ListItem = View.define({
   },
 });
 
-const ExampleList = View.define({
+const ExampleList = new View({
   setup: (ctx, m) => {
     return m("section", [
       m("h1", { class: "heading" }, "Item List"),
@@ -208,7 +208,7 @@ The second is using JSX. You can do this when building with `@borf/build`, but i
 > Note that Borf uses a `class` attribute like HTML rather than `className` like React.
 
 ```jsx
-const Example = View.define({
+const Example = new View({
   label: "ExampleView",
   setup: (ctx, m) => {
     return (
@@ -239,27 +239,27 @@ These special views take an observable (or a static value) as a first argument.
 
 ```jsx
 // Conditional:
-View.when(value, <h1>Value is truthy</h1>, <h1>Value is falsy</h1>);
-View.unless(value, <h1>Value is not truthy</h1>);
+View.when($value, <h1>Value is truthy</h1>, <h1>Value is falsy</h1>);
+View.unless($value, <h1>Value is not truthy</h1>);
 
 // Looping:
-View.repeat(array, (ctx, m) => {
-  const $item = ctx.inputs.readable("item");
+View.forEach($list, (ctx, m) => {
+  const $item = ctx.inputs.readable("view");
   const $name = $item.map((x) => x.name);
 
   return m("li", $name);
 });
 
 // Observables:
-View.subscribe(observable, (value) => {
+View.observe($value, (value) => {
   return; /* render something */
 });
-View.subscribe([observable1, observable2], (value1, value2) => {
+View.observe([$value1, $value2], (value1, value2) => {
   return; /* render something */
 });
 
 // Full example:
-const Example = View.define({
+const Example = new View({
   inputs: {
     header: {
       default: "This is the default header",
@@ -298,7 +298,7 @@ const Example = View.define({
     return (
       <section>
         <header>
-          {View.subscribe($header, (text) => {
+          {View.observe($header, (text) => {
             // This doesn't make any sense because you could just pass $header directly, but whatever.
             return <h1>{text}</h1>;
           })}
@@ -308,7 +308,7 @@ const Example = View.define({
         {View.unless($showContent, <p>Content is hidden.</p>)}
 
         <ul>
-          {View.repeat($names, (ctx) => {
+          {View.forEach($names, (ctx) => {
             const $name = ctx.inputs.readable("value");
             const $index = ctx.inputs.readable("index");
 
@@ -328,18 +328,16 @@ const Example = View.define({
 ### Full View Example
 
 ```js
-const Example = View.define({
+// Views and Stores support taking a Zod schema as a `schema` field.
+import z from "zod";
+
+const Example = new View({
   label: "ExampleView",  // Recommended. What this view is called for console and dev tools purposes.
   about: "Demonstrates all options and methods of a View.",
   inputs: {
     someValue: {
       about: "An optional string input with validation.",
-      assert: (x) => {
-        if (typeof x !== "string") {
-          throw new TypeError(`Must be a string.`);
-        }
-        return true;
-      },
+      schema: z.string(),
       optional: true,
     }
     otherValue: {
@@ -372,11 +370,11 @@ const Example = View.define({
     ||              State              ||
     \*=================================*/
 
-    // Using State to create an observable for 'subscribe'. See later in this README for details.
-    const $$title = new State("The Default Title");
+    // Using Writable to create a value for 'observe'. See later in this README for details.
+    const $$title = new Writable("The Default Title");
 
-    // Subscribes to an observable while this view is connected.
-    ctx.subscribe($$title, (title) => {
+    // Observes a readable (or writable) while this view is connected.
+    ctx.observe($$title, (title) => {
       ctx.log("title attribute changed to " + title);
     });
 
@@ -438,7 +436,7 @@ import { App, View, Store } from "@borf/browser";
 const app = new App();
 
 // Stores, like views, have to be instantiated to be used.
-const MessageStore = Store.define({
+const MessageStore = new Store({
   setup: (ctx) => {
     return {
       message: "Hello world!",
@@ -446,7 +444,7 @@ const MessageStore = Store.define({
   },
 });
 
-const HelloWorld = View.define({
+const HelloWorld = new View({
   setup: (ctx, m) => {
     // Where this call gets its instance depends on how we instantiate the store.
     const store = ctx.useStore(MessageStore);
@@ -535,7 +533,7 @@ app
 As you may have inferred from the code above, when the URL matches a pattern the corresponding view is displayed. If we visit `/people/john`, we will see the `PersonDetails` view and the params will be `{ name: "john" }`. Params can be accessed inside those views through the built-in `router` store.
 
 ```js
-const PersonDetails = View.define({
+const PersonDetails = new View({
   setup(ctx, m) {
     // `router` store allows you to work with the router from inside the app.
     const router = ctx.useStore("router");
@@ -582,7 +580,7 @@ import { View, Readable, Writable } from "@borf/browser";
  * Displays a timer that shows an ever-incrementing count of seconds elapsed.
  * Also displays a button to reset the timer to 0.
  */
-const Timer = View.define({
+const Timer = new View({
   setup(ctx) {
     // Use regular variables to store data. Setup is only called once, so this function scope is here for the lifetime of the view.
     let interval = null;

@@ -60,27 +60,27 @@ export class Store<I, O> extends Component<I> {
   // ----- Static ----- //
 
   // Full inference using Zod schemas in input config.
-  // static define<
-  //   D extends StoreDefinition<any, any>,
-  //   I = {
-  //     [K in keyof D["inputs"]]: D["inputs"][K] extends InputDefinition<any>
-  //       ? D["inputs"][K]["schema"] extends z.ZodType
-  //         ? z.infer<D["inputs"][K]["schema"]>
-  //         : never
-  //       : never;
-  //   },
-  //   O extends object = ReturnType<D["setup"]>
-  // >(definition: StoreDefinition<I, O>): Store<I, O extends Promise<infer U> ? U : O>;
+  static define<
+    D extends StoreDefinition<any, any>,
+    I = {
+      [K in keyof D["inputs"]]: D["inputs"][K] extends InputDefinition<any>
+        ? D["inputs"][K]["schema"] extends z.ZodType
+          ? z.infer<D["inputs"][K]["schema"]>
+          : never
+        : never;
+    },
+    O extends object = ReturnType<D["setup"]>
+  >(definition: StoreDefinition<I, O>): Store<I, O extends Promise<infer U> ? U : O>;
 
-  // static define<I, O extends object>(definition: StoreDefinition<I, O>) {
-  //   if (!definition.label) {
-  //     console.trace(
-  //       `Store is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
-  //     );
-  //   }
+  static define<I, O extends object>(definition: StoreDefinition<I, O>) {
+    if (!definition.label) {
+      console.trace(
+        `Store is defined without a label. Setting a label is recommended for easier debugging and error tracing.`
+      );
+    }
 
-  //   return new Store(definition) as any;
-  // }
+    return new Store(definition) as any;
+  }
 
   static isStore<I = unknown, O = unknown>(value: any): value is Store<I, O> {
     return value instanceof Store;

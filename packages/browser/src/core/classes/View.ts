@@ -60,9 +60,9 @@ export class View<I = {}> extends Component<I> {
 
   // ----- Static ----- //
 
-  // static define<I>(definition: ViewDefinition<I>): View<I> {
-  //   return new View(definition);
-  // }
+  static define<I>(definition: ViewDefinition<I>): View<I> {
+    return new View(definition);
+  }
 
   static isView<I>(value: any): value is View<I> {
     return value instanceof View;
