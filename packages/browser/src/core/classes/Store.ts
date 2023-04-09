@@ -108,10 +108,10 @@ export class Store<Inputs = {}, Outputs extends Record<string, any> = Record<str
     D extends StoreDefinition<any, any>,
     I = {
       [K in keyof D["inputs"]]: D["inputs"][K] extends InputDefinition<any>
-        ? D["inputs"][K]["schema"] extends z.ZodSchema<infer U>
-          ? U
-          : any
-        : D;
+        ? D["inputs"][K]["schema"] extends z.ZodSchema
+          ? z.infer<D["inputs"][K]["schema"]>
+          : never
+        : never;
     },
     O extends object = ReturnType<D["setup"]>
   >(config: StoreDefinition<I, O>): StoreConstructor<I, O extends Promise<infer U> ? U : O>;

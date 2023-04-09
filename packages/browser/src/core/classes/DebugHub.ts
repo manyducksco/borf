@@ -31,6 +31,12 @@ type DebugHubOptions = DebugOptions & {
   mode: "development" | "production";
 };
 
+export interface DebugChannel {
+  log(...args: any[]): void;
+  warn(...args: any[]): void;
+  error(...args: any[]): void;
+}
+
 /**
  * The central trunk from which all channels branch.
  * Changing the filter here determines what kind of messages are printed across the app.
@@ -54,7 +60,7 @@ export class DebugHub {
   /**
    * Returns a debug channel labelled by `name`. Used for logging from components.
    */
-  channel(name: string) {
+  channel(name: string): DebugChannel {
     assertNameFormat(name);
 
     const _console = this.#console;
@@ -88,7 +94,7 @@ export class DebugHub {
   /**
    * Returns a framework logger. These messages are by default not printed at all unless the app is in development mode.
    */
-  logger(name: string) {
+  logger(name: string): DebugChannel {
     const _console = this.#console;
     const options = this.#options;
 

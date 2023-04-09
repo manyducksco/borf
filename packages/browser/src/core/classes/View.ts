@@ -80,7 +80,7 @@ export class View<Inputs = {}> extends Connectable {
       static inputs = config.inputs;
 
       setup = config.setup;
-    } as any;
+    } as any as ViewConstructor<I>;
   }
 
   static defineDialog<I>(config: ViewDefinition<I & { open: boolean }>) {

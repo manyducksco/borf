@@ -11,10 +11,11 @@
   "license": "ISC",
   "dependencies": {
     "@borf/browser": "file:../packages/browser",
-    "typescript": "^4.7.4"
+    "typescript": "^5.0.4",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
-    "@types/ramda": "^0.28.15",
-    "ramda": "^0.28.0"
+    "@types/ramda": "^0.28.23",
+    "ramda": "^0.29.0"
   }
 }
