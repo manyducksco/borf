@@ -1,7 +1,6 @@
 import { Type } from "@borf/bedrock";
-import { Store } from "../classes/Store.js";
+import { getAppContext, type ComponentCore } from "../scratch.js";
 import { Readable, Writable } from "../classes/Writable.js";
-import { APP_CONTEXT } from "../keys.js";
 
 // ----- Types ----- //
 
@@ -18,156 +17,146 @@ export interface LanguageConfig {
   translation: Translation | (() => Translation) | (() => Promise<Translation>);
 }
 
-interface LanguageStoreInputs {
+type LanguageInputs = {
+  /**
+   * Languages supported by the app (as added with App.addLanguage)
+   */
   languages: {
     [tag: string]: LanguageConfig;
   };
+
+  /**
+   * Default language to load on startup
+   */
   currentLanguage: string;
-}
+};
 
 // ----- Code ----- //
 
-export const LanguageStore = new Store({
-  label: "language",
-  about: "Manages translations",
+export async function LanguageStore(self: ComponentCore<LanguageInputs>) {
+  self.setName("borf:language");
 
-  inputs: {
-    languages: {
-      about: "Languages supported by the app (as added with App.addLanguage)",
-      // schema: z.record(z.object({ translation: z.any() })),
+  const options = self.inputs.get();
+  const languages = new Map<string, Language>();
+  const logger = getAppContext(self).debugHub.logger("borf:store:language");
+
+  // Convert languages into Language instances.
+  Object.entries(options.languages).forEach(([tag, config]) => {
+    languages.set(tag, new Language(tag, config));
+  });
+
+  logger.log(
+    `app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
+  );
+
+  const $$language = new Writable<string | undefined>(undefined);
+  const $$translation = new Writable<Translation | undefined>(undefined);
+
+  // Fallback labels for missing state and data.
+  const $noLanguageValue = new Readable("[NO LANGUAGE SET]");
+
+  /**
+   * Replaces {{placeholders}} with values in translated strings.
+   */
+  function replaceMustaches(template: string, values: Record<string, Stringable>) {
+    for (const name in values) {
+      template = template.replace(`{{${name}}}`, String(values[name]));
+    }
+    return template;
+  }
+
+  // TODO: Determine and load default language.
+  const currentLanguage = options.currentLanguage
+    ? languages.get(options.currentLanguage)
+    : languages.get([...languages.keys()][0]);
+
+  if (currentLanguage != null) {
+    logger.log(`current language is '${currentLanguage.tag}'`);
+
+    const translation = await currentLanguage.getTranslation();
+
+    $$language.value = currentLanguage.tag;
+    $$translation.value = translation;
+  }
+
+  return {
+    $currentLanguage: $$language.toReadable(),
+    supportedLanguages: [...languages.keys()],
+
+    async setLanguage(tag: string) {
+      if (!languages.has(tag)) {
+        throw new Error(`Language '${tag}' is not supported.`);
+      }
+
+      const lang = languages.get(tag)!;
+
+      try {
+        const translation = await lang.getTranslation();
+
+        $$language.value = tag;
+        $$translation.value = translation;
+
+        logger.log("set language to " + tag);
+      } catch (error) {
+        if (error instanceof Error) {
+          self.crash(error);
+        }
+      }
     },
-    currentLanguage: {
-      about: "Default language to load on startup",
-      // schema: z.string(),
-      optional: true,
-    },
-  },
-
-  async setup(ctx) {
-    const options = ctx.inputs.get() as LanguageStoreInputs;
-    const languages = new Map<string, Language>();
-    const logger = ctx[APP_CONTEXT].debugHub.logger("borf:store:language");
-
-    // Convert languages into Language instances.
-    Object.entries(options.languages).forEach(([tag, config]) => {
-      languages.set(tag, new Language(tag, config));
-    });
-
-    logger.log(
-      `app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join(
-        "', '"
-      )}'`
-    );
-
-    const $$language = new Writable<string | undefined>(undefined);
-    const $$translation = new Writable<Translation | undefined>(undefined);
-
-    // Fallback labels for missing state and data.
-    const $noLanguageValue = new Readable("[NO LANGUAGE SET]");
 
     /**
-     * Replaces {{placeholders}} with values in translated strings.
+     * Returns a Readable of the translated value.
+
+     * @param key - Key to the translated value.
+     * @param values - A map of {{placeholder}} names and the values to replace them with.
      */
-    function replaceMustaches(template: string, values: Record<string, Stringable>) {
-      for (const name in values) {
-        template = template.replace(`{{${name}}}`, String(values[name]));
+    translate(key: string, values?: Record<string, Stringable | Readable<Stringable>>): Readable<string> {
+      if (!$$language.value) {
+        return $noLanguageValue;
       }
-      return template;
-    }
 
-    // TODO: Determine and load default language.
-    const currentLanguage = options.currentLanguage
-      ? languages.get(options.currentLanguage)
-      : languages.get([...languages.keys()][0]);
+      if (values) {
+        const readableValues: Record<string, Readable<any>> = {};
 
-    if (currentLanguage != null) {
-      logger.log(`current language is '${currentLanguage.tag}'`);
-
-      const translation = await currentLanguage.getTranslation();
-
-      $$language.value = currentLanguage.tag;
-      $$translation.value = translation;
-    }
-
-    return {
-      $currentLanguage: $$language.toReadable(),
-      supportedLanguages: [...languages.keys()],
-
-      async setLanguage(tag: string) {
-        if (!languages.has(tag)) {
-          throw new Error(`Language '${tag}' is not supported.`);
-        }
-
-        const lang = languages.get(tag)!;
-
-        try {
-          const translation = await lang.getTranslation();
-
-          $$language.value = tag;
-          $$translation.value = translation;
-
-          logger.log("set language to " + tag);
-        } catch (error) {
-          if (error instanceof Error) {
-            ctx.crash(error);
+        for (const [key, value] of Object.entries<any>(values)) {
+          if (typeof value?.observe === "function") {
+            readableValues[key] = value;
           }
         }
-      },
 
-      /**
-       * Returns a Readable of the translated value.
+        // This looks extremely weird, but it creates a joined state
+        // that contains the translation with interpolated observable values.
+        const readableEntries = Object.entries(readableValues);
+        if (readableEntries.length > 0) {
+          return Readable.merge([$$translation, ...readableEntries.map((x) => x[1])], (t, ...entryValues) => {
+            const entries = entryValues.map((_, i) => readableEntries[i]);
+            const mergedValues = {
+              ...values,
+            };
 
-       * @param key - Key to the translated value.
-       * @param values - A map of {{placeholder}} names and the values to replace them with.
-       */
-      translate(key: string, values?: Record<string, Readable<Stringable>>) {
-        if (!$$language.value) {
-          return $noLanguageValue;
+            for (let i = 0; i < entries.length; i++) {
+              const key = entries[i][0];
+              mergedValues[key] = entryValues[i];
+            }
+
+            const result = resolve(t, key) || `[NO TRANSLATION: ${key}]`;
+            return replaceMustaches(result, mergedValues);
+          });
         }
+      }
+
+      return $$translation.map((t) => {
+        let result = resolve(t, key) || `[NO TRANSLATION: ${key}]`;
 
         if (values) {
-          const readableValues: Record<string, Readable<any>> = {};
-
-          for (const [key, value] of Object.entries<Readable<any>>(values)) {
-            if (typeof value?.observe === "function") {
-              readableValues[key] = value;
-            }
-          }
-
-          // This looks extremely weird, but it creates a joined state
-          // that contains the translation with interpolated observable values.
-          const readableEntries = Object.entries(readableValues);
-          if (readableEntries.length > 0) {
-            return Readable.merge([$$translation, ...readableEntries.map((x) => x[1])], (t, ...entryValues) => {
-              const entries = entryValues.map((_, i) => readableEntries[i]);
-              const mergedValues = {
-                ...values,
-              };
-
-              for (let i = 0; i < entries.length; i++) {
-                const key = entries[i][0];
-                mergedValues[key] = entryValues[i];
-              }
-
-              const result = resolve(t, key) || `[NO TRANSLATION: ${key}]`;
-              return replaceMustaches(result, mergedValues);
-            });
-          }
+          result = replaceMustaches(result, values);
         }
 
-        return $$translation.map((t) => {
-          let result = resolve(t, key) || `[NO TRANSLATION: ${key}]`;
-
-          if (values) {
-            result = replaceMustaches(result, values);
-          }
-
-          return result;
-        });
-      },
-    };
-  },
-});
+        return result;
+      });
+    },
+  };
+}
 
 function resolve(object: any, key: string) {
   const parsed = String(key)

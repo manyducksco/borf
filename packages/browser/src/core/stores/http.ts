@@ -1,29 +1,25 @@
 import { HTTPClient } from "@borf/bedrock";
-import { Store } from "../classes/Store.js";
+import { ComponentCore } from "../scratch.js";
 
-// TODO: Types are not being inferred because of how `define` is written.
-export const HTTPStore = new Store({
-  label: "http",
-  about: "A nice HTTP client that auto-parses responses and supports middleware.",
-  inputs: {
-    fetch: {
-      about: "The fetch function to use for requests. Pass this to mock for testing.",
-      default: getDefaultFetch(),
-    },
-  },
+interface HTTPStoreInputs {
+  /**
+   * The fetch function to use for requests. Pass this to mock for testing.
+   */
+  fetch?: typeof window.fetch;
+}
 
-  setup(ctx) {
-    const { fetch } = ctx.inputs.get();
-    return new HTTPClient({ fetch });
-  },
-});
+export function HTTPStore(self: ComponentCore<HTTPStoreInputs>) {
+  self.setName("borf:http");
 
-function getDefaultFetch() {
-  if (typeof window !== "undefined" && window.fetch) {
-    return window.fetch.bind(window);
+  let fetch = self.inputs.get("fetch");
+
+  if (!fetch && typeof window !== "undefined" && window.fetch) {
+    fetch = window.fetch.bind(window);
   }
 
-  if (typeof global !== "undefined" && global.fetch) {
-    return global.fetch.bind(global);
+  if (!fetch && typeof global !== "undefined" && global.fetch) {
+    fetch = global.fetch.bind(global);
   }
+
+  return new HTTPClient({ fetch });
 }

@@ -2,23 +2,19 @@ import { Type } from "@borf/bedrock";
 
 import { DebugHub } from "../DebugHub.js";
 import { type Connectable } from "../Connectable.js";
-import { type Component } from "../Component.js";
-import { Store, type StoreInstance } from "../Store.js";
 import { HTTPStore } from "../../stores/http.js";
 import { PageStore } from "../../stores/page.js";
-
-import { DialogStore } from "./stores/dialog.js";
 import { RouterStore } from "./stores/router.js";
 import { type AppContext, type ElementContext } from "../App.js";
-import { type InputValues } from "../Inputs.js";
 import { type BuiltInStores } from "../../types.js";
 import { CrashCollector } from "../CrashCollector.js";
+import { Component, Store, View, makeComponent } from "../../scratch.js";
 
 type StoreRegistration<I = any> = {
   store: keyof BuiltInStores | Store<any, any>;
   exports?: Store<I, any>;
   instance?: StoreInstance<I, any>;
-  inputs?: InputValues<I>;
+  inputs?: I;
 };
 
 type ElementRegistration = {
@@ -31,7 +27,7 @@ export class ElementHub {
   #stores: StoreRegistration[] = [
     { store: "http", exports: HTTPStore },
     { store: "page", exports: PageStore },
-    { store: "dialog", exports: DialogStore },
+    // { store: "dialog", exports: DialogStore },
     { store: "router", exports: RouterStore },
   ];
   #elements: ElementRegistration[] = [];
@@ -47,8 +43,8 @@ export class ElementHub {
     const debugHub = new DebugHub({ crashCollector, mode: "production" });
 
     // Log error to console on component's channel.
-    crashCollector.onError(({ error, componentLabel }) => {
-      debugHub.channel(componentLabel).error(error);
+    crashCollector.onError(({ error, componentName }) => {
+      debugHub.channel(componentName).error(error);
     });
 
     this.#appContext = {
@@ -164,13 +160,13 @@ export class ElementHub {
             appContext = appContext;
             elementContext = elementContext;
 
-            static get observedAttributes() {
-              if (element.component.inputs) {
-                return Object.keys(element.component.inputs); // Subscribe to changes on all defined inputs.
-              } else {
-                return [];
-              }
-            }
+            // static get observedAttributes() {
+            //   if (element.component.inputs) {
+            //     return Object.keys(element.component.inputs); // Subscribe to changes on all defined inputs.
+            //   } else {
+            //     return [];
+            //   }
+            // }
           }
         );
 
@@ -194,11 +190,11 @@ class BorfCustomElement extends HTMLElement {
       return obj;
     }, {} as Record<string, string>);
 
-    this.instance = this.component.create({
+    this.instance = makeComponent({
+      component: this.component,
       appContext: this.appContext,
       elementContext: this.elementContext,
       inputs: initialValues, // TODO: Update attributes when `attributeChangedCallback` runs.
-      channelPrefix: "element",
     });
 
     const shadow = this.attachShadow({ mode: "open" });

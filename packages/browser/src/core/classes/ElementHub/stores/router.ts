@@ -1,8 +1,8 @@
 import { Router } from "@borf/bedrock";
 import { createBrowserHistory } from "history";
 
-import { Store } from "../../Store.js";
 import { Writable } from "../../Writable.js";
+import { ComponentCore } from "core/scratch.js";
 
 interface NavigateOptions {
   /**
@@ -12,98 +12,97 @@ interface NavigateOptions {
   replace?: boolean;
 }
 
-export const RouterStore = new Store({
-  label: "router",
-  setup: (ctx) => {
-    const history = createBrowserHistory();
-    let cancel: () => void;
+export function RouterStore(self: ComponentCore<{}>) {
+  self.setName("borf:router");
 
-    const $$pattern = new Writable<string | null>(null);
-    const $$path = new Writable("");
-    const $$params = new Writable({});
-    const $$query = new Writable<ReturnType<typeof Router.parseQuery>>({});
+  const history = createBrowserHistory();
+  let cancel: () => void;
 
-    let lastQuery: string;
-    let isRouteChange = false;
+  const $$pattern = new Writable<string | null>(null);
+  const $$path = new Writable("");
+  const $$params = new Writable({});
+  const $$query = new Writable<ReturnType<typeof Router.parseQuery>>({});
 
-    // Update URL when query changes
-    ctx.observe($$query, (current) => {
-      // No-op if this is triggered by a route change.
-      if (isRouteChange) {
-        isRouteChange = false;
-        return;
-      }
+  let lastQuery: string;
+  let isRouteChange = false;
 
-      const params = new URLSearchParams();
-
-      for (const key in current) {
-        params.set(key, String(current[key]));
-      }
-
-      history.replace({
-        pathname: history.location.pathname,
-        search: "?" + params.toString(),
-      });
-    });
-
-    ctx.onConnect(() => {
-      cancel = history.listen(({ location }) => {
-        // Update query params if they've changed.
-        if (location.search !== lastQuery) {
-          lastQuery = location.search;
-
-          isRouteChange = true;
-          $$query.value = Router.parseQuery(location.search);
-        }
-
-        $$pattern.value = "";
-        $$path.value = location.pathname;
-        $$params.value = {
-          wildcard: location.pathname,
-        };
-      });
-    });
-
-    ctx.onDisconnect(() => {
-      cancel();
-    });
-
-    function navigate(path: Stringable, options?: NavigateOptions): void;
-    function navigate(fragments: Stringable[], options?: NavigateOptions): void;
-
-    function navigate(path: Stringable | Stringable[], options: NavigateOptions = {}) {
-      let joined: string;
-
-      if (Array.isArray(path)) {
-        joined = Router.joinPath(path);
-      } else {
-        joined = path.toString();
-      }
-
-      joined = Router.resolvePath(history.location.pathname, joined);
-
-      if (options.replace) {
-        history.replace(joined);
-      } else {
-        history.push(joined);
-      }
+  // Update URL when query changes
+  self.observe($$query, (current) => {
+    // No-op if this is triggered by a route change.
+    if (isRouteChange) {
+      isRouteChange = false;
+      return;
     }
 
-    return {
-      $path: $$path.toReadable(),
-      $pattern: $$pattern.toReadable(),
-      $params: $$params.toReadable(),
-      $$query: $$query,
+    const params = new URLSearchParams();
 
-      back(steps = 1) {
-        history.go(-steps);
-      },
+    for (const key in current) {
+      params.set(key, String(current[key]));
+    }
 
-      forward(steps = 1) {
-        history.go(steps);
-      },
+    history.replace({
+      pathname: history.location.pathname,
+      search: "?" + params.toString(),
+    });
+  });
 
-      navigate,
-    };
-  },
-});
+  self.onConnected(() => {
+    cancel = history.listen(({ location }) => {
+      // Update query params if they've changed.
+      if (location.search !== lastQuery) {
+        lastQuery = location.search;
+
+        isRouteChange = true;
+        $$query.value = Router.parseQuery(location.search);
+      }
+
+      $$pattern.value = "";
+      $$path.value = location.pathname;
+      $$params.value = {
+        wildcard: location.pathname,
+      };
+    });
+  });
+
+  self.onDisconnected(() => {
+    cancel();
+  });
+
+  function navigate(path: Stringable, options?: NavigateOptions): void;
+  function navigate(fragments: Stringable[], options?: NavigateOptions): void;
+
+  function navigate(path: Stringable | Stringable[], options: NavigateOptions = {}) {
+    let joined: string;
+
+    if (Array.isArray(path)) {
+      joined = Router.joinPath(path);
+    } else {
+      joined = path.toString();
+    }
+
+    joined = Router.resolvePath(history.location.pathname, joined);
+
+    if (options.replace) {
+      history.replace(joined);
+    } else {
+      history.push(joined);
+    }
+  }
+
+  return {
+    $path: $$path.toReadable(),
+    $pattern: $$pattern.toReadable(),
+    $params: $$params.toReadable(),
+    $$query: $$query,
+
+    back(steps = 1) {
+      history.go(-steps);
+    },
+
+    forward(steps = 1) {
+      history.go(steps);
+    },
+
+    navigate,
+  };
+}

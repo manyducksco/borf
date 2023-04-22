@@ -1,34 +1,21 @@
-import { View } from "@borf/browser";
+import { m } from "@borf/browser";
 
 import styles from "./ExampleFrame.module.css";
 
-export const ExampleFrame = new View({
-  label: "ExampleFrame",
-  inputs: {
-    title: {
-      type: "string",
-    },
-    about: {
-      type: "string",
-      optional: true,
-    },
-  },
-  setup(ctx, m) {
-    const { title, about } = ctx.inputs.get();
+export function ExampleFrame(self) {
+  const { title, about } = self.inputs.get();
 
-    return (
-      <article class={styles.frame}>
-        <header class={styles.header}>
-          <h2 class={styles.title}>{title}</h2>
-        </header>
-        {about && (
-          <div class={styles.about}>
-            <div class={styles.symbol}>⌘</div>
-            <p>{about}</p>
-          </div>
-        )}
-        <div class={styles.content}>{ctx.outlet()}</div>
-      </article>
-    );
-  },
-});
+  return m("article", { class: styles.frame }, [
+    m("header", { class: styles.header }, [
+      m("h2", { class: styles.title }, title),
+    ]),
+
+    about &&
+      m("div", { class: styles.about }, [
+        m("div", { class: styles.symbol }, "⌘"),
+        m("p", about),
+      ]),
+
+    m("div", { class: styles.content }, self.outlet()),
+  ]);
+}

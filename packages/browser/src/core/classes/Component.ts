@@ -1,298 +1,225 @@
-import { type AppContext, type ElementContext } from "./App.js";
-import { Connectable } from "./Connectable.js";
-import { type InputDefinitions, type InputValues, Inputs, InputsAPI } from "./Inputs.js";
-import { type DebugChannel } from "./DebugHub.js";
-import { type Renderable, type Markup, type MarkupFunction } from "./Markup.js";
-import { Writable, Readable, type ValuesOfReadables, type StopFunction } from "./Writable.js";
-import { Store } from "./Store.js";
-import { type BuiltInStores } from "../types.js";
-import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
+// import { type AppContext, type ElementContext } from "./App.js";
+// import { Connectable } from "./Connectable.js";
+// import { Inputs, InputsAPI, UnwrapReadables } from "./Inputs.js";
+// import { type DebugChannel } from "./DebugHub.js";
+// import { type Renderable, type Markup } from "./Markup.js";
+// import { Writable, Readable, type ValuesOfReadables, type StopFunction } from "./Writable.js";
+// import { Store, type StoreConstructor } from "./Store.js";
+// import { type BuiltInStores } from "../types.js";
+// import { APP_CONTEXT, ELEMENT_CONTEXT, CHILDREN, INPUTS } from "../keys.js";
 
-/*==========================*\
-||     Component Object     ||
-\*==========================*/
+// export type Constructor<T> = { new (...args: any[]): T };
 
-export interface ComponentDefinition<I> {
-  /**
-   * Name to identify this component in the console and dev tools.
-   */
-  label?: string;
+// export interface ComponentConfig<I> {
+//   appContext: AppContext;
+//   elementContext: ElementContext;
+//   channelPrefix?: string;
+//   label?: string;
+//   inputs?: I;
+//   children?: Markup[];
+// }
 
-  /**
-   * Explanation of this component.
-   */
-  about?: string;
+// export interface ComponentContext {
+//   debug: DebugChannel;
 
-  /**
-   * Values passed into this component, usually as HTML attributes.
-   */
-  inputs?: InputDefinitions<I>;
+//   get isConnected(): boolean;
 
-  /**
-   * Displays temporary DOM nodes while the `setup` function's Promise resolves.
-   */
-  loading?: (m: MarkupFunction) => Renderable;
-}
+//   onConnect(callback: () => void): void;
+//   onDisconnect(callback: () => void): void;
 
-export interface CreateComponentConfig<I> {
-  appContext: AppContext;
-  elementContext: ElementContext;
-  channelPrefix?: string;
-  inputs?: InputValues<I>;
-  children?: Markup[];
-}
+//   observe<T>(readable: Readable<T>, callback: (value: T) => void): void;
+//   observe<T extends Readable<any>[], V>(readables: T, callback: (...value: ValuesOfReadables<T>) => void): void;
 
-/**
- * Base class representing all user-created things that are rendered as HTML elements.
- */
-export abstract class Component<I> {
-  label;
-  about;
-  inputs;
+//   useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+//   useStore<O, S extends { setup(): O }>(store: S): O;
 
-  constructor(definition: ComponentDefinition<I>) {
-    this.label = definition.label ?? "(anonymous)";
-    this.about = definition.about;
-    this.inputs = definition.inputs;
-  }
+//   crash(error: Error): void;
+// }
 
-  create(config: CreateComponentConfig<I>): Connectable {
-    throw new Error(`Implement this function.`);
-  }
+// /**
+//  * Base class representing all user-created things that are rendered as HTML elements.
+//  */
+// export abstract class Component<I> extends Connectable implements ComponentContext {
+//   static isComponent<I = unknown>(value: any): value is Constructor<Component<I>> {
+//     return value?.prototype instanceof Component;
+//   }
 
-  static isComponent<I = unknown>(value: any): value is Component<I> {
-    return value instanceof Component;
-  }
-}
+//   #isConnected = false;
 
-/*==========================*\
-||       Setup Context      ||
-\*==========================*/
+//   #stopObserverCallbacks: (() => void)[] = [];
+//   #connectCallbacks: (() => void)[] = [];
+//   #disconnectCallbacks: (() => void)[] = [];
 
-export interface ComponentContextConfig<I> {
-  component: Component<I>;
-  appContext: AppContext;
-  elementContext: ElementContext;
-  debugChannel: DebugChannel;
-  inputs?: InputValues<I>;
-  inputDefs?: InputDefinitions<I>;
-  $$children: Writable<Markup[]>;
-  setControls: (controls: ComponentContextControls<I>, ...args: any[]) => void;
-}
+//   inputs: InputsAPI<UnwrapReadables<I>>;
+//   debug: DebugChannel;
 
-export interface ComponentContextControls<I> {
-  inputs: Inputs<I>;
-  connect(): void;
-  disconnect(): void;
-}
+//   [APP_CONTEXT]: AppContext;
+//   [ELEMENT_CONTEXT]: ElementContext;
+//   [CHILDREN]: Writable<Markup[]>;
+//   [INPUTS]: Inputs<I>;
 
-/**
- * The object components receive as an argument to their `setup` function.
- */
-export class ComponentContext<I> implements DebugChannel {
-  #config: ComponentContextConfig<I>;
-  #isConnected = false;
+//   constructor(config: ComponentConfig<I>) {
+//     super();
 
-  #stopObserverCallbacks: (() => void)[] = [];
-  #connectCallbacks: (() => void)[] = [];
-  #disconnectCallbacks: (() => void)[] = [];
+//     this[APP_CONTEXT] = config.appContext;
+//     this[ELEMENT_CONTEXT] = config.elementContext;
+//     this[CHILDREN] = new Writable(config.children ?? []);
 
-  inputs: InputsAPI<I>;
+//     const inputs = new Inputs<I>(config.inputs!);
+//     this[INPUTS] = inputs;
+//     this.inputs = inputs.api;
 
-  log!: (...args: any[]) => void;
-  warn!: (...args: any[]) => void;
-  error!: (...args: any[]) => void;
+//     const channelName = `${config.channelPrefix ?? "component"}:${config.label ?? "(anonymous)"}`;
+//     this.debug = config.appContext.debugHub.channel(channelName);
+//   }
 
-  [APP_CONTEXT]: AppContext;
-  [ELEMENT_CONTEXT]: ElementContext;
+//   /*=================================*\
+//   ||      Author-defined Methods     ||
+//   \*=================================*/
 
-  constructor(config: ComponentContextConfig<I>) {
-    this.#config = config;
+//   // Setup function configures the component instance. This is written by the author.
+//   setup(): unknown {
+//     throw new Error(`Implement this function.`);
+//   }
 
-    this[APP_CONTEXT] = config.appContext;
-    this[ELEMENT_CONTEXT] = config.elementContext;
+//   loading?: () => Renderable;
 
-    const inputs = new Inputs({ inputs: config.inputs, definitions: config.inputDefs });
-    this.inputs = inputs.api;
+//   /*=================================*\
+//   ||   Context Methods for Authors   ||
+//   \*=================================*/
 
-    Object.defineProperties(this, Object.getOwnPropertyDescriptors(config.debugChannel));
+//   get isConnected(): boolean {
+//     return this.#isConnected;
+//   }
 
-    // Pass controls object to callback.
-    // This lets the code that created the instance control it
-    // without exposing secret methods to code that uses the instance.
-    config.setControls({
-      inputs,
-      connect: () => {
-        this.#isConnected = true;
-        for (const callback of this.#connectCallbacks) {
-          callback();
-        }
-      },
-      disconnect: () => {
-        for (const callback of this.#stopObserverCallbacks) {
-          callback();
-        }
-        this.#stopObserverCallbacks = [];
+//   onConnect(callback: () => void) {
+//     this.#connectCallbacks.push(callback);
+//   }
 
-        this.#isConnected = false;
-        for (const callback of this.#disconnectCallbacks) {
-          callback();
-        }
-      },
-    });
-  }
+//   onDisconnect(callback: () => void) {
+//     this.#disconnectCallbacks.push(callback);
+//   }
 
-  get isConnected(): boolean {
-    return this.#isConnected;
-  }
+//   observe<T>(readable: Readable<T>, callback: (value: T) => void): void;
+//   observe<T extends Readable<any>[], V>(readables: T, callback: (...value: ValuesOfReadables<T>) => void): void;
 
-  onConnect(callback: () => void) {
-    this.#connectCallbacks.push(callback);
-  }
+//   observe(readable: Readable<any> | Readable<any>[], callback: (...args: any[]) => void) {
+//     const readables: Readable<any>[] = [];
 
-  onDisconnect(callback: () => void) {
-    this.#disconnectCallbacks.push(callback);
-  }
+//     if (Array.isArray(readable) && readable.every(Readable.isReadable)) {
+//       readables.push(...readable);
+//     } else if (Readable.isReadable(readable)) {
+//       readables.push(readable);
+//     } else {
+//       throw new TypeError(`Expected one Readable or an array of Readables as the first argument.`);
+//     }
 
-  observe<T>(readable: Readable<T>, callback: (value: T) => void): void;
-  observe<T extends Readable<any>[], V>(readables: T, callback: (...value: ValuesOfReadables<T>) => void): void;
+//     if (readables.length === 0) {
+//       throw new TypeError(`Expected at least one readable.`);
+//     }
 
-  observe(readable: Readable<any> | Readable<any>[], callback: (...args: any[]) => void) {
-    const readables: Readable<any>[] = [];
+//     const start = (): StopFunction => {
+//       if (readables.length > 1) {
+//         return Readable.merge(readables, callback).observe(() => {});
+//       } else {
+//         return readables[0].observe(callback);
+//       }
+//     };
 
-    if (Array.isArray(readable) && readable.every(Readable.isReadable)) {
-      readables.push(...readable);
-    } else if (Readable.isReadable(readable)) {
-      readables.push(readable);
-    } else {
-      throw new TypeError(`Expected one Readable or an array of Readables as the first argument.`);
-    }
+//     if (this.isConnected) {
+//       // If called when the component is connected, we assume this code is in a lifecycle hook
+//       // where it will be triggered at some point again after the component is reconnected.
+//       this.#stopObserverCallbacks.push(start());
+//     } else {
+//       // This should only happen if called in the body of the setup function.
+//       // This code is not always re-run between when a component is disconnected and reconnected.
+//       this.#connectCallbacks.push(() => {
+//         this.#stopObserverCallbacks.push(start());
+//       });
+//     }
+//   }
 
-    if (readables.length === 0) {
-      throw new TypeError(`Expected at least one readable.`);
-    }
+//   // useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+//   // useStore<S extends Store<any, any>>(store: S): S extends Store<any, infer U> ? U : never;
 
-    const start = (): StopFunction => {
-      if (readables.length > 1) {
-        return Readable.merge(readables, callback).observe(() => {});
-      } else {
-        return readables[0].observe(callback);
-      }
-    };
+//   useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+//   useStore<S extends StoreConstructor<any>>(store: S): ReturnType<S["setup"]>;
 
-    if (this.isConnected) {
-      // If called when the component is connected, we assume this code is in a lifecycle hook
-      // where it will be triggered at some point again after the component is reconnected.
-      this.#stopObserverCallbacks.push(start());
-    } else {
-      // This should only happen if called in the body of the setup function.
-      // This code is not always re-run between when a component is disconnected and reconnected.
-      this.#connectCallbacks.push(() => {
-        this.#stopObserverCallbacks.push(start());
-      });
-    }
-  }
+//   useStore(store: keyof BuiltInStores | StoreConstructor<any>) {
+//     const appContext = this[APP_CONTEXT];
+//     const elementContext = this[ELEMENT_CONTEXT];
+//     const debugChannel = this.debug;
 
-  useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-  useStore<S extends Store<any, any>>(store: S): S extends Store<any, infer U> ? U : never;
+//     if (typeof store === "string") {
+//       store = store as keyof BuiltInStores;
 
-  useStore(store: keyof BuiltInStores | Store<any, any>) {
-    const { appContext, elementContext, debugChannel } = this.#config;
+//       if (appContext.stores.has(store)) {
+//         const _store = appContext.stores.get(store)!;
 
-    if (typeof store === "string") {
-      store = store as keyof BuiltInStores;
+//         if (!_store.instance) {
+//           throw new Error(
+//             `Store '${store}' was accessed before it was set up. Make sure '${store}' is registered before components that access it.`
+//           );
+//         }
 
-      if (appContext.stores.has(store)) {
-        const _store = appContext.stores.get(store)!;
+//         return _store.instance.outputs;
+//       }
+//     } else {
+//       const name = store.name;
 
-        if (!_store.instance) {
-          throw new Error(
-            `Store '${store}' was accessed before it was set up. Make sure '${store}' is registered before components that access it.`
-          );
-        }
+//       if (elementContext.stores.has(store)) {
+//         if (appContext.stores.has(store)) {
+//           // Warn if shadowing a global, just in case this isn't intended.
+//           debugChannel.warn(`Using local store '${name}' which shadows global store '${name}'.`);
+//         }
 
-        return _store.instance.outputs;
-      }
-    } else {
-      const name = store.label;
+//         return elementContext.stores.get(store)!.instance!.outputs;
+//       }
 
-      if (elementContext.stores.has(store)) {
-        if (appContext.stores.has(store)) {
-          // Warn if shadowing a global, just in case this isn't intended.
-          debugChannel.warn(`Using local store '${name}' which shadows global store '${name}'.`);
-        }
+//       if (appContext.stores.has(store)) {
+//         const _store = appContext.stores.get(store)!;
 
-        return elementContext.stores.get(store)!.instance!.outputs;
-      }
+//         if (!_store.instance) {
+//           throw new Error(
+//             `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
+//           );
+//         }
 
-      if (appContext.stores.has(store)) {
-        const _store = appContext.stores.get(store)!;
+//         return _store.instance.outputs;
+//       }
 
-        if (!_store.instance) {
-          throw new Error(
-            `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
-          );
-        }
+//       throw new Error(`Store '${name}' is not registered on this app.`);
+//     }
+//   }
 
-        return _store.instance.outputs;
-      }
+//   crash(error: Error) {
+//     this[APP_CONTEXT].crashCollector.crash({ error, component: this });
+//   }
 
-      throw new Error(`Store '${name}' is not registered on this app.`);
-    }
-  }
+//   /*=================================*\
+//   ||        Framework Methods        ||
+//   \*=================================*/
 
-  crash(error: Error) {
-    this.#config.appContext.crashCollector.crash({
-      error,
-      component: this.#config.component,
-    });
-  }
-}
+//   __setChildren(children: Markup[]) {
+//     this[CHILDREN].set(children);
+//   }
 
-/*==========================*\
-||         Instance         ||
-\*==========================*/
+//   async __connect(parent: Node, after?: Node) {
+//     this.#isConnected = true;
+//     for (const callback of this.#connectCallbacks) {
+//       callback();
+//     }
+//   }
 
-export interface ComponentInstanceConfig<I> extends CreateComponentConfig<I> {
-  component: Component<I>;
-  inputs?: InputValues<I>;
-  inputDefs?: InputDefinitions<I>;
-  children: Markup[];
-  loading?: (m: MarkupFunction) => Renderable;
-}
+//   async __disconnect() {
+//     for (const callback of this.#stopObserverCallbacks) {
+//       callback();
+//     }
+//     this.#stopObserverCallbacks = [];
 
-export abstract class ComponentInstance<I> extends Connectable {
-  // config!: ComponentInstanceConfig<I>;
-  // context!: ComponentContext<I>;
-  // contextControls!: ComponentContextControls<I>;
-  $$children: Writable<Markup[]>;
-
-  loading?: (m: MarkupFunction) => Renderable;
-
-  constructor(config: ComponentInstanceConfig<I>) {
-    super();
-
-    this.$$children = new Writable(config.children);
-
-    if (config.loading) {
-      this.loading = config.loading;
-    }
-
-    // this.config = config;
-    // this.context = new ComponentContext<I>({
-    //   ...config,
-    //   $$children: this.$$children,
-    //   setControls: (controls) => {
-    //     this.contextControls = controls;
-    //   },
-    // });
-  }
-
-  setChildren(children: Markup[]) {
-    this.$$children.set(children);
-  }
-
-  async connect(parent: Node, after?: Node) {}
-
-  async disconnect() {}
-}
+//     this.#isConnected = false;
+//     for (const callback of this.#disconnectCallbacks) {
+//       callback();
+//     }
+//   }
+// }

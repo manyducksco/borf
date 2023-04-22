@@ -49,6 +49,18 @@ export class Readable<T> {
     return new MergedReadable(readables, merge);
   }
 
+  /**
+   * If value is a Readable, returns that readable's value. Otherwise, returns that value as-is.
+   * Writables are also Readables, so this will unwrap Writables as well.
+   */
+  static unwrap<T>(valueOrReadable: T | Readable<T>): T {
+    if (Readable.isReadable<T>(valueOrReadable)) {
+      return valueOrReadable.value;
+    } else {
+      return valueOrReadable;
+    }
+  }
+
   #source?: Readable<T>; // If present, this Readable acts as a proxy. Mainly used to provide read-only access to a Writable value.
   #observers: ObserveCallback<T>[] = [];
   #value: T;
@@ -78,7 +90,7 @@ export class Readable<T> {
   }
 
   /**
-   * Current value of this Readable.
+   * Value currently stored in this Readable.
    */
   get value(): T {
     if (this.#source) {
@@ -88,7 +100,7 @@ export class Readable<T> {
   }
 
   /**
-   * Returns the current value of this Readable. Equivalent to accessing `value`.
+   * Returns the value currently stored in this Readable. Equivalent to accessing `value`.
    */
   get(): T {
     return this.value;
@@ -311,7 +323,7 @@ export class Writable<T> extends Readable<T> {
   }
 
   /**
-   * The current value stored in this Writable.
+   * Value currently stored in this Writable. Setting it will notify all observers of the new value.
    */
   get value() {
     return this.#value;
@@ -329,7 +341,7 @@ export class Writable<T> extends Readable<T> {
   }
 
   /**
-   * Replaces the current value with `newValue`. Equivalent to `writable.value = newValue`.
+   * Replaces the current value with `newValue`. Equivalent to setting the `value` property.
    */
   set(newValue: T) {
     this.value = newValue;

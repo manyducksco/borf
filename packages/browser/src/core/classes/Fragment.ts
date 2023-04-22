@@ -1,5 +1,5 @@
 import { type AppContext, type ElementContext } from "./App.js";
-import { Connectable } from "./Connectable.js";
+import { type Connectable } from "./Connectable.js";
 import { type Markup } from "./Markup.js";
 
 interface FragmentOptions {
@@ -11,7 +11,7 @@ interface FragmentOptions {
 /**
  * Displays static children without a parent element.
  */
-export class Fragment extends Connectable {
+export class Fragment implements Connectable {
   #node = document.createComment("Fragment");
   #children;
   #connectedViews: Connectable[] = [];
@@ -22,9 +22,11 @@ export class Fragment extends Connectable {
     return this.#node;
   }
 
-  constructor({ children, appContext, elementContext }: FragmentOptions) {
-    super();
+  get isConnected() {
+    return this.node.parentNode != null;
+  }
 
+  constructor({ children, appContext, elementContext }: FragmentOptions) {
     this.#children = children;
     this.#appContext = appContext;
     this.#elementContext = elementContext;

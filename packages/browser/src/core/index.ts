@@ -1,7 +1,6 @@
 export { App } from "./classes/App.js";
-export { View } from "./classes/View.js";
-export { Store } from "./classes/Store.js";
+export { ElementHub } from "./classes/ElementHub/ElementHub.js";
 export { Readable, Writable } from "./classes/Writable.js";
 export { Spring } from "./classes/Spring.js";
 export { Ref } from "./classes/Ref.js";
-export { ElementHub } from "./classes/ElementHub/ElementHub.js";
+export { m, when, unless, repeat, observe } from "./classes/Markup.js";

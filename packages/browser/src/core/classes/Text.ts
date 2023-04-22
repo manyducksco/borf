@@ -1,5 +1,5 @@
 import { Readable, type StopFunction } from "./Writable.js";
-import { Connectable } from "./Connectable.js";
+import { type Connectable } from "./Connectable.js";
 
 interface Stringable {
   toString(): string;
@@ -9,7 +9,7 @@ interface TextOptions {
   value: Stringable | Readable<Stringable>;
 }
 
-export class Text extends Connectable {
+export class Text implements Connectable {
   #node = document.createTextNode("");
   #value: Stringable | Readable<Stringable> = "";
   #stop?: StopFunction;
@@ -18,9 +18,11 @@ export class Text extends Connectable {
     return this.#node;
   }
 
-  constructor({ value }: TextOptions) {
-    super();
+  get isConnected() {
+    return this.node.parentNode != null;
+  }
 
+  constructor({ value }: TextOptions) {
     this.#value = value;
   }
 

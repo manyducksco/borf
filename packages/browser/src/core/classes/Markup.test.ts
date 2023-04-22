@@ -1,24 +1,15 @@
 import test from "ava";
 import { m, Markup } from "./Markup.js";
-import { View } from "./View.js";
+import { ComponentCore } from "../scratch.js";
 
 test("a", (t) => {
-  const SomeView = new View({
-    inputs: {
-      value: {
-        // example: "Hello World",
-        default: "Default",
-      },
-    },
-
-    setup(ctx, m) {
-      return m("span", ctx.inputs.$("value"));
-    },
-  });
+  function SomeView(self: ComponentCore<{ value: string }>) {
+    return m("span", self.inputs.$("value"));
+  }
 
   const stringMarkup = m("div", { class: "test" }, "Hello");
   const viewMarkup = m(SomeView, { value: "Hello" });
-  const fnMarkup = m((ctx, m) => {
+  const fnMarkup = m((self) => {
     return m("div");
   });
 

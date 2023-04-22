@@ -34,6 +34,7 @@
     "zod": "^3.21.4"
   },
   "dependencies": {
+    "dedent": "^0.7.0",
     "ramda": "^0.28.0"
   }
 }

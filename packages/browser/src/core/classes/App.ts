@@ -1,7 +1,7 @@
 import { Type, Router, Timer } from "@borf/bedrock";
 
 import { merge } from "../helpers/merge.js";
-import { DialogStore } from "../stores/dialog.js";
+// import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
 import { LanguageStore, type LanguageConfig } from "../stores/language.js";
 import { PageStore } from "../stores/page.js";
@@ -15,23 +15,12 @@ import {
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
 import { type StopFunction } from "./Writable.js";
-import { type InputValues } from "./Inputs.js";
-import { Store, type Storable, type StoreSetupFunction, StoreInstance } from "./Store.js";
-import { View, type ViewInstance, type Viewable, type ViewSetupFunction } from "./View.js";
+
 import { m } from "./Markup.js";
 import { type BuiltInStores } from "../types.js";
+import { makeComponent, type ComponentCore, type View, type Store, type ComponentControls } from "../scratch.js";
 
 // ----- Types ----- //
-
-/**
- * Options passed when registering a store with `addStore`.
- */
-interface AddStoreOptions<I> {
-  /**
-   * Inputs to pass to this store when it is created.
-   */
-  inputs?: InputValues<I>;
-}
 
 interface AppOptions {
   /**
@@ -56,7 +45,7 @@ export interface AppContext {
   stores: Map<keyof BuiltInStores | StoreRegistration["store"], StoreRegistration>;
   mode: "development" | "production";
   rootElement?: HTMLElement;
-  rootView?: ViewInstance<{}>;
+  rootView?: ComponentControls;
 }
 
 export interface ElementContext {
@@ -70,7 +59,7 @@ export interface ElementContext {
 export interface StoreRegistration<I = any> {
   store: Store<I, any>;
   exports?: Store<I, any>;
-  inputs?: InputValues<I>;
+  inputs?: I;
   instance?: StoreInstance<I, any>;
 }
 
@@ -83,7 +72,7 @@ interface AppRouter {
    * @param view - The view to display while `pattern` matches the current URL.
    * @param subroutes - A callback that takes a router object. Use this to append nested routes and redirects.
    */
-  addRoute<I>(pattern: string, view: Viewable<I>, subroutes?: (router: AppRouter) => void): this;
+  addRoute<I>(pattern: string, view: View<I>, subroutes?: (router: AppRouter) => void): this;
 
   /**
    * Adds a new pattern and chains a set of nested routes that are displayed without a layout `view`.
@@ -118,10 +107,11 @@ interface AppRouter {
  * The default root view. This is used when no root view is provided to the app.
  * It does nothing but render routes.
  */
-const DefaultRoot = new View({
-  label: "root",
-  setup: (ctx) => ctx.outlet(),
-});
+
+function DefaultRootView(self: ComponentCore<{}>) {
+  self.setName("root");
+  return self.outlet();
+}
 
 /**
  * A Borf browser app, complete with routes, stores, and multiple language support.
@@ -131,14 +121,14 @@ export class App implements AppRouter {
   #isConnected = false;
   #stopCallbacks: StopFunction[] = [];
   #stores = new Map<keyof BuiltInStores | StoreRegistration["store"], StoreRegistration>([
-    ["dialog", { store: DialogStore }],
+    // ["dialog", { store: DialogStore }],
     ["router", { store: RouterStore }],
     ["page", { store: PageStore }],
     ["http", { store: HTTPStore }],
     ["language", { store: LanguageStore }],
   ]);
   #languages = new Map<string, LanguageConfig>();
-  #rootView: View<any> = DefaultRoot;
+  #rootView: View<any> = DefaultRootView;
   #currentLanguage?: string;
   #appContext: AppContext;
   #elementContext: ElementContext = {
@@ -196,23 +186,24 @@ export class App implements AppRouter {
 
     // When an error of "crash" severity is reported by a component,
     // the app is disconnected and a crash page is connected.
-    crashCollector.onError(async ({ error, severity, componentLabel }) => {
+    crashCollector.onError(async ({ error, severity, componentName }) => {
       // Disconnect app and connect crash page on "crash" severity.
       if (severity === "crash") {
         await this.disconnect();
 
-        const instance = DefaultCrashPage.create({
+        const instance = makeComponent({
+          component: DefaultCrashPage,
           appContext: this.#appContext,
           elementContext: this.#elementContext,
-          channelPrefix: "crash",
+          // channelPrefix: "crash",
           inputs: {
             message: error.message,
             error: error,
-            componentLabel,
+            componentName,
           },
         });
 
-        instance.connect(this.#appContext.rootElement!);
+        await instance.connect(this.#appContext.rootElement!);
       }
     });
 
@@ -233,55 +224,39 @@ export class App implements AppRouter {
    *
    * @param view - A View or a standalone setup function.
    */
-  setRootView(view: Viewable<{}>) {
-    if (this.#rootView != DefaultRoot) {
+  setRootView(view: View<{}>) {
+    if (this.#rootView != DefaultRootView) {
       this.#appContext.debugHub
         .channel("borf:App")
         .warn(`Root view is already defined. Only the final addRootView call will take effect.`);
     }
 
-    if (Type.isFunction(view)) {
-      this.#rootView = new View({ label: "root", setup: view as ViewSetupFunction<{}> });
-    } else if (View.isView(view)) {
-      this.#rootView = view as View<{}>;
+    if (typeof view === "function") {
+      this.#rootView = view;
     } else {
-      throw new TypeError(`Expected a View or a standalone setup function. Got type: ${Type.of(view)}, value: ${view}`);
+      throw new TypeError(`Expected a view function. Got type: ${Type.of(view)}, value: ${view}`);
     }
 
     return this;
   }
 
-  addStore<I>(store: Storable<I, any>, options?: AddStoreOptions<I>): this;
-
-  addStore(config: StoreRegistration): this;
+  addStore<I>(store: Store<I, any>, inputs?: I): this;
 
   /**
    * Adds a new global store which will be available to every component within this App.
-   *
-   * @param store - A Store or a standalone setup function.
    */
-  addStore<I>(store: Storable<I, any> | StoreRegistration, options?: AddStoreOptions<I>) {
+  addStore<I>(store: Store<I, any>, inputs?: I) {
     let config: StoreRegistration | undefined;
 
-    if (Store.isStore(store)) {
-      config = { store: store as Store<I, any>, ...options };
-    } else if (Type.isFunction(store)) {
-      config = { store: new Store({ setup: store as StoreSetupFunction<any, any> }) };
-    } else if (Type.isObject(store)) {
-      config = store as StoreRegistration;
+    if (Type.isFunction(store)) {
+      config = { store, inputs };
     } else {
-      throw new TypeError(
-        `Expected a Store or Store registration object. Got type: ${Type.of(store)}, value: ${store}`
-      );
+      throw new TypeError(`Expected a store function. Got type: ${Type.of(store)}, value: ${store}`);
     }
 
-    Type.assertInstanceOf(
-      Store,
-      store,
-      "Expected a Store, store config object or a standalone setup function. Got type: %t, value: %v"
-    );
+    Type.assertFunction(store, "Expected a store function or a store config object. Got type: %t, value: %v");
 
-    this.#stores.set(config.store, config);
+    this.#stores.set(store, config);
 
     return this;
   }
@@ -363,7 +338,7 @@ export class App implements AppRouter {
    * @param view - The view to display while `pattern` matches the current URL.
    * @param extend - A callback that takes a router to configure nested routes and redirects.
    */
-  addRoute<I>(pattern: string, view: Viewable<I>, subroutes?: (sub: AppRouter) => void): this;
+  addRoute<I>(pattern: string, view: View<I>, subroutes?: (sub: AppRouter) => void): this;
 
   /**
    * Adds a new pattern and a set of nested routes that are displayed without a layout `view`.
@@ -374,7 +349,7 @@ export class App implements AppRouter {
    */
   addRoute(pattern: string, view: null, subroutes: (sub: AppRouter) => void): this;
 
-  addRoute(pattern: string, view: Viewable<unknown> | null, subroutes?: (sub: AppRouter) => void) {
+  addRoute(pattern: string, view: View<unknown> | null, subroutes?: (sub: AppRouter) => void) {
     Type.assertString(pattern, "Pattern must be a string. Got type: %t, value: %v");
 
     if (view == null) {
@@ -472,7 +447,7 @@ export class App implements AppRouter {
       // Built-in globals get an additional 'borf:' prefix so it's clear messages are from the framework.
       // 'borf:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
       const channelPrefix = Type.isString(key) ? "borf:store" : "store";
-      const label = Type.isString(key) ? key : store.label ?? "(anonymous)";
+      const label = Type.isString(key) ? key : store.name ?? "(anonymous)";
       const config = {
         appContext,
         elementContext,
@@ -481,21 +456,17 @@ export class App implements AppRouter {
         inputs,
       };
 
-      let instance: StoreInstance<any, any> | undefined;
+      let instance: ComponentControls | undefined;
 
       if (exports) {
-        if (Store.isStore(exports)) {
-          instance = exports.create(config);
-        } else if (Type.isFunction(exports)) {
-          instance = new Store({ label, setup: exports }).create(config);
-        } else if (Type.isObject(exports)) {
-          instance = new Store({ label, setup: () => exports }).create(config);
+        if (typeof exports === "function") {
+          instance = makeComponent({ ...config, component: exports });
         }
-
-        Type.assertInstanceOf(Store, instance, "Value of 'exports' is not a valid store. Got type: %t, value: %v");
       } else {
-        instance = store.create(config);
+        instance = makeComponent({ ...config, component: store });
       }
+
+      Type.assertObject(instance, "Value of 'exports' is not an object. Got type: %t, value: %v");
 
       // Add instance and mark as ready.
       this.#stores.set(key, { ...item, instance });
@@ -511,17 +482,14 @@ export class App implements AppRouter {
 
     // Then the view is initialized and connected to root element.
 
-    appContext.rootView = this.#rootView.create({
+    appContext.rootView = makeComponent({
+      component: this.#rootView,
       appContext,
       elementContext,
+      inputs: {},
     });
 
-    appContext.rootView!.connect(appContext.rootElement);
-
-    // Then stores receive the connected signal. This notifies `router` to start listening for route changes.
-    // for (const { instance } of this.#stores.values()) {
-    //   instance!.afterConnect();
-    // }
+    await appContext.rootView!.connect(appContext.rootElement);
 
     // The app is now connected.
     this.#isConnected = true;
@@ -535,11 +503,6 @@ export class App implements AppRouter {
   async disconnect() {
     if (this.#isConnected) {
       const appContext = this.#appContext;
-
-      // Send beforeDisconnect signal to stores.
-      // for (const { instance } of this.#stores.values()) {
-      //   await instance!.beforeDisconnect();
-      // }
 
       // Remove the root view from the page (runs teardown callbacks on all connected views).
       await appContext.rootView!.disconnect();
@@ -570,7 +533,7 @@ export class App implements AppRouter {
     route: {
       pattern: string;
       redirect?: string | ((ctx: RedirectContext) => void);
-      view?: Viewable<unknown> | null;
+      view?: View<unknown> | null;
       subroutes?: (router: AppRouter) => void;
     },
     layers = []
@@ -612,21 +575,11 @@ export class App implements AppRouter {
     let view: View<unknown> | undefined;
 
     if (!route.view) {
-      view = new View({
-        label: route.pattern,
-        setup: (ctx) => ctx.outlet(),
-      });
-    } else if (View.isView(route.view)) {
+      view = DefaultRootView;
+    } else if (typeof route.view === "function") {
       view = route.view;
-    } else if (Type.isFunction(route.view) && !Type.isClass(route.view)) {
-      view = new View({
-        label: route.pattern,
-        setup: route.view as ViewSetupFunction<unknown>,
-      });
-    }
-
-    if (!View.isView(view)) {
-      throw new TypeError(`Route '${route.pattern}' needs a setup function or a View. Got: ${route.view}`);
+    } else {
+      throw new TypeError(`Route '${route.pattern}' expected a view function. Got: ${route.view}`);
     }
 
     const markup = m(view);
@@ -635,7 +588,7 @@ export class App implements AppRouter {
     // Parse nested routes if they exist.
     if (route.subroutes) {
       const router: AppRouter = {
-        addRoute: (pattern: string, view: Viewable<any> | null, subroutes: (router: AppRouter) => void) => {
+        addRoute: (pattern: string, view: View<any> | null, subroutes: (router: AppRouter) => void) => {
           pattern = Router.joinPath([...parts, pattern]);
           routes.push(...this.#prepareRoute({ pattern, view, subroutes }));
           return router;
@@ -665,67 +618,64 @@ export class App implements AppRouter {
 type CrashPageInputs = {
   message: string;
   error: Error;
-  componentLabel: string;
+  componentName: string;
 };
 
-const DefaultCrashPage = new View<CrashPageInputs>({
-  label: "DefaultCrashPage",
-  setup(ctx, m) {
-    const { message, error, componentLabel } = ctx.inputs.get();
+function DefaultCrashPage(self: ComponentCore<CrashPageInputs>) {
+  const { message, error, componentName } = self.inputs.get();
 
-    return m(
-      "div",
-      {
-        style: {
-          backgroundColor: "#880000",
-          color: "#fff",
-          padding: "2rem",
-          position: "fixed",
-          inset: 0,
-          fontSize: "20px",
-        },
+  return m(
+    "div",
+    {
+      style: {
+        backgroundColor: "#880000",
+        color: "#fff",
+        padding: "2rem",
+        position: "fixed",
+        inset: 0,
+        fontSize: "20px",
       },
-      [
-        m("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
+    },
+    [
+      m("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
 
-        m(
-          "p",
-          { style: { marginBottom: "0.25rem" } },
-          m("span", { style: { fontFamily: "monospace" } }, componentLabel),
-          " says:"
-        ),
+      m(
+        "p",
+        { style: { marginBottom: "0.25rem" } },
+        m("span", { style: { fontFamily: "monospace" } }, componentName),
+        " says:"
+      ),
 
+      m(
+        "blockquote",
+        {
+          style: {
+            backgroundColor: "#991111",
+            padding: "0.25em",
+            borderRadius: "6px",
+            fontFamily: "monospace",
+            marginBottom: "1rem",
+          },
+        },
         m(
-          "blockquote",
+          "span",
           {
             style: {
-              backgroundColor: "#991111",
-              padding: "0.25em",
-              borderRadius: "6px",
-              fontFamily: "monospace",
-              marginBottom: "1rem",
+              display: "inline-block",
+              backgroundColor: "red",
+              padding: "0.1em 0.4em",
+              marginRight: "0.5em",
+              borderRadius: "4px",
+              fontSize: "0.9em",
+              fontWeight: "bold",
             },
           },
-          m(
-            "span",
-            {
-              style: {
-                display: "inline-block",
-                backgroundColor: "red",
-                padding: "0.1em 0.4em",
-                marginRight: "0.5em",
-                borderRadius: "4px",
-                fontSize: "0.9em",
-                fontWeight: "bold",
-              },
-            },
-            error.name
-          ),
-          message
+          error.name
         ),
+        message
+      ),
 
-        m("p", "Please see the browser console for details."),
-      ]
-    );
-  },
-});
+      m("p", "Please see the browser console for details."),
+    ]
+  );
+}

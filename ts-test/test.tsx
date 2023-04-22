@@ -1,5 +1,5 @@
 import z from "zod";
-import { Store } from "@borf/browser";
+import { Store, View } from "@borf/browser";
 
 const Test = Store.define({
   inputs: {

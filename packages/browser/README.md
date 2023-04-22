@@ -5,6 +5,19 @@
 
 This is the front-end (browser) component of [Borf](https://www.borfjs.com). It handles [routing](#routing), components (two types; [views](#views) and [stores](#stores)) and [data binding](#state), all out of the box, aiming to cover the common needs of modern web apps while striking a balance between features and size.
 
+## About this README
+
+### Terms
+
+- User: the end user of the app.
+- Author: the programmer who uses Borf to create an app; you.
+- Framework: the Borf framework itself.
+- Observable: an instance of Readable or Writable.
+- Component: a view or store function.
+  - View: a function that takes a component context and returns Markup or null.
+  - Store: a function that takes a component context and returns a plain object.
+- Markup: DOM templates created with the `m` function, a view helper, or an element function.
+
 ## Installation
 
 ### NPM
@@ -51,9 +64,7 @@ Inside `index.html`:
     <title>Borf Demo</title>
   </head>
   <body>
-    <main id="app">
-      <!-- app goes here -->
-    </main>
+    <main id="app"></main>
 
     <script async src="./app.js"></script>
   </body>
@@ -63,30 +74,21 @@ Inside `index.html`:
 Inside `app.js`:
 
 ```js
-import { App } from "https://cdn.skypack.dev/@borf/browser";
+import { App } from "@borf/browser";
+import { h1 } from "@borf/browser/elements";
 
 const app = new App();
 
-// A root view is always displayed while the app is connected.
-app.setRootView((ctx, m) => {
-  return m("h1", "Hello world!");
+// Display this view at all times while the app is connected
+app.setRootView((ctx) => {
+  return h1("Hello world!");
 });
 
-// Display this app inside the element with `id="app"`
+// Display app views as children of the element with an id of `app`
 app.connect("#app");
 ```
 
-Most methods on App are chainable, so you could condense the above example thus:
-
-```js
-new App()
-  .setRootView((ctx, m) => {
-    return m("h1", "Hello world!");
-  })
-  .connect("#app");
-```
-
-Now when you visit the page the document should look something like this:
+Now when you visit the page the document should look like this (sans comment):
 
 ```html
 <!DOCTYPE html>
@@ -96,7 +98,8 @@ Now when you visit the page the document should look something like this:
   </head>
   <body>
     <main id="app">
-      <h1>Hello World</h1>
+      <!-- This is from the root view: -->
+      <h1>Hello world!</h1>
     </main>
 
     <script async src="./app.js"></script>
@@ -109,39 +112,47 @@ Now when you visit the page the document should look something like this:
 In our Hello World example above, you saw a piece of code that looked like this:
 
 ```js
-app.setRootView((ctx, m) => {
-  return m("h1", "Hello world!");
-});
-```
-
-That is a View, or more specifically a `setup` function for one. We could refactor this slightly to make it a standalone View:
-
-```js
-import { View } from "@borf/browser";
-
-const HelloWorld = new View({
-  setup: (ctx, m) => {
-    return m("h1", "Hello world!");
-  },
+app.setRootView((ctx) => {
+  return h1("Hello world!");
 });
 
-// This time we're passing in a whole View.
-app.setRootView(HelloWorld);
+// As a standalone view function
+function ExampleView(ctx) {
+  return h1("Hello world!");
+}
+app.setRootView(ExampleView);
+
+// Used inside another view function
+function OtherView(ctx) {
+  const $value = ctx.attrs.getReadable("value"); // Switch back to attrs/attributes?
+
+  return m(ExampleView);
+}
 ```
 
-Views are what most other JS frameworks call a component; a reusable chunk of markup and logic that takes attributes/props/inputs/etc and returns what's going to be displayed to the user. As you might expect if you have experience with React, Views can be used just like typical HTML elements.
+Views are what most other frameworks would call a component; a reusable chunk of markup and logic that takes attributes (like an HTML element) and returns DOM nodes to be displayed to the user. As you might expect if you have experience with React, Views can be used just like typical HTML elements.
 
 > Borf has two types of components; Views and Stores. Views deal with displaying DOM nodes and handling user input, while Stores manage shared state that is accessible to multiple components. Stores are explained in more depth later in this README.
 
 ```js
-app.setRootView((ctx, m) => {
-  return m("div", [
-    m("p", "This is the message:"),
+import { View, m } from "@borf/browser";
 
-    // Views are passed to `m` in place of an HTML tag.
-    m(HelloWorld),
-  ]);
-});
+class HelloWorld extends View {
+  setup() {
+    return m("h1", "Hello world!");
+  }
+}
+
+class Layout extends View {
+  setup() {
+    return m("div", [
+      m("p", "This is the message:"),
+
+      // Views are passed to `m` in place of an HTML tag.
+      m(HelloWorld),
+    ]);
+  }
+}
 ```
 
 Which renders the equivalent to the following HTML:
@@ -155,62 +166,26 @@ Which renders the equivalent to the following HTML:
 
 ### Templating
 
-Templating is how you create elements. There are two ways to do it; first is calling the `m`arkup function which is passed as the second argument to `setup`.
-
 The markup function has these signatures:
 
 ```js
-m(tagname, [attributes, ][...children])
-m(view, [inputs, ][...children])
+m(tag, [attributes, ][...children])
+m(component, [inputs, ][...children])
 ```
 
-```jsx
-const ListItem = new View({
-  inputs: {
-    active: {
-      default: false,
-    },
-  },
-  setup: (ctx, m) => {
-    const $active = ctx.inputs.readable("active");
+```tsx
+class ListItem extends View {
+  setup() {
+    const $active = this.inputs.getReadable("active");
 
-    return m(
-      "li",
-      {
-        // 'active' class only applied while `active` input is true.
-        class: { active: $active },
-      },
-      ctx.outlet()
-    );
-  },
-});
+    // 'active' class only applied while `active` input is true.
+    // Note that Borf uses a `class` attribute like HTML rather than `className` like React.
+    return <li class={{ active: $active }}>{this.outlet()}</li>;
+  }
+}
 
-const ExampleList = new View({
-  setup: (ctx, m) => {
-    return m("section", [
-      m("h1", { class: "heading" }, "Item List"),
-      m("p", { style: "color: red" }, "Below is a list of items."),
-      m("ul", [
-        m(ListItem, "Item 1"),
-        m(ListItem, { active: true }, "Item 2"),
-        m(ListItem, "Item 3"),
-        m(ListItem, "Item 4"),
-        m(ListItem, "Item 5"),
-        m(ListItem, "Item 6"),
-      ]),
-    ]);
-  },
-});
-```
-
-The second is using JSX. You can do this when building with `@borf/build`, but it won't work out of the box in a browser.
-
-> Note that Borf uses a `class` attribute like HTML rather than `className` like React.
-
-```jsx
-const Example = new View({
-  label: "ExampleView",
-  setup: (ctx, m) => {
+class ExampleList extends View {
+  setup() {
     return (
       <section>
         <h1 class="heading">Item List</h1>
@@ -225,13 +200,13 @@ const Example = new View({
         </ul>
       </section>
     );
-  },
-});
+  }
+}
 ```
 
 ### Special Views
 
-> TODO: Describe better. The following is a rough draft.
+> TODO: Describe these better. The following is a rough draft.
 
 The `View` class includes a few helpers for conditional rendering, loops and rendering based on observables. Unlike views created with `View.define`, these views can be used inline.
 
@@ -243,9 +218,14 @@ View.when($value, <h1>Value is truthy</h1>, <h1>Value is falsy</h1>);
 View.unless($value, <h1>Value is not truthy</h1>);
 
 // Looping:
-View.forEach($list, (ctx, m) => {
-  const $item = ctx.inputs.readable("view");
+View.forEach($list, ($item, $index, ctx) => {
   const $name = $item.map((x) => x.name);
+
+  // ctx has the methods you would expect on a View `this`
+  ctx.observe($name, (name) => {
+    // Observe $name only while this forEach view is connected
+    ctx.log("name is", name);
+  });
 
   return m("li", $name);
 });
@@ -274,7 +254,7 @@ const Example = new View({
     // How it looks with `m` function:
     return m("section", [
       m("header", [
-        View.subscribe($header, (text) => {
+        View.observe($header, (text) => {
           // This doesn't make any sense because you could just pass $header directly, but whatever.
           return m("h1", text);
         }),
@@ -285,9 +265,12 @@ const Example = new View({
 
       m(
         "ul",
-        View.repeat($names, (ctx) => {
-          const $name = ctx.inputs.readable("value");
-          const $index = ctx.inputs.readable("index");
+        View.forEach($names, ($name, $index, ctx) => {
+          // Use ctx for observers, etc.
+
+          ctx.observe($name, (name) => {
+            // Observe only while this forEach view instance is connected.
+          });
 
           return m("li", `#${$index}: ${$name}`);
         })
@@ -308,10 +291,7 @@ const Example = new View({
         {View.unless($showContent, <p>Content is hidden.</p>)}
 
         <ul>
-          {View.forEach($names, (ctx) => {
-            const $name = ctx.inputs.readable("value");
-            const $index = ctx.inputs.readable("index");
-
+          {View.forEach($names, function ($name, $index) {
             return (
               <li>
                 #{$index}: {$name}

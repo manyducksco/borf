@@ -1,21 +1,15 @@
-import { Component } from "./Component.js";
-
 // ----- Types ----- //
 
-type ErrorContext = {
+interface ErrorContext {
   error: Error;
   severity: "error" | "crash";
+  componentName: string;
+}
 
-  /**
-   * Label for the component where the error occurred.
-   */
-  componentLabel: string;
-};
-
-type CrashOptions = {
+interface CrashOptions {
   error: Error;
-  component: Component<any>;
-};
+  componentName?: string;
+}
 
 type ErrorCallback = (ctx: ErrorContext) => void;
 
@@ -43,11 +37,11 @@ export class CrashCollector {
   /**
    * Reports an unrecoverable error that requires crashing the whole app.
    */
-  crash({ error, component }: CrashOptions) {
+  crash({ error, componentName }: CrashOptions) {
     const ctx: ErrorContext = {
       error,
       severity: "crash",
-      componentLabel: getComponentLabel(component),
+      componentName: componentName ?? "anonymous component",
     };
 
     this.#errors.push(ctx);
@@ -61,11 +55,11 @@ export class CrashCollector {
   /**
    * Reports a recoverable error.
    */
-  error({ error, component }: CrashOptions) {
+  error({ error, componentName }: CrashOptions) {
     const ctx: ErrorContext = {
       error,
       severity: "error",
-      componentLabel: getComponentLabel(component),
+      componentName: componentName ?? "anonymous component",
     };
 
     this.#errors.push(ctx);
@@ -73,8 +67,4 @@ export class CrashCollector {
       callback(ctx);
     }
   }
-}
-
-function getComponentLabel(component: Component<any>) {
-  return component.label ?? "anonymous component";
 }

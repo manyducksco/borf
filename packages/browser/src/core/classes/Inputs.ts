@@ -1,59 +1,11 @@
 import produce from "immer";
-import type z from "zod";
 import { Type } from "@borf/bedrock";
 import { Writable, Readable, READABLE, type ObserveCallback, type StopFunction } from "./Writable.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 
-/**
- * Input values passed to the component.
- */
-export type InputValues<T = {}> = {
-  [K in keyof T]: T[K] | Readable<T[K]> | Writable<T[K]>;
+export type UnwrapReadables<T> = {
+  [K in keyof T]: Exclude<T[K], Readable<any>>;
 };
-
-export type InputDefinition<T> = {
-  /**
-   * Attribute description for viewer.
-   */
-  about?: string;
-
-  /**
-   * The default value if the input is not passed.
-   */
-  default?: T;
-
-  /**
-   * Allows writing back to writable bindings to propagate changes up to a parent view. Also known as two-way binding.
-   * All bindings are only readable by default.
-   */
-  writable?: boolean;
-
-  /**
-   * Allows a value to be omitted without defining a default value.
-   */
-  optional?: boolean;
-
-  /**
-   * Zod schema for input validation. TypeScript types are inferred automatically from this schema.
-   */
-  schema?: z.ZodSchema<T>;
-};
-
-/**
- * Defines which inputs a component can take and their properties.
- */
-export type InputDefinitions<T> = {
-  [K in keyof T]: InputDefinition<T[K]>;
-};
-
-/**
- * Options passed when instantiating Inputs.
- */
-interface InputsOptions<T> {
-  inputs?: InputValues<T>;
-  definitions?: InputDefinitions<T>;
-  enableValidation?: boolean;
-}
 
 /**
  * Handles observables, readables, writables and plain values as passed to a View or Store.
@@ -67,27 +19,19 @@ export class Inputs<T> {
   _writables: Partial<Record<keyof T, Writable<any>>> = {};
   _statics: Partial<Record<keyof T, any>> = {};
 
-  _values?: InputValues<T>;
-  _definitions?: InputDefinitions<T>;
-  _enableValidation = true;
+  _values?: T;
 
-  _$$inputs: Writable<T>;
+  _$$inputs: Writable<UnwrapReadables<T>>;
 
-  api: InputsAPI<T>;
+  api: InputsAPI<UnwrapReadables<T>>;
 
-  constructor({ inputs, definitions, enableValidation = true }: InputsOptions<T>) {
-    if (!inputs) {
-      inputs = {} as InputValues<T>;
-    }
-
-    this._values = inputs;
-    this._definitions = definitions;
-    this._enableValidation = enableValidation;
+  constructor(values: T) {
+    this._values = values;
 
     // Sort inputs by binding type.
-    for (const _name of Object.keys(inputs)) {
+    for (const _name of Object.keys(values as Record<string, any>)) {
       const name = _name as keyof T;
-      const value = inputs[name];
+      const value = values[name];
 
       if (Writable.isWritable(value)) {
         this._writables[name] = value;
@@ -95,15 +39,6 @@ export class Inputs<T> {
         this._readables[name] = value;
       } else {
         this._statics[name] = value;
-      }
-    }
-
-    // Set initial values for unpassed attributes with a `default` defined.
-    if (definitions) {
-      for (const name in definitions) {
-        if (!(name in inputs) && definitions[name].default !== undefined) {
-          this._statics[name] = definitions[name].default;
-        }
       }
     }
 
@@ -118,15 +53,13 @@ export class Inputs<T> {
       initialValues[name] = this._readables[name]!.value;
     }
 
-    this._$$inputs = new Writable(initialValues as T);
+    this._$$inputs = new Writable(initialValues as UnwrapReadables<T>);
 
     // Create the API to interact with attribute values.
-    this.api = new InputsAPI({
+    this.api = new InputsAPI<UnwrapReadables<T>>({
       $$inputs: this._$$inputs,
-      definitions: this._definitions,
       readables: this._readables,
       writables: this._writables,
-      enableValidation: this._enableValidation,
     });
   }
 
@@ -137,8 +70,6 @@ export class Inputs<T> {
     for (const key in this._readables) {
       this._stopCallbacks.push(
         this._readables[key]!.observe((next) => {
-          assertValidItem(key, next, this._definitions);
-
           this._$$inputs.update((current) => {
             current[key] = next;
           });
@@ -149,17 +80,11 @@ export class Inputs<T> {
     for (const key in this._writables) {
       this._stopCallbacks.push(
         this._writables[key]!.observe((next) => {
-          assertValidItem(key, next, this._definitions);
-
           this._$$inputs.update((current) => {
             current[key] = next;
           });
         })
       );
-    }
-
-    if (this._enableValidation && this._definitions) {
-      assertValidInputs(this._definitions, this._$$inputs.value);
     }
   }
 
@@ -179,10 +104,8 @@ export class Inputs<T> {
  */
 type InputsAPIOptions<T> = {
   $$inputs: Writable<T>;
-  definitions?: InputDefinitions<T>;
   readables: Partial<Record<keyof T, Readable<any>>>;
   writables: Partial<Record<keyof T, Writable<any>>>;
-  enableValidation: boolean;
 };
 
 /**
@@ -192,19 +115,15 @@ export class InputsAPI<T> extends Readable<T> {
   [READABLE] = true;
 
   #inputs;
-  #definitions;
   #readables;
   #writables;
-  #enableValidation;
 
   constructor(options: InputsAPIOptions<T>) {
     super(options.$$inputs);
 
     this.#inputs = options.$$inputs;
-    this.#definitions = options.definitions;
     this.#readables = options.readables;
     this.#writables = options.writables;
-    this.#enableValidation = options.enableValidation;
   }
 
   /**
@@ -226,15 +145,6 @@ export class InputsAPI<T> extends Readable<T> {
 
   get(key?: keyof T) {
     if (key) {
-      // Ensure key is actually in definitions.
-      if (this.#enableValidation && this.#definitions) {
-        if (!this.#definitions[key]) {
-          throw new Error(
-            `Input '${String(key)}' is not defined. Add an entry to your inputs object to accept this input.`
-          );
-        }
-      }
-
       return this.#inputs.value[key];
     }
 
@@ -265,11 +175,6 @@ export class InputsAPI<T> extends Readable<T> {
     const before = this.#inputs.value;
     const after: T = { ...before, ...values };
 
-    // Make sure values match definitions before committing the new values.
-    if (this.#enableValidation && this.#definitions) {
-      assertValidInputs(this.#definitions, after);
-    }
-
     const diff = objectDiff(before, after);
 
     for (const key in diff) {
@@ -295,10 +200,6 @@ export class InputsAPI<T> extends Readable<T> {
 
     const before = this.#inputs.value;
     const after = produce(before, callback);
-
-    if (this.#enableValidation && this.#definitions) {
-      assertValidInputs(this.#definitions, after);
-    }
 
     const diff = objectDiff(before, after);
 
@@ -358,22 +259,6 @@ export class InputsAPI<T> extends Readable<T> {
 
   getWritable<K extends keyof T>(key?: K) {
     if (key) {
-      if (this.#enableValidation && this.#definitions) {
-        if (!this.#definitions[key]) {
-          throw new Error(
-            `Input '${String(key)}' is not defined. Add an entry to your input definition to accept this attribute.`
-          );
-        }
-
-        if (!this.#definitions[key].writable) {
-          throw new Error(
-            `Input '${String(
-              key
-            )}' is not marked as writable. Add 'writable: true' to this input definition to enable two way binding.`
-          );
-        }
-      }
-
       return new BoundWritable<T, K>(this, key) as Writable<T[K]>;
     } else {
       return this.#inputs;
@@ -388,13 +273,13 @@ export class InputsAPI<T> extends Readable<T> {
     return this.getWritable(name);
   }
 
-  // map<N>(transform: (value: T) => N): Readable<N> {
-  //   return this.#inputs.map(transform);
-  // }
+  map<N>(transform: (value: T) => N): Readable<N> {
+    return this.#inputs.map(transform);
+  }
 
-  // observe(callback: (value: T) => void): StopFunction {
-  //   return this.#inputs.observe(callback);
-  // }
+  observe(callback: (value: T) => void): StopFunction {
+    return this.#inputs.observe(callback);
+  }
 }
 
 /**
@@ -440,51 +325,6 @@ class BoundWritable<T, K extends keyof T> extends Writable<T[K]> {
 
   toReadable() {
     return this.#api.map((current) => current[this.#key]);
-  }
-}
-
-function assertValidInputs<T>(definitions: InputDefinitions<T>, values: T) {
-  // Fail if required attribute is nullish.
-  for (const name in definitions) {
-    if (!definitions[name].optional && values[name] == null) {
-      throw new TypeError(
-        `Attribute '${name}' is required, but value is undefined. Use 'optional: true' in 'inputs.${name}' to make it optional, or provide a 'default' value, if passing this attribute isn't necessary.`
-      );
-    }
-  }
-
-  for (const name in values) {
-    assertValidItem(name, values[name], definitions);
-  }
-}
-
-function assertValidItem<T>(name: keyof T, value: unknown, definitions?: InputDefinitions<T>) {
-  if (!definitions) return; // Pass when no definitions are provided.
-
-  const def = definitions[name];
-
-  if (!def) {
-    throw new TypeError(`Attribute '${String(name)}' is not defined, but a value was passed. Got: ${value}`);
-  }
-
-  if (!def.schema) {
-    return; // All values are allowed when no assert function is specified.
-  }
-
-  try {
-    const result = def.schema.safeParse(value);
-
-    if (!result.success) {
-      console.error(result.error); // TODO: Remove this.
-      throw new TypeError(`Input '${String(name)}' failed type assertion. Got: ${value}`);
-    }
-
-    // TODO: Use parsed value from zod schema.
-  } catch (error) {
-    if (error instanceof Error) {
-      // TODO: Crash app through crashCollector.
-      throw new TypeError(error.message);
-    }
   }
 }
 

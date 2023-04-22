@@ -1,17 +1,19 @@
 import { Readable, Writable, type StopFunction } from "./Writable.js";
 import { Connectable } from "./Connectable.js";
-import { Markup, type MarkupConfig } from "./Markup.js";
+import { type Renderable } from "./Markup.js";
 import { type AppContext, type ElementContext } from "./App.js";
-import { type InputValues } from "./Inputs.js";
+import { type ComponentCore } from "../scratch.js";
 
 // ----- Types ----- //
 
-interface ForEachOptions<T> {
+export type RepeatContext = Omit<ComponentCore<any>, "inputs">;
+
+interface RepeatOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
   readable: Readable<Iterable<T>>;
-  markup: Markup;
-  key: (value: T, index: number) => any;
+  render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Renderable;
+  key?: (value: T, index: number) => any;
 }
 
 type ConnectedItem<T> = {
@@ -23,29 +25,31 @@ type ConnectedItem<T> = {
 
 // ----- Code ----- //
 
-export class ForEach<T> extends Connectable {
-  #node = document.createComment("ForEach");
+export class Repeat<T> implements Connectable {
+  #node = document.createComment("Repeat");
   #readable: Readable<Iterable<T>>;
   #stopCallback?: StopFunction;
   #connectedItems: ConnectedItem<T>[] = [];
   #appContext;
   #elementContext;
-  #markup: Markup<MarkupConfig & { inputs: InputValues<{ value: T; index: number }> }>;
+  #render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Renderable;
   #keyFn;
 
   get node() {
     return this.#node;
   }
 
-  constructor({ appContext, elementContext, readable, markup, key }: ForEachOptions<T>) {
-    super();
+  get isConnected() {
+    return this.node?.parentNode != null;
+  }
 
+  constructor({ appContext, elementContext, readable, render, key }: RepeatOptions<T>) {
     this.#appContext = appContext;
     this.#elementContext = elementContext;
 
     this.#readable = readable;
-    this.#markup = markup;
-    this.#keyFn = key || ((x) => x);
+    this.#render = render;
+    this.#keyFn = key ?? ((x) => x);
   }
 
   async connect(parent: Node, after?: Node) {
@@ -71,6 +75,7 @@ export class ForEach<T> extends Connectable {
 
   async #cleanup() {
     while (this.#connectedItems.length > 0) {
+      // TODO: Handle errors
       this.#connectedItems.pop()?.connectable.disconnect();
     }
   }
@@ -100,6 +105,7 @@ export class ForEach<T> extends Connectable {
       const stillPresent = !!potentialItems.find((p) => p.key === connected.key);
 
       if (!stillPresent) {
+        // TODO: Handle errors
         connected.connectable.disconnect();
       }
     }
@@ -131,6 +137,7 @@ export class ForEach<T> extends Connectable {
 
     // Reconnect to ensure order. Lifecycle hooks won't be run again if the view is already connected.
     for (const item of newItems) {
+      // TODO: Handle errors
       item.connectable.connect(this.#node.parentNode!);
     }
 

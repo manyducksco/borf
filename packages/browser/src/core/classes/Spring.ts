@@ -1,13 +1,36 @@
 import { Readable, Writable } from "./Writable.js";
 
 interface SpringOptions {
+  /**
+   * Starting value of the spring. Defaults to 0.
+   */
+  initialValue?: number;
+
+  /**
+   * How heavy the spring is.
+   */
   mass?: number;
+
+  /**
+   * Amount of stiffness or tension in the spring.
+   */
   stiffness?: number;
+
+  /**
+   * Amount of smoothing. Affects the speed of transitions.
+   */
   damping?: number;
+
+  /**
+   * How much force the spring's motion begins with.
+   */
   velocity?: number;
 }
 
 export class Spring extends Readable<number> {
+  /**
+   * Determines if an object is a Spring.
+   */
   static isSpring(value: unknown): value is Spring {
     return value instanceof Spring;
   }
@@ -22,7 +45,9 @@ export class Spring extends Readable<number> {
   #nextId = 0;
   #currentAnimationId?: number;
 
-  constructor(initialValue = 0, options: SpringOptions = {}) {
+  constructor(options: SpringOptions = {}) {
+    const initialValue = options.initialValue ?? 0;
+
     super(initialValue);
 
     this.#current = new Writable(initialValue);
@@ -33,11 +58,17 @@ export class Spring extends Readable<number> {
     this.#velocity = options.velocity ?? 0;
   }
 
+  /**
+   * Sets the Spring's value without animating.
+   */
   async snapTo(value: number) {
     this.#currentAnimationId = undefined;
     this.#current.value = value;
   }
 
+  /**
+   * Animate from the current value to a new value. Returns a Promise that resolves when the transition is finished.
+   */
   async to(value: number, options?: SpringOptions) {
     // Act like snap if user prefers reduced motion.
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -82,11 +113,17 @@ export class Spring extends Readable<number> {
     });
   }
 
+  /**
+   * Animate from a set starting value to an ending value. Returns a Promise that resolves when the transition is finished.
+   */
   async animate(startValue: number, endValue: number) {
     this.#current.value = startValue;
     return this.to(endValue);
   }
 
+  /**
+   * Current value of the spring.
+   */
   get value() {
     return this.#current.value;
   }
@@ -106,7 +143,7 @@ class SpringSolver {
   $damping: Readable<number>;
   $velocity: Readable<number>;
 
-  constructor({ mass, stiffness, damping, velocity }: Required<SpringOptions>) {
+  constructor({ mass, stiffness, damping, velocity }: Required<Omit<SpringOptions, "initialValue">>) {
     this.$mass = new Readable(mass);
     this.$stiffness = new Readable(stiffness);
     this.$damping = new Readable(damping);

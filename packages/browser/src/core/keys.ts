@@ -5,3 +5,5 @@ export const WRITABLE = Symbol("Writable");
 
 export const APP_CONTEXT = Symbol("appContext");
 export const ELEMENT_CONTEXT = Symbol("elementContext");
+export const CHILDREN = Symbol("$$children");
+export const INPUTS = Symbol("inputs");

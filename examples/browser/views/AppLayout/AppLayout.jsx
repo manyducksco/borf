@@ -1,107 +1,80 @@
-import { View } from "@borf/browser";
+import { m } from "@borf/browser";
 import { MouseStore } from "../../globals/MouseStore";
 
 import styles from "./AppLayout.module.css";
 
-export const AppLayout = new View({
-  label: "🐕",
-  about:
-    "Top level layout for the app. All other routes are rendered in this one's ctx.outlet()",
-  inputs: {},
+export async function AppLayout(self) {
+  self.setName("🐕");
+  self.setLoader(m("h1", "This app is loading!"));
 
-  loading() {
-    return <h1>This app is loading!</h1>;
-  },
+  self.log("hi");
 
-  async setup(ctx) {
-    ctx.log("hi");
+  const router = self.useStore("router");
+  const page = self.useStore("page");
+  const mouse = self.useStore(MouseStore);
 
-    // await new Promise((resolve) => {
-    //   setTimeout(resolve, 400);
-    // });
+  // Display current mouse coordinates as tab title
+  self.observe(mouse.$position, (pos) => {
+    page.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
+  });
 
-    const router = ctx.useStore("router");
-    const page = ctx.useStore("page");
-    const mouse = ctx.useStore(MouseStore);
+  self.observe(page.$visibility, (status) => {
+    self.log(`visibility: ${status}`);
+  });
 
-    // Display current mouse coordinates as tab title
-    ctx.observe(mouse.$position, (pos) => {
-      page.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
-    });
-
-    ctx.observe(page.$visibility, (status) => {
-      ctx.log(`visibility: ${status}`);
-    });
-
-    const navLink = (href, label) => {
-      return (
-        <a
-          href={href}
-          class={{
-            [styles.active]: router.$path.map((x) => x.startsWith(href)),
-          }}
-        >
-          {label}
-        </a>
-      );
-    };
-
-    return (
-      <div class={styles.layout}>
-        <nav class={styles.nav}>
-          <section class={styles.navSection}>
-            <header>
-              <h3 class={styles.navTitle}>Examples</h3>
-            </header>
-
-            <ul class={styles.navList}>
-              <li>
-                {navLink("/examples/spring-animation", "Spring Animation")}
-              </li>
-              <li>{navLink("/examples/languages", "Languages")}</li>
-              <li>{navLink("/examples/crash-handling", "Crash Handling")}</li>
-              <li>
-                {navLink("/examples/counter-with-store", "Counter with Store")}
-              </li>
-              <li>{navLink("/examples/local-stores", "Local Stores")}</li>
-            </ul>
-          </section>
-
-          <section class={styles.navSection}>
-            <header>
-              <h3 class={styles.navTitle}>7 GUIs</h3>
-            </header>
-
-            <ol class={styles.navList}>
-              <li>{navLink("/7guis/counter", "Counter")}</li>
-              <li>
-                {navLink("/7guis/temp-converter", "Temperature Converter")}
-              </li>
-              <li>{navLink("/7guis/flight-booker", "Flight Booker")}</li>
-              <li>{navLink("/7guis/timer", "Timer")}</li>
-              <li>{navLink("/7guis/crud", "CRUD")}</li>
-              <li>{navLink("/7guis/circle-drawer", "Circle Drawer")}</li>
-              <li>{navLink("/7guis/cells", "Cells")}</li>
-            </ol>
-          </section>
-
-          <section class={styles.navSection}>
-            <header>
-              <h3 class={styles.navTitle}>Tests</h3>
-            </header>
-
-            <ul class={styles.navList}>
-              <li>{navLink("/router-test", "Router Test")}</li>
-              <li>{navLink("/nested/one", "Nested: #1")}</li>
-              <li>{navLink("/nested/two", "Nested: #2")}</li>
-              <li>{navLink("/nested/invalid", "Nested: Redirect *")}</li>
-              <li>{navLink("/tests/render-order", "Render Order Test")}</li>
-            </ul>
-          </section>
-        </nav>
-
-        <div class={styles.content}>{ctx.outlet()}</div>
-      </div>
+  const navLink = (href, label) => {
+    return m(
+      "a",
+      {
+        href,
+        class: { [styles.active]: router.$path.map((x) => x.startsWith(href)) },
+      },
+      label
     );
-  },
-});
+  };
+
+  return m("div", { class: styles.layout }, [
+    m("nav", { class: styles.nav }, [
+      m("section", { class: styles.navSection }, [
+        m("header", [m("h3", { class: styles.navTitle }, "Examples")]),
+
+        m("ul", { class: styles.navList }, [
+          m("li", navLink("/examples/spring-animation", "Spring Animation")),
+          m("li", navLink("/examples/languages", "Languages")),
+          m("li", navLink("/examples/crash-handling", "Crash Handling")),
+          m(
+            "li",
+            navLink("/examples/counter-with-store", "Counter with Store")
+          ),
+          m("li", navLink("/examples/local-stores", "Local Stores")),
+        ]),
+      ]),
+
+      m("section", { class: styles.navSection }, [
+        m("header", [m("h3", { class: styles.navTitle }, "7GUIs")]),
+
+        m("ul", { class: styles.navList }, [
+          m("li", navLink("/7guis/counter", "Counter")),
+          m("li", navLink("/7guis/temp-converter", "Temperature Converter")),
+          m("li", navLink("/7guis/flight-booker", "Flight Booker")),
+          m("li", navLink("/7guis/timer", "Timer")),
+          m("li", navLink("/7guis/crud", "CRUD")),
+          m("li", navLink("/7guis/circle-drawer", "Circle Drawer")),
+          m("li", navLink("/7guis/cells", "Cells")),
+        ]),
+      ]),
+
+      m("section", { class: styles.navSection }, [
+        m("header", [m("h3", { class: styles.navTitle }, "Tests")]),
+
+        m("ul", { class: styles.navList }, [
+          m("li", navLink("/router-test", "Router Test")),
+          m("li", navLink("/nested/one", "Nested: #1")),
+          m("li", navLink("/nested/two", "Nested: #2")),
+          m("li", navLink("/nested/invalid", "Nested: Redirect *")),
+          m("li", navLink("/tests/render-order", "Render Order Test")),
+        ]),
+      ]),
+    ]),
+  ]);
+}

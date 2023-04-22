@@ -28,7 +28,7 @@ function isRenderable(value: unknown): value is Renderable {
 /**
  * Displays dynamic children without a parent element.
  */
-export class Outlet<T> extends Connectable {
+export class Outlet<T> implements Connectable {
   #node = document.createComment("Outlet");
   #connectedViews: Connectable[] = [];
   #stopCallback?: StopFunction;
@@ -42,9 +42,11 @@ export class Outlet<T> extends Connectable {
     return this.#node;
   }
 
-  constructor({ readable, render, appContext, elementContext }: OutletOptions<T>) {
-    super();
+  get isConnected() {
+    return this.#node.parentNode != null;
+  }
 
+  constructor({ readable, render, appContext, elementContext }: OutletOptions<T>) {
     this.#readable = readable;
     this.#appContext = appContext;
     this.#elementContext = elementContext;
@@ -57,6 +59,7 @@ export class Outlet<T> extends Connectable {
 
   async connect(parent: Node, after?: Node) {
     if (this.isConnected) {
+      // TODO: Handle errors
       await this.disconnect();
     }
 
@@ -97,13 +100,9 @@ export class Outlet<T> extends Connectable {
     }
   }
 
-  setChildren(children: Renderable[]) {
-    // If this is ever called, the framework is broken.
-    throw new Error(`setChildren is not supported for Outlets because they get their contents from a Readable`);
-  }
-
   #cleanup() {
     while (this.#connectedViews.length > 0) {
+      // TODO: Handle errors
       this.#connectedViews.pop()?.disconnect();
     }
   }
@@ -121,6 +120,7 @@ export class Outlet<T> extends Connectable {
       const previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
       const view = child.init({ appContext: this.#appContext, elementContext: this.#elementContext });
 
+      // TODO: Handle errors
       view.connect(this.node.parentNode!, previous);
 
       this.#connectedViews.push(view);

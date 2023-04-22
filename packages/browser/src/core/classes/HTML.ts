@@ -15,7 +15,7 @@ type HTMLOptions = {
   children?: Markup[];
 };
 
-export class HTML extends Connectable {
+export class HTML implements Connectable {
   #node;
   #attributes;
   #children;
@@ -27,9 +27,11 @@ export class HTML extends Connectable {
     return this.#node;
   }
 
-  constructor({ tag, attributes, children, appContext, elementContext }: HTMLOptions) {
-    super();
+  get isConnected() {
+    return this.node.parentNode != null;
+  }
 
+  constructor({ tag, attributes, children, appContext, elementContext }: HTMLOptions) {
     elementContext = { ...elementContext };
 
     // This and all nested views will be created as SVG elements.
@@ -74,9 +76,10 @@ export class HTML extends Connectable {
     this.#elementContext = elementContext;
   }
 
-  setChildren(children: Markup[]) {
+  __setChildren(children: Markup[]) {
     if (this.isConnected) {
       for (const child of this.#children) {
+        // TODO: Handle errors
         child.disconnect();
       }
     }
@@ -87,6 +90,7 @@ export class HTML extends Connectable {
 
     if (this.isConnected) {
       for (const child of this.#children) {
+        // TODO: Handle errors
         child.connect(this.#node);
       }
     }
@@ -99,6 +103,7 @@ export class HTML extends Connectable {
   async connect(parent: Node, after?: Node) {
     if (!this.isConnected) {
       for (const child of this.#children) {
+        // TODO: Handle errors
         child.connect(this.#node);
       }
 
@@ -113,6 +118,7 @@ export class HTML extends Connectable {
   async disconnect() {
     if (this.isConnected) {
       for (const child of this.#children) {
+        // TODO: Handle errors
         child.disconnect();
       }
 
