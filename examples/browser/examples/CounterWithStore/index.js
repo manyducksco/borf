@@ -1,1 +1,1 @@
-export { CounterWithStore } from "./CounterWithStore.jsx";
+export { CounterWithStore } from "./CounterWithStore";

@@ -1,1 +1,1 @@
-export { ExampleFrame } from "./ExampleFrame.jsx";
+export { ExampleFrame } from "./ExampleFrame";

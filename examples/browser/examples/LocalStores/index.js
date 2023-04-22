@@ -1,1 +1,1 @@
-export { LocalStores } from "./LocalStores.jsx";
+export { LocalStores } from "./LocalStores";

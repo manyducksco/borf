@@ -1,1 +1,1 @@
-export { CrashHandling } from "./CrashHandling.jsx";
+export { CrashHandling } from "./CrashHandling";

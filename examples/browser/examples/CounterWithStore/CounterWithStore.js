@@ -1,6 +1,6 @@
 import { m } from "@borf/browser";
 import { CounterStore } from "../../globals/CounterStore.js";
-import { ExampleFrame } from "../../views/ExampleFrame/ExampleFrame.jsx";
+import { ExampleFrame } from "../../views/ExampleFrame/ExampleFrame.js";
 
 /**
  * Component with controls and a mapped label based on a readable inside a store.

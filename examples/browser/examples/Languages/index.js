@@ -1,1 +1,1 @@
-export { Languages } from "./Languages.jsx";
+export { Languages } from "./Languages";

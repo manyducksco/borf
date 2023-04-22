@@ -1,1 +1,1 @@
-export { PassingAttributes } from "./PassingAttributes.jsx";
+export { PassingAttributes } from "./PassingAttributes";

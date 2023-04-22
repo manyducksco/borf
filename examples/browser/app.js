@@ -1,4 +1,4 @@
-import { App } from "@borf/browser";
+import { App, m } from "@borf/browser";
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
@@ -11,7 +11,7 @@ import { Languages } from "./examples/Languages";
 import { LocalStores } from "./examples/LocalStores";
 import { SpringAnimation } from "./examples/SpringAnimation";
 
-import { RenderOrderTest } from "./views/RenderOrderTest.jsx";
+import { RenderOrderTest } from "./views/RenderOrderTest";
 
 import SevenGUIs from "./7guis";
 import Counter from "./7guis/01_Counter";
@@ -111,24 +111,19 @@ app.addRoute("/7guis", SevenGUIs, (sub) => {
 
 // Manual tests to make sure routing and redirects are working
 app
-  .addRoute("/router-test/one", () => <h1>One</h1>)
-  .addRoute("/router-test/two", () => <h1>Two</h1>)
+  .addRoute("/router-test/one", () => m("h1", "One"))
+  .addRoute("/router-test/two", () => m("h1", "Two"))
   .addRedirect("/router-test/*", "/router-test/one");
 
 app.addRoute(
   "/nested",
-  function view(ctx) {
-    return (
-      <div>
-        <h1>Nested Routes!</h1>
-        {ctx.outlet()}
-      </div>
-    );
+  function view(self) {
+    return m("div", m("h1", "Nested Routes!"), self.outlet());
   },
   function extend(sub) {
     sub
-      .addRoute("/one", () => <h1>NESTED #1</h1>)
-      .addRoute("/two", () => <h1>NESTED #2</h1>)
+      .addRoute("/one", () => m("h1", "NESTED #1"))
+      .addRoute("/two", () => m("h1", "NESTED #2"))
       .addRedirect("*", "./one");
   }
 );

@@ -1,1 +1,1 @@
-export { SpringAnimation } from "./SpringAnimation.jsx";
+export { SpringAnimation } from "./SpringAnimation";
