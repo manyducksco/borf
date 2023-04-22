@@ -4,8 +4,6 @@ import { formatChildren, Markup, type Renderable } from "./Markup.js";
 import { Readable, type StopFunction } from "./Writable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 
-// type Renderable = string | number | View<any> | Store<any>;
-
 interface OutletOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
@@ -36,7 +34,6 @@ export class Outlet<T> implements Connectable {
   #render?: (value: T) => Renderable;
   #appContext;
   #elementContext;
-  #logger;
 
   get node() {
     return this.#node;
@@ -50,7 +47,6 @@ export class Outlet<T> implements Connectable {
     this.#readable = readable;
     this.#appContext = appContext;
     this.#elementContext = elementContext;
-    this.#logger = appContext.debugHub.logger("outlet");
 
     if (render) {
       this.#render = render;

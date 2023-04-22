@@ -1,14 +1,8 @@
-import { View } from "@borf/browser";
+import { m } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default new View({
-  label: "7guis:Cells",
+export default function (self) {
+  self.setName("7GUIs:Cells");
 
-  setup(ctx) {
-    return (
-      <ExampleFrame title="7. Cells">
-        <div></div>
-      </ExampleFrame>
-    );
-  },
-});
+  return m(ExampleFrame, { title: "7. Cells" }, [m("div")]);
+}

@@ -4,8 +4,12 @@ import { Writable, Readable, READABLE, type ObserveCallback, type StopFunction }
 import { deepEqual } from "../helpers/deepEqual.js";
 
 export type UnwrapReadables<T> = {
-  [K in keyof T]: Exclude<T[K], Readable<any>>;
+  [K in keyof T]: T[K] extends Readable<infer U> ? U : T[K];
 };
+
+type Test = string | Readable<string> | Writable<string>;
+
+type UnwrappedTest = UnwrapReadables<Test>;
 
 /**
  * Handles observables, readables, writables and plain values as passed to a View or Store.

@@ -1,46 +1,40 @@
-import { Writable, View } from "@borf/browser";
+import { Writable, when } from "@borf/browser";
 import { ExampleFrame } from "./ExampleFrame";
 
-export const RenderOrderTest = new View({
-  setup(ctx) {
-    const $$isTrue = new Writable(true);
+export function RenderOrderTest(self) {
+  const $$isTrue = new Writable(true);
 
-    let interval;
+  let interval;
 
-    ctx.onConnect(() => {
-      interval = setInterval(() => {
-        $$isTrue.update((t) => !t);
-      }, 1000);
-    });
+  self.onConnected(() => {
+    interval = setInterval(() => {
+      $$isTrue.update((t) => !t);
+    }, 1000);
+  });
 
-    ctx.onDisconnect(() => {
-      clearInterval(interval);
-    });
+  self.onDisconnected(() => {
+    clearInterval(interval);
+  });
 
-    return (
-      <ExampleFrame title="Render Order Test">
-        <p>You should be seeing these in the order: 1 a 2 b 3 c 4 5 d</p>
+  return m(ExampleFrame, { title: "Render Order Test" }, [
+    m("p", "You should be seeing these in the order: 1 a 2 b 3 c 4 5 d"),
 
-        <ul>
-          {View.when($$isTrue, <SubView value={1} />)}
-          <SubView value="a" />
-          {View.when($$isTrue, <SubView value={2} />)}
-          <SubView value="b" />
-          {View.when($$isTrue, <SubView value={3} />)}
-          <SubView value="c" />
-          {View.when($$isTrue, <SubView value={4} />)}
-          {View.when($$isTrue, <SubView value={5} />)}
-          <SubView value="d" />
-        </ul>
-      </ExampleFrame>
-    );
-  },
-});
+    m("ul", [
+      when($$isTrue, m(SubView, { value: 1 })),
+      m(SubView, { value: "a" }),
+      when($$isTrue, m(SubView, { value: 2 })),
+      m(SubView, { value: "b" }),
+      when($$isTrue, m(SubView, { value: 3 })),
+      m(SubView, { value: "c" }),
+      when($$isTrue, m(SubView, { value: 4 })),
+      when($$isTrue, m(SubView, { value: 5 })),
+      m(SubView, { value: "d" }),
+    ]),
+  ]);
+}
 
-const SubView = new View({
-  setup(ctx) {
-    const { value } = ctx.inputs.get();
+function SubView(self) {
+  const { value } = self.inputs.get();
 
-    return <li>{value}</li>;
-  },
-});
+  return m("li", value);
+}

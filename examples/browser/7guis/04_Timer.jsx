@@ -1,72 +1,74 @@
-import { Writable, View } from "@borf/browser";
+import { Writable, m } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default new View({
-  label: "7guis:Timer",
+export default function (self) {
+  self.setName("7GUIs:Timer");
 
-  setup(ctx) {
-    const $$duration = new Writable(10); // duration in seconds
-    const $$elapsed = new Writable(0); // elapsed time in seconds
+  const $$duration = new Writable(10); // duration in seconds
+  const $$elapsed = new Writable(0); // elapsed time in seconds
 
-    let lastTick = null;
+  let lastTick = null;
 
-    const tick = () => {
-      ctx.log("tick - isConnected", ctx.isConnected);
+  const tick = () => {
+    self.debug.log("tick - isConnected", self.isConnected);
 
-      if (ctx.isConnected) {
-        const now = Date.now();
+    if (self.isConnected) {
+      const now = Date.now();
 
-        const elapsed = $$elapsed.get();
-        const duration = $$duration.get();
+      const elapsed = $$elapsed.get();
+      const duration = $$duration.get();
 
-        // Only update if $elapsed hasn't yet reached $duration
-        if (elapsed < duration) {
-          const difference = (now - lastTick) / 1000;
+      // Only update if $elapsed hasn't yet reached $duration
+      if (elapsed < duration) {
+        const difference = (now - lastTick) / 1000;
 
-          $$elapsed.update((current) => {
-            return Math.min(current + difference, duration);
-          });
-        }
-
-        lastTick = now;
-        window.requestAnimationFrame(tick);
+        $$elapsed.update((current) => {
+          return Math.min(current + difference, duration);
+        });
       }
-    };
 
-    ctx.onConnect(() => {
-      lastTick = Date.now();
+      lastTick = now;
+      window.requestAnimationFrame(tick);
+    }
+  };
 
-      tick();
-    });
+  self.onConnected(() => {
+    lastTick = Date.now();
 
-    return (
-      <ExampleFrame title="4. Timer">
-        <div>
-          <div>
-            Elapsed Time: <progress max={$$duration} value={$$elapsed} />
-          </div>
-          <div>{$$elapsed.map((seconds) => seconds.toFixed(1))}</div>
-          <div>
-            Duration:{" "}
-            <input
-              type="range"
-              min={0}
-              max={30}
-              step={0.1}
-              value={$$duration}
-            />
-          </div>
-          <div>
-            <button
-              onclick={() => {
-                $$elapsed.set(0);
-              }}
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-      </ExampleFrame>
-    );
-  },
-});
+    tick();
+  });
+
+  return m(ExampleFrame, { title: "4. Timer" }, [
+    m("div", [
+      m("div", [
+        "Elapsed Time: ",
+        m("progress", { max: $$duration, value: $$elapsed }),
+      ]),
+      m(
+        "div",
+        $$elapsed.map((seconds) => seconds.toFixed(1))
+      ),
+      m("div", [
+        "Duration: ",
+        m("input", {
+          type: "range",
+          min: 0,
+          max: 30,
+          step: 0.1,
+          value: $$duration,
+        }),
+      ]),
+      m("div", [
+        m(
+          "button",
+          {
+            onclick: () => {
+              $$elapsed.set(0);
+            },
+          },
+          "Reset"
+        ),
+      ]),
+    ]),
+  ]);
+}

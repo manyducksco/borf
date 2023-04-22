@@ -104,7 +104,6 @@ export function RouterStore(self: ComponentCore<RouterInputs>) {
 
   const appContext = getAppContext(self);
   const elementContext = getElementContext(self);
-  const logger = appContext.debugHub.logger("borf:store:router");
 
   const { options, router } = self.inputs.get();
 
@@ -203,7 +202,7 @@ export function RouterStore(self: ComponentCore<RouterInputs>) {
       return;
     }
 
-    logger.log(`matched route '${matched.pattern}'`);
+    self.debug.info(`matched route '${matched.pattern}'`);
 
     if (matched.meta.redirect != null) {
       if (typeof matched.meta.redirect === "string") {
@@ -215,7 +214,7 @@ export function RouterStore(self: ComponentCore<RouterInputs>) {
 
         // TODO: Update this code to work with new `{param}` style. Looks like it's still for `:params`
 
-        logger.log(`redirecting to '${path}'`);
+        self.debug.info(`redirecting to '${path}'`);
         history.replace(path);
       } else if (typeof matched.meta.redirect === "function") {
         // TODO: Implement redirect by function.
@@ -238,7 +237,7 @@ export function RouterStore(self: ComponentCore<RouterInputs>) {
           const activeLayer = activeLayers[i];
 
           if (activeLayer?.id !== matchedLayer.id) {
-            logger.log(`replacing layer@${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
+            self.debug.info(`replacing layer@${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];

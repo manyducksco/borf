@@ -38,14 +38,13 @@ export async function LanguageStore(self: ComponentCore<LanguageInputs>) {
 
   const options = self.inputs.get();
   const languages = new Map<string, Language>();
-  const logger = getAppContext(self).debugHub.logger("borf:store:language");
 
   // Convert languages into Language instances.
   Object.entries(options.languages).forEach(([tag, config]) => {
     languages.set(tag, new Language(tag, config));
   });
 
-  logger.log(
+  self.debug.info(
     `app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
   );
 
@@ -71,7 +70,7 @@ export async function LanguageStore(self: ComponentCore<LanguageInputs>) {
     : languages.get([...languages.keys()][0]);
 
   if (currentLanguage != null) {
-    logger.log(`current language is '${currentLanguage.tag}'`);
+    self.debug.info(`current language is '${currentLanguage.tag}'`);
 
     const translation = await currentLanguage.getTranslation();
 
@@ -96,7 +95,7 @@ export async function LanguageStore(self: ComponentCore<LanguageInputs>) {
         $$language.value = tag;
         $$translation.value = translation;
 
-        logger.log("set language to " + tag);
+        self.debug.info("set language to " + tag);
       } catch (error) {
         if (error instanceof Error) {
           self.crash(error);

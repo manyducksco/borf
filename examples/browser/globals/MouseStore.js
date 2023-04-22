@@ -1,22 +1,20 @@
-import { Store, Writable } from "@borf/browser";
+import { Writable } from "@borf/browser";
 
-export const MouseStore = new Store({
-  label: "MouseStore",
-  about: "Tracks the mouse position.",
+/**
+ * Tracks the mouse position.
+ */
+export function MouseStore(self) {
+  const $$position = new Writable({ x: 0, y: 0 });
 
-  setup: (ctx) => {
-    const $$position = new Writable({ x: 0, y: 0 });
+  self.onConnected(() => {
+    self.debug.log("listening for mousemove events");
 
-    ctx.onConnect(() => {
-      ctx.log("listening for mousemove events");
-
-      window.addEventListener("mousemove", (e) => {
-        $$position.set({ x: e.clientX, y: e.clientY });
-      });
+    window.addEventListener("mousemove", (e) => {
+      $$position.set({ x: e.clientX, y: e.clientY });
     });
+  });
 
-    return {
-      $position: $$position.toReadable(),
-    };
-  },
-});
+  return {
+    $position: $$position.toReadable(),
+  };
+}

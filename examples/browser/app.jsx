@@ -1,4 +1,4 @@
-import { App, ElementHub } from "@borf/browser";
+import { App } from "@borf/browser";
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
@@ -29,14 +29,14 @@ import Cells from "./7guis/07_Cells";
 // Views and stores can be added to an ElementHub to use them as custom HTML elements.
 // This is a good option if you want to sprinkle in views to enhance a regular HTML & CSS website.
 
-const hub = new ElementHub();
+// const hub = new ElementHub();
 
-hub.addElement("web-component-view", (self) => {
-  const { location } = self.inputs.get();
-  return m("h1", `This is a web component. [location:${location}]`);
-});
+// hub.addElement("web-component-view", (self) => {
+//   const { location } = self.inputs.get();
+//   return m("h1", `This is a web component. [location:${location}]`);
+// });
 
-hub.connect(); // Now using <web-component-view> anywhere in your HTML will create an instance of WebComponentView.
+// hub.connect(); // Now using <web-component-view> anywhere in your HTML will create an instance of WebComponentView.
 
 /*===========================*\
 ||            App            ||

@@ -76,7 +76,7 @@ export function m<I>(element: string | Component<I>, attributes?: any, ...childr
   }
 
   // If attributes isn't null or an object, consider it a child.
-  if (!Type.isObject(attributes)) {
+  if (Markup.isMarkup(attributes) || !Type.isObject(attributes)) {
     children.unshift(attributes as Renderable);
     attributes = {};
   }
@@ -190,7 +190,7 @@ export function observe<T>(readable: Readable<T>, render: (value: T) => Renderab
  */
 export function repeat<T>(
   readable: Readable<Iterable<T>>,
-  render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Renderable,
+  render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
   key?: (value: T, index: number) => string | number
 ): Markup {
   return new Markup((config) => {

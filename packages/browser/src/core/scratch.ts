@@ -1,14 +1,16 @@
 import { Readable, Writable, type ValuesOfReadables, type StopFunction } from "./classes/Writable.js";
 import { Inputs, InputsAPI, type UnwrapReadables } from "./classes/Inputs.js";
-import { m, Markup } from "./classes/Markup.js";
+import { Markup } from "./classes/Markup.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "./keys.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
-import { BuiltInStores } from "./types.js";
+import { type BuiltInStores } from "./types.js";
 import { Outlet } from "./classes/Outlet.js";
 import { Connectable } from "./classes/Connectable.js";
+import { type DebugChannel } from "./classes/DebugHub.js";
 
 export interface ComponentCore<I> {
   inputs: InputsAPI<UnwrapReadables<I>>;
+  debug: DebugChannel;
 
   /**
    * Runs `callback` after this component is connected.
@@ -51,11 +53,9 @@ export interface ComponentCore<I> {
   outlet(): Markup;
 }
 
-function makeInputs<I>(values: I): [InputsAPI<UnwrapReadables<I>>, Inputs<I>] {
-  const inputs = new Inputs(values);
-
-  return [inputs.api, inputs];
-}
+export type Component<I> = (ctx: ComponentCore<I>) => unknown;
+export type Store<I, O> = (ctx: ComponentCore<I>) => O;
+export type View<I> = (ctx: ComponentCore<I>) => Markup | null;
 
 export function getAppContext(core: ComponentCore<any>) {
   return (core as any)[APP_CONTEXT] as AppContext;
@@ -65,10 +65,19 @@ export function getElementContext(core: ComponentCore<any>) {
   return (core as any)[ELEMENT_CONTEXT] as ElementContext;
 }
 
+function makeInputs<I>(values: I): [InputsAPI<UnwrapReadables<I>>, Inputs<I>] {
+  const inputs = new Inputs(values);
+
+  return [inputs.api, inputs];
+}
+
+/**
+ * Parameters passed to the makeComponent function.
+ */
 interface ComponentConfig<I> {
+  component: Component<I>;
   appContext: AppContext;
   elementContext: ElementContext;
-  component: Component<I>;
   inputs: I;
   children?: Markup[];
 }
@@ -78,25 +87,38 @@ interface ComponentConfig<I> {
  */
 export interface ComponentControls extends Connectable {
   $$children: Writable<Markup[]>;
+  outputs?: object;
 }
 
 // Run component functions through a single function that initializes them in the same way and determines what kind of component they are based on the return value.
 
 export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls {
-  const stopObserverCallbacks: (() => void)[] = [];
-  const onConnectedCallbacks: (() => void)[] = [];
-  const onDisconnectedCallbacks: (() => void)[] = [];
-  const beforeConnectedCallbacks: (() => Promise<void>)[] = [];
-  const beforeDisconnectedCallbacks: (() => Promise<void>)[] = [];
+  let stopObserverCallbacks: (() => void)[] = [];
+  let onConnectedCallbacks: (() => void)[] = [];
+  let onDisconnectedCallbacks: (() => void)[] = [];
+  let beforeConnectedCallbacks: (() => Promise<void>)[] = [];
+  let beforeDisconnectedCallbacks: (() => Promise<void>)[] = [];
 
   const [inputs, inputsControls] = makeInputs(config.inputs);
   const $$children = new Writable(config.children ?? []);
 
   let isConnected = false;
-  let componentName = config.component.name;
+  let componentName = config.component.name ?? "anonymous";
+
+  const appContext = config.appContext;
+  const elementContext = {
+    ...config.elementContext,
+  };
+
+  const debugChannel = appContext.debugHub.channel({
+    get name() {
+      return componentName;
+    },
+  });
 
   const core: ComponentCore<I> = {
     inputs,
+    debug: debugChannel,
 
     onConnected(callback) {
       onConnectedCallbacks.push(callback);
@@ -129,7 +151,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
             });
           }
 
-          return _store.instance.outputs;
+          return _store.instance!.outputs;
         }
       } else {
         const name = store.name;
@@ -150,7 +172,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
             });
           }
 
-          return _store.instance.outputs;
+          return _store.instance!.outputs;
         }
 
         appContext.crashCollector.crash({
@@ -203,7 +225,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
     },
 
     crash(error) {
-      config.appContext.crashCollector.crash({ error, componentName });
+      appContext.crashCollector.crash({ error, componentName });
     },
 
     outlet() {
@@ -214,18 +236,24 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   // For secret internal funny business only.
   Object.defineProperties(core, {
     [APP_CONTEXT]: {
-      value: config.appContext,
+      value: appContext,
       enumerable: false,
       configurable: false,
     },
     [ELEMENT_CONTEXT]: {
-      value: config.elementContext,
+      value: elementContext,
       enumerable: false,
       configurable: false,
     },
   });
 
-  async function initialize(parent: Node, after?: Node): Connectable {
+  // Exported object from store. This is undefined for views.
+  let outputs: object | undefined;
+
+  // Either the markup from a view or the outlet from a store.
+  let connectable: Connectable | undefined;
+
+  async function initialize(parent: Node, after?: Node) {
     let result = config.component(core);
 
     if (result instanceof Promise) {
@@ -235,18 +263,25 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
 
     if (result instanceof Markup || result === null) {
       // Result is a view.
+      connectable = result?.init({ appContext, elementContext });
     } else if (typeof result === "object" && !Array.isArray(result)) {
       // Result is a store.
+      outputs = result;
+      connectable = new Outlet({ appContext, elementContext, readable: $$children });
     } else {
       // Result is not usable.
       throw new TypeError(
-        `Expected component function to return Markup or null for a view, or an object for a store. Got type: ${typeof result}, value: ${result}`
+        `Expected component function to return Markup or null (View), or an object (Store). Got type: ${typeof result}, value: ${result}`
       );
     }
   }
 
   const controls: ComponentControls = {
     $$children,
+
+    get outputs() {
+      return outputs;
+    },
 
     get node() {
       return document.createComment("REPLACE ME");
@@ -257,102 +292,56 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
     },
 
     async connect(parent: Node, after?: Node) {
+      // Start input observers
       inputsControls.connect();
 
+      // Initialize and connect
+      await initialize(parent, after);
+      if (connectable) {
+        await connectable.connect(parent, after);
+      }
+
+      // Run beforeConnected
       for (const callback of beforeConnectedCallbacks) {
         await callback();
       }
+      beforeConnectedCallbacks = [];
 
+      // Mark component as connected
+      isConnected = true;
+
+      // Run onConnected
       for (const callback of onConnectedCallbacks) {
         callback();
       }
+      onConnectedCallbacks = [];
     },
 
     async disconnect() {
+      // Run beforeDisconnected
       for (const callback of beforeDisconnectedCallbacks) {
         await callback();
       }
+      beforeDisconnectedCallbacks = [];
 
+      // Disconnect component
+      if (connectable) {
+        await connectable.disconnect();
+      }
+
+      // Mark as disconnected
+      isConnected = false;
+
+      // Run onDisconnected
       for (const callback of onDisconnectedCallbacks) {
         callback();
       }
+      onDisconnectedCallbacks = [];
 
+      // Disconnect input observers.
       inputsControls.disconnect();
     },
   };
 
   return controls;
 }
-
-export type Component<I> = (ctx: ComponentCore<I>) => unknown;
-export type Store<I, O> = (ctx: ComponentCore<I>) => O;
-export type View<I> = (ctx: ComponentCore<I>) => Markup | null;
-
-interface AppRouter {
-  addRoute(pattern: string, view: View<any>, subroutes?: (router: AppRouter) => void): this;
-  addRoute(pattern: string, view: null, subroutes: (router: AppRouter) => void): this;
-
-  addRedirect(pattern: string, path: string): this;
-}
-
-class App implements AppRouter {
-  /**
-   * Displays view at the root of the app. All other routes render inside this view's outlet.
-   */
-  setRootView<I>(view: View<I>, inputs?: I) {
-    return this;
-  }
-
-  /**
-   * Displays view over top of all other app content while at least one async component promise is pending.
-   */
-  setSplashView<I>(view: View<I>, inputs?: I) {
-    return this;
-  }
-
-  /**
-   * Makes this store accessible from any other component in the app, except for stores registered before this one.
-   */
-  addStore<I>(store: Store<I, any>, inputs?: I) {
-    return this;
-  }
-
-  addRoute(pattern: string, view: View<any>, subroutes?: (router: AppRouter) => void): this;
-  addRoute(pattern: string, view: null, subroutes: (router: AppRouter) => void): this;
-
-  addRoute(pattern: string, view: View<any> | null, subroutes?: (router: AppRouter) => void) {
-    return this;
-  }
-
-  addRedirect(pattern: string, path: string) {
-    return this;
-  }
-
-  async connect() {}
-
-  async disconnect() {}
-}
-
-const app = new App();
-
-interface ExampleStoreInputs {
-  initialValue: number;
-}
-
-function ExampleStore(self: ComponentCore<ExampleStoreInputs>) {
-  return {
-    $value: new Readable(self.inputs.get("initialValue")),
-  };
-}
-
-function ExampleView(self: ComponentCore<{}>) {
-  const { $value } = self.useStore(ExampleStore);
-
-  return m("p", "The value is", $value);
-}
-
-app.addStore(ExampleStore, {
-  initialValue: 5,
-});
-
-app.setRootView(ExampleView);

@@ -1,8 +1,9 @@
 import { Readable, Writable, type StopFunction } from "./Writable.js";
 import { Connectable } from "./Connectable.js";
-import { type Renderable } from "./Markup.js";
+import { omit } from "../helpers/omit.js";
+import { type Markup } from "./Markup.js";
 import { type AppContext, type ElementContext } from "./App.js";
-import { type ComponentCore } from "../scratch.js";
+import { makeComponent, type ComponentCore } from "../scratch.js";
 
 // ----- Types ----- //
 
@@ -12,7 +13,7 @@ interface RepeatOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
   readable: Readable<Iterable<T>>;
-  render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Renderable;
+  render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null;
   key?: (value: T, index: number) => any;
 }
 
@@ -32,7 +33,7 @@ export class Repeat<T> implements Connectable {
   #connectedItems: ConnectedItem<T>[] = [];
   #appContext;
   #elementContext;
-  #render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Renderable;
+  #render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null;
   #keyFn;
 
   get node() {
@@ -126,10 +127,11 @@ export class Repeat<T> implements Connectable {
           key: potential.key,
           $$value,
           $$index,
-          connectable: this.#markup.init({
+          connectable: makeComponent({
+            component: RepeatItemView,
             appContext: this.#appContext,
             elementContext: this.#elementContext,
-            inputs: { value: $$value, index: $$index },
+            inputs: { value: $$value.toReadable(), index: $$index.toReadable(), render: this.#render },
           }),
         };
       }
@@ -143,4 +145,18 @@ export class Repeat<T> implements Connectable {
 
     this.#connectedItems = newItems;
   }
+}
+
+interface RepeatItemInputs {
+  value: Readable<any>;
+  index: Readable<number>;
+  render: ($value: Readable<any>, $index: Readable<number>, ctx: RepeatContext) => Markup | null;
+}
+
+function RepeatItemView(self: ComponentCore<RepeatItemInputs>) {
+  const $value = self.inputs.$("value");
+  const $index = self.inputs.$("index");
+  const render = self.inputs.get("render");
+
+  return render($value, $index, omit(["inputs"], self) as RepeatContext);
 }

@@ -31,7 +31,12 @@ type DebugHubOptions = DebugOptions & {
   mode: "development" | "production";
 };
 
+export interface DebugChannelOptions {
+  name: string;
+}
+
 export interface DebugChannel {
+  info(...args: any[]): void;
   log(...args: any[]): void;
   warn(...args: any[]): void;
   error(...args: any[]): void;
@@ -60,66 +65,57 @@ export class DebugHub {
   /**
    * Returns a debug channel labelled by `name`. Used for logging from components.
    */
-  channel(name: string): DebugChannel {
-    assertNameFormat(name);
-
+  channel(options: DebugChannelOptions): DebugChannel {
     const _console = this.#console;
-    const options = this.#options;
-
-    const label = `%c${name}`;
-    const labelStyles = `color:${hash(label)};font-weight:bold`;
+    const hubOptions = this.#options;
 
     const match = (value: string) => {
       return this.#matcher(value);
     };
 
     return {
+      get info() {
+        const name = options.name;
+
+        if (hubOptions.mode !== "development" || hubOptions.log === false || !match(name)) {
+          return noOp;
+        } else {
+          const label = `%c${name}`;
+          return _console.info.bind(_console, label, `color:${hash(label)};font-weight:bold`);
+        }
+      },
+
       get log() {
-        if (options.log === false || !match(name)) return noOp;
-        else return _console.log.bind(_console, label, labelStyles);
+        const name = options.name;
+
+        if (hubOptions.log === false || !match(name)) {
+          return noOp;
+        } else {
+          const label = `%c${name}`;
+          return _console.log.bind(_console, label, `color:${hash(label)};font-weight:bold`);
+        }
       },
 
       get warn() {
-        if (options.warn === false || !match(name)) return noOp;
-        else return _console.warn.bind(_console, label, labelStyles);
+        const name = options.name;
+
+        if (hubOptions.warn === false || !match(name)) {
+          return noOp;
+        } else {
+          const label = `%c${name}`;
+          return _console.warn.bind(_console, label, `color:${hash(label)};font-weight:bold`);
+        }
       },
 
       get error() {
-        if (options.error === false || !match(name)) return noOp;
-        else return _console.error.bind(_console, label, labelStyles);
-      },
-    };
-  }
+        const name = options.name;
 
-  /**
-   * Returns a framework logger. These messages are by default not printed at all unless the app is in development mode.
-   */
-  logger(name: string): DebugChannel {
-    const _console = this.#console;
-    const options = this.#options;
-
-    const enabled = options.mode === "development";
-    const label = `%c${name}`;
-    const labelStyles = `color:${hash(label)};font-weight:bold`;
-
-    const match = (value: string) => {
-      return this.#matcher(value);
-    };
-
-    return {
-      get log() {
-        if (!enabled || options.log === false || !match(name)) return noOp;
-        else return _console.info.bind(_console, label, labelStyles);
-      },
-
-      get warn() {
-        if (!enabled || options.warn === false || !match(name)) return noOp;
-        else return _console.warn.bind(_console, label, labelStyles);
-      },
-
-      get error() {
-        if (!enabled || options.error === false || !match(name)) return noOp;
-        else return _console.error.bind(_console, label, labelStyles);
+        if (hubOptions.error === false || !match(name)) {
+          return noOp;
+        } else {
+          const label = `%c${name}`;
+          return _console.error.bind(_console, label, `color:${hash(label)};font-weight:bold`);
+        }
       },
     };
   }
@@ -154,12 +150,6 @@ function hash(value: string) {
     sat: { min: 0.35, max: 0.55 },
     light: { min: 0.6, max: 0.6 },
   });
-}
-
-function assertNameFormat(name: string) {
-  if (name.includes(",")) {
-    throw new Error(`Channel names cannot contain commas. Got: ${name}`);
-  }
 }
 
 type MatcherFunction = (value: string) => boolean;

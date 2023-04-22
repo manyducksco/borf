@@ -60,7 +60,7 @@ export interface StoreRegistration<I = any> {
   store: Store<I, any>;
   exports?: Store<I, any>;
   inputs?: I;
-  instance?: StoreInstance<I, any>;
+  instance?: ComponentControls;
 }
 
 interface AppRouter {
@@ -120,7 +120,7 @@ export class App implements AppRouter {
   #layerId = 0;
   #isConnected = false;
   #stopCallbacks: StopFunction[] = [];
-  #stores = new Map<keyof BuiltInStores | StoreRegistration["store"], StoreRegistration>([
+  #stores = new Map<keyof BuiltInStores | Store<any, any>, StoreRegistration>([
     // ["dialog", { store: DialogStore }],
     ["router", { store: RouterStore }],
     ["page", { store: PageStore }],
@@ -134,7 +134,6 @@ export class App implements AppRouter {
   #elementContext: ElementContext = {
     stores: new Map(),
   };
-  #logger;
 
   #options: AppOptions = {
     debug: {
@@ -215,19 +214,15 @@ export class App implements AppRouter {
       mode: options.mode!,
       // $dialogs - added by dialog store
     };
-    this.#logger = this.#appContext.debugHub.logger("App");
   }
 
   /**
-   * Sets a root view, which is displayed by the app at all times.
-   * All routes added to the app will render inside this view's `ctx.outlet()`.
-   *
-   * @param view - A View or a standalone setup function.
+   * Displays view at the root of the app. All other routes render inside this view's outlet.
    */
-  setRootView(view: View<{}>) {
+  setRootView<I>(view: View<I>, inputs?: I) {
     if (this.#rootView != DefaultRootView) {
       this.#appContext.debugHub
-        .channel("borf:App")
+        .channel({ name: "borf:App" })
         .warn(`Root view is already defined. Only the final addRootView call will take effect.`);
     }
 
@@ -240,10 +235,17 @@ export class App implements AppRouter {
     return this;
   }
 
+  /**
+   * Displays view over top of all other app content while at least one async component promise is pending.
+   */
+  setSplashView<I>(view: View<I>, inputs?: I) {
+    return this;
+  }
+
   addStore<I>(store: Store<I, any>, inputs?: I): this;
 
   /**
-   * Adds a new global store which will be available to every component within this App.
+   * Makes this store accessible from any other component in the app, except for stores registered before this one.
    */
   addStore<I>(store: Store<I, any>, inputs?: I) {
     let config: StoreRegistration | undefined;
@@ -415,6 +417,7 @@ export class App implements AppRouter {
 
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
+    const debugChannel = this.#appContext.debugHub.channel({ name: "App" });
 
     appContext.rootElement = element!;
 
@@ -437,7 +440,7 @@ export class App implements AppRouter {
       },
     });
 
-    this.#logger.log(`total routes: ${this.#router.routes.length}`);
+    debugChannel.info(`total routes: ${this.#router.routes.length}`);
 
     // Initialize global stores.
     for (let [key, item] of this.#stores.entries()) {
@@ -453,7 +456,7 @@ export class App implements AppRouter {
         elementContext,
         channelPrefix,
         label,
-        inputs,
+        inputs: inputs ?? {},
       };
 
       let instance: ComponentControls | undefined;
@@ -494,7 +497,7 @@ export class App implements AppRouter {
     // The app is now connected.
     this.#isConnected = true;
 
-    this.#logger.log("connected in " + timer.formatted);
+    debugChannel.info("connected in " + timer.formatted);
   }
 
   /**

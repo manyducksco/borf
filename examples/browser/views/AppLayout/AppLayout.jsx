@@ -7,7 +7,7 @@ export async function AppLayout(self) {
   self.setName("🐕");
   self.setLoader(m("h1", "This app is loading!"));
 
-  self.log("hi");
+  self.debug.log("hi");
 
   const router = self.useStore("router");
   const page = self.useStore("page");
@@ -19,7 +19,7 @@ export async function AppLayout(self) {
   });
 
   self.observe(page.$visibility, (status) => {
-    self.log(`visibility: ${status}`);
+    self.debug.log(`visibility: ${status}`);
   });
 
   const navLink = (href, label) => {
