@@ -1,5 +1,5 @@
 import test from "ava";
-import { m, Markup } from "./Markup_temp.js";
+import { m, Markup } from "./Markup.js";
 import { ComponentCore } from "../component.js";
 
 test("a", (t) => {

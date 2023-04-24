@@ -1,5 +1,5 @@
 import { omit } from "../core/helpers/omit.js";
-import { m } from "../core/classes/Markup_temp.js";
+import { m } from "../core/classes/Markup.js";
 
 export { Fragment } from "../core/classes/Fragment.js";
 

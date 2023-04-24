@@ -1,6 +1,6 @@
 import { type AppContext, type ElementContext } from "./App.js";
 import { type Connectable } from "./Connectable.js";
-import { type Markup } from "./Markup_temp.js";
+import { type Markup } from "./Markup.js";
 
 interface FragmentOptions {
   appContext: AppContext;

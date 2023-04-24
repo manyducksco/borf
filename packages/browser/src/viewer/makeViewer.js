@@ -1,4 +1,4 @@
-import { Markup } from "../core/classes/Markup_temp.js";
+import { Markup } from "../core/classes/Markup.js";
 import { Store } from "../core/classes/Store.old.js";
 import { View } from "../core/classes/View.old.js";
 

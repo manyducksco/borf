@@ -1,6 +1,6 @@
 import { Readable, Writable, type ValuesOfReadables, type StopFunction } from "./classes/Writable.js";
 import { Inputs, InputsAPI, type UnwrapReadables } from "./classes/Inputs.js";
-import { Markup } from "./classes/Markup_temp.js";
+import { Markup } from "./classes/Markup.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "./keys.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
 import { type BuiltInStores } from "./types.js";
