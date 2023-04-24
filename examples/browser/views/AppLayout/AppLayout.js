@@ -42,6 +42,7 @@ export async function AppLayout(self) {
           m.li(navLink("/examples/crash-handling", "Crash Handling")),
           m.li(navLink("/examples/counter-with-store", "Counter with Store")),
           m.li(navLink("/examples/local-stores", "Local Stores")),
+          m.li(navLink("/examples/passing-attributes", "Passing Attributes")),
         ]),
       ]),
 

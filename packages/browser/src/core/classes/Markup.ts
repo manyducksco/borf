@@ -250,7 +250,6 @@ const tags: (keyof IntrinsicElements)[] = [
   "option",
   "output",
   "p",
-  "param",
   "pre",
   "progress",
   "q",

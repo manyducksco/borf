@@ -10,6 +10,7 @@ import { CrashHandling } from "./examples/CrashHandling";
 import { Languages } from "./examples/Languages";
 import { LocalStores } from "./examples/LocalStores";
 import { SpringAnimation } from "./examples/SpringAnimation";
+import { PassingAttributes } from "./examples/PassingAttributes";
 
 import { RenderOrderTest } from "./views/RenderOrderTest";
 
@@ -95,6 +96,7 @@ app.addRoute("/examples", null, (sub) => {
   sub.addRoute("/crash-handling", CrashHandling);
   sub.addRoute("/counter-with-store", CounterWithStore);
   sub.addRoute("/local-stores", LocalStores);
+  sub.addRoute("/passing-attributes", PassingAttributes);
   sub.addRedirect("*", "./spring-animation");
 });
 

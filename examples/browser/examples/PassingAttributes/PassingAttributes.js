@@ -9,9 +9,12 @@ import styles from "./PassingAttributes.module.css";
 export function PassingAttributes(self) {
   const $$message = new Writable("Hello");
 
-  return m(ExampleFrame, [
-    m.h3("Passing Attributes"),
+  return m(ExampleFrame, { title: "Input Bindings" }, [
     m.div(
+      m.p(
+        "Type in the box below and watch the message update. Both are bound to the same Writable."
+      ),
+
       // Input values support two way binding, so changes here will propagate to $$message and vice versa
       m.input({ type: "text", value: $$message }),
       m.hr(),

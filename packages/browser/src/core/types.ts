@@ -5,7 +5,7 @@ import { type LanguageStore } from "./stores/language.js";
 import { type PageStore } from "./stores/page.js";
 import { type RouterStore } from "./stores/router.js";
 import { type Store } from "./component.js";
-import { type Readable } from "./classes/Writable.js";
+import { type Writable, type Readable } from "./classes/Writable.js";
 import { type Ref } from "./classes/Ref.js";
 
 type StoreOutput<T> = T extends Store<any, infer O> ? (O extends Promise<infer U> ? U : O) : unknown;
@@ -835,8 +835,8 @@ export interface IntrinsicElements {
 }
 
 /*====================================*\
-    || 4.4               Grouping content ||
-    \*====================================*/
+|| 4.4               Grouping content ||
+\*====================================*/
 
 interface PElementAttributes extends ElementAttributes<HTMLParagraphElement> {}
 
@@ -1497,14 +1497,14 @@ export interface IntrinsicElements {
 }
 
 /*====================================*\
-    || 4.6                          Links ||
-    \*====================================*/
+|| 4.6                          Links ||
+\*====================================*/
 
 // --- This is just about <a> and <area> attributes in the spec.
 
 /*====================================*\
-    || 4.7                          Edits ||
-    \*====================================*/
+|| 4.7                          Edits ||
+\*====================================*/
 
 interface ModElementAttributes extends ElementAttributes<HTMLModElement> {
   /**
@@ -1604,8 +1604,8 @@ export interface IntrinsicElements {
 }
 
 /*====================================*\
-    || 4.8               Embedded Content ||
-    \*====================================*/
+|| 4.8               Embedded Content ||
+\*====================================*/
 
 // picture
 // source
@@ -2624,8 +2624,8 @@ export interface IntrinsicElements {
 }
 
 /*====================================*\
-    || 4.10                         Forms ||
-    \*====================================*/
+|| 4.10                         Forms ||
+\*====================================*/
 
 // form
 // label
@@ -2701,23 +2701,139 @@ interface LabelElementAttributes extends ElementAttributes<HTMLLabelElement> {
   for?: MaybeReadable<string | undefined>;
 }
 
-interface InputElementAttributes extends ElementAttributes<HTMLInputElement> {}
+type InputType =
+  | "hidden"
+  | "text"
+  | "search"
+  | "tel"
+  | "url"
+  | "email"
+  | "password"
+  | "date"
+  | "month"
+  | "week"
+  | "time"
+  | "datetime-local"
+  | "number"
+  | "range"
+  | "color"
+  | "checkbox"
+  | "radio"
+  | "file"
+  | "submit"
+  | "image"
+  | "reset"
+  | "button";
 
-interface ButtonElementAttributes extends ElementAttributes<HTMLButtonElement> {}
+// TODO: Add complete doc comments
+interface InputElementAttributes extends ElementAttributes<HTMLInputElement> {
+  accept?: MaybeReadable<string | undefined>;
+  alt?: MaybeReadable<string | undefined>;
+  autocomplete?: MaybeReadable<"off" | "on" | string | undefined>;
+  checked?: MaybeReadable<boolean | undefined>;
+  dirname?: MaybeReadable<string | undefined>;
+  disabled?: MaybeReadable<boolean | undefined>;
+  form?: MaybeReadable<string | undefined>;
+  formaction?: MaybeReadable<string | undefined>;
+  formenctype?: MaybeReadable<string | undefined>;
+  formmethod?: MaybeReadable<string | undefined>;
+  formnovalidate?: MaybeReadable<boolean | undefined>;
+  formtarget?: MaybeReadable<string | undefined>;
+  height?: MaybeReadable<string | number | undefined>;
+  list?: MaybeReadable<string | undefined>;
+  max?: MaybeReadable<string | number | undefined>;
+  maxlength?: MaybeReadable<number | undefined>;
+  min?: MaybeReadable<string | number | undefined>;
+  minlength?: MaybeReadable<number | undefined>;
+  multiple?: MaybeReadable<boolean | undefined>;
+  name?: MaybeReadable<string | undefined>;
+  pattern?: MaybeReadable<string | RegExp | undefined>;
+  placeholder?: MaybeReadable<string | undefined>;
+  popovertarget?: MaybeReadable<string | undefined>;
+  popovertargetaction?: MaybeReadable<"toggle" | "show" | "hide" | undefined>;
+  readonly?: MaybeReadable<boolean | undefined>;
+  required?: MaybeReadable<boolean | undefined>;
+  size?: MaybeReadable<number | undefined>;
+  src?: MaybeReadable<string | undefined>;
+  step?: MaybeReadable<number | undefined>;
+  type?: MaybeReadable<InputType | undefined>;
+  value?: Writable<string> | Readable<string> | string;
+  width?: MaybeReadable<string | number | undefined>;
+  title?: MaybeReadable<string | undefined>;
+}
 
-interface SelectElementAttributes extends ElementAttributes<HTMLSelectElement> {}
+// TODO: Add complete doc comments
+interface ButtonElementAttributes extends ElementAttributes<HTMLButtonElement> {
+  disabled?: MaybeReadable<boolean | undefined>;
+  form?: MaybeReadable<string | undefined>;
+  formaction?: MaybeReadable<string | undefined>;
+  formenctype?: MaybeReadable<string | undefined>;
+  formmethod?: MaybeReadable<string | undefined>;
+  formnovalidate?: MaybeReadable<boolean | undefined>;
+  formtarget?: MaybeReadable<string | undefined>;
+  name?: MaybeReadable<string | undefined>;
+  popovertarget?: MaybeReadable<string | undefined>;
+  popovertargetaction?: MaybeReadable<"toggle" | "show" | "hide" | undefined>;
+  type?: MaybeReadable<"submit" | "reset" | "button" | undefined>;
+  value?: MaybeReadable<string | undefined>;
+}
 
+// TODO: Add complete doc comments
+interface SelectElementAttributes extends ElementAttributes<HTMLSelectElement> {
+  autocomplete?: MaybeReadable<"off" | "on" | string | undefined>;
+  disabled?: MaybeReadable<boolean | undefined>;
+  form?: MaybeReadable<string | undefined>;
+  multiple?: MaybeReadable<boolean | undefined>;
+  name?: MaybeReadable<string | undefined>;
+  required?: MaybeReadable<boolean | undefined>;
+  size?: MaybeReadable<number | undefined>;
+}
+
+// TODO: Add complete doc comments
 interface DatalistElementAttributes extends ElementAttributes<HTMLDataListElement> {}
 
-interface OptgroupElementAttributes extends ElementAttributes<HTMLOptGroupElement> {}
+// TODO: Add complete doc comments
+interface OptgroupElementAttributes extends ElementAttributes<HTMLOptGroupElement> {
+  disabled?: MaybeReadable<boolean | undefined>;
+  label?: MaybeReadable<string | undefined>;
+}
 
-interface OptionElementAttributes extends ElementAttributes<HTMLOptionElement> {}
+// TODO: Add complete doc comments
+interface OptionElementAttributes extends ElementAttributes<HTMLOptionElement> {
+  disabled?: MaybeReadable<boolean | undefined>;
+  label?: MaybeReadable<string | undefined>;
+  selected?: MaybeReadable<boolean | undefined>;
+  value?: MaybeReadable<string | undefined>;
+}
 
-interface TextareaElementAttributes extends ElementAttributes<HTMLTextAreaElement> {}
+// TODO: Add complete doc comments
+interface TextareaElementAttributes extends ElementAttributes<HTMLTextAreaElement> {
+  autocomplete?: MaybeReadable<"off" | "on" | string | undefined>;
+  cols?: MaybeReadable<number | undefined>;
+  dirname?: MaybeReadable<string | undefined>;
+  disabled?: MaybeReadable<boolean | undefined>;
+  form?: MaybeReadable<string | undefined>;
+  maxlength?: MaybeReadable<number | undefined>;
+  minlength?: MaybeReadable<number | undefined>;
+  name?: MaybeReadable<string | undefined>;
+  placeholder?: MaybeReadable<string | undefined>;
+  readonly?: MaybeReadable<boolean | undefined>;
+  required?: MaybeReadable<boolean | undefined>;
+  rows?: MaybeReadable<number | undefined>;
+  wrap?: MaybeReadable<"soft" | "hard" | undefined>;
+}
 
-interface OutputElementAttributes extends ElementAttributes<HTMLOutputElement> {}
+// TODO: Add complete doc comments
+interface OutputElementAttributes extends ElementAttributes<HTMLOutputElement> {
+  for?: MaybeReadable<string | undefined>;
+  form?: MaybeReadable<string | undefined>;
+  name?: MaybeReadable<string | undefined>;
+}
 
-interface ProgressElementAttributes extends ElementAttributes<HTMLProgressElement> {}
+interface ProgressElementAttributes extends ElementAttributes<HTMLProgressElement> {
+  value?: MaybeReadable<number | undefined>;
+  max?: MaybeReadable<number | undefined>;
+}
 
 interface MeterElementAttributes extends ElementAttributes<HTMLMeterElement> {
   /**
@@ -2786,8 +2902,24 @@ export interface IntrinsicElements {
    */
   label: LabelElementAttributes;
 
+  input: InputElementAttributes;
+
+  button: ButtonElementAttributes;
+
+  select: SelectElementAttributes;
+
+  datalist: DatalistElementAttributes;
+
+  optgroup: OptgroupElementAttributes;
+
+  option: OptionElementAttributes;
+
+  textarea: TextareaElementAttributes;
+
+  output: OutputElementAttributes;
+
   /**
-   * Displays
+   * Displays a finite progress indicator.
    */
   progress: ProgressElementAttributes;
 
@@ -2815,8 +2947,8 @@ export interface IntrinsicElements {
 }
 
 /*====================================*\
-    || 4.11          Interactive elements ||
-    \*====================================*/
+|| 4.11          Interactive elements ||
+\*====================================*/
 
 // details
 // summary
@@ -2882,13 +3014,14 @@ export interface IntrinsicElements {
 }
 
 /*====================================*\
-    || 4.12                     Scripting ||
-    \*====================================*/
+|| 4.12                     Scripting ||
+\*====================================*/
 
 // UNSUPPORTED script
 // UNSUPPORTED noscript
 // UNSUPPORTED template
 // UNSUPPORTED slot
+// canvas
 
 interface CanvasElementAttributes extends ElementAttributes<HTMLCanvasElement> {
   /**
