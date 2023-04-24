@@ -9,7 +9,7 @@ test("a", (t) => {
 
   const stringMarkup = m("div", { class: "test" }, "Hello");
   const viewMarkup = m(SomeView, { value: "Hello" });
-  const fnMarkup = m((self) => {
+  const fnMarkup = m(() => {
     return m("div");
   });
 

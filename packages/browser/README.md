@@ -74,14 +74,13 @@ Inside `index.html`:
 Inside `app.js`:
 
 ```js
-import { App } from "@borf/browser";
-import { h1 } from "@borf/browser/elements";
+import { App, m } from "@borf/browser";
 
 const app = new App();
 
 // Display this view at all times while the app is connected
-app.setRootView((ctx) => {
-  return h1("Hello world!");
+app.setRootView(() => {
+  return m.h1("Hello world!"); // `m` has helpers for all standard HTML5 elements
 });
 
 // Display app views as children of the element with an id of `app`
@@ -112,19 +111,19 @@ Now when you visit the page the document should look like this (sans comment):
 In our Hello World example above, you saw a piece of code that looked like this:
 
 ```js
-app.setRootView((ctx) => {
-  return h1("Hello world!");
+app.setRootView(() => {
+  return m.h1("Hello world!");
 });
 
 // As a standalone view function
-function ExampleView(ctx) {
-  return h1("Hello world!");
+function ExampleView() {
+  return m.h1("Hello world!");
 }
 app.setRootView(ExampleView);
 
 // Used inside another view function
-function OtherView(ctx) {
-  const $value = ctx.attrs.getReadable("value"); // Switch back to attrs/attributes?
+function OtherView(self) {
+  const $value = self.inputs.getReadable("value"); // Switch back to attrs/attributes?
 
   return m(ExampleView);
 }

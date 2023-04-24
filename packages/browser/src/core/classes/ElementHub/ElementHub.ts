@@ -2,21 +2,14 @@
 
 // import { DebugHub } from "../DebugHub.js";
 // import { type Connectable } from "../Connectable.js";
-// import { type AppContext, type ElementContext } from "../App.js";
+// import { type AppContext, type ElementContext, type StoreRegistration } from "../App.js";
 // import { type BuiltInStores } from "../../types.js";
 // import { CrashCollector } from "../CrashCollector.js";
-// import { makeComponent, type Component, type ComponentControls, type Store, type View } from "../../scratch.js";
+// import { makeComponent, type Component, type ComponentControls, type Store, type View } from "../../component.js";
 
 // import { HTTPStore } from "../../stores/http.js";
 // import { PageStore } from "../../stores/page.js";
 // import { RouterStore } from "./stores/router.js";
-
-// type StoreRegistration<I = any> = {
-//   store: keyof BuiltInStores | Store<any, any>;
-//   exports?: Store<I, any>;
-//   instance?: ComponentControls;
-//   inputs?: I;
-// };
 
 // type ElementRegistration = {
 //   tag: string;
@@ -35,8 +28,8 @@
 //   #isConnected = false;
 
 //   #appContext: AppContext;
-//   #elementContext = {
-//     stores: new Map(),
+//   #elementContext: ElementContext = {
+//     stores: new Map<Store<any, any>, StoreRegistration>(),
 //   };
 
 //   constructor() {
@@ -45,7 +38,7 @@
 
 //     // Log error to console on component's channel.
 //     crashCollector.onError(({ error, componentName }) => {
-//       debugHub.channel(componentName).error(error);
+//       debugHub.channel({ name: componentName }).error(error);
 //     });
 
 //     this.#appContext = {
@@ -139,7 +132,7 @@
 //     const rootElement = document.createElement("div"); // Connect stores to dummy div that never gets mounted.
 
 //     for (const [_, config] of stores.entries()) {
-//       await config.instance.connect(rootElement);
+//       await config.instance!.connect(rootElement);
 //     }
 
 //     for (const element of this.#elements) {

@@ -1,4 +1,4 @@
-import { Timer, Type } from "@borf/bedrock";
+import { Type } from "@borf/bedrock";
 import { Connectable } from "./Connectable.js";
 import { formatChildren, Markup, type Renderable } from "./Markup.js";
 import { Readable, type StopFunction } from "./Writable.js";

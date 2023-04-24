@@ -8,7 +8,7 @@ export default function (self) {
 
   return m(ExampleFrame, { title: "1. Counter" }, [
     m.div(
-      m.input({ type: "text", value: $$count.toReadable(), disabled: true }),
+      m.input({ type: "text", value: $$count.toReadable(), readonly: true }),
       m.button(
         {
           onclick: () => {
