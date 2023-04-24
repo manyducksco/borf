@@ -1,4 +1,4 @@
-import { m } from "@borf/browser";
+import { m, useStore } from "@borf/browser";
 import { MouseStore } from "../../globals/MouseStore";
 import styles from "./AppLayout.module.css";
 
@@ -8,9 +8,13 @@ export async function AppLayout(self) {
 
   self.debug.log("hi");
 
-  const router = self.useStore("router");
-  const page = self.useStore("page");
-  const mouse = self.useStore(MouseStore);
+  // const router = self.useStore("router");
+  // const page = self.useStore("page");
+  // const mouse = self.useStore(MouseStore);
+
+  const router = useStore("router");
+  const page = useStore("page");
+  const mouse = useStore(MouseStore);
 
   // Display current mouse coordinates as tab title
   self.observe(mouse.$position, (pos) => {

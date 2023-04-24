@@ -1,7 +1,7 @@
 import { createHashHistory, createBrowserHistory, type History, type Listener } from "history";
 import { Router } from "@borf/bedrock";
 import { Writable } from "../classes/Writable.js";
-import { Markup } from "../classes/Markup.js";
+import { Markup } from "../classes/Markup_temp.js";
 import { catchLinks } from "../helpers/catchLinks.js";
 import { getAppContext, getElementContext, type ComponentCore, type ComponentControls } from "../component.js";
 

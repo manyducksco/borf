@@ -1,12 +1,14 @@
 import { Readable, Writable, type ValuesOfReadables, type StopFunction } from "./classes/Writable.js";
 import { Inputs, InputsAPI, type UnwrapReadables } from "./classes/Inputs.js";
-import { Markup } from "./classes/Markup.js";
+import { Markup } from "./classes/Markup_temp.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "./keys.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
 import { type BuiltInStores } from "./types.js";
 import { Outlet } from "./classes/Outlet.js";
 import { Connectable } from "./classes/Connectable.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
+
+import { CONTEXT } from "./useStore.js";
 
 export interface ComponentCore<I> {
   inputs: InputsAPI<UnwrapReadables<I>>;
@@ -254,12 +256,18 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   let connectable: Connectable | undefined;
 
   async function initialize(parent: Node, after?: Node) {
+    CONTEXT.appStores = appContext.stores;
+    CONTEXT.localStores = elementContext.stores;
+
     let result = config.component(core);
 
     if (result instanceof Promise) {
       // TODO: Handle loading states
       result = await result;
     }
+
+    CONTEXT.appStores = undefined;
+    CONTEXT.localStores = undefined;
 
     if (result instanceof Markup || result === null) {
       // Result is a view.

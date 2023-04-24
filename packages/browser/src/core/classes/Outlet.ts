@@ -1,6 +1,6 @@
 import { Type } from "@borf/bedrock";
 import { Connectable } from "./Connectable.js";
-import { formatChildren, Markup, type Renderable } from "./Markup.js";
+import { formatChildren, Markup, type Renderable } from "./Markup_temp.js";
 import { Readable, type StopFunction } from "./Writable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 

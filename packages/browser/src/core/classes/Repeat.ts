@@ -1,7 +1,7 @@
 import { Readable, Writable, type StopFunction } from "./Writable.js";
 import { Connectable } from "./Connectable.js";
 import { omit } from "../helpers/omit.js";
-import { type Markup } from "./Markup.js";
+import { type Markup } from "./Markup_temp.js";
 import { type AppContext, type ElementContext } from "./App.js";
 import { makeComponent, type ComponentCore } from "../component.js";
 

@@ -16,7 +16,7 @@ import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
 import { type StopFunction } from "./Writable.js";
 
-import { m } from "./Markup.js";
+import { m } from "./Markup_temp.js";
 import { type BuiltInStores } from "../types.js";
 import { makeComponent, type ComponentCore, type View, type Store, type ComponentControls } from "../component.js";
 
