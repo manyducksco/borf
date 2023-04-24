@@ -120,13 +120,6 @@ function ExampleView() {
   return m.h1("Hello world!");
 }
 app.setRootView(ExampleView);
-
-// Used inside another view function
-function OtherView(self) {
-  const $value = self.inputs.getReadable("value"); // Switch back to attrs/attributes?
-
-  return m(ExampleView);
-}
 ```
 
 Views are what most other frameworks would call a component; a reusable chunk of markup and logic that takes attributes (like an HTML element) and returns DOM nodes to be displayed to the user. As you might expect if you have experience with React, Views can be used just like typical HTML elements.
@@ -136,21 +129,17 @@ Views are what most other frameworks would call a component; a reusable chunk of
 ```js
 import { View, m } from "@borf/browser";
 
-class HelloWorld extends View {
-  setup() {
-    return m("h1", "Hello world!");
-  }
+function HelloWorld() {
+  return m.h1("Hello world!");
 }
 
-class Layout extends View {
-  setup() {
-    return m("div", [
-      m("p", "This is the message:"),
+function Layout() {
+  return m.div(
+    m.p("This is the message:"),
 
-      // Views are passed to `m` in place of an HTML tag.
-      m(HelloWorld),
-    ]);
-  }
+    // Views are passed directly to the `m` function to create an instance.
+    m(HelloWorld)
+  );
 }
 ```
 
@@ -163,246 +152,198 @@ Which renders the equivalent to the following HTML:
 </div>
 ```
 
-### Templating
+### Markup
 
-The markup function has these signatures:
+Templating is done through the `m` util. It serves as both a function and an object with HTML tag helpers. All of these calls return a Markup element, which Borf uses as a template to create DOM nodes.
 
 ```js
 m(tag, [attributes, ][...children])
 m(component, [inputs, ][...children])
+
+// HTML tags are also available as helper functions where `tag` is `span`, `h1`, etc:
+m.tag([attributes, ][...children])
 ```
 
 ```tsx
-class ListItem extends View {
-  setup() {
-    const $active = this.inputs.getReadable("active");
+function ListItem(self) {
+  const $active = self.inputs.getReadable("active");
 
-    // 'active' class only applied while `active` input is true.
-    // Note that Borf uses a `class` attribute like HTML rather than `className` like React.
-    return <li class={{ active: $active }}>{this.outlet()}</li>;
-  }
+  // 'active' class only applied while `active` input is true.
+  // Note that Borf uses a `class` attribute like HTML rather than `className` like React.
+  return m.li({ class: { active: $active } }, self.outlet());
 }
 
-class ExampleList extends View {
-  setup() {
-    return (
-      <section>
-        <h1 class="heading">Item List</h1>
-        <p style="color: red">Below is a list of items.</p>
-        <ul>
-          <ListItem>Item 1</ListItem>
-          <ListItem active>Item 2</ListItem>
-          <ListItem>Item 3</ListItem>
-          <ListItem>Item 4</ListItem>
-          <ListItem>Item 5</ListItem>
-          <ListItem>Item 6</ListItem>
-        </ul>
-      </section>
-    );
-  }
+function ExampleList() {
+  return m.section(
+    m.h1({ class: "heading" }, "Item List"),
+    m.p({ style: { color: "red" } }, "Below is a list of items."),
+    m.ul(
+      m(ListItem, "Item 1"),
+      m(ListItem, { active: true }, "Item 2"),
+      m(ListItem, "Item 3"),
+      m(ListItem, "Item 4"),
+      m(ListItem, "Item 5"),
+      m(ListItem, "Item 6")
+    )
+  );
 }
 ```
 
-### Special Views
+### Special Markup
 
 > TODO: Describe these better. The following is a rough draft.
 
-The `View` class includes a few helpers for conditional rendering, loops and rendering based on observables. Unlike views created with `View.define`, these views can be used inline.
+The `m` util includes a few helpers for conditional rendering, loops and rendering based on observables.
 
-These special views take an observable (or a static value) as a first argument.
+These helpers take an observable as a first argument.
 
 ```jsx
 // Conditional:
-View.when($value, <h1>Value is truthy</h1>, <h1>Value is falsy</h1>);
-View.unless($value, <h1>Value is not truthy</h1>);
+m.$if($value, <h1>Value is truthy</h1>, <h1>Value is falsy</h1>);
+m.$unless($value, <h1>Value is not truthy</h1>);
 
 // Looping:
-View.forEach($list, ($item, $index, ctx) => {
+m.$repeat($list, ($item, $index, self) => {
   const $name = $item.map((x) => x.name);
 
-  // ctx has the methods you would expect on a View `this`
-  ctx.observe($name, (name) => {
+  // self has the methods you would expect on a View `self`
+  self.observe($name, (name) => {
     // Observe $name only while this forEach view is connected
-    ctx.log("name is", name);
+    self.log("name is", name);
   });
 
   return m("li", $name);
 });
 
 // Observables:
-View.observe($value, (value) => {
+m.$observe($value, (value) => {
   return; /* render something */
 });
-View.observe([$value1, $value2], (value1, value2) => {
+m.$observe([$value1, $value2], (value1, value2) => {
   return; /* render something */
 });
 
 // Full example:
-const Example = new View({
-  inputs: {
-    header: {
-      default: "This is the default header",
-    },
-  },
+function ExampleView(self) {
+  const $header = self.inputs.$("header"); // Shorthand for getting a Readable input
+  const $showContent = new Readable(false);
+  const $names = new Readable(["one", "two", "three"]);
 
-  setup: (ctx) => {
-    const $header = ctx.inputs.readable("header");
-    const $showContent = new State(false);
-    const $names = new State(["one", "two", "three"]);
+  // How it looks with `m` function:
+  return m.section([
+    m.header(
+      m.$observe($header, (text) => {
+        // This doesn't make any sense because you could just pass $header directly, but whatever.
+        return m.h1(text);
+      })
+    ),
 
-    // How it looks with `m` function:
-    return m("section", [
-      m("header", [
-        View.observe($header, (text) => {
-          // This doesn't make any sense because you could just pass $header directly, but whatever.
-          return m("h1", text);
-        }),
-      ]),
+    m.$if($showContent, m.p("This content is only shown while showContent is true.")),
+    m.$unless($showContent, m.p("Content is hidden.")),
 
-      View.when($showContent, m("p", "This content is only shown while showContent is true.")),
-      View.unless($showContent, m("p", "Content is hidden.")),
+    m.ul(
+      m.$repeat($names, ($name, $index, self) => {
+        // Use self for observers, etc.
 
-      m(
-        "ul",
-        View.forEach($names, ($name, $index, ctx) => {
-          // Use ctx for observers, etc.
+        self.observe($name, (name) => {
+          // Observe only while this forEach view instance is connected.
+        });
 
-          ctx.observe($name, (name) => {
-            // Observe only while this forEach view instance is connected.
-          });
-
-          return m("li", `#${$index}: ${$name}`);
-        })
-      ),
-    ]);
-
-    // How it looks with JSX:
-    return (
-      <section>
-        <header>
-          {View.observe($header, (text) => {
-            // This doesn't make any sense because you could just pass $header directly, but whatever.
-            return <h1>{text}</h1>;
-          })}
-        </header>
-
-        {View.when($showContent, <p>This content is only shown while showContent is true.</p>)}
-        {View.unless($showContent, <p>Content is hidden.</p>)}
-
-        <ul>
-          {View.forEach($names, function ($name, $index) {
-            return (
-              <li>
-                #{$index}: {$name}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-    );
-  },
-});
+        return m.li("#", $index, ": ", $name);
+      })
+    ),
+  ]);
+}
 ```
 
-### Full View Example
+### Full Component Example
 
 ```js
-// Views and Stores support taking a Zod schema as a `schema` field.
-import z from "zod";
+function ExampleView(self) {
+  // Access the built-in stores by name
+  const http = self.useStore("http");
+  const page = self.useStore("page");
+  const router = self.useStore("router");
+  const dialog = self.useStore("dialog");
+  const language = self.useStore("language");
 
-const Example = new View({
-  label: "ExampleView",  // Recommended. What this view is called for console and dev tools purposes.
-  about: "Demonstrates all options and methods of a View.",
-  inputs: {
-    someValue: {
-      about: "An optional string input with validation.",
-      schema: z.string(),
-      optional: true,
-    }
-    otherValue: {
-      about: "Another string input with a default value.",
-      default: "<no-value>"
-    }
-  },
-  setup: (ctx, m) => {
-    // Access the built-in stores by name
-    const http = ctx.useStore("http");
-    const page = ctx.useStore("page");
-    const router = ctx.useStore("router");
-    const dialog = ctx.useStore("dialog");
-    const language = ctx.useStore("language");
+  // Access custom stores by reference
+  const some = self.useStore(SomeStore);
+  const other = self.useStore(OtherStore);
 
-    // Access custom stores by reference
-    const some = ctx.useStore(SomeStore);
-    const other = ctx.useStore(OtherStore);
+  /*=================================*\
+  ||             Logging             ||
+  \*=================================*/
 
-    /*=================================*\
-    ||             Logging             ||
-    \*=================================*/
+  self.debug.log("Something happened.");
+  self.debug.warn("Something happened!");
+  self.debug.error("SOMETHING HAPPENED!!!!");
+  self.crash(new Error("FUBAR"));
 
-    ctx.log("Something happened.");
-    ctx.warn("Something happened!");
-    ctx.error("SOMETHING HAPPENED!!!!");
-    ctx.crash(new Error("FUBAR"));
+  /*=================================*\
+  ||              State              ||
+  \*=================================*/
 
-    /*=================================*\
-    ||              State              ||
-    \*=================================*/
+  // Using Writable to create a value for 'observe'. See later in this README for details.
+  const $$title = new Writable("The Default Title");
 
-    // Using Writable to create a value for 'observe'. See later in this README for details.
-    const $$title = new Writable("The Default Title");
+  // Observes a readable (or writable) while this view is connected.
+  self.observe($$title, (title) => {
+    self.debug.log("title attribute changed to " + title);
+  });
 
-    // Observes a readable (or writable) while this view is connected.
-    ctx.observe($$title, (title) => {
-      ctx.log("title attribute changed to " + title);
-    });
+  /*=================================*\
+  ||            Lifecycle            ||
+  \*=================================*/
 
-    /*=================================*\
-    ||            Lifecycle            ||
-    \*=================================*/
+  ctx.isConnected; // true if view is connected
 
-    ctx.isConnected; // true if view is connected
+  ctx.beforeConnected(async () => {
+    // Promise resolves before onConnected callbacks are triggered.
+  });
 
-    ctx.onConnect(() => {
-      // Runs after the view is added to the page.
-    });
+  ctx.beforeDisconnected(async () => {
+    // Promise resolves before onDisconnected callbacks are triggered.
+  });
 
-    ctx.onDisconnect(() => {
-      // Runs after the view is removed from the page.
-    });
+  ctx.onConnected(() => {
+    // Runs after the view is added to the page.
+  });
 
-    /*=================================*\
-    ||            Animation            ||
-    \*=================================*/
+  ctx.onDisconnected(() => {
+    // Runs after the view is removed from the page.
+  });
 
-    // Using a Spring to animate translateY % of container element.
-    const spring = new Spring(100);
+  /*=================================*\
+  ||            Animation            ||
+  \*=================================*/
 
-    ctx.animateIn(async () => {
-      return spring.to(0); // Returns a promise that resolves after Spring value transitions to 1.
-    });
+  // Using a Spring to animate translateY % of container element.
+  const spring = new Spring({ initialValue: 100 });
 
-    ctx.animateOut(async () => {
-      return spring.to(100); // View is not completely removed until this promise resolves.
-    });
+  ctx.beforeConnected(async () => {
+    return spring.to(0); // Returns a promise that resolves after Spring value transitions to 1.
+  });
 
-    /*=================================*\
-    ||      Rendering & Children       ||
-    \*=================================*/
+  ctx.beforeDisconnected(async () => {
+    return spring.to(100); // View is not completely removed until this promise resolves.
+  });
 
-    // Render children inside a `<div class="container">`
-    return m(
-      "div",
-      {
-        class: "container",
-        style: {
-          transform: spring.map(x => `translateY(${x}%)`)
-        }
+  /*=================================*\
+  ||      Rendering & Children       ||
+  \*=================================*/
+
+  // Render children inside a `<div class="container">`
+  return m.div(
+    {
+      class: "container",
+      style: {
+        transform: spring.map((x) => `translateY(${x}%)`),
       },
-      ctx.outlet()
-    );
-  },
-});
+    },
+    self.outlet()
+  );
+}
 ```
 
 ## Stores
@@ -410,27 +351,22 @@ const Example = new View({
 The other kind of component is a Store. Stores return an object which can be accessed by any subcomponent. Let's refactor the Hello World example.
 
 ```js
-import { App, View, Store } from "@borf/browser";
+import { App, m } from "@borf/browser";
 
 const app = new App();
 
-// Stores, like views, have to be instantiated to be used.
-const MessageStore = new Store({
-  setup: (ctx) => {
-    return {
-      message: "Hello world!",
-    };
-  },
-});
+function MessageStore(self) {
+  return {
+    message: "Hello world!",
+  };
+}
 
-const HelloWorld = new View({
-  setup: (ctx, m) => {
-    // Where this call gets its instance depends on how we instantiate the store.
-    const store = ctx.useStore(MessageStore);
+function HelloWorld(self) {
+  // Where this call gets its instance depends on how we instantiate the store.
+  const store = self.useStore(MessageStore);
 
-    return m("h1", store.message);
-  },
-});
+  return m.h1(store.message);
+}
 ```
 
 Now that we have a store, there are two ways to make it available in the `HelloWorld` view.
@@ -454,18 +390,11 @@ Using a Store inside a View will create one instance and make that instance avai
 If you've ever worked on an app of sufficient size, you know that scoping state to specific parts of the app is extremely helpful.
 
 ```js
-app.setRootView((ctx, m) => {
+app.setRootView(() => {
   return m(MessageStore, [
     // MessageStore is available to subcomponents.
     m(HelloWorld),
   ]);
-
-  // If you're using JSX:
-  return (
-    <MessageStore>
-      <HelloWorld />
-    </MessageStore>
-  );
 });
 ```
 
@@ -512,97 +441,91 @@ app
 As you may have inferred from the code above, when the URL matches a pattern the corresponding view is displayed. If we visit `/people/john`, we will see the `PersonDetails` view and the params will be `{ name: "john" }`. Params can be accessed inside those views through the built-in `router` store.
 
 ```js
-const PersonDetails = new View({
-  setup(ctx, m) {
-    // `router` store allows you to work with the router from inside the app.
-    const router = ctx.useStore("router");
+function PersonDetails(self) {
+  // `router` store allows you to work with the router from inside the app.
+  const router = self.useStore("router");
 
-    // Info about the current route is exported as a set of Readables. Query params are also Writable through $$query:
-    const { $path, $pattern, $params, $$query } = router;
+  // Info about the current route is exported as a set of Readables. Query params are also Writable through $$query:
+  const { $path, $pattern, $params, $$query } = router;
 
-    // Functions are exported for navigation:
-    const { back, forward, navigate } = router;
+  // Functions are exported for navigation:
+  const { back, forward, navigate } = router;
 
-    back(); // Step back in the history to the previous route, if any.
-    back(2); // Hit the back button twice.
+  back(); // Step back in the history to the previous route, if any.
+  back(2); // Hit the back button twice.
 
-    forward(); // Step forward in the history to the next route, if any.
-    forward(4); // Hit the forward button 4 times.
+  forward(); // Step forward in the history to the next route, if any.
+  forward(4); // Hit the forward button 4 times.
 
-    navigate("/things/152"); // Navigate to another path within the same app.
-    navigate("https://www.example.com/another/site"); // Navigate to another domain entirely.
+  navigate("/things/152"); // Navigate to another path within the same app.
+  navigate("https://www.example.com/another/site"); // Navigate to another domain entirely.
 
-    // Three ways to confirm with the user that they wish to navigate before actually doing it.
-    navigate("/another/page", { prompt: true });
-    navigate("/another/page", { prompt: "Are you sure you want to leave and go to /another/page?" });
-    navigate("/another/page", { prompt: PromptView });
+  // Three ways to confirm with the user that they wish to navigate before actually doing it.
+  navigate("/another/page", { prompt: true });
+  navigate("/another/page", { prompt: "Are you sure you want to leave and go to /another/page?" });
+  navigate("/another/page", { prompt: PromptView });
 
-    // Get the live value of `{name}` from the current path.
-    const $name = $params.map((p) => p.name);
+  // Get the live value of `{name}` from the current path.
+  const $name = $params.map((p) => p.name);
 
-    // Render it into a <p> tag. The name portion will update if the URL changes.
-    return m("p", "The person is:", $name);
-  },
-});
+  // Render it into a <p> tag. The name portion will update if the URL changes.
+  return m.p("The person is:", $name);
+}
 ```
 
-## State: Readables and Writables
+## Observable State: Readables and Writables
 
 In a Borf app, all data that changes is stored in a Readable or a Writable. All interested parties subscribe to that value and update themselves automatically. Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a state change.
 
 Typically, you'll be creating a `Writable` when you need to store a value that will change. Creating a `Readable` directly is rare, as `Readable` values are usually derived from a `Writable`, either explicitly with `.toReadable()` or implicitly as a result of an operation like `.map()`.
 
 ```js
-import { View, Readable, Writable } from "@borf/browser";
+import { Readable, Writable, m } from "@borf/browser";
 
 /**
  * Displays a timer that shows an ever-incrementing count of seconds elapsed.
  * Also displays a button to reset the timer to 0.
  */
-const Timer = new View({
-  setup(ctx) {
-    // Use regular variables to store data. Setup is only called once, so this function scope is here for the lifetime of the view.
-    let interval = null;
+function Timer(self) {
+  // Use regular variables to store data. Setup is only called once, so this function scope is here for the lifetime of the view.
+  let interval = null;
 
-    // the $$ naming convention indicates a binding is writable (supports .set, .update, ...)
-    const $$seconds = new Writable(0);
+  // the $$ naming convention indicates a binding is writable (supports .set, .update, ...)
+  const $$seconds = new Writable(0);
 
-    // the $ naming convention denotes a read-only binding
-    // $seconds will always have the same value as $$seconds and can't be directly written.
-    const $seconds = $$seconds.toReadable();
-    const $seconds = new Readable($$seconds); // This is another way to do the same thing.
+  // the $ naming convention denotes a read-only binding
+  // $seconds will always have the same value as $$seconds and can't be directly written.
+  const $seconds = $$seconds.toReadable();
+  const $seconds = new Readable($$seconds); // This is another way to do the same thing.
 
-    // Increment once per second after the view is connected to the DOM.
-    ctx.onConnect(function () {
-      function increment() {
-        // Update uses a function to derive a new value from the current one.
-        $$seconds.update((value) => value + 1);
-      }
+  // Increment once per second after the view is connected to the DOM.
+  self.onConnected(function () {
+    function increment() {
+      // Update uses a function to derive a new value from the current one.
+      $$seconds.update((value) => value + 1);
+    }
 
-      interval = setInterval(increment, 1000);
-    });
+    interval = setInterval(increment, 1000);
+  });
 
-    // Stop incrementing when the view is disconnected.
-    ctx.onDisconnect(function () {
-      clearInterval(interval);
-    });
+  // Stop incrementing when the view is disconnected.
+  self.onDisconnected(function () {
+    clearInterval(interval);
+  });
 
-    return (
-      <div class="timer">
-        <span>{$seconds}</span>
-
-        <button
-          onclick={() => {
-            // Set replaces the current value with a new one.
-            $$seconds.set(0);
-          }}
-        >
-          Reset
-        </button>
-      </div>
-    );
-  },
-});
+  return m.div({ class: "timer" }, [
+    m.span($seconds),
+    m.button(
+      {
+        onclick: () => {
+          // Set replaces the current value with a new one.
+          $$seconds.set(0);
+        },
+      },
+      "Reset"
+    ),
+  ]);
+}
 ```
 
 > TODO: Explain Readable.merge()
