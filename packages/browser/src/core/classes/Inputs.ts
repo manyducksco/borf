@@ -7,10 +7,6 @@ export type UnwrapReadables<T> = {
   [K in keyof T]: T[K] extends Readable<infer U> ? U : T[K];
 };
 
-type Test = string | Readable<string> | Writable<string>;
-
-type UnwrappedTest = UnwrapReadables<Test>;
-
 /**
  * Handles observables, readables, writables and plain values as passed to a View or Store.
  * Exposes an API to work with input values, automatically propagating writable values back to the original binding.

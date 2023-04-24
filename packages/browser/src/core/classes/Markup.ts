@@ -6,7 +6,10 @@ import { HTML } from "./HTML.js";
 import { Readable } from "./Writable.js";
 import { Repeat, type RepeatContext } from "./Repeat.js";
 import { Outlet } from "./Outlet.js";
-import { makeComponent, type Component } from "../scratch.js";
+import { makeComponent, type Component } from "../component.js";
+import { type IntrinsicElements } from "../types.js";
+
+/* ----- Types ----- */
 
 export interface MarkupConfig {
   appContext: AppContext;
@@ -20,11 +23,6 @@ export interface MarkupConfig {
  * These are all the items considered valid to pass as children to any element.
  */
 export type Renderable = string | number | Markup | false | null | undefined | Readable<any>;
-
-/**
- * Creates markup nodes that can be displayed by a View.
- */
-export type MarkupFunction = typeof m;
 
 /**
  * DOM node factory. This is where things go to be converted into a Connectable.
@@ -45,28 +43,81 @@ export class Markup {
   }
 }
 
+interface MarkupElement<Attrs> {
+  (attributes: Attrs, ...children: (Renderable | Renderable[])[]): Markup;
+  (...children: (Renderable | Renderable[])[]): Markup;
+}
+
+type Elements = { [K in keyof IntrinsicElements]: MarkupElement<IntrinsicElements[K]> };
+
+interface MarkupFunction extends Elements {
+  <T extends keyof IntrinsicElements>(
+    tag: T,
+    attributes: IntrinsicElements[T],
+    ...children: (Renderable | Renderable[])[]
+  ): Markup;
+
+  <T extends keyof IntrinsicElements>(tag: T, ...children: (Renderable | Renderable[])[]): Markup;
+
+  // export function m(tag: string, attributes: any, ...children: (Renderable | Renderable[])[]): Markup;
+
+  // export function m(tag: string, ...children: (Renderable | Renderable[])[]): Markup;
+
+  <I>(component: Component<I>, inputs?: I, ...children: (Renderable | Renderable[])[]): Markup;
+
+  /**
+   * Displays `then` content when `value` holds a truthy value. Displays `otherwise` content otherwise.
+   */
+  $if(value: Readable<any>, then?: Renderable, otherwise?: Renderable): Markup;
+
+  /**
+   * Displays `then` content when `value` holds a falsy value.
+   */
+  $unless(value: Readable<any>, then: Renderable): Markup;
+
+  $observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup;
+
+  /**
+   * Renders once for each item in `values`. Dynamically adds and removes views as items change.
+   * For complex objects with an ID, define a `key` function to select that ID.
+   * Object identity (`===`) will be used for comparison if no `key` function is passed.
+   *
+   * TODO: Describe or link to docs where keying is explained.
+   */
+  $repeat<T>(
+    readable: Readable<Iterable<T>>,
+    render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
+    key?: (value: T, index: number) => string | number
+  ): Markup;
+}
+
+/* ----- Code ----- */
+
 /**
- * Creates markup for an HTML element.
+ * Creates markup nodes that can be rendered to the DOM by a view.
+ *
+ * @example
+ * // Use components inside other components:
+ * m(ExampleView, { inputOne: "value", inputTwo: 5 })
+ *
+ * // Create HTML elements:
+ * m("span", { style: { color: "red" } }, "This text is red")
+ * m("custom-element", "Child content")
+ *
+ * // Create HTML elements with helpers:
+ * m.button({ onclick: () => alert("clicked") }, "Click me!")
+ * m.span({ style: { color: "red" } }, "This text is red")
+ * m.section([
+ *   m.header(m.h1("Hello!")),
+ *   m.p("This is a section.")
+ * ])
+ * // ...
  */
-
-// TODO: Use JSX element types to suggest attributes.
-// export function m<T extends keyof JSX.IntrinsicElements>(
-//   tagname: T,
-//   attributes?: JSX.IntrinsicElements[T],
-//   ...children: Renderable[]
-// ): Markup;
-
-/**
- * Creates markup for a custom HTML element.
- */
-export function m(tag: string, attributes?: any, ...children: (Renderable | Renderable[])[]): Markup;
-
-/**
- * Creates markup for a component.
- */
-export function m<I>(component: Component<I>, inputs?: I, ...children: (Renderable | Renderable[])[]): Markup;
-
-export function m<I>(element: string | Component<I>, attributes?: any, ...children: (Renderable | Renderable[])[]) {
+export const m = <MarkupFunction>(<I>(
+  element: string | Component<I>,
+  attributes?: any,
+  ...children: (Renderable | Renderable[])[]
+) => {
   if (!children) {
     children = [];
   }
@@ -76,7 +127,7 @@ export function m<I>(element: string | Component<I>, attributes?: any, ...childr
   }
 
   // If attributes isn't null or an object, consider it a child.
-  if (Markup.isMarkup(attributes) || !Type.isObject(attributes)) {
+  if (Readable.isReadable(attributes) || Markup.isMarkup(attributes) || !Type.isObject(attributes)) {
     children.unshift(attributes as Renderable);
     attributes = {};
   }
@@ -103,7 +154,7 @@ export function m<I>(element: string | Component<I>, attributes?: any, ...childr
 
   console.log({ element, attributes, children });
   throw new TypeError(`Unexpected arguments to m()`);
-}
+});
 
 /**
  * Filters out falsy children and converts remaining ones to Markup instances.
@@ -129,10 +180,119 @@ export function formatChildren(children: Renderable | Renderable[]): Markup[] {
     });
 }
 
-/**
- * Takes a Readable `value` and displays `then` content when `value` is truthy, or `otherwise` content when `value` is falsy.
- */
-export function when(value: Readable<any>, then?: Renderable, otherwise?: Renderable): Markup {
+/*==============================*\
+||         HTML Elements        ||
+\*==============================*/
+
+const tags: (keyof IntrinsicElements)[] = [
+  "a",
+  "abbr",
+  "address",
+  "area",
+  "article",
+  "aside",
+  "audio",
+  "b",
+  "bdi",
+  "bdo",
+  "blockquote",
+  "br",
+  "button",
+  "canvas",
+  "caption",
+  "cite",
+  "code",
+  "col",
+  "colgroup",
+  "data",
+  "dd",
+  "del",
+  "details",
+  "dfn",
+  "dialog",
+  "div",
+  "dl",
+  "dt",
+  "em",
+  "embed",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "header",
+  "hgroup",
+  "hr",
+  "i",
+  "iframe",
+  "img",
+  "input",
+  "ins",
+  "kbd",
+  "label",
+  "legend",
+  "li",
+  "main",
+  "map",
+  "mark",
+  "menu",
+  "meter",
+  "nav",
+  "object",
+  "ol",
+  "optgroup",
+  "option",
+  "output",
+  "p",
+  "param",
+  "pre",
+  "progress",
+  "q",
+  "rp",
+  "rt",
+  "ruby",
+  "s",
+  "samp",
+  "section",
+  "select",
+  "small",
+  "source",
+  "span",
+  "strong",
+  "sub",
+  "summary",
+  "sup",
+  "table",
+  "tbody",
+  "td",
+  "textarea",
+  "tfoot",
+  "th",
+  "thead",
+  "time",
+  "tr",
+  "track",
+  "ul",
+  "var", // this is a JS keyword, but shouldn't pose a problem if called like `m.var()`
+  "video",
+  "wbr",
+];
+
+for (const tag of tags) {
+  m[tag] = (...args) => m(tag, ...(args as any));
+}
+
+/*==============================*\
+||       Special Elements       ||
+\*==============================*/
+
+m.$if = function $if(value: Readable<any>, then?: Renderable, otherwise?: Renderable): Markup {
   return new Markup((config) => {
     return new Outlet({
       ...config,
@@ -150,12 +310,12 @@ export function when(value: Readable<any>, then?: Renderable, otherwise?: Render
       },
     });
   });
-}
+};
 
 /**
  * Takes a Readable `value` and displays `then` content when `value` is falsy.
  */
-export function unless(value: Readable<any>, then: Renderable): Markup {
+m.$unless = function $unless(value: Readable<any>, then: Renderable): Markup {
   return new Markup((config) => {
     return new Outlet({
       ...config,
@@ -169,9 +329,9 @@ export function unless(value: Readable<any>, then: Renderable): Markup {
       },
     });
   });
-}
+};
 
-export function observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup {
+m.$observe = function $observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup {
   return new Markup((config) => {
     return new Outlet({
       ...config,
@@ -179,7 +339,7 @@ export function observe<T>(readable: Readable<T>, render: (value: T) => Renderab
       render,
     });
   });
-}
+};
 
 /**
  * Displays an instance of `view` for each item in `values`. Dynamically adds and removes views as items change.
@@ -188,7 +348,7 @@ export function observe<T>(readable: Readable<T>, render: (value: T) => Renderab
  *
  * TODO: Describe or link to docs where keying is explained.
  */
-export function repeat<T>(
+m.$repeat = function $repeat<T>(
   readable: Readable<Iterable<T>>,
   render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
   key?: (value: T, index: number) => string | number
@@ -201,4 +361,4 @@ export function repeat<T>(
       key,
     });
   });
-}
+};

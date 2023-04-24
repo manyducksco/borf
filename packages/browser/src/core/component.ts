@@ -268,6 +268,10 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
       // Result is a store.
       outputs = result;
       connectable = new Outlet({ appContext, elementContext, readable: $$children });
+      elementContext.stores = new Map([
+        ...elementContext.stores.entries(),
+        [config.component, { store: config.component, instance: controls }],
+      ]);
     } else {
       // Result is not usable.
       throw new TypeError(
@@ -284,7 +288,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
     },
 
     get node() {
-      return document.createComment("REPLACE ME");
+      return connectable!.node;
     },
 
     get isConnected() {

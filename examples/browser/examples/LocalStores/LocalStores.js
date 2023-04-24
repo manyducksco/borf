@@ -3,17 +3,16 @@ import { ExampleFrame } from "../../views/ExampleFrame";
 
 export function LocalStores(self) {
   return m(ExampleFrame, { title: "Local State with Stores" }, [
-    m(
-      "p",
+    m.p(
       `You should be seeing "Hello from Instance 1" and "Hello from Instance 2" below this.`
     ),
 
-    m("ul", [
+    m.ul(
       m(ExampleStore, { initialValue: "Instance 1" }, [
         m(ValueDisplay),
         m(ExampleStore, { initialValue: "Instance 2" }, m(ValueDisplay)),
-      ]),
-    ]),
+      ])
+    ),
   ]);
 }
 
@@ -28,5 +27,5 @@ function ExampleStore(self) {
 function ValueDisplay(self) {
   const { $$value } = self.useStore(ExampleStore);
 
-  return m("li", "Hello from ", $$value);
+  return m.li("Hello from ", $$value);
 }

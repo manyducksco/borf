@@ -3,7 +3,7 @@ import { Router } from "@borf/bedrock";
 import { Markup } from "../classes/Markup.js";
 import { Writable } from "../classes/Writable.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { getAppContext, getElementContext, type ComponentCore, type ComponentControls } from "../scratch.js";
+import { getAppContext, getElementContext, type ComponentCore, type ComponentControls } from "../component.js";
 
 // ----- Types ----- //
 

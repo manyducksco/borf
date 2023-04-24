@@ -1,4 +1,4 @@
-import { Readable, Writable, m, repeat } from "@borf/browser";
+import { Readable, Writable, m } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 export default function (self) {
@@ -92,7 +92,7 @@ export default function (self) {
             },
           },
           [
-            repeat($filteredPeople, ($person) => {
+            m.$repeat($filteredPeople, ($person) => {
               const $id = $person.map((p) => p.id);
               const $name = $person.map((p) => p.name);
               const $surname = $person.map((p) => p.surname);

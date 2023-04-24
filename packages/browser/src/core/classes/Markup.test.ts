@@ -1,6 +1,6 @@
 import test from "ava";
 import { m, Markup } from "./Markup.js";
-import { ComponentCore } from "../scratch.js";
+import { ComponentCore } from "../component.js";
 
 test("a", (t) => {
   function SomeView(self: ComponentCore<{ value: string }>) {

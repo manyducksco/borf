@@ -33,7 +33,7 @@ export class Readable<T> {
    * Determines if an object is a Readable.
    */
   static isReadable<T>(readable: any): readable is Readable<T> {
-    return readable != null && typeof readable === "object" && readable[READABLE];
+    return readable != null && typeof readable === "object" && readable[READABLE] == true;
   }
 
   /**
@@ -304,7 +304,7 @@ export class Writable<T> extends Readable<T> {
   [WRITABLE] = true;
 
   static isWritable<T>(writable: any): writable is Writable<T> {
-    return writable != null && typeof writable === "object" && writable[WRITABLE];
+    return writable != null && typeof writable === "object" && writable[WRITABLE] === true;
   }
 
   #value: T;

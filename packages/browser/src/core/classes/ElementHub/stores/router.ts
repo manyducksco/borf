@@ -2,7 +2,7 @@ import { Router } from "@borf/bedrock";
 import { createBrowserHistory } from "history";
 
 import { Writable } from "../../Writable.js";
-import { ComponentCore } from "core/scratch.js";
+import { ComponentCore } from "core/component.js";
 
 interface NavigateOptions {
   /**

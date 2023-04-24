@@ -1,4 +1,4 @@
-import { type ComponentCore } from "../scratch.js";
+import { type ComponentCore } from "../component.js";
 import { Writable } from "../classes/Writable.js";
 
 type ScreenOrientation = "landscape" | "portrait";

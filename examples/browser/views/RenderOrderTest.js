@@ -1,4 +1,4 @@
-import { Writable, when } from "@borf/browser";
+import { m, Writable } from "@borf/browser";
 import { ExampleFrame } from "./ExampleFrame";
 
 export function RenderOrderTest(self) {
@@ -17,17 +17,17 @@ export function RenderOrderTest(self) {
   });
 
   return m(ExampleFrame, { title: "Render Order Test" }, [
-    m("p", "You should be seeing these in the order: 1 a 2 b 3 c 4 5 d"),
+    m.p("You should be seeing these in the order: 1 a 2 b 3 c 4 5 d"),
 
-    m("ul", [
-      when($$isTrue, m(SubView, { value: 1 })),
+    m.ul([
+      m.$if($$isTrue, m(SubView, { value: 1 })),
       m(SubView, { value: "a" }),
-      when($$isTrue, m(SubView, { value: 2 })),
+      m.$if($$isTrue, m(SubView, { value: 2 })),
       m(SubView, { value: "b" }),
-      when($$isTrue, m(SubView, { value: 3 })),
+      m.$if($$isTrue, m(SubView, { value: 3 })),
       m(SubView, { value: "c" }),
-      when($$isTrue, m(SubView, { value: 4 })),
-      when($$isTrue, m(SubView, { value: 5 })),
+      m.$if($$isTrue, m(SubView, { value: 4 })),
+      m.$if($$isTrue, m(SubView, { value: 5 })),
       m(SubView, { value: "d" }),
     ]),
   ]);

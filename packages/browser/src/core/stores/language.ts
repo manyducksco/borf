@@ -1,5 +1,5 @@
 import { Type } from "@borf/bedrock";
-import { getAppContext, type ComponentCore } from "../scratch.js";
+import { getAppContext, type ComponentCore } from "../component.js";
 import { Readable, Writable } from "../classes/Writable.js";
 
 // ----- Types ----- //

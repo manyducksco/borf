@@ -10,15 +10,15 @@ export function PassingAttributes(self) {
   const $$message = new Writable("Hello");
 
   return m(ExampleFrame, [
-    m("h3", "Passing Attributes"),
-    m("div", [
+    m.h3("Passing Attributes"),
+    m.div(
       // Input values support two way binding, so changes here will propagate to $$message and vice versa
-      m("input", { type: "text", value: $$message }),
-      m("hr"),
+      m.input({ type: "text", value: $$message }),
+      m.hr(),
 
       // Passing a writable state for two-way binding
-      m(SubView, { message: $$message }),
-    ]),
+      m(SubView, { message: $$message })
+    ),
   ]);
 }
 
@@ -28,10 +28,9 @@ export function PassingAttributes(self) {
 function SubView(self) {
   const $$message = self.inputs.$$("message");
 
-  return m("div", [
-    m("p", "Message: ", $$message),
-    m(
-      "button",
+  return m.div(
+    m.p("Message: ", $$message),
+    m.button(
       {
         onclick: () => {
           // Writing $$message here updates the original $$message in the superview.
@@ -39,6 +38,6 @@ function SubView(self) {
         },
       },
       "Reset State"
-    ),
-  ]);
+    )
+  );
 }

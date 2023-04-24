@@ -10,12 +10,11 @@ export function CounterWithStore(self) {
   const $label = counter.$current.map((n) => `the number is: ${n}`);
 
   return m(ExampleFrame, { title: "Shared State with Stores" }, [
-    m("div", [
-      m("p", $label),
-      m("button", { onclick: counter.reset }, "Reset"),
+    m.div([
+      m.p($label),
+      m.button({ onclick: counter.reset }, "Reset"),
       m(CounterViewLabel),
-      m(
-        "p",
+      m.p(
         "You'll notice the counter keeps its state and increments even when you're not on the page. This is because this state is stored in a global CounterStore. Global stores last for the lifetime of the app."
       ),
     ]),
@@ -28,5 +27,5 @@ export function CounterWithStore(self) {
 function CounterViewLabel(self) {
   const { $current } = self.useStore(CounterStore);
 
-  return m("h1", $current);
+  return m.h1($current);
 }

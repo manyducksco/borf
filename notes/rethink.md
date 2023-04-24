@@ -182,3 +182,32 @@ async function AsyncView(ctx) {
   return null;
 }
 ```
+
+Put markup helpers on markup function, but start them with a $ to show that they are special elements to deal with dynamic data?
+
+```js
+function ExampleView(self) {
+  const $$value = new Writable(false);
+  const $list = new Readable(["いち", "に", "さん"]);
+
+  return m.div([
+    m.h1("Helpers"),
+
+    // Conditional
+    m.$if($$value, m.p("Value is truthy")),
+    m.$unless($$value, m.p("Value is falsy")),
+
+    // Loop
+    m.ul(
+      m.$repeat($$list, ($item, $index) => {
+        return m.li("#", $index, ": ", $item);
+      })
+    ),
+
+    // Observe
+    m.$observe($list, (items) => {
+      return m.p(items.toString());
+    }),
+  ]);
+}
+```

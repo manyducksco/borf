@@ -1,5 +1,5 @@
 import { HTTPClient } from "@borf/bedrock";
-import { ComponentCore } from "../scratch.js";
+import { ComponentCore } from "../component.js";
 
 interface HTTPStoreInputs {
   /**

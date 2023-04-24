@@ -16,11 +16,9 @@ export function Languages(self) {
   // TODO: Show a larger component with multiple translated strings to give a better example of what's actually happening here.
   // Possibly something with a few pieces of textual information and an image, like an ID card view.
   return m(ExampleFrame, { title: "Languages" }, [
-    m(
-      "div",
+    m.div(
       supportedLanguages.map((tag) => {
-        return m(
-          "button",
+        return m.button(
           {
             class: {
               [styles.active]: $currentLanguage.map((lang) => {
@@ -35,6 +33,6 @@ export function Languages(self) {
         );
       })
     ),
-    m("p", translate("greeting")),
+    m.p(translate("greeting")),
   ]);
 }

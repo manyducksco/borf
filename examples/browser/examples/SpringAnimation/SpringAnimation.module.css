@@ -50,7 +50,6 @@
 /* ----- Controls ----- */
 
 .controls {
-  background-color: #000;
   flex: 1 1 auto;
   max-width: 400px;
   /* margin: 0 auto; */

@@ -18,7 +18,7 @@ import { type StopFunction } from "./Writable.js";
 
 import { m } from "./Markup.js";
 import { type BuiltInStores } from "../types.js";
-import { makeComponent, type ComponentCore, type View, type Store, type ComponentControls } from "../scratch.js";
+import { makeComponent, type ComponentCore, type View, type Store, type ComponentControls } from "../component.js";
 
 // ----- Types ----- //
 
@@ -627,8 +627,7 @@ type CrashPageInputs = {
 function DefaultCrashPage(self: ComponentCore<CrashPageInputs>) {
   const { message, error, componentName } = self.inputs.get();
 
-  return m(
-    "div",
+  return m.div(
     {
       style: {
         backgroundColor: "#880000",
@@ -639,46 +638,42 @@ function DefaultCrashPage(self: ComponentCore<CrashPageInputs>) {
         fontSize: "20px",
       },
     },
-    [
-      m("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
 
-      m(
-        "p",
-        { style: { marginBottom: "0.25rem" } },
-        m("span", { style: { fontFamily: "monospace" } }, componentName),
-        " says:"
-      ),
+    m.h1({ style: { marginBottom: "0.5rem" } }, "The app has crashed"),
 
-      m(
-        "blockquote",
+    m.p(
+      { style: { marginBottom: "0.25rem" } },
+      m.span({ style: { fontFamily: "monospace" } }, componentName),
+      " says:"
+    ),
+
+    m.blockquote(
+      {
+        style: {
+          backgroundColor: "#991111",
+          padding: "0.25em",
+          borderRadius: "6px",
+          fontFamily: "monospace",
+          marginBottom: "1rem",
+        },
+      },
+      m.span(
         {
           style: {
-            backgroundColor: "#991111",
-            padding: "0.25em",
-            borderRadius: "6px",
-            fontFamily: "monospace",
-            marginBottom: "1rem",
+            display: "inline-block",
+            backgroundColor: "red",
+            padding: "0.1em 0.4em",
+            marginRight: "0.5em",
+            borderRadius: "4px",
+            fontSize: "0.9em",
+            fontWeight: "bold",
           },
         },
-        m(
-          "span",
-          {
-            style: {
-              display: "inline-block",
-              backgroundColor: "red",
-              padding: "0.1em 0.4em",
-              marginRight: "0.5em",
-              borderRadius: "4px",
-              fontSize: "0.9em",
-              fontWeight: "bold",
-            },
-          },
-          error.name
-        ),
-        message
+        error.name
       ),
+      message
+    ),
 
-      m("p", "Please see the browser console for details."),
-    ]
+    m.p("Please see the browser console for details.")
   );
 }

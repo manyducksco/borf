@@ -36,7 +36,7 @@ export function SpringAnimation(self) {
   );
 
   return m(ExampleFrame, { title: "Spring Animation" }, [
-    m("p", "The shapes below are animated by a single spring."),
+    m.p("The shapes below are animated by a single spring."),
 
     m(Examples, {
       stiffness: $$stiffness,
@@ -45,12 +45,9 @@ export function SpringAnimation(self) {
       velocity: $$velocity,
     }),
 
-    m(
-      "p",
-      "That spring's properties can be tweaked with the following sliders:"
-    ),
+    m.p("That spring's properties can be tweaked with the following sliders:"),
 
-    m("div", { class: styles.controls }, [
+    m.div({ class: styles.controls }, [
       m(ControlGroup, {
         label: "Stiffness",
         value: $$stiffness,
@@ -77,52 +74,47 @@ export function SpringAnimation(self) {
       }),
     ]),
 
-    m("p", "Presets:"),
+    m.p("Presets:"),
 
-    m("ul", { class: styles.presetList }, [
-      m("li", [
-        m(
-          "button",
+    m.ul({ class: styles.presetList }, [
+      m.li(
+        m.button(
           { class: styles.presetButton, onclick: preset(1845, 1, 28, 0) },
           "Clunky"
-        ),
-      ]),
-      m("li", [
-        m(
-          "button",
+        )
+      ),
+      m.li(
+        m.button(
           { class: styles.presetButton, onclick: preset(1354, 7, 66, 0) },
           "Marshmallowy"
-        ),
-      ]),
-      m("li", [
-        m(
-          "button",
+        )
+      ),
+      m.li(
+        m.button(
           { class: styles.presetButton, onclick: preset(2000, 5, 400, 3) },
           "Corporate"
-        ),
-      ]),
-      m("li", [
-        m(
-          "button",
+        )
+      ),
+      m.li(
+        m.button(
           { class: styles.presetButton, onclick: preset(648, 1, 28, 0) },
           "Punchy"
-        ),
-      ]),
-      m("li", [
-        m(
-          "button",
+        )
+      ),
+      m.li(
+        m.button(
           { class: styles.presetButton, onclick: preset(841, 41, 301, 0) },
           "Smooth"
-        ),
-      ]),
+        )
+      ),
     ]),
 
-    m(
-      "p",
+    m.p(
+      { style: { marginBottom: "1rem" } },
       "Once you find the settings you like, plug those numbers into your code like so:"
     ),
 
-    m("pre", m("code", $codeSnippet)),
+    m.pre(m.code($codeSnippet)),
   ]);
 }
 
@@ -152,9 +144,9 @@ export function Examples(self) {
     animate();
   });
 
-  return m("div", { class: styles.examples }, [
-    m("div", { class: styles.exampleCanvas }, [
-      m("div", {
+  return m.div({ class: styles.examples }, [
+    m.div({ class: styles.exampleCanvas }, [
+      m.div({
         style: {
           width: 24,
           height: 24,
@@ -165,8 +157,8 @@ export function Examples(self) {
       }),
     ]),
 
-    m("div", { class: styles.exampleCanvas }, [
-      m("div", {
+    m.div({ class: styles.exampleCanvas }, [
+      m.div({
         style: {
           position: "absolute",
           inset: "0 0.5rem",
@@ -178,8 +170,8 @@ export function Examples(self) {
       }),
     ]),
 
-    m("div", { class: styles.exampleCanvas }, [
-      m("div", {
+    m.div({ class: styles.exampleCanvas }, [
+      m.div({
         style: {
           position: "absolute",
           width: 36,
@@ -190,8 +182,8 @@ export function Examples(self) {
       }),
     ]),
 
-    m("div", { class: styles.exampleCanvas }, [
-      m("div", {
+    m.div({ class: styles.exampleCanvas }, [
+      m.div({
         style: {
           position: "absolute",
           width: 2,
@@ -211,13 +203,13 @@ function ControlGroup(self) {
   const $max = self.inputs.$("max");
   const $$value = self.inputs.$$("value");
 
-  return m("div", { class: styles.controlGroup }, [
-    m("label", { for: $label }, [
-      m("span", $label),
-      m("span", { class: styles.controlLabel }, $$value),
+  return m.div({ class: styles.controlGroup }, [
+    m.label({ for: $label }, [
+      m.span($label),
+      m.span({ class: styles.controlLabel }, $$value),
     ]),
 
-    m("input", {
+    m.input({
       class: styles.controlInput,
       id: $label,
       type: "range",
