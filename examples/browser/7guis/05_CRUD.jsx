@@ -59,6 +59,10 @@ export default function (self) {
     });
   }
 
+  self.observe($$people, (people) => {
+    self.debug.log(people);
+  });
+
   // Deletes the selected person.
   function del() {
     const selectedId = $$selectedId.get();
@@ -70,7 +74,7 @@ export default function (self) {
 
   // Update fields when selection changes.
   self.observe($$selectedId, (id) => {
-    const person = $$people.get().find((p) => p.id === id);
+    const person = $$people.value.find((p) => p.id === id);
 
     if (person) {
       $$nameInput.set(person.name);
@@ -79,38 +83,43 @@ export default function (self) {
   });
 
   return m(ExampleFrame, { title: "5. CRUD" }, [
-    m("div", [
-      m("div", ["Filter prefix: ", m("input", { value: $$filterPrefix })]),
-      m("div", [
-        m(
-          "select",
+    m.div([
+      m.div("Filter prefix: ", m("input", { value: $$filterPrefix })),
+      m.div(
+        m.select(
           {
-            size: $filteredPeople.map((fp) => Math.max(fp.length, 2)),
+            // size: $filteredPeople.map((fp) => Math.max(fp.length, 2)),
+            size: 8,
             value: $$selectedId.toReadable(),
             onchange: (e) => {
+              self.debug.log(e.target, e.target.value);
+
               $$selectedId.set(Number(e.target.value));
             },
           },
-          [
-            m.$repeat($filteredPeople, ($person) => {
+
+          m.$repeat(
+            $filteredPeople,
+            ($person) => {
               const $id = $person.map((p) => p.id);
               const $name = $person.map((p) => p.name);
               const $surname = $person.map((p) => p.surname);
 
-              return m("option", { value: $id }, $surname, ", ", $name);
-            }),
-          ]
-        ),
-      ]),
-      m("div", [
-        m("input", { type: "text", value: $$nameInput }),
-        m("input", { type: "text", value: $$surnameInput }),
-      ]),
-      m("div", [
-        m("button", { onclick: create }, "Create"),
-        m("button", { onclick: update }, "Update"),
-        m("button", { onclick: del }, "Delete"),
-      ]),
+              return m.option({ value: $id }, $surname, ", ", $name);
+            },
+            (person) => person.id
+          )
+        )
+      ),
+      m.div(
+        m.input({ type: "text", value: $$nameInput }),
+        m.input({ type: "text", value: $$surnameInput })
+      ),
+      m.div(
+        m.button({ onclick: create }, "Create"),
+        m.button({ onclick: update }, "Update"),
+        m.button({ onclick: del }, "Delete")
+      ),
     ]),
   ]);
 }

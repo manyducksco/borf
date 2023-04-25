@@ -1,6 +1,6 @@
 import { Type } from "@borf/bedrock";
 import { Connectable } from "./Connectable.js";
-import { formatChildren, Markup, type Renderable } from "./Markup.js";
+import { formatChildren, isRenderable, type Renderable } from "./Markup.js";
 import { Readable, type StopFunction } from "./Writable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 
@@ -9,18 +9,6 @@ interface OutletOptions<T> {
   elementContext: ElementContext;
   readable: Readable<T>;
   render?: (value: T) => Renderable;
-}
-
-function isRenderable(value: unknown): value is Renderable {
-  return (
-    value == null ||
-    value === false ||
-    typeof value === "string" ||
-    typeof value === "number" ||
-    Markup.isMarkup(value) ||
-    Readable.isReadable(value) ||
-    Type.isArrayOf(isRenderable, value)
-  );
 }
 
 /**

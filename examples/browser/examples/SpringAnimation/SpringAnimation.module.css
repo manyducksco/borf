@@ -22,7 +22,9 @@
   width: 84px;
   height: 84px;
   border: 2px solid #48375a;
+  /* background-color: #3b2a4e; */
   flex: 0 0 84px;
+  /* border-radius: 50%; */
 }
 
 .exampleCanvas:not(:last-child) {

@@ -8,8 +8,6 @@ import { Outlet } from "./classes/Outlet.js";
 import { Connectable } from "./classes/Connectable.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
 
-import { CONTEXT } from "./useStore.js";
-
 export interface ComponentCore<I> {
   inputs: InputsAPI<UnwrapReadables<I>>;
   debug: DebugChannel;
@@ -256,18 +254,22 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   let connectable: Connectable | undefined;
 
   async function initialize(parent: Node, after?: Node) {
-    CONTEXT.appStores = appContext.stores;
-    CONTEXT.localStores = elementContext.stores;
+    let result: unknown;
 
-    let result = config.component(core);
+    try {
+      result = config.component(core);
 
-    if (result instanceof Promise) {
-      // TODO: Handle loading states
-      result = await result;
+      if (result instanceof Promise) {
+        // TODO: Handle loading states
+        result = await result;
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        appContext.crashCollector.crash({ error, componentName });
+      } else {
+        throw error;
+      }
     }
-
-    CONTEXT.appStores = undefined;
-    CONTEXT.localStores = undefined;
 
     if (result instanceof Markup || result === null) {
       // Result is a view.
@@ -276,10 +278,8 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
       // Result is a store.
       outputs = result;
       connectable = new Outlet({ appContext, elementContext, readable: $$children });
-      elementContext.stores = new Map([
-        ...elementContext.stores.entries(),
-        [config.component, { store: config.component, instance: controls }],
-      ]);
+      elementContext.stores = new Map([...elementContext.stores.entries()]);
+      elementContext.stores.set(config.component, { store: config.component, instance: controls });
     } else {
       // Result is not usable.
       throw new TypeError(
@@ -304,29 +304,38 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
     },
 
     async connect(parent: Node, after?: Node) {
-      // Start input observers
-      inputsControls.connect();
+      // Don't run lifecycle hooks or initialize if already connected.
+      // Calling connect again can be used to re-order elements that are already connected to the DOM.
+      const wasConnected = isConnected;
 
-      // Initialize and connect
-      await initialize(parent, after);
+      if (!wasConnected) {
+        // Start input observers
+        inputsControls.connect();
+
+        // Initialize an instance of the component
+        await initialize(parent, after);
+      }
+
       if (connectable) {
         await connectable.connect(parent, after);
       }
 
-      // Run beforeConnected
-      for (const callback of beforeConnectedCallbacks) {
-        await callback();
-      }
-      beforeConnectedCallbacks = [];
+      if (!wasConnected) {
+        // Run beforeConnected
+        for (const callback of beforeConnectedCallbacks) {
+          await callback();
+        }
+        beforeConnectedCallbacks = [];
 
-      // Mark component as connected
-      isConnected = true;
+        // Mark component as connected
+        isConnected = true;
 
-      // Run onConnected
-      for (const callback of onConnectedCallbacks) {
-        callback();
+        // Run onConnected
+        for (const callback of onConnectedCallbacks) {
+          callback();
+        }
+        onConnectedCallbacks = [];
       }
-      onConnectedCallbacks = [];
     },
 
     async disconnect() {
@@ -356,4 +365,17 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   };
 
   return controls;
+}
+
+/**
+ * Casts an object's type to ComponentCore, allowing components written in plain JavaScript to benefit from type inference.
+ *
+ * @example
+ * function Example(core) {
+ *   // Any code referencing `self` will get full autocomplete if your editor supports it.
+ *   const self = asComponentCore(core);
+ * }
+ */
+export function asComponentCore(core: any): ComponentCore<any> {
+  return core as ComponentCore<any>;
 }

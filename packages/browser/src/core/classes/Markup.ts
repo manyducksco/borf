@@ -94,10 +94,10 @@ interface MarkupFunction extends Elements {
 /* ----- Code ----- */
 
 /**
- * Creates markup nodes that can be rendered to the DOM by a view.
+ * Creates markup nodes that can be rendered to the DOM by a View.
  *
  * @example
- * // Use components inside other components:
+ * // Use components:
  * m(ExampleView, { inputOne: "value", inputTwo: 5 })
  *
  * // Create HTML elements:
@@ -156,6 +156,10 @@ export const m = <MarkupFunction>(<I>(
   throw new TypeError(`Unexpected arguments to m()`);
 });
 
+/*==============================*\
+||            Helpers           ||
+\*==============================*/
+
 /**
  * Filters out falsy children and converts remaining ones to Markup instances.
  */
@@ -178,6 +182,18 @@ export function formatChildren(children: Renderable | Renderable[]): Markup[] {
 
       throw new TypeError(`Unexpected child type. Got: ${x}`);
     });
+}
+
+export function isRenderable(value: unknown): value is Renderable {
+  return (
+    value == null ||
+    value === false ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    Markup.isMarkup(value) ||
+    Readable.isReadable(value) ||
+    Type.isArrayOf(isRenderable, value)
+  );
 }
 
 /*==============================*\
@@ -278,7 +294,7 @@ const tags: (keyof IntrinsicElements)[] = [
   "tr",
   "track",
   "ul",
-  "var", // this is a JS keyword, but shouldn't pose a problem if called like `m.var()`
+  "var", // this is a JS keyword, but that shouldn't pose a problem if called as `m.var()`
   "video",
   "wbr",
 ];

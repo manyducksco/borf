@@ -114,7 +114,7 @@ function DefaultRootView(self: ComponentCore<{}>) {
 }
 
 /**
- * A Borf browser app, complete with routes, stores, and multiple language support.
+ * A Borf browser app, complete with routes, stores, and multiple-language support.
  */
 export class App implements AppRouter {
   #layerId = 0;
@@ -220,10 +220,10 @@ export class App implements AppRouter {
    * Displays view at the root of the app. All other routes render inside this view's outlet.
    */
   setRootView<I>(view: View<I>, inputs?: I) {
-    if (this.#rootView != DefaultRootView) {
+    if (this.#rootView !== DefaultRootView) {
       this.#appContext.debugHub
         .channel({ name: "borf:App" })
-        .warn(`Root view is already defined. Only the final addRootView call will take effect.`);
+        .warn(`Root view is already defined. Only the final setRootView call will take effect.`);
     }
 
     if (typeof view === "function") {
@@ -239,7 +239,14 @@ export class App implements AppRouter {
    * Displays view over top of all other app content while at least one async component promise is pending.
    */
   setSplashView<I>(view: View<I>, inputs?: I) {
-    return this;
+    return this; // TODO: Implement
+  }
+
+  /**
+   * Sets the view that will be displayed when the app encounters an unhandled error. Set to null to crash to a blank screen.
+   */
+  setCrashView(view: View<CrashPageInputs> | null) {
+    return this; // TODO: Implement
   }
 
   addStore<I>(store: Store<I, any>, inputs?: I): this;

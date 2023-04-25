@@ -128,6 +128,10 @@ export class Spring extends Readable<number> {
     return this.#current.value;
   }
 
+  get() {
+    return this.value;
+  }
+
   map<R>(transform: (value: number) => R): Readable<R> {
     return this.#current.map(transform);
   }

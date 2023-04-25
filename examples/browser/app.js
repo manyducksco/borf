@@ -1,4 +1,4 @@
-import { App, m } from "@borf/browser";
+import { App, Elements, asComponentCore, m } from "@borf/browser";
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
@@ -27,17 +27,47 @@ import Cells from "./7guis/07_Cells";
 ||      Custom Elements      ||
 \*===========================*/
 
-// Views and stores can be added to an ElementHub to use them as custom HTML elements.
+// Views and stores can be registered on Elements to use them as custom HTML elements.
 // This is a good option if you want to sprinkle in views to enhance a regular HTML & CSS website.
 
-// const hub = new ElementHub();
+const elems = new Elements();
 
-// hub.addElement("web-component-view", (self) => {
-//   const { location } = self.inputs.get();
-//   return m("h1", `This is a web component. [location:${location}]`);
-// });
+// Invoked in index.html
+elems.addElement("web-component-view", (core) => {
+  const self = asComponentCore(core);
 
-// hub.connect(); // Now using <web-component-view> anywhere in your HTML will create an instance of WebComponentView.
+  const { location } = self.inputs.get();
+  return m.h1(`This is a web component. [location:${location}]`);
+});
+
+function WebComponentStore(core) {
+  const self = asComponentCore(core);
+
+  return {
+    // TODO: Convert kebab-case to camelCase for web component inputs?
+    value: self.inputs.get("defaultValue") ?? "The Default Value",
+  };
+}
+
+elems.addStore(WebComponentStore, {
+  defaultValue: "This is on Elements",
+});
+
+elems.addElement("web-component-store", WebComponentStore);
+
+elems.addElement("web-component-store-user", (core) => {
+  const self = asComponentCore(core);
+
+  const { value } = self.useStore(WebComponentStore);
+
+  return m.div(
+    { style: { border: "1px solid red" } },
+    m.h1("This web component is using a store"),
+    m.p(value)
+  );
+});
+
+elems.connect(); // Now using <web-component-view> anywhere in your HTML will create an instance of WebComponentView.
 
 /*===========================*\
 ||            App            ||

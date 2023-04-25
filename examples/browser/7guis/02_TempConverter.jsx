@@ -18,7 +18,7 @@ export default function (self) {
   const $fahrenheit = $celsius.map((c) => c * (9 / 5) + 32);
 
   return m(ExampleFrame, { title: "2. Temperature Converter" }, [
-    m("input", {
+    m.input({
       type: "text",
       value: $celsius,
       oninput: (e) => {
@@ -27,7 +27,7 @@ export default function (self) {
       },
     }),
     "Celsius =",
-    m("input", {
+    m.input({
       type: "text",
       value: $fahrenheit,
       oninput: (e) => {

@@ -101,12 +101,11 @@ export class Repeat<T> implements Connectable {
 
     const newItems: ConnectedItem<T>[] = [];
 
-    // Disconnect views for items that no longer exist.
+    // Remove views for items that no longer exist in the new list.
     for (const connected of this.#connectedItems) {
       const stillPresent = !!potentialItems.find((p) => p.key === connected.key);
 
       if (!stillPresent) {
-        // TODO: Handle errors
         connected.connectable.disconnect();
       }
     }
@@ -139,7 +138,6 @@ export class Repeat<T> implements Connectable {
 
     // Reconnect to ensure order. Lifecycle hooks won't be run again if the view is already connected.
     for (const item of newItems) {
-      // TODO: Handle errors
       item.connectable.connect(this.#node.parentNode!);
     }
 

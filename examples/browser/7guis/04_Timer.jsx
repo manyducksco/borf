@@ -8,11 +8,10 @@ export default function (self) {
   const $$elapsed = new Writable(0); // elapsed time in seconds
 
   let lastTick = null;
+  let stopped = false;
 
   const tick = () => {
-    self.debug.log("tick - isConnected", self.isConnected);
-
-    if (self.isConnected) {
+    if (!stopped) {
       const now = Date.now();
 
       const elapsed = $$elapsed.get();
@@ -34,41 +33,40 @@ export default function (self) {
 
   self.onConnected(() => {
     lastTick = Date.now();
-
     tick();
   });
 
+  self.onDisconnected(() => {
+    stopped = true;
+  });
+
   return m(ExampleFrame, { title: "4. Timer" }, [
-    m("div", [
-      m("div", [
+    m.div(
+      m.div(
         "Elapsed Time: ",
-        m("progress", { max: $$duration, value: $$elapsed }),
-      ]),
-      m(
-        "div",
-        $$elapsed.map((seconds) => seconds.toFixed(1))
+        m.progress({ max: $$duration, value: $$elapsed })
       ),
-      m("div", [
+      m.div($$elapsed.map((seconds) => seconds.toFixed(1))),
+      m.div(
         "Duration: ",
-        m("input", {
+        m.input({
           type: "range",
           min: 0,
           max: 30,
           step: 0.1,
           value: $$duration,
-        }),
-      ]),
-      m("div", [
-        m(
-          "button",
+        })
+      ),
+      m.div(
+        m.button(
           {
             onclick: () => {
               $$elapsed.set(0);
             },
           },
           "Reset"
-        ),
-      ]),
-    ]),
+        )
+      )
+    ),
   ]);
 }

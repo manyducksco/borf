@@ -65,7 +65,7 @@ export default function (self) {
               (x, y) => x === y
             );
 
-            return m("option", { value: $type, selected: $selected }, $type);
+            return m.option({ value: $type, selected: $selected }, $type);
           })
         )
       ),

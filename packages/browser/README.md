@@ -296,21 +296,21 @@ function ExampleView(self) {
   ||            Lifecycle            ||
   \*=================================*/
 
-  ctx.isConnected; // true if view is connected
+  self.isConnected; // true if view is connected
 
-  ctx.beforeConnected(async () => {
+  self.beforeConnected(async () => {
     // Promise resolves before onConnected callbacks are triggered.
   });
 
-  ctx.beforeDisconnected(async () => {
+  self.beforeDisconnected(async () => {
     // Promise resolves before onDisconnected callbacks are triggered.
   });
 
-  ctx.onConnected(() => {
+  self.onConnected(() => {
     // Runs after the view is added to the page.
   });
 
-  ctx.onDisconnected(() => {
+  self.onDisconnected(() => {
     // Runs after the view is removed from the page.
   });
 
@@ -321,11 +321,11 @@ function ExampleView(self) {
   // Using a Spring to animate translateY % of container element.
   const spring = new Spring({ initialValue: 100 });
 
-  ctx.beforeConnected(async () => {
+  self.beforeConnected(async () => {
     return spring.to(0); // Returns a promise that resolves after Spring value transitions to 1.
   });
 
-  ctx.beforeDisconnected(async () => {
+  self.beforeDisconnected(async () => {
     return spring.to(100); // View is not completely removed until this promise resolves.
   });
 

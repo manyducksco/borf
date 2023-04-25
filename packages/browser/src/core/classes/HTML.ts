@@ -76,30 +76,6 @@ export class HTML implements Connectable {
     this.#elementContext = elementContext;
   }
 
-  __setChildren(children: Markup[]) {
-    if (this.isConnected) {
-      for (const child of this.#children) {
-        // TODO: Handle errors
-        child.disconnect();
-      }
-    }
-
-    this.#children = children.map((c) =>
-      c.init({ appContext: this.#appContext, elementContext: this.#elementContext })
-    );
-
-    if (this.isConnected) {
-      for (const child of this.#children) {
-        // TODO: Handle errors
-        child.connect(this.#node);
-      }
-    }
-
-    applyAttrs(this.#node, this.#attributes, this.#stopCallbacks);
-    if (this.#attributes.style) applyStyles(this.#node, this.#attributes.style, this.#stopCallbacks);
-    if (this.#attributes.class) applyClasses(this.#node, this.#attributes.class, this.#stopCallbacks);
-  }
-
   async connect(parent: Node, after?: Node) {
     if (!this.isConnected) {
       for (const child of this.#children) {
@@ -107,7 +83,7 @@ export class HTML implements Connectable {
         child.connect(this.#node);
       }
 
-      applyAttrs(this.#node, this.#attributes, this.#stopCallbacks);
+      applyAttributes(this.#node, this.#attributes, this.#stopCallbacks);
       if (this.#attributes.style) applyStyles(this.#node, this.#attributes.style, this.#stopCallbacks);
       if (this.#attributes.class) applyClasses(this.#node, this.#attributes.class, this.#stopCallbacks);
     }
@@ -132,16 +108,22 @@ export class HTML implements Connectable {
   }
 }
 
-function applyAttrs(element: HTMLElement | SVGElement, attrs: Record<string, unknown>, stopCallbacks: StopFunction[]) {
+function applyAttributes(
+  element: HTMLElement | SVGElement,
+  attrs: Record<string, unknown>,
+  stopCallbacks: StopFunction[]
+) {
   for (const key in attrs) {
     const value = attrs[key];
 
+    // console.log({ key, element, readable: value });
+
     // Bind or set value depending on its type.
-    if (key === "value" && element instanceof HTMLInputElement) {
+    if (key === "value") {
       if (Readable.isReadable(value)) {
         stopCallbacks.push(
           value.observe((current) => {
-            element.value = String(current);
+            (element as any).value = String(current);
           })
         );
 
@@ -158,7 +140,7 @@ function applyAttrs(element: HTMLElement | SVGElement, attrs: Record<string, unk
           });
         }
       } else {
-        element.value = String(value);
+        (element as any).value = String(value);
       }
     } else if (eventAttrs.includes(key.toLowerCase())) {
       const eventName = key.slice(2).toLowerCase();
