@@ -64,19 +64,18 @@ export interface HTMLGlobalAttributes {
    * array of strings and class maps.
    *
    * @example
-   * <div class="standard usage" />
+   * m.div({ class: "one-class" })
    *
-   * @example
-   * <div class={["array", "of", "classes"]} />
+   * m.div({ class: ["array", "of", "classes"] })
    *
-   * @example
-   * <div class={{
-   *   applied: true,
-   *   notApplied: false
-   * }} />
+   * m.div({
+   *   class: {
+   *     applied: true,
+   *     notApplied: false
+   *   }
+   * })
    *
-   * @example
-   * <div class={["class", "class2", { "conditional": $value }]} />
+   * m.div({ class: ["class", "class2", { "conditional": $value }] })
    */
   class: string | ClassMap | Array<string | ClassMap | (string | ClassMap)[]>;
 
@@ -195,7 +194,7 @@ export interface HTMLGlobalAttributes {
   /**
    * Inline CSS styles.
    */
-  style: Styles;
+  style: CSSProperties;
 
   /**
    * @see https://html.spec.whatwg.org/multipage/interaction.html#attr-tabindex
@@ -224,11 +223,20 @@ export interface HTMLGlobalAttributes {
   translate: "" | "yes" | "no";
 }
 
-export interface Styles extends CSS.Properties, CSS.PropertiesHyphen {}
+export interface Styles extends CSS.Properties, CSS.PropertiesHyphen {
+  transform?: string;
+  [key: string]: any;
+}
+
+export type CSSProperties = {
+  [K in keyof Styles]: MaybeReadable<Styles[K]>;
+};
 
 export interface ClassMap {
-  [className: string]: MaybeReadable<boolean>;
+  [className: string]: MaybeReadable<any>;
 }
+
+type X = CSS.Property.Transform;
 
 export type EventHandler<E> = (event: E) => void;
 

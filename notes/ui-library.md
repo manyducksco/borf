@@ -25,6 +25,7 @@ Layout primitives (Flow components):
 class Example extends View {
   setup(ctx, m) {
     // Gap and padding are in units, which are defined on a FlowLayoutStore. Here 1 unit is 4px.
+
     return (
       <FlowLayoutStore unit="4px">
         <FlowRight

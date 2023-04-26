@@ -44,26 +44,37 @@ export class Markup {
 }
 
 interface MarkupElement<Attrs> {
-  (attributes: Attrs, ...children: (Renderable | Renderable[])[]): Markup;
-  (...children: (Renderable | Renderable[])[]): Markup;
+  (attributes: Attrs, ...children: Renderable[]): Markup;
+  (attributes: Attrs, children: Renderable[]): Markup;
+  (...children: Renderable[]): Markup;
+  (children: Renderable[]): Markup;
 }
 
 type Elements = { [K in keyof IntrinsicElements]: MarkupElement<IntrinsicElements[K]> };
 
 interface MarkupFunction extends Elements {
-  <T extends keyof IntrinsicElements>(
-    tag: T,
-    attributes: IntrinsicElements[T],
-    ...children: (Renderable | Renderable[])[]
-  ): Markup;
+  <T extends keyof IntrinsicElements>(tag: T, attributes: IntrinsicElements[T], ...children: Renderable[]): Markup;
 
-  <T extends keyof IntrinsicElements>(tag: T, ...children: (Renderable | Renderable[])[]): Markup;
+  <T extends keyof IntrinsicElements>(tag: T, attributes: IntrinsicElements[T], children: Renderable[]): Markup;
+
+  <T extends keyof IntrinsicElements>(tag: T, ...children: Renderable[]): Markup;
+
+  <T extends keyof IntrinsicElements>(tag: T, children: Renderable[]): Markup;
+
+  (tag: string, attributes: Record<string, any>, ...children: Renderable[]): Markup;
+  (tag: string, attributes: Record<string, any>, children: Renderable[]): Markup;
+  (tag: string, ...children: Renderable[]): Markup;
+  (tag: string, children: Renderable[]): Markup;
 
   // export function m(tag: string, attributes: any, ...children: (Renderable | Renderable[])[]): Markup;
 
   // export function m(tag: string, ...children: (Renderable | Renderable[])[]): Markup;
 
-  <I>(component: Component<I>, inputs?: I, ...children: (Renderable | Renderable[])[]): Markup;
+  <I>(component: Component<I>, inputs: I, ...children: Renderable[]): Markup;
+  <I>(component: Component<I>, inputs: I, children: Renderable[]): Markup;
+  <I>(component: Component<I>, ...children: Renderable[]): Markup;
+  <I>(component: Component<I>, children: Renderable[]): Markup;
+  <I>(component: Component<I>, inputs: I): Markup;
 
   /**
    * Displays `then` content when `value` holds a truthy value. Displays `otherwise` content otherwise.

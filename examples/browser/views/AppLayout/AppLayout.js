@@ -50,6 +50,7 @@ export async function AppLayout(core) {
           m.li(navLink("/examples/counter-with-store", "Counter with Store")),
           m.li(navLink("/examples/local-stores", "Local Stores")),
           m.li(navLink("/examples/passing-attributes", "Passing Attributes")),
+          m.li(navLink("/examples/http-requests", "HTTP Requests")),
         ]),
       ]),
 

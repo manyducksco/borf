@@ -1,5 +1,5 @@
 import { Readable, Writable, type ValuesOfReadables, type StopFunction } from "./classes/Writable.js";
-import { Inputs, InputsAPI, type UnwrapReadables } from "./classes/Inputs.js";
+import { Inputs, InputsAPI, type InputValues } from "./classes/Inputs.js";
 import { Markup } from "./classes/Markup.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT } from "./keys.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
@@ -9,7 +9,7 @@ import { Connectable } from "./classes/Connectable.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
 
 export interface ComponentCore<I> {
-  inputs: InputsAPI<UnwrapReadables<I>>;
+  inputs: InputsAPI<InputValues<I>>;
   debug: DebugChannel;
 
   /**
@@ -34,7 +34,7 @@ export interface ComponentCore<I> {
    */
   beforeDisconnected(callback: () => Promise<void>): void;
 
-  useStore<T extends Store<any, any>>(store: T): ReturnType<T>;
+  useStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
   useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
 
   observe<T>(readable: Readable<T>, callback: (value: T) => void): void;
@@ -53,9 +53,9 @@ export interface ComponentCore<I> {
   outlet(): Markup;
 }
 
-export type Component<I> = (ctx: ComponentCore<I>) => unknown;
-export type Store<I, O> = (ctx: ComponentCore<I>) => O;
-export type View<I> = (ctx: ComponentCore<I>) => Markup | null;
+export type Component<I> = (self: ComponentCore<I>) => unknown;
+export type Store<I, O> = (self: ComponentCore<I>) => O | Promise<O>;
+export type View<I> = (self: ComponentCore<I>) => Markup | null | Promise<Markup | null>;
 
 export function getAppContext(core: ComponentCore<any>) {
   return (core as any)[APP_CONTEXT] as AppContext;
@@ -65,7 +65,7 @@ export function getElementContext(core: ComponentCore<any>) {
   return (core as any)[ELEMENT_CONTEXT] as ElementContext;
 }
 
-function makeInputs<I>(values: I): [InputsAPI<UnwrapReadables<I>>, Inputs<I>] {
+function makeInputs<I>(values: I): [InputsAPI<InputValues<I>>, Inputs<I>] {
   const inputs = new Inputs(values);
 
   return [inputs.api, inputs];

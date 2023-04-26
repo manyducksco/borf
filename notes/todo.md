@@ -2,8 +2,11 @@
 
 Prepare for v1.0
 
-- Complete JSX element type definitions
-- Add full doc comments to type definitions
+- [x] Complete JSX element type definitions
+- [ ] Add full doc comments to type definitions
+- [ ] Implement App.setCrashView
+- [ ] Implement App.setSplashView (and splash view in general)
+- [ ] Fix input.get() type issues (seen in Quack)
 
 ## Working On
 

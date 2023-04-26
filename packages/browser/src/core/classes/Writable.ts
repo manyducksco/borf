@@ -137,18 +137,22 @@ export class Readable<T> {
       observers.splice(observers.indexOf(callback), 1);
     };
   }
+
+  toString() {
+    return String(this.value);
+  }
 }
 
 /**
  * Readable with a value derived by transforming the value of another Readable.
  */
-class MappedReadable<O, T> extends Readable<T> {
+class MappedReadable<F, T> extends Readable<T> {
   [READABLE] = true;
 
-  #readable: Readable<O>;
-  #transform: (value: O) => T;
+  #readable: Readable<F>;
+  #transform: (value: F) => T;
 
-  constructor(readable: Readable<O>, transform: (value: O) => T) {
+  constructor(readable: Readable<F>, transform: (value: F) => T) {
     super(transform(readable.value));
 
     this.#readable = readable;

@@ -100,3 +100,59 @@ import * as styles from "./styles.js";
 
 styles.button
 ```
+
+## BSS: Better Style Sheets
+
+```js
+import BSS from "@borf/bss";
+
+// Creates a new bss instance with the specified config overrides
+const bss = new BSS({
+  unit: "4px",
+  colors: {
+    flamingo: "#f08",
+  },
+  scheme: "dark", // Perma-dark theme (always include dark styles in base)
+});
+
+// Immutable chaining, so you can safely create derivative classes without mutating the original.
+// Class is only attached to the document when used.
+const container = bss
+  .class({
+    // Better properties that translate to one or more CSS style rules.
+    flow: "down",
+    padding: 2, // in units
+    bg: bss.color("flamingo").desaturate(0.5),
+    x: bss.var("some-name"),
+  })
+  .vars({
+    /* vars are set for this class and children */
+  })
+  .dark({
+    /* Overrides for dark mode */
+  })
+  .light({
+    /* Overrides for light mode */
+  })
+  .widerThan(360, {
+    /* Media query for >360px */
+  })
+  .hover({
+    /* Hover (true hover:hover media query) styles */
+  })
+  .before({})
+  .after({})
+  .firstChild({})
+  .lastChild({})
+  .placeholder({})
+  .focus({})
+  // Aliases for browser-specific scrollbar styling
+  .scrollBar({})
+  .scrollHandle({});
+
+const extended = container.extend({
+  /* Additions to base styles */
+});
+
+container; // Access generated styles as a style object
+```

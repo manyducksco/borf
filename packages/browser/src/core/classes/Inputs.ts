@@ -3,9 +3,11 @@ import { Type } from "@borf/bedrock";
 import { Writable, Readable, READABLE, type ObserveCallback, type StopFunction } from "./Writable.js";
 import { deepEqual } from "../helpers/deepEqual.js";
 
-export type UnwrapReadables<T> = {
-  [K in keyof T]: T[K] extends Readable<infer U> ? U : T[K];
+export type InputValues<T> = {
+  [K in keyof T]: UnwrapReadable<T[K]>;
 };
+
+type UnwrapReadable<T> = T extends Readable<infer U> ? U : T;
 
 /**
  * Handles observables, readables, writables and plain values as passed to a View or Store.
@@ -21,9 +23,9 @@ export class Inputs<T> {
 
   _values?: T;
 
-  _$$inputs: Writable<UnwrapReadables<T>>;
+  _$$inputs: Writable<InputValues<T>>;
 
-  api: InputsAPI<UnwrapReadables<T>>;
+  api: InputsAPI<InputValues<T>>;
 
   constructor(values: T) {
     this._values = values;
@@ -53,10 +55,10 @@ export class Inputs<T> {
       initialValues[name] = this._readables[name]!.value;
     }
 
-    this._$$inputs = new Writable(initialValues as UnwrapReadables<T>);
+    this._$$inputs = new Writable(initialValues as InputValues<T>);
 
     // Create the API to interact with attribute values.
-    this.api = new InputsAPI<UnwrapReadables<T>>({
+    this.api = new InputsAPI<InputValues<T>>({
       $$inputs: this._$$inputs,
       readables: this._readables,
       writables: this._writables,
