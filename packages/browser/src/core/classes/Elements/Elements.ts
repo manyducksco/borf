@@ -10,6 +10,8 @@ import { HTTPStore } from "../../stores/http.js";
 import { PageStore } from "../../stores/page.js";
 import { RouterStore } from "./stores/router.js";
 
+// TODO: Local store elements currently do not apply themselves to the elementContext
+
 type ElementRegistration = {
   tag: string;
   component: Component<any>;

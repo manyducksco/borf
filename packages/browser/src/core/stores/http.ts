@@ -1,4 +1,3 @@
-import { Type } from "@borf/bedrock";
 import { ComponentCore } from "../component.js";
 
 interface HTTPStoreInputs {
@@ -10,7 +9,7 @@ interface HTTPStoreInputs {
 
 /**
  * A simple HTTP client with middleware support. Middleware applies to all requests made through this store,
- * so it's a perfect place to handle things like auth and permission checks for API calls.
+ * so it's the perfect way to handle things like auth headers and permission checks for API calls.
  */
 export function HTTPStore(self: ComponentCore<HTTPStoreInputs>) {
   self.setName("borf:http");
@@ -25,7 +24,7 @@ export function HTTPStore(self: ComponentCore<HTTPStoreInputs>) {
     fetch = global.fetch.bind(global);
   }
 
-  const middleware: RequestMiddleware[] = [];
+  const middleware: HTTPMiddleware[] = [];
 
   async function request<ResBody, ReqBody>(method: string, uri: string, options?: RequestOptions<any>) {
     return makeRequest<ResBody, ReqBody>({ ...options, method, uri, middleware, fetch });
@@ -38,7 +37,7 @@ export function HTTPStore(self: ComponentCore<HTTPStoreInputs>) {
      *
      * @param middleware - A middleware function that will intercept requests.
      */
-    use(fn: RequestMiddleware) {
+    use(fn: HTTPMiddleware) {
       middleware.push(fn);
 
       // Call returned function to remove this middleware for subsequent requests.
@@ -85,7 +84,7 @@ export function HTTPStore(self: ComponentCore<HTTPStoreInputs>) {
 ||      Request       ||
 \*====================*/
 
-export type RequestMiddleware = (
+export type HTTPMiddleware = (
   request: HTTPRequest<unknown>,
   next: () => Promise<HTTPResponse<unknown>>
 ) => void | Promise<void>;
@@ -140,7 +139,7 @@ class HTTPResponseError extends Error {
 interface MakeRequestConfig<ReqBody> extends RequestOptions<ReqBody> {
   method: string;
   uri: string;
-  middleware: RequestMiddleware[];
+  middleware: HTTPMiddleware[];
   fetch: typeof window.fetch;
 }
 
@@ -161,7 +160,7 @@ async function makeRequest<ResBody, ReqBody>(config: MakeRequestConfig<ReqBody>)
       headers.forEach((value, key) => {
         request.headers.set(key, value);
       });
-    } else if (Type.isObject(headers)) {
+    } else if (headers != null && typeof headers === "object" && !Array.isArray(headers)) {
       for (const name in headers) {
         request.headers.set(name, String(headers[name]));
       }
@@ -172,11 +171,11 @@ async function makeRequest<ResBody, ReqBody>(config: MakeRequestConfig<ReqBody>)
 
   // Read query params into request
   if (query) {
-    if (query instanceof Map || query instanceof Headers) {
+    if (query instanceof Map || query instanceof URLSearchParams) {
       query.forEach((value, key) => {
         request.query.set(key, value);
       });
-    } else if (Type.isObject(query)) {
+    } else if (query != null && typeof query === "object" && !Array.isArray(query)) {
       for (const name in query) {
         request.query.set(name, String(query[name]));
       }
@@ -187,6 +186,7 @@ async function makeRequest<ResBody, ReqBody>(config: MakeRequestConfig<ReqBody>)
 
   let response: HTTPResponse<ResBody>;
 
+  // This is the function that performs the actual request after the final middleware.
   const handler = async () => {
     const query = request.query.toString();
     const fullURL = request.query.keys.length > 0 ? request.uri + "?" + query : request.uri;

@@ -12,7 +12,7 @@ export type RepeatContext = Omit<ComponentCore<any>, "inputs">;
 interface RepeatOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
-  readable: Readable<Iterable<T>>;
+  readable: Readable<T[]>;
   render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null;
   key?: (value: T, index: number) => any;
 }
@@ -28,7 +28,7 @@ type ConnectedItem<T> = {
 
 export class Repeat<T> implements Connectable {
   #node = document.createComment("Repeat");
-  #readable: Readable<Iterable<T>>;
+  #readable: Readable<T[]>;
   #stopCallback?: StopFunction;
   #connectedItems: ConnectedItem<T>[] = [];
   #appContext;

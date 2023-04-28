@@ -96,7 +96,7 @@ interface MarkupFunction extends Elements {
    * TODO: Describe or link to docs where keying is explained.
    */
   $repeat<T>(
-    readable: Readable<Iterable<T>>,
+    readable: Readable<T[]>,
     render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
     key?: (value: T, index: number) => string | number
   ): Markup;
@@ -375,7 +375,7 @@ m.$observe = function $observe<T>(readable: Readable<T>, render: (value: T) => R
  * TODO: Describe or link to docs where keying is explained.
  */
 m.$repeat = function $repeat<T>(
-  readable: Readable<Iterable<T>>,
+  readable: Readable<T[]>,
   render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
   key?: (value: T, index: number) => string | number
 ): Markup {

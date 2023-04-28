@@ -7,3 +7,4 @@ export { m } from "./classes/Markup.js";
 export { asComponentCore } from "./component.js";
 
 export { type ComponentCore } from "./component.js";
+export { type HTTPMiddleware } from "./stores/http.js";
