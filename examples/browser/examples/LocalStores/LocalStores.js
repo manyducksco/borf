@@ -1,31 +1,37 @@
-import { m, Writable } from "@borf/browser";
+import { html, useAttributes, useStore, Writable } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
-export function LocalStores(self) {
-  return m(ExampleFrame, { title: "Local State with Stores" }, [
-    m.p(
-      `You should be seeing "Hello from Instance 1" and "Hello from Instance 2" below this.`
-    ),
+export function LocalStores() {
+  return html`
+    <${ExampleFrame} title="Local State with Stores">
+      <p>
+        You should be seeing "Hello from Instance 1" and "Hello from Instance 2"
+        below this.
+      </p>
 
-    m.ul(
-      m(ExampleStore, { initialValue: "Instance 1" }, [
-        m(ValueDisplay),
-        m(ExampleStore, { initialValue: "Instance 2" }, m(ValueDisplay)),
-      ])
-    ),
-  ]);
+      <ul>
+        <${ExampleStore} initialValue="Instance 1">
+          <${ValueDisplay} />
+          <${ExampleStore} initialValue="Instance 2">
+            <${ValueDisplay} />
+          <//>
+        <//>
+      </ul>
+    <//>
+  `;
 }
 
-function ExampleStore(self) {
-  const initialValue = self.inputs.get("initialValue") ?? "DEFAULT";
+function ExampleStore() {
+  const attrs = useAttributes();
+  const initialValue = attrs.get("initialValue") ?? "DEFAULT";
 
   return {
     $$value: new Writable(initialValue),
   };
 }
 
-function ValueDisplay(self) {
-  const { $$value } = self.useStore(ExampleStore);
+function ValueDisplay() {
+  const { $$value } = useStore(ExampleStore);
 
-  return m.li("Hello from ", $$value);
+  return html`<li>Hello from ${$$value}</li>`;
 }

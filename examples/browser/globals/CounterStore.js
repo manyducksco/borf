@@ -1,12 +1,12 @@
-import { Writable } from "@borf/browser";
+import { Writable, useConnected } from "@borf/browser";
 
 /**
  * Keeps a counter that auto-increments each second.
  */
-export function CounterStore(self) {
+export function CounterStore() {
   const $$current = new Writable(0);
 
-  self.onConnected(() => {
+  useConnected(() => {
     setInterval(() => {
       $$current.update((x) => x + 1);
     }, 1000);

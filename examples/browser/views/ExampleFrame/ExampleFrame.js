@@ -1,18 +1,24 @@
-import { m } from "@borf/browser";
+import { html, useAttributes, useOutlet } from "@borf/browser";
 import styles from "./ExampleFrame.module.css";
 
-export function ExampleFrame(self) {
-  const { title, about } = self.inputs.get();
+export function ExampleFrame() {
+  const attrs = useAttributes();
 
-  return m.article({ class: styles.frame }, [
-    m.header({ class: styles.header }, m.h2({ class: styles.title }, title)),
+  const { title, about } = attrs.get();
 
-    about &&
-      m.div({ class: styles.about }, [
-        m.div({ class: styles.symbol }, "⌘"),
-        m.p(about),
-      ]),
+  return html`
+    <article class=${styles.frame}>
+      <header class=${styles.header}>
+        <h2 class=${styles.title}>${title}</h2>
+      </header>
 
-    m.div({ class: styles.content }, self.outlet()),
-  ]);
+      ${about &&
+      html`<div class=${styles.about}>
+        <div class=${styles.symbol}>⌘</div>
+        <p>${about}</p>
+      </div>`}
+
+      <div class=${styles.content}>${useOutlet()}</div>
+    </article>
+  `;
 }

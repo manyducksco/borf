@@ -1,7 +1,8 @@
+import { Type } from "@borf/bedrock";
 import { Readable, Writable, type ValuesOfReadables, type StopFunction } from "./classes/Writable.js";
 import { Inputs, InputsAPI, type InputValues } from "./classes/Inputs.js";
 import { Markup } from "./classes/Markup.js";
-import { APP_CONTEXT, ELEMENT_CONTEXT } from "./keys.js";
+import { APP_CONTEXT, ELEMENT_CONTEXT, setCurrentComponent, clearCurrentComponent } from "./keys.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
 import { type BuiltInStores } from "./types.js";
 import { Outlet } from "./classes/Outlet.js";
@@ -99,11 +100,11 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   let beforeConnectedCallbacks: (() => Promise<void>)[] = [];
   let beforeDisconnectedCallbacks: (() => Promise<void>)[] = [];
 
-  const [inputs, inputsControls] = makeInputs(config.inputs);
-  const $$children = new Writable(config.children ?? []);
-
   let isConnected = false;
   let componentName = config.component.name ?? "anonymous";
+
+  const [inputs, inputsControls] = makeInputs(config.inputs);
+  const $$children = new Writable(config.children ?? []);
 
   const appContext = config.appContext;
   const elementContext = {
@@ -135,9 +136,10 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
 
     useStore(store: keyof BuiltInStores | Store<any, any>) {
       const { appContext, elementContext } = config;
+      let name: string;
 
       if (typeof store === "string") {
-        store = store as keyof BuiltInStores;
+        name = store as keyof BuiltInStores;
 
         if (appContext.stores.has(store)) {
           const _store = appContext.stores.get(store)!;
@@ -154,7 +156,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
           return _store.instance!.outputs;
         }
       } else {
-        const name = store.name;
+        name = store.name;
 
         if (elementContext.stores.has(store)) {
           return elementContext.stores.get(store)!.instance!.outputs;
@@ -174,12 +176,12 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
 
           return _store.instance!.outputs;
         }
-
-        appContext.crashCollector.crash({
-          componentName,
-          error: new Error(`Store '${name}' is not registered on this app.`),
-        });
       }
+
+      appContext.crashCollector.crash({
+        componentName,
+        error: new Error(`Store '${name}' is not registered on this app.`),
+      });
     },
 
     setName(name) {
@@ -257,6 +259,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
     let result: unknown;
 
     try {
+      setCurrentComponent(core);
       result = config.component(core);
 
       if (result instanceof Promise) {
@@ -269,6 +272,8 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
       } else {
         throw error;
       }
+    } finally {
+      clearCurrentComponent();
     }
 
     if (result instanceof Markup || result === null) {
@@ -281,10 +286,16 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
       elementContext.stores = new Map([...elementContext.stores.entries()]);
       elementContext.stores.set(config.component, { store: config.component, instance: controls });
     } else {
+      console.warn(result, config);
       // Result is not usable.
-      throw new TypeError(
-        `Expected component function to return Markup or null (View), or an object (Store). Got type: ${typeof result}, value: ${result}`
-      );
+      appContext.crashCollector.crash({
+        error: new TypeError(
+          `Expected '${
+            config.component.name
+          }' function to return Markup or null for a view, or an object for a store. Got: ${Type.of(result)}`
+        ),
+        componentName,
+      });
     }
   }
 
@@ -365,17 +376,4 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   };
 
   return controls;
-}
-
-/**
- * Casts an object's type to ComponentCore, allowing components written in plain JavaScript to benefit from type inference.
- *
- * @example
- * function Example(core) {
- *   // Any code referencing `self` will get full autocomplete if your editor supports it.
- *   const self = asComponentCore(core);
- * }
- */
-export function asComponentCore(core: any): ComponentCore<any> {
-  return core as ComponentCore<any>;
 }

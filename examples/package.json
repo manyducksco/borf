@@ -28,6 +28,7 @@
     "@borf/server": "file:../packages/server",
     "@vitest/browser": "^0.29.8",
     "@vitest/ui": "^0.29.8",
+    "htm": "^3.1.1",
     "vite": "^4.2.1",
     "vitest": "^0.29.8",
     "webdriverio": "^8.6.9",

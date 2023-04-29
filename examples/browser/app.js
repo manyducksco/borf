@@ -1,4 +1,5 @@
-import { App, Elements, asComponentCore, m } from "@borf/browser";
+import z from "zod";
+import { App, Elements, html, useAttributes, useStore } from "@borf/browser";
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
@@ -34,19 +35,23 @@ import Cells from "./7guis/07_Cells";
 const elems = new Elements();
 
 // Invoked in index.html
-elems.addElement("web-component-view", (core) => {
-  const self = asComponentCore(core);
+elems.addElement("web-component-view", () => {
+  const attrs = useAttributes();
+  const { location } = attrs.get();
 
-  const { location } = self.inputs.get();
-  return m.h1(`This is a web component. [location:${location}]`);
+  return html`<h1>This is a web component. [location:${location}]</h1>`;
 });
 
-function WebComponentStore(core) {
-  const self = asComponentCore(core);
+function WebComponentStore() {
+  const attrs = useAttributes({
+    schema: z.object({
+      defaultValue: z.string().default("The Default Value"),
+    }),
+  });
 
   return {
     // TODO: Convert kebab-case to camelCase for web component inputs?
-    value: self.inputs.get("defaultValue") ?? "The Default Value",
+    value: attrs.get("defaultValue"),
   };
 }
 
@@ -56,16 +61,15 @@ elems.addStore(WebComponentStore, {
 
 elems.addElement("web-component-store", WebComponentStore);
 
-elems.addElement("web-component-store-user", (core) => {
-  const self = asComponentCore(core);
+elems.addElement("web-component-store-user", () => {
+  const { value } = useStore(WebComponentStore);
 
-  const { value } = self.useStore(WebComponentStore);
-
-  return m.div(
-    { style: { border: "1px solid red" } },
-    m.h1("This web component is using a store"),
-    m.p(value)
-  );
+  return html`
+    <div style=${{ border: "1px solid red" }}>
+      <h1>This web component is using a store</h1>
+      <p>${value}</p>
+    </div>
+  `;
 });
 
 elems.connect(); // Now using <web-component-view> anywhere in your HTML will create an instance of WebComponentView.
@@ -145,19 +149,24 @@ app.addRoute("/7guis", SevenGUIs, (sub) => {
 
 // Manual tests to make sure routing and redirects are working
 app
-  .addRoute("/router-test/one", () => m("h1", "One"))
-  .addRoute("/router-test/two", () => m("h1", "Two"))
+  .addRoute("/router-test/one", () => html`<h1>One</h1>`)
+  .addRoute("/router-test/two", () => html`<h1>Two</h1>`)
   .addRedirect("/router-test/*", "/router-test/one");
 
 app.addRoute(
   "/nested",
-  function view(self) {
-    return m("div", m("h1", "Nested Routes!"), self.outlet());
+  function view() {
+    return html`
+      <div>
+        <h1>Nested Routes!</h1>
+        ${useOutlet()}
+      </div>
+    `;
   },
   function extend(sub) {
     sub
-      .addRoute("/one", () => m("h1", "NESTED #1"))
-      .addRoute("/two", () => m("h1", "NESTED #2"))
+      .addRoute("/one", () => html`<h1>Nested #1</h1>`)
+      .addRoute("/two", () => html`<h1>Nested #2</h1>`)
       .addRedirect("*", "./one");
   }
 );

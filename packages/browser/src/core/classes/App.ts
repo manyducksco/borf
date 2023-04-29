@@ -51,6 +51,7 @@ export interface AppContext {
 export interface ElementContext {
   stores: Map<StoreRegistration["store"], StoreRegistration>;
   isSVG?: boolean;
+  componentName?: string; // name of the nearest parent component
 }
 
 /**

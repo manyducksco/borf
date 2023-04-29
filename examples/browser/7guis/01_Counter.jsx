@@ -1,22 +1,23 @@
-import { Writable, m } from "@borf/browser";
+import { Writable, html, useName } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function (self) {
-  self.setName("7GUIs:Counter");
+export default function () {
+  useName("7GUIs:Counter");
 
   const $$count = new Writable(0);
 
-  return m(ExampleFrame, { title: "1. Counter" }, [
-    m.div(
-      m.input({ type: "text", value: $$count.toReadable(), readonly: true }),
-      m.button(
-        {
-          onclick: () => {
+  return html`
+    <${ExampleFrame} title="1. Counter">
+      <div>
+        <input type="text" value=${$$count.toReadable()} readonly />
+        <button
+          onclick=${() => {
             $$count.update((n) => n + 1);
-          },
-        },
-        "Increment"
-      )
-    ),
-  ]);
+          }}
+        >
+          Increment
+        </button>
+      </div>
+    <//>
+  `;
 }

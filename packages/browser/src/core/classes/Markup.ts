@@ -1,4 +1,5 @@
 import { Type } from "@borf/bedrock";
+import htm from "htm/mini";
 import { Connectable } from "./Connectable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 import { Text } from "./Text.js";
@@ -79,14 +80,14 @@ interface MarkupFunction extends Elements {
   /**
    * Displays `then` content when `value` holds a truthy value. Displays `otherwise` content otherwise.
    */
-  $if(value: Readable<any>, then?: Renderable, otherwise?: Renderable): Markup;
+  // $if(value: Readable<any>, then?: Renderable, otherwise?: Renderable): Markup;
 
   /**
    * Displays `then` content when `value` holds a falsy value.
    */
-  $unless(value: Readable<any>, then: Renderable): Markup;
+  // $unless(value: Readable<any>, then: Renderable): Markup;
 
-  $observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup;
+  // $observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup;
 
   /**
    * Renders once for each item in `values`. Dynamically adds and removes views as items change.
@@ -95,11 +96,11 @@ interface MarkupFunction extends Elements {
    *
    * TODO: Describe or link to docs where keying is explained.
    */
-  $repeat<T>(
-    readable: Readable<T[]>,
-    render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
-    key?: (value: T, index: number) => string | number
-  ): Markup;
+  // $repeat<T>(
+  //   readable: Readable<T[]>,
+  //   render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
+  //   key?: (value: T, index: number) => string | number
+  // ): Markup;
 }
 
 /* ----- Code ----- */
@@ -211,114 +212,122 @@ export function isRenderable(value: unknown): value is Renderable {
 ||         HTML Elements        ||
 \*==============================*/
 
-const tags: (keyof IntrinsicElements)[] = [
-  "a",
-  "abbr",
-  "address",
-  "area",
-  "article",
-  "aside",
-  "audio",
-  "b",
-  "bdi",
-  "bdo",
-  "blockquote",
-  "br",
-  "button",
-  "canvas",
-  "caption",
-  "cite",
-  "code",
-  "col",
-  "colgroup",
-  "data",
-  "dd",
-  "del",
-  "details",
-  "dfn",
-  "dialog",
-  "div",
-  "dl",
-  "dt",
-  "em",
-  "embed",
-  "fieldset",
-  "figcaption",
-  "figure",
-  "footer",
-  "form",
-  "h1",
-  "h2",
-  "h3",
-  "h4",
-  "h5",
-  "h6",
-  "header",
-  "hgroup",
-  "hr",
-  "i",
-  "iframe",
-  "img",
-  "input",
-  "ins",
-  "kbd",
-  "label",
-  "legend",
-  "li",
-  "main",
-  "map",
-  "mark",
-  "menu",
-  "meter",
-  "nav",
-  "object",
-  "ol",
-  "optgroup",
-  "option",
-  "output",
-  "p",
-  "pre",
-  "progress",
-  "q",
-  "rp",
-  "rt",
-  "ruby",
-  "s",
-  "samp",
-  "section",
-  "select",
-  "small",
-  "source",
-  "span",
-  "strong",
-  "sub",
-  "summary",
-  "sup",
-  "table",
-  "tbody",
-  "td",
-  "textarea",
-  "tfoot",
-  "th",
-  "thead",
-  "time",
-  "tr",
-  "track",
-  "ul",
-  "var", // this is a JS keyword, but that shouldn't pose a problem if called as `m.var()`
-  "video",
-  "wbr",
-];
+// const tags: (keyof IntrinsicElements)[] = [
+//   "a",
+//   "abbr",
+//   "address",
+//   "area",
+//   "article",
+//   "aside",
+//   "audio",
+//   "b",
+//   "bdi",
+//   "bdo",
+//   "blockquote",
+//   "br",
+//   "button",
+//   "canvas",
+//   "caption",
+//   "cite",
+//   "code",
+//   "col",
+//   "colgroup",
+//   "data",
+//   "dd",
+//   "del",
+//   "details",
+//   "dfn",
+//   "dialog",
+//   "div",
+//   "dl",
+//   "dt",
+//   "em",
+//   "embed",
+//   "fieldset",
+//   "figcaption",
+//   "figure",
+//   "footer",
+//   "form",
+//   "h1",
+//   "h2",
+//   "h3",
+//   "h4",
+//   "h5",
+//   "h6",
+//   "header",
+//   "hgroup",
+//   "hr",
+//   "i",
+//   "iframe",
+//   "img",
+//   "input",
+//   "ins",
+//   "kbd",
+//   "label",
+//   "legend",
+//   "li",
+//   "main",
+//   "map",
+//   "mark",
+//   "menu",
+//   "meter",
+//   "nav",
+//   "object",
+//   "ol",
+//   "optgroup",
+//   "option",
+//   "output",
+//   "p",
+//   "pre",
+//   "progress",
+//   "q",
+//   "rp",
+//   "rt",
+//   "ruby",
+//   "s",
+//   "samp",
+//   "section",
+//   "select",
+//   "small",
+//   "source",
+//   "span",
+//   "strong",
+//   "sub",
+//   "summary",
+//   "sup",
+//   "table",
+//   "tbody",
+//   "td",
+//   "textarea",
+//   "tfoot",
+//   "th",
+//   "thead",
+//   "time",
+//   "tr",
+//   "track",
+//   "ul",
+//   "var", // this is a JS keyword, but that shouldn't pose a problem if called as `m.var()`
+//   "video",
+//   "wbr",
+// ];
 
-for (const tag of tags) {
-  m[tag] = (...args) => m(tag, ...(args as any));
-}
+// for (const tag of tags) {
+//   m[tag] = (...args) => m(tag, ...(args as any));
+// }
 
 /*==============================*\
-||       Special Elements       ||
+||        Template Tools        ||
 \*==============================*/
 
-m.$if = function $if(value: Readable<any>, then?: Renderable, otherwise?: Renderable): Markup {
+/**
+ * Renders HTML in a tagged template literal as Markup elements.
+ */
+export const html = htm.bind(m);
+
+/**
+ * Displays `then` content when `value` holds a truthy value. Displays `otherwise` content otherwise.
+ */
+export function when(value: Readable<any>, then?: Renderable, otherwise?: Renderable): Markup {
   return new Markup((config) => {
     return new Outlet({
       ...config,
@@ -336,12 +345,12 @@ m.$if = function $if(value: Readable<any>, then?: Renderable, otherwise?: Render
       },
     });
   });
-};
+}
 
 /**
- * Takes a Readable `value` and displays `then` content when `value` is falsy.
+ * Displays `then` content when `value` holds a falsy value.
  */
-m.$unless = function $unless(value: Readable<any>, then: Renderable): Markup {
+export function unless(value: Readable<any>, then: Renderable): Markup {
   return new Markup((config) => {
     return new Outlet({
       ...config,
@@ -355,9 +364,9 @@ m.$unless = function $unless(value: Readable<any>, then: Renderable): Markup {
       },
     });
   });
-};
+}
 
-m.$observe = function $observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup {
+export function observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup {
   return new Markup((config) => {
     return new Outlet({
       ...config,
@@ -365,16 +374,16 @@ m.$observe = function $observe<T>(readable: Readable<T>, render: (value: T) => R
       render,
     });
   });
-};
+}
 
 /**
- * Displays an instance of `view` for each item in `values`. Dynamically adds and removes views as items change.
+ * Renders once for each item in `values`. Dynamically adds and removes views as items change.
  * For complex objects with an ID, define a `key` function to select that ID.
  * Object identity (`===`) will be used for comparison if no `key` function is passed.
  *
  * TODO: Describe or link to docs where keying is explained.
  */
-m.$repeat = function $repeat<T>(
+export function repeat<T>(
   readable: Readable<T[]>,
   render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
   key?: (value: T, index: number) => string | number
@@ -387,4 +396,4 @@ m.$repeat = function $repeat<T>(
       key,
     });
   });
-};
+}

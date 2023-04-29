@@ -1,4 +1,13 @@
-import { m, Spring, Writable, Ref, Readable } from "@borf/browser";
+import z from "zod";
+import {
+  html,
+  Spring,
+  Writable,
+  Readable,
+  useConnected,
+  useAttributes,
+  useConsole,
+} from "@borf/browser";
 import dedent from "dedent";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
@@ -35,87 +44,177 @@ export function SpringAnimation(self) {
     }
   );
 
-  return m(ExampleFrame, { title: "Spring Animation" }, [
-    m.p("The shapes below are animated by a single spring."),
+  return html`
+    <${ExampleFrame} title="Spring Animation">
+      <p>The shapes below are animated by a single spring.</p>
 
-    m(Examples, {
-      stiffness: $$stiffness,
-      damping: $$damping,
-      mass: $$mass,
-      velocity: $$velocity,
-    }),
+      <${Examples}
+        stiffness=${$$stiffness}
+        damping=${$$damping}
+        mass=${$$mass}
+        velocity=${$$velocity}
+      />
 
-    m.p("That spring's properties can be tweaked with the following sliders:"),
+      <p>That spring's properties can be tweaked with the following sliders:</p>
 
-    m.div({ class: styles.controls }, [
-      m(ControlGroup, {
-        label: "Stiffness",
-        value: $$stiffness,
-        min: 0,
-        max: 2000,
-      }),
-      m(ControlGroup, {
-        label: "Mass",
-        value: $$mass,
-        min: 1,
-        max: 50,
-      }),
-      m(ControlGroup, {
-        label: "Damping",
-        value: $$damping,
-        min: 1,
-        max: 400,
-      }),
-      m(ControlGroup, {
-        label: "Velocity",
-        value: $$velocity,
-        min: -100,
-        max: 100,
-      }),
-    ]),
+      <div class=${styles.controls}>
+        <${ControlGroup}
+          label="Stiffness"
+          value=${$$stiffness}
+          min=${0}
+          max=${2000}
+        />
+        <${ControlGroup} label="Mass" value=${$$mass} min=${1} max=${50} />
+        <${ControlGroup}
+          label="Damping"
+          value=${$$damping}
+          min=${1}
+          max=${400}
+        />
+        <${ControlGroup}
+          label="Velocity"
+          value=${$$velocity}
+          min=${-100}
+          max=${100}
+        />
+      </div>
 
-    m.p("Presets:"),
+      <p>Presets</p>
 
-    m.ul({ class: styles.presetList }, [
-      m.li(
-        m.button(
-          { class: styles.presetButton, onclick: preset(1845, 1, 28, 0) },
-          "Clunky"
-        )
-      ),
-      m.li(
-        m.button(
-          { class: styles.presetButton, onclick: preset(1354, 7, 66, 0) },
-          "Marshmallowy"
-        )
-      ),
-      m.li(
-        m.button(
-          { class: styles.presetButton, onclick: preset(2000, 5, 400, 3) },
-          "Corporate"
-        )
-      ),
-      m.li(
-        m.button(
-          { class: styles.presetButton, onclick: preset(648, 1, 28, 0) },
-          "Punchy"
-        )
-      ),
-      m.li(
-        m.button(
-          { class: styles.presetButton, onclick: preset(841, 41, 301, 0) },
-          "Smooth"
-        )
-      ),
-    ]),
+      <ul class=${styles.presetList}>
+        <li>
+          <button
+            class=${styles.presetButton}
+            onclick=${preset(1845, 1, 28, 0)}
+          >
+            Clunky
+          </button>
+        </li>
 
-    m.p(
-      { style: { marginBottom: "1rem" } },
-      "Once you find the settings you like, plug those numbers into your code like so:"
-    ),
+        <li>
+          <button
+            class=${styles.presetButton}
+            onclick=${preset(1354, 7, 66, 0)}
+          >
+            Marshmallowy
+          </button>
+        </li>
 
-    m.pre(m.code($codeSnippet)),
-  ]);
+        <li>
+          <button
+            class=${styles.presetButton}
+            onclick=${preset(2000, 5, 400, 3)}
+          >
+            Corporate
+          </button>
+        </li>
+
+        <li>
+          <button class=${styles.presetButton} onclick=${preset(648, 1, 28, 0)}>
+            Punchy
+          </button>
+        </li>
+
+        <li>
+          <button
+            class=${styles.presetButton}
+            onclick=${preset(841, 41, 301, 0)}
+          >
+            Smooth
+          </button>
+        </li>
+      </ul>
+
+      <p style=${{ marginBottom: "1rem" }}>
+        Once you find the settings you like, plug those numbers into your code
+        like so:
+      </p>
+
+      <pre><code>${$codeSnippet}</code></pre>
+    <//>
+  `;
+
+  // return m(ExampleFrame, { title: "Spring Animation" }, [
+  //   m.p("The shapes below are animated by a single spring."),
+
+  //   m(Examples, {
+  //     stiffness: $$stiffness,
+  //     damping: $$damping,
+  //     mass: $$mass,
+  //     velocity: $$velocity,
+  //   }),
+
+  //   m.p("That spring's properties can be tweaked with the following sliders:"),
+
+  //   m.div({ class: styles.controls }, [
+  //     m(ControlGroup, {
+  //       label: "Stiffness",
+  //       value: $$stiffness,
+  //       min: 0,
+  //       max: 2000,
+  //     }),
+  //     m(ControlGroup, {
+  //       label: "Mass",
+  //       value: $$mass,
+  //       min: 1,
+  //       max: 50,
+  //     }),
+  //     m(ControlGroup, {
+  //       label: "Damping",
+  //       value: $$damping,
+  //       min: 1,
+  //       max: 400,
+  //     }),
+  //     m(ControlGroup, {
+  //       label: "Velocity",
+  //       value: $$velocity,
+  //       min: -100,
+  //       max: 100,
+  //     }),
+  //   ]),
+
+  //   m.p("Presets:"),
+
+  //   m.ul({ class: styles.presetList }, [
+  //     m.li(
+  //       m.button(
+  //         { class: styles.presetButton, onclick: preset(1845, 1, 28, 0) },
+  //         "Clunky"
+  //       )
+  //     ),
+  //     m.li(
+  //       m.button(
+  //         { class: styles.presetButton, onclick: preset(1354, 7, 66, 0) },
+  //         "Marshmallowy"
+  //       )
+  //     ),
+  //     m.li(
+  //       m.button(
+  //         { class: styles.presetButton, onclick: preset(2000, 5, 400, 3) },
+  //         "Corporate"
+  //       )
+  //     ),
+  //     m.li(
+  //       m.button(
+  //         { class: styles.presetButton, onclick: preset(648, 1, 28, 0) },
+  //         "Punchy"
+  //       )
+  //     ),
+  //     m.li(
+  //       m.button(
+  //         { class: styles.presetButton, onclick: preset(841, 41, 301, 0) },
+  //         "Smooth"
+  //       )
+  //     ),
+  //   ]),
+
+  //   m.p(
+  //     { style: { marginBottom: "1rem" } },
+  //     "Once you find the settings you like, plug those numbers into your code like so:"
+  //   ),
+
+  //   m.pre(m.code($codeSnippet)),
+  // ]);
 }
 
 export function Examples(self) {
@@ -140,82 +239,177 @@ export function Examples(self) {
       });
   };
 
-  self.onConnected(() => {
+  useConnected(() => {
     animate();
   });
 
-  return m.div({ class: styles.examples }, [
-    m.div({ class: styles.exampleCanvas }, [
-      m.div({
-        style: {
-          width: 24,
-          height: 24,
-          borderRadius: "50%",
-          backgroundColor: "red",
-          transform: spring.map((x) => `translateX(${x * 160 - 80}%)`),
-        },
-      }),
-    ]),
+  return html`
+    <div class=${styles.examples}>
+      <!-- Left/Right Circle -->
+      <div class=${styles.exampleCanvas}>
+        <div
+          style=${{
+            width: 24,
+            height: 24,
+            borderRadius: "50%",
+            backgroundColor: "red",
+            transform: spring.map((x) => `translateX(${x * 160 - 80}%)`),
+          }}
+        />
+      </div>
 
-    m.div({ class: styles.exampleCanvas }, [
-      m.div({
-        style: {
-          position: "absolute",
-          inset: "0 0.5rem",
-          backgroundColor: "orange",
-          transform: spring.map(
-            (current) => `translateY(${90 - (1 - current) * 60}%)`
-          ),
-        },
-      }),
-    ]),
+      <!-- Up/Down Square -->
+      <div class=${styles.exampleCanvas}>
+        <div
+          style=${{
+            position: "absolute",
+            inset: "0 0.5rem",
+            backgroundColor: "orange",
+            transform: spring.map(
+              (current) => `translateY(${90 - (1 - current) * 60}%)`
+            ),
+          }}
+        />
+      </div>
 
-    m.div({ class: styles.exampleCanvas }, [
-      m.div({
-        style: {
-          position: "absolute",
-          width: 36,
-          height: 36,
-          backgroundColor: "purple",
-          transform: spring.map((x) => `scale(${0.5 + x * 1})`),
-        },
-      }),
-    ]),
+      <!-- Grow/Shrink Square -->
+      <div class=${styles.exampleCanvas}>
+        <div
+          style=${{
+            position: "absolute",
+            width: 36,
+            height: 36,
+            backgroundColor: "purple",
+            transform: spring.map((x) => `scale(${0.5 + x * 1})`),
+          }}
+        />
+      </div>
 
-    m.div({ class: styles.exampleCanvas }, [
-      m.div({
-        style: {
-          position: "absolute",
-          width: 2,
-          height: 60,
-          backgroundColor: "white",
-          transformOrigin: "bottom center",
-          transform: spring.map((x) => `rotate(${45 + x * -90}deg)`),
-        },
-      }),
-    ]),
-  ]);
+      <!-- Fuel Gauge -->
+      <div class=${styles.exampleCanvas}>
+        <div
+          style=${{
+            position: "absolute",
+            width: 2,
+            height: 60,
+            backgroundColor: "white",
+            transformOrigin: "bottom center",
+            transform: spring.map((x) => `rotate(${45 + x * -90}deg)`),
+          }}
+        />
+      </div>
+    </div>
+  `;
+
+  // return m.div({ class: styles.examples }, [
+  //   m.div({ class: styles.exampleCanvas }, [
+  //     m.div({
+  //       style: {
+  //         width: 24,
+  //         height: 24,
+  //         borderRadius: "50%",
+  //         backgroundColor: "red",
+  //         transform: spring.map((x) => `translateX(${x * 160 - 80}%)`),
+  //       },
+  //     }),
+  //   ]),
+
+  //   m.div({ class: styles.exampleCanvas }, [
+  //     m.div({
+  //       style: {
+  //         position: "absolute",
+  //         inset: "0 0.5rem",
+  //         backgroundColor: "orange",
+  //         transform: spring.map(
+  //           (current) => `translateY(${90 - (1 - current) * 60}%)`
+  //         ),
+  //       },
+  //     }),
+  //   ]),
+
+  //   m.div({ class: styles.exampleCanvas }, [
+  //     m.div({
+  //       style: {
+  //         position: "absolute",
+  //         width: 36,
+  //         height: 36,
+  //         backgroundColor: "purple",
+  //         transform: spring.map((x) => `scale(${0.5 + x * 1})`),
+  //       },
+  //     }),
+  //   ]),
+
+  //   m.div({ class: styles.exampleCanvas }, [
+  //     m.div({
+  //       style: {
+  //         position: "absolute",
+  //         width: 2,
+  //         height: 60,
+  //         backgroundColor: "white",
+  //         transformOrigin: "bottom center",
+  //         transform: spring.map((x) => `rotate(${45 + x * -90}deg)`),
+  //       },
+  //     }),
+  //   ]),
+  // ]);
 }
 
-function ControlGroup(self) {
-  const $label = self.inputs.$("label");
-  const $min = self.inputs.$("min");
-  const $max = self.inputs.$("max");
-  const $$value = self.inputs.$$("value");
+const controlGroupInputsSchema = z.object({
+  value: z.string().default("HELLO"),
+});
 
-  return m.div({ class: styles.controlGroup }, [
-    m.label({ for: $label }, [
-      m.span($label),
-      m.span({ class: styles.controlLabel }, $$value),
-    ]),
+function ControlGroup() {
+  // TODO: Idea; hook-like API + html tagged template literals
 
-    m.input({
-      class: styles.controlInput,
-      id: $label,
-      type: "range",
-      min: $min,
-      max: $max,
-      value: $$value,
-    }),
-  ]);
+  // TS is pointless with string templates, but runtime parsing will do the trick
+  // Also passing a Zod schema will automatically infer types for input values
+  const { $, $$ } = useAttributes({ schema: controlGroupInputsSchema });
+
+  // One advantage of this is it will just silently redirect all console.* refs in this component to the inbuilt logger.
+  const console = useConsole();
+
+  useConnected(() => {
+    console.log(
+      "Witchcraft! Labeled console logging. Oh, also we're connected now."
+    );
+  });
+
+  const $label = $("label");
+  const $min = $("min");
+  const $max = $("max");
+  const $$value = $$("value");
+
+  return html`
+    <div class=${styles.controlGroup}>
+      <label for=${$label}>
+        <span>${$label}</span>
+        <span class=${styles.controlLabel}>${$$value}</span>
+      </label>
+
+      <input
+        class=${styles.controlInput}
+        id=${$label}
+        type="range"
+        min=${$min}
+        max=${$max}
+        value=${$$value}
+      />
+    </div>
+  `;
+
+  // return m.div({ class: styles.controlGroup }, [
+  //   m.label({ for: $label }, [
+  //     m.span($label),
+  //     m.span({ class: styles.controlLabel }, $$value),
+  //   ]),
+
+  //   m.input({
+  //     class: styles.controlInput,
+  //     id: $label,
+  //     type: "range",
+  //     min: $min,
+  //     max: $max,
+  //     value: $$value,
+  //   }),
+  // ]);
 }

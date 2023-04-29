@@ -1,14 +1,14 @@
-import { Writable, Readable, m } from "@borf/browser";
+import { Writable, Readable, html, when, useStore } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 /**
- * @param {import("@borf/browser").ComponentCore} self
+ * Demonstrates HTTP requests with the built-in `http` store.
  */
-export function HTTPRequests(self) {
+export function HTTPRequests() {
   const $$loading = new Writable(false);
   const $$url = new Writable();
 
-  const http = self.useStore("http");
+  const http = useStore("http");
 
   const $label = Readable.merge([$$loading, $$url], (loading, url) => {
     if (loading) {
@@ -19,7 +19,7 @@ export function HTTPRequests(self) {
   });
 
   function onclick() {
-    $$loading.set(true);
+    $$loading.value = true;
 
     http
       .get("https://dog.ceo/api/breeds/image/random", {
@@ -35,12 +35,13 @@ export function HTTPRequests(self) {
       });
   }
 
-  return m(ExampleFrame, { title: "HTTP Requests with 'http' global" }, [
-    m.div(
-      { style: { display: "flex", flexFlow: "column nowrap" } },
-      m.button({ onclick }, "Get Dog"),
-      $label,
-      m.$if($$url, m.img({ style: { maxWidth: 300 }, src: $$url }))
-    ),
-  ]);
+  return html`
+    <${ExampleFrame} title="HTTP Requests with 'http' store">
+      <div style=${{ display: "flex", flexFlow: "column nowrap" }}>
+        <button onclick=${onclick}>Get Dog</button>
+        ${$label}
+        ${when($$url, html`<img style=${{ maxWidth: 300 }} src=${$$url} />`)}
+      </div>
+    </${ExampleFrame}>
+  `;
 }

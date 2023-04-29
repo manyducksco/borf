@@ -1,17 +1,18 @@
-import { m } from "@borf/browser";
+import { html } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
-export function CrashHandling(self) {
-  return m(ExampleFrame, { title: "CrashHandling" }, [
-    m.div(
-      m.button(
-        {
-          onclick: () => {
-            self.crash(new Error("The forbidden button was clicked."));
-          },
-        },
-        "Do not press!"
-      )
-    ),
-  ]);
+export function CrashHandling() {
+  return html`
+    <${ExampleFrame} title="Crash Handling">
+      <div>
+        <button
+          onclick=${() => {
+            throw new Error("The forbidden button was clicked.");
+          }}
+        >
+          Do not press!
+        </button>
+      </div>
+    <//>
+  `;
 }
