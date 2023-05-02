@@ -1,4 +1,3 @@
-import z from "zod";
 import {
   Spring,
   Writable,
@@ -33,7 +32,7 @@ export function SpringAnimation() {
     [$$stiffness, $$mass, $$damping, $$velocity],
     (s, m, d, v) => {
       return dedent`
-        const spring = new Spring({
+        const spring = new Spring(0, {
           stiffness: ${s},
           mass: ${m},
           damping: ${d},
@@ -113,7 +112,7 @@ export function SpringAnimation() {
       </p>
 
       <pre>
-        <code>${$codeSnippet}</code>
+        <code>{$codeSnippet}</code>
       </pre>
     </ExampleFrame>
   );
@@ -125,7 +124,7 @@ export function Examples(attrs) {
   const $damping = useReadable(attrs.damping); // Amount of smoothing. Affects the speed of transitions.
   const $velocity = useReadable(attrs.velocity); // How much force the spring's motion begins with.
 
-  const spring = new Spring({
+  const spring = new Spring(0, {
     stiffness: $stiffness,
     mass: $mass,
     damping: $damping,

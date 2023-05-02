@@ -2,11 +2,6 @@ import { Readable, Writable } from "./Writable.js";
 
 interface SpringOptions {
   /**
-   * Starting value of the spring. Defaults to 0.
-   */
-  initialValue?: number;
-
-  /**
    * How heavy the spring is.
    */
   mass?: number;
@@ -45,9 +40,7 @@ export class Spring extends Readable<number> {
   #nextId = 0;
   #currentAnimationId?: number;
 
-  constructor(options: SpringOptions = {}) {
-    const initialValue = options.initialValue ?? 0;
-
+  constructor(initialValue = 0, options: SpringOptions = {}) {
     super(initialValue);
 
     this.#current = new Writable(initialValue);
