@@ -129,13 +129,17 @@ app.onGet("/hello-html", function () {
       <div class="container">
         <h1>Title</h1>
 
-        ${AsyncHeader(html`<p>This is a child</p>`)}
+        <${AsyncHeader}>
+          <p>This is a child</p>
+        </${AsyncHeader}>
       </div>
     </body>
   `;
 });
 
-async function AsyncHeader(...children) {
+async function AsyncHeader() {
+  const outlet = useOutlet();
+
   return html`<div class="container">${children}</div>`;
 }
 

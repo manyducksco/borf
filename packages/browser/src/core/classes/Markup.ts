@@ -1,14 +1,14 @@
 import { Type } from "@borf/bedrock";
-import htm from "htm/mini";
 import { Connectable } from "./Connectable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 import { Text } from "./Text.js";
 import { HTML } from "./HTML.js";
 import { Readable } from "./Writable.js";
-import { Repeat, type RepeatContext } from "./Repeat.js";
+import { Repeat } from "./Repeat.js";
 import { Outlet } from "./Outlet.js";
 import { makeComponent, type Component } from "../component.js";
 import { type IntrinsicElements } from "../types.js";
+import { Outlet as OutletView } from "../views/Outlet.js";
 
 /* ----- Types ----- */
 
@@ -23,7 +23,15 @@ export interface MarkupConfig {
  * Represents everything that can be handled as a DOM node.
  * These are all the items considered valid to pass as children to any element.
  */
-export type Renderable = string | number | Markup | false | null | undefined | Readable<any>;
+export type Renderable =
+  | string
+  | number
+  | Markup
+  | false
+  | null
+  | undefined
+  | Readable<any>
+  | (string | number | Markup | false | null | undefined | Readable<any>)[];
 
 /**
  * DOM node factory. This is where things go to be converted into a Connectable.
@@ -44,63 +52,16 @@ export class Markup {
   }
 }
 
-interface MarkupElement<Attrs> {
-  (attributes: Attrs, ...children: Renderable[]): Markup;
-  (attributes: Attrs, children: Renderable[]): Markup;
-  (...children: Renderable[]): Markup;
-  (children: Renderable[]): Markup;
-}
+interface MarkupFunction {
+  <T extends keyof IntrinsicElements>(
+    tag: T,
+    attributes?: IntrinsicElements[T] | null,
+    ...children: Renderable[]
+  ): Markup;
 
-type Elements = { [K in keyof IntrinsicElements]: MarkupElement<IntrinsicElements[K]> };
+  (tag: string, attributes?: Record<string, any> | null, ...children: Renderable[]): Markup;
 
-interface MarkupFunction extends Elements {
-  <T extends keyof IntrinsicElements>(tag: T, attributes: IntrinsicElements[T], ...children: Renderable[]): Markup;
-
-  <T extends keyof IntrinsicElements>(tag: T, attributes: IntrinsicElements[T], children: Renderable[]): Markup;
-
-  <T extends keyof IntrinsicElements>(tag: T, ...children: Renderable[]): Markup;
-
-  <T extends keyof IntrinsicElements>(tag: T, children: Renderable[]): Markup;
-
-  (tag: string, attributes: Record<string, any>, ...children: Renderable[]): Markup;
-  (tag: string, attributes: Record<string, any>, children: Renderable[]): Markup;
-  (tag: string, ...children: Renderable[]): Markup;
-  (tag: string, children: Renderable[]): Markup;
-
-  // export function m(tag: string, attributes: any, ...children: (Renderable | Renderable[])[]): Markup;
-
-  // export function m(tag: string, ...children: (Renderable | Renderable[])[]): Markup;
-
-  <I>(component: Component<I>, inputs: I, ...children: Renderable[]): Markup;
-  <I>(component: Component<I>, inputs: I, children: Renderable[]): Markup;
-  <I>(component: Component<I>, ...children: Renderable[]): Markup;
-  <I>(component: Component<I>, children: Renderable[]): Markup;
-  <I>(component: Component<I>, inputs: I): Markup;
-
-  /**
-   * Displays `then` content when `value` holds a truthy value. Displays `otherwise` content otherwise.
-   */
-  // $if(value: Readable<any>, then?: Renderable, otherwise?: Renderable): Markup;
-
-  /**
-   * Displays `then` content when `value` holds a falsy value.
-   */
-  // $unless(value: Readable<any>, then: Renderable): Markup;
-
-  // $observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup;
-
-  /**
-   * Renders once for each item in `values`. Dynamically adds and removes views as items change.
-   * For complex objects with an ID, define a `key` function to select that ID.
-   * Object identity (`===`) will be used for comparison if no `key` function is passed.
-   *
-   * TODO: Describe or link to docs where keying is explained.
-   */
-  // $repeat<T>(
-  //   readable: Readable<T[]>,
-  //   render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
-  //   key?: (value: T, index: number) => string | number
-  // ): Markup;
+  <I>(component: Component<I>, attributes?: I | null, ...children: Renderable[]): Markup;
 }
 
 /* ----- Code ----- */
@@ -149,6 +110,10 @@ export const m = <MarkupFunction>(<I>(
 
   // Components
   if (Type.isFunction<Component<I>>(element)) {
+    if (element === OutletView) {
+      return OutletView({}); // Special handling for outlets which don't need their own component scope despite being rendered like components.
+    }
+
     return new Markup((config) => {
       return makeComponent({
         ...config,
@@ -209,120 +174,8 @@ export function isRenderable(value: unknown): value is Renderable {
 }
 
 /*==============================*\
-||         HTML Elements        ||
-\*==============================*/
-
-// const tags: (keyof IntrinsicElements)[] = [
-//   "a",
-//   "abbr",
-//   "address",
-//   "area",
-//   "article",
-//   "aside",
-//   "audio",
-//   "b",
-//   "bdi",
-//   "bdo",
-//   "blockquote",
-//   "br",
-//   "button",
-//   "canvas",
-//   "caption",
-//   "cite",
-//   "code",
-//   "col",
-//   "colgroup",
-//   "data",
-//   "dd",
-//   "del",
-//   "details",
-//   "dfn",
-//   "dialog",
-//   "div",
-//   "dl",
-//   "dt",
-//   "em",
-//   "embed",
-//   "fieldset",
-//   "figcaption",
-//   "figure",
-//   "footer",
-//   "form",
-//   "h1",
-//   "h2",
-//   "h3",
-//   "h4",
-//   "h5",
-//   "h6",
-//   "header",
-//   "hgroup",
-//   "hr",
-//   "i",
-//   "iframe",
-//   "img",
-//   "input",
-//   "ins",
-//   "kbd",
-//   "label",
-//   "legend",
-//   "li",
-//   "main",
-//   "map",
-//   "mark",
-//   "menu",
-//   "meter",
-//   "nav",
-//   "object",
-//   "ol",
-//   "optgroup",
-//   "option",
-//   "output",
-//   "p",
-//   "pre",
-//   "progress",
-//   "q",
-//   "rp",
-//   "rt",
-//   "ruby",
-//   "s",
-//   "samp",
-//   "section",
-//   "select",
-//   "small",
-//   "source",
-//   "span",
-//   "strong",
-//   "sub",
-//   "summary",
-//   "sup",
-//   "table",
-//   "tbody",
-//   "td",
-//   "textarea",
-//   "tfoot",
-//   "th",
-//   "thead",
-//   "time",
-//   "tr",
-//   "track",
-//   "ul",
-//   "var", // this is a JS keyword, but that shouldn't pose a problem if called as `m.var()`
-//   "video",
-//   "wbr",
-// ];
-
-// for (const tag of tags) {
-//   m[tag] = (...args) => m(tag, ...(args as any));
-// }
-
-/*==============================*\
 ||        Template Tools        ||
 \*==============================*/
-
-/**
- * Renders HTML in a tagged template literal as Markup elements.
- */
-export const html = htm.bind(m);
 
 /**
  * Displays `then` content when `value` holds a truthy value. Displays `otherwise` content otherwise.
@@ -385,7 +238,7 @@ export function observe<T>(readable: Readable<T>, render: (value: T) => Renderab
  */
 export function repeat<T>(
   readable: Readable<T[]>,
-  render: ($value: Readable<T>, $index: Readable<number>, ctx: RepeatContext) => Markup | null,
+  render: ($value: Readable<T>, $index: Readable<number>) => Markup | Markup[] | null,
   key?: (value: T, index: number) => string | number
 ): Markup {
   return new Markup((config) => {

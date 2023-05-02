@@ -10,4 +10,8 @@ export default defineConfig({
   server: {
     port: 9000,
   },
+  esbuild: {
+    jsx: "automatic",
+    jsxImportSource: "@borf/browser",
+  },
 });

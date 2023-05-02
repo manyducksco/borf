@@ -2,11 +2,24 @@ import type * as CSS from "csstype";
 import { type HTTPStore } from "./stores/http.js";
 // import { type DialogStore } from "./stores/dialog.js";
 import { type LanguageStore } from "./stores/language.js";
-import { type PageStore } from "./stores/page.js";
+import { type DocumentStore } from "./stores/document.js";
 import { type RouterStore } from "./stores/router.js";
 import { type Store } from "./component.js";
 import { type Writable, type Readable } from "./classes/Writable.js";
 import { type Ref } from "./classes/Ref.js";
+
+/**
+ * Value will be read by the component.
+ */
+export type Read<T> = T | Readable<T> | Writable<T>;
+/**
+ * Value will be both read and written by the component.
+ */
+export type Write<T> = Writable<T>;
+/**
+ * Extracts the value from a Read or Write type.
+ */
+export type Value<T> = T extends Read<infer U> ? U : T;
 
 type StoreOutput<T> = T extends Store<any, infer O> ? (O extends Promise<infer U> ? U : O) : unknown;
 
@@ -14,7 +27,7 @@ export interface BuiltInStores {
   http: StoreOutput<typeof HTTPStore>;
   // dialog: StoreOutput<typeof DialogStore>;
   language: StoreOutput<typeof LanguageStore>;
-  page: StoreOutput<typeof PageStore>;
+  document: StoreOutput<typeof DocumentStore>;
   router: StoreOutput<typeof RouterStore>;
 }
 

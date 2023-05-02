@@ -7,6 +7,7 @@ Prepare for v1.0
 - [ ] Implement App.setCrashView
 - [ ] Implement App.setSplashView (and splash view in general)
 - [ ] Fix input.get() type issues (seen in Quack)
+- [ ] Make sure all template helpers and views in general support returning an array of Markup items
 
 ## Working On
 

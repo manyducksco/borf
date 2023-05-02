@@ -3,7 +3,10 @@ import { Router } from "@borf/bedrock";
 import { Writable } from "../classes/Writable.js";
 import { Markup } from "../classes/Markup.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { getAppContext, getElementContext, type ComponentCore, type ComponentControls } from "../component.js";
+import { type ComponentControls } from "../component.js";
+import { useConnected, useConsole, useName, useObserver } from "../hooks/index.js";
+import { _useAppContext } from "../hooks/_useAppContext.js";
+import { _useElementContext } from "../hooks/_useElementContext.js";
 
 // ----- Types ----- //
 
@@ -85,7 +88,7 @@ interface NavigateOptions {
 /**
  * Inputs passed to the RouterStore when the app is connected.
  */
-type RouterInputs = {
+type RouterStoreAttrs = {
   /**
    * Router options passed through the 'router' field in the app config.
    */
@@ -99,13 +102,12 @@ type RouterInputs = {
 
 // ----- Code ----- //
 
-export function RouterStore(self: ComponentCore<RouterInputs>) {
-  self.setName("borf:router");
+export function RouterStore({ options, router }: RouterStoreAttrs) {
+  useName("borf:router");
 
-  const appContext = getAppContext(self);
-  const elementContext = getElementContext(self);
-
-  const { options, router } = self.inputs.get();
+  const console = useConsole();
+  const appContext = _useAppContext();
+  const elementContext = _useElementContext();
 
   let history: History;
 
@@ -141,7 +143,7 @@ export function RouterStore(self: ComponentCore<RouterInputs>) {
   let isRouteChange = false;
 
   // Update URL when query changes
-  self.observe($$query, (current) => {
+  useObserver($$query, (current) => {
     // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
@@ -160,7 +162,7 @@ export function RouterStore(self: ComponentCore<RouterInputs>) {
     });
   });
 
-  self.onConnected(() => {
+  useConnected(() => {
     history.listen(onRouteChange);
     onRouteChange(history);
 
@@ -202,7 +204,7 @@ export function RouterStore(self: ComponentCore<RouterInputs>) {
       return;
     }
 
-    self.debug.info(`matched route '${matched.pattern}'`);
+    console.info(`matched route '${matched.pattern}'`);
 
     if (matched.meta.redirect != null) {
       if (typeof matched.meta.redirect === "string") {
@@ -214,7 +216,7 @@ export function RouterStore(self: ComponentCore<RouterInputs>) {
 
         // TODO: Update this code to work with new `{param}` style. Looks like it's still for `:params`
 
-        self.debug.info(`redirecting to '${path}'`);
+        console.info(`redirecting to '${path}'`);
         history.replace(path);
       } else if (typeof matched.meta.redirect === "function") {
         // TODO: Implement redirect by function.
@@ -237,7 +239,7 @@ export function RouterStore(self: ComponentCore<RouterInputs>) {
           const activeLayer = activeLayers[i];
 
           if (activeLayer?.id !== matchedLayer.id) {
-            self.debug.info(`replacing layer@${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
+            console.info(`replacing layer@${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];

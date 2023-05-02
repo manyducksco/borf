@@ -1,5 +1,4 @@
-import z from "zod";
-import { App, Elements, html, useAttributes, useStore } from "@borf/browser";
+import { App, Elements, Outlet, useStore, useValue } from "@borf/browser";
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
@@ -16,14 +15,14 @@ import { HTTPRequests } from "./examples/HTTPRequests";
 
 import { RenderOrderTest } from "./views/RenderOrderTest";
 
-import SevenGUIs from "./7guis";
-import Counter from "./7guis/01_Counter";
-import TempConverter from "./7guis/02_TempConverter";
-import FlightBooker from "./7guis/03_FlightBooker";
-import Timer from "./7guis/04_Timer";
-import CRUD from "./7guis/05_CRUD";
-import CircleDrawer from "./7guis/06_CircleDrawer";
-import Cells from "./7guis/07_Cells";
+// import SevenGUIs from "./7guis";
+// import Counter from "./7guis/01_Counter";
+// import TempConverter from "./7guis/02_TempConverter";
+// import FlightBooker from "./7guis/03_FlightBooker";
+// import Timer from "./7guis/04_Timer";
+// import CRUD from "./7guis/05_CRUD";
+// import CircleDrawer from "./7guis/06_CircleDrawer";
+// import Cells from "./7guis/07_Cells";
 
 /*===========================*\
 ||      Custom Elements      ||
@@ -35,23 +34,14 @@ import Cells from "./7guis/07_Cells";
 const elems = new Elements();
 
 // Invoked in index.html
-elems.addElement("web-component-view", () => {
-  const attrs = useAttributes();
-  const { location } = attrs.get();
-
-  return html`<h1>This is a web component. [location:${location}]</h1>`;
+elems.addElement("web-component-view", ({ location }) => {
+  return <h1>This is a web component. [location:{location}]</h1>;
 });
 
-function WebComponentStore() {
-  const attrs = useAttributes({
-    schema: z.object({
-      defaultValue: z.string().default("The Default Value"),
-    }),
-  });
-
+function WebComponentStore({ defaultValue }) {
   return {
     // TODO: Convert kebab-case to camelCase for web component inputs?
-    value: attrs.get("defaultValue"),
+    value: useValue(defaultValue ?? "The Default Value"),
   };
 }
 
@@ -64,12 +54,12 @@ elems.addElement("web-component-store", WebComponentStore);
 elems.addElement("web-component-store-user", () => {
   const { value } = useStore(WebComponentStore);
 
-  return html`
-    <div style=${{ border: "1px solid red" }}>
+  return (
+    <div style={{ border: "1px solid red" }}>
       <h1>This web component is using a store</h1>
-      <p>${value}</p>
+      <p>{value}</p>
     </div>
-  `;
+  );
 });
 
 elems.connect(); // Now using <web-component-view> anywhere in your HTML will create an instance of WebComponentView.
@@ -136,37 +126,37 @@ app.addRoute("/examples", null, (sub) => {
   sub.addRedirect("*", "./spring-animation");
 });
 
-app.addRoute("/7guis", SevenGUIs, (sub) => {
-  sub.addRoute("/counter", Counter);
-  sub.addRoute("/temp-converter", TempConverter);
-  sub.addRoute("/flight-booker", FlightBooker);
-  sub.addRoute("/timer", Timer);
-  sub.addRoute("/crud", CRUD);
-  sub.addRoute("/circle-drawer", CircleDrawer);
-  sub.addRoute("/cells", Cells);
-  sub.addRedirect("*", "./counter");
-});
+// app.addRoute("/7guis", SevenGUIs, (sub) => {
+//   sub.addRoute("/counter", Counter);
+//   sub.addRoute("/temp-converter", TempConverter);
+//   sub.addRoute("/flight-booker", FlightBooker);
+//   sub.addRoute("/timer", Timer);
+//   sub.addRoute("/crud", CRUD);
+//   sub.addRoute("/circle-drawer", CircleDrawer);
+//   sub.addRoute("/cells", Cells);
+//   sub.addRedirect("*", "./counter");
+// });
 
 // Manual tests to make sure routing and redirects are working
 app
-  .addRoute("/router-test/one", () => html`<h1>One</h1>`)
-  .addRoute("/router-test/two", () => html`<h1>Two</h1>`)
+  .addRoute("/router-test/one", () => <h1>One</h1>)
+  .addRoute("/router-test/two", () => <h1>Two</h1>)
   .addRedirect("/router-test/*", "/router-test/one");
 
 app.addRoute(
   "/nested",
   function view() {
-    return html`
+    return (
       <div>
         <h1>Nested Routes!</h1>
-        ${useOutlet()}
+        <Outlet />
       </div>
-    `;
+    );
   },
   function extend(sub) {
     sub
-      .addRoute("/one", () => html`<h1>Nested #1</h1>`)
-      .addRoute("/two", () => html`<h1>Nested #2</h1>`)
+      .addRoute("/one", () => <h1>Nested #1</h1>)
+      .addRoute("/two", () => <h1>Nested #2</h1>)
       .addRedirect("*", "./one");
   }
 );

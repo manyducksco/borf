@@ -1,11 +1,11 @@
-import { type ComponentCore } from "../component.js";
+import { useConnected, useDisconnected, useName, useObserver } from "../hooks/index.js";
 import { Writable } from "../classes/Writable.js";
 
 type ScreenOrientation = "landscape" | "portrait";
 type ColorScheme = "light" | "dark";
 
-export function PageStore(self: ComponentCore<{}>) {
-  self.setName("borf:page");
+export function DocumentStore() {
+  useName("borf:page");
 
   const $$title = new Writable(document.title);
   const $$visibility = new Writable(document.visibilityState);
@@ -15,7 +15,7 @@ export function PageStore(self: ComponentCore<{}>) {
   /* ----- Title and Visibility ----- */
 
   if (document) {
-    self.observe($$title, (current) => {
+    useObserver($$title, (current) => {
       document.title = current;
     });
 
@@ -53,11 +53,11 @@ export function PageStore(self: ComponentCore<{}>) {
   /* ----- Lifecycle ----- */
 
   // Listen for changes while connected.
-  self.onConnected(() => {
+  useConnected(function () {
     landscapeQuery.addEventListener("change", onOrientationChange);
     colorSchemeQuery.addEventListener("change", onColorChange);
   });
-  self.onDisconnected(() => {
+  useDisconnected(function () {
     landscapeQuery.removeEventListener("change", onOrientationChange);
     colorSchemeQuery.removeEventListener("change", onColorChange);
   });

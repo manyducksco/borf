@@ -1,6 +1,5 @@
 import { Type } from "@borf/bedrock";
 import { Readable, Writable, type ValuesOfReadables, type StopFunction } from "./classes/Writable.js";
-import { Inputs, InputsAPI, type InputValues } from "./classes/Inputs.js";
 import { Markup } from "./classes/Markup.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT, setCurrentComponent, clearCurrentComponent } from "./keys.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
@@ -10,7 +9,6 @@ import { Connectable } from "./classes/Connectable.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
 
 export interface ComponentCore<I> {
-  inputs: InputsAPI<InputValues<I>>;
   debug: DebugChannel;
 
   /**
@@ -54,9 +52,9 @@ export interface ComponentCore<I> {
   outlet(): Markup;
 }
 
-export type Component<I> = (self: ComponentCore<I>) => unknown;
-export type Store<I, O> = (self: ComponentCore<I>) => O | Promise<O>;
-export type View<I> = (self: ComponentCore<I>) => Markup | null | Promise<Markup | null>;
+export type Component<I> = (attributes: I) => unknown;
+export type Store<I, O> = (attributes: I) => O | Promise<O>;
+export type View<I> = (attributes: I) => Markup | null | Promise<Markup | null>;
 
 export function getAppContext(core: ComponentCore<any>) {
   return (core as any)[APP_CONTEXT] as AppContext;
@@ -64,12 +62,6 @@ export function getAppContext(core: ComponentCore<any>) {
 
 export function getElementContext(core: ComponentCore<any>) {
   return (core as any)[ELEMENT_CONTEXT] as ElementContext;
-}
-
-function makeInputs<I>(values: I): [InputsAPI<InputValues<I>>, Inputs<I>] {
-  const inputs = new Inputs(values);
-
-  return [inputs.api, inputs];
 }
 
 /**
@@ -103,12 +95,12 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   let isConnected = false;
   let componentName = config.component.name ?? "anonymous";
 
-  const [inputs, inputsControls] = makeInputs(config.inputs);
   const $$children = new Writable(config.children ?? []);
 
   const appContext = config.appContext;
   const elementContext = {
     ...config.elementContext,
+    $$children,
   };
 
   const debugChannel = appContext.debugHub.channel({
@@ -118,7 +110,6 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   });
 
   const core: ComponentCore<I> = {
-    inputs,
     debug: debugChannel,
 
     onConnected(callback) {
@@ -260,7 +251,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
 
     try {
       setCurrentComponent(core);
-      result = config.component(core);
+      result = config.component(config.inputs);
 
       if (result instanceof Promise) {
         // TODO: Handle loading states
@@ -320,9 +311,6 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
       const wasConnected = isConnected;
 
       if (!wasConnected) {
-        // Start input observers
-        inputsControls.connect();
-
         // Initialize an instance of the component
         await initialize(parent, after);
       }
@@ -369,9 +357,6 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
         callback();
       }
       onDisconnectedCallbacks = [];
-
-      // Disconnect input observers.
-      inputsControls.disconnect();
     },
   };
 

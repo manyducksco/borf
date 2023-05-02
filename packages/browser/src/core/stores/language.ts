@@ -1,5 +1,5 @@
 import { Type } from "@borf/bedrock";
-import { getAppContext, type ComponentCore } from "../component.js";
+import { useConsole, useName, useCrash } from "../hooks/index.js";
 import { Readable, Writable } from "../classes/Writable.js";
 
 // ----- Types ----- //
@@ -17,7 +17,7 @@ export interface LanguageConfig {
   translation: Translation | (() => Translation) | (() => Promise<Translation>);
 }
 
-type LanguageInputs = {
+type LanguageAttrs = {
   /**
    * Languages supported by the app (as added with App.addLanguage)
    */
@@ -33,18 +33,20 @@ type LanguageInputs = {
 
 // ----- Code ----- //
 
-export async function LanguageStore(self: ComponentCore<LanguageInputs>) {
-  self.setName("borf:language");
+export async function LanguageStore(attrs: LanguageAttrs) {
+  useName("borf:language");
 
-  const options = self.inputs.get();
+  const console = useConsole();
+  const crash = useCrash();
+
   const languages = new Map<string, Language>();
 
   // Convert languages into Language instances.
-  Object.entries(options.languages).forEach(([tag, config]) => {
+  Object.entries(attrs.languages).forEach(([tag, config]) => {
     languages.set(tag, new Language(tag, config));
   });
 
-  self.debug.info(
+  console.info(
     `app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
   );
 
@@ -65,12 +67,12 @@ export async function LanguageStore(self: ComponentCore<LanguageInputs>) {
   }
 
   // TODO: Determine and load default language.
-  const currentLanguage = options.currentLanguage
-    ? languages.get(options.currentLanguage)
+  const currentLanguage = attrs.currentLanguage
+    ? languages.get(attrs.currentLanguage)
     : languages.get([...languages.keys()][0]);
 
   if (currentLanguage != null) {
-    self.debug.info(`current language is '${currentLanguage.tag}'`);
+    console.info(`current language is '${currentLanguage.tag}'`);
 
     const translation = await currentLanguage.getTranslation();
 
@@ -95,10 +97,10 @@ export async function LanguageStore(self: ComponentCore<LanguageInputs>) {
         $$language.value = tag;
         $$translation.value = translation;
 
-        self.debug.info("set language to " + tag);
+        console.info("set language to " + tag);
       } catch (error) {
         if (error instanceof Error) {
-          self.crash(error);
+          crash(error);
         }
       }
     },

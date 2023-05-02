@@ -1,5 +1,4 @@
 import { DebugHub } from "../DebugHub.js";
-import { type Connectable } from "../Connectable.js";
 import { type AppContext, type ElementContext, type StoreRegistration } from "../App.js";
 import { type BuiltInStores } from "../../types.js";
 import { CrashCollector } from "../CrashCollector.js";
@@ -7,7 +6,7 @@ import { makeComponent, type Component, type Store, type ComponentControls } fro
 import { Markup, formatChildren, isRenderable, type Renderable } from "../Markup.js";
 
 import { HTTPStore } from "../../stores/http.js";
-import { PageStore } from "../../stores/page.js";
+import { DocumentStore } from "../../stores/document.js";
 import { RouterStore } from "./stores/router.js";
 
 // TODO: Local store elements currently do not apply themselves to the elementContext
@@ -24,7 +23,7 @@ type ElementRegistration = {
 export class Elements {
   #stores = new Map<keyof BuiltInStores | Store<any, any>, StoreRegistration>([
     ["http", { store: HTTPStore }],
-    ["page", { store: PageStore }],
+    ["document", { store: DocumentStore }],
     ["router", { store: RouterStore }],
   ]);
 
@@ -139,8 +138,6 @@ class BorfCustomElement extends HTMLElement {
       obj[toCamelCase(attr.localName)] = attr.value;
       return obj;
     }, {} as Record<string, string>);
-
-    console.log(initialValues);
 
     // Convert children to Markup
     const children: Markup[] = [];

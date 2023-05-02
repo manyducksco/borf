@@ -29,6 +29,13 @@ export class Router {
   }
 
   /**
+   * Adds a new middleware function that will run for every route on this Router.
+   */
+  addMiddleware() {
+    // Add handlers to all methods.
+  }
+
+  /**
    * Responds to HTTP GET requests that match this URL pattern.
    */
   onGet(pattern: string, ...handlers: RouteHandler[]) {
@@ -89,7 +96,7 @@ export class Router {
    *
    * @param router - Another Router instance.
    */
-  addRouter(router: Router): void;
+  addRoutes(router: Router): void;
 
   /**
    * Adds all routes from another Router to this one.
@@ -97,9 +104,9 @@ export class Router {
    * @param prefix - Pattern to prepend to all routes, e.g. '/users', '/admin', etc.
    * @param router - Another Router instance.
    */
-  addRouter(prefix: string, router: Router): void;
+  addRoutes(prefix: string, router: Router): void;
 
-  addRouter(...args: unknown[]) {
+  addRoutes(...args: unknown[]) {
     let prefix: string | undefined;
 
     if (Type.isString(args[0])) {

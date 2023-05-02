@@ -1,9 +1,9 @@
 import { getCurrentComponent } from "../keys.js";
 
 /**
- * Returns an outlet that displays this component's children when used in a template.
+ * Displays the child elements of the view that renders it.
  */
-export function useOutlet() {
+export function Outlet(attrs: {}) {
   const core = getCurrentComponent();
   return core.outlet();
 }

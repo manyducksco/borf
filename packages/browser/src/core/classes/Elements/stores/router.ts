@@ -2,7 +2,7 @@ import { Router } from "@borf/bedrock";
 import { createBrowserHistory } from "history";
 
 import { Writable } from "../../Writable.js";
-import { ComponentCore } from "core/component.js";
+import { useConnected, useDisconnected, useName, useObserver } from "../../../hooks/index.js";
 
 interface NavigateOptions {
   /**
@@ -12,8 +12,8 @@ interface NavigateOptions {
   replace?: boolean;
 }
 
-export function RouterStore(self: ComponentCore<{}>) {
-  self.setName("borf:router");
+export function RouterStore(attrs: {}) {
+  useName("borf:router");
 
   const history = createBrowserHistory();
   let cancel: () => void;
@@ -27,7 +27,7 @@ export function RouterStore(self: ComponentCore<{}>) {
   let isRouteChange = false;
 
   // Update URL when query changes
-  self.observe($$query, (current) => {
+  useObserver($$query, (current) => {
     // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
@@ -46,7 +46,7 @@ export function RouterStore(self: ComponentCore<{}>) {
     });
   });
 
-  self.onConnected(() => {
+  useConnected(() => {
     cancel = history.listen(({ location }) => {
       // Update query params if they've changed.
       if (location.search !== lastQuery) {
@@ -64,7 +64,7 @@ export function RouterStore(self: ComponentCore<{}>) {
     });
   });
 
-  self.onDisconnected(() => {
+  useDisconnected(() => {
     cancel();
   });
 

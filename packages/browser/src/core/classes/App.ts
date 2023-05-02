@@ -1,10 +1,9 @@
 import { Type, Router, Timer } from "@borf/bedrock";
-
 import { merge } from "../helpers/merge.js";
 // import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
 import { LanguageStore, type LanguageConfig } from "../stores/language.js";
-import { PageStore } from "../stores/page.js";
+import { DocumentStore } from "../stores/document.js";
 import {
   RouterStore,
   type RouterOptions,
@@ -14,11 +13,11 @@ import {
 } from "../stores/router.js";
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
-import { type StopFunction } from "./Writable.js";
-
-import { m } from "./Markup.js";
+import { type StopFunction, type Writable } from "./Writable.js";
+import { m, type Markup } from "./Markup.js";
 import { type BuiltInStores } from "../types.js";
-import { makeComponent, type ComponentCore, type View, type Store, type ComponentControls } from "../component.js";
+import { makeComponent, type View, type Store, type ComponentControls } from "../component.js";
+import { Outlet } from "../views/Outlet.js";
 
 // ----- Types ----- //
 
@@ -52,6 +51,7 @@ export interface ElementContext {
   stores: Map<StoreRegistration["store"], StoreRegistration>;
   isSVG?: boolean;
   componentName?: string; // name of the nearest parent component
+  $$children?: Writable<Markup[]>;
 }
 
 /**
@@ -109,9 +109,8 @@ interface AppRouter {
  * It does nothing but render routes.
  */
 
-function DefaultRootView(self: ComponentCore<{}>) {
-  self.setName("root");
-  return self.outlet();
+function DefaultRootView() {
+  return m(Outlet);
 }
 
 /**
@@ -124,7 +123,7 @@ export class App implements AppRouter {
   #stores = new Map<keyof BuiltInStores | Store<any, any>, StoreRegistration>([
     // ["dialog", { store: DialogStore }],
     ["router", { store: RouterStore }],
-    ["page", { store: PageStore }],
+    ["document", { store: DocumentStore }],
     ["http", { store: HTTPStore }],
     ["language", { store: LanguageStore }],
   ]);
@@ -246,7 +245,7 @@ export class App implements AppRouter {
   /**
    * Sets the view that will be displayed when the app encounters an unhandled error. Set to null to crash to a blank screen.
    */
-  setCrashView(view: View<CrashPageInputs> | null) {
+  setCrashView(view: View<CrashPageAttrs> | null) {
     return this; // TODO: Implement
   }
 
@@ -626,16 +625,15 @@ export class App implements AppRouter {
   }
 }
 
-type CrashPageInputs = {
+type CrashPageAttrs = {
   message: string;
   error: Error;
   componentName: string;
 };
 
-function DefaultCrashPage(self: ComponentCore<CrashPageInputs>) {
-  const { message, error, componentName } = self.inputs.get();
-
-  return m.div(
+function DefaultCrashPage({ message, error, componentName }: CrashPageAttrs) {
+  return m(
+    "div",
     {
       style: {
         backgroundColor: "#880000",
@@ -646,16 +644,16 @@ function DefaultCrashPage(self: ComponentCore<CrashPageInputs>) {
         fontSize: "20px",
       },
     },
-
-    m.h1({ style: { marginBottom: "0.5rem" } }, "The app has crashed"),
-
-    m.p(
+    m("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
+    m(
+      "p",
       { style: { marginBottom: "0.25rem" } },
-      m.span({ style: { fontFamily: "monospace" } }, componentName),
+      m("span", { style: { fontFamily: "monospace" } }, componentName),
       " says:"
     ),
 
-    m.blockquote(
+    m(
+      "blockquote",
       {
         style: {
           backgroundColor: "#991111",
@@ -665,7 +663,8 @@ function DefaultCrashPage(self: ComponentCore<CrashPageInputs>) {
           marginBottom: "1rem",
         },
       },
-      m.span(
+      m(
+        "span",
         {
           style: {
             display: "inline-block",
@@ -682,6 +681,6 @@ function DefaultCrashPage(self: ComponentCore<CrashPageInputs>) {
       message
     ),
 
-    m.p("Please see the browser console for details.")
+    m("p", null, "Please see the browser console for details.")
   );
 }

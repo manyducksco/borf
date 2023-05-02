@@ -1,4 +1,4 @@
-import { Writable, Readable, html, when, useStore } from "@borf/browser";
+import { Writable, when, useStore, useMerge } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 /**
@@ -10,7 +10,7 @@ export function HTTPRequests() {
 
   const http = useStore("http");
 
-  const $label = Readable.merge([$$loading, $$url], (loading, url) => {
+  const $label = useMerge([$$loading, $$url], (loading, url) => {
     if (loading) {
       return "LOADING...";
     } else {
@@ -28,20 +28,20 @@ export function HTTPRequests() {
         },
       })
       .then((res) => {
-        $$url.set(res.body.message);
+        $$url.value = res.body.message;
       })
       .finally(() => {
-        $$loading.set(false);
+        $$loading.value = false;
       });
   }
 
-  return html`
-    <${ExampleFrame} title="HTTP Requests with 'http' store">
-      <div style=${{ display: "flex", flexFlow: "column nowrap" }}>
-        <button onclick=${onclick}>Get Dog</button>
-        ${$label}
-        ${when($$url, html`<img style=${{ maxWidth: 300 }} src=${$$url} />`)}
+  return (
+    <ExampleFrame title="HTTP Requests with 'http' store">
+      <div style={{ display: "flex", flexFlow: "column nowrap" }}>
+        <button onclick={onclick}>Get Dog</button>
+        {$label}
+        {when($$url, <img style={{ maxWidth: 300 }} src={$$url} />)}
       </div>
-    </${ExampleFrame}>
-  `;
+    </ExampleFrame>
+  );
 }

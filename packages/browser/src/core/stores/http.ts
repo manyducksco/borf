@@ -1,6 +1,6 @@
-import { ComponentCore } from "../component.js";
+import { useName } from "../hooks/index.js";
 
-interface HTTPStoreInputs {
+interface HTTPStoreAttrs {
   /**
    * The fetch function to use for requests. Pass this to mock for testing.
    */
@@ -11,18 +11,10 @@ interface HTTPStoreInputs {
  * A simple HTTP client with middleware support. Middleware applies to all requests made through this store,
  * so it's the perfect way to handle things like auth headers and permission checks for API calls.
  */
-export function HTTPStore(self: ComponentCore<HTTPStoreInputs>) {
-  self.setName("borf:http");
+export function HTTPStore(attrs: HTTPStoreAttrs) {
+  useName("borf:http");
 
-  let fetch = self.inputs.get("fetch")!;
-
-  if (!fetch && typeof window !== "undefined" && window.fetch) {
-    fetch = window.fetch.bind(window);
-  }
-
-  if (!fetch && typeof global !== "undefined" && global.fetch) {
-    fetch = global.fetch.bind(global);
-  }
+  const fetch = attrs.fetch ?? getDefaultFetch();
 
   const middleware: HTTPMiddleware[] = [];
 
@@ -78,6 +70,18 @@ export function HTTPStore(self: ComponentCore<HTTPStoreInputs>) {
       return request<ResBody, ReqBody>("trace", uri, options);
     },
   };
+}
+
+function getDefaultFetch(): typeof window.fetch {
+  if (typeof window !== "undefined" && window.fetch) {
+    return window.fetch.bind(window);
+  }
+
+  if (typeof global !== "undefined" && global.fetch) {
+    return global.fetch.bind(global);
+  }
+
+  throw new Error("Running in neither browser nor node. Please run this app in one of the supported environments.");
 }
 
 /*====================*\
