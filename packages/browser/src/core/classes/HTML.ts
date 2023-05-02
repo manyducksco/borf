@@ -1,9 +1,8 @@
 import { Type } from "@borf/bedrock";
 import { omit } from "../helpers/omit.js";
 import { Ref } from "./Ref.js";
-
 import { Readable, Writable, type StopFunction } from "./Writable.js";
-import { Connectable } from "./Connectable.js";
+import { type Connectable } from "../types.js";
 import { type AppContext, type ElementContext } from "./App.js";
 import { Markup } from "./Markup.js";
 

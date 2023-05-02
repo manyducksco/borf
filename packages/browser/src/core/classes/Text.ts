@@ -1,5 +1,5 @@
 import { Readable, type StopFunction } from "./Writable.js";
-import { type Connectable } from "./Connectable.js";
+import { type Connectable } from "../types.js";
 
 interface Stringable {
   toString(): string;

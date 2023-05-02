@@ -1,13 +1,12 @@
 import { Type } from "@borf/bedrock";
-import { Connectable } from "./Connectable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 import { Text } from "./Text.js";
 import { HTML } from "./HTML.js";
 import { Readable } from "./Writable.js";
 import { Repeat } from "./Repeat.js";
-import { Outlet } from "./Outlet.js";
+import { Dynamic } from "./Dynamic.js";
 import { makeComponent, type Component } from "../component.js";
-import { type IntrinsicElements } from "../types.js";
+import { type IntrinsicElements, type Connectable } from "../types.js";
 import { Outlet as OutletView } from "../views/Outlet.js";
 
 /* ----- Types ----- */
@@ -182,7 +181,7 @@ export function isRenderable(value: unknown): value is Renderable {
  */
 export function when(value: Readable<any>, then?: Renderable, otherwise?: Renderable): Markup {
   return new Markup((config) => {
-    return new Outlet({
+    return new Dynamic({
       ...config,
       readable: value,
       render: (value) => {
@@ -205,7 +204,7 @@ export function when(value: Readable<any>, then?: Renderable, otherwise?: Render
  */
 export function unless(value: Readable<any>, then: Renderable): Markup {
   return new Markup((config) => {
-    return new Outlet({
+    return new Dynamic({
       ...config,
       readable: value,
       render: (value) => {
@@ -221,7 +220,7 @@ export function unless(value: Readable<any>, then: Renderable): Markup {
 
 export function observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup {
   return new Markup((config) => {
-    return new Outlet({
+    return new Dynamic({
       ...config,
       readable: readable,
       render,

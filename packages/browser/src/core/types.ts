@@ -31,6 +31,14 @@ export interface BuiltInStores {
   router: StoreOutput<typeof RouterStore>;
 }
 
+export interface Connectable {
+  readonly node: Node;
+  readonly isConnected: boolean;
+
+  connect(parent: Node, after?: Node): Promise<void>;
+  disconnect(): Promise<void>;
+}
+
 export type MaybeReadable<T> = T | Readable<T>;
 
 /**

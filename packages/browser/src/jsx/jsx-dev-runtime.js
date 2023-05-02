@@ -1,7 +1,7 @@
 import { omit } from "../core/helpers/omit.js";
 import { m } from "../core/classes/Markup.js";
 
-export { Fragment } from "../core/classes/Fragment.js";
+export { Fragment } from "../core/views/Fragment.js";
 
 export function jsxDEV(element, props, key, isStaticChildren, source, self) {
   const attributes = { ...omit(["children", "key"], props) };

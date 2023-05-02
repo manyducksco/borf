@@ -1,10 +1,10 @@
 import { Type } from "@borf/bedrock";
-import { Connectable } from "./Connectable.js";
+import { type Connectable } from "../types.js";
 import { formatChildren, isRenderable, type Renderable } from "./Markup.js";
 import { Readable, type StopFunction } from "./Writable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 
-interface OutletOptions<T> {
+interface DynamicOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
   readable: Readable<T>;
@@ -14,8 +14,8 @@ interface OutletOptions<T> {
 /**
  * Displays dynamic children without a parent element.
  */
-export class Outlet<T> implements Connectable {
-  #node = document.createComment("Outlet");
+export class Dynamic<T> implements Connectable {
+  #node = document.createComment("Dynamic");
   #connectedViews: Connectable[] = [];
   #stopCallback?: StopFunction;
   #readable;
@@ -31,7 +31,7 @@ export class Outlet<T> implements Connectable {
     return this.#node.parentNode != null;
   }
 
-  constructor({ readable, render, appContext, elementContext }: OutletOptions<T>) {
+  constructor({ readable, render, appContext, elementContext }: DynamicOptions<T>) {
     this.#readable = readable;
     this.#appContext = appContext;
     this.#elementContext = elementContext;
@@ -60,7 +60,7 @@ export class Outlet<T> implements Connectable {
 
       if (!isRenderable(newValue)) {
         throw new TypeError(
-          `Outlet received invalid value to render. Got type: ${Type.of(newValue)}, value: ${newValue}`
+          `Dynamic received invalid value to render. Got type: ${Type.of(newValue)}, value: ${newValue}`
         );
       }
 

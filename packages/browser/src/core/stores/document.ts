@@ -14,19 +14,17 @@ export function DocumentStore() {
 
   /* ----- Title and Visibility ----- */
 
-  if (document) {
-    useObserver($$title, (current) => {
-      document.title = current;
-    });
+  useObserver($$title, (current) => {
+    document.title = current;
+  });
 
-    document.addEventListener("visibilitychange", () => {
-      $$visibility.value = document.visibilityState;
-    });
+  const onVisibilityChange = () => {
+    $$visibility.value = document.visibilityState;
+  };
 
-    window.addEventListener("focus", () => {
-      $$visibility.value = "visible";
-    });
-  }
+  const onFocus = () => {
+    $$visibility.value = "visible";
+  };
 
   /* ----- Orientation ----- */
 
@@ -56,10 +54,14 @@ export function DocumentStore() {
   useConnected(function () {
     landscapeQuery.addEventListener("change", onOrientationChange);
     colorSchemeQuery.addEventListener("change", onColorChange);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("focus", onFocus);
   });
   useDisconnected(function () {
     landscapeQuery.removeEventListener("change", onOrientationChange);
     colorSchemeQuery.removeEventListener("change", onColorChange);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.removeEventListener("focus", onFocus);
   });
 
   /* ----- Exports ----- */

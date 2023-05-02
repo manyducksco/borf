@@ -200,15 +200,6 @@ export function Examples(attrs) {
 }
 
 function ControlGroup({ label, min, max, $$value }) {
-  // One advantage of this is it will just silently redirect all console.* refs in this component to the inbuilt logger.
-  const console = useConsole();
-
-  useConnected(() => {
-    console.log(
-      "Witchcraft! Labeled console logging. Oh, also we're connected now."
-    );
-  });
-
   return (
     <div class={styles.controlGroup}>
       <label for={label}>

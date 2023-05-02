@@ -3,9 +3,8 @@ import { Readable, Writable, type ValuesOfReadables, type StopFunction } from ".
 import { Markup } from "./classes/Markup.js";
 import { APP_CONTEXT, ELEMENT_CONTEXT, setCurrentComponent, clearCurrentComponent } from "./keys.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
-import { type BuiltInStores } from "./types.js";
-import { Outlet } from "./classes/Outlet.js";
-import { Connectable } from "./classes/Connectable.js";
+import { type BuiltInStores, type Connectable } from "./types.js";
+import { Dynamic } from "./classes/Dynamic.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
 
 export interface ComponentCore<I> {
@@ -222,7 +221,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
     },
 
     outlet() {
-      return new Markup((config) => new Outlet({ ...config, readable: $$children }));
+      return new Markup((config) => new Dynamic({ ...config, readable: $$children }));
     },
   };
 
@@ -273,7 +272,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
     } else if (typeof result === "object" && !Array.isArray(result)) {
       // Result is a store.
       outputs = result;
-      connectable = new Outlet({ appContext, elementContext, readable: $$children });
+      connectable = new Dynamic({ appContext, elementContext, readable: $$children });
       elementContext.stores = new Map([...elementContext.stores.entries()]);
       elementContext.stores.set(config.component, { store: config.component, instance: controls });
     } else {
