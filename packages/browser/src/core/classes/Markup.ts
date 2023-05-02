@@ -66,7 +66,7 @@ interface MarkupFunction {
 /* ----- Code ----- */
 
 /**
- * Creates markup nodes that can be rendered to the DOM by a View.
+ * Creates markup nodes that can be returned from a View function and rendered to the DOM.
  *
  * @example
  * // Use components:
@@ -74,38 +74,11 @@ interface MarkupFunction {
  *
  * // Create HTML elements:
  * m("span", { style: { color: "red" } }, "This text is red")
- * m("custom-element", "Child content")
- *
- * // Create HTML elements with helpers:
- * m.button({ onclick: () => alert("clicked") }, "Click me!")
- * m.span({ style: { color: "red" } }, "This text is red")
- * m.section([
- *   m.header(m.h1("Hello!")),
- *   m.p("This is a section.")
- * ])
- * // ...
+ * m("custom-element", null, "Child content", "Child content 2")
  */
-export const m = <MarkupFunction>(<I>(
-  element: string | Component<I>,
-  attributes?: any,
-  ...children: (Renderable | Renderable[])[]
-) => {
-  if (!children) {
-    children = [];
-  }
-
-  if (!Type.isArray(children)) {
-    children = [children];
-  }
-
-  // If attributes isn't null or an object, consider it a child.
-  if (Readable.isReadable(attributes) || Markup.isMarkup(attributes) || !Type.isObject(attributes)) {
-    children.unshift(attributes as Renderable);
-    attributes = {};
-  }
-
+export const m = <MarkupFunction>(<I>(element: string | Component<I>, attributes?: any, ...children: Renderable[]) => {
   // Filter out falsy children and convert remaining ones to Markup instances.
-  const formattedChildren = formatChildren(children.flat(Infinity) as Renderable[]);
+  const formattedChildren = formatChildren(children.flat(Infinity));
 
   // Components
   if (Type.isFunction<Component<I>>(element)) {
