@@ -1,4 +1,4 @@
-import { Writable, when, useStore, useMerge } from "@borf/browser";
+import { Writable, when, useStore, useMerge, useCrash } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 /**
@@ -9,6 +9,7 @@ export function HTTPRequests() {
   const $$url = new Writable();
 
   const http = useStore("http");
+  const crash = useCrash();
 
   const $label = useMerge([$$loading, $$url], (loading, url) => {
     if (loading) {
@@ -30,6 +31,7 @@ export function HTTPRequests() {
       .then((res) => {
         $$url.value = res.body.message;
       })
+      .catch(crash)
       .finally(() => {
         $$loading.value = false;
       });
