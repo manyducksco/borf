@@ -1,8 +1,17 @@
-import { Readable, Writable, m } from "@borf/browser";
+import {
+  Writable,
+  repeat,
+  useConsole,
+  useMerge,
+  useName,
+  useObserver,
+} from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function (self) {
-  self.setName("7GUIs:CRUD");
+export default function () {
+  useName("7GUIs:CRUD");
+
+  const console = useConsole();
 
   const $$people = new Writable([
     { id: 1, name: "Hans", surname: "Emil" },
@@ -15,7 +24,7 @@ export default function (self) {
   const $$surnameInput = new Writable("");
   const $$filterPrefix = new Writable("");
 
-  const $filteredPeople = Readable.merge(
+  const $filteredPeople = useMerge(
     [$$people, $$filterPrefix],
     (people, prefix) => {
       if (prefix.trim() === "") {
@@ -59,8 +68,8 @@ export default function (self) {
     });
   }
 
-  self.observe($$people, (people) => {
-    self.debug.log(people);
+  useObserver($$people, (people) => {
+    console.log(people);
   });
 
   // Deletes the selected person.
@@ -73,7 +82,7 @@ export default function (self) {
   }
 
   // Update fields when selection changes.
-  self.observe($$selectedId, (id) => {
+  useObserver($$selectedId, (id) => {
     const person = $$people.value.find((p) => p.id === id);
 
     if (person) {
@@ -82,44 +91,49 @@ export default function (self) {
     }
   });
 
-  return m(ExampleFrame, { title: "5. CRUD" }, [
-    m.div([
-      m.div("Filter prefix: ", m("input", { value: $$filterPrefix })),
-      m.div(
-        m.select(
-          {
-            // size: $filteredPeople.map((fp) => Math.max(fp.length, 2)),
-            size: 8,
-            value: $$selectedId.toReadable(),
-            onchange: (e) => {
-              self.debug.log(e.target, e.target.value);
+  return (
+    <ExampleFrame title="5. CRUD">
+      <div>
+        <div>
+          Filter prefix: <input value={$$filterPrefix} />
+        </div>
+        <div>
+          <select
+            size={8}
+            value={$$selectedId.toReadable()}
+            onchange={(e) => {
+              console.log(e.target, e.target.value);
 
               $$selectedId.set(Number(e.target.value));
-            },
-          },
+            }}
+          >
+            {repeat(
+              $filteredPeople,
+              ($person) => {
+                const $id = $person.map((p) => p.id);
+                const $name = $person.map((p) => p.name);
+                const $surname = $person.map((p) => p.surname);
 
-          m.$repeat(
-            $filteredPeople,
-            ($person) => {
-              const $id = $person.map((p) => p.id);
-              const $name = $person.map((p) => p.name);
-              const $surname = $person.map((p) => p.surname);
-
-              return m.option({ value: $id }, $surname, ", ", $name);
-            },
-            (person) => person.id
-          )
-        )
-      ),
-      m.div(
-        m.input({ type: "text", value: $$nameInput }),
-        m.input({ type: "text", value: $$surnameInput })
-      ),
-      m.div(
-        m.button({ onclick: create }, "Create"),
-        m.button({ onclick: update }, "Update"),
-        m.button({ onclick: del }, "Delete")
-      ),
-    ]),
-  ]);
+                return (
+                  <option value={$id}>
+                    {$surname}, {$name}
+                  </option>
+                );
+              },
+              (person) => person.id
+            )}
+          </select>
+        </div>
+        <div>
+          <input value={$$nameInput} />
+          <input value={$$surnameInput} />
+        </div>
+        <div>
+          <button onclick={create}>Create</button>
+          <button onclick={update}>Update</button>
+          <button onclick={del}>Delete</button>
+        </div>
+      </div>
+    </ExampleFrame>
+  );
 }

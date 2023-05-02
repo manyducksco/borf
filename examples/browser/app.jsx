@@ -1,4 +1,4 @@
-import { App, Elements, Outlet, useStore, useValue } from "@borf/browser";
+import { App, Elements, Outlet, useStore } from "@borf/browser";
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
@@ -15,14 +15,14 @@ import { HTTPRequests } from "./examples/HTTPRequests";
 
 import { RenderOrderTest } from "./views/RenderOrderTest";
 
-// import SevenGUIs from "./7guis";
-// import Counter from "./7guis/01_Counter";
-// import TempConverter from "./7guis/02_TempConverter";
-// import FlightBooker from "./7guis/03_FlightBooker";
-// import Timer from "./7guis/04_Timer";
-// import CRUD from "./7guis/05_CRUD";
-// import CircleDrawer from "./7guis/06_CircleDrawer";
-// import Cells from "./7guis/07_Cells";
+import SevenGUIs from "./7guis";
+import Counter from "./7guis/01_Counter";
+import TempConverter from "./7guis/02_TempConverter";
+import FlightBooker from "./7guis/03_FlightBooker";
+import Timer from "./7guis/04_Timer";
+import CRUD from "./7guis/05_CRUD";
+import CircleDrawer from "./7guis/06_CircleDrawer";
+import Cells from "./7guis/07_Cells";
 
 /*===========================*\
 ||      Custom Elements      ||
@@ -41,7 +41,7 @@ elems.addElement("web-component-view", ({ location }) => {
 function WebComponentStore({ defaultValue }) {
   return {
     // TODO: Convert kebab-case to camelCase for web component inputs?
-    value: useValue(defaultValue ?? "The Default Value"),
+    value: defaultValue ?? "The Default Value",
   };
 }
 
@@ -126,16 +126,16 @@ app.addRoute("/examples", null, (sub) => {
   sub.addRedirect("*", "./spring-animation");
 });
 
-// app.addRoute("/7guis", SevenGUIs, (sub) => {
-//   sub.addRoute("/counter", Counter);
-//   sub.addRoute("/temp-converter", TempConverter);
-//   sub.addRoute("/flight-booker", FlightBooker);
-//   sub.addRoute("/timer", Timer);
-//   sub.addRoute("/crud", CRUD);
-//   sub.addRoute("/circle-drawer", CircleDrawer);
-//   sub.addRoute("/cells", Cells);
-//   sub.addRedirect("*", "./counter");
-// });
+app.addRoute("/7guis", SevenGUIs, (sub) => {
+  sub.addRoute("/counter", Counter);
+  sub.addRoute("/temp-converter", TempConverter);
+  sub.addRoute("/flight-booker", FlightBooker);
+  sub.addRoute("/timer", Timer);
+  sub.addRoute("/crud", CRUD);
+  sub.addRoute("/circle-drawer", CircleDrawer);
+  sub.addRoute("/cells", Cells);
+  sub.addRedirect("*", "./counter");
+});
 
 // Manual tests to make sure routing and redirects are working
 app

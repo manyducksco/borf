@@ -200,10 +200,6 @@ export function Examples(attrs) {
   );
 }
 
-const controlGroupInputsSchema = z.object({
-  value: z.string().default("HELLO"),
-});
-
 function ControlGroup({ label, min, max, $$value }) {
   // One advantage of this is it will just silently redirect all console.* refs in this component to the inbuilt logger.
   const console = useConsole();
@@ -218,7 +214,7 @@ function ControlGroup({ label, min, max, $$value }) {
     <div class={styles.controlGroup}>
       <label for={label}>
         <span>{label}</span>
-        <span class={styles.controlLabel}>${$$value}</span>
+        <span class={styles.controlLabel}>{$$value}</span>
       </label>
 
       <input

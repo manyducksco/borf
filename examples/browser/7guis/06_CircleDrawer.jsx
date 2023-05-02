@@ -1,8 +1,12 @@
-import { m } from "@borf/browser";
+import { useName } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function (self) {
-  self.setName("7GUIs:CircleDrawer");
+export default function () {
+  useName("7GUIs:CircleDrawer");
 
-  return m(ExampleFrame, { title: "6. Circle Drawer" }, [m("div")]);
+  return (
+    <ExampleFrame title="6. Circle Drawer">
+      <div></div>
+    </ExampleFrame>
+  );
 }

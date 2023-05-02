@@ -1,8 +1,13 @@
-import { Writable, m } from "@borf/browser";
+import {
+  Writable,
+  useConnected,
+  useDisconnected,
+  useName,
+} from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function (self) {
-  self.setName("7GUIs:Timer");
+export default function () {
+  useName("7GUIs:Timer");
 
   const $$duration = new Writable(10); // duration in seconds
   const $$elapsed = new Writable(0); // elapsed time in seconds
@@ -14,8 +19,8 @@ export default function (self) {
     if (!stopped) {
       const now = Date.now();
 
-      const elapsed = $$elapsed.get();
-      const duration = $$duration.get();
+      const elapsed = $$elapsed.value;
+      const duration = $$duration.value;
 
       // Only update if $elapsed hasn't yet reached $duration
       if (elapsed < duration) {
@@ -31,42 +36,36 @@ export default function (self) {
     }
   };
 
-  self.onConnected(() => {
+  useConnected(() => {
     lastTick = Date.now();
     tick();
   });
 
-  self.onDisconnected(() => {
+  useDisconnected(() => {
     stopped = true;
   });
 
-  return m(ExampleFrame, { title: "4. Timer" }, [
-    m.div(
-      m.div(
-        "Elapsed Time: ",
-        m.progress({ max: $$duration, value: $$elapsed })
-      ),
-      m.div($$elapsed.map((seconds) => seconds.toFixed(1))),
-      m.div(
-        "Duration: ",
-        m.input({
-          type: "range",
-          min: 0,
-          max: 30,
-          step: 0.1,
-          value: $$duration,
-        })
-      ),
-      m.div(
-        m.button(
-          {
-            onclick: () => {
-              $$elapsed.set(0);
-            },
-          },
-          "Reset"
-        )
-      )
-    ),
-  ]);
+  return (
+    <ExampleFrame title="4. Timer">
+      <div>
+        <div>
+          Elapsed Time: <progress max={$$duration} value={$$elapsed} />
+        </div>
+        <div>{$$elapsed.map((seconds) => seconds.toFixed(1))}</div>
+        <div>
+          Duration:{" "}
+          <input type="range" min={0} max={30} step={0.1} value={$$duration} />
+        </div>
+        <div>
+          <button
+            onclick={() => {
+              $$elapsed.value = 0;
+            }}
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+    </ExampleFrame>
+  );
 }

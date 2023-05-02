@@ -1,4 +1,4 @@
-import { Writable, html, useName } from "@borf/browser";
+import { Writable, useName } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 export default function () {
@@ -6,18 +6,18 @@ export default function () {
 
   const $$count = new Writable(0);
 
-  return html`
-    <${ExampleFrame} title="1. Counter">
+  return (
+    <ExampleFrame title="1. Counter">
       <div>
-        <input type="text" value=${$$count.toReadable()} readonly />
+        <input type="text" value={$$count.toReadable()} readonly />
         <button
-          onclick=${() => {
+          onclick={() => {
             $$count.update((n) => n + 1);
           }}
         >
           Increment
         </button>
       </div>
-    <//>
-  `;
+    </ExampleFrame>
+  );
 }
