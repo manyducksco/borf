@@ -39,7 +39,7 @@ Components don't have direct access to their children. Instead, the `Outlet` com
 ```js
 import { Outlet } from "@borf/browser";
 
-function ContextBox() {
+function ContentBox() {
   return (
     <div style={{ padding: "1rem", border: "1px dashed orange" }}>
       <Outlet />
