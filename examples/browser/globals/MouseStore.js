@@ -11,7 +11,7 @@ export function MouseStore() {
     console.log("listening for mousemove events");
 
     window.addEventListener("mousemove", (e) => {
-      $$position.set({ x: e.clientX, y: e.clientY });
+      $$position.value = { x: e.clientX, y: e.clientY };
     });
   });
 

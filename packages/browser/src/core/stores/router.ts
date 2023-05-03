@@ -254,9 +254,9 @@ export function RouterStore({ options, router }: RouterStoreAttrs) {
               const markup = new Markup(() => view);
 
               if (parentLayer) {
-                parentLayer.view.$$children.set([markup]);
+                parentLayer.view.$$children.value = [markup];
               } else {
-                appContext.rootView!.$$children.set([markup]);
+                appContext.rootView!.$$children.value = [markup];
               }
             });
 

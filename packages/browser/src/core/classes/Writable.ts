@@ -90,20 +90,13 @@ export class Readable<T> {
   }
 
   /**
-   * Value currently stored in this Readable.
+   * The value currently stored in this Readable.
    */
   get value(): T {
     if (this.#source) {
       return this.#source.value;
     }
     return this.#value;
-  }
-
-  /**
-   * Returns the value currently stored in this Readable. Equivalent to accessing `value`.
-   */
-  get(): T {
-    return this.value;
   }
 
   /**
@@ -163,10 +156,6 @@ class MappedReadable<F, T> extends Readable<T> {
     return this.#transform(this.#readable.value);
   }
 
-  get() {
-    return this.value;
-  }
-
   map<N>(transform: (value: T) => N): Readable<N> {
     return new MappedReadable<T, N>(this, transform);
   }
@@ -212,10 +201,6 @@ class MergedReadable<Rs extends Readable<any>[], T> extends Readable<T> {
     } else {
       return this.#merge(...(this.#readables.map((s) => s.value) as ValuesOfReadables<Rs>));
     }
-  }
-
-  get() {
-    return this.value;
   }
 
   map<R>(transform: (value: T) => R): Readable<R> {
@@ -338,17 +323,6 @@ export class Writable<T> extends Readable<T> {
       this.#value = newValue;
       this.#notifyObservers();
     }
-  }
-
-  get() {
-    return this.value;
-  }
-
-  /**
-   * Replaces the current value with `newValue`. Equivalent to setting the `value` property.
-   */
-  set(newValue: T) {
-    this.value = newValue;
   }
 
   map<N>(transform: (value: T) => N): Readable<N> {

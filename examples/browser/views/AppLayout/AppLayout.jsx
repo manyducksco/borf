@@ -26,7 +26,7 @@ export async function AppLayout() {
 
   // Display current mouse coordinates as tab title
   useObserver(mouse.$position, (pos) => {
-    doc.$$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
+    doc.$$title.value = `x:${Math.round(pos.x)} y:${Math.round(pos.y)}`;
   });
 
   useObserver(doc.$visibility, (status) => {

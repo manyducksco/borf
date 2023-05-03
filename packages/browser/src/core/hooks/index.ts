@@ -72,7 +72,14 @@ export function useDisconnected(callback: () => any) {
   core.onDisconnected(callback);
 }
 
+/**
+ * Observes a readable value while this component is connected. Calls `callback` each time the value changes.
+ */
 export function useObserver<T>(readable: Readable<T>, callback: (value: T) => void): void;
+/**
+ * Observes a set of readable values while this component is connected.
+ * Calls `callback` with each value in the same order as `readables` each time any of their values change.
+ */
 export function useObserver<T extends Readable<any>[], V>(
   readables: [...T],
   callback: (...values: ValuesOfReadables<T>) => void

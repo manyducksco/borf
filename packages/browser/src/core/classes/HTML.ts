@@ -115,8 +115,6 @@ function applyAttributes(
   for (const key in attrs) {
     const value = attrs[key];
 
-    // console.log({ key, element, readable: value });
-
     // Bind or set value depending on its type.
     if (key === "value") {
       if (Readable.isReadable(value)) {
@@ -326,7 +324,7 @@ function toTypeOf<T>(target: T, source: unknown): T | unknown {
 }
 
 // Attributes in this list will not be forwarded to the DOM node.
-const privateAttrs = ["$ref", "children", "class", "value", "style", "data"];
+const privateAttrs = ["ref", "children", "class", "value", "style", "data"];
 
 const booleanAttrs = [
   "allowfullscreen",
@@ -358,23 +356,6 @@ const booleanAttrs = [
   "spellcheck",
   "translate",
   "truespeed",
-];
-
-const selfClosingTags = [
-  "area",
-  "base",
-  "br",
-  "col",
-  "embed",
-  "hr",
-  "img",
-  "input",
-  "link",
-  "meta",
-  "param",
-  "source",
-  "track",
-  "wbr",
 ];
 
 const eventAttrs = [
