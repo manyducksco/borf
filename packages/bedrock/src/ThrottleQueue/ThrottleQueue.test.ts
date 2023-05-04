@@ -1,6 +1,6 @@
 import test from "ava";
 import { sleep } from "../helpers/sleep.js";
-import { Type } from "../Type/Type.js";
+import { isNumber } from "../typeChecking.js";
 import { ThrottleQueue } from "./ThrottleQueue.js";
 
 test("ThrottleQueue", (t) => {
@@ -27,8 +27,8 @@ test("ThrottleQueue", (t) => {
     // queue.debug = true;
 
     queue.on("resolve", function onResolve(n, result) {
-      t.assert(Type.isNumber(n));
-      t.assert(Type.isNumber(result));
+      t.assert(isNumber(n));
+      t.assert(isNumber(result));
       t.is(result, n * 2);
     });
 

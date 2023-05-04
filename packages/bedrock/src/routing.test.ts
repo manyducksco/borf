@@ -6,10 +6,11 @@ import {
   matchRoutes,
   joinPath,
   resolvePath,
+  sortRoutes,
 } from "./routing.js";
 
 test("add and match routes", (t) => {
-  const routes: Route<{ testId: number }>[] = [];
+  let routes: Route<{ testId: number }>[] = [];
 
   routes.push({
     pattern: "/{named}",
@@ -41,6 +42,8 @@ test("add and match routes", (t) => {
     meta: { testId: 6 },
     fragments: patternToFragments("/wild/*"),
   });
+
+  routes = sortRoutes(routes);
 
   const match1 = matchRoutes(routes, "/example");
   const match2 = matchRoutes(routes, "/users/123");
