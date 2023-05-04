@@ -18,6 +18,10 @@ export function RenderOrderTest() {
 
   return (
     <ExampleFrame title="Render Order Test">
+      <p>
+        The order below when numbers are visible should be: 1 a 2 b 3 c 4 5 d
+      </p>
+
       {when($$isTrue, <SubView value={1} />)}
       <SubView value="a" />
       {when($$isTrue, <SubView value={2} />)}

@@ -1,3 +1,3 @@
-# Woof Examples
+# Borf Examples
 
-Run this project with `woof start` to see examples.
+Run this project with `npm start` to see examples.

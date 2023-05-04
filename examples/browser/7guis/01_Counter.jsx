@@ -12,7 +12,7 @@ export default function () {
         <input type="text" value={$$count.toReadable()} readonly />
         <button
           onclick={() => {
-            $$count.update((n) => n + 1);
+            $$count.value += 1;
           }}
         >
           Increment
