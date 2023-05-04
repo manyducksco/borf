@@ -143,12 +143,12 @@ export function useReadable<T>(value?: Read<T>) {
 /**
  * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
  */
-export function useWritable<T>(value: Write<T>): Writable<T>;
+export function useWritable<T>(value: Write<T> | T): Writable<T>;
 /**
  * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
  */
-export function useWritable<T>(value?: Write<T>): Writable<T | undefined>;
-export function useWritable<T>(value?: Write<T>) {
+export function useWritable<T>(value?: Write<T> | T): Writable<T | undefined>;
+export function useWritable<T>(value?: Write<T> | T) {
   getCurrentComponent(); // Runs a check to throw an error if hook is used outside component scope.
 
   if (Writable.isWritable<T>(value)) {

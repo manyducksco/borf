@@ -17,4 +17,4 @@ export * from "./hooks/index.js";
 
 // Types
 export type { HTTPMiddleware } from "./stores/http.js";
-export type { Read, Write } from "./types.js";
+export type { Read, Write, InputType } from "./types.js";

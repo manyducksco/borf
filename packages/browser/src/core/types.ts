@@ -257,8 +257,6 @@ export interface ClassMap {
   [className: string]: MaybeReadable<any>;
 }
 
-type X = CSS.Property.Transform;
-
 export type EventHandler<E> = (event: E) => void;
 
 /**
@@ -2730,7 +2728,7 @@ interface LabelElementAttributes extends ElementAttributes<HTMLLabelElement> {
   for?: MaybeReadable<string | undefined>;
 }
 
-type InputType =
+export type InputType =
   | "hidden"
   | "text"
   | "search"
