@@ -1,26 +1,20 @@
-// import { Type } from "@borf/bedrock";
-// import { APP_CONTEXT, ELEMENT_CONTEXT } from "../keys.js";
+// import { getCurrentContext, makeComponent, type View } from "../component.js";
 // import { Writable } from "../classes/Writable.js";
-// import { Markup, type MarkupConfig } from "../classes/Markup.js";
-// import { type Connectable } from "../classes/Connectable.js";
-// import { type View, type ComponentCore, getAppContext, getElementContext } from "../scratch.js";
+// import { useDisconnected, useName, useObserver } from "../hooks/index.js";
+// import { type Connectable } from "../types.js";
 
-// interface DialogInputs {
-//   open: boolean;
-// }
-
-// interface DialogConfig extends MarkupConfig {
-//   inputs: {
-//     open: Writable<boolean>;
-//   };
+// interface DialogAttrs {
+//   $$open: Writable<boolean>;
 // }
 
 // /**
 //  * Manages dialogs. Also known as modals.
 //  * TODO: Describe this better.
 //  */
-// export function DialogStore(self: ComponentCore<DialogInputs>) {
-//   self.setName("borf:dialog");
+// export function DialogStore() {
+//   useName("borf:dialog");
+
+//   const { appContext, elementContext } = getCurrentContext();
 
 //   const container = document.createElement("div");
 //   container.style.position = "fixed";
@@ -39,7 +33,7 @@
 //   let activeDialogs: Connectable[] = [];
 
 //   // Diff dialogs when value is updated, adding and removing dialogs as necessary.
-//   self.observe($$dialogs, (dialogs) => {
+//   useObserver($$dialogs, (dialogs) => {
 //     requestAnimationFrame(() => {
 //       let removed: Connectable[] = [];
 //       let added: Connectable[] = [];
@@ -79,54 +73,45 @@
 //     });
 //   });
 
-//   self.onDisconnect(() => {
+//   useDisconnected(() => {
 //     if (container.parentNode) {
 //       document.body.removeChild(container);
 //     }
 //   });
 
-//   return {
-//     open: <I extends DialogInputs>(view: View<I>, inputs?: <Omit<I, "open">>) => {
-//       let markup: Markup<DialogConfig> | undefined;
+//   function open<I extends DialogAttrs>(view: View<I>, inputs?: Omit<I, "$$open">) {
+//     const $$open = new Writable(true);
 
-//       if (Type.isFunction(view)) {
-//         markup = new Markup((config) => new View({ setup: view as ViewSetupFunction<any> }).create(config));
-//       } else if (View.isView(view)) {
-//         markup = new Markup((config) => view.create(config));
+//     let instance: Connectable | undefined = makeComponent({
+//       component: view,
+//       appContext,
+//       elementContext,
+//       inputs: { ...inputs, $$open },
+//     });
+//     $$dialogs.update((current) => {
+//       current.push(instance!);
+//     });
+
+//     const stop = $$open.observe((value) => {
+//       if (!value) {
+//         close();
 //       }
+//     });
 
-//       if (!markup) {
-//         throw new TypeError(`Expected a view or setup function. Got: ${view}`);
-//       }
-
-//       const $$open = new Writable(true);
-
-//       let instance: Connectable | undefined = markup.init({
-//         appContext: getAppContext(self),
-//         elementContext: getElementContext(self),
-//         inputs: { ...inputs, open: $$open },
-//       });
+//     return function close() {
 //       $$dialogs.update((current) => {
-//         current.push(instance!);
+//         current.splice(
+//           current.findIndex((x) => x === instance),
+//           1
+//         );
 //       });
+//       instance = undefined;
 
-//       const stop = $$open.observe((value) => {
-//         if (!value) {
-//           close();
-//         }
-//       });
+//       stop();
+//     };
+//   }
 
-//       return function close() {
-//         $$dialogs.update((current) => {
-//           current.splice(
-//             current.findIndex((x) => x === instance),
-//             1
-//           );
-//         });
-//         instance = undefined;
-
-//         stop();
-//       };
-//     },
+//   return {
+//     open,
 //   };
 // }

@@ -1,7 +1,7 @@
-import { Type } from "@borf/bedrock";
+import { typeOf } from "@borf/bedrock";
 import { type Connectable } from "../types.js";
 import { formatChildren, isRenderable, type Renderable } from "./Markup.js";
-import { Readable, type StopFunction } from "./Writable.js";
+import { Readable, type StopFunction } from "./Readable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 
 interface DynamicOptions<T> {
@@ -60,7 +60,7 @@ export class Dynamic<T> implements Connectable {
 
       if (!isRenderable(newValue)) {
         throw new TypeError(
-          `Dynamic received invalid value to render. Got type: ${Type.of(newValue)}, value: ${newValue}`
+          `Dynamic received invalid value to render. Got type: ${typeOf(newValue)}, value: ${newValue}`
         );
       }
 

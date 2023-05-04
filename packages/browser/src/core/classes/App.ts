@@ -1,4 +1,19 @@
-import { Type, Router, Timer } from "@borf/bedrock";
+import {
+  type Route,
+  isObject,
+  typeOf,
+  isFunction,
+  assertFunction,
+  assertString,
+  patternToFragments,
+  isString,
+  assertInstanceOf,
+  assertObject,
+  splitPath,
+  resolvePath,
+  joinPath,
+  sortRoutes,
+} from "@borf/bedrock";
 import { merge } from "../helpers/merge.js";
 // import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
@@ -13,7 +28,8 @@ import {
 } from "../stores/router.js";
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
-import { type StopFunction, type Writable } from "./Writable.js";
+import { type StopFunction } from "./Readable.js";
+import { type Writable } from "./Writable.js";
 import { m, type Markup } from "./Markup.js";
 import { type BuiltInStores } from "../types.js";
 import { makeComponent, type View, type Store, type ComponentControls } from "../component.js";
@@ -150,7 +166,7 @@ export class App implements AppRouter {
 
   // Routes are prepared by the app and added to this router,
   // which is passed to and used by the `router` store to handle navigation.
-  #router = new Router();
+  #routes: Route<RouteConfig["meta"]>[] = [];
 
   /**
    * Whether the app is connected to the DOM.
@@ -164,7 +180,7 @@ export class App implements AppRouter {
       options = {};
     }
 
-    if (!Type.isObject(options)) {
+    if (!isObject(options)) {
       throw new TypeError(`App options must be an object. Got: ${options}`);
     }
 
@@ -229,7 +245,7 @@ export class App implements AppRouter {
     if (typeof view === "function") {
       this.#rootView = view;
     } else {
-      throw new TypeError(`Expected a view function. Got type: ${Type.of(view)}, value: ${view}`);
+      throw new TypeError(`Expected a view function. Got type: ${typeOf(view)}, value: ${view}`);
     }
 
     return this;
@@ -257,13 +273,13 @@ export class App implements AppRouter {
   addStore<I>(store: Store<I, any>, inputs?: I) {
     let config: StoreRegistration | undefined;
 
-    if (Type.isFunction(store)) {
+    if (isFunction(store)) {
       config = { store, inputs };
     } else {
-      throw new TypeError(`Expected a store function. Got type: ${Type.of(store)}, value: ${store}`);
+      throw new TypeError(`Expected a store function. Got type: ${typeOf(store)}, value: ${store}`);
     }
 
-    Type.assertFunction(store, "Expected a store function or a store config object. Got type: %t, value: %v");
+    assertFunction(store, "Expected a store function or a store config object. Got type: %t, value: %v");
 
     this.#stores.set(store, config);
 
@@ -359,14 +375,18 @@ export class App implements AppRouter {
   addRoute(pattern: string, view: null, subroutes: (sub: AppRouter) => void): this;
 
   addRoute(pattern: string, view: View<unknown> | null, subroutes?: (sub: AppRouter) => void) {
-    Type.assertString(pattern, "Pattern must be a string. Got type: %t, value: %v");
+    assertString(pattern, "Pattern must be a string. Got type: %t, value: %v");
 
     if (view == null) {
-      Type.assertFunction(subroutes, "Sub routes must be defined when `view` is null.");
+      assertFunction(subroutes, "Sub routes must be defined when `view` is null.");
     }
 
     this.#prepareRoute({ pattern, view, subroutes }).forEach((route) => {
-      this.#router.addRoute(route.pattern, route.meta);
+      this.#routes.push({
+        pattern: route.pattern,
+        meta: route.meta,
+        fragments: patternToFragments(route.pattern),
+      });
     });
 
     return this;
@@ -390,16 +410,16 @@ export class App implements AppRouter {
   addRedirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
 
   addRedirect(pattern: string, redirect: string | ((ctx: RedirectContext) => string)) {
-    if (!Type.isFunction(redirect) && !Type.isString(redirect)) {
-      throw new TypeError(`Expected a redirect path or function. Got type: ${Type.of(redirect)}, value: ${redirect}`);
-    }
-
-    if (Type.isString(redirect)) {
-      // TODO: Crash app if redirect path doesn't match. Ideally prevent this before the app starts running.
+    if (!isFunction(redirect) && !isString(redirect)) {
+      throw new TypeError(`Expected a redirect path or function. Got type: ${typeOf(redirect)}, value: ${redirect}`);
     }
 
     this.#prepareRoute({ pattern, redirect }).forEach((route) => {
-      this.#router.addRoute(route.pattern, route.meta);
+      this.#routes.push({
+        pattern: route.pattern,
+        meta: route.meta,
+        fragments: patternToFragments(route.pattern),
+      });
     });
 
     return this;
@@ -413,20 +433,21 @@ export class App implements AppRouter {
   async connect(selector: string | Node) {
     let element: HTMLElement | null = null;
 
-    if (Type.isString(selector)) {
+    if (isString(selector)) {
       element = document.querySelector(selector);
-      Type.assertInstanceOf(HTMLElement, element, `Selector string '${selector}' did not match any element.`);
+      assertInstanceOf(HTMLElement, element, `Selector string '${selector}' did not match any element.`);
     }
 
-    Type.assertInstanceOf(HTMLElement, element, "Expected a DOM node or a selector string. Got type: %t, value: %v");
-
-    const timer = new Timer();
+    assertInstanceOf(HTMLElement, element, "Expected a DOM node or a selector string. Got type: %t, value: %v");
 
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
     const debugChannel = this.#appContext.debugHub.channel({ name: "App" });
 
     appContext.rootElement = element!;
+
+    // Sort routes by specificity for correct matching.
+    this.#routes = sortRoutes(this.#routes);
 
     // Pass language options to language store.
     const language = this.#stores.get("language")!;
@@ -443,11 +464,11 @@ export class App implements AppRouter {
       ...router,
       inputs: {
         options: this.#options.router,
-        router: this.#router,
+        routes: this.#routes,
       },
     });
 
-    debugChannel.info(`total routes: ${this.#router.routes.length}`);
+    debugChannel.info(`total routes: ${this.#routes.length}`);
 
     // Initialize global stores.
     for (let [key, item] of this.#stores.entries()) {
@@ -456,8 +477,8 @@ export class App implements AppRouter {
       // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
       // Built-in globals get an additional 'borf:' prefix so it's clear messages are from the framework.
       // 'borf:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
-      const channelPrefix = Type.isString(key) ? "borf:store" : "store";
-      const label = Type.isString(key) ? key : store.name ?? "(anonymous)";
+      const channelPrefix = isString(key) ? "borf:store" : "store";
+      const label = isString(key) ? key : store.name ?? "(anonymous)";
       const config = {
         appContext,
         elementContext,
@@ -476,7 +497,7 @@ export class App implements AppRouter {
         instance = makeComponent({ ...config, component: store });
       }
 
-      Type.assertObject(instance, "Value of 'exports' is not an object. Got type: %t, value: %v");
+      assertObject(instance, "Value of 'exports' is not an object. Got type: %t, value: %v");
 
       // Add instance and mark as ready.
       this.#stores.set(key, { ...item, instance });
@@ -487,7 +508,7 @@ export class App implements AppRouter {
     for (const { instance } of this.#stores.values()) {
       await instance!.connect(storeParent);
 
-      Type.assertObject(instance!.outputs, "Store setup function must return an object. Got type: %t, value: %v");
+      assertObject(instance!.outputs, "Store setup function must return an object. Got type: %t, value: %v");
     }
 
     // Then the view is initialized and connected to root element.
@@ -503,8 +524,6 @@ export class App implements AppRouter {
 
     // The app is now connected.
     this.#isConnected = true;
-
-    debugChannel.info("connected in " + timer.formatted);
   }
 
   /**
@@ -548,11 +567,11 @@ export class App implements AppRouter {
     },
     layers = []
   ) {
-    if (!Type.isObject(route) || !Type.isString(route.pattern)) {
+    if (!isObject(route) || !isString(route.pattern)) {
       throw new TypeError(`Route configs must be objects with a 'pattern' string property. Got: ${route}`);
     }
 
-    const parts = Router.splitPath(route.pattern);
+    const parts = splitPath(route.pattern);
 
     // Remove trailing wildcard for joining with nested routes.
     if (parts[parts.length - 1] === "*") {
@@ -564,8 +583,8 @@ export class App implements AppRouter {
     if (route.redirect) {
       let redirect = route.redirect;
 
-      if (Type.isString(redirect)) {
-        redirect = Router.resolvePath(Router.joinPath(parts), redirect);
+      if (isString(redirect)) {
+        redirect = resolvePath(joinPath(parts), redirect);
 
         if (!redirect.startsWith("/")) {
           redirect = "/" + redirect;
@@ -599,12 +618,12 @@ export class App implements AppRouter {
     if (route.subroutes) {
       const router: AppRouter = {
         addRoute: (pattern: string, view: View<any> | null, subroutes: (router: AppRouter) => void) => {
-          pattern = Router.joinPath([...parts, pattern]);
+          pattern = joinPath([...parts, pattern]);
           routes.push(...this.#prepareRoute({ pattern, view, subroutes }));
           return router;
         },
         addRedirect: (pattern, redirect) => {
-          pattern = Router.joinPath([...parts, pattern]);
+          pattern = joinPath([...parts, pattern]);
           routes.push(...this.#prepareRoute({ pattern, redirect }));
           return router;
         },

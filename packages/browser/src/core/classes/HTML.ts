@@ -1,7 +1,8 @@
-import { Type } from "@borf/bedrock";
+import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { omit } from "../helpers/omit.js";
 import { Ref } from "./Ref.js";
-import { Readable, Writable, type StopFunction } from "./Writable.js";
+import { Readable, type StopFunction } from "./Readable.js";
+import { Writable } from "./Writable.js";
 import { type Connectable } from "../types.js";
 import { type AppContext, type ElementContext } from "./App.js";
 import { Markup } from "./Markup.js";
@@ -18,8 +19,6 @@ export class HTML implements Connectable {
   #node;
   #attributes;
   #children;
-  #appContext;
-  #elementContext;
   #stopCallbacks: StopFunction[] = [];
 
   get node() {
@@ -71,8 +70,6 @@ export class HTML implements Connectable {
 
     this.#attributes = omit(["ref"], normalizedAttrs);
     this.#children = children?.map((c) => c.init({ appContext, elementContext })) ?? [];
-    this.#appContext = appContext;
-    this.#elementContext = elementContext;
   }
 
   async connect(parent: Node, after?: Node) {
@@ -178,7 +175,7 @@ function applyStyles(element: HTMLElement | SVGElement, styles: Record<string, a
 
     const stop = styles.observe((current) => {
       requestAnimationFrame(() => {
-        if (Type.isFunction(unapply)) {
+        if (isFunction(unapply)) {
           unapply();
         }
         element.style.cssText = "";
@@ -188,7 +185,7 @@ function applyStyles(element: HTMLElement | SVGElement, styles: Record<string, a
 
     stopCallbacks.push(stop);
     propStopCallbacks.push(stop);
-  } else if (Type.isObject(styles)) {
+  } else if (isObject(styles)) {
     styles = styles as Record<string, any>;
 
     for (const key in styles) {
@@ -210,9 +207,9 @@ function applyStyles(element: HTMLElement | SVGElement, styles: Record<string, a
 
         stopCallbacks.push(stop);
         propStopCallbacks.push(stop);
-      } else if (Type.isString(value)) {
+      } else if (isString(value)) {
         setProperty(key, value);
-      } else if (Type.isNumber(value)) {
+      } else if (isNumber(value)) {
         setProperty(key, value + "px");
       } else {
         throw new TypeError(`Style properties should be strings, $states or numbers. Got (${key}: ${value})`);
@@ -238,7 +235,7 @@ function applyClasses(element: HTMLElement | SVGElement, classes: unknown, stopC
 
     const stop = classes.observe((current) => {
       requestAnimationFrame(() => {
-        if (Type.isFunction(unapply)) {
+        if (isFunction(unapply)) {
           unapply();
         }
         element.removeAttribute("class");
@@ -282,13 +279,13 @@ function applyClasses(element: HTMLElement | SVGElement, classes: unknown, stopC
 function getClassMap(classes: unknown) {
   let mapped: Record<string, boolean> = {};
 
-  if (Type.isString(classes)) {
+  if (isString(classes)) {
     // Support multiple classes in one string like HTML.
     const names = classes.split(" ");
     for (const name of names) {
       mapped[name] = true;
     }
-  } else if (Type.isObject(classes)) {
+  } else if (isObject(classes)) {
     Object.assign(mapped, classes);
   } else if (Array.isArray(classes)) {
     Array.from(classes)

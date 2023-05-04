@@ -5,7 +5,8 @@ import { type LanguageStore } from "./stores/language.js";
 import { type DocumentStore } from "./stores/document.js";
 import { type RouterStore } from "./stores/router.js";
 import { type Store } from "./component.js";
-import { type Writable, type Readable } from "./classes/Writable.js";
+import { type Readable } from "./classes/Readable.js";
+import { type Writable } from "./classes/Writable.js";
 import { type Ref } from "./classes/Ref.js";
 
 /**

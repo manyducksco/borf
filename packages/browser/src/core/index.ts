@@ -1,7 +1,8 @@
 // Classes
 export { App } from "./classes/App.js";
 export { Elements } from "./classes/Elements/Elements.js";
-export { Readable, Writable } from "./classes/Writable.js";
+export { Readable } from "./classes/Readable.js";
+export { Writable } from "./classes/Writable.js";
 export { Spring } from "./classes/Spring.js";
 export { Ref } from "./classes/Ref.js";
 

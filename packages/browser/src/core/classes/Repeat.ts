@@ -1,4 +1,5 @@
-import { Readable, Writable, type StopFunction } from "./Writable.js";
+import { Readable, type StopFunction } from "./Readable.js";
+import { Writable } from "./Writable.js";
 import { type Connectable } from "../types.js";
 import { type Markup } from "./Markup.js";
 import { type AppContext, type ElementContext } from "./App.js";

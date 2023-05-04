@@ -1,4 +1,4 @@
-import { Type } from "../Type/Type.js";
+import { isPromise } from "../typeChecking.js";
 
 type BatchQueueEvent = "resolve" | "reject" | "complete";
 
@@ -108,7 +108,7 @@ export class BatchQueue<T, R> {
 
       const promise = this.#callback(next);
 
-      if (!Type.isPromise<R>(promise)) {
+      if (!isPromise<R>(promise)) {
         throw new TypeError(
           `BatchQueue callback must always return a Promise.`
         );

@@ -1,6 +1,7 @@
-import { Type } from "@borf/bedrock";
+import { assertObject, isFunction, isObject, isPromise, typeOf } from "@borf/bedrock";
 import { useConsole, useName, useCrash } from "../hooks/index.js";
-import { Readable, Writable } from "../classes/Writable.js";
+import { Readable } from "../classes/Readable.js";
+import { Writable } from "../classes/Writable.js";
 
 // ----- Types ----- //
 
@@ -195,13 +196,13 @@ class Language {
   async getTranslation() {
     if (!this.#translation) {
       // Translation can be an object of strings, a function that returns one, or an async function that resolves to one.
-      if (Type.isFunction(this.#config.translation)) {
+      if (isFunction(this.#config.translation)) {
         const result = this.#config.translation();
 
-        if (Type.isPromise(result)) {
+        if (isPromise(result)) {
           const resolved = await result;
 
-          Type.assertObject(
+          assertObject(
             resolved,
             `Translation promise of language '${
               this.#tag
@@ -209,22 +210,22 @@ class Language {
           );
 
           this.#translation = resolved;
-        } else if (Type.isObject(result)) {
+        } else if (isObject(result)) {
           this.#translation = result;
         } else {
           throw new TypeError(
-            `Translation function of '${this.#tag}' must return an object or promise. Got type: ${Type.of(
+            `Translation function of '${this.#tag}' must return an object or promise. Got type: ${typeOf(
               result
             )}, value: ${result}`
           );
         }
-      } else if (Type.isObject(this.#config.translation)) {
+      } else if (isObject(this.#config.translation)) {
         this.#translation = this.#config.translation;
       } else {
         throw new TypeError(
           `Translation of '${
             this.#tag
-          }' must be an object of translated strings, a function that returns one, or an async function that resolves to one. Got type: ${Type.of(
+          }' must be an object of translated strings, a function that returns one, or an async function that resolves to one. Got type: ${typeOf(
             this.#config.translation
           )}, value: ${this.#config.translation}`
         );

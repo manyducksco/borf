@@ -1,12 +1,10 @@
 import { createHashHistory, createBrowserHistory, type History, type Listener } from "history";
-import { Router } from "@borf/bedrock";
+import { type Route, matchRoutes, isString, isFunction, joinPath, parseQueryParams, resolvePath } from "@borf/bedrock";
 import { Writable } from "../classes/Writable.js";
 import { Markup } from "../classes/Markup.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { type ComponentControls } from "../component.js";
+import { getCurrentContext, type ComponentControls } from "../component.js";
 import { useConnected, useConsole, useName, useObserver } from "../hooks/index.js";
-import { _useAppContext } from "../hooks/_useAppContext.js";
-import { _useElementContext } from "../hooks/_useElementContext.js";
 
 // ----- Types ----- //
 
@@ -97,17 +95,17 @@ type RouterStoreAttrs = {
   /**
    * An instance of Router with the app's routes preloaded.
    */
-  router: Router<RouteConfig["meta"]>;
+  routes: Route<RouteConfig["meta"]>[];
 };
 
 // ----- Code ----- //
 
-export function RouterStore({ options, router }: RouterStoreAttrs) {
+export function RouterStore({ options, routes }: RouterStoreAttrs) {
   useName("borf:router");
 
   const console = useConsole();
-  const appContext = _useAppContext();
-  const elementContext = _useElementContext();
+
+  const { appContext, elementContext } = getCurrentContext();
 
   let history: History;
 
@@ -120,19 +118,29 @@ export function RouterStore({ options, router }: RouterStoreAttrs) {
   }
 
   // Test redirects to make sure all possible redirect targets actually exist.
-  // for (const route of routes) {
-  //   if (route.meta.redirect) {
-  //     const match = appContext.router.match(route.meta.redirect, {
-  //       willMatch(r) {
-  //         return r !== route;
-  //       },
-  //     });
+  for (const route of routes) {
+    if (route.meta.redirect) {
+      let redirectPath: string;
 
-  //     if (!match) {
-  //       throw new Error(`Found a redirect to an undefined URL. From '${route.pattern}' to '${route.meta.redirect}'`);
-  //     }
-  //   }
-  // }
+      if (isFunction(route.meta.redirect)) {
+        throw new Error(`Redirect functions are not yet supported.`);
+      } else if (isString(route.meta.redirect)) {
+        redirectPath = route.meta.redirect;
+      } else {
+        throw new TypeError(`Expected a string or redirect function. Got: ${route.meta.redirect}`);
+      }
+
+      const match = matchRoutes(routes, redirectPath, {
+        willMatch(r) {
+          return r !== route;
+        },
+      });
+
+      if (!match) {
+        throw new Error(`Found a redirect to an undefined URL. From '${route.pattern}' to '${route.meta.redirect}'`);
+      }
+    }
+  }
 
   const $$pattern = new Writable<string | null>(null);
   const $$path = new Writable("");
@@ -170,7 +178,7 @@ export function RouterStore({ options, router }: RouterStoreAttrs) {
       let href = anchor.getAttribute("href")!;
 
       if (!/^https?:\/\/|^\//.test(href)) {
-        href = Router.joinPath([history.location.pathname, href]);
+        href = joinPath([history.location.pathname, href]);
       }
 
       history.push(href);
@@ -190,10 +198,10 @@ export function RouterStore({ options, router }: RouterStoreAttrs) {
       lastQuery = location.search;
 
       isRouteChange = true;
-      $$query.value = Router.parseQuery(location.search);
+      $$query.value = parseQueryParams(location.search);
     }
 
-    const matched = router.match(location.pathname);
+    const matched = matchRoutes(routes, location.pathname);
 
     if (!matched) {
       $$pattern.value = null;
@@ -275,12 +283,12 @@ export function RouterStore({ options, router }: RouterStoreAttrs) {
     let joined: string;
 
     if (Array.isArray(path)) {
-      joined = Router.joinPath(path);
+      joined = joinPath(path);
     } else {
       joined = path.toString();
     }
 
-    joined = Router.resolvePath(history.location.pathname, joined);
+    joined = resolvePath(history.location.pathname, joined);
 
     if (options.replace) {
       history.replace(joined);

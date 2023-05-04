@@ -1,4 +1,4 @@
-import { Router } from "@borf/bedrock";
+import { joinPath, parseQueryParams, resolvePath } from "@borf/bedrock";
 import { createBrowserHistory } from "history";
 
 import { Writable } from "../../Writable.js";
@@ -21,7 +21,7 @@ export function RouterStore(attrs: {}) {
   const $$pattern = new Writable<string | null>(null);
   const $$path = new Writable("");
   const $$params = new Writable({});
-  const $$query = new Writable<ReturnType<typeof Router.parseQuery>>({});
+  const $$query = new Writable<Record<string, string | number | boolean>>({});
 
   let lastQuery: string;
   let isRouteChange = false;
@@ -53,7 +53,7 @@ export function RouterStore(attrs: {}) {
         lastQuery = location.search;
 
         isRouteChange = true;
-        $$query.value = Router.parseQuery(location.search);
+        $$query.value = parseQueryParams(location.search);
       }
 
       $$pattern.value = "";
@@ -75,12 +75,12 @@ export function RouterStore(attrs: {}) {
     let joined: string;
 
     if (Array.isArray(path)) {
-      joined = Router.joinPath(path);
+      joined = joinPath(path);
     } else {
       joined = path.toString();
     }
 
-    joined = Router.resolvePath(history.location.pathname, joined);
+    joined = resolvePath(history.location.pathname, joined);
 
     if (options.replace) {
       history.replace(joined);

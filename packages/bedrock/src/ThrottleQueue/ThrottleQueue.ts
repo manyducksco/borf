@@ -1,5 +1,4 @@
-import { Type } from "../Type/Type.js";
-import { List } from "../List/List.js";
+import { isPromise } from "../typeChecking.js";
 
 type ThrottleQueueEvent = "resolve" | "reject" | "complete";
 
@@ -12,7 +11,7 @@ export class ThrottleQueue<T, R> {
   #callback: (item: T) => Promise<R>;
 
   // Array of timestamps of recently started items in old -> new order
-  #timestamps = new List<number>();
+  #timestamps: number[] = [];
 
   #listeners: Record<ThrottleQueueEvent, ((...args: any[]) => void)[]> = {
     resolve: [],
@@ -122,7 +121,7 @@ export class ThrottleQueue<T, R> {
 
       const promise = this.#callback(next);
 
-      if (!Type.isPromise<R>(promise)) {
+      if (!isPromise<R>(promise)) {
         throw new TypeError(
           `PerSecondQueue callback must always return a Promise.`
         );
@@ -150,7 +149,10 @@ export class ThrottleQueue<T, R> {
           this.#next();
         });
 
-      this.#timestamps.append(Date.now()).keepLast(this.#maxPerSecond);
+      this.#timestamps.push(Date.now());
+      while (this.#timestamps.length > this.#maxPerSecond) {
+        this.#timestamps.shift();
+      }
     }
   }
 

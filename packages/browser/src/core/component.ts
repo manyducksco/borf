@@ -1,66 +1,34 @@
-import { Type } from "@borf/bedrock";
-import { Readable, Writable, type ValuesOfReadables, type StopFunction } from "./classes/Writable.js";
+import { typeOf } from "@borf/bedrock";
+import { Writable } from "./classes/Writable.js";
 import { Markup } from "./classes/Markup.js";
-import { APP_CONTEXT, ELEMENT_CONTEXT, setCurrentComponent, clearCurrentComponent } from "./keys.js";
-import { type AppContext, type ElementContext } from "./classes/App.js";
-import { type BuiltInStores, type Connectable } from "./types.js";
 import { Dynamic } from "./classes/Dynamic.js";
+import { type AppContext, type ElementContext } from "./classes/App.js";
+import { type Connectable } from "./types.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
-
-export interface ComponentCore<I> {
-  debug: DebugChannel;
-
-  /**
-   * Runs `callback` after this component is connected.
-   */
-  onConnected(callback: () => void): void;
-
-  /**
-   * Runs `callback` after this component is disconnected.
-   */
-  onDisconnected(callback: () => void): void;
-
-  /**
-   * Runs `callback` and awaits its promise before `onConnect` callbacks run.
-   * Component is not considered connected until all `beforeConnected` promises resolve.
-   */
-  beforeConnected(callback: () => Promise<void>): void;
-
-  /**
-   * Runs `callback` and awaits its promise before `onDisconnect` callbacks run.
-   * Component is not considered disconnected until all `beforeDisconnected` promises resolve.
-   */
-  beforeDisconnected(callback: () => Promise<void>): void;
-
-  useStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
-  useStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-
-  observe<T>(readable: Readable<T>, callback: (value: T) => void): void;
-  observe<T extends Readable<any>[], V>(readables: T, callback: (...value: ValuesOfReadables<T>) => void): void;
-
-  setLoader(loader: Markup): void;
-  setLoader<I>(loader: View<I>, inputs?: I): void;
-
-  /**
-   * Sets the name of this view for debugging purposes.
-   */
-  setName(name: string): void;
-
-  crash(error: Error): void;
-
-  outlet(): Markup;
-}
 
 export type Component<I> = (attributes: I) => unknown;
 export type Store<I, O> = (attributes: I) => O | Promise<O>;
 export type View<I> = (attributes: I) => Markup | null | Promise<Markup | null>;
 
-export function getAppContext(core: ComponentCore<any>) {
-  return (core as any)[APP_CONTEXT] as AppContext;
-}
+/**
+ * The core state of a component. Hooks access this object.
+ */
+export interface ComponentContext {
+  appContext: AppContext;
+  elementContext: ElementContext;
 
-export function getElementContext(core: ComponentCore<any>) {
-  return (core as any)[ELEMENT_CONTEXT] as ElementContext;
+  isConnected: boolean;
+  name: string;
+  debugChannel: DebugChannel;
+  $$children: Writable<Markup[]>;
+  loadingContent?: Markup;
+
+  // Lifecycle and observers
+  stopObserverCallbacks: (() => void)[];
+  connectedCallbacks: (() => void)[];
+  disconnectedCallbacks: (() => void)[];
+  beforeConnectCallbacks: (() => Promise<void>)[];
+  beforeDisconnectCallbacks: (() => Promise<void>)[];
 }
 
 /**
@@ -82,162 +50,61 @@ export interface ComponentControls extends Connectable {
   outputs?: object;
 }
 
-// Run component functions through a single function that initializes them in the same way and determines what kind of component they are based on the return value.
+/*=====================================*\
+||     Context Accessors for Hooks     ||
+\*=====================================*/
+
+const COMPONENT_CONTEXT = Symbol("ComponentContext");
+
+/**
+ * Used by hooks to get the current component context.
+ */
+export function getCurrentContext(): ComponentContext {
+  const ctx = (window as any)[COMPONENT_CONTEXT];
+  if (!ctx) {
+    throw new Error("Hooks must be called in the body of a component function.");
+  }
+  return ctx;
+}
+
+/**
+ * Used by components to set themselves as current while running the setup function.
+ */
+function setCurrentContext(ctx: ComponentContext) {
+  (window as any)[COMPONENT_CONTEXT] = ctx;
+}
+
+/**
+ * Used by components to clear the current component after finished setting up.
+ */
+function clearCurrentContext() {
+  (window as any)[COMPONENT_CONTEXT] = undefined;
+}
+
+/*=====================================*\
+||      Component Initialization       ||
+\*=====================================*/
 
 export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls {
-  let stopObserverCallbacks: (() => void)[] = [];
-  let onConnectedCallbacks: (() => void)[] = [];
-  let onDisconnectedCallbacks: (() => void)[] = [];
-  let beforeConnectedCallbacks: (() => Promise<void>)[] = [];
-  let beforeDisconnectedCallbacks: (() => Promise<void>)[] = [];
+  const ctx: ComponentContext = {
+    name: config.component.name ?? "anonymous",
+    $$children: new Writable(config.children ?? []),
+    isConnected: false,
+    appContext: config.appContext,
+    elementContext: { ...config.elementContext },
+    debugChannel: config.appContext.debugHub.channel({
+      get name() {
+        return ctx.name;
+      },
+    }),
 
-  let isConnected = false;
-  let componentName = config.component.name ?? "anonymous";
-
-  const $$children = new Writable(config.children ?? []);
-
-  const appContext = config.appContext;
-  const elementContext = {
-    ...config.elementContext,
-    $$children,
+    // Lifecycle and observers
+    stopObserverCallbacks: [],
+    connectedCallbacks: [],
+    disconnectedCallbacks: [],
+    beforeConnectCallbacks: [],
+    beforeDisconnectCallbacks: [],
   };
-
-  const debugChannel = appContext.debugHub.channel({
-    get name() {
-      return componentName;
-    },
-  });
-
-  const core: ComponentCore<I> = {
-    debug: debugChannel,
-
-    onConnected(callback) {
-      onConnectedCallbacks.push(callback);
-    },
-    onDisconnected(callback) {
-      onDisconnectedCallbacks.push(callback);
-    },
-    beforeConnected(callback) {
-      onDisconnectedCallbacks.push(callback);
-    },
-    beforeDisconnected(callback) {
-      onDisconnectedCallbacks.push(callback);
-    },
-
-    useStore(store: keyof BuiltInStores | Store<any, any>) {
-      const { appContext, elementContext } = config;
-      let name: string;
-
-      if (typeof store === "string") {
-        name = store as keyof BuiltInStores;
-
-        if (appContext.stores.has(store)) {
-          const _store = appContext.stores.get(store)!;
-
-          if (!_store.instance) {
-            appContext.crashCollector.crash({
-              componentName,
-              error: new Error(
-                `Store '${store}' was accessed before it was set up. Make sure '${store}' is registered before components that access it.`
-              ),
-            });
-          }
-
-          return _store.instance!.outputs;
-        }
-      } else {
-        name = store.name;
-
-        if (elementContext.stores.has(store)) {
-          return elementContext.stores.get(store)!.instance!.outputs;
-        }
-
-        if (appContext.stores.has(store)) {
-          const _store = appContext.stores.get(store)!;
-
-          if (!_store.instance) {
-            appContext.crashCollector.crash({
-              componentName,
-              error: new Error(
-                `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
-              ),
-            });
-          }
-
-          return _store.instance!.outputs;
-        }
-      }
-
-      appContext.crashCollector.crash({
-        componentName,
-        error: new Error(`Store '${name}' is not registered on this app.`),
-      });
-    },
-
-    setName(name) {
-      componentName = name;
-    },
-
-    setLoader(content: any) {},
-
-    observe(readable: Readable<any> | Readable<any>[], callback: (...args: any[]) => void) {
-      const readables: Readable<any>[] = [];
-
-      if (Array.isArray(readable) && readable.every(Readable.isReadable)) {
-        readables.push(...readable);
-      } else if (Readable.isReadable(readable)) {
-        readables.push(readable);
-      } else {
-        throw new TypeError(`Expected one Readable or an array of Readables as the first argument.`);
-      }
-
-      if (readables.length === 0) {
-        throw new TypeError(`Expected at least one readable.`);
-      }
-
-      const start = (): StopFunction => {
-        if (readables.length > 1) {
-          return Readable.merge(readables, callback).observe(() => {});
-        } else {
-          return readables[0].observe(callback);
-        }
-      };
-
-      if (isConnected) {
-        // If called when the component is connected, we assume this code is in a lifecycle hook
-        // where it will be triggered at some point again after the component is reconnected.
-        stopObserverCallbacks.push(start());
-      } else {
-        // This should only happen if called in the body of the setup function.
-        // This code is not always re-run between when a component is disconnected and reconnected.
-        onConnectedCallbacks.push(() => {
-          stopObserverCallbacks.push(start());
-        });
-      }
-    },
-
-    crash(error) {
-      appContext.crashCollector.crash({ error, componentName });
-    },
-
-    outlet() {
-      return new Markup((config) => new Dynamic({ ...config, readable: $$children }));
-    },
-  };
-
-  // For secret internal funny business only.
-  Object.defineProperties(core, {
-    [APP_CONTEXT]: {
-      value: appContext,
-      enumerable: false,
-      configurable: false,
-    },
-    [ELEMENT_CONTEXT]: {
-      value: elementContext,
-      enumerable: false,
-      configurable: false,
-    },
-  });
 
   // Exported object from store. This is undefined for views.
   let outputs: object | undefined;
@@ -248,8 +115,10 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   async function initialize(parent: Node, after?: Node) {
     let result: unknown;
 
+    const { appContext, elementContext, $$children, name: componentName } = ctx;
+
     try {
-      setCurrentComponent(core);
+      setCurrentContext(ctx);
       result = config.component(config.inputs);
 
       if (result instanceof Promise) {
@@ -263,7 +132,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
         throw error;
       }
     } finally {
-      clearCurrentComponent();
+      clearCurrentContext();
     }
 
     if (result instanceof Markup || result === null) {
@@ -282,7 +151,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
         error: new TypeError(
           `Expected '${
             config.component.name
-          }' function to return Markup or null for a view, or an object for a store. Got: ${Type.of(result)}`
+          }' function to return Markup or null for a view, or an object for a store. Got: ${typeOf(result)}`
         ),
         componentName,
       });
@@ -290,7 +159,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
   }
 
   const controls: ComponentControls = {
-    $$children,
+    $$children: ctx.$$children,
 
     get outputs() {
       return outputs;
@@ -301,13 +170,13 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
     },
 
     get isConnected() {
-      return isConnected;
+      return ctx.isConnected;
     },
 
     async connect(parent: Node, after?: Node) {
       // Don't run lifecycle hooks or initialize if already connected.
       // Calling connect again can be used to re-order elements that are already connected to the DOM.
-      const wasConnected = isConnected;
+      const wasConnected = ctx.isConnected;
 
       if (!wasConnected) {
         // Initialize an instance of the component
@@ -320,28 +189,28 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
 
       if (!wasConnected) {
         // Run beforeConnected
-        for (const callback of beforeConnectedCallbacks) {
+        for (const callback of ctx.beforeConnectCallbacks) {
           await callback();
         }
-        beforeConnectedCallbacks = [];
+        ctx.beforeConnectCallbacks = [];
 
         // Mark component as connected
-        isConnected = true;
+        ctx.isConnected = true;
 
         // Run onConnected
-        for (const callback of onConnectedCallbacks) {
+        for (const callback of ctx.connectedCallbacks) {
           callback();
         }
-        onConnectedCallbacks = [];
+        ctx.connectedCallbacks = [];
       }
     },
 
     async disconnect() {
       // Run beforeDisconnected
-      for (const callback of beforeDisconnectedCallbacks) {
+      for (const callback of ctx.beforeDisconnectCallbacks) {
         await callback();
       }
-      beforeDisconnectedCallbacks = [];
+      ctx.beforeDisconnectCallbacks = [];
 
       // Disconnect component
       if (connectable) {
@@ -349,13 +218,13 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
       }
 
       // Mark as disconnected
-      isConnected = false;
+      ctx.isConnected = false;
 
       // Run onDisconnected
-      for (const callback of onDisconnectedCallbacks) {
+      for (const callback of ctx.disconnectedCallbacks) {
         callback();
       }
-      onDisconnectedCallbacks = [];
+      ctx.disconnectedCallbacks = [];
     },
   };
 

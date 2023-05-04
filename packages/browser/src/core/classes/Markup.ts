@@ -1,8 +1,8 @@
-import { Type } from "@borf/bedrock";
+import { isArray, isArrayOf, isFunction, isNumber, isString } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
 import { Text } from "./Text.js";
 import { HTML } from "./HTML.js";
-import { Readable } from "./Writable.js";
+import { Readable } from "./Readable.js";
 import { Repeat } from "./Repeat.js";
 import { Dynamic } from "./Dynamic.js";
 import { makeComponent, type Component } from "../component.js";
@@ -81,9 +81,9 @@ export const m = <MarkupFunction>(<I>(element: string | Component<I>, attributes
   const formattedChildren = formatChildren(children.flat(Infinity));
 
   // Components
-  if (Type.isFunction<Component<I>>(element)) {
+  if (isFunction<Component<I>>(element)) {
     if (element === OutletView) {
-      return OutletView({}); // Special handling for outlets which don't need their own component scope despite being rendered like components.
+      return OutletView({}); // Special handling for outlets which don't need their own context despite being rendered like components.
     }
 
     return new Markup((config) => {
@@ -97,7 +97,7 @@ export const m = <MarkupFunction>(<I>(element: string | Component<I>, attributes
   }
 
   // HTML tag like "h1", "span"
-  if (Type.isString(element)) {
+  if (isString(element)) {
     return new Markup((config) => new HTML({ attributes, children: formattedChildren, ...config, tag: element }));
   }
 
@@ -113,7 +113,7 @@ export const m = <MarkupFunction>(<I>(element: string | Component<I>, attributes
  * Filters out falsy children and converts remaining ones to Markup instances.
  */
 export function formatChildren(children: Renderable | Renderable[]): Markup[] {
-  if (!Type.isArray(children)) {
+  if (!isArray(children)) {
     children = [children];
   }
 
@@ -125,7 +125,7 @@ export function formatChildren(children: Renderable | Renderable[]): Markup[] {
         return x;
       }
 
-      if (Type.isString(x) || Type.isNumber(x) || Readable.isReadable(x)) {
+      if (isString(x) || isNumber(x) || Readable.isReadable(x)) {
         return new Markup((config) => new Text({ ...config, value: x }));
       }
 
@@ -141,7 +141,7 @@ export function isRenderable(value: unknown): value is Renderable {
     typeof value === "number" ||
     Markup.isMarkup(value) ||
     Readable.isReadable(value) ||
-    Type.isArrayOf(isRenderable, value)
+    isArrayOf(isRenderable, value)
   );
 }
 
