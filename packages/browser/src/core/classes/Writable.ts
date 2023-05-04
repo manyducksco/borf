@@ -1,4 +1,4 @@
-import produce from "immer";
+import { produce } from "immer";
 import { deepEqual } from "../helpers/deepEqual.js";
 import { READABLE, Readable, MappedReadable, type ObserveCallback, type StopFunction } from "./Readable.js";
 
