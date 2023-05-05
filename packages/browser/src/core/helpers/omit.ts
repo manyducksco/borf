@@ -25,5 +25,3 @@ export function omit<O extends Record<any, any>>(keys: (keyof O)[], object: O): 
 
   return process(object);
 }
-
-const value = omit(["one", "three"], { one: 1, two: 2, three: 3 });

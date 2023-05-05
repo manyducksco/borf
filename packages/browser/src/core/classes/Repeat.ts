@@ -128,7 +128,7 @@ export class Repeat<T> implements Connectable {
             component: RepeatItemView,
             appContext: this.#appContext,
             elementContext: this.#elementContext,
-            inputs: { $value: $$value.toReadable(), $index: $$index.toReadable(), render: this.#render },
+            attributes: { $value: $$value.toReadable(), $index: $$index.toReadable(), render: this.#render },
           }),
         };
       }

@@ -1,6 +1,4 @@
-function isObject<T = { [name: string]: any }>(value: unknown): value is T {
-  return value != null && typeof value === "object" && !Array.isArray(value);
-}
+import { isObject } from "@borf/bedrock";
 
 /**
  * Takes an old value and a new value.  Returns a merged copy if both are objects, otherwise returns the new value.

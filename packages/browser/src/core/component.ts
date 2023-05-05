@@ -6,9 +6,9 @@ import { type AppContext, type ElementContext } from "./classes/App.js";
 import { type Connectable } from "./types.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
 
-export type Component<I> = (attributes: I) => unknown;
-export type Store<I, O> = (attributes: I) => O | Promise<O>;
-export type View<I> = (attributes: I) => Markup | null | Promise<Markup | null>;
+export type Component<A> = (attributes: A) => unknown;
+export type Store<A, E> = (attributes: A) => E | Promise<E>;
+export type View<A> = (attributes: A) => Markup | null | Promise<Markup | null>;
 
 /**
  * The core state of a component. Hooks access this object.
@@ -34,11 +34,11 @@ export interface ComponentContext {
 /**
  * Parameters passed to the makeComponent function.
  */
-interface ComponentConfig<I> {
-  component: Component<I>;
+interface ComponentConfig<A> {
+  component: Component<A>;
   appContext: AppContext;
   elementContext: ElementContext;
-  inputs: I;
+  attributes: A;
   children?: Markup[];
 }
 
@@ -85,7 +85,7 @@ function clearCurrentContext() {
 ||      Component Initialization       ||
 \*=====================================*/
 
-export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls {
+export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls {
   const ctx: ComponentContext = {
     name: config.component.name ?? "anonymous",
     $$children: new Writable(config.children ?? []),
@@ -119,7 +119,7 @@ export function makeComponent<I>(config: ComponentConfig<I>): ComponentControls 
 
     try {
       setCurrentContext(ctx);
-      result = config.component(config.inputs);
+      result = config.component(config.attributes);
 
       if (result instanceof Promise) {
         // TODO: Handle loading states

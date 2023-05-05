@@ -88,9 +88,9 @@ function MessageView() {
 
 ### Dynamic State: Readables and Writables
 
-Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a state change. In a Borf app, all data that changes is stored in a Readable or a Writable. By storing values in these containers, and slotting these containers into your DOM nodes, only those elements which are directly affected that change need to update when changes occur.
+Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a state change. All data that needs to change is stored in a Readable or a Writable. By storing values in these containers, and slotting these containers into your DOM nodes, only those elements which are directly affected by that change need to update when changes occur.
 
-> Borf's convention is to use dollar signs at the start of variable names to mark them as dynamic. A `$single` sign means Readable and a `$$double` sign means Writable. Another way to think of this is that `$` represents how many 'ways' the binding goes; one-way (read only) or two-way (read-write).
+> Borf's convention is dollar signs at the start of variable names to mark them as dynamic. A `$single` means Readable and a `$$double` means Writable. Another way to think of this is that `$` represents how many 'ways' the binding goes; one-way (read only) or two-way (read-write).
 
 ```jsx
 import { useStore, Writable } from "@borf/browser";
@@ -295,11 +295,7 @@ import { App } from "@borf/browser";
 
 #### Routing
 
-Most web apps today are what's known as an SPA, or single-page app, consisting of one HTML page with links to bundled app code. This code uses browser APIs to simulate navigation between multiple "pages" by swapping out page content based on the URL, but retains all JavaScript state that would normally be lost between page loads because no actual page loads take place. Despite the illusion of moving around the app, you never actually leave that one HTML page. This technique is generally known as client-side routing.
-
-`@borf/browser` makes heavy use of client-side routing. You can define as many routes as you have views, and the URL will determine which one the app shows at any given time.
-
-By building an app around routes, lots of things we expect from a web app will just work; back and forward buttons, sharable URLs, bookmarks, etc.
+`@borf/browser` makes heavy use of client-side routing. You can define as many routes as you have views, and the URL will determine which one the app shows at any given time. By building an app around routes, lots of things one expects from a web app will just work; back and forward buttons, sharable URLs, bookmarks, etc.
 
 Routing in Borf is aesthetically inspired by [choo.js](https://www.choo.io/docs/routing)
 with technical inspiration from [@reach/router](https://reach.tech/router/), as routes are matched by highest specificity regardless of the order they were registered. This avoids some confusing situations that come up with order-based routers like that of `express`. On the other hand, order-based routers can support regular expressions as patterns which Borf's router cannot.

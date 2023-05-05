@@ -1,6 +1,5 @@
 // Classes
 export { App } from "./classes/App.js";
-export { Elements } from "./classes/Elements/Elements.js";
 export { Readable } from "./classes/Readable.js";
 export { Writable } from "./classes/Writable.js";
 export { Spring } from "./classes/Spring.js";
@@ -19,3 +18,4 @@ export * from "./hooks/index.js";
 // Types
 export type { HTTPMiddleware } from "./stores/http.js";
 export type { Read, Write, InputType } from "./types.js";
+export type { Markup } from "./classes/Markup.js";

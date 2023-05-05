@@ -1,0 +1,53 @@
+{
+  "name": "@borf/elemental",
+  "version": "0.1.0",
+  "description": "",
+  "main": "lib/index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "sideEffects": false,
+  "repository": "https://github.com/manyducksco/borf",
+  "scripts": {
+    "test": "ava",
+    "test:watch": "npm run test -- --watch",
+    "build": "tsc",
+    "start": "tsc --watch"
+  },
+  "keywords": [
+    "web app",
+    "front end framework",
+    "functional",
+    "reactive state"
+  ],
+  "author": "tony@manyducks.co",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": "./lib/index.js",
+      "types": "./index.d.ts"
+    }
+  },
+  "dependencies": {
+    "@borf/bedrock": "^3.0.0",
+    "@borf/browser": "^0.45.1",
+    "htm": "^3.1.1",
+    "simple-color-hash": "^1.0.2"
+  },
+  "devDependencies": {
+    "@ava/typescript": "^4.0.0",
+    "@types/sinon": "^10.0.14",
+    "ava": "^5.2.0",
+    "csstype": "^3.1.2",
+    "sinon": "^15.0.4",
+    "typescript": "^5.0.4",
+    "zod": "^3.21.4"
+  },
+  "ava": {
+    "typescript": {
+      "rewritePaths": {
+        "src/": "lib/"
+      },
+      "compile": "tsc"
+    }
+  }
+}

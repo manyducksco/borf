@@ -91,7 +91,7 @@ export const m = <MarkupFunction>(<I>(element: string | Component<I>, attributes
         ...config,
         component: element,
         children: formattedChildren,
-        inputs: attributes,
+        attributes: attributes,
       });
     });
   }
@@ -193,11 +193,7 @@ export function unless(value: Readable<any>, then: Renderable): Markup {
 
 export function observe<T>(readable: Readable<T>, render: (value: T) => Renderable): Markup {
   return new Markup((config) => {
-    return new Dynamic({
-      ...config,
-      readable: readable,
-      render,
-    });
+    return new Dynamic({ ...config, readable, render });
   });
 }
 
@@ -214,11 +210,6 @@ export function repeat<T>(
   key?: (value: T, index: number) => string | number
 ): Markup {
   return new Markup((config) => {
-    return new Repeat<T>({
-      ...config,
-      readable,
-      render,
-      key,
-    });
+    return new Repeat<T>({ ...config, readable, render, key });
   });
 }

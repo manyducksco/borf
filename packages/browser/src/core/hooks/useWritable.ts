@@ -3,6 +3,13 @@ import { Readable } from "../classes/Readable.js";
 import { Writable } from "../classes/Writable.js";
 import { type Write } from "../types.js";
 
+interface UseWritableOptions<T> {
+  /**
+   * The default value if `value` is undefined.
+   */
+  default: T;
+}
+
 /**
  * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
  */
@@ -10,8 +17,16 @@ export function useWritable<T>(value: Write<T> | T): Writable<T>;
 /**
  * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
  */
+export function useWritable<T>(value: Write<T> | T, options: UseWritableOptions<T>): Writable<T>;
+/**
+ * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
+ */
 export function useWritable<T>(value?: Write<T> | T): Writable<T | undefined>;
-export function useWritable<T>(value?: Write<T> | T) {
+/**
+ * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
+ */
+export function useWritable<T>(value: Write<T> | T | undefined, options: UseWritableOptions<T>): Writable<T>;
+export function useWritable<T>(value?: Write<T> | T, options?: UseWritableOptions<T>) {
   getCurrentContext(); // Runs a check to throw an error if hook is used outside component scope.
 
   if (Writable.isWritable<T>(value)) {
@@ -19,6 +34,10 @@ export function useWritable<T>(value?: Write<T> | T) {
   } else if (Readable.isReadable<T>(value)) {
     throw new Error(`Value must be writable. Got: ${value}`);
   } else {
-    return new Writable(value);
+    if (value != null) {
+      return new Writable(value);
+    }
+
+    return new Writable(options?.default);
   }
 }

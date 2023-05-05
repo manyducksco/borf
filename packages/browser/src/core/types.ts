@@ -22,14 +22,14 @@ export type Write<T> = Writable<T>;
  */
 export type Value<T> = T extends Read<infer U> ? U : T;
 
-type StoreOutput<T> = T extends Store<any, infer O> ? (O extends Promise<infer U> ? U : O) : unknown;
+type StoreExports<T> = T extends Store<any, infer O> ? (O extends Promise<infer U> ? U : O) : unknown;
 
 export interface BuiltInStores {
-  http: StoreOutput<typeof HTTPStore>;
+  http: StoreExports<typeof HTTPStore>;
   // dialog: StoreOutput<typeof DialogStore>;
-  language: StoreOutput<typeof LanguageStore>;
-  document: StoreOutput<typeof DocumentStore>;
-  router: StoreOutput<typeof RouterStore>;
+  language: StoreExports<typeof LanguageStore>;
+  document: StoreExports<typeof DocumentStore>;
+  router: StoreExports<typeof RouterStore>;
 }
 
 export interface Connectable {
@@ -40,7 +40,7 @@ export interface Connectable {
   disconnect(): Promise<void>;
 }
 
-export type MaybeReadable<T> = T | Readable<T>;
+export type MaybeReadable<T> = T | Readable<T> | Readable<Exclude<T, undefined>>;
 
 /**
  * The set of HTML attributes supported by all HTML elements.
@@ -1897,12 +1897,12 @@ interface ImgElementAttributes extends ElementAttributes<HTMLImageElement> {
   /**
    * The intrinsic height of the image, in pixels. Must be an integer without a unit.
    */
-  height?: MaybeReadable<string | number | undefined>;
+  height?: MaybeReadable<string | undefined> | MaybeReadable<number | undefined>;
 
   /**
    * The intrinsic width of the image, in pixels. Must be an integer without a unit.
    */
-  width?: MaybeReadable<string | number | undefined>;
+  width?: MaybeReadable<string | undefined> | MaybeReadable<number | undefined>;
 
   /**
    * Indicates that the image is part of a [server-side map](https://en.wikipedia.org/wiki/Image_map#Server-side).
@@ -2815,6 +2815,7 @@ interface SelectElementAttributes extends ElementAttributes<HTMLSelectElement> {
   name?: MaybeReadable<string | undefined>;
   required?: MaybeReadable<boolean | undefined>;
   size?: MaybeReadable<number | undefined>;
+  value?: MaybeReadable<string | undefined>;
 }
 
 // TODO: Add complete doc comments
@@ -2849,6 +2850,7 @@ interface TextareaElementAttributes extends ElementAttributes<HTMLTextAreaElemen
   required?: MaybeReadable<boolean | undefined>;
   rows?: MaybeReadable<number | undefined>;
   wrap?: MaybeReadable<"soft" | "hard" | undefined>;
+  value?: MaybeReadable<string | undefined>;
 }
 
 // TODO: Add complete doc comments

@@ -67,16 +67,15 @@ export interface ElementContext {
   stores: Map<StoreRegistration["store"], StoreRegistration>;
   isSVG?: boolean;
   componentName?: string; // name of the nearest parent component
-  $$children?: Writable<Markup[]>;
 }
 
 /**
  * An object kept in App for each store registered with `addStore`.
  */
-export interface StoreRegistration<I = any> {
-  store: Store<I, any>;
-  exports?: Store<I, any>;
-  inputs?: I;
+export interface StoreRegistration<A = any> {
+  store: Store<A, any>;
+  exports?: Store<A, any>;
+  attributes?: A;
   instance?: ComponentControls;
 }
 
@@ -191,7 +190,7 @@ export class App implements AppRouter {
     const routerStore = this.#stores.get("router")!;
     this.#stores.set("router", {
       ...routerStore,
-      inputs: {
+      attributes: {
         options: options.router,
       },
     });
@@ -211,7 +210,7 @@ export class App implements AppRouter {
           appContext: this.#appContext,
           elementContext: this.#elementContext,
           // channelPrefix: "crash",
-          inputs: {
+          attributes: {
             message: error.message,
             error: error,
             componentName,
@@ -235,7 +234,7 @@ export class App implements AppRouter {
   /**
    * Displays view at the root of the app. All other routes render inside this view's outlet.
    */
-  setRootView<I>(view: View<I>, inputs?: I) {
+  setRootView<A>(view: View<A>, attributes?: A) {
     if (this.#rootView !== DefaultRootView) {
       this.#appContext.debugHub
         .channel({ name: "borf:App" })
@@ -254,7 +253,7 @@ export class App implements AppRouter {
   /**
    * Displays view over top of all other app content while at least one async component promise is pending.
    */
-  setSplashView<I>(view: View<I>, inputs?: I) {
+  setSplashView<A>(view: View<A>, attributes?: A) {
     return this; // TODO: Implement
   }
 
@@ -265,16 +264,16 @@ export class App implements AppRouter {
     return this; // TODO: Implement
   }
 
-  addStore<I>(store: Store<I, any>, inputs?: I): this;
+  addStore<A>(store: Store<A, any>, attributes?: A): this;
 
   /**
    * Makes this store accessible from any other component in the app, except for stores registered before this one.
    */
-  addStore<I>(store: Store<I, any>, inputs?: I) {
+  addStore<A>(store: Store<A, any>, attributes?: A) {
     let config: StoreRegistration | undefined;
 
     if (isFunction(store)) {
-      config = { store, inputs };
+      config = { store, attributes };
     } else {
       throw new TypeError(`Expected a store function. Got type: ${typeOf(store)}, value: ${store}`);
     }
@@ -453,7 +452,7 @@ export class App implements AppRouter {
     const language = this.#stores.get("language")!;
     this.#stores.set("language", {
       ...language,
-      inputs: {
+      attributes: {
         languages: Object.fromEntries(this.#languages.entries()),
       },
     });
@@ -462,7 +461,7 @@ export class App implements AppRouter {
     const router = this.#stores.get("router")!;
     this.#stores.set("router", {
       ...router,
-      inputs: {
+      attributes: {
         options: this.#options.router,
         routes: this.#routes,
       },
@@ -472,7 +471,7 @@ export class App implements AppRouter {
 
     // Initialize global stores.
     for (let [key, item] of this.#stores.entries()) {
-      const { store, inputs, exports } = item;
+      const { store, attributes, exports } = item;
 
       // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
       // Built-in globals get an additional 'borf:' prefix so it's clear messages are from the framework.
@@ -484,7 +483,7 @@ export class App implements AppRouter {
         elementContext,
         channelPrefix,
         label,
-        inputs: inputs ?? {},
+        attributes: attributes ?? {},
       };
 
       let instance: ComponentControls | undefined;
@@ -517,7 +516,7 @@ export class App implements AppRouter {
       component: this.#rootView,
       appContext,
       elementContext,
-      inputs: {},
+      attributes: {},
     });
 
     await appContext.rootView!.connect(appContext.rootElement);

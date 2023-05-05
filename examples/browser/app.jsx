@@ -1,4 +1,4 @@
-import { App, Elements, Outlet, useStore } from "@borf/browser";
+import { App, Outlet } from "@borf/browser";
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
@@ -23,46 +23,6 @@ import Timer from "./7guis/04_Timer";
 import CRUD from "./7guis/05_CRUD";
 import CircleDrawer from "./7guis/06_CircleDrawer";
 import Cells from "./7guis/07_Cells";
-
-/*===========================*\
-||      Custom Elements      ||
-\*===========================*/
-
-// Views and stores can be registered on Elements to use them as custom HTML elements.
-// This is a good option if you want to sprinkle in views to enhance a regular HTML & CSS website.
-
-const elems = new Elements();
-
-// Invoked in index.html
-elems.addElement("web-component-view", ({ location }) => {
-  return <h1>This is a web component. [location:{location}]</h1>;
-});
-
-function WebComponentStore({ defaultValue }) {
-  return {
-    // TODO: Convert kebab-case to camelCase for web component inputs?
-    value: defaultValue ?? "The Default Value",
-  };
-}
-
-elems.addStore(WebComponentStore, {
-  defaultValue: "This is on Elements",
-});
-
-elems.addElement("web-component-store", WebComponentStore);
-
-elems.addElement("web-component-store-user", () => {
-  const { value } = useStore(WebComponentStore);
-
-  return (
-    <div style={{ border: "1px solid red" }}>
-      <h1>This web component is using a store</h1>
-      <p>{value}</p>
-    </div>
-  );
-});
-
-elems.connect(); // Now using <web-component-view> anywhere in your HTML will create an instance of WebComponentView.
 
 /*===========================*\
 ||            App            ||
