@@ -1,31 +1,41 @@
-import type { RequestContext } from "./App/makeRequestListener";
-
-import { Type, Router as BedrockRouter } from "@borf/bedrock";
+import {
+  type Route,
+  patternToFragments,
+  sortRoutes,
+  isString,
+  assertInstanceOf,
+  joinPath,
+  matchRoutes,
+} from "@borf/bedrock";
 import { EventSource } from "./EventSource.js";
 
-type RouteHandler = (
-  ctx: RequestContext
-) =>
+type RouteHandler = () =>
   | EventSource
   | Record<string | number | symbol, any>
   | undefined
   | null
   | Promise<EventSource | Record<string | number | symbol, any> | undefined | null>;
 
-export type Route = {
+export type RouteMeta = {
   verb: string;
   pattern: string;
   handlers: RouteHandler[]; // Includes middleware and final handler.
 };
 
 export class Router {
-  #router = new BedrockRouter<Route>();
+  routes: Route<RouteMeta>[] = [];
 
-  /**
-   * A list of all routes registered to this Router.
-   */
-  get routes() {
-    return this.#router.routes;
+  #addRoute(verb: string, pattern: string, handlers: RouteHandler[]) {
+    this.routes.push({
+      pattern,
+      fragments: patternToFragments(pattern),
+      meta: {
+        verb,
+        pattern,
+        handlers,
+      },
+    });
+    this.routes = sortRoutes(this.routes);
   }
 
   /**
@@ -39,7 +49,7 @@ export class Router {
    * Responds to HTTP GET requests that match this URL pattern.
    */
   onGet(pattern: string, ...handlers: RouteHandler[]) {
-    this.#router.addRoute(pattern, { verb: "GET", pattern, handlers });
+    this.#addRoute("GET", pattern, handlers);
     return this;
   }
 
@@ -47,7 +57,7 @@ export class Router {
    * Responds to HTTP POST requests that match this URL pattern.
    */
   onPost(pattern: string, ...handlers: RouteHandler[]) {
-    this.#router.addRoute(pattern, { verb: "POST", pattern, handlers });
+    this.#addRoute("POST", pattern, handlers);
     return this;
   }
 
@@ -55,7 +65,7 @@ export class Router {
    * Responds to HTTP PUT requests that match this URL pattern.
    */
   onPut(pattern: string, ...handlers: RouteHandler[]) {
-    this.#router.addRoute(pattern, { verb: "PUT", pattern, handlers });
+    this.#addRoute("PUT", pattern, handlers);
     return this;
   }
 
@@ -63,7 +73,7 @@ export class Router {
    * Responds to HTTP PATCH requests that match this URL pattern.
    */
   onPatch(pattern: string, ...handlers: RouteHandler[]) {
-    this.#router.addRoute(pattern, { verb: "PATCH", pattern, handlers });
+    this.#addRoute("PATCH", pattern, handlers);
     return this;
   }
 
@@ -71,7 +81,7 @@ export class Router {
    * Responds to HTTP DELETE requests that match this URL pattern.
    */
   onDelete(pattern: string, ...handlers: RouteHandler[]) {
-    this.#router.addRoute(pattern, { verb: "DELETE", pattern, handlers });
+    this.#addRoute("DELETE", pattern, handlers);
     return this;
   }
 
@@ -79,7 +89,7 @@ export class Router {
    * Responds to HTTP HEAD requests that match this URL pattern.
    */
   onHead(pattern: string, ...handlers: RouteHandler[]) {
-    this.#router.addRoute(pattern, { verb: "HEAD", pattern, handlers });
+    this.#addRoute("HEAD", pattern, handlers);
     return this;
   }
 
@@ -87,7 +97,7 @@ export class Router {
    * Responds to HTTP OPTIONS requests that match this URL pattern.
    */
   onOptions(pattern: string, ...handlers: RouteHandler[]) {
-    this.#router.addRoute(pattern, { verb: "OPTIONS", pattern, handlers });
+    this.#addRoute("OPTIONS", pattern, handlers);
     return this;
   }
 
@@ -109,22 +119,22 @@ export class Router {
   addRoutes(...args: unknown[]) {
     let prefix: string | undefined;
 
-    if (Type.isString(args[0])) {
+    if (isString(args[0])) {
       prefix = args.shift() as string;
     }
 
-    Type.assertInstanceOf(Router, args[0], "Expected a Router. Got type: %t, value: %v");
+    assertInstanceOf(Router, args[0], "Expected a Router. Got type: %t, value: %v");
     const router = args[0] as Router;
 
     if (prefix) {
       // Prepend pattern to all routes.
       for (const route of router.routes) {
-        const pattern = BedrockRouter.joinPath([prefix, route.pattern]);
-        this.#router.addRoute(pattern, { ...route.meta, pattern });
+        const pattern = joinPath([prefix, route.pattern]);
+        this.#addRoute(route.meta.verb, pattern, route.meta.handlers);
       }
     } else {
       for (const route of router.routes) {
-        this.#router.addRoute(route.pattern, route.meta);
+        this.#addRoute(route.meta.verb, route.pattern, route.meta.handlers);
       }
     }
   }
@@ -138,7 +148,7 @@ export class Router {
   matchRoute(verb: string, path: string) {
     verb = verb.toUpperCase();
 
-    const matched = this.#router.match(path, {
+    const matched = matchRoutes(this.routes, path, {
       willMatch: (route) => route.meta.verb === verb,
     });
 

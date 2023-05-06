@@ -1,30 +1,35 @@
 import type { DebugOptions } from "classes/DebugHub";
 import type { Cache } from "classes/StaticCache";
-import type { StoreConstructor, StoreRegistration } from "classes/Store";
+import { type Store, type StoreControls, makeStore } from "../../component.js";
 
 import path from "node:path";
 import { createServer } from "node:http";
-import { Type } from "@borf/bedrock";
+import { assert, assertString } from "@borf/bedrock";
 import { NoCache, StaticCache } from "../StaticCache.js";
 import { merge } from "../../helpers/merge.js";
 import { DebugHub } from "../DebugHub.js";
 import { CrashCollector } from "../CrashCollector.js";
 import { Router } from "../Router.js";
-import { Store } from "../Store.js";
 
 import { makeRequestListener, RequestListener } from "./makeRequestListener.js";
 
 // TODO: Use project config output paths
 const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), "output/static");
 
+export interface StoreRegistration<A> {
+  store: Store<A, any>;
+  attributes?: A;
+  instance?: StoreControls;
+}
+
 export interface AppContext {
   debugHub: DebugHub;
   crashCollector: CrashCollector;
   staticCache: Cache;
-  stores: Map<StoreConstructor<unknown>, StoreRegistration<unknown>>;
+  stores: Map<Store<any, any>, StoreRegistration<any>>;
   corsOptions?: CORSOptions;
   fallback?: string;
-  environment?: "development" | "production";
+  mode?: "development" | "production";
 }
 
 /**
@@ -39,7 +44,7 @@ interface AppOptions {
   /**
    * Pass a value to override NODE_ENV environment variable.
    */
-  environment?: "development" | "production";
+  mode?: "development" | "production";
 }
 
 /**
@@ -75,14 +80,6 @@ interface CORSOptions {
   maxAge?: number; // (in seconds) Access-Control-Max-Age
 }
 
-interface AddStoreOptions {
-  /**
-   * If "app", the store is created at app start and lives for the life of the app.
-   * If "request", a new instance is created for each request.
-   */
-  lifecycle?: "app" | "request";
-}
-
 export class App extends Router {
   #options: Required<AppOptions> = {
     debug: {
@@ -91,7 +88,7 @@ export class App extends Router {
       warn: "development",
       error: true,
     },
-    environment: process.env.NODE_ENV === "production" ? "production" : "development",
+    mode: process.env.NODE_ENV === "production" ? "production" : "development",
   };
 
   #server = createServer();
@@ -103,7 +100,7 @@ export class App extends Router {
     allowCredentials: false,
   };
   #isStarted = false;
-  #stores = new Map<StoreConstructor<unknown>, StoreRegistration<unknown>>();
+  #stores = new Map<Store<any, any>, StoreRegistration<any>>();
   #cache: Cache;
   #fallback?: string;
 
@@ -115,7 +112,7 @@ export class App extends Router {
     super();
     this.#options = merge(this.#options, options ?? {});
 
-    if (this.#options.environment === "production") {
+    if (this.#options.mode === "production") {
       this.#cache = new NoCache();
     } else {
       this.#cache = new StaticCache();
@@ -125,7 +122,7 @@ export class App extends Router {
   /**
    * Configure how the app handles CORS requests.
    */
-  addCORS(options?: Partial<CORSOptions>) {
+  setCORS(options?: Partial<CORSOptions>) {
     this.#corsEnabled = true;
     Object.assign(this.#corsOptions, options);
 
@@ -138,7 +135,7 @@ export class App extends Router {
    *
    * @param filename - The name of the file in your `static` directory to use as a fallback.
    */
-  addFallback(filename = "index.html") {
+  setFallback(filename = "index.html") {
     this.#fallback = filename;
     return this;
   }
@@ -150,19 +147,17 @@ export class App extends Router {
    * @param filesDir - Directory on disk where files exist to be served from `prefix`.
    */
   addStaticFiles(prefix = "/", filesDir = DEFAULT_STATIC_SOURCE) {
-    Type.assertString(prefix, "Expected prefix to be a string. Got type: %t, value: %v");
-    Type.assertString(filesDir, "Expected filesDir to be a string. Got type: %t, value: %v");
+    assertString(prefix, "Expected prefix to be a string. Got type: %t, value: %v");
+    assertString(filesDir, "Expected filesDir to be a string. Got type: %t, value: %v");
 
     this.#cache.addEntry({ path: prefix, source: filesDir });
     return this;
   }
 
-  addStore(store: StoreConstructor<unknown>, options: AddStoreOptions = {}) {
-    Type.assertExtends(Store)(store);
-
+  addStore<A>(store: Store<A, any>, attributes?: A) {
     this.#stores.set(store, {
       store,
-      lifecycle: options.lifecycle || "app",
+      attributes,
       instance: undefined,
     });
     return this;
@@ -173,10 +168,7 @@ export class App extends Router {
       throw new Error(`App is already started`);
     }
 
-    Type.assert(
-      options?.port || process.env.PORT,
-      `Must provide a 'port' option or define a PORT environment variable.`
-    );
+    assert(options?.port || process.env.PORT, `Must provide a 'port' option or define a PORT environment variable.`);
 
     const now = performance.now();
     const port = options?.port || Number(process.env.PORT);
@@ -185,7 +177,7 @@ export class App extends Router {
     const crashCollector = new CrashCollector({
       onCrash: (entry) => {},
       onReport: (entry) => {},
-      sendStackTrace: this.#options.environment === "development",
+      sendStackTrace: this.#options.mode === "development",
     });
 
     const appContext: AppContext = {
@@ -195,21 +187,18 @@ export class App extends Router {
       staticCache: this.#cache,
       fallback: this.#fallback,
       stores: this.#stores,
-      environment: this.#options.environment,
+      mode: this.#options.mode,
     };
 
     // Initialize app-lifecycle stores.
     for (const config of this.#stores.values()) {
-      if (config.lifecycle === "app") {
-        const instance = new config.store({
-          appContext,
-          label: config.store.label || config.store.name,
-          lifecycle: config.lifecycle,
-        });
+      const instance = makeStore({
+        store: config.store,
+        attributes: config.attributes ?? {},
+      });
 
-        config.instance = instance;
-        await instance.connect();
-      }
+      config.instance = instance;
+      await instance.connect();
     }
 
     this.#listener = makeRequestListener(appContext, this);

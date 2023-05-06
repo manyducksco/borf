@@ -6,7 +6,9 @@ import { Headers } from "../classes/Headers.js";
 export function useRequest() {
   return {
     pattern: "/replace/{data}",
-    location: new Location(),
+    domain: "whatever.com",
+    protocol: "http",
+    path: "/test",
     params: { data: "me" },
     query: { valueOne: 1 },
     headers: new Headers(),

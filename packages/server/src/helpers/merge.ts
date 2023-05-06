@@ -1,4 +1,4 @@
-import { Type } from "@borf/bedrock";
+import { isObject } from "@borf/bedrock";
 
 export function merge<A extends Record<any, any>, B extends Record<any, any>>(a: A, b: B): A & B;
 
@@ -8,8 +8,8 @@ export function merge<A = unknown, B = unknown>(a: A, b: B): B;
  * Takes an old value and a new value.  Returns a merged copy if both are objects, otherwise returns the new value.
  */
 export function merge<A = any, B = any>(a: A, b: B) {
-  if (Type.isObject(a)) {
-    if (!Type.isObject(b)) {
+  if (isObject(a)) {
+    if (!isObject(b)) {
       return b;
     }
 

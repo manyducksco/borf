@@ -24,17 +24,18 @@
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.47",
     "@types/send": "^0.17.1",
-    "@types/sinon": "^10.0.13",
+    "@types/sinon": "^10.0.14",
     "ava": "^5.2.0",
     "esbuild": "^0.14.10",
-    "sinon": "^15.0.2",
-    "typescript": "^5.0.2"
+    "sinon": "^15.0.4",
+    "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@borf/bedrock": "^1.0.3",
+    "@borf/bedrock": "^3.0.0",
     "busboy": "^1.6.0",
     "chokidar": "^3.5.3",
-    "color-hash": "^2.0.1",
+    "color-hash": "^2.0.2",
+    "htm": "^3.1.1",
     "query-string": "^7.0.1",
     "send": "^0.18.0"
   },

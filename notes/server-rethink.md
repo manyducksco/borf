@@ -14,7 +14,7 @@ import { Server, useRequest, useStore, useContext } from "@borf/server";
 
 const app = new Server();
 
-app.addStaticPath("/some/path" /*, some path on disk to serve files from */);
+app.addStaticPath("/files", "/actual/folder/on/disk/where/files/are");
 
 // Configure app here.
 
@@ -60,6 +60,8 @@ app.onGet("/path", Auth, async function GetPath() {
   req.query;
   req.uri;
   req.body;
+  req.domain;
+  req.protocol;
   // ...
 
   // Access response context (headers, status, etc.)
@@ -91,7 +93,7 @@ project/
   app/
     browser.html (browser entrypoint for vite)
     server.js (server entrypoint)
-    # code can be shared between browser and server (types, etc.)
+    # code can be shared between browser and server (types, helpers, etc.)
   static/
     # files that will be copied as-is (maybe optimized and gzipped)
   package.json
@@ -103,5 +105,9 @@ Package would include CLI commands:
 - `borf serve` to run in dev mode with live reload
 - `borf serve --production` to build and run in production mode with all optimizations (clone your project's git repo, npm install, and run this for an easy production deploy)
 - `borf build [--production]` to build app output and place it in the `build/` folder (`start` uses a temp folder outside the project; use this if you prefer to build the app files for deployment)
-- `borf inspect` to start the browser component inspector (reads `.inspector.js` files throughout the app)
+- `borf viewer` to start the browser component inspector (reads `.viewer.js` files throughout the app)
   - Could this include generated API documentation and route testing UI? Use metadata from routers to build a route that serves this configuration.
+
+## Stores
+
+I'm thinking stores on the server should be app-level only. Do we need per-request store instances? Auth for example? That kind of thing is probably better done in middleware. Stores would work better for things like a database connection or managing server-wide resources like socket connections.

@@ -1,9 +1,9 @@
 import test from "ava";
-import { html } from "./html.js";
+import { html, render } from "./html.js";
 
 test("works", async (t) => {
   const template = html`<p>This is some text</p>`;
-  const result = await template.render();
+  const result = await render(template);
 
   t.is(result, "<p>This is some text</p>");
 });
@@ -20,7 +20,7 @@ test("function views", async (t) => {
   const template = html`
     <div class="container">${Header("Hello!")}${AsyncParagraph("This component is async for testing purposes.")}</div>
   `;
-  const result = await template.render();
+  const result = await render(template);
 
   t.is(result, `<div class="container"><h1>Hello!</h1><p>This component is async for testing purposes.</p></div>`);
 });
@@ -31,7 +31,7 @@ test("arrays with map", async (t) => {
     ${numbers.map((num) => html`<li>${num}</li>`)}
   </ul>`;
 
-  const result = await template.render();
+  const result = await render(template);
 
   t.is(result, `<ul>\n  <li>1</li><li>2</li><li>3</li>\n</ul>`);
 });

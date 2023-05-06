@@ -43,7 +43,6 @@ A virtual book structured around the exports of the package. Drill down to each 
   - Concepts
     - Introduction
       - Who is Borf for?
-      - Ways to use Borf (App vs. Elements)
       - Why was Borf created?
         - React re-rendering and hooks annoyances
         - Includes essentials like routing, state management, i18n, and a standard HTTP client
@@ -56,48 +55,45 @@ A virtual book structured around the exports of the package. Drill down to each 
         - choo
         - Ractive (two way binding and observers)
           - Readables and Writables also coincidentally ended up extremely similar to Svelte stores (and Spring to svelte springs), which apparently is a natural progression if you start with the concepts as expressed in Ractive (the cards didn't fall identically, but we're definitely working with the same deck)
-        - SolidJS is also extremely similar, but not a direct inspiration. Mention this in case people are interested in a more React-like API.
+        - SolidJS is also extremely similar, but not a direct inspiration.
     - Components
-      - What a component is (a function scope that wraps and operates a ComponentCore)
-      - ComponentCore
-        - Inputs (link to Readable & Writable for more on working with values)
-        - Lifecycle
-        - Outlet and children
+      - What a component is (a function that takes attributes and returns elements or an object)
       - Views
-        - Link to `m` for more on how to render content for a view
+        - Link to templating for more on how to render content for a view
       - Stores
         - When to use stores vs. keeping state in views
         - Global vs local stores
+      - Hooks
     - Built-in stores
       - router
       - http
-      - page
+      - document
       - language
     - Observable state (readable/writable)
-      - Link to `m`, and especially `m.$...` helpers for more on using observable state
+      - Link to templating, and especially section on helpers for more on using observable state
   - Exports
     - App
       - Root view
       - Routing
       - Global stores
       - Crash handling
-      - Language translations
-    - Elements
-      - Web components
-      - Global stores
-      - Store elements
-      - View elements
+      - Languages and translation
     - Readable & Writable
       - Writable is a superset of Readable
       - One way to create a Writable (new Writable())
-      - Various ways to obtain a Readable (.toReadable(), .map(), etc.)
+      - Various ways to obtain a Readable (.toReadable(), .map(), new Readable(), etc.)
     - Ref
       - When to use ref vs. when to pass attributes (generally prefer attributes)
     - Spring
       - Animating CSS styles
       - Animating component transitions
-    - m
-      - HTML
-      - views
-      - $helpers
-      - custom elements (web components)
+    - templating
+      - JSX
+      - m (and external libraries like `htm`)
+      - Dynamic attributes
+        - Toggling classes
+      - Helpers
+        - when
+        - unless
+        - repeat
+        - observe

@@ -1,4 +1,4 @@
-import { App, Router, Store, html } from "@borf/server";
+import { App, Router, html, useContext, useRequest } from "@borf/server";
 
 const app = new App({
   debug: {
@@ -7,41 +7,35 @@ const app = new App({
 });
 const PORT = process.env.PORT || 4000;
 
-app.addCORS();
-app.addStaticFiles();
+app.setCORS();
+// app.setFallback();
+// app.setFallback("/some/weird/place/index.html");
+// app.addStaticFiles();
 // app.addStaticFiles("/files", "/path/to/files/dir");
-app.addFallback();
-// app.addFallback("/some/weird/place/index.html");
 
-const ExampleStore = Store.define({
-  label: "ExampleStore",
-  setup: () => {
-    let timesCalled = 0;
+function ExampleStore() {
+  let timesCalled = 0;
 
-    return {
-      call: () => {
-        timesCalled++;
-        return timesCalled;
-      },
-    };
-  },
-});
+  return {
+    call: () => {
+      timesCalled++;
+      return timesCalled;
+    },
+  };
+}
 
-const AsyncStore = Store.define({
-  label: "AsyncStore",
-  setup: async () => {
-    let waitFor = 50 + Math.random() * 100;
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          call: () => {
-            return waitFor;
-          },
-        });
-      }, waitFor);
-    });
-  },
-});
+async function AsyncStore() {
+  let waitFor = 50 + Math.random() * 100;
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        call: () => {
+          return waitFor;
+        },
+      });
+    }, waitFor);
+  });
+}
 
 app.addStore(ExampleStore);
 app.addStore(AsyncStore);
@@ -101,15 +95,24 @@ app.onPost(
   }
 );
 
+app.onPost("/form", () => {
+  const req = useRequest();
+  const ctx = useContext();
+
+  console.log({ req, ctx });
+
+  return "NOICE";
+});
+
 const router = new Router();
 router.onGet("/test", () => {
   return "FROM ROUTER";
 });
 
-app.addRouter(router);
-app.addRouter("/router", router);
+app.addRoutes(router);
+app.addRoutes("/router", router);
 
-app.onGet("/hello", (ctx) => {
+app.onGet("/hello", () => {
   return "Hello world.";
 });
 
@@ -144,6 +147,6 @@ async function AsyncHeader() {
 }
 
 // Listen for HTTP requests on localhost at specified port number.
-app.start(PORT).then((info) => {
+app.start({ port: PORT }).then((info) => {
   console.log("started server", info);
 });

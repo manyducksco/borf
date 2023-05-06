@@ -2,11 +2,10 @@ import type { IncomingMessage, RequestListener } from "node:http";
 import type { Stream } from "node:stream";
 import type { AppContext } from "./App";
 import type { DebugChannel } from "classes/DebugHub";
-import type { StoreConstructor, StoreRegistration } from "classes/Store";
 
 import path from "node:path";
 import send from "send";
-import { Type } from "@borf/bedrock";
+import { isFunction, isString } from "@borf/bedrock";
 import { Router } from "../Router.js";
 import { Request } from "../Request.js";
 import { Response } from "../Response.js";
@@ -15,12 +14,53 @@ import { isHTML } from "../../html.js";
 
 export type { RequestListener };
 
-export interface RequestContext {
-  useStore<S extends StoreConstructor<unknown>, E = S extends StoreConstructor<infer U> ? U : unknown>(store: S): E;
+/**
+ * The object accessed by hooks. Set while running handlers for a particular request.
+ */
+export interface HandlerContext {
+  appContext: AppContext;
   request: Request;
   response: Response;
-  redirect(to: string, statusCode?: number): void;
-  next?: () => void;
+  next?: () => Promise<Response>;
+}
+
+/**
+ * The object accessed through the `useContext` hook.
+ */
+export interface ResponseContext {
+  status: number;
+  statusText: string;
+  headers: Headers;
+  next: <T = unknown>() => Promise<T>;
+  redirect: (to: string) => void;
+}
+
+const HANDLER_CONTEXT = Symbol("HandlerContext");
+
+/**
+ * Returns the current request context, or throws an error if none is set.
+ */
+export function getCurrentContext() {
+  const ctx = (global as any)[HANDLER_CONTEXT];
+  if (!ctx) {
+    throw new Error(`Hooks must be used inside a request handler function.`);
+  }
+  return ctx;
+}
+
+/**
+ * Sets the current request context that all hooks will access until it is cleared.
+ */
+export function setCurrentContext(ctx: HandlerContext) {
+  // TODO: Set argument type once it's defined.
+  (global as any)[HANDLER_CONTEXT] = ctx;
+}
+
+/**
+ * Clears the current request context.
+ */
+export function clearCurrentContext() {
+  (global as any)[HANDLER_CONTEXT] = undefined;
 }
 
 // Server router store is initialized per request.
@@ -90,66 +130,8 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
     const matched = router.matchRoute(req.method!, req.url!);
 
     if (matched) {
-      // Initialize request-lifecycle stores.
-      const requestStores = new Map<StoreConstructor<unknown>, StoreRegistration<unknown>>();
-
-      // TODO: First the built-ins (router, etc.)
-
-      // Then the user stores
-      for (const config of appContext.stores.values()) {
-        if (config.lifecycle === "request") {
-          const instance = new config.store({
-            appContext,
-            label: config.store.label || config.store.name,
-            lifecycle: config.lifecycle,
-          });
-
-          requestStores.set(config.store, {
-            ...config,
-            instance,
-          });
-
-          await instance.connect();
-        }
-      }
-
-      // Disconnect stores after response is finished.
-      res.once("close", async () => {
-        for (const config of requestStores.values()) {
-          await config.instance!.disconnect();
-        }
-      });
-
       const request = new Request(req, matched);
       const response = new Response<any>({ headers });
-
-      const ctx: RequestContext = {
-        // cache: {}, // TODO: Users can make a request-lifecycle store for this.
-
-        useStore<S extends StoreConstructor<unknown>, E = S extends StoreConstructor<infer U> ? U : unknown>(
-          store: S
-        ): E {
-          // Try request-lifecycle stores.
-          if (requestStores.has(store)) {
-            return requestStores.get(store)?.instance!.exports as E;
-          }
-
-          // Fall back to app-lifecycle stores.
-          if (appContext.stores.has(store)) {
-            return appContext.stores.get(store)?.instance!.exports as E;
-          }
-
-          throw new Error(`Store '${name}' is not registered on this app.`);
-        },
-
-        request,
-        response,
-
-        redirect(to: string, statusCode = 301) {
-          response.status = statusCode;
-          response.headers.set("Location", to);
-        },
-      };
 
       let index = -1;
       // TODO: Inject app-level middleware.
@@ -159,20 +141,30 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
         index++;
         let current = handlers[index];
 
-        ctx.next = index === handlers.length - 1 ? undefined : nextFunc;
-        ctx.response.body = (await current(ctx)) || ctx.response.body;
+        const handlerContext: HandlerContext = {
+          appContext,
+          request,
+          response,
+          next: index === handlers.length - 1 ? undefined : nextFunc,
+        };
+
+        setCurrentContext(handlerContext);
+        response.body = (await current()) || response.body;
+        clearCurrentContext();
+
+        return response;
       };
 
       try {
         await nextFunc();
       } catch (err) {
-        if (Type.isString(err)) {
+        if (isString(err)) {
           err = new Error(err);
         }
 
         if (err instanceof Error) {
-          ctx.response.status = 500;
-          ctx.response.body = {
+          response.status = 500;
+          response.body = {
             error: {
               message: err.message,
               stack: err.stack,
@@ -186,28 +178,28 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
       let bodyIsStream = false;
 
       // Automatically handle content-type and body formatting when returned from handler function.
-      if (ctx.response.body) {
-        if (isHTML(ctx.response.body)) {
-          ctx.response.headers.set("content-type", "text/html");
-          ctx.response.body = await ctx.response.body.render();
-        } else if (Type.isString(ctx.response.body)) {
-          ctx.response.headers.set("content-type", "text/plain");
-        } else if (Type.isFunction((ctx.response.body as any).pipe)) {
+      if (response.body) {
+        if (isHTML(response.body)) {
+          response.headers.set("content-type", "text/html");
+          response.body = await response.body.render();
+        } else if (isString(response.body)) {
+          response.headers.set("content-type", "text/plain");
+        } else if (isFunction((response.body as any).pipe)) {
           // Is a stream; handled below
           bodyIsStream = true;
-        } else if (!ctx.response.headers.has("content-type")) {
-          ctx.response.headers.set("content-type", "application/json");
-          ctx.response.body = JSON.stringify(ctx.response.body);
+        } else if (!response.headers.has("content-type")) {
+          response.headers.set("content-type", "application/json");
+          response.body = JSON.stringify(response.body);
         }
       }
 
-      res.writeHead(ctx.response.status, ctx.response.headers.toJSON());
+      res.writeHead(response.status, response.headers.toJSON());
 
       if (bodyIsStream) {
-        (ctx.response.body as Stream).pipe(res);
+        (response.body as Stream).pipe(res);
       } else {
-        if (ctx.response.body != null) {
-          res.write(Buffer.from(ctx.response.body as Buffer | string | any[]));
+        if (response.body != null) {
+          res.write(Buffer.from(response.body as Buffer | string | any[]));
         }
 
         res.end();
@@ -268,7 +260,7 @@ function canServeFallback(req: IncomingMessage, channel: DebugChannel) {
   }
 
   // Accept header is not sent.
-  if (!Type.isString(headers.accept)) {
+  if (!isString(headers.accept)) {
     channel.log(`Cannot fall back to index: no "Accept" header was sent (${req.method} ${req.url})`);
     return false;
   }
