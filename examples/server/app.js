@@ -1,4 +1,11 @@
-import { App, Router, html, useContext, useRequest } from "@borf/server";
+import {
+  App,
+  Router,
+  html,
+  useContext,
+  useRequest,
+  useStore,
+} from "@borf/server";
 
 const app = new App({
   debug: {
@@ -50,32 +57,36 @@ app.addStore(AsyncStore);
 
 app.onPost(
   "/full-test",
-  (ctx) => {
-    ctx.response.headers.set("X-MIDDLEWARE-INLINE", "RUFF");
-    return ctx.next();
+  async () => {
+    const ctx = useContext();
+    ctx.headers.set("X-MIDDLEWARE-INLINE", "RUFF");
+
+    // Measure response time of subsequent handlers:
+    const started = performance.now();
+    await ctx.next();
+    ctx.headers.set("X-RESPONSE-TIME-MS", performance.now() - started);
   },
-  (ctx) => {
-    const exampleGlobal = ctx.useStore(ExampleStore);
-    const asyncGlobal = ctx.useStore(AsyncStore);
+  () => {
+    const req = useRequest();
+    const ctx = useContext();
+    const exampleStore = useStore(ExampleStore);
+    const asyncStore = useStore(AsyncStore);
 
-    ctx.response.headers.set(
+    ctx.headers.set(
       "X-GLOBAL-CALLS",
-      `Example Global called ${exampleGlobal.call()} times.`
+      `Example Store called ${exampleStore.call()} times.`
     );
 
-    ctx.response.headers.set(
-      "X-REQUEST-METHOD",
-      `This is some CTX info: ${ctx.request.method}.`
-    );
+    ctx.headers.set("X-REQUEST-METHOD", `This is some CTX info: ${req.verb}.`);
 
-    ctx.response.headers.set(
+    ctx.headers.set(
       "X-REQUEST-BODY",
-      `This is some CTX info: ${ctx.request.body?.hello}.`
+      `This is some CTX info: ${req.body?.hello}.`
     );
 
-    ctx.response.headers.set(
+    ctx.headers.set(
       "X-GLOBAL-ASYNC",
-      `Async Global waited ${asyncGlobal.call()} ms.`
+      `Async Store waited ${asyncStore.call()} ms.`
     );
 
     // ctx.setHeaders({

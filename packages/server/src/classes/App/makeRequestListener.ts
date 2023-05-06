@@ -21,7 +21,7 @@ export interface HandlerContext {
   appContext: AppContext;
   request: Request;
   response: Response;
-  next?: () => Promise<Response>;
+  next?: () => Promise<unknown>;
 }
 
 /**
@@ -40,7 +40,7 @@ const HANDLER_CONTEXT = Symbol("HandlerContext");
 /**
  * Returns the current request context, or throws an error if none is set.
  */
-export function getCurrentContext() {
+export function getCurrentContext(): HandlerContext {
   const ctx = (global as any)[HANDLER_CONTEXT];
   if (!ctx) {
     throw new Error(`Hooks must be used inside a request handler function.`);
@@ -51,7 +51,7 @@ export function getCurrentContext() {
 /**
  * Sets the current request context that all hooks will access until it is cleared.
  */
-export function setCurrentContext(ctx: HandlerContext) {
+export function setCurrentContext(ctx: HandlerContext): void {
   // TODO: Set argument type once it's defined.
   (global as any)[HANDLER_CONTEXT] = ctx;
 }
@@ -59,7 +59,7 @@ export function setCurrentContext(ctx: HandlerContext) {
 /**
  * Clears the current request context.
  */
-export function clearCurrentContext() {
+export function clearCurrentContext(): void {
   (global as any)[HANDLER_CONTEXT] = undefined;
 }
 
@@ -152,7 +152,7 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
         response.body = (await current()) || response.body;
         clearCurrentContext();
 
-        return response;
+        return response.body;
       };
 
       try {
