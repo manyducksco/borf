@@ -1,29 +1,102 @@
-import { isPromise, isFunction, isObject } from "@borf/bedrock";
+import { typeOf, isString, isArray, isArrayOf, isFunction, isObject, isNumber, isBoolean } from "@borf/bedrock";
 import htm from "htm";
+import { Outlet } from "./views/Outlet.js";
 
-interface HTMLTemplate {
-  render(): Promise<string>;
+export interface HTMLTemplate {
+  render(scope?: RenderScope): Promise<string>;
+}
+
+interface RenderScope {
+  children?: HTMLTemplate[];
 }
 
 export function isHTML(value: unknown): value is HTMLTemplate {
-  return isObject(value) && isFunction(value.render);
+  return (isObject(value) && isFunction(value.render)) || isArrayOf(isHTML, value);
 }
 
-export async function render(templates: HTMLTemplate | HTMLTemplate[]): Promise<string> {
-  // TODO: Make into array and build into a single string.
+export async function render(templates: HTMLTemplate | HTMLTemplate[] | string, scope?: RenderScope): Promise<string> {
+  const list = isArray(templates) ? templates : [templates];
 
-  return "";
+  let rendered = "";
+
+  for (const template of list) {
+    if (isString(template)) {
+      rendered += template;
+    } else {
+      rendered += await template.render(scope);
+    }
+  }
+
+  return rendered;
 }
 
-function h(tag: string, attributes: any, ...children: any): HTMLTemplate;
-function h(component: () => unknown, attributes: any, ...children: any): HTMLTemplate;
+function h(tag: string, attributes: any, ...children: any[]): HTMLTemplate;
+function h(component: () => unknown, attributes: any, ...children: any[]): HTMLTemplate;
 
-function h(element: string | (() => unknown), attributes: any, ...children: any) {
+function h(element: string | ((attributes: any) => unknown), attributes: any, ...children: any[]) {
   console.log({ element, attributes, children });
 
+  const filteredChildren: HTMLTemplate[] = children
+    .filter((child) => child != null && child !== false)
+    .map((child) => {
+      if (isHTML(child)) {
+        return child;
+      }
+
+      if (isNumber(child) || isString(child) || isBoolean(child)) {
+        return { render: async () => String(child) };
+      }
+
+      throw new Error(`Unexpected child type: ${typeOf(child)}, value: ${child}`);
+    })
+    .flat();
+
   return {
-    async render() {
-      return "";
+    async render(scope?: RenderScope) {
+      if (isFunction(element)) {
+        if (element === Outlet && scope?.children) {
+          console.log("IS OUTLET", scope);
+          const rendered = await render(scope.children);
+
+          console.log({ rendered });
+
+          return rendered;
+        }
+
+        // Component
+        const templates = await element(attributes);
+
+        if (templates === null) {
+          return "";
+        }
+
+        if (!isHTML(templates)) {
+          console.error({ element, attributes, templates });
+          throw new Error(`View function must return HTMLTemplates. Got: ${templates}`);
+        }
+
+        return render(templates, { children: filteredChildren });
+      } else {
+        // HTML element
+
+        let rendered = "";
+
+        rendered += `<${element}`;
+
+        // Attributes
+        for (const key in attributes) {
+          rendered += ` ${key}="${String(attributes[key])}"`;
+        }
+
+        rendered += ">";
+
+        // Children
+        rendered += await render(filteredChildren, { children: filteredChildren });
+
+        rendered += `</${element}>`;
+
+        return rendered;
+      }
     },
   };
 }

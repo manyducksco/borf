@@ -10,7 +10,7 @@ import { Router } from "../Router.js";
 import { Request } from "../Request.js";
 import { Response } from "../Response.js";
 import { Headers } from "../Headers.js";
-import { isHTML } from "../../html.js";
+import { isHTML, render } from "../../html.js";
 
 export type { RequestListener };
 
@@ -19,6 +19,7 @@ export type { RequestListener };
  */
 export interface HandlerContext {
   appContext: AppContext;
+  debugChannel: DebugChannel;
   request: Request;
   response: Response;
   next?: () => Promise<unknown>;
@@ -133,6 +134,8 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
       const request = new Request(req, matched);
       const response = new Response<any>({ headers });
 
+      const debugChannel = appContext.debugHub.channel(`${req.method} ${req.url}`);
+
       let index = -1;
       // TODO: Inject app-level middleware.
       const handlers = [...matched.meta.handlers];
@@ -143,6 +146,7 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
 
         const handlerContext: HandlerContext = {
           appContext,
+          debugChannel,
           request,
           response,
           next: index === handlers.length - 1 ? undefined : nextFunc,
@@ -181,7 +185,7 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
       if (response.body) {
         if (isHTML(response.body)) {
           response.headers.set("content-type", "text/html");
-          response.body = await response.body.render();
+          response.body = await render(response.body);
         } else if (isString(response.body)) {
           response.headers.set("content-type", "text/plain");
         } else if (isFunction((response.body as any).pipe)) {

@@ -1,7 +1,9 @@
 import {
   App,
+  Outlet,
   Router,
   html,
+  useConsole,
   useContext,
   useRequest,
   useStore,
@@ -67,6 +69,7 @@ app.onPost(
     ctx.headers.set("X-RESPONSE-TIME-MS", performance.now() - started);
   },
   () => {
+    const console = useConsole();
     const req = useRequest();
     const ctx = useContext();
     const exampleStore = useStore(ExampleStore);
@@ -88,6 +91,8 @@ app.onPost(
       "X-GLOBAL-ASYNC",
       `Async Store waited ${asyncStore.call()} ms.`
     );
+
+    console.log("Console test");
 
     // ctx.setHeaders({
     //   "X-GLOBAL-CALLS": `Example Global called ${exampleGlobal.call()} times.`,
@@ -135,7 +140,6 @@ app.onGet("/hello-json", () => {
 
 app.onGet("/hello-html", function () {
   return html`
-    <!DOCTYPE html>
     <head>
       <title>DEMO!</title>
     </head>
@@ -152,9 +156,7 @@ app.onGet("/hello-html", function () {
 });
 
 async function AsyncHeader() {
-  const outlet = useOutlet();
-
-  return html`<div class="container">${children}</div>`;
+  return html`<div class="container"><${Outlet} /></div>`;
 }
 
 // Listen for HTTP requests on localhost at specified port number.
