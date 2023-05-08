@@ -8,8 +8,11 @@ import {
   matchRoutes,
 } from "@borf/bedrock";
 import { EventSource } from "./EventSource.js";
+import { type HandlerContext } from "./App/makeRequestListener.js";
 
-type RouteHandler = () =>
+export type RouteHandler = (
+  ctx: HandlerContext
+) =>
   | EventSource
   | Record<string | number | symbol, any>
   | undefined
@@ -24,6 +27,7 @@ export type RouteMeta = {
 
 export class Router {
   routes: Route<RouteMeta>[] = [];
+  middleware: RouteHandler[] = [];
 
   #addRoute(verb: string, pattern: string, handlers: RouteHandler[]) {
     this.routes.push({
@@ -41,8 +45,9 @@ export class Router {
   /**
    * Adds a new middleware function that will run for every route on this Router.
    */
-  addMiddleware() {
+  addMiddleware(handler: RouteHandler) {
     // Add handlers to all methods.
+    this.middleware.push(handler);
   }
 
   /**
@@ -130,11 +135,11 @@ export class Router {
       // Prepend pattern to all routes.
       for (const route of router.routes) {
         const pattern = joinPath([prefix, route.pattern]);
-        this.#addRoute(route.meta.verb, pattern, route.meta.handlers);
+        this.#addRoute(route.meta.verb, pattern, [...router.middleware, ...route.meta.handlers]);
       }
     } else {
       for (const route of router.routes) {
-        this.#addRoute(route.meta.verb, route.pattern, route.meta.handlers);
+        this.#addRoute(route.meta.verb, route.pattern, [...router.middleware, ...route.meta.handlers]);
       }
     }
   }

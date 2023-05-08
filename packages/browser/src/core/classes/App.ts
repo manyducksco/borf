@@ -469,6 +469,14 @@ export class App implements AppRouter {
 
     debugChannel.info(`total routes: ${this.#routes.length}`);
 
+    // First, initialize the root view. The router store needs this to connect the initial route.
+    appContext.rootView = makeComponent({
+      component: this.#rootView,
+      appContext,
+      elementContext,
+      attributes: {},
+    });
+
     // Initialize global stores.
     for (let [key, item] of this.#stores.entries()) {
       const { store, attributes, exports } = item;
@@ -510,14 +518,7 @@ export class App implements AppRouter {
       assertObject(instance!.outputs, "Store setup function must return an object. Got type: %t, value: %v");
     }
 
-    // Then the view is initialized and connected to root element.
-
-    appContext.rootView = makeComponent({
-      component: this.#rootView,
-      appContext,
-      elementContext,
-      attributes: {},
-    });
+    // Then connect the root view.
 
     await appContext.rootView!.connect(appContext.rootElement);
 

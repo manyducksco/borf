@@ -15,53 +15,31 @@ import { isHTML, render } from "../../html.js";
 export type { RequestListener };
 
 /**
- * The object accessed by hooks. Set while running handlers for a particular request.
+ * The object passed to request handlers.
  */
 export interface HandlerContext {
-  appContext: AppContext;
-  debugChannel: DebugChannel;
-  request: Request;
-  response: Response;
+  cache: Record<string | number | symbol, unknown>;
+  req: Request;
+  res: Response;
   next?: () => Promise<unknown>;
 }
 
-/**
- * The object accessed through the `useContext` hook.
- */
-export interface ResponseContext {
-  status: number;
-  statusText: string;
-  headers: Headers;
-  next: <T = unknown>() => Promise<T>;
-  redirect: (to: string) => void;
-}
+const APP_CONTEXT = Symbol("AppContext");
 
-const HANDLER_CONTEXT = Symbol("HandlerContext");
-
-/**
- * Returns the current request context, or throws an error if none is set.
- */
-export function getCurrentContext(): HandlerContext {
-  const ctx = (global as any)[HANDLER_CONTEXT];
+export function getAppContext(): AppContext {
+  const ctx = (global as any)[APP_CONTEXT];
   if (!ctx) {
-    throw new Error(`Hooks must be used inside a request handler function.`);
+    throw new Error(`Hooks must be used inside a component or request handler.`);
   }
   return ctx;
 }
 
-/**
- * Sets the current request context that all hooks will access until it is cleared.
- */
-export function setCurrentContext(ctx: HandlerContext): void {
-  // TODO: Set argument type once it's defined.
-  (global as any)[HANDLER_CONTEXT] = ctx;
+export function setAppContext(ctx: AppContext): void {
+  (global as any)[APP_CONTEXT] = ctx;
 }
 
-/**
- * Clears the current request context.
- */
-export function clearCurrentContext(): void {
-  (global as any)[HANDLER_CONTEXT] = undefined;
+export function clearAppContext(): void {
+  (global as any)[APP_CONTEXT] = undefined;
 }
 
 // Server router store is initialized per request.
@@ -133,8 +111,7 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
     if (matched) {
       const request = new Request(req, matched);
       const response = new Response<any>({ headers });
-
-      const debugChannel = appContext.debugHub.channel(`${req.method} ${req.url}`);
+      const cache: Record<string | number | symbol, unknown> = {};
 
       let index = -1;
       // TODO: Inject app-level middleware.
@@ -145,16 +122,15 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
         let current = handlers[index];
 
         const handlerContext: HandlerContext = {
-          appContext,
-          debugChannel,
-          request,
-          response,
+          cache,
+          req: request,
+          res: response,
           next: index === handlers.length - 1 ? undefined : nextFunc,
         };
 
-        setCurrentContext(handlerContext);
-        response.body = (await current()) || response.body;
-        clearCurrentContext();
+        setAppContext(appContext);
+        response.body = (await current(handlerContext)) || response.body;
+        clearAppContext();
 
         return response.body;
       };

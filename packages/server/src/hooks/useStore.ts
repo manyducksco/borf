@@ -1,4 +1,4 @@
-import { getCurrentContext } from "../classes/App/makeRequestListener.js";
+import { getAppContext } from "../classes/App/makeRequestListener.js";
 import { type Store } from "../component.js";
 
 export function useStore<T extends Store<any, any>>(
@@ -6,7 +6,7 @@ export function useStore<T extends Store<any, any>>(
 ): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
 
 export function useStore(store: Store<any, any>) {
-  const { appContext } = getCurrentContext();
+  const appContext = getAppContext();
 
   // Fall back to app-lifecycle stores.
   if (appContext.stores.has(store)) {

@@ -18,17 +18,14 @@ app.addStaticPath("/files", "/actual/folder/on/disk/where/files/are");
 
 // Configure app here.
 
-async function Auth() {
+async function Auth({ req, res, next }) {
   const auth = useStore(AuthStore);
 
-  const req = useRequest();
   const header = req.headers.get("authorization");
   const token = header?.replace(/^bearer\s/i, "");
 
-  const ctx = useContext();
-
   if (!token) {
-    ctx.status = 401;
+    res.status = 401;
     return {
       message: "Bearer token not found in authorization header",
     };
@@ -37,7 +34,7 @@ async function Auth() {
   const user = await auth.getUserByToken(token);
 
   if (!user) {
-    ctx.status = 403;
+    res.status = 403;
     return {
       message: "Bearer token invalid",
     };
@@ -47,15 +44,14 @@ async function Auth() {
   // If a response body was returned then this is the end of the road. No further handlers run and the response is sent (or continues back through the next() await chain until it is eventually sent).
 }
 
-app.onGet("/path", Auth, async function GetPath() {
+app.onGet("/path", Auth, async function GetPath(ctx) {
   // Same name/route labeling as browser-side
   const console = useConsole();
 
-  // Use stores
-  const http = useStore("http");
+  // Context has information about the request, options for the pending response, and a next function to await further handlers.
+  const { req, res, next } = ctx;
 
-  // Get request object
-  const req = useRequest();
+  // Request object:
   req.params;
   req.query;
   req.uri;
@@ -64,18 +60,14 @@ app.onGet("/path", Auth, async function GetPath() {
   req.protocol;
   // ...
 
-  // Access response context (headers, status, etc.)
-  const ctx = useContext();
-
   // Work with response headers
-  ctx.headers.set("value", "something");
+  res.headers.set("value", "something");
 
   // Work with response status
-  ctx.status = 555;
-  ctx.statusText = "Bad Happening";
+  res.status = 403;
 
   // Await the remaining handlers
-  const res = await ctx.next();
+  const res = await next();
 
   // If a value is returned now, it overwrites the previous response body.
   // -> This means you could have a middleware rewrite a JSON response into an HTML page.
