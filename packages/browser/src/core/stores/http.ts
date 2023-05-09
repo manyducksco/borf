@@ -1,3 +1,4 @@
+import { isObject } from "@borf/bedrock";
 import { useName } from "../hooks/index.js";
 
 interface HTTPStoreAttrs {
@@ -195,10 +196,20 @@ async function makeRequest<ResBody, ReqBody>(config: MakeRequestConfig<ReqBody>)
     const query = request.query.toString();
     const fullURL = request.query.keys.length > 0 ? request.uri + "?" + query : request.uri;
 
+    let reqBody: BodyInit;
+
+    if (!request.headers.has("content-type") && isObject(request.body)) {
+      // Auto-detect JSON bodies and encode as a string with correct headers.
+      request.headers.set("content-type", "application/json");
+      reqBody = JSON.stringify(request.body);
+    } else {
+      reqBody = request.body as BodyInit;
+    }
+
     const fetched = await fetch(fullURL, {
       method: request.method,
       headers: request.headers,
-      body: request.body as BodyInit,
+      body: reqBody,
     });
 
     // Auto-parse response body based on content-type header

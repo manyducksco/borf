@@ -11,6 +11,7 @@ import { Request } from "../Request.js";
 import { Response } from "../Response.js";
 import { Headers } from "../Headers.js";
 import { isHTML, render } from "../../html.js";
+import { parseBody } from "../../helpers/parseBody.js";
 
 export type { RequestListener };
 
@@ -19,8 +20,8 @@ export type { RequestListener };
  */
 export interface HandlerContext {
   cache: Record<string | number | symbol, unknown>;
-  req: Request;
-  res: Response;
+  req: Request<any>;
+  res: Response<any>;
   next?: () => Promise<unknown>;
 }
 
@@ -41,14 +42,6 @@ export function setAppContext(ctx: AppContext): void {
 export function clearAppContext(): void {
   (global as any)[APP_CONTEXT] = undefined;
 }
-
-// Server router store is initialized per request.
-// const router = ctx.useStore("router");
-
-// router.pattern;
-// router.params;
-// router.query;
-// router.redirect("/path");
 
 export function makeRequestListener(appContext: AppContext, router: Router): RequestListener {
   return async function listener(req, res) {
@@ -109,7 +102,9 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
     const matched = router.matchRoute(req.method!, req.url!);
 
     if (matched) {
-      const request = new Request(req, matched);
+      const parsedBody = await parseBody(req);
+
+      const request = new Request(req, matched, parsedBody);
       const response = new Response<any>({ headers });
       const cache: Record<string | number | symbol, unknown> = {};
 

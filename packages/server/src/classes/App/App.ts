@@ -3,7 +3,7 @@ import type { Cache } from "classes/StaticCache";
 import { type Store, type StoreControls, makeStore } from "../../component.js";
 
 import path from "node:path";
-import { createServer } from "node:http";
+import { createServer, type Server } from "node:http";
 import { assert, assertString } from "@borf/bedrock";
 import { NoCache, StaticCache } from "../StaticCache.js";
 import { merge } from "../../helpers/merge.js";
@@ -91,9 +91,8 @@ export class App extends Router {
     mode: process.env.NODE_ENV === "production" ? "production" : "development",
   };
 
-  #server = createServer();
+  #server: Server;
   #listener?: RequestListener;
-  #corsEnabled = false;
   #corsOptions: CORSOptions = {
     allowOrigin: ["*"],
     allowMethods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
@@ -102,7 +101,7 @@ export class App extends Router {
   #isStarted = false;
   #stores = new Map<Store<any, any>, StoreRegistration<any>>();
   #cache: Cache;
-  #fallback?: string;
+  #appContext: AppContext;
 
   get server() {
     return this.#server;
@@ -117,15 +116,31 @@ export class App extends Router {
     } else {
       this.#cache = new StaticCache();
     }
+
+    const debugHub = new DebugHub(this.#options.debug);
+    const crashCollector = new CrashCollector({
+      onCrash: (entry) => {},
+      onReport: (entry) => {},
+      sendStackTrace: this.#options.mode === "development",
+    });
+
+    this.#appContext = {
+      debugHub,
+      crashCollector,
+      staticCache: this.#cache,
+      stores: this.#stores,
+      mode: this.#options.mode,
+    };
+
+    this.#listener = makeRequestListener(this.#appContext, this);
+    this.#server = createServer(this.#listener);
   }
 
   /**
    * Configure how the app handles CORS requests.
    */
   setCORS(options?: Partial<CORSOptions>) {
-    this.#corsEnabled = true;
-    Object.assign(this.#corsOptions, options);
-
+    this.#appContext.corsOptions = Object.assign({}, this.#appContext.corsOptions ?? this.#corsOptions, options);
     return this;
   }
 
@@ -136,7 +151,7 @@ export class App extends Router {
    * @param filename - The name of the file in your `static` directory to use as a fallback.
    */
   setFallback(filename = "index.html") {
-    this.#fallback = filename;
+    this.#appContext.fallback = filename;
     return this;
   }
 
@@ -173,24 +188,7 @@ export class App extends Router {
     const now = performance.now();
     const port = options?.port || Number(process.env.PORT);
 
-    const debugHub = new DebugHub(this.#options.debug);
-    const crashCollector = new CrashCollector({
-      onCrash: (entry) => {},
-      onReport: (entry) => {},
-      sendStackTrace: this.#options.mode === "development",
-    });
-
-    const appContext: AppContext = {
-      debugHub,
-      crashCollector,
-      corsOptions: this.#corsEnabled ? this.#corsOptions : undefined,
-      staticCache: this.#cache,
-      fallback: this.#fallback,
-      stores: this.#stores,
-      mode: this.#options.mode,
-    };
-
-    setAppContext(appContext);
+    setAppContext(this.#appContext);
 
     // Initialize app-lifecycle stores.
     for (const config of this.#stores.values()) {
@@ -204,9 +202,6 @@ export class App extends Router {
     }
 
     clearAppContext();
-
-    this.#listener = makeRequestListener(appContext, this);
-    this.#server.addListener("request", this.#listener);
 
     return new Promise<AppStartStats>(async (resolve) => {
       this.#server.listen(port, () => {

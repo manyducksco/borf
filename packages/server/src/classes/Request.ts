@@ -14,14 +14,14 @@ export class Request<Body = never> {
   params: Record<string, string | number | boolean>;
   query: Record<string, string | number | boolean>;
   headers: Headers;
-  body: RequestBody<Body>;
+  body: Body;
   socket: Socket;
 
   /**
    * @param req - Node http.IncomingRequest object
    * @param route - Matched route object
    */
-  constructor(req: IncomingMessage, route: RouteMatch) {
+  constructor(req: IncomingMessage, route: RouteMatch, body: Body) {
     this.headers = new Headers(req.headers);
 
     this.url = req.url!;
@@ -32,7 +32,7 @@ export class Request<Body = never> {
     this.params = route.params;
     this.query = route.query;
 
-    this.body = new RequestBody(req);
+    this.body = body;
   }
 
   // get protocol() {
@@ -42,22 +42,4 @@ export class Request<Body = never> {
 
   //   return index !== -1 ? header.substring(0, index).trim() : header.trim();
   // }
-}
-
-class RequestBody<T> {
-  #req;
-
-  constructor(req: IncomingMessage) {
-    this.#req = req;
-  }
-
-  async json() {}
-
-  async form() {}
-
-  async text() {}
-
-  async buffer() {}
-
-  async stream() {}
 }
