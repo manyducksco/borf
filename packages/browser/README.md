@@ -29,20 +29,25 @@ function LayoutView() {
   );
 }
 
-function MessageView({ message }) {
-  return <p>{message}</p>;
+function MessageView(attrs) {
+  return <p>{attrs.message}</p>;
 }
 ```
 
-Components don't have direct access to their children. Instead, the `Outlet` component can be used to display children at a location of your choosing.
+Components don't have direct access to their children. Instead, the component context object (passed as the second argument to any component function) has an `outlet` method that can be used to display children at a location of your choosing.
 
 ```js
 import { Outlet } from "@borf/browser";
 
-function ContentBox() {
+function ContentBox(attrs, ctx) {
   return (
-    <div style={{ padding: "1rem", border: "1px dashed orange" }}>
-      <Outlet />
+    <div
+      style={{
+        padding: "1rem",
+        border: "1px dashed orange",
+      }}
+    >
+      {ctx.outlet()}
     </div>
   );
 }
@@ -59,11 +64,9 @@ function LayoutView() {
 
 ### Components: Stores
 
-Stores return a plain JavaScript object, a single instance of which is shared amongst child components via the `useStore` hook. Stores don't display anything, but they are useful for scoping common state to a limited area of your component tree.
+Stores return a plain JavaScript object, a single instance of which is shared amongst child components via the context's `getStore` method. Stores don't display anything, but they are useful for scoping common state to a limited area of your component tree.
 
 ```js
-import { useStore } from "@borf/browser";
-
 function MessageStore() {
   return {
     message: "This is the message",
@@ -79,21 +82,21 @@ function LayoutView() {
   );
 }
 
-function MessageView() {
-  const { message } = useStore(MessageStore);
+function MessageView(attrs, ctx) {
+  const store = ctx.getStore(MessageStore);
 
-  return <p>{message}</p>;
+  return <p>{store.message}</p>;
 }
 ```
 
 ### Dynamic State: Readables and Writables
 
-Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a state change. All data that needs to change is stored in a Readable or a Writable. By storing values in these containers, and slotting these containers into your DOM nodes, only those elements which are directly affected by that change need to update when changes occur.
+Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a state change. All data that needs to change is stored in a Readable or a Writable. By storing values in these containers, and slotting these containers into your DOM nodes, only those elements which are directly affected by that change update when changes occur.
 
 > Borf's convention is dollar signs at the start of variable names to mark them as dynamic. A `$single` means Readable and a `$$double` means Writable. Another way to think of this is that `$` represents how many 'ways' the binding goes; one-way (read only) or two-way (read-write).
 
 ```jsx
-import { useStore, Writable } from "@borf/browser";
+import { Writable } from "@borf/browser";
 
 function CounterStore() {
   const $$counter = new Writable(0);
@@ -125,8 +128,8 @@ function LayoutView() {
   );
 }
 
-function CounterView() {
-  const { $counter, ...methods } = useStore(CounterStore);
+function CounterView(_, ctx) {
+  const { $counter, ...methods } = ctx.getStore(CounterStore);
 
   return (
     <div>
@@ -262,27 +265,12 @@ function PizzaBuilderView() {
 }
 ```
 
-### Hooks
+### Component Context
 
 > ...
 
 ```js
-import {
-  useName,
-  useLoader,
-  useConsole,
-  useCrash,
-  useBeforeConnect,
-  useConnected,
-  useBeforeDisconnect,
-  useDisconnected,
-  useObserver,
-  useStore,
-  useValue,
-  useReadable,
-  useWritable,
-  useMerge,
-} from "@borf/browser";
+// Full example of a component using everything on its context.
 ```
 
 ### App
@@ -332,9 +320,9 @@ app
 As you may have inferred from the code above, when the URL matches a pattern the corresponding view is displayed. If we visit `/people/john`, we will see the `PersonDetails` view and the params will be `{ name: "john" }`. Params can be accessed inside those views through the built-in `router` store.
 
 ```js
-function PersonDetails() {
+function PersonDetails(_, ctx) {
   // `router` store allows you to work with the router from inside the app.
-  const router = useStore("router");
+  const router = ctx.getStore("router");
 
   // Info about the current route is exported as a set of Readables. Query params are also Writable through $$query:
   const { $path, $pattern, $params, $$query } = router;
