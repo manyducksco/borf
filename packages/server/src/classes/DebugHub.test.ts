@@ -19,7 +19,7 @@ test("names don't allow commas", (t) => {
 
   // Not allowed when you make a channel
   t.throws(() => {
-    debug.channel("this,is,not,allowed");
+    debug.channel({ name: "this,is,not,allowed" });
   });
 });
 
@@ -30,9 +30,9 @@ test("silences messages by type with options", (t) => {
     error: sinon.fake(),
   };
 
-  const noLog = new DebugHub({ log: false }, _console as any).channel("test");
-  const noWarn = new DebugHub({ warn: false }, _console as any).channel("test");
-  const noError = new DebugHub({ error: false }, _console as any).channel("test");
+  const noLog = new DebugHub({ log: false }, _console as any).channel({ name: "test" });
+  const noWarn = new DebugHub({ warn: false }, _console as any).channel({ name: "test" });
+  const noError = new DebugHub({ error: false }, _console as any).channel({ name: "test" });
 
   noLog.log("silent");
   noLog.warn("prints");

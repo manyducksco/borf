@@ -1,4 +1,5 @@
 export interface DebugChannel {
+  info(...args: any[]): void;
   log(...args: any[]): void;
   warn(...args: any[]): void;
   error(...args: any[]): void;
@@ -9,6 +10,10 @@ export interface DebugOptions {
   log?: boolean | "development";
   warn?: boolean | "development";
   error?: boolean | "development";
+}
+
+export interface DebugChannelOptions {
+  name: string;
 }
 
 export class DebugHub {
@@ -24,27 +29,32 @@ export class DebugHub {
     this.#options = options;
   }
 
-  channel(name: string): DebugChannel {
-    assertNameFormat(name);
+  channel(options: DebugChannelOptions): DebugChannel {
+    assertNameFormat(options.name);
 
     const _console = this.#console;
-    const options = this.#options;
+    const debugOptions = this.#options;
     const match = this.#matcher;
 
     return {
+      get info() {
+        if (process.env.NODE_ENV === "production" || !match(options.name)) return noOp;
+        else return _console.info.bind(_console, `${timestamp()} (${options.name})`);
+      },
+
       get log() {
-        if (options.log === false || !match(name)) return noOp;
-        else return _console.log.bind(_console, `${timestamp()} (${name})`);
+        if (debugOptions.log === false || !match(options.name)) return noOp;
+        else return _console.log.bind(_console, `${timestamp()} (${options.name})`);
       },
 
       get warn() {
-        if (options.warn === false || !match(name)) return noOp;
-        else return _console.warn.bind(_console, `${timestamp()} (${name})`);
+        if (debugOptions.warn === false || !match(options.name)) return noOp;
+        else return _console.warn.bind(_console, `${timestamp()} (${options.name})`);
       },
 
       get error() {
-        if (options.error === false || !match(name)) return noOp;
-        else return _console.error.bind(_console, `${timestamp()} (${name})`);
+        if (debugOptions.error === false || !match(options.name)) return noOp;
+        else return _console.error.bind(_console, `${timestamp()} (${options.name})`);
       },
     };
   }

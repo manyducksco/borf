@@ -40,7 +40,7 @@ export interface Connectable {
   disconnect(): Promise<void>;
 }
 
-export type MaybeReadable<T> = T | Readable<T> | Readable<Exclude<T, undefined>>;
+export type MaybeReadable<T> = T extends Readable<any> ? T : T | Readable<T> | Readable<Exclude<T, undefined>>;
 
 /**
  * The set of HTML attributes supported by all HTML elements.
@@ -245,8 +245,14 @@ export interface HTMLGlobalAttributes {
   translate: "" | "yes" | "no";
 }
 
-export interface Styles extends CSS.Properties, CSS.PropertiesHyphen {
+interface DefaultStyleProperties
+  extends Omit<CSS.Properties, "width" | "height">,
+    Omit<CSS.PropertiesHyphen, "width" | "height"> {}
+
+export interface Styles extends DefaultStyleProperties {
   transform?: string;
+  width?: string | number | Readable<string> | Readable<number>;
+  height?: string | number | Readable<string> | Readable<number>;
   [key: string]: any;
 }
 

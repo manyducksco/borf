@@ -11,7 +11,7 @@ import { DebugHub } from "../DebugHub.js";
 import { CrashCollector } from "../CrashCollector.js";
 import { Router } from "../Router.js";
 
-import { clearAppContext, makeRequestListener, RequestListener, setAppContext } from "./makeRequestListener.js";
+import { makeRequestListener, type RequestListener } from "./makeRequestListener.js";
 
 // TODO: Use project config output paths
 const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), "output/static");
@@ -188,11 +188,10 @@ export class App extends Router {
     const now = performance.now();
     const port = options?.port || Number(process.env.PORT);
 
-    setAppContext(this.#appContext);
-
     // Initialize app-lifecycle stores.
     for (const config of this.#stores.values()) {
       const instance = makeStore({
+        appContext: this.#appContext,
         store: config.store,
         attributes: config.attributes ?? {},
       });
@@ -200,8 +199,6 @@ export class App extends Router {
       config.instance = instance;
       await instance.connect();
     }
-
-    clearAppContext();
 
     return new Promise<AppStartStats>(async (resolve) => {
       this.#server.listen(port, () => {

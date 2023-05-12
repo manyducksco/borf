@@ -1,6 +1,5 @@
 import { typeOf, isString, isArray, isArrayOf, isFunction, isObject, isNumber, isBoolean } from "@borf/bedrock";
 import htm from "htm";
-import { Outlet } from "./views/Outlet.js";
 
 export interface HTMLTemplate {
   render(scope?: RenderScope): Promise<string>;
@@ -54,16 +53,8 @@ function h(element: string | ((attributes: any) => unknown), attributes: any, ..
   return {
     async render(scope?: RenderScope) {
       if (isFunction(element)) {
-        if (element === Outlet && scope?.children) {
-          console.log("IS OUTLET", scope);
-          const rendered = await render(scope.children);
-
-          console.log({ rendered });
-
-          return rendered;
-        }
-
         // Component
+        // TODO: Pass context as second argument
         const templates = await element(attributes);
 
         if (templates === null) {

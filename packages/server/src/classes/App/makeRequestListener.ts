@@ -1,7 +1,7 @@
 import type { IncomingMessage, RequestListener } from "node:http";
 import type { Stream } from "node:stream";
 import type { AppContext } from "./App";
-import type { DebugChannel } from "classes/DebugHub";
+import type { DebugChannel } from "../DebugHub";
 
 import path from "node:path";
 import send from "send";
@@ -12,6 +12,7 @@ import { Response } from "../Response.js";
 import { Headers } from "../Headers.js";
 import { isHTML, render } from "../../html.js";
 import { parseBody } from "../../helpers/parseBody.js";
+import { type Store } from "../../component.js";
 
 export type { RequestListener };
 
@@ -20,33 +21,16 @@ export type { RequestListener };
  */
 export interface HandlerContext {
   cache: Record<string | number | symbol, unknown>;
-  req: Request<any>;
-  res: Response<any>;
+  request: Request<any>;
+  response: Response<any>;
   next?: () => Promise<unknown>;
-}
-
-const APP_CONTEXT = Symbol("AppContext");
-
-export function getAppContext(): AppContext {
-  const ctx = (global as any)[APP_CONTEXT];
-  if (!ctx) {
-    throw new Error(`Hooks must be used inside a component or request handler.`);
-  }
-  return ctx;
-}
-
-export function setAppContext(ctx: AppContext): void {
-  (global as any)[APP_CONTEXT] = ctx;
-}
-
-export function clearAppContext(): void {
-  (global as any)[APP_CONTEXT] = undefined;
+  getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
 }
 
 export function makeRequestListener(appContext: AppContext, router: Router): RequestListener {
   return async function listener(req, res) {
     const { corsOptions } = appContext;
-    const channel = appContext.debugHub.channel("borf:server");
+    const channel = appContext.debugHub.channel({ name: "borf:server" });
     const headers = new Headers();
 
     /**
@@ -118,14 +102,19 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
 
         const handlerContext: HandlerContext = {
           cache,
-          req: request,
-          res: response,
+          request,
+          response,
           next: index === handlers.length - 1 ? undefined : nextFunc,
+          getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T> {
+            if (appContext.stores.has(store)) {
+              return appContext.stores.get(store)?.instance!.exports as any;
+            }
+
+            throw new Error(`Store '${store.name}' is not registered on this app.`);
+          },
         };
 
-        setAppContext(appContext);
         response.body = (await current(handlerContext)) || response.body;
-        clearAppContext();
 
         return response.body;
       };

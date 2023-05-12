@@ -1,13 +1,4 @@
-import {
-  App,
-  Outlet,
-  Router,
-  html,
-  useConsole,
-  useContext,
-  useRequest,
-  useStore,
-} from "@borf/server";
+import { App, Router, html } from "@borf/server";
 
 const app = new App({
   debug: {
@@ -59,40 +50,39 @@ app.addStore(AsyncStore);
 
 app.onPost(
   "/full-test",
-  async () => {
-    const ctx = useContext();
-    ctx.headers.set("X-MIDDLEWARE-INLINE", "RUFF");
+  async (ctx) => {
+    ctx.response.headers.set("X-MIDDLEWARE-INLINE", "RUFF");
 
     // Measure response time of subsequent handlers:
     const started = performance.now();
     await ctx.next();
-    ctx.headers.set("X-RESPONSE-TIME-MS", performance.now() - started);
+    ctx.response.headers.set("X-RESPONSE-TIME-MS", performance.now() - started);
   },
-  () => {
-    const console = useConsole();
-    const req = useRequest();
-    const ctx = useContext();
+  ({ request, response, ...ctx }) => {
     const exampleStore = useStore(ExampleStore);
     const asyncStore = useStore(AsyncStore);
 
-    ctx.headers.set(
+    response.headers.set(
       "X-GLOBAL-CALLS",
       `Example Store called ${exampleStore.call()} times.`
     );
 
-    ctx.headers.set("X-REQUEST-METHOD", `This is some CTX info: ${req.verb}.`);
+    response.headers.set(
+      "X-REQUEST-METHOD",
+      `This is some CTX info: ${request.verb}.`
+    );
 
-    ctx.headers.set(
+    response.headers.set(
       "X-REQUEST-BODY",
       `This is some CTX info: ${req.body?.hello}.`
     );
 
-    ctx.headers.set(
+    response.headers.set(
       "X-GLOBAL-ASYNC",
       `Async Store waited ${asyncStore.call()} ms.`
     );
 
-    console.log("Console test");
+    ctx.log("Console test");
 
     // ctx.setHeaders({
     //   "X-GLOBAL-CALLS": `Example Global called ${exampleGlobal.call()} times.`,
@@ -111,11 +101,8 @@ app.onPost(
   }
 );
 
-app.onPost("/form", () => {
-  const req = useRequest();
-  const ctx = useContext();
-
-  console.log({ req, ctx });
+app.onPost("/form", ({ request, response }) => {
+  console.log({ request, response });
 
   return "NOICE";
 });
@@ -155,8 +142,8 @@ app.onGet("/hello-html", function () {
   `;
 });
 
-async function AsyncHeader() {
-  return html`<div class="container"><${Outlet} /></div>`;
+async function AsyncHeader(_, ctx) {
+  return html`<div class="container">${ctx.outlet()}</div>`;
 }
 
 // Listen for HTTP requests on localhost at specified port number.
