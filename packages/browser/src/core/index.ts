@@ -6,16 +6,10 @@ export { Spring } from "./classes/Spring.js";
 export { Ref } from "./classes/Ref.js";
 
 // Markup
-export { m, when, unless, repeat, observe } from "./classes/Markup.js";
-
-// Views
-export { Fragment } from "./views/Fragment.js";
-export { Outlet } from "./views/Outlet.js";
-
-// Hooks
-export * from "./hooks/index.js";
+export { html, when, unless, repeat, observe } from "./classes/Markup.js";
 
 // Types
 export type { HTTPMiddleware } from "./stores/http.js";
 export type { Read, Write, InputType } from "./types.js";
 export type { Markup } from "./classes/Markup.js";
+export type { ComponentContext } from "./component.js";

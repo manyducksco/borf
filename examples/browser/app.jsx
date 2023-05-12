@@ -1,4 +1,4 @@
-import { App, Outlet } from "@borf/browser";
+import { App, html } from "@borf/browser";
 
 import { CounterStore } from "./globals/CounterStore";
 import { MouseStore } from "./globals/MouseStore";
@@ -103,13 +103,20 @@ app
   .addRoute("/router-test/two", () => <h1>Two</h1>)
   .addRedirect("/router-test/*", "/router-test/one");
 
+app.addRoute("/multiple-element-root", function MultipleElementRoot() {
+  return html`
+    <h1>View with Multiple Root Elements</h1>
+    <p>You can't do this with JSX!</p>
+  `;
+});
+
 app.addRoute(
   "/nested",
-  function view() {
+  function view(_, ctx) {
     return (
       <div>
         <h1>Nested Routes!</h1>
-        <Outlet />
+        {ctx.outlet()}
       </div>
     );
   },

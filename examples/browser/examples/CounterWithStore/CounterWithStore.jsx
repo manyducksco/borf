@@ -1,12 +1,11 @@
-import { useStore } from "@borf/browser";
 import { CounterStore } from "../../globals/CounterStore.js";
 import { ExampleFrame } from "../../views/ExampleFrame/index.js";
 
 /**
  * Component with controls and a mapped label based on a readable inside a store.
  */
-export function CounterWithStore() {
-  const { $current, reset } = useStore(CounterStore);
+export function CounterWithStore(_, ctx) {
+  const { $current, reset } = ctx.getStore(CounterStore);
   const $label = $current.map((n) => `the number is: ${n}`);
 
   return (
@@ -28,8 +27,8 @@ export function CounterWithStore() {
 /**
  * Second component that displays the same information from the same store.
  */
-function CounterViewLabel() {
-  const { $current } = useStore(CounterStore);
+function CounterViewLabel(_, ctx) {
+  const { $current } = ctx.getStore(CounterStore);
 
   return <h1>{$current}</h1>;
 }

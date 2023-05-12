@@ -38,5 +38,5 @@ In an HTML file (`index.html`):
 
 - Does this support built-in stores (`http`, `document`, `router`, `language`)? Leaning toward no.
 - Should attributes be written in HTML in `kebab-case` but passed to the component in `camelCase`? HTML is not case sensitive and JS is, and JS doesn't deal well with dashes in property names.
-- Re-exports a subset of hooks and classes from `@borf/browser`.
-- Stores are only supported as elements?
+- Re-exports a subset of hooks and classes from `@borf/browser`. Meant to be used as an alternative.
+- No "page-level" stores, just local ones as custom elements?

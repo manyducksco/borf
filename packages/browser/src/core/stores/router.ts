@@ -3,8 +3,7 @@ import { type Route, matchRoutes, isString, isFunction, joinPath, parseQueryPara
 import { Writable } from "../classes/Writable.js";
 import { Markup } from "../classes/Markup.js";
 import { catchLinks } from "../helpers/catchLinks.js";
-import { getCurrentContext, type ComponentControls } from "../component.js";
-import { useConnected, useConsole, useName, useObserver } from "../hooks/index.js";
+import { getSecrets, type ComponentControls, type ComponentContext } from "../component.js";
 
 // ----- Types ----- //
 
@@ -100,12 +99,10 @@ type RouterStoreAttrs = {
 
 // ----- Code ----- //
 
-export function RouterStore({ options, routes }: RouterStoreAttrs) {
-  useName("borf:router");
+export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: ComponentContext) {
+  ctx.name = "borf:router";
 
-  const console = useConsole();
-
-  const { appContext, elementContext } = getCurrentContext();
+  const { appContext, elementContext } = getSecrets(ctx);
 
   let history: History;
 
@@ -151,7 +148,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs) {
   let isRouteChange = false;
 
   // Update URL when query changes
-  useObserver($$query, (current) => {
+  ctx.observe($$query, (current) => {
     // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
@@ -170,7 +167,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs) {
     });
   });
 
-  useConnected(() => {
+  ctx.onConnected(() => {
     history.listen(onRouteChange);
     onRouteChange(history);
 
@@ -212,7 +209,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs) {
       return;
     }
 
-    console.info(`matched route '${matched.pattern}'`);
+    ctx.info(`matched route '${matched.pattern}'`);
 
     if (matched.meta.redirect != null) {
       if (typeof matched.meta.redirect === "string") {
@@ -224,7 +221,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs) {
 
         // TODO: Update this code to work with new `{param}` style. Looks like it's still for `:params`
 
-        console.info(`redirecting to '${path}'`);
+        ctx.info(`redirecting to '${path}'`);
         history.replace(path);
       } else if (typeof matched.meta.redirect === "function") {
         // TODO: Implement redirect by function.
@@ -247,7 +244,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs) {
           const activeLayer = activeLayers[i];
 
           if (activeLayer?.id !== matchedLayer.id) {
-            console.info(`replacing layer@${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
+            ctx.info(`replacing layer@${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];

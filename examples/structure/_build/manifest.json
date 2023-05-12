@@ -1,0 +1,8 @@
+{
+  "staticFiles": [
+    {
+      "path": "public",
+      "fragment": ""
+    }
+  ]
+}

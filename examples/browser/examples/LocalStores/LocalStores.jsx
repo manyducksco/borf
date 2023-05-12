@@ -1,4 +1,4 @@
-import { useStore, Writable } from "@borf/browser";
+import { Writable } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 export function LocalStores() {
@@ -27,8 +27,8 @@ function ExampleStore({ initialValue }) {
   };
 }
 
-function ValueDisplay() {
-  const { $$value } = useStore(ExampleStore);
+function ValueDisplay(_, ctx) {
+  const { $$value } = ctx.getStore(ExampleStore);
 
   return <li>Hello from {$$value}</li>;
 }

@@ -1,18 +1,18 @@
-import { when, useConnected, useDisconnected, Writable } from "@borf/browser";
+import { when, Writable } from "@borf/browser";
 import { ExampleFrame } from "./ExampleFrame";
 
-export function RenderOrderTest() {
+export function RenderOrderTest(_, ctx) {
   const $$isTrue = new Writable(true);
 
   let interval;
 
-  useConnected(() => {
+  ctx.onConnected(() => {
     interval = setInterval(() => {
       $$isTrue.update((t) => !t);
     }, 1000);
   });
 
-  useDisconnected(() => {
+  ctx.onDisconnected(() => {
     clearInterval(interval);
   });
 

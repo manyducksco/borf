@@ -1,8 +1,8 @@
-import { Writable, useName } from "@borf/browser";
+import { Writable } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function () {
-  useName("7GUIs:TempConverter");
+export default function (_, ctx) {
+  ctx.name = "7GUIs:TempConverter";
 
   const $$celsius = new Writable(10);
 

@@ -76,7 +76,7 @@ export class HTML implements Connectable {
     if (!this.isConnected) {
       for (const child of this.#children) {
         // TODO: Handle errors
-        child.connect(this.#node);
+        await child.connect(this.#node);
       }
 
       applyAttributes(this.#node, this.#attributes, this.#stopCallbacks);

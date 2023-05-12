@@ -1,3 +1,4 @@
+import htm from "htm/mini";
 import { isArray, isArrayOf, isFunction, isNumber, isString } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
 import { Text } from "./Text.js";
@@ -5,9 +6,8 @@ import { HTML } from "./HTML.js";
 import { Readable } from "./Readable.js";
 import { Repeat } from "./Repeat.js";
 import { Dynamic } from "./Dynamic.js";
-import { makeComponent, type Component } from "../component.js";
+import { makeComponent, type Component, type ComponentContext } from "../component.js";
 import { type IntrinsicElements, type Connectable } from "../types.js";
-import { Outlet as OutletView } from "../views/Outlet.js";
 
 /* ----- Types ----- */
 
@@ -82,10 +82,6 @@ export const m = <MarkupFunction>(<I>(element: string | Component<I>, attributes
 
   // Components
   if (isFunction<Component<I>>(element)) {
-    if (element === OutletView) {
-      return OutletView({}); // Special handling for outlets which don't need their own context despite being rendered like components.
-    }
-
     return new Markup((config) => {
       return makeComponent({
         ...config,
@@ -104,6 +100,8 @@ export const m = <MarkupFunction>(<I>(element: string | Component<I>, attributes
   console.log({ element, attributes, children });
   throw new TypeError(`Unexpected arguments to m()`);
 });
+
+export const html = htm.bind(m);
 
 /*==============================*\
 ||            Helpers           ||
@@ -206,7 +204,7 @@ export function observe<T>(readable: Readable<T>, render: (value: T) => Renderab
  */
 export function repeat<T>(
   readable: Readable<T[]>,
-  render: ($value: Readable<T>, $index: Readable<number>) => Markup | Markup[] | null,
+  render: ($value: Readable<T>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null,
   key?: (value: T, index: number) => string | number
 ): Markup {
   return new Markup((config) => {

@@ -1,11 +1,4 @@
-import {
-  Spring,
-  Writable,
-  useConnected,
-  useConsole,
-  useMerge,
-  useReadable,
-} from "@borf/browser";
+import { Readable, Writable, Spring } from "@borf/browser";
 import dedent from "dedent";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
@@ -28,7 +21,7 @@ export function SpringAnimation() {
   };
 
   // Render the current settings as a code snippet to copy and paste.
-  const $codeSnippet = useMerge(
+  const $codeSnippet = Readable.merge(
     [$$stiffness, $$mass, $$damping, $$velocity],
     (s, m, d, v) => {
       return dedent`
@@ -118,11 +111,11 @@ export function SpringAnimation() {
   );
 }
 
-export function Examples(attrs) {
-  const $stiffness = useReadable(attrs.stiffness); // Amount of stiffness or tension in the spring.
-  const $mass = useReadable(attrs.mass); // How heavy the spring is.
-  const $damping = useReadable(attrs.damping); // Amount of smoothing. Affects the speed of transitions.
-  const $velocity = useReadable(attrs.velocity); // How much force the spring's motion begins with.
+export function Examples(attrs, ctx) {
+  const $stiffness = ctx.asReadable(attrs.stiffness); // Amount of stiffness or tension in the spring.
+  const $mass = ctx.asReadable(attrs.mass); // How heavy the spring is.
+  const $damping = ctx.asReadable(attrs.damping); // Amount of smoothing. Affects the speed of transitions.
+  const $velocity = ctx.asReadable(attrs.velocity); // How much force the spring's motion begins with.
 
   const spring = new Spring(0, {
     stiffness: $stiffness,
@@ -140,7 +133,7 @@ export function Examples(attrs) {
       });
   };
 
-  useConnected(() => {
+  ctx.onConnected(() => {
     animate();
   });
 

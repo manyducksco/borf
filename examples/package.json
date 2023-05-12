@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "serve": "borf serve",
     "start:prod": "node server/app.js",
     "start": "vite",
     "build": "vite build",
@@ -28,6 +29,7 @@
     "@borf/server": "file:../packages/server",
     "@vitest/browser": "^0.29.8",
     "@vitest/ui": "^0.29.8",
+    "borf": "file:../packages/borf",
     "htm": "^3.1.1",
     "vite": "^4.2.1",
     "vitest": "^0.29.8",

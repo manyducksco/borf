@@ -1,13 +1,8 @@
-import {
-  Writable,
-  useConnected,
-  useDisconnected,
-  useName,
-} from "@borf/browser";
+import { Writable } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function () {
-  useName("7GUIs:Timer");
+export default function (_, ctx) {
+  ctx.name = "7GUIs:Timer";
 
   const $$duration = new Writable(10); // duration in seconds
   const $$elapsed = new Writable(0); // elapsed time in seconds
@@ -36,12 +31,12 @@ export default function () {
     }
   };
 
-  useConnected(() => {
+  ctx.onConnected(() => {
     lastTick = Date.now();
     tick();
   });
 
-  useDisconnected(() => {
+  ctx.onDisconnected(() => {
     stopped = true;
   });
 

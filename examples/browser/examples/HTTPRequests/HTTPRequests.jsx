@@ -1,17 +1,16 @@
-import { Writable, when, useStore, useMerge, useCrash } from "@borf/browser";
+import { Readable, Writable, when } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 /**
  * Demonstrates HTTP requests with the built-in `http` store.
  */
-export function HTTPRequests() {
+export function HTTPRequests(_, ctx) {
   const $$loading = new Writable(false);
   const $$url = new Writable();
 
-  const http = useStore("http");
-  const crash = useCrash();
+  const http = ctx.getStore("http");
 
-  const $label = useMerge([$$loading, $$url], (loading, url) => {
+  const $label = Readable.merge([$$loading, $$url], (loading, url) => {
     if (loading) {
       return "LOADING...";
     } else {
@@ -31,7 +30,7 @@ export function HTTPRequests() {
       .then((res) => {
         $$url.value = res.body.message;
       })
-      .catch(crash)
+      .catch(ctx.crash)
       .finally(() => {
         $$loading.value = false;
       });

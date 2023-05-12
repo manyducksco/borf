@@ -1,36 +1,25 @@
-import {
-  useName,
-  useLoader,
-  useConsole,
-  useStore,
-  Outlet,
-  useObserver,
-} from "@borf/browser";
 import { MouseStore } from "../../globals/MouseStore";
 import styles from "./AppLayout.module.css";
 
-export async function AppLayout() {
-  useName("🐕");
-  useLoader(<h1>This app is loading!</h1>);
+export async function AppLayout(_, ctx) {
+  ctx.name = "🐕";
+  ctx.loader = <h1>This app is loading!</h1>;
+  ctx.log("hi");
 
-  const console = useConsole();
-
-  console.log("hi");
-
-  const doc = useStore("document");
-  const mouse = useStore(MouseStore);
+  const doc = ctx.getStore("document");
+  const mouse = ctx.getStore(MouseStore);
 
   // Should throw an error that results in crash page being shown.
   // const crap = useStore("not-exist");
   // console.log(crap);
 
   // Display current mouse coordinates as tab title
-  useObserver(mouse.$position, (pos) => {
+  ctx.observe(mouse.$position, (pos) => {
     doc.$$title.value = `x:${Math.round(pos.x)} y:${Math.round(pos.y)}`;
   });
 
-  useObserver(doc.$visibility, (status) => {
-    console.log(`visibility: ${status}`);
+  ctx.observe(doc.$visibility, (status) => {
+    ctx.log(`visibility: ${status}`);
   });
 
   return (
@@ -130,13 +119,13 @@ export async function AppLayout() {
         </section>
       </nav>
 
-      <Outlet />
+      {ctx.outlet()}
     </div>
   );
 }
 
-function NavLink({ path, name }) {
-  const router = useStore("router");
+function NavLink({ path, name }, ctx) {
+  const router = ctx.getStore("router");
 
   const $active = router.$path.map((routerPath) => {
     return routerPath.startsWith(path);

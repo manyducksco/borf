@@ -1,7 +1,7 @@
 import { assertObject, isFunction, isObject, isPromise, typeOf } from "@borf/bedrock";
-import { useConsole, useName, useCrash } from "../hooks/index.js";
 import { Readable } from "../classes/Readable.js";
 import { Writable } from "../classes/Writable.js";
+import { type ComponentContext } from "core/component.js";
 
 // ----- Types ----- //
 
@@ -34,11 +34,8 @@ type LanguageAttrs = {
 
 // ----- Code ----- //
 
-export async function LanguageStore(attrs: LanguageAttrs) {
-  useName("borf:language");
-
-  const console = useConsole();
-  const crash = useCrash();
+export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext) {
+  ctx.name = "borf:language";
 
   const languages = new Map<string, Language>();
 
@@ -47,7 +44,7 @@ export async function LanguageStore(attrs: LanguageAttrs) {
     languages.set(tag, new Language(tag, config));
   });
 
-  console.info(
+  ctx.info(
     `app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
   );
 
@@ -73,7 +70,7 @@ export async function LanguageStore(attrs: LanguageAttrs) {
     : languages.get([...languages.keys()][0]);
 
   if (currentLanguage != null) {
-    console.info(`current language is '${currentLanguage.tag}'`);
+    ctx.info(`current language is '${currentLanguage.tag}'`);
 
     const translation = await currentLanguage.getTranslation();
 
@@ -98,10 +95,10 @@ export async function LanguageStore(attrs: LanguageAttrs) {
         $$language.value = tag;
         $$translation.value = translation;
 
-        console.info("set language to " + tag);
+        ctx.info("set language to " + tag);
       } catch (error) {
         if (error instanceof Error) {
-          crash(error);
+          ctx.crash(error);
         }
       }
     },

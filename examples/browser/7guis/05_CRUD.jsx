@@ -1,17 +1,8 @@
-import {
-  Writable,
-  repeat,
-  useConsole,
-  useMerge,
-  useName,
-  useObserver,
-} from "@borf/browser";
+import { Writable, repeat } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function () {
-  useName("7GUIs:CRUD");
-
-  const console = useConsole();
+export default function (_, ctx) {
+  ctx.name = "7GUIs:CRUD";
 
   const $$people = new Writable([
     { id: 1, name: "Hans", surname: "Emil" },
@@ -24,7 +15,7 @@ export default function () {
   const $$surnameInput = new Writable("");
   const $$filterPrefix = new Writable("");
 
-  const $filteredPeople = useMerge(
+  const $filteredPeople = Readable.merge(
     [$$people, $$filterPrefix],
     (people, prefix) => {
       if (prefix.trim() === "") {
@@ -68,8 +59,8 @@ export default function () {
     });
   }
 
-  useObserver($$people, (people) => {
-    console.log(people);
+  ctx.observe($$people, (people) => {
+    ctx.log(people);
   });
 
   // Deletes the selected person.
@@ -82,7 +73,7 @@ export default function () {
   }
 
   // Update fields when selection changes.
-  useObserver($$selectedId, (id) => {
+  ctx.observe($$selectedId, (id) => {
     const person = $$people.value.find((p) => p.id === id);
 
     if (person) {
@@ -102,7 +93,7 @@ export default function () {
             size={8}
             value={$$selectedId.toReadable()}
             onchange={(e) => {
-              console.log(e.target, e.target.value);
+              ctx.log(e.target, e.target.value);
 
               $$selectedId.set(Number(e.target.value));
             }}

@@ -29,11 +29,9 @@ import {
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
 import { type StopFunction } from "./Readable.js";
-import { type Writable } from "./Writable.js";
-import { m, type Markup } from "./Markup.js";
+import { html, m } from "./Markup.js";
 import { type BuiltInStores } from "../types.js";
-import { makeComponent, type View, type Store, type ComponentControls } from "../component.js";
-import { Outlet } from "../views/Outlet.js";
+import { makeComponent, type View, type Store, type ComponentControls, type ComponentContext } from "../component.js";
 
 // ----- Types ----- //
 
@@ -124,8 +122,8 @@ interface AppRouter {
  * It does nothing but render routes.
  */
 
-function DefaultRootView() {
-  return m(Outlet);
+function DefaultRootView(_: {}, ctx: ComponentContext) {
+  return ctx.outlet();
 }
 
 /**
@@ -601,7 +599,7 @@ export class App implements AppRouter {
       return routes;
     }
 
-    let view: View<unknown> | undefined;
+    let view: View<{}> | undefined;
 
     if (!route.view) {
       view = DefaultRootView;
@@ -651,41 +649,33 @@ type CrashPageAttrs = {
 };
 
 function DefaultCrashPage({ message, error, componentName }: CrashPageAttrs) {
-  return m(
-    "div",
-    {
-      style: {
+  return html`
+    <div
+      style=${{
         backgroundColor: "#880000",
         color: "#fff",
         padding: "2rem",
         position: "fixed",
         inset: 0,
         fontSize: "20px",
-      },
-    },
-    m("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
-    m(
-      "p",
-      { style: { marginBottom: "0.25rem" } },
-      m("span", { style: { fontFamily: "monospace" } }, componentName),
-      " says:"
-    ),
+      }}
+    >
+      <h1 style=${{ marginBottom: "0.5rem" }}>The app has crashed</h1>
+      <p style=${{ marginBottom: "0.25rem" }}>
+        <span style=${{ fontFamily: "monospace" }}>${componentName}</span> says:
+      </p>
 
-    m(
-      "blockquote",
-      {
-        style: {
+      <blockquote
+        style=${{
           backgroundColor: "#991111",
           padding: "0.25em",
           borderRadius: "6px",
           fontFamily: "monospace",
           marginBottom: "1rem",
-        },
-      },
-      m(
-        "span",
-        {
-          style: {
+        }}
+      >
+        <span
+          style=${{
             display: "inline-block",
             backgroundColor: "red",
             padding: "0.1em 0.4em",
@@ -693,13 +683,67 @@ function DefaultCrashPage({ message, error, componentName }: CrashPageAttrs) {
             borderRadius: "4px",
             fontSize: "0.9em",
             fontWeight: "bold",
-          },
-        },
-        error.name
-      ),
-      message
-    ),
+          }}
+        >
+          ${error.name}
+        </span>
 
-    m("p", null, "Please see the browser console for details.")
-  );
+        ${message}
+      </blockquote>
+
+      <p>Please see the browser console for details.</p>
+    </div>
+  `;
+
+  // return m(
+  //   "div",
+  //   {
+  //     style: {
+  //       backgroundColor: "#880000",
+  //       color: "#fff",
+  //       padding: "2rem",
+  //       position: "fixed",
+  //       inset: 0,
+  //       fontSize: "20px",
+  //     },
+  //   },
+  //   m("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
+  //   m(
+  //     "p",
+  //     { style: { marginBottom: "0.25rem" } },
+  //     m("span", { style: { fontFamily: "monospace" } }, componentName),
+  //     " says:"
+  //   ),
+
+  //   m(
+  //     "blockquote",
+  //     {
+  //       style: {
+  //         backgroundColor: "#991111",
+  //         padding: "0.25em",
+  //         borderRadius: "6px",
+  //         fontFamily: "monospace",
+  //         marginBottom: "1rem",
+  //       },
+  //     },
+  //     m(
+  //       "span",
+  //       {
+  //         style: {
+  //           display: "inline-block",
+  //           backgroundColor: "red",
+  //           padding: "0.1em 0.4em",
+  //           marginRight: "0.5em",
+  //           borderRadius: "4px",
+  //           fontSize: "0.9em",
+  //           fontWeight: "bold",
+  //         },
+  //       },
+  //       error.name
+  //     ),
+  //     message
+  //   ),
+
+  //   m("p", null, "Please see the browser console for details.")
+  // );
 }

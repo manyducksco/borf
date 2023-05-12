@@ -3,7 +3,7 @@ import { Writable } from "./Writable.js";
 import { type Connectable } from "../types.js";
 import { type Markup } from "./Markup.js";
 import { type AppContext, type ElementContext } from "./App.js";
-import { makeComponent } from "../component.js";
+import { type ComponentContext, makeComponent } from "../component.js";
 
 // ----- Types ----- //
 
@@ -11,7 +11,7 @@ interface RepeatOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
   readable: Readable<T[]>;
-  render: ($value: Readable<T>, $index: Readable<number>) => Markup | Markup[] | null;
+  render: ($value: Readable<T>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null;
   key?: (value: T, index: number) => any;
 }
 
@@ -31,7 +31,7 @@ export class Repeat<T> implements Connectable {
   #connectedItems: ConnectedItem<T>[] = [];
   #appContext;
   #elementContext;
-  #render: ($value: Readable<T>, $index: Readable<number>) => Markup | Markup[] | null;
+  #render: ($value: Readable<T>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null;
   #keyFn;
 
   get node() {
@@ -146,9 +146,9 @@ export class Repeat<T> implements Connectable {
 interface RepeatItemAttrs {
   $value: Readable<any>;
   $index: Readable<number>;
-  render: ($value: Readable<any>, $index: Readable<number>) => Markup | Markup[] | null;
+  render: ($value: Readable<any>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null;
 }
 
-function RepeatItemView({ $value, $index, render }: RepeatItemAttrs) {
-  return render($value, $index);
+function RepeatItemView({ $value, $index, render }: RepeatItemAttrs, ctx: ComponentContext) {
+  return render($value, $index, ctx);
 }

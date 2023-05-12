@@ -4,8 +4,6 @@ import { parseFormBody } from "./parseFormBody.js";
 export async function parseBody(req: IncomingMessage) {
   const contentType = req.headers["content-type"];
 
-  console.log({ contentType });
-
   if (contentType) {
     if (contentType.startsWith("application/json")) {
       const buffered = await readToBuffer(req);

@@ -1,6 +1,4 @@
-import { Outlet } from "@borf/browser";
-
-export default function () {
+export default function (attrs, ctx) {
   return (
     <div>
       <p style={{ padding: "1rem 1rem 0 1rem" }}>
@@ -9,9 +7,7 @@ export default function () {
         evaluating UI frameworks.
       </p>
 
-      <div>
-        <Outlet />
-      </div>
+      <div>{ctx.outlet()}</div>
     </div>
   );
 }

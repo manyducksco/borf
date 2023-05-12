@@ -1,34 +1,157 @@
-import { typeOf } from "@borf/bedrock";
+import { isArrayOf, typeOf } from "@borf/bedrock";
+import { Readable, type StopFunction, type ValuesOfReadables } from "./classes/Readable.js";
 import { Writable } from "./classes/Writable.js";
-import { Markup } from "./classes/Markup.js";
+import { Markup, Renderable } from "./classes/Markup.js";
 import { Dynamic } from "./classes/Dynamic.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
-import { type Connectable } from "./types.js";
+import { type Read, type Write, type Value, type Connectable, type BuiltInStores } from "./types.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
 
-export type Component<A> = (attributes: A) => unknown;
-export type Store<A, E> = (attributes: A) => E | Promise<E>;
-export type View<A> = (attributes: A) => Markup | null | Promise<Markup | null>;
+export type Component<A> = (attributes: A, context: ComponentContext) => unknown;
+export type Store<A, E> = (attributes: A, context: ComponentContext) => E | Promise<E>;
+export type View<A> = (attributes: A, context: ComponentContext) => Markup | null | Promise<Markup | null>;
 
-/**
- * The core state of a component. Hooks access this object.
- */
-export interface ComponentContext {
+interface AsValueOptions<T> {
+  /**
+   * The default value if `value` is undefined.
+   */
+  default: T;
+}
+
+interface AsReadableOptions<T> {
+  /**
+   * The default value if `value` is undefined.
+   */
+  default: Exclude<T, undefined>;
+}
+
+interface AsWritableOptions<T> {
+  /**
+   * The default value if `value` is undefined.
+   */
+  default: T;
+}
+
+// TODO: Rename when hooks are phased out.
+export interface ComponentContext extends DebugChannel {
+  /**
+   * Returns the nearest parent instance or app instance of `store`.
+   */
+  getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+  /**
+   * Returns an instance of a built-in store.
+   */
+  getStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+
+  /**
+   * Returns the current value of an attribute.
+   */
+  asValue<T>(value: Read<T>): Value<T>;
+  /**
+   * Returns the current value of an attribute.
+   */
+  asValue<T>(value: Read<T>, options: AsValueOptions<T>): Value<Exclude<T, undefined>>;
+  /**
+   * Returns the current value of an attribute.
+   */
+  asValue<T>(value?: Read<T>): Value<T | undefined>;
+  /**
+   * Returns the current value of an attribute.
+   */
+  asValue<T>(value: Read<T> | undefined, options: AsValueOptions<T>): Value<Exclude<T, undefined>>;
+
+  /**
+   * Returns a Readable binding to a Read or Write attribute.
+   */
+  asReadable<T>(value: Read<T>): Readable<T>;
+  /**
+   * Returns a Readable binding to a Read or Write attribute.
+   */
+  asReadable<T>(value: Read<T>, options: AsReadableOptions<T>): Readable<Exclude<T, undefined>>;
+  /**
+   * Returns a Readable binding to a Read or Write attribute.
+   */
+  asReadable<T>(value?: Read<T>): Readable<T | undefined>;
+  /**
+   * Returns a Readable binding to a Read or Write attribute.
+   */
+  asReadable<T>(value: Read<T> | undefined, options: AsReadableOptions<T>): Readable<Exclude<T, undefined>>;
+
+  /**
+   * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
+   */
+  asWritable<T>(value: Write<T> | T): Writable<T>;
+  /**
+   * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
+   */
+  asWritable<T>(value: Write<T> | T, options: AsWritableOptions<T>): Writable<T>;
+  /**
+   * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
+   */
+  asWritable<T>(value?: Write<T> | T): Writable<T | undefined>;
+  /**
+   * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
+   */
+  asWritable<T>(value: Write<T> | T | undefined, options: AsWritableOptions<T>): Writable<T>;
+
+  /**
+   * Runs `callback` and awaits its promise before `onConnected` callbacks are called.
+   * Component is not considered connected until all `beforeConnect` promises resolve.
+   */
+  beforeConnect(callback: () => Promise<any>): void;
+
+  /**
+   * Runs `callback` after this component is connected.
+   */
+  onConnected(callback: () => any): void;
+
+  /**
+   * Runs `callback` and awaits its promise before `onDisconnected` callbacks are called.
+   * Component is not removed from the DOM until all `beforeDisconnect` promises resolve.
+   */
+  beforeDisconnect(callback: () => Promise<any>): void;
+
+  /**
+   * Runs `callback` after this component is disconnected.
+   */
+  onDisconnected(callback: () => any): void;
+
+  /**
+   * The name of this component for logging and debugging purposes.
+   */
+  name: string;
+
+  /**
+   * Sets loading content to be displayed while this component's setup is pending.
+   * Only takes effect if this component function is async.
+   */
+  loader: Renderable;
+
+  /**
+   * Takes an Error object, unmounts the app and displays its crash page.
+   */
+  crash(error: Error): void;
+
+  /**
+   * Observes a readable value while this component is connected. Calls `callback` each time the value changes.
+   */
+  observe<T>(readable: Readable<T>, callback: (value: T) => void): void;
+
+  /**
+   * Observes a set of readable values while this component is connected.
+   * Calls `callback` with each value in the same order as `readables` each time any of their values change.
+   */
+  observe<T extends Readable<any>[], V>(readables: [...T], callback: (...values: ValuesOfReadables<T>) => void): void;
+
+  /**
+   * Returns a Markup element that displays this component's children.
+   */
+  outlet(): Markup;
+}
+
+export interface ContextSecrets {
   appContext: AppContext;
   elementContext: ElementContext;
-
-  isConnected: boolean;
-  name: string;
-  debugChannel: DebugChannel;
-  $$children: Writable<Markup[]>;
-  loadingContent?: Markup;
-
-  // Lifecycle and observers
-  stopObserverCallbacks: (() => void)[];
-  connectedCallbacks: (() => void)[];
-  disconnectedCallbacks: (() => void)[];
-  beforeConnectCallbacks: (() => Promise<void>)[];
-  beforeDisconnectCallbacks: (() => Promise<void>)[];
 }
 
 /**
@@ -51,34 +174,13 @@ export interface ComponentControls extends Connectable {
 }
 
 /*=====================================*\
-||     Context Accessors for Hooks     ||
+||          Context Accessors          ||
 \*=====================================*/
 
-const COMPONENT_CONTEXT = Symbol("ComponentContext");
+const SECRETS = Symbol("SECRETS");
 
-/**
- * Used by hooks to get the current component context.
- */
-export function getCurrentContext(): ComponentContext {
-  const ctx = (window as any)[COMPONENT_CONTEXT];
-  if (!ctx) {
-    throw new Error("Hooks must be called in the body of a component function.");
-  }
-  return ctx;
-}
-
-/**
- * Used by components to set themselves as current while running the setup function.
- */
-function setCurrentContext(ctx: ComponentContext) {
-  (window as any)[COMPONENT_CONTEXT] = ctx;
-}
-
-/**
- * Used by components to clear the current component after finished setting up.
- */
-function clearCurrentContext() {
-  (window as any)[COMPONENT_CONTEXT] = undefined;
+export function getSecrets(ctx: ComponentContext): ContextSecrets {
+  return (ctx as any)[SECRETS];
 }
 
 /*=====================================*\
@@ -86,25 +188,187 @@ function clearCurrentContext() {
 \*=====================================*/
 
 export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls {
-  const ctx: ComponentContext = {
-    name: config.component.name ?? "anonymous",
-    $$children: new Writable(config.children ?? []),
-    isConnected: false,
-    appContext: config.appContext,
-    elementContext: { ...config.elementContext },
-    debugChannel: config.appContext.debugHub.channel({
-      get name() {
-        return ctx.name;
-      },
-    }),
+  const appContext = config.appContext;
+  const elementContext = { ...config.elementContext };
+  const $$children = new Writable(config.children ?? []);
 
-    // Lifecycle and observers
-    stopObserverCallbacks: [],
-    connectedCallbacks: [],
-    disconnectedCallbacks: [],
-    beforeConnectCallbacks: [],
-    beforeDisconnectCallbacks: [],
+  let isConnected = false;
+
+  // Lifecycle and observers
+  const stopObserverCallbacks: (() => void)[] = [];
+  const connectedCallbacks: (() => any)[] = [];
+  const disconnectedCallbacks: (() => any)[] = [];
+  const beforeConnectCallbacks: (() => Promise<any>)[] = [];
+  const beforeDisconnectCallbacks: (() => Promise<any>)[] = [];
+
+  const ctx: Omit<ComponentContext, keyof DebugChannel> = {
+    name: config.component.name ?? "anonymous",
+    loader: null,
+
+    getStore(store: keyof BuiltInStores | Store<any, any>) {
+      let name: string;
+
+      if (typeof store === "string") {
+        name = store as keyof BuiltInStores;
+
+        if (appContext.stores.has(store)) {
+          const _store = appContext.stores.get(store)!;
+
+          if (!_store.instance) {
+            appContext.crashCollector.crash({
+              componentName: ctx.name,
+              error: new Error(
+                `Store '${store}' was accessed before it was set up. Make sure '${store}' is registered before components that access it.`
+              ),
+            });
+          }
+
+          return _store.instance!.outputs;
+        }
+      } else {
+        name = store.name;
+
+        if (elementContext.stores.has(store)) {
+          return elementContext.stores.get(store)!.instance!.outputs;
+        }
+
+        if (appContext.stores.has(store)) {
+          const _store = appContext.stores.get(store)!;
+
+          if (!_store.instance) {
+            appContext.crashCollector.crash({
+              componentName: ctx.name,
+              error: new Error(
+                `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
+              ),
+            });
+          }
+
+          return _store.instance!.outputs;
+        }
+      }
+
+      appContext.crashCollector.crash({
+        componentName: ctx.name,
+        error: new Error(`Store '${name}' is not registered on this app.`),
+      });
+    },
+
+    asValue<T>(value?: Read<T>, options?: AsValueOptions<T>) {
+      if (Readable.isReadable<T>(value)) {
+        return value.value;
+      } else {
+        if (value != null) {
+          return value;
+        }
+
+        return options?.default;
+      }
+    },
+
+    asReadable<T>(value?: Read<T>, options?: AsReadableOptions<T>) {
+      if (Readable.isReadable<T>(value)) {
+        return value;
+      } else {
+        if (value != null) {
+          return new Readable(value);
+        }
+
+        return new Readable(options?.default);
+      }
+    },
+
+    asWritable<T>(value?: Write<T> | T, options?: AsWritableOptions<T>) {
+      if (Writable.isWritable<T>(value)) {
+        return value;
+      } else if (Readable.isReadable<T>(value)) {
+        throw new Error(`Value must be writable. Got: ${value}`);
+      } else {
+        if (value != null) {
+          return new Writable(value);
+        }
+
+        return new Writable(options?.default);
+      }
+    },
+
+    onConnected(callback: () => any) {
+      connectedCallbacks.push(callback);
+    },
+
+    onDisconnected(callback: () => any) {
+      disconnectedCallbacks.push(callback);
+    },
+
+    beforeConnect(callback: () => Promise<any>) {
+      beforeConnectCallbacks.push(callback);
+    },
+
+    beforeDisconnect(callback: () => Promise<any>) {
+      beforeDisconnectCallbacks.push(callback);
+    },
+
+    crash(error: Error) {
+      config.appContext.crashCollector.crash({ error, componentName: ctx.name });
+    },
+
+    observe(readable: any, callback: any) {
+      const readables: Readable<any>[] = [];
+
+      if (Array.isArray(readable) && readable.every(Readable.isReadable)) {
+        readables.push(...readable);
+      } else if (Readable.isReadable(readable)) {
+        readables.push(readable);
+      } else {
+        throw new TypeError(`Expected one Readable or an array of Readables as the first argument.`);
+      }
+
+      if (readables.length === 0) {
+        throw new TypeError(`Expected at least one readable.`);
+      }
+
+      const start = (): StopFunction => {
+        if (readables.length > 1) {
+          return Readable.merge(readables, callback).observe(() => {});
+        } else {
+          return readables[0].observe(callback);
+        }
+      };
+
+      if (isConnected) {
+        // If called when the component is connected, we assume this code is in a lifecycle hook
+        // where it will be triggered at some point again after the component is reconnected.
+        stopObserverCallbacks.push(start());
+      } else {
+        // This should only happen if called in the body of the setup function.
+        // This code is not always re-run between when a component is disconnected and reconnected.
+        connectedCallbacks.push(() => {
+          stopObserverCallbacks.push(start());
+        });
+      }
+    },
+
+    outlet() {
+      return new Markup((config) => new Dynamic({ ...config, readable: $$children }));
+    },
   };
+
+  const debugChannel = appContext.debugHub.channel({
+    get name() {
+      return ctx.name;
+    },
+  });
+
+  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debugChannel));
+
+  Object.defineProperty(ctx, SECRETS, {
+    enumerable: false,
+    configurable: false,
+    value: {
+      appContext,
+      elementContext,
+    } as ContextSecrets,
+  });
 
   // Exported object from store. This is undefined for views.
   let outputs: object | undefined;
@@ -115,11 +379,8 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
   async function initialize(parent: Node, after?: Node) {
     let result: unknown;
 
-    const { appContext, elementContext, $$children, name: componentName } = ctx;
-
     try {
-      setCurrentContext(ctx);
-      result = config.component(config.attributes);
+      result = config.component(config.attributes, ctx as ComponentContext);
 
       if (result instanceof Promise) {
         // TODO: Handle loading states
@@ -127,17 +388,17 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
       }
     } catch (error) {
       if (error instanceof Error) {
-        appContext.crashCollector.crash({ error, componentName });
-      } else {
-        throw error;
+        appContext.crashCollector.crash({ error, componentName: ctx.name });
       }
-    } finally {
-      clearCurrentContext();
+      throw error;
     }
 
     if (result instanceof Markup || result === null) {
       // Result is a view.
       connectable = result?.init({ appContext, elementContext });
+    } else if (isArrayOf((x) => x instanceof Markup, result)) {
+      // Result is a view with multiple root elements.
+      connectable = new Dynamic({ appContext, elementContext, readable: new Readable(result) });
     } else if (typeof result === "object" && !Array.isArray(result)) {
       // Result is a store.
       outputs = result;
@@ -153,13 +414,13 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
             config.component.name
           }' function to return Markup or null for a view, or an object for a store. Got: ${typeOf(result)}`
         ),
-        componentName,
+        componentName: ctx.name,
       });
     }
   }
 
   const controls: ComponentControls = {
-    $$children: ctx.$$children,
+    $$children,
 
     get outputs() {
       return outputs;
@@ -170,16 +431,15 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
     },
 
     get isConnected() {
-      return ctx.isConnected;
+      return isConnected;
     },
 
     async connect(parent: Node, after?: Node) {
       // Don't run lifecycle hooks or initialize if already connected.
       // Calling connect again can be used to re-order elements that are already connected to the DOM.
-      const wasConnected = ctx.isConnected;
+      const wasConnected = isConnected;
 
       if (!wasConnected) {
-        // Initialize an instance of the component
         await initialize(parent, after);
       }
 
@@ -188,43 +448,36 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
       }
 
       if (!wasConnected) {
-        // Run beforeConnected
-        for (const callback of ctx.beforeConnectCallbacks) {
+        while (beforeConnectCallbacks.length > 0) {
+          const callback = beforeConnectCallbacks.shift()!;
           await callback();
         }
-        ctx.beforeConnectCallbacks = [];
 
-        // Mark component as connected
-        ctx.isConnected = true;
+        isConnected = true;
 
-        // Run onConnected
-        for (const callback of ctx.connectedCallbacks) {
+        while (connectedCallbacks.length > 0) {
+          const callback = connectedCallbacks.shift()!;
           callback();
         }
-        ctx.connectedCallbacks = [];
       }
     },
 
     async disconnect() {
-      // Run beforeDisconnected
-      for (const callback of ctx.beforeDisconnectCallbacks) {
+      while (beforeDisconnectCallbacks.length > 0) {
+        const callback = beforeDisconnectCallbacks.shift()!;
         await callback();
       }
-      ctx.beforeDisconnectCallbacks = [];
 
-      // Disconnect component
       if (connectable) {
         await connectable.disconnect();
       }
 
-      // Mark as disconnected
-      ctx.isConnected = false;
+      isConnected = false;
 
-      // Run onDisconnected
-      for (const callback of ctx.disconnectedCallbacks) {
+      while (disconnectedCallbacks.length > 0) {
+        const callback = disconnectedCallbacks.shift()!;
         callback();
       }
-      ctx.disconnectedCallbacks = [];
     },
   };
 

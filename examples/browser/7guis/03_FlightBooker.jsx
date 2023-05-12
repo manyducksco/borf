@@ -1,4 +1,4 @@
-import { Writable, Readable, useMerge, useName, repeat } from "@borf/browser";
+import { Writable, Readable, repeat } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 const flightTypes = ["one-way flight", "return flight"];
@@ -27,8 +27,8 @@ function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
-export default function () {
-  useName("7GUIs:FlightBooker");
+export default function (_, ctx) {
+  ctx.name = "7GUIs:FlightBooker";
 
   const $$flightType = new Writable(flightTypes[0]);
   const $$startDate = new Writable(formatDate(new Date()));
@@ -37,7 +37,7 @@ export default function () {
   const $$returnDateIsValid = new Writable(true);
 
   // Concatenate date states and convert through a function into a new state.
-  const $formIsValid = useMerge(
+  const $formIsValid = Readable.merge(
     [$$startDateIsValid, $$returnDateIsValid],
     (x, y) => x && y
   );
@@ -57,7 +57,7 @@ export default function () {
             }}
           >
             {repeat(new Readable(flightTypes), ($type) => {
-              const $selected = useMerge(
+              const $selected = Readable.merge(
                 [$type, $$flightType],
                 (x, y) => x === y
               );

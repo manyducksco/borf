@@ -1,23 +1,25 @@
-import { Outlet } from "@borf/browser";
+import { when } from "@borf/browser";
 import styles from "./ExampleFrame.module.css";
 
-export function ExampleFrame({ title, about }) {
+export function ExampleFrame(attrs, ctx) {
+  const $title = ctx.asReadable(attrs.title);
+  const $about = ctx.asReadable(attrs.about);
+
   return (
     <article class={styles.frame}>
       <header class={styles.header}>
-        <h2 class={styles.title}>{title}</h2>
+        <h2 class={styles.title}>{$title}</h2>
       </header>
 
-      {about && (
+      {when(
+        $about,
         <div class={styles.about}>
           <div class={styles.symbol}>⌘</div>
-          <p>{about}</p>
+          <p>{$about}</p>
         </div>
       )}
 
-      <div class={styles.content}>
-        <Outlet />
-      </div>
+      <div class={styles.content}>{ctx.outlet()}</div>
     </article>
   );
 }

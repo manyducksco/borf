@@ -1,0 +1,25 @@
+{
+  "name": "borf",
+  "version": "1.0.0",
+  "description": "Base package for Borf apps. Supplies CLI commands for interacting with your app.",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc --watch"
+  },
+  "bin": {
+    "borf": "./lib/cli.js"
+  },
+  "keywords": [],
+  "author": "Tony McCoy <tony@manyducks.co>",
+  "license": "ISC",
+  "dependencies": {
+    "vite": "^4.3.5",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.1.1",
+    "@types/yargs": "^17.0.24",
+    "typescript": "^5.0.4"
+  }
+}

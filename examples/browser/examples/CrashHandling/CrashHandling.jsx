@@ -1,15 +1,12 @@
-import { useCrash } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
-export function CrashHandling() {
-  const crash = useCrash();
-
+export function CrashHandling(_, ctx) {
   return (
     <ExampleFrame title="Crash Handling">
       <div>
         <button
           onclick={() => {
-            crash(new Error("The forbidden button was clicked."));
+            ctx.crash(new Error("The forbidden button was clicked."));
           }}
         >
           Do not press!

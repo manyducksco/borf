@@ -1,14 +1,13 @@
-import { Writable, useConnected, useConsole } from "@borf/browser";
+import { Writable } from "@borf/browser";
 
 /**
  * Tracks the mouse position.
  */
-export function MouseStore() {
-  const console = useConsole();
+export function MouseStore(_, ctx) {
   const $$position = new Writable({ x: 0, y: 0 });
 
-  useConnected(() => {
-    console.log("listening for mousemove events");
+  ctx.onConnected(() => {
+    ctx.log("listening for mousemove events");
 
     window.addEventListener("mousemove", (e) => {
       $$position.value = { x: e.clientX, y: e.clientY };
