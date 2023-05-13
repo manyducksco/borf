@@ -42,34 +42,31 @@ export class Dynamic<T> implements Connectable {
   }
 
   async connect(parent: Node, after?: Node) {
-    if (this.isConnected) {
-      // TODO: Handle errors
-      await this.disconnect();
+    if (!this.isConnected) {
+      parent.insertBefore(this.node, after?.nextSibling ?? null);
+
+      this.#stopCallback = this.#readable.observe((value: T) => {
+        let newValue: unknown;
+
+        if (this.#render) {
+          newValue = this.#render(value);
+        } else {
+          newValue = value;
+        }
+
+        if (!isRenderable(newValue)) {
+          throw new TypeError(
+            `Dynamic received invalid value to render. Got type: ${typeOf(newValue)}, value: ${newValue}`
+          );
+        }
+
+        if (Array.isArray(newValue)) {
+          this.#update(...newValue);
+        } else {
+          this.#update(newValue);
+        }
+      });
     }
-
-    parent.insertBefore(this.node, after?.nextSibling ?? null);
-
-    this.#stopCallback = this.#readable.observe((value: T) => {
-      let newValue: unknown;
-
-      if (this.#render) {
-        newValue = this.#render(value);
-      } else {
-        newValue = value;
-      }
-
-      if (!isRenderable(newValue)) {
-        throw new TypeError(
-          `Dynamic received invalid value to render. Got type: ${typeOf(newValue)}, value: ${newValue}`
-        );
-      }
-
-      if (Array.isArray(newValue)) {
-        this.#update(...newValue);
-      } else {
-        this.#update(newValue);
-      }
-    });
   }
 
   async disconnect() {
@@ -91,7 +88,7 @@ export class Dynamic<T> implements Connectable {
     }
   }
 
-  #update(...children: Renderable[]) {
+  async #update(...children: Renderable[]) {
     this.#cleanup();
 
     if (children == null || !this.isConnected) {
@@ -105,7 +102,7 @@ export class Dynamic<T> implements Connectable {
       const view = child.init({ appContext: this.#appContext, elementContext: this.#elementContext });
 
       // TODO: Handle errors
-      view.connect(this.node.parentNode!, previous);
+      await view.connect(this.node.parentNode!, previous);
 
       this.#connectedViews.push(view);
     }

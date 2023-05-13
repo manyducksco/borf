@@ -43,9 +43,9 @@ export class Text implements Connectable {
       } else {
         this.#update(this.#value);
       }
-
-      parent.insertBefore(this.#node, after?.nextSibling ?? null);
     }
+
+    parent.insertBefore(this.#node, after?.nextSibling ?? null);
   }
 
   async disconnect() {

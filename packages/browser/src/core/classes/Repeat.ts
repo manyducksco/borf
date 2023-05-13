@@ -12,7 +12,7 @@ interface RepeatOptions<T> {
   elementContext: ElementContext;
   readable: Readable<T[]>;
   render: ($value: Readable<T>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null;
-  key?: (value: T, index: number) => any;
+  key?: (value: T, index: number) => string | number | symbol;
 }
 
 type ConnectedItem<T> = {
@@ -32,7 +32,7 @@ export class Repeat<T> implements Connectable {
   #appContext;
   #elementContext;
   #render: ($value: Readable<T>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null;
-  #keyFn;
+  #keyFn: (value: T, index: number) => string | number | symbol;
 
   get node() {
     return this.#node;
@@ -48,7 +48,7 @@ export class Repeat<T> implements Connectable {
 
     this.#readable = readable;
     this.#render = render;
-    this.#keyFn = key ?? ((x) => x);
+    this.#keyFn = key ?? ((x) => x as any);
   }
 
   async connect(parent: Node, after?: Node) {
@@ -84,7 +84,7 @@ export class Repeat<T> implements Connectable {
       return this.#cleanup();
     }
 
-    type UpdateItem = { key: any; value: T; index: number };
+    type UpdateItem = { key: string | number | symbol; value: T; index: number };
 
     const potentialItems: UpdateItem[] = [];
     let index = 0;
@@ -104,7 +104,7 @@ export class Repeat<T> implements Connectable {
       const stillPresent = !!potentialItems.find((p) => p.key === connected.key);
 
       if (!stillPresent) {
-        connected.connectable.disconnect();
+        await connected.connectable.disconnect();
       }
     }
 
@@ -136,7 +136,7 @@ export class Repeat<T> implements Connectable {
 
     // Reconnect to ensure order. Lifecycle hooks won't be run again if the view is already connected.
     for (const item of newItems) {
-      item.connectable.connect(this.#node.parentNode!);
+      await item.connectable.connect(this.#node.parentNode!);
     }
 
     this.#connectedItems = newItems;

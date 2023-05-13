@@ -4,3 +4,4 @@ lib/
 coverage/
 .DS_Store
 .nova/
+tsconfig.tsbuildinfo

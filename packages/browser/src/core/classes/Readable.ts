@@ -160,8 +160,15 @@ export class MappedReadable<F, T> extends Readable<T> {
   }
 
   observe(callback: ObserveCallback<T>): StopFunction {
+    let lastObserved: T;
+
     return this.#readable.observe((value) => {
-      callback(this.#transform(value));
+      const observed = this.#transform(value);
+
+      if (!deepEqual(observed, lastObserved)) {
+        lastObserved = observed;
+        callback(observed);
+      }
     });
   }
 }
