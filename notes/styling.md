@@ -1,5 +1,29 @@
 # Styling
 
+New thoughts since latest API change.
+
+```js
+export function ExampleView(attrs, ctx) {
+  const $$color = new Writable("#ff0088");
+
+  // CSS template with readable value support.
+  // Applied to a shadow DOM in which this view's nodes are rendered.
+  ctx.styles = css`
+    p {
+      color: ${$$color};
+    }
+  `;
+
+  return html`
+    <div>
+      <p>This is styled.</p>
+    </div>
+  `;
+}
+```
+
+---
+
 CSS modules are really convenient but they require a bundler. Can I come up with something using JS functions that composes just as well as CSS stylesheets? Probably not, but that won't stop me trying.
 
 ```js

@@ -478,6 +478,11 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
         const callback = disconnectedCallbacks.shift()!;
         callback();
       }
+
+      while (stopObserverCallbacks.length > 0) {
+        const callback = stopObserverCallbacks.shift()!;
+        callback();
+      }
     },
   };
 
