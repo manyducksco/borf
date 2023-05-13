@@ -239,3 +239,21 @@ test("Readable.merge: transform with 'map'", (t) => {
   t.is($sum.value, 6);
   t.is($doubledSum.value, 12);
 });
+
+test("Mapped readable only gets new values when they are different", (t) => {
+  const $$source = new Writable({ name: "Jimbo Jones", age: 346 });
+  const $age = $$source.map((x) => x.age);
+
+  const observer = sinon.fake();
+  const stop = $age.observe(observer);
+
+  t.assert(observer.calledOnce);
+
+  $$source.update((current) => {
+    current.name = "Not Jimbo Jones";
+  });
+
+  t.assert(observer.calledOnce); // Age has not changed, so shouldn't be observed again.
+
+  stop();
+});
