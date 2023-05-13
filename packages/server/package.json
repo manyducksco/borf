@@ -1,6 +1,6 @@
 {
   "name": "@borf/server",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Back-end routing, middleware and state management.",
   "main": "./lib/index.js",
   "type": "module",
