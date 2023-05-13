@@ -11,6 +11,7 @@ export class Request<Body = never> {
   verb: string;
   url: string | undefined;
   path: string;
+  protocol: string;
   params: Record<string, string | number | boolean>;
   query: Record<string, string | number | boolean>;
   headers: Headers;
@@ -27,6 +28,7 @@ export class Request<Body = never> {
     this.url = req.url!;
     this.verb = req.method!;
     this.socket = req.socket;
+    this.protocol = req.headers.referer?.split("://")[0] ?? "http";
 
     this.path = route.path;
     this.params = route.params;

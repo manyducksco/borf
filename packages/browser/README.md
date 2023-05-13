@@ -67,12 +67,6 @@ function LayoutView() {
 Stores return a plain JavaScript object, a single instance of which is shared amongst child components via the context's `getStore` method. Stores don't display anything, but they are useful for scoping common state to a limited area of your component tree.
 
 ```js
-function MessageStore() {
-  return {
-    message: "This is the message",
-  };
-}
-
 function LayoutView() {
   return (
     <MessageStore>
@@ -80,6 +74,12 @@ function LayoutView() {
       <MessageView />
     </MessageStore>
   );
+}
+
+function MessageStore() {
+  return {
+    message: "This is the message",
+  };
 }
 
 function MessageView(attrs, ctx) {
@@ -98,26 +98,6 @@ Borf has no virtual DOM or re-rendering. Components are set up once, and everyth
 ```jsx
 import { Writable } from "@borf/browser";
 
-function CounterStore() {
-  const $$counter = new Writable(0);
-
-  return {
-    // Expose counter as a Readable.
-    // The value can only be changed from outside using the methods below.
-    $counter: $$counter.toReadable(),
-
-    increment: () => {
-      $$counter.value += 1;
-    },
-    decrement: () => {
-      $$counter.value -= 1;
-    },
-    reset: () => {
-      $$counter.value = 0;
-    },
-  };
-}
-
 function LayoutView() {
   return (
     <div class="layout">
@@ -128,16 +108,36 @@ function LayoutView() {
   );
 }
 
+function CounterStore() {
+  const $$current = new Writable(0);
+
+  return {
+    // Expose value as a Readable.
+    // The value can only be changed from outside using the methods below.
+    $current: $$current.toReadable(),
+
+    increment: () => {
+      $$current.value += 1;
+    },
+    decrement: () => {
+      $$current.value -= 1;
+    },
+    reset: () => {
+      $$current.value = 0;
+    },
+  };
+}
+
 function CounterView(_, ctx) {
-  const { $counter, ...methods } = ctx.getStore(CounterStore);
+  const counter = ctx.getStore(CounterStore);
 
   return (
     <div>
-      <p>The count is {$counter}</p>
+      <p>The count is {counter.$current}</p>
       <div>
-        <button onclick={methods.increment}>+1</button>
-        <button onclick={methods.decrement}>-1</button>
-        <button onclick={methods.reset}>Reset</button>
+        <button onclick={counter.increment}>+1</button>
+        <button onclick={counter.decrement}>-1</button>
+        <button onclick={counter.reset}>Reset</button>
       </div>
     </div>
   );
@@ -172,14 +172,14 @@ function ExampleView() {
 One of Borf's most important features is the ability to `.map` existing values to create a new ones. By mapping, you can extrude your core data into whatever shape you need it to be for views, only the core data remains writable, and everything else stays in sync.
 
 ```js
-const $$count = new Writable(152);
-const $doubled = $$count.map((value) => value * 2);
+const $$number = new Writable(152);
+const $doubled = $$number.map((value) => value * 2);
 const $quadrupled = $doubled.map((value) => value * 2);
 
 console.log($doubled.value); // 304
 console.log($quadrupled.value); // 608
 
-$$count.value = 250;
+$$number.value = 250;
 
 console.log($doubled.value); // 500
 console.log($quadrupled.value); // 1000

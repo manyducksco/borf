@@ -15,7 +15,7 @@ import {
   sortRoutes,
 } from "@borf/bedrock";
 import { merge } from "../helpers/merge.js";
-// import { DialogStore } from "../stores/dialog.js";
+import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
 import { LanguageStore, type LanguageConfig } from "../stores/language.js";
 import { DocumentStore } from "../stores/document.js";
@@ -134,7 +134,7 @@ export class App implements AppRouter {
   #isConnected = false;
   #stopCallbacks: StopFunction[] = [];
   #stores = new Map<keyof BuiltInStores | Store<any, any>, StoreRegistration>([
-    // ["dialog", { store: DialogStore }],
+    ["dialog", { store: DialogStore }],
     ["router", { store: RouterStore }],
     ["document", { store: DocumentStore }],
     ["http", { store: HTTPStore }],

@@ -7,17 +7,11 @@ import {
   joinPath,
   matchRoutes,
 } from "@borf/bedrock";
-import { EventSource } from "./EventSource.js";
 import { type HandlerContext } from "./App/makeRequestListener.js";
 
-export type RouteHandler = (
-  ctx: HandlerContext
-) =>
-  | EventSource
-  | Record<string | number | symbol, any>
-  | undefined
-  | null
-  | Promise<EventSource | Record<string | number | symbol, any> | undefined | null>;
+export type RouteHandler<ResBody = any, ReqBody = any> = (
+  ctx: HandlerContext<ReqBody>
+) => ResBody | Promise<ResBody> | void;
 
 export type RouteMeta = {
   verb: string;
@@ -29,7 +23,7 @@ export class Router {
   routes: Route<RouteMeta>[] = [];
   middleware: RouteHandler[] = [];
 
-  #addRoute(verb: string, pattern: string, handlers: RouteHandler[]) {
+  #addRoute(verb: string, pattern: string, handlers: RouteHandler<any, any>[]) {
     this.routes.push({
       pattern,
       fragments: patternToFragments(pattern),
@@ -53,15 +47,17 @@ export class Router {
   /**
    * Responds to HTTP GET requests that match this URL pattern.
    */
-  onGet(pattern: string, ...handlers: RouteHandler[]) {
+  onGet<ResBody = any>(pattern: string, ...handlers: RouteHandler<undefined, ResBody>[]) {
     this.#addRoute("GET", pattern, handlers);
     return this;
   }
 
+  // TODO: Add ResBody and ReqBody type args to all route types once we have a TS backend to test this.
+
   /**
    * Responds to HTTP POST requests that match this URL pattern.
    */
-  onPost(pattern: string, ...handlers: RouteHandler[]) {
+  onPost<ResBody = any, ReqBody = any>(pattern: string, ...handlers: RouteHandler<ReqBody, ResBody>[]) {
     this.#addRoute("POST", pattern, handlers);
     return this;
   }

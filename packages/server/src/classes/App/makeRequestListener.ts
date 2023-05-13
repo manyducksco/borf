@@ -19,9 +19,9 @@ export type { RequestListener };
 /**
  * The object passed to request handlers.
  */
-export interface HandlerContext {
+export interface HandlerContext<ReqBody = any> {
   cache: Record<string | number | symbol, unknown>;
-  request: Request<any>;
+  request: Request<ReqBody>;
   response: Response<any>;
   next?: () => Promise<unknown>;
   getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;

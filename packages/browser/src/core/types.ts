@@ -1,6 +1,6 @@
 import type * as CSS from "csstype";
 import { type HTTPStore } from "./stores/http.js";
-// import { type DialogStore } from "./stores/dialog.js";
+import { type DialogStore } from "./stores/dialog.js";
 import { type LanguageStore } from "./stores/language.js";
 import { type DocumentStore } from "./stores/document.js";
 import { type RouterStore } from "./stores/router.js";
@@ -26,7 +26,7 @@ type StoreExports<T> = T extends Store<any, infer O> ? (O extends Promise<infer 
 
 export interface BuiltInStores {
   http: StoreExports<typeof HTTPStore>;
-  // dialog: StoreOutput<typeof DialogStore>;
+  dialog: StoreExports<typeof DialogStore>;
   language: StoreExports<typeof LanguageStore>;
   document: StoreExports<typeof DocumentStore>;
   router: StoreExports<typeof RouterStore>;
@@ -245,19 +245,12 @@ export interface HTMLGlobalAttributes {
   translate: "" | "yes" | "no";
 }
 
-interface DefaultStyleProperties
-  extends Omit<CSS.Properties, "width" | "height">,
-    Omit<CSS.PropertiesHyphen, "width" | "height"> {}
-
-export interface Styles extends DefaultStyleProperties {
-  transform?: string;
-  width?: string | number | Readable<string> | Readable<number>;
-  height?: string | number | Readable<string> | Readable<number>;
+export interface Styles extends CSS.Properties, CSS.PropertiesHyphen {
   [key: string]: any;
 }
 
 export type CSSProperties = {
-  [K in keyof Styles]: MaybeReadable<Styles[K]>;
+  [K in keyof Styles]: any;
 };
 
 export interface ClassMap {
