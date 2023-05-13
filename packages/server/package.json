@@ -1,8 +1,9 @@
 {
   "name": "@borf/server",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Back-end routing, middleware and state management.",
   "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "type": "module",
   "scripts": {
     "test": "ava",
