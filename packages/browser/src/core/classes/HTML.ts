@@ -73,6 +73,10 @@ export class HTML implements Connectable {
   }
 
   async connect(parent: Node, after?: Node) {
+    if (parent == null) {
+      throw new Error(`HTML element requires a parent element as the first argument to connect. Got: ${parent}`);
+    }
+
     if (!this.isConnected) {
       for (const child of this.#children) {
         await child.connect(this.#node);
