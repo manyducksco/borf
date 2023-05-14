@@ -3,6 +3,9 @@ import { deepEqual } from "../helpers/deepEqual.js";
 
 export const READABLE = Symbol("Readable");
 
+// Symbol to mark an observed value as unobserved. Callbacks are always called once for unobserved values.
+const UNOBSERVED = Symbol("Unobserved");
+
 /**
  * Callback function to receive new values as they are written.
  */
@@ -160,7 +163,7 @@ export class MappedReadable<F, T> extends Readable<T> {
   }
 
   observe(callback: ObserveCallback<T>): StopFunction {
-    let lastObserved: T;
+    let lastObserved: T = UNOBSERVED as T;
 
     return this.#readable.observe((value) => {
       const observed = this.#transform(value);
