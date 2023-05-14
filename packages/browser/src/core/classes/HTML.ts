@@ -75,7 +75,6 @@ export class HTML implements Connectable {
   async connect(parent: Node, after?: Node) {
     if (!this.isConnected) {
       for (const child of this.#children) {
-        // TODO: Handle errors
         await child.connect(this.#node);
       }
 
@@ -90,8 +89,7 @@ export class HTML implements Connectable {
   async disconnect() {
     if (this.isConnected) {
       for (const child of this.#children) {
-        // TODO: Handle errors
-        child.disconnect();
+        await child.disconnect();
       }
 
       this.#node.parentNode!.removeChild(this.#node);

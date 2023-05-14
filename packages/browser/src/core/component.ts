@@ -448,17 +448,20 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
       }
 
       if (!wasConnected) {
-        while (beforeConnectCallbacks.length > 0) {
-          const callback = beforeConnectCallbacks.shift()!;
-          await callback();
-        }
+        // Defer until DOM nodes are attached so beforeConnect can be used for animation.
+        setTimeout(async () => {
+          while (beforeConnectCallbacks.length > 0) {
+            const callback = beforeConnectCallbacks.shift()!;
+            await callback();
+          }
 
-        isConnected = true;
+          isConnected = true;
 
-        while (connectedCallbacks.length > 0) {
-          const callback = connectedCallbacks.shift()!;
-          callback();
-        }
+          while (connectedCallbacks.length > 0) {
+            const callback = connectedCallbacks.shift()!;
+            callback();
+          }
+        }, 0);
       }
     },
 
