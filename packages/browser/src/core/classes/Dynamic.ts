@@ -83,7 +83,6 @@ export class Dynamic<T> implements Connectable {
 
   async #cleanup() {
     while (this.#connectedViews.length > 0) {
-      // TODO: Handle errors
       await this.#connectedViews.pop()?.disconnect();
     }
   }
@@ -101,7 +100,6 @@ export class Dynamic<T> implements Connectable {
       const previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
       const view = child.init({ appContext: this.#appContext, elementContext: this.#elementContext });
 
-      // TODO: Handle errors
       await view.connect(this.node.parentNode!, previous);
 
       this.#connectedViews.push(view);
