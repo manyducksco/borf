@@ -81,15 +81,15 @@ export class Dynamic<T> implements Connectable {
     }
   }
 
-  #cleanup() {
+  async #cleanup() {
     while (this.#connectedViews.length > 0) {
       // TODO: Handle errors
-      this.#connectedViews.pop()?.disconnect();
+      await this.#connectedViews.pop()?.disconnect();
     }
   }
 
   async #update(...children: Renderable[]) {
-    this.#cleanup();
+    await this.#cleanup();
 
     if (children == null || !this.isConnected) {
       return;
