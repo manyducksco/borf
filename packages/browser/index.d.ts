@@ -1,6 +1,6 @@
-export * from "./src/index";
+export * from "./lib/index";
 
-import type { IntrinsicElements as Elements } from "./src/core/types";
+import type { IntrinsicElements as Elements } from "./lib/core/types";
 
 declare global {
   namespace JSX {
