@@ -144,35 +144,34 @@ class SpringSolver {
     this.$velocity = new Readable(velocity);
   }
 
+  /**
+   * Solves for the current value of the spring based on `t` number of seconds elapsed from the start of the animation.
+   */
   solve(t: number) {
     // Getting the variables each time allows the values to change as the spring is animating.
     const mass = this.$mass.value;
     const stiffness = this.$stiffness.value;
     const damping = this.$damping.value;
-    const velocity = this.$velocity.value;
+    const initialVelocity = this.$velocity.value;
 
     const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
-    const undampedAngularFreq = Math.sqrt(stiffness / mass);
+    const speed = Math.sqrt(stiffness / mass);
 
-    let angularFreq;
-    let A = 1;
-    let B;
+    let B: number;
+    let position: number;
 
     if (dampingRatio < 1) {
-      angularFreq = undampedAngularFreq * Math.sqrt(1 - dampingRatio * dampingRatio);
-      B = (dampingRatio * undampedAngularFreq + -velocity) / angularFreq;
+      const dampedSpeed = speed * Math.sqrt(1 - dampingRatio * dampingRatio);
+      B = (dampingRatio * speed + -initialVelocity) / dampedSpeed;
 
-      t =
-        Math.exp(-t * dampingRatio * undampedAngularFreq) *
-        (A * Math.cos(angularFreq * t) + B * Math.sin(angularFreq * t));
+      position = (Math.cos(dampedSpeed * t) + B * Math.sin(dampedSpeed * t)) * Math.exp(-t * speed * dampingRatio);
     } else {
-      angularFreq = 0;
-      B = -velocity + undampedAngularFreq;
+      B = speed + -initialVelocity;
 
-      t = (A + B * t) * Math.exp(-t * undampedAngularFreq);
+      position = (1 + B * t) * Math.exp(-t * speed);
     }
 
-    return 1 - t;
+    return 1 - position;
   }
 }
 

@@ -76,14 +76,16 @@ export class Dynamic<T> implements Connectable {
     }
 
     if (this.isConnected) {
+      await this.#cleanup();
       this.#node.parentNode!.removeChild(this.#node);
-      this.#cleanup();
     }
   }
 
   async #cleanup() {
     while (this.#connectedViews.length > 0) {
-      await this.#connectedViews.pop()?.disconnect();
+      // NOTE: Awaiting this disconnect causes problems when transitioning out old elements while new ones are transitioning in.
+      // Not awaiting seems to fix this, but may cause problems with error handling or other render order things. Keep an eye on it.
+      this.#connectedViews.pop()?.disconnect();
     }
   }
 

@@ -1,7 +1,4 @@
-import { App, m } from "@borf/browser";
-import htm from "htm/mini";
-
-const html = htm.bind(m);
+import { App, html } from "@borf/browser";
 
 const app = new App();
 
