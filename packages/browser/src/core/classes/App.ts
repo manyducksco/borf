@@ -86,7 +86,7 @@ interface AppRouter {
    * @param view - The view to display while `pattern` matches the current URL.
    * @param subroutes - A callback that takes a router object. Use this to append nested routes and redirects.
    */
-  addRoute<I>(pattern: string, view: View<I>, subroutes?: (router: AppRouter) => void): this;
+  route<I>(pattern: string, view: View<I>, subroutes?: (router: AppRouter) => void): this;
 
   /**
    * Adds a new pattern and chains a set of nested routes that are displayed without a layout `view`.
@@ -95,7 +95,7 @@ interface AppRouter {
    * @param view - Pass null to render subroutes without a parent view.
    * @param subroutes - A callback that takes a router object. Use this to append nested routes and redirects.
    */
-  addRoute(pattern: string, view: null, subroutes: (router: AppRouter) => void): this;
+  route(pattern: string, view: null, subroutes: (router: AppRouter) => void): this;
 
   /**
    * Adds a new pattern that will redirect to a different route when matched.
@@ -103,7 +103,7 @@ interface AppRouter {
    * @param pattern - A URL pattern to match against the current URL.
    * @param redirectPath - A path to redirect to when `pattern` matches the current URL.
    */
-  addRedirect(pattern: string, redirectPath: string): this;
+  redirect(pattern: string, redirectPath: string): this;
 
   /**
    * Adds a new pattern that will redirect to a different route when matched, as calculated by a callback function.
@@ -112,8 +112,14 @@ interface AppRouter {
    * @param pattern - A URL pattern to match against the current URL.
    * @param createPath - A function that generates a redirect path from the current URL match.
    */
-  addRedirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
+  redirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
 }
+
+interface ConfigureContext {
+  // use
+}
+
+type ConfigureCallback = (ctx: ConfigureContext) => void | Promise<void>;
 
 // ----- Code ----- //
 
@@ -147,6 +153,7 @@ export class App implements AppRouter {
   #elementContext: ElementContext = {
     stores: new Map(),
   };
+  #configureCallback?: ConfigureCallback;
 
   #options: AppOptions = {
     debug: {
@@ -232,11 +239,11 @@ export class App implements AppRouter {
   /**
    * Displays view at the root of the app. All other routes render inside this view's outlet.
    */
-  setRootView<A>(view: View<A>, attributes?: A) {
+  main<A>(view: View<A>, attributes?: A) {
     if (this.#rootView !== DefaultRootView) {
       this.#appContext.debugHub
         .channel({ name: "borf:App" })
-        .warn(`Root view is already defined. Only the final setRootView call will take effect.`);
+        .warn(`Root view is already defined. Only the final main call will take effect.`);
     }
 
     if (typeof view === "function") {
@@ -248,26 +255,12 @@ export class App implements AppRouter {
     return this;
   }
 
-  /**
-   * Displays view over top of all other app content while at least one async component promise is pending.
-   */
-  setSplashView<A>(view: View<A>, attributes?: A) {
-    return this; // TODO: Implement
-  }
-
-  /**
-   * Sets the view that will be displayed when the app encounters an unhandled error. Set to null to crash to a blank screen.
-   */
-  setCrashView(view: View<CrashPageAttrs> | null) {
-    return this; // TODO: Implement
-  }
-
-  addStore<A>(store: Store<A, any>, attributes?: A): this;
+  store<A>(store: Store<A, any>, attributes?: A): this;
 
   /**
    * Makes this store accessible from any other component in the app, except for stores registered before this one.
    */
-  addStore<A>(store: Store<A, any>, attributes?: A) {
+  store<A>(store: Store<A, any>, attributes?: A) {
     let config: StoreRegistration | undefined;
 
     if (isFunction(store)) {
@@ -289,7 +282,7 @@ export class App implements AppRouter {
    * @param tag - A valid BCP47 language tag, like `en-US`, `en-GB`, `ja`, etc.
    * @param config - Language configuration.
    */
-  addLanguage(tag: string, config: LanguageConfig) {
+  language(tag: string, config: LanguageConfig) {
     this.#languages.set(tag, config);
 
     return this;
@@ -360,7 +353,7 @@ export class App implements AppRouter {
    * @param view - The view to display while `pattern` matches the current URL.
    * @param extend - A callback that takes a router to configure nested routes and redirects.
    */
-  addRoute<I>(pattern: string, view: View<I>, subroutes?: (sub: AppRouter) => void): this;
+  route<I>(pattern: string, view: View<I>, subroutes?: (sub: AppRouter) => void): this;
 
   /**
    * Adds a new pattern and a set of nested routes that are displayed without a layout `view`.
@@ -369,9 +362,9 @@ export class App implements AppRouter {
    * @param view - Pass null to render subroutes without a parent view.
    * @param extend - A callback that takes a router to configure nested routes and redirects.
    */
-  addRoute(pattern: string, view: null, subroutes: (sub: AppRouter) => void): this;
+  route(pattern: string, view: null, subroutes: (sub: AppRouter) => void): this;
 
-  addRoute(pattern: string, view: View<unknown> | null, subroutes?: (sub: AppRouter) => void) {
+  route(pattern: string, view: View<unknown> | null, subroutes?: (sub: AppRouter) => void) {
     assertString(pattern, "Pattern must be a string. Got type: %t, value: %v");
 
     if (view == null) {
@@ -395,7 +388,7 @@ export class App implements AppRouter {
    * @param pattern - A URL pattern to match against the current URL.
    * @param redirectPath - A path to redirect to when `pattern` matches the current URL.
    */
-  addRedirect(pattern: string, redirectPath: string): this;
+  redirect(pattern: string, redirectPath: string): this;
 
   /**
    * Adds a new pattern that will redirect to a different path when matched, as calculated by a callback function.
@@ -404,9 +397,9 @@ export class App implements AppRouter {
    * @param pattern - A URL pattern to match against the current URL.
    * @param createPath - A function that generates a redirect path from the current URL match.
    */
-  addRedirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
+  redirect(pattern: string, createPath: (ctx: RedirectContext) => string): this;
 
-  addRedirect(pattern: string, redirect: string | ((ctx: RedirectContext) => string)) {
+  redirect(pattern: string, redirect: string | ((ctx: RedirectContext) => string)) {
     if (!isFunction(redirect) && !isString(redirect)) {
       throw new TypeError(`Expected a redirect path or function. Got type: ${typeOf(redirect)}, value: ${redirect}`);
     }
@@ -420,6 +413,20 @@ export class App implements AppRouter {
     });
 
     return this;
+  }
+
+  /**
+   * Runs `callback` after app-level stores are connected to the app, but before views are connected to the DOM.
+   * Use this function to run async configuration code before displaying content to the user.
+   */
+  configure(callback: ConfigureCallback) {
+    if (this.#configureCallback !== undefined) {
+      this.#appContext.debugHub
+        .channel({ name: "borf:App" })
+        .warn(`Configure callback is already defined. Only the final configure call will take effect.`);
+    }
+
+    this.#configureCallback = callback;
   }
 
   /**
@@ -514,6 +521,12 @@ export class App implements AppRouter {
       await instance!.connect(storeParent);
 
       assertObject(instance!.outputs, "Store setup function must return an object. Got type: %t, value: %v");
+    }
+
+    if (this.#configureCallback) {
+      await this.#configureCallback({
+        // TODO: Add context methods
+      });
     }
 
     // Then connect the root view.
@@ -615,12 +628,12 @@ export class App implements AppRouter {
     // Parse nested routes if they exist.
     if (route.subroutes) {
       const router: AppRouter = {
-        addRoute: (pattern: string, view: View<any> | null, subroutes: (router: AppRouter) => void) => {
+        route: (pattern: string, view: View<any> | null, subroutes: (router: AppRouter) => void) => {
           pattern = joinPath([...parts, pattern]);
           routes.push(...this.#prepareRoute({ pattern, view, subroutes }));
           return router;
         },
-        addRedirect: (pattern, redirect) => {
+        redirect: (pattern, redirect) => {
           pattern = joinPath([...parts, pattern]);
           routes.push(...this.#prepareRoute({ pattern, redirect }));
           return router;

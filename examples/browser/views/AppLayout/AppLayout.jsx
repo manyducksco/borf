@@ -6,19 +6,19 @@ export async function AppLayout(_, ctx) {
   ctx.loader = <h1>This app is loading!</h1>;
   ctx.log("hi");
 
-  const doc = ctx.getStore("document");
-  const mouse = ctx.getStore(MouseStore);
+  const { $$title, $visibility } = ctx.use("document");
+  const { $position } = ctx.use(MouseStore);
 
   // Should throw an error that results in crash page being shown.
   // const crap = useStore("not-exist");
   // console.log(crap);
 
   // Display current mouse coordinates as tab title
-  ctx.observe(mouse.$position, (pos) => {
-    doc.$$title.value = `x:${Math.round(pos.x)} y:${Math.round(pos.y)}`;
+  ctx.observe($position, (pos) => {
+    $$title.value = `x:${Math.round(pos.x)} y:${Math.round(pos.y)}`;
   });
 
-  ctx.observe(doc.$visibility, (status) => {
+  ctx.observe($visibility, (status) => {
     ctx.log(`visibility: ${status}`);
   });
 
@@ -125,9 +125,9 @@ export async function AppLayout(_, ctx) {
 }
 
 function NavLink({ path, name }, ctx) {
-  const router = ctx.getStore("router");
+  const { $path } = ctx.use("router");
 
-  const $active = router.$path.map((routerPath) => {
+  const $active = $path.map((routerPath) => {
     return routerPath.startsWith(path);
   });
 

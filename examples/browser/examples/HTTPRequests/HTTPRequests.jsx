@@ -8,7 +8,7 @@ export function HTTPRequests(_, ctx) {
   const $$loading = new Writable(false);
   const $$url = new Writable();
 
-  const http = ctx.getStore("http");
+  const http = ctx.use("http");
 
   const $label = Readable.merge([$$loading, $$url], (loading, url) => {
     if (loading) {

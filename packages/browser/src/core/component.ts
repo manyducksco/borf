@@ -37,11 +37,11 @@ export interface ComponentContext extends DebugChannel {
   /**
    * Returns the nearest parent instance or app instance of `store`.
    */
-  getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+  use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
   /**
    * Returns an instance of a built-in store.
    */
-  getStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+  use<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
 
   /**
    * Returns the current value of an attribute.
@@ -205,7 +205,7 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
     name: config.component.name ?? "anonymous",
     loader: null,
 
-    getStore(store: keyof BuiltInStores | Store<any, any>) {
+    use(store: keyof BuiltInStores | Store<any, any>) {
       let name: string;
 
       if (typeof store === "string") {

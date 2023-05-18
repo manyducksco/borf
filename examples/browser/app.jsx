@@ -43,13 +43,13 @@ const app = new App({
 
 // ----- Language Support ----- //
 
-app.addLanguage("en-US", {
+app.language("en-US", {
   translation: {
     greeting: "Howdy pardner",
   },
 });
 
-app.addLanguage("en-GB", {
+app.language("en-GB", {
   // Use an async function to fetch translations from a server.
   translation: async () => {
     return Promise.resolve({
@@ -58,7 +58,7 @@ app.addLanguage("en-GB", {
   },
 });
 
-app.addLanguage("ja", {
+app.language("ja", {
   // Or pass a string which is assumed to be a path to a JSON file to be requested over HTTP?
   translation: "/api/lang/ja.json",
 });
@@ -68,49 +68,49 @@ app.setLanguage("auto", "en-US");
 
 // ----- Stores ----- //
 
-app.addStore(CounterStore);
-app.addStore(MouseStore);
+app.store(CounterStore);
+app.store(MouseStore);
 
 // ----- Root View & Routing ----- //
 
-app.setRootView(AppLayout);
+app.main(AppLayout);
 
-app.addRoute("/examples", null, (sub) => {
-  sub.addRoute("/spring-animation", SpringAnimation);
-  sub.addRoute("/languages", Languages);
-  sub.addRoute("/crash-handling", CrashHandling);
-  sub.addRoute("/counter-with-store", CounterWithStore);
-  sub.addRoute("/local-stores", LocalStores);
-  sub.addRoute("/passing-attributes", PassingAttributes);
-  sub.addRoute("/http-requests", HTTPRequests);
-  sub.addRedirect("*", "./spring-animation");
+app.route("/examples", null, (sub) => {
+  sub.route("/spring-animation", SpringAnimation);
+  sub.route("/languages", Languages);
+  sub.route("/crash-handling", CrashHandling);
+  sub.route("/counter-with-store", CounterWithStore);
+  sub.route("/local-stores", LocalStores);
+  sub.route("/passing-attributes", PassingAttributes);
+  sub.route("/http-requests", HTTPRequests);
+  sub.redirect("*", "./spring-animation");
 });
 
-app.addRoute("/7guis", SevenGUIs, (sub) => {
-  sub.addRoute("/counter", Counter);
-  sub.addRoute("/temp-converter", TempConverter);
-  sub.addRoute("/flight-booker", FlightBooker);
-  sub.addRoute("/timer", Timer);
-  sub.addRoute("/crud", CRUD);
-  sub.addRoute("/circle-drawer", CircleDrawer);
-  sub.addRoute("/cells", Cells);
-  sub.addRedirect("*", "./counter");
+app.route("/7guis", SevenGUIs, (sub) => {
+  sub.route("/counter", Counter);
+  sub.route("/temp-converter", TempConverter);
+  sub.route("/flight-booker", FlightBooker);
+  sub.route("/timer", Timer);
+  sub.route("/crud", CRUD);
+  sub.route("/circle-drawer", CircleDrawer);
+  sub.route("/cells", Cells);
+  sub.redirect("*", "./counter");
 });
 
 // Manual tests to make sure routing and redirects are working
 app
-  .addRoute("/router-test/one", () => <h1>One</h1>)
-  .addRoute("/router-test/two", () => <h1>Two</h1>)
-  .addRedirect("/router-test/*", "/router-test/one");
+  .route("/router-test/one", () => <h1>One</h1>)
+  .route("/router-test/two", () => <h1>Two</h1>)
+  .redirect("/router-test/*", "/router-test/one");
 
-app.addRoute("/multiple-element-root", function MultipleElementRoot() {
+app.route("/multiple-element-root", function MultipleElementRoot() {
   return html`
     <h1>View with Multiple Root Elements</h1>
     <p>You can't do this with JSX!</p>
   `;
 });
 
-app.addRoute(
+app.route(
   "/nested",
   function view(_, ctx) {
     return (
@@ -122,18 +122,18 @@ app.addRoute(
   },
   function extend(sub) {
     sub
-      .addRoute("/one", () => <h1>Nested #1</h1>)
-      .addRoute("/two", () => <h1>Nested #2</h1>)
-      .addRedirect("*", "./one");
+      .route("/one", () => <h1>Nested #1</h1>)
+      .route("/two", () => <h1>Nested #2</h1>)
+      .redirect("*", "./one");
   }
 );
 
-app.addRoute("/tests", null, (sub) => {
-  sub.addRoute("/render-order", RenderOrderTest);
+app.route("/tests", null, (sub) => {
+  sub.route("/render-order", RenderOrderTest);
 });
 
 // For any route not registered, redirect to a route that does exist.
-app.addRedirect("*", "./examples");
+app.redirect("*", "./examples");
 
 // ----- Connect App ----- //
 

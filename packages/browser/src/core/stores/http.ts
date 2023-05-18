@@ -30,7 +30,7 @@ export function HTTPStore(attrs: HTTPStoreAttrs, ctx: ComponentContext) {
      *
      * @param middleware - A middleware function that will intercept requests.
      */
-    use(fn: HTTPMiddleware) {
+    middleware(fn: HTTPMiddleware) {
       middleware.push(fn);
 
       // Call returned function to remove this middleware for subsequent requests.
@@ -114,6 +114,7 @@ interface RequestOptions<ReqBody> {
 interface HTTPRequest<Body> {
   method: string;
   uri: string;
+  readonly sameOrigin: boolean;
   headers: Headers;
   query: URLSearchParams;
   body: Body;
@@ -154,6 +155,9 @@ async function makeRequest<ResBody, ReqBody>(config: MakeRequestConfig<ReqBody>)
   const request: HTTPRequest<ReqBody> = {
     method: config.method,
     uri: config.uri,
+    get sameOrigin() {
+      return !request.uri.startsWith("http");
+    },
     query: new URLSearchParams(),
     headers: new Headers(),
     body: config.body!,

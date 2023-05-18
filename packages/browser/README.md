@@ -20,7 +20,7 @@ Like most other frameworks, `@borf/browser` is built around the idea of _compone
 Views return `Markup` objects, which are used to construct and manage a tree of DOM elements. `Markup` objects are typically created by writing JSX.
 
 ```js
-function LayoutView() {
+function LayoutView(attrs, ctx) {
   return (
     <div>
       <h1>Title</h1>
@@ -29,7 +29,7 @@ function LayoutView() {
   );
 }
 
-function MessageView(attrs) {
+function MessageView(attrs, ctx) {
   return <p>{attrs.message}</p>;
 }
 ```
@@ -37,8 +37,6 @@ function MessageView(attrs) {
 Components don't have direct access to their children. Instead, the component context object (passed as the second argument to any component function) has an `outlet` method that can be used to display children at a location of your choosing.
 
 ```js
-import { Outlet } from "@borf/browser";
-
 function ContentBox(attrs, ctx) {
   return (
     <div
@@ -52,7 +50,7 @@ function ContentBox(attrs, ctx) {
   );
 }
 
-function LayoutView() {
+function LayoutView(attrs, ctx) {
   return (
     <ContentBox>
       <h1>Hello</h1>
@@ -64,10 +62,10 @@ function LayoutView() {
 
 ### Components: Stores
 
-Stores return a plain JavaScript object, a single instance of which is shared amongst child components via the context's `getStore` method. Stores don't display anything, but they are useful for scoping common state to a limited area of your component tree.
+Stores return a plain JavaScript object, a single instance of which is shared amongst child components via the context's `use` method. Stores don't display anything, but they are useful for scoping common state to a limited area of your component tree.
 
 ```js
-function LayoutView() {
+function LayoutView(attrs, ctx) {
   return (
     <MessageStore>
       <h1>Title</h1>
@@ -76,14 +74,14 @@ function LayoutView() {
   );
 }
 
-function MessageStore() {
+function MessageStore(attrs, ctx) {
   return {
     message: "This is the message",
   };
 }
 
 function MessageView(attrs, ctx) {
-  const store = ctx.getStore(MessageStore);
+  const store = ctx.use(MessageStore);
 
   return <p>{store.message}</p>;
 }
@@ -98,7 +96,7 @@ Borf has no virtual DOM or re-rendering. Components are set up once, and everyth
 ```jsx
 import { Writable } from "@borf/browser";
 
-function LayoutView() {
+function LayoutView(attrs, ctx) {
   return (
     <div class="layout">
       <CounterStore>
@@ -108,7 +106,7 @@ function LayoutView() {
   );
 }
 
-function CounterStore() {
+function CounterStore(attrs, ctx) {
   const $$current = new Writable(0);
 
   return {
@@ -128,8 +126,9 @@ function CounterStore() {
   };
 }
 
-function CounterView(_, ctx) {
-  const counter = ctx.getStore(CounterStore);
+function CounterView(attrs, ctx) {
+  // Returns the instance of CounterStore which happens to be the direct parent of CounterView.
+  const counter = ctx.use(CounterStore);
 
   return (
     <div>
@@ -151,7 +150,7 @@ In the following example, typing in the input box immediately updates the text i
 ```js
 import { Writable } from "@borf/browser";
 
-function ExampleView() {
+function ExampleView(attrs, ctx) {
   const $$value = new Writable("Your Name");
 
   return (
@@ -169,7 +168,7 @@ function ExampleView() {
 
 #### Mapped Readables
 
-One of Borf's most important features is the ability to `.map` existing values to create a new ones. By mapping, you can extrude your core data into whatever shape you need it to be for views, only the core data remains writable, and everything else stays in sync.
+One of Borf's most important features is the ability to `.map` existing values to create a new ones. By mapping, you can extrude your core data into whatever shape you need for views. Only the core data remains writable, and everything else stays in sync.
 
 ```js
 const $$number = new Writable(152);
@@ -194,13 +193,13 @@ The `@borf/browser` package has a set of four functions that handle conditionals
 ```jsx
 import { Writable, when, unless, repeat, observe } from "@borf/browser";
 
-function PizzaBuilderView() {
+function PizzaBuilderView(attrs, ctx) {
   const $$toppings = new Writable(["Pineapple", "Jalapeño", "Sausage"]);
   const $$showToppingInput = new Writable(false);
   const $$tempTopping = new Writable("");
 
   const addTopping = () => {
-    // This is new; it takes a function that receives the current value and modifies it to derive a new value.
+    // Another way to update values using a function that receives the current value and modifies it.
     $$toppings.update((toppings) => {
       toppings.push($$tempTopping.value);
     });

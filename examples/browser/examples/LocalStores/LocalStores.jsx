@@ -28,7 +28,7 @@ function ExampleStore({ initialValue }) {
 }
 
 function ValueDisplay(_, ctx) {
-  const { $$value } = ctx.getStore(ExampleStore);
+  const { $$value } = ctx.use(ExampleStore);
 
   return <li>Hello from {$$value}</li>;
 }
