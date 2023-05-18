@@ -30,6 +30,15 @@ export class Response<Body = unknown> {
     this.status = 303;
     this.headers.set("Location", to);
   }
+
+  toJSON() {
+    return {
+      status: this.status,
+      statusText: this.statusText,
+      headers: this.headers.toJSON(),
+      body: this.body,
+    };
+  }
 }
 
 // Mapping of status codes to status text.

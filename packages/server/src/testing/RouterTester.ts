@@ -246,7 +246,7 @@ export class RouterTester {
         (ctx.res.body as Stream).pipe(res);
       }
 
-      return ctx.res;
+      return ctx.res.toJSON();
     } else {
       const res = new Response({});
       res.status = 404;
