@@ -4,7 +4,10 @@ import { type DebugChannel } from "./classes/DebugHub.js";
 import { type Store, type ComponentContext } from "./component.js";
 import { type AppContext } from "./classes/App/App.js";
 
+export const HTML = Symbol("HTML");
+
 export interface HTMLTemplate {
+  readonly kind: Symbol;
   render(config: RenderConfig): Promise<string>;
 }
 
@@ -13,7 +16,7 @@ export interface RenderConfig {
 }
 
 export function isHTML(value: unknown): value is HTMLTemplate | HTMLTemplate[] {
-  return (isObject(value) && isFunction(value.render)) || isArrayOf(isHTML, value);
+  return (isObject(value) && value.kind === HTML) || (Array.isArray(value) && value.length > 0 && value.every(isHTML));
 }
 
 export async function render(templates: HTMLTemplate | HTMLTemplate[] | string, config: RenderConfig): Promise<string> {
@@ -39,7 +42,11 @@ function h<A>(
   ...children: any[]
 ): HTMLTemplate;
 
-function h<A>(element: string | ((attrs: A, ctx: ComponentContext) => unknown), attributes: any, ...children: any[]) {
+function h<A>(
+  element: string | ((attrs: A, ctx: ComponentContext) => unknown),
+  attributes: any,
+  ...children: any[]
+): HTMLTemplate {
   const filteredChildren: HTMLTemplate[] = children
     .filter((child) => child != null && child !== false)
     .map((child) => {
@@ -48,7 +55,7 @@ function h<A>(element: string | ((attrs: A, ctx: ComponentContext) => unknown), 
       }
 
       if (isNumber(child) || isString(child) || isBoolean(child)) {
-        return { render: async () => String(child) };
+        return { kind: HTML, render: async () => String(child) };
       }
 
       throw new Error(`Unexpected child type: ${typeOf(child)}, value: ${child}`);
@@ -56,6 +63,7 @@ function h<A>(element: string | ((attrs: A, ctx: ComponentContext) => unknown), 
     .flat();
 
   return {
+    kind: HTML,
     async render(config: RenderConfig) {
       if (isFunction(element)) {
         // Component
@@ -71,6 +79,7 @@ function h<A>(element: string | ((attrs: A, ctx: ComponentContext) => unknown), 
           },
           outlet(): HTMLTemplate {
             return {
+              kind: HTML,
               async render(config) {
                 return render(filteredChildren, config);
               },

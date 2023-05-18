@@ -1,4 +1,4 @@
-import { type HTMLTemplate } from "./html.js";
+import { HTML, type HTMLTemplate } from "./html.js";
 import { type AppContext } from "./classes/App/App.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
 
@@ -41,6 +41,7 @@ export function makeStore<A>(config: StoreConfig<A>): StoreControls {
     },
     outlet(): HTMLTemplate {
       return {
+        kind: HTML,
         async render() {
           return "";
         },
