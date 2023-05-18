@@ -243,7 +243,8 @@ export class RouterTester {
       }
 
       if (bodyIsStream) {
-        (ctx.res.body as Stream).pipe(res);
+        throw new Error(`TODO: Streaming bodies are not yet supported by RouterTester.`);
+        // (ctx.res.body as Stream).pipe(res);
       }
 
       return ctx.res.toJSON();
