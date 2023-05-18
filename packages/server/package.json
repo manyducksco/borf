@@ -14,7 +14,12 @@
   },
   "exports": {
     ".": {
-      "import": "./lib/index.js"
+      "import": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    },
+    "./testing": {
+      "import": "./lib/testing/index.js",
+      "types": "./lib/testing/index.d.ts"
     }
   },
   "keywords": [],
@@ -29,6 +34,7 @@
     "@types/sinon": "^10.0.14",
     "ava": "^5.2.0",
     "esbuild": "^0.14.10",
+    "prettier": "^2.8.8",
     "sinon": "^15.0.4",
     "typescript": "^5.0.4"
   },

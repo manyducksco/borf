@@ -10,7 +10,8 @@ import {
 import { type HandlerContext } from "./App/makeRequestListener.js";
 
 export type RouteHandler<ResBody = any, ReqBody = any> = (
-  ctx: HandlerContext<ReqBody>
+  ctx: HandlerContext<ReqBody>,
+  next: () => Promise<any>
 ) => ResBody | Promise<ResBody> | void;
 
 export type RouteMeta = {
@@ -21,7 +22,7 @@ export type RouteMeta = {
 
 export class Router {
   routes: Route<RouteMeta>[] = [];
-  middleware: RouteHandler[] = [];
+  #middleware: RouteHandler[] = [];
 
   #addRoute(verb: string, pattern: string, handlers: RouteHandler<any, any>[]) {
     this.routes.push({
@@ -39,15 +40,15 @@ export class Router {
   /**
    * Adds a new middleware function that will run for every route on this Router.
    */
-  addMiddleware(handler: RouteHandler) {
+  middleware(handler: RouteHandler) {
     // Add handlers to all methods.
-    this.middleware.push(handler);
+    this.#middleware.push(handler);
   }
 
   /**
    * Responds to HTTP GET requests that match this URL pattern.
    */
-  onGet<ResBody = any>(pattern: string, ...handlers: RouteHandler<undefined, ResBody>[]) {
+  get<ResBody = any>(pattern: string, ...handlers: RouteHandler<undefined, ResBody>[]) {
     this.#addRoute("GET", pattern, handlers);
     return this;
   }
@@ -57,7 +58,7 @@ export class Router {
   /**
    * Responds to HTTP POST requests that match this URL pattern.
    */
-  onPost<ResBody = any, ReqBody = any>(pattern: string, ...handlers: RouteHandler<ReqBody, ResBody>[]) {
+  post<ResBody = any, ReqBody = any>(pattern: string, ...handlers: RouteHandler<ReqBody, ResBody>[]) {
     this.#addRoute("POST", pattern, handlers);
     return this;
   }
@@ -65,7 +66,7 @@ export class Router {
   /**
    * Responds to HTTP PUT requests that match this URL pattern.
    */
-  onPut(pattern: string, ...handlers: RouteHandler[]) {
+  put(pattern: string, ...handlers: RouteHandler[]) {
     this.#addRoute("PUT", pattern, handlers);
     return this;
   }
@@ -73,7 +74,7 @@ export class Router {
   /**
    * Responds to HTTP PATCH requests that match this URL pattern.
    */
-  onPatch(pattern: string, ...handlers: RouteHandler[]) {
+  patch(pattern: string, ...handlers: RouteHandler[]) {
     this.#addRoute("PATCH", pattern, handlers);
     return this;
   }
@@ -81,7 +82,7 @@ export class Router {
   /**
    * Responds to HTTP DELETE requests that match this URL pattern.
    */
-  onDelete(pattern: string, ...handlers: RouteHandler[]) {
+  delete(pattern: string, ...handlers: RouteHandler[]) {
     this.#addRoute("DELETE", pattern, handlers);
     return this;
   }
@@ -89,7 +90,7 @@ export class Router {
   /**
    * Responds to HTTP HEAD requests that match this URL pattern.
    */
-  onHead(pattern: string, ...handlers: RouteHandler[]) {
+  head(pattern: string, ...handlers: RouteHandler[]) {
     this.#addRoute("HEAD", pattern, handlers);
     return this;
   }
@@ -97,7 +98,7 @@ export class Router {
   /**
    * Responds to HTTP OPTIONS requests that match this URL pattern.
    */
-  onOptions(pattern: string, ...handlers: RouteHandler[]) {
+  options(pattern: string, ...handlers: RouteHandler[]) {
     this.#addRoute("OPTIONS", pattern, handlers);
     return this;
   }
@@ -107,7 +108,7 @@ export class Router {
    *
    * @param router - Another Router instance.
    */
-  addRoutes(router: Router): void;
+  router(router: Router): void;
 
   /**
    * Adds all routes from another Router to this one.
@@ -115,9 +116,9 @@ export class Router {
    * @param prefix - Pattern to prepend to all routes, e.g. '/users', '/admin', etc.
    * @param router - Another Router instance.
    */
-  addRoutes(prefix: string, router: Router): void;
+  router(prefix: string, router: Router): void;
 
-  addRoutes(...args: unknown[]) {
+  router(...args: unknown[]) {
     let prefix: string | undefined;
 
     if (isString(args[0])) {
@@ -131,11 +132,11 @@ export class Router {
       // Prepend pattern to all routes.
       for (const route of router.routes) {
         const pattern = joinPath([prefix, route.pattern]);
-        this.#addRoute(route.meta.verb, pattern, [...router.middleware, ...route.meta.handlers]);
+        this.#addRoute(route.meta.verb, pattern, [...router.#middleware, ...route.meta.handlers]);
       }
     } else {
       for (const route of router.routes) {
-        this.#addRoute(route.meta.verb, route.pattern, [...router.middleware, ...route.meta.handlers]);
+        this.#addRoute(route.meta.verb, route.pattern, [...router.#middleware, ...route.meta.handlers]);
       }
     }
   }

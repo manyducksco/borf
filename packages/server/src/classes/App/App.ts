@@ -18,6 +18,12 @@ const DEFAULT_STATIC_SOURCE = path.join(process.cwd(), "output/static");
 
 export interface StoreRegistration<A> {
   store: Store<A, any>;
+
+  /**
+   * Store to return instead whenever `store` is requested.
+   */
+  inject?: Store<A, any>;
+
   attributes?: A;
   instance?: StoreControls;
 }
@@ -139,7 +145,7 @@ export class App extends Router {
   /**
    * Configure how the app handles CORS requests.
    */
-  setCORS(options?: Partial<CORSOptions>) {
+  cors(options?: Partial<CORSOptions>) {
     this.#appContext.corsOptions = Object.assign({}, this.#appContext.corsOptions ?? this.#corsOptions, options);
     return this;
   }
@@ -150,7 +156,7 @@ export class App extends Router {
    *
    * @param filename - The name of the file in your `static` directory to use as a fallback.
    */
-  setFallback(filename = "index.html") {
+  fallback(filename = "index.html") {
     this.#appContext.fallback = filename;
     return this;
   }
@@ -161,7 +167,7 @@ export class App extends Router {
    * @param prefix - Route pattern under which to serve files from `source`.
    * @param filesDir - Directory on disk where files exist to be served from `prefix`.
    */
-  addStaticFiles(prefix = "/", filesDir = DEFAULT_STATIC_SOURCE) {
+  static(prefix = "/", filesDir = DEFAULT_STATIC_SOURCE) {
     assertString(prefix, "Expected prefix to be a string. Got type: %t, value: %v");
     assertString(filesDir, "Expected filesDir to be a string. Got type: %t, value: %v");
 
@@ -169,7 +175,7 @@ export class App extends Router {
     return this;
   }
 
-  addStore<A>(store: Store<A, any>, attributes?: A) {
+  store<A>(store: Store<A, any>, attributes?: A) {
     this.#stores.set(store, {
       store,
       attributes,
@@ -188,7 +194,6 @@ export class App extends Router {
     const now = performance.now();
     const port = options?.port || Number(process.env.PORT);
 
-    // Initialize app-lifecycle stores.
     for (const config of this.#stores.values()) {
       const instance = makeStore({
         appContext: this.#appContext,

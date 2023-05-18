@@ -1,11 +1,11 @@
-import type { IncomingMessage, RequestListener } from "node:http";
+import type { IncomingMessage, RequestListener, ServerResponse } from "node:http";
 import type { Stream } from "node:stream";
 import type { AppContext } from "./App";
 import type { DebugChannel } from "../DebugHub";
 
 import path from "node:path";
 import send from "send";
-import { isFunction, isString } from "@borf/bedrock";
+import { type RouteMatch, isFunction, isString } from "@borf/bedrock";
 import { Router } from "../Router.js";
 import { Request } from "../Request.js";
 import { Response } from "../Response.js";
@@ -19,12 +19,11 @@ export type { RequestListener };
 /**
  * The object passed to request handlers.
  */
-export interface HandlerContext<ReqBody = any> {
+export interface HandlerContext<ReqBody = any> extends DebugChannel {
   cache: Record<string | number | symbol, unknown>;
-  request: Request<ReqBody>;
-  response: Response<any>;
-  next?: () => Promise<unknown>;
-  getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+  req: Request<ReqBody>;
+  res: Response<any>;
+  use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
 }
 
 export function makeRequestListener(appContext: AppContext, router: Router): RequestListener {
@@ -86,88 +85,7 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
     const matched = router.matchRoute(req.method!, req.url!);
 
     if (matched) {
-      const parsedBody = await parseBody(req);
-
-      const request = new Request(req, matched, parsedBody);
-      const response = new Response<any>({ headers });
-      const cache: Record<string | number | symbol, unknown> = {};
-
-      let index = -1;
-      // TODO: Inject app-level middleware.
-      const handlers = [...matched.meta.handlers];
-
-      const nextFunc = async () => {
-        index++;
-        let current = handlers[index];
-
-        const handlerContext: HandlerContext = {
-          cache,
-          request,
-          response,
-          next: index === handlers.length - 1 ? undefined : nextFunc,
-          getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T> {
-            if (appContext.stores.has(store)) {
-              return appContext.stores.get(store)?.instance!.exports as any;
-            }
-
-            throw new Error(`Store '${store.name}' is not registered on this app.`);
-          },
-        };
-
-        response.body = (await current(handlerContext)) || response.body;
-
-        return response.body;
-      };
-
-      try {
-        await nextFunc();
-      } catch (err) {
-        if (isString(err)) {
-          err = new Error(err);
-        }
-
-        if (err instanceof Error) {
-          response.status = 500;
-          response.body = {
-            error: {
-              message: err.message,
-              stack: err.stack,
-            },
-          };
-        }
-
-        console.error(err);
-      }
-
-      let bodyIsStream = false;
-
-      // Automatically handle content-type and body formatting when returned from handler function.
-      if (response.body) {
-        if (isHTML(response.body)) {
-          response.headers.set("content-type", "text/html");
-          response.body = await render(response.body);
-        } else if (isString(response.body)) {
-          response.headers.set("content-type", "text/plain");
-        } else if (isFunction((response.body as any).pipe)) {
-          // Is a stream; handled below
-          bodyIsStream = true;
-        } else if (!response.headers.has("content-type")) {
-          response.headers.set("content-type", "application/json");
-          response.body = JSON.stringify(response.body);
-        }
-      }
-
-      res.writeHead(response.status, response.headers.toJSON());
-
-      if (bodyIsStream) {
-        (response.body as Stream).pipe(res);
-      } else {
-        if (response.body != null) {
-          res.write(Buffer.from(response.body as Buffer | string | any[]));
-        }
-
-        res.end();
-      }
+      await handleMatchedRequest(appContext, req, res, matched, headers);
     } else if (!canServeStatic(req, channel)) {
       res.writeHead(404, { ...headers.toJSON(), "Content-Type": "application/json" });
       res.end(JSON.stringify({ message: "Route not found." }));
@@ -219,35 +137,35 @@ function canServeFallback(req: IncomingMessage, channel: DebugChannel) {
 
   // Method is not GET or HEAD.
   if (method !== "GET" && method !== "HEAD") {
-    channel.log(`Cannot fall back to index: method is not GET or HEAD (${req.method} ${req.url})`);
+    channel.info(`Cannot fall back to index: method is not GET or HEAD (${req.method} ${req.url})`);
     return false;
   }
 
   // Accept header is not sent.
   if (!isString(headers.accept)) {
-    channel.log(`Cannot fall back to index: no "Accept" header was sent (${req.method} ${req.url})`);
+    channel.info(`Cannot fall back to index: no "Accept" header was sent (${req.method} ${req.url})`);
     return false;
   }
 
   // Client prefers JSON.
   if (headers.accept.startsWith("application/json")) {
-    channel.log(`Cannot fall back to index: client prefers JSON (${req.method} ${req.url})`);
+    channel.info(`Cannot fall back to index: client prefers JSON (${req.method} ${req.url})`);
     return false;
   }
 
   // Client doesn't accept HTML.
   if (!headers.accept.startsWith("text/html") && !headers.accept.startsWith("*/*")) {
-    channel.log(`Cannot fall back to index: client doesn't accept HTML (${req.method} ${req.url})`);
+    channel.info(`Cannot fall back to index: client doesn't accept HTML (${req.method} ${req.url})`);
     return false;
   }
 
   // Client is requesting file with an extension.
   if (url.lastIndexOf(".") > url.lastIndexOf("/")) {
-    channel.log(`Cannot fall back to index: client requests a file with extension (${req.method} ${req.url})`);
+    channel.info(`Cannot fall back to index: client requests a file with extension (${req.method} ${req.url})`);
     return false;
   }
 
-  channel.log(`Can fall back to index (${req.method} ${req.url})`);
+  channel.info(`Can fall back to index (${req.method} ${req.url})`);
   return true;
 }
 
@@ -259,11 +177,11 @@ function canServeStatic(req: IncomingMessage, channel: DebugChannel) {
 
   // Method is not GET or HEAD.
   if (method !== "GET" && method !== "HEAD") {
-    channel.log(`Cannot fall back to static: method is not GET or HEAD (${req.method} ${req.url})`);
+    channel.info(`Cannot fall back to static: method is not GET or HEAD (${req.method} ${req.url})`);
     return false;
   }
 
-  channel.log(`Can fall back to static (${req.method} ${req.url})`);
+  channel.info(`Can fall back to static (${req.method} ${req.url})`);
   return true;
 }
 
@@ -273,4 +191,95 @@ function normalizePath(p: string) {
   }
 
   return p;
+}
+
+export async function handleMatchedRequest(
+  appContext: AppContext,
+  req: IncomingMessage,
+  res: ServerResponse,
+  matched: RouteMatch,
+  headers?: Headers
+) {
+  const parsedBody = await parseBody(req);
+
+  const ctx: Omit<HandlerContext, keyof DebugChannel> = {
+    cache: {},
+    req: new Request(req, matched, parsedBody),
+    res: new Response<any>({ headers }),
+    use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T> {
+      if (appContext.stores.has(store)) {
+        return appContext.stores.get(store)?.instance!.exports as any;
+      }
+
+      throw new Error(`Store '${store.name}' is not registered on this app.`);
+    },
+  };
+
+  const debugChannel = appContext.debugHub.channel({ name: `${req.method?.toUpperCase()} ${req.url}` });
+
+  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debugChannel));
+
+  let index = -1;
+  // TODO: Inject app-level middleware.
+  const handlers = [...matched.meta.handlers];
+
+  const nextFunc = async () => {
+    index++;
+    const current = handlers[index];
+    const next = index === handlers.length - 1 ? () => Promise.resolve() : nextFunc;
+
+    ctx.res.body = (await current(ctx as HandlerContext, next)) || ctx.res.body;
+
+    return ctx.res.body;
+  };
+
+  try {
+    await nextFunc();
+  } catch (err) {
+    if (isString(err)) {
+      err = new Error(err);
+    }
+
+    if (err instanceof Error) {
+      ctx.res.status = 500;
+      ctx.res.body = {
+        error: {
+          message: err.message,
+          stack: err.stack,
+        },
+      };
+    }
+
+    console.error(err);
+  }
+
+  let bodyIsStream = false;
+
+  // Automatically handle content-type and body formatting when returned from handler function.
+  if (ctx.res.body != null) {
+    if (isHTML(ctx.res.body)) {
+      ctx.res.headers.set("content-type", "text/html");
+      ctx.res.body = "<!DOCTYPE html>" + (await render(ctx.res.body, { appContext }));
+    } else if (isString(ctx.res.body)) {
+      ctx.res.headers.set("content-type", "text/plain");
+    } else if (isFunction((ctx.res.body as any).pipe)) {
+      // Is a stream; handled below
+      bodyIsStream = true;
+    } else if (!ctx.res.headers.has("content-type")) {
+      ctx.res.headers.set("content-type", "application/json");
+      ctx.res.body = JSON.stringify(ctx.res.body);
+    }
+  }
+
+  res.writeHead(ctx.res.status, ctx.res.headers.toJSON());
+
+  if (bodyIsStream) {
+    (ctx.res.body as Stream).pipe(res);
+  } else {
+    if (ctx.res.body != null) {
+      res.write(Buffer.from(ctx.res.body as Buffer | string | any[]));
+    }
+
+    res.end();
+  }
 }

@@ -1,3 +1,4 @@
+import { type HTMLTemplate } from "./html.js";
 import { type AppContext } from "./classes/App/App.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
 
@@ -5,7 +6,8 @@ export type Store<A, E> = (attributes: A, context: ComponentContext) => E | Prom
 
 export interface ComponentContext extends DebugChannel {
   name: string;
-  getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+  use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+  outlet: () => HTMLTemplate;
 }
 
 /**
@@ -30,12 +32,19 @@ export function makeStore<A>(config: StoreConfig<A>): StoreControls {
 
   const context: Omit<ComponentContext, keyof DebugChannel> = {
     name: config.store.name ?? "anonymous",
-    getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T> {
+    use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T> {
       if (config.appContext.stores.has(store)) {
         return config.appContext.stores.get(store)?.instance!.exports as any;
       }
 
       throw new Error(`Store '${store.name}' is not registered on this app.`);
+    },
+    outlet(): HTMLTemplate {
+      return {
+        async render() {
+          return "";
+        },
+      };
     },
   };
 

@@ -36,25 +36,27 @@ export class DebugHub {
     const debugOptions = this.#options;
     const match = this.#matcher;
 
+    const label = () => `[${options.name}]`;
+
     return {
       get info() {
         if (process.env.NODE_ENV === "production" || !match(options.name)) return noOp;
-        else return _console.info.bind(_console, `${timestamp()} (${options.name})`);
+        else return _console.info.bind(_console, `INFO ${timestamp()} ${label()}`);
       },
 
       get log() {
         if (debugOptions.log === false || !match(options.name)) return noOp;
-        else return _console.log.bind(_console, `${timestamp()} (${options.name})`);
+        else return _console.log.bind(_console, `LOG ${timestamp()} ${label()}`);
       },
 
       get warn() {
         if (debugOptions.warn === false || !match(options.name)) return noOp;
-        else return _console.warn.bind(_console, `${timestamp()} (${options.name})`);
+        else return _console.warn.bind(_console, `WARN ${timestamp()} ${label()}`);
       },
 
       get error() {
         if (debugOptions.error === false || !match(options.name)) return noOp;
-        else return _console.error.bind(_console, `${timestamp()} (${options.name})`);
+        else return _console.error.bind(_console, `ERROR ${timestamp()} ${label()}`);
       },
     };
   }

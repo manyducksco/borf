@@ -7,11 +7,11 @@ const app = new App({
 });
 const PORT = process.env.PORT || 4000;
 
-app.setCORS();
-// app.setFallback();
-// app.setFallback("/some/weird/place/index.html");
-// app.addStaticFiles();
-// app.addStaticFiles("/files", "/path/to/files/dir");
+app.cors();
+// app.fallback();
+// app.fallback("/some/weird/place/index.html");
+// app.static();
+// app.static("/files", "/path/to/files/dir");
 
 function ExampleStore() {
   let timesCalled = 0;
@@ -37,47 +37,47 @@ async function AsyncStore() {
   });
 }
 
-app.addStore(ExampleStore);
-app.addStore(AsyncStore);
+app.store(ExampleStore);
+app.store(AsyncStore);
 
-// app.use(async (ctx) => {
-//   ctx.response.headers.set("X-MIDDLEWARE-OUTLINE", "mrrp");
-//   const start = performance.now();
-//   await ctx.next();
-//   const end = performance.now();
-//   ctx.response.headers.set("X-TIMER", end - start + "ms");
-// });
+app.middleware(async (ctx, next) => {
+  ctx.res.headers.set("X-MIDDLEWARE-OUTLINE", "mrrp");
+  const start = performance.now();
+  await next();
+  const end = performance.now();
+  ctx.res.headers.set("X-TIMER", end - start + "ms");
+});
 
-app.onPost(
+app.post(
   "/full-test",
-  async (ctx) => {
-    ctx.response.headers.set("X-MIDDLEWARE-INLINE", "RUFF");
+  async (ctx, next) => {
+    ctx.res.headers.set("X-MIDDLEWARE-INLINE", "RUFF");
 
     // Measure response time of subsequent handlers:
     const started = performance.now();
-    await ctx.next();
-    ctx.response.headers.set("X-RESPONSE-TIME-MS", performance.now() - started);
+    await next();
+    ctx.res.headers.set("X-RESPONSE-TIME-MS", performance.now() - started);
   },
-  ({ request, response, ...ctx }) => {
-    const exampleStore = useStore(ExampleStore);
-    const asyncStore = useStore(AsyncStore);
+  (ctx) => {
+    const exampleStore = ctx.use(ExampleStore);
+    const asyncStore = ctx.use(AsyncStore);
 
-    response.headers.set(
+    ctx.res.headers.set(
       "X-GLOBAL-CALLS",
       `Example Store called ${exampleStore.call()} times.`
     );
 
-    response.headers.set(
+    ctx.res.headers.set(
       "X-REQUEST-METHOD",
-      `This is some CTX info: ${request.verb}.`
+      `This is some CTX info: ${ctx.req.verb}.`
     );
 
-    response.headers.set(
+    ctx.res.headers.set(
       "X-REQUEST-BODY",
-      `This is some CTX info: ${req.body?.hello}.`
+      `This is some CTX info: ${ctx.req.body?.hello}.`
     );
 
-    response.headers.set(
+    ctx.res.headers.set(
       "X-GLOBAL-ASYNC",
       `Async Store waited ${asyncStore.call()} ms.`
     );
@@ -101,31 +101,31 @@ app.onPost(
   }
 );
 
-app.onPost("/form", ({ request, response }) => {
-  console.log({ request, response });
+app.post("/form", ({ req, res }) => {
+  console.log({ req, res });
 
   return "NOICE";
 });
 
-const router = new Router();
-router.onGet("/test", () => {
+const r = new Router();
+r.get("/test", () => {
   return "FROM ROUTER";
 });
 
-app.addRoutes(router);
-app.addRoutes("/router", router);
+app.router(r);
+app.router("/router", r);
 
-app.onGet("/hello", () => {
+app.get("/hello", () => {
   return "Hello world.";
 });
 
-app.onGet("/hello-json", () => {
+app.get("/hello-json", () => {
   return {
     message: "Hello from the server!",
   };
 });
 
-app.onGet("/hello-html", function () {
+app.get("/hello-html", function () {
   return html`
     <head>
       <title>DEMO!</title>
@@ -143,7 +143,12 @@ app.onGet("/hello-html", function () {
 });
 
 async function AsyncHeader(_, ctx) {
-  return html`<div class="container">${ctx.outlet()}</div>`;
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(html`<div class="container">${ctx.outlet()}</div>`);
+    }, Math.random() * 300);
+  })
+  
 }
 
 // Listen for HTTP requests on localhost at specified port number.
