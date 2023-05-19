@@ -1,4 +1,4 @@
-import { IncomingMessage, ServerResponse } from "node:http";
+import { IncomingMessage, ServerResponse, IncomingHttpHeaders } from "node:http";
 import { Socket } from "node:net";
 import { type Stream } from "node:stream";
 import { isFunction, isObject, isString, typeOf } from "@borf/bedrock";
@@ -8,6 +8,7 @@ import { CrashCollector } from "../classes/CrashCollector.js";
 import { NoCache } from "../classes/StaticCache.js";
 import { Request } from "../classes/Request.js";
 import { Response } from "../classes/Response.js";
+import { Headers } from "../classes/Headers.js";
 import { makeStore, type Store } from "../component.js";
 import { isHTML, render } from "../html.js";
 import { type HandlerContext } from "../classes/App/makeRequestListener.js";
@@ -159,6 +160,25 @@ export class RouterTester {
       await this.#init();
     }
 
+    if (options?.query) {
+      let query: URLSearchParams;
+
+      if (options.query instanceof URLSearchParams) {
+        query = options.query;
+      } else {
+        query = new URLSearchParams();
+        for (const key in options.query) {
+          query.set(key, String(options.query[key]));
+        }
+      }
+
+      if (path.includes("?")) {
+        path += "&" + options.query.toString();
+      } else {
+        path += "?" + options.query.toString();
+      }
+    }
+
     const match = this.#router.matchRoute(verb, path);
 
     if (match) {
@@ -170,6 +190,22 @@ export class RouterTester {
 
       req.url = path;
       req.method = verb;
+
+      if (options?.headers) {
+        let headers: Record<string, string> = {};
+
+        if (options.headers instanceof Headers) {
+          headers = options.headers.toJSON();
+        } else {
+          for (const key in options.headers) {
+            headers[key] = String(options.headers[key]);
+          }
+        }
+
+        for (const key in headers) {
+          req.headers[key] = headers[key];
+        }
+      }
 
       const parsedBody: ReqBody | undefined = options?.body;
 
