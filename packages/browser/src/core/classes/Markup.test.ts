@@ -1,5 +1,6 @@
 import test from "ava";
-import { m, Markup } from "./Markup.js";
+import { Markup } from "./Markup.js";
+import { m } from "../helpers/html.js";
 
 test("a", (t) => {
   function SomeView(attrs: { value: string }) {

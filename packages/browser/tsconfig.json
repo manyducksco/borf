@@ -5,7 +5,7 @@
     "module": "es2022",
     "rootDir": "src",
     "moduleResolution": "node",
-    "baseUrl": "src",
+    // "baseUrl": "src",
     "allowJs": true,
     "checkJs": false,
     "declaration": true,

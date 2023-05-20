@@ -2,7 +2,7 @@ import { createHashHistory, createBrowserHistory, type History, type Listener } 
 import { type Route, matchRoutes, isString, isFunction, joinPath, parseQueryParams, resolvePath } from "@borf/bedrock";
 import { Writable } from "../classes/Writable.js";
 import { Markup } from "../classes/Markup.js";
-import { catchLinks } from "../helpers/catchLinks.js";
+import { catchLinks } from "../utils/catchLinks.js";
 import { getSecrets, type ComponentControls, type ComponentContext } from "../component.js";
 
 // ----- Types ----- //
@@ -248,7 +248,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];
-            const view = matchedLayer.markup.init({ appContext, elementContext }) as ComponentControls;
+            const view = matchedLayer.markup.create({ appContext, elementContext }) as ComponentControls;
 
             requestAnimationFrame(() => {
               if (activeLayer && activeLayer.view.isConnected) {
@@ -256,7 +256,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
                 activeLayer.view.disconnect();
               }
 
-              const markup = new Markup(() => view);
+              const markup = new Markup({ type: "@static", attributes: null, children: null }, () => view);
 
               if (parentLayer) {
                 parentLayer.view.$$children.value = [markup];

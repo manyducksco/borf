@@ -6,7 +6,16 @@ export { Spring } from "./classes/Spring.js";
 export { Ref } from "./classes/Ref.js";
 
 // Markup
-export { html, when, unless, repeat, observe } from "./classes/Markup.js";
+export { html } from "./helpers/html.js";
+export { when } from "./helpers/when.js";
+export { unless } from "./helpers/unless.js";
+// export { virtual } from "./helpers/virtual.js";
+
+// Markup (obsolete with virtual?)
+export { repeat } from "./helpers/repeat.js";
+export { observe } from "./helpers/observe.js";
+
+// If virtual -> render, export only html and render. No need for others?
 
 // Types
 export type { HTTPMiddleware } from "./stores/http.js";

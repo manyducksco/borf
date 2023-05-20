@@ -1,5 +1,5 @@
 import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
-import { omit } from "../helpers/omit.js";
+import { omit } from "../utils/omit.js";
 import { Ref } from "./Ref.js";
 import { Readable, type StopFunction } from "./Readable.js";
 import { Writable } from "./Writable.js";
@@ -69,7 +69,7 @@ export class HTML implements Connectable {
     }
 
     this.#attributes = omit(["ref"], normalizedAttrs);
-    this.#children = children?.map((c) => c.init({ appContext, elementContext })) ?? [];
+    this.#children = children?.map((c) => c.create({ appContext, elementContext })) ?? [];
   }
 
   async connect(parent: Node, after?: Node) {

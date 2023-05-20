@@ -1,5 +1,5 @@
 import { type Writable } from "./Writable.js";
-import { deepEqual } from "../helpers/deepEqual.js";
+import { deepEqual } from "../utils/deepEqual.js";
 
 export const READABLE = Symbol("Readable");
 

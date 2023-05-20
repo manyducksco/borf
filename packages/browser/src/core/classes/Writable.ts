@@ -1,5 +1,5 @@
 import { produce } from "immer";
-import { deepEqual } from "../helpers/deepEqual.js";
+import { deepEqual } from "../utils/deepEqual.js";
 import { READABLE, Readable, MappedReadable, type ObserveCallback, type StopFunction } from "./Readable.js";
 
 export const WRITABLE = Symbol("Writable");

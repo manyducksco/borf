@@ -14,7 +14,7 @@ import {
   joinPath,
   sortRoutes,
 } from "@borf/bedrock";
-import { merge } from "../helpers/merge.js";
+import { merge } from "../utils/merge.js";
 import { DialogStore } from "../stores/dialog.js";
 import { HTTPStore } from "../stores/http.js";
 import { LanguageStore, type LanguageConfig } from "../stores/language.js";
@@ -29,7 +29,7 @@ import {
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
 import { type StopFunction } from "./Readable.js";
-import { html, m } from "./Markup.js";
+import { html, m } from "../helpers/html.js";
 import { type BuiltInStores } from "../types.js";
 import { makeComponent, type View, type Store, type ComponentControls, type ComponentContext } from "../component.js";
 

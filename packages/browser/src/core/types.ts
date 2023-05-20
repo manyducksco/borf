@@ -8,6 +8,7 @@ import { type Store } from "./component.js";
 import { type Readable } from "./classes/Readable.js";
 import { type Writable } from "./classes/Writable.js";
 import { type Ref } from "./classes/Ref.js";
+import { type Markup } from "./classes/Markup.js";
 
 /**
  * Value will be read by the component.
@@ -21,6 +22,20 @@ export type Write<T> = Writable<T>;
  * Extracts the value from a Read or Write type.
  */
 export type Value<T> = T extends Read<infer U> ? U : T;
+
+/**
+ * Represents everything that can be handled as a DOM node.
+ * These are all the items considered valid to pass as children to any element.
+ */
+export type Renderable =
+  | string
+  | number
+  | Markup
+  | false
+  | null
+  | undefined
+  | Readable<any>
+  | (string | number | Markup | false | null | undefined | Readable<any>)[];
 
 type StoreExports<T> = T extends Store<any, infer O> ? (O extends Promise<infer U> ? U : O) : unknown;
 

@@ -22,11 +22,11 @@ export async function AppLayout(_, ctx) {
     ctx.log(`visibility: ${status}`);
   });
 
-  return (
+  const markup = (
     <div class={styles.layout}>
       <nav class={styles.nav}>
         <section class={styles.navSection}>
-          <header>
+          <header id="first-section-header">
             <h3 class={styles.navTitle}>Examples</h3>
           </header>
 
@@ -122,6 +122,10 @@ export async function AppLayout(_, ctx) {
       {ctx.outlet()}
     </div>
   );
+
+  ctx.log(markup);
+
+  return markup;
 }
 
 function NavLink({ path, name }, ctx) {

@@ -228,7 +228,7 @@ export class RouterTester {
 
       let index = -1;
       // TODO: Inject app-level middleware.
-      const handlers = [...match.meta.handlers];
+      const handlers = [...this.#router._middleware, ...match.meta.handlers];
 
       const nextFunc = async () => {
         index++;

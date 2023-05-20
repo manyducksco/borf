@@ -1,10 +1,11 @@
+import type { Renderable, Read, Write, Value, Connectable, BuiltInStores } from "./types";
+
 import { isArrayOf, typeOf } from "@borf/bedrock";
 import { Readable, type StopFunction, type ValuesOfReadables } from "./classes/Readable.js";
 import { Writable } from "./classes/Writable.js";
-import { Markup, Renderable } from "./classes/Markup.js";
+import { Markup } from "./classes/Markup.js";
 import { Dynamic } from "./classes/Dynamic.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
-import { type Read, type Write, type Value, type Connectable, type BuiltInStores } from "./types.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
 
 export type Component<A> = (attributes: A, context: ComponentContext) => unknown;
@@ -349,7 +350,10 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
     },
 
     outlet() {
-      return new Markup((config) => new Dynamic({ ...config, readable: $$children }));
+      return new Markup(
+        { type: "$dynamic", attributes: { value: $$children }, children: null },
+        (config) => new Dynamic({ ...config, readable: $$children })
+      );
     },
   };
 
@@ -395,7 +399,7 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
 
     if (result instanceof Markup || result === null) {
       // Result is a view.
-      connectable = result?.init({ appContext, elementContext });
+      connectable = result?.create({ appContext, elementContext });
     } else if (isArrayOf((x) => x instanceof Markup, result)) {
       // Result is a view with multiple root elements.
       connectable = new Dynamic({ appContext, elementContext, readable: new Readable(result) });

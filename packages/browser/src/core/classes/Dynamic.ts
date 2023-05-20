@@ -1,6 +1,8 @@
+import type { Connectable, Renderable } from "../types";
+
 import { typeOf } from "@borf/bedrock";
-import { type Connectable } from "../types.js";
-import { formatChildren, isRenderable, type Renderable } from "./Markup.js";
+import { toMarkup } from "./Markup.js";
+import { isRenderable } from "../utils/isRenderable.js";
 import { Readable, type StopFunction } from "./Readable.js";
 import { type AppContext, type ElementContext } from "./App.js";
 
@@ -96,11 +98,11 @@ export class Dynamic<T> implements Connectable {
       return;
     }
 
-    const formattedChildren = formatChildren(children);
+    const formattedChildren = toMarkup(children);
 
     for (const child of formattedChildren) {
       const previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
-      const view = child.init({ appContext: this.#appContext, elementContext: this.#elementContext });
+      const view = child.create({ appContext: this.#appContext, elementContext: this.#elementContext });
 
       await view.connect(this.node.parentNode!, previous);
 

@@ -3,7 +3,7 @@ import { MockRouterStore } from "./stores/router.js";
 import { MockPageStore } from "./stores/page.js";
 import { MockHTTPStore } from "./stores/http.js";
 import { makeMockDOMNode } from "./makeMockDOMNode.js";
-import { isString } from "../core/helpers/typeChecking.js";
+import { isString } from "../core/utils/typeChecking.js";
 import { DebugHub } from "../core/classes/DebugHub.js";
 import { Store } from "../core/classes/Store.old.js";
 
