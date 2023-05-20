@@ -38,6 +38,13 @@ export class Router {
   }
 
   /**
+   * The list of currently loaded router-level middleware.
+   */
+  get __middleware() {
+    return this.#middleware;
+  }
+
+  /**
    * Adds a new middleware function that will run for every route on this Router.
    */
   middleware(handler: RouteHandler) {
