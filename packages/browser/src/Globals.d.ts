@@ -9,10 +9,3 @@ declare module "simple-color-hash" {
 }
 
 declare const global = any;
-
-/**
- * Any object with a toString method that returns a string.
- */
-declare interface Stringable {
-  toString(): string;
-}

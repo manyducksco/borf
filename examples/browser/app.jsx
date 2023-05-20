@@ -12,6 +12,7 @@ import { LocalStores } from "./examples/LocalStores";
 import { SpringAnimation } from "./examples/SpringAnimation";
 import { PassingAttributes } from "./examples/PassingAttributes";
 import { HTTPRequests } from "./examples/HTTPRequests";
+import { Virtual } from "./examples/Virtual";
 
 import { RenderOrderTest } from "./views/RenderOrderTest";
 
@@ -75,6 +76,30 @@ app.store(MouseStore);
 
 app.main(AppLayout);
 
+// app.main((_, ctx) => {
+//   const markup = (
+//     <section class="container">
+//       <header>
+//         <Heading title={"title"} />
+//       </header>
+
+//       <ul>
+//         <li>Item One</li>
+//         <li>Item Two</li>
+//         <li>Item Three</li>
+//       </ul>
+//     </section>
+//   );
+
+//   console.log(markup);
+
+//   return markup;
+// });
+
+async function Heading({ title }) {
+  return <h1>{title}</h1>;
+}
+
 app.route("/examples", null, (sub) => {
   sub.route("/spring-animation", SpringAnimation);
   sub.route("/languages", Languages);
@@ -83,6 +108,7 @@ app.route("/examples", null, (sub) => {
   sub.route("/local-stores", LocalStores);
   sub.route("/passing-attributes", PassingAttributes);
   sub.route("/http-requests", HTTPRequests);
+  sub.route("/virtual", Virtual);
   sub.redirect("*", "./spring-animation");
 });
 
@@ -97,7 +123,6 @@ app.route("/7guis", SevenGUIs, (sub) => {
   sub.redirect("*", "./counter");
 });
 
-// Manual tests to make sure routing and redirects are working
 app
   .route("/router-test/one", () => <h1>One</h1>)
   .route("/router-test/two", () => <h1>Two</h1>)
@@ -133,7 +158,7 @@ app.route("/tests", null, (sub) => {
 });
 
 // For any route not registered, redirect to a route that does exist.
-app.redirect("*", "./examples");
+app.redirect("*", "/examples");
 
 // ----- Connect App ----- //
 

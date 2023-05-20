@@ -61,6 +61,9 @@ export async function AppLayout(_, ctx) {
             <li>
               <NavLink path="/examples/http-requests" name="HTTP Requests" />
             </li>
+            <li>
+              <NavLink path="/examples/virtual" name="Virtual" />
+            </li>
           </ul>
         </section>
 

@@ -1,3 +1,5 @@
+import type { Stringable } from "../types";
+
 import { assertObject, isFunction, isObject, isPromise, typeOf } from "@borf/bedrock";
 import { Readable } from "../classes/Readable.js";
 import { Writable } from "../classes/Writable.js";

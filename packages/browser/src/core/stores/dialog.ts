@@ -1,7 +1,7 @@
 import { makeComponent, getSecrets, type View, type ComponentContext, Component } from "../component.js";
 import { Writable } from "../classes/Writable.js";
 
-import { type Connectable } from "../types.js";
+import { type DOMHandle } from "../markup.js";
 
 interface DialogAttrs {
   $$open: Writable<boolean>;
@@ -28,15 +28,15 @@ export function DialogStore(_: {}, ctx: ComponentContext) {
    * A first-in-last-out queue of dialogs. The last one appears on top.
    * This way if a dialog opens another dialog the new dialog stacks.
    */
-  const $$dialogs = new Writable<Connectable[]>([]);
+  const $$dialogs = new Writable<DOMHandle[]>([]);
 
-  let activeDialogs: Connectable[] = [];
+  let activeDialogs: DOMHandle[] = [];
 
   // Diff dialogs when value is updated, adding and removing dialogs as necessary.
   ctx.observe($$dialogs, (dialogs) => {
     requestAnimationFrame(() => {
-      let removed: Connectable[] = [];
-      let added: Connectable[] = [];
+      let removed: DOMHandle[] = [];
+      let added: DOMHandle[] = [];
 
       for (const dialog of activeDialogs) {
         if (!dialogs.includes(dialog)) {
@@ -82,7 +82,7 @@ export function DialogStore(_: {}, ctx: ComponentContext) {
   function open<I extends DialogAttrs>(view: View<I>, inputs?: Omit<I, "$$open">) {
     const $$open = new Writable(true);
 
-    let instance: Connectable | undefined = makeComponent({
+    let instance: DOMHandle | undefined = makeComponent({
       component: view as Component<unknown>,
       appContext,
       elementContext,

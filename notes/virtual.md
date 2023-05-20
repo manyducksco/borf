@@ -112,3 +112,133 @@ export function ExampleView() {
   });
 }
 ```
+
+VNode brainstorming
+
+```js
+function markup({ type, attributes, children }) {
+  return { type, attributes, children };
+}
+
+function vnode({ markup, connectable }) {
+  return { markup, connectable };
+}
+
+function vnode({ type, attributes, children }) {
+  return { type, attributes, children };
+}
+
+const markup = html`
+  <section class="container">
+    <header>
+      <${Header}>Text</${Header}>
+    </header>
+
+    <ul>
+      <li>Item One</li>
+      <li>Item Two</li>
+      <li>Item Three</li>
+    </ul>
+  </section>
+`;
+
+// Markup is:
+[
+  {
+    type: "section",
+    attributes: { class: "container" },
+    children: [
+      {
+        type: "header",
+        attributes: null,
+        children: [
+          {
+            type: Header,
+            attributes: null,
+            children: [{ type: "$text", attributes: { value: "Text" } }],
+          },
+        ],
+      },
+      {
+        type: "ul",
+        attributes: null,
+        children: [
+          {
+            type: "li",
+            attributes: null,
+            children: [{ type: "$text", attributes: { value: "Item One" } }],
+          },
+          {
+            type: "li",
+            attributes: null,
+            children: [{ type: "$text", attributes: { value: "Item Two" } }],
+          },
+          {
+            type: "li",
+            attributes: null,
+            children: [{ type: "$text", attributes: { value: "Item Three" } }],
+          },
+        ],
+      },
+    ],
+  },
+];
+```
+
+This tree gets transformed into a version with DOM node handles when rendered.
+
+```js
+[
+  {
+    type: "section",
+    attributes: { class: "container" },
+    handle: {
+      node: <section class="container" />,
+      connected: true,
+      async connect() {},
+      async disconnect() {}
+    },
+    children: [
+      {
+        type: "header",
+        attributes: null,
+        handle: {
+          node: <header />,
+          // ...
+        },
+        children: [
+          {
+            type: Header,
+            attributes: null,
+            handle: {
+              node: /* component root */,
+            },
+            children: [{ type: "$text", attributes: { value: "Text" } }],
+          },
+        ],
+      },
+      {
+        type: "ul",
+        attributes: null,
+        children: [
+          {
+            type: "li",
+            attributes: null,
+            children: [{ type: "$text", attributes: { value: "Item One" } }],
+          },
+          {
+            type: "li",
+            attributes: null,
+            children: [{ type: "$text", attributes: { value: "Item Two" } }],
+          },
+          {
+            type: "li",
+            attributes: null,
+            children: [{ type: "$text", attributes: { value: "Item Three" } }],
+          },
+        ],
+      },
+    ],
+  },
+];
+```

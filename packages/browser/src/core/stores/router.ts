@@ -1,9 +1,11 @@
+import type { Stringable } from "../types";
+
 import { createHashHistory, createBrowserHistory, type History, type Listener } from "history";
 import { type Route, matchRoutes, isString, isFunction, joinPath, parseQueryParams, resolvePath } from "@borf/bedrock";
 import { Writable } from "../classes/Writable.js";
-import { Markup } from "../classes/Markup.js";
 import { catchLinks } from "../utils/catchLinks.js";
-import { getSecrets, type ComponentControls, type ComponentContext } from "../component.js";
+import { getSecrets, type ComponentHandle, type ComponentContext } from "../component.js";
+import { DOMHandle, Markup, DOMMarkup, getRenderHandle, patchMarkup, renderMarkupToDOM } from "../markup.js";
 
 // ----- Types ----- //
 
@@ -65,7 +67,7 @@ export interface RedirectContext {
  */
 interface ActiveLayer {
   id: number;
-  view: ComponentControls;
+  handle: DOMHandle;
 }
 
 interface ParsedParams {
@@ -248,25 +250,26 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];
-            const view = matchedLayer.markup.create({ appContext, elementContext }) as ComponentControls;
+            const renderContext = { app: appContext, element: elementContext };
+
+            const rendered = renderMarkupToDOM(matchedLayer.markup, renderContext);
+            const handle = getRenderHandle(rendered);
 
             requestAnimationFrame(() => {
-              if (activeLayer && activeLayer.view.isConnected) {
+              if (activeLayer && activeLayer.handle.connected) {
                 // Disconnect first mismatched active layer.
-                activeLayer.view.disconnect();
+                activeLayer.handle.disconnect();
               }
 
-              const markup = new Markup({ type: "@static", attributes: null, children: null }, () => view);
-
               if (parentLayer) {
-                parentLayer.view.$$children.value = [markup];
+                parentLayer.handle.setChildren(rendered);
               } else {
-                appContext.rootView!.$$children.value = [markup];
+                appContext.rootView!.$$children.value = rendered;
               }
             });
 
             // Push and connect new active layer.
-            activeLayers.push({ id: matchedLayer.id, view });
+            activeLayers.push({ id: matchedLayer.id, handle });
           }
         }
       }

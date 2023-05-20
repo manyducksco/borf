@@ -1,5 +1,5 @@
 import { omit } from "../core/utils/omit.js";
-import { m } from "../core/helpers/html.js";
+import { makeMarkup } from "../core/markup.js";
 
 export { Fragment } from "../core/views/Fragment.js";
 
@@ -7,18 +7,12 @@ export { Fragment } from "../core/views/Fragment.js";
  * JSX function for elements with dynamic children.
  */
 export function jsx(element, props, key) {
-  const attributes = { ...omit(["children", "key"], props) };
-  const children = [props.children];
-
-  return m(element, attributes, ...children);
+  return makeMarkup(element, props ? { ...omit(["children", "key"], props) } : undefined, ...[props.children]);
 }
 
 /**
  * JSX function for elements with static children.
  */
 export function jsxs(element, props, key) {
-  const attributes = { ...omit(["children", "key"], props) };
-  const children = props.children;
-
-  return m(element, attributes, ...children);
+  return makeMarkup(element, props ? { ...omit(["children", "key"], props) } : undefined, props.children);
 }

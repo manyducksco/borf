@@ -7,7 +7,7 @@ import styles from "./SpringAnimation.module.css";
 /**
  * Demonstrates the use of Spring for animation.
  */
-export function SpringAnimation() {
+export function SpringAnimation(attrs, ctx) {
   const $$stiffness = new Writable(1549);
   const $$mass = new Writable(7);
   const $$damping = new Writable(83);
@@ -35,7 +35,7 @@ export function SpringAnimation() {
     }
   );
 
-  return (
+  const markup = (
     <ExampleFrame title="Spring Animation">
       <p>The shapes below are animated by a single spring.</p>
 
@@ -109,6 +109,10 @@ export function SpringAnimation() {
       </pre>
     </ExampleFrame>
   );
+
+  ctx.log(markup);
+
+  return markup;
 }
 
 export function Examples(attrs, ctx) {

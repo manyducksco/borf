@@ -5,7 +5,7 @@ import { Readable, type StopFunction } from "./Readable.js";
 import { Writable } from "./Writable.js";
 import { type Connectable } from "../types.js";
 import { type AppContext, type ElementContext } from "./App.js";
-import { Markup } from "./Markup.js";
+import { Markup, DOMMarkup, renderMarkupToDOM } from "../markup.js";
 
 type HTMLOptions = {
   appContext: AppContext;
@@ -20,12 +20,14 @@ export class HTML implements Connectable {
   #attributes;
   #children;
   #stopCallbacks: StopFunction[] = [];
+  #appContext;
+  #elementContext;
 
   get node() {
     return this.#node;
   }
 
-  get isConnected() {
+  get connected() {
     return this.node.parentNode != null;
   }
 
@@ -69,7 +71,10 @@ export class HTML implements Connectable {
     }
 
     this.#attributes = omit(["ref"], normalizedAttrs);
-    this.#children = children?.map((c) => c.create({ appContext, elementContext })) ?? [];
+    this.#children = children?.flatMap((c) => renderMarkupToDOM(c, { app: appContext, element: elementContext })) ?? [];
+
+    this.#appContext = appContext;
+    this.#elementContext = elementContext;
   }
 
   async connect(parent: Node, after?: Node) {
@@ -77,9 +82,9 @@ export class HTML implements Connectable {
       throw new Error(`HTML element requires a parent element as the first argument to connect. Got: ${parent}`);
     }
 
-    if (!this.isConnected) {
+    if (!this.connected) {
       for (const child of this.#children) {
-        await child.connect(this.#node);
+        await child.handle.connect(this.#node);
       }
 
       applyAttributes(this.#node, this.#attributes, this.#stopCallbacks);
@@ -91,9 +96,9 @@ export class HTML implements Connectable {
   }
 
   async disconnect() {
-    if (this.isConnected) {
+    if (this.connected) {
       for (const child of this.#children) {
-        await child.disconnect();
+        await child.handle.disconnect();
       }
 
       this.#node.parentNode!.removeChild(this.#node);
@@ -103,6 +108,15 @@ export class HTML implements Connectable {
       }
       this.#stopCallbacks = [];
     }
+  }
+
+  async setChildren(markup: DOMMarkup[]) {
+    // const rendered = markup.flatMap((m) =>
+    //   m.hasOwnProperty("handle")
+    //     ? (m as RenderedMarkup)
+    //     : renderMarkup(m, { app: this.#appContext, element: this.#elementContext })
+    // );
+    // TODO: Diff and replace
   }
 }
 

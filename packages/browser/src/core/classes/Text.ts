@@ -1,5 +1,5 @@
 import { Readable, type StopFunction } from "./Readable.js";
-import { type Connectable } from "../types.js";
+import { type DOMHandle } from "../markup.js";
 
 interface Stringable {
   toString(): string;
@@ -9,7 +9,7 @@ interface TextOptions {
   value: Stringable | Readable<Stringable>;
 }
 
-export class Text implements Connectable {
+export class Text implements DOMHandle {
   #node = document.createTextNode("");
   #value: Stringable | Readable<Stringable> = "";
   #stop?: StopFunction;
@@ -18,7 +18,7 @@ export class Text implements Connectable {
     return this.#node;
   }
 
-  get isConnected() {
+  get connected() {
     return this.node.parentNode != null;
   }
 
@@ -35,7 +35,7 @@ export class Text implements Connectable {
   }
 
   async connect(parent: Node, after: Node | null = null) {
-    if (!this.isConnected) {
+    if (!this.connected) {
       if (Readable.isReadable<Stringable>(this.#value)) {
         this.#stop = this.#value.observe((value) => {
           this.#update(value);
@@ -49,7 +49,7 @@ export class Text implements Connectable {
   }
 
   async disconnect() {
-    if (this.isConnected) {
+    if (this.connected) {
       if (this.#stop) {
         this.#stop();
       }
@@ -57,4 +57,6 @@ export class Text implements Connectable {
       this.#node.parentNode!.removeChild(this.#node);
     }
   }
+
+  async setChildren() {}
 }

@@ -1,7 +1,6 @@
 import { Readable, type StopFunction } from "./Readable.js";
 import { Writable } from "./Writable.js";
-import { type Connectable } from "../types.js";
-import { type Markup } from "./Markup.js";
+import { type Markup, type DOMHandle } from "../markup.js";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type ComponentContext, makeComponent } from "../component.js";
 
@@ -19,12 +18,12 @@ type ConnectedItem<T> = {
   key: any;
   $$value: Writable<T>;
   $$index: Writable<number>;
-  connectable: Connectable;
+  handle: DOMHandle;
 };
 
 // ----- Code ----- //
 
-export class Repeat<T> implements Connectable {
+export class Repeat<T> implements DOMHandle {
   #node = document.createComment("Repeat");
   #readable: Readable<T[]>;
   #stopCallback?: StopFunction;
@@ -38,7 +37,7 @@ export class Repeat<T> implements Connectable {
     return this.#node;
   }
 
-  get isConnected() {
+  get connected() {
     return this.node?.parentNode != null;
   }
 
@@ -52,7 +51,7 @@ export class Repeat<T> implements Connectable {
   }
 
   async connect(parent: Node, after?: Node) {
-    if (!this.isConnected) {
+    if (!this.connected) {
       parent.insertBefore(this.#node, after?.nextSibling ?? null);
 
       this.#stopCallback = this.#readable.observe((value) => {
@@ -67,20 +66,22 @@ export class Repeat<T> implements Connectable {
       this.#stopCallback = undefined;
     }
 
-    if (this.isConnected) {
+    if (this.connected) {
       this.#node.parentNode!.removeChild(this.#node);
     }
   }
 
+  async setChildren() {}
+
   async #cleanup() {
     while (this.#connectedItems.length > 0) {
       // TODO: Handle errors
-      this.#connectedItems.pop()?.connectable.disconnect();
+      this.#connectedItems.pop()?.handle.disconnect();
     }
   }
 
   async #update(value: Iterable<T>) {
-    if (value == null || !this.isConnected) {
+    if (value == null || !this.connected) {
       return this.#cleanup();
     }
 
@@ -104,7 +105,7 @@ export class Repeat<T> implements Connectable {
       const stillPresent = !!potentialItems.find((p) => p.key === connected.key);
 
       if (!stillPresent) {
-        await connected.connectable.disconnect();
+        await connected.handle.disconnect();
       }
     }
 
@@ -124,7 +125,7 @@ export class Repeat<T> implements Connectable {
           key: potential.key,
           $$value,
           $$index,
-          connectable: makeComponent({
+          handle: makeComponent({
             component: RepeatItemView,
             appContext: this.#appContext,
             elementContext: this.#elementContext,
@@ -136,7 +137,7 @@ export class Repeat<T> implements Connectable {
 
     // Reconnect to ensure order. Lifecycle hooks won't be run again if the view is already connected.
     for (const item of newItems) {
-      await item.connectable.connect(this.#node.parentNode!);
+      await item.handle.connect(this.#node.parentNode!);
     }
 
     this.#connectedItems = newItems;

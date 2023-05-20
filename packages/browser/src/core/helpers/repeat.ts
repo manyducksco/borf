@@ -1,7 +1,6 @@
 import { type ComponentContext } from "../component.js";
-import { Markup } from "../classes/Markup.js";
+import { Markup, makeMarkup } from "../markup.js";
 import { Readable } from "../classes/Readable.js";
-import { Repeat } from "../classes/Repeat.js";
 
 /**
  * Renders once for each item in `values`. Dynamically adds and removes views as items change.
@@ -11,11 +10,9 @@ import { Repeat } from "../classes/Repeat.js";
  * TODO: Describe or link to docs where keying is explained.
  */
 export function repeat<T>(
-  readable: Readable<T[]>,
+  value: Readable<T[]>,
   render: ($value: Readable<T>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null,
   key?: (value: T, index: number) => string | number
 ): Markup {
-  return new Markup({ type: "$repeat", attributes: { readable, render, key }, children: null }, (config) => {
-    return new Repeat<T>({ ...config, readable, render, key });
-  });
+  return makeMarkup("$repeat", { value, render, key });
 }

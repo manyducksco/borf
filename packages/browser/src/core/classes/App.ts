@@ -29,9 +29,16 @@ import {
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
 import { type StopFunction } from "./Readable.js";
-import { html, m } from "../helpers/html.js";
+import { Markup, html, makeMarkup } from "../markup.js";
 import { type BuiltInStores } from "../types.js";
-import { makeComponent, type View, type Store, type ComponentControls, type ComponentContext } from "../component.js";
+import {
+  makeComponent,
+  type View,
+  type Store,
+  type ComponentHandle,
+  type ComponentContext,
+  Component,
+} from "../component.js";
 
 // ----- Types ----- //
 
@@ -58,7 +65,7 @@ export interface AppContext {
   stores: Map<keyof BuiltInStores | StoreRegistration["store"], StoreRegistration>;
   mode: "development" | "production";
   rootElement?: HTMLElement;
-  rootView?: ComponentControls;
+  rootView?: ComponentHandle;
 }
 
 export interface ElementContext {
@@ -74,7 +81,7 @@ export interface StoreRegistration<A = any> {
   store: Store<A, any>;
   exports?: Store<A, any>;
   attributes?: A;
-  instance?: ComponentControls;
+  instance?: ComponentHandle;
 }
 
 interface AppRouter {
@@ -147,7 +154,7 @@ export class App implements AppRouter {
     ["language", { store: LanguageStore }],
   ]);
   #languages = new Map<string, LanguageConfig>();
-  #rootView: View<any> = DefaultRootView;
+  #mainView: Markup = makeMarkup(DefaultRootView, {});
   #currentLanguage?: string;
   #appContext: AppContext;
   #elementContext: ElementContext = {
@@ -239,15 +246,15 @@ export class App implements AppRouter {
   /**
    * Displays view at the root of the app. All other routes render inside this view's outlet.
    */
-  main<A>(view: View<A>, attributes?: A) {
-    if (this.#rootView !== DefaultRootView) {
+  main<A extends Record<string, any>>(view: View<A>, attributes?: A) {
+    if (this.#mainView.type !== DefaultRootView) {
       this.#appContext.debugHub
         .channel({ name: "borf:App" })
         .warn(`Root view is already defined. Only the final main call will take effect.`);
     }
 
     if (typeof view === "function") {
-      this.#rootView = view;
+      this.#mainView = makeMarkup(view, attributes);
     } else {
       throw new TypeError(`Expected a view function. Got type: ${typeOf(view)}, value: ${view}`);
     }
@@ -476,10 +483,10 @@ export class App implements AppRouter {
 
     // First, initialize the root view. The router store needs this to connect the initial route.
     appContext.rootView = makeComponent({
-      component: this.#rootView,
+      component: this.#mainView.type as Component<any>,
+      attributes: this.#mainView.attributes,
       appContext,
       elementContext,
-      attributes: {},
     });
 
     // Initialize global stores.
@@ -499,7 +506,7 @@ export class App implements AppRouter {
         attributes: attributes ?? {},
       };
 
-      let instance: ComponentControls | undefined;
+      let instance: ComponentHandle | undefined;
 
       if (exports) {
         if (typeof exports === "function") {
@@ -622,7 +629,7 @@ export class App implements AppRouter {
       throw new TypeError(`Route '${route.pattern}' expected a view function. Got: ${route.view}`);
     }
 
-    const markup = m(view);
+    const markup = makeMarkup(view);
     const layer: RouteLayer = { id: this.#layerId++, markup };
 
     // Parse nested routes if they exist.

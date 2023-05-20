@@ -1,12 +1,12 @@
-import type { Renderable, Read, Write, Value, Connectable, BuiltInStores } from "./types";
+import type { Renderable, Read, Write, Value, BuiltInStores } from "./types";
 
-import { isArrayOf, typeOf } from "@borf/bedrock";
-import { Readable, type StopFunction, type ValuesOfReadables } from "./classes/Readable.js";
+import { isArrayOf, isObject, typeOf } from "@borf/bedrock";
+import { DOMHandle, Markup, getRenderHandle, isMarkup, makeMarkup, renderMarkupToDOM } from "./markup.js";
+import { Readable, type ValuesOfReadables } from "./classes/Readable.js";
 import { Writable } from "./classes/Writable.js";
-import { Markup } from "./classes/Markup.js";
-import { Dynamic } from "./classes/Dynamic.js";
 import { type AppContext, type ElementContext } from "./classes/App.js";
 import { type DebugChannel } from "./classes/DebugHub.js";
+import { observeMany } from "./utils/observeMany.js";
 
 export type Component<A> = (attributes: A, context: ComponentContext) => unknown;
 export type Store<A, E> = (attributes: A, context: ComponentContext) => E | Promise<E>;
@@ -169,7 +169,7 @@ interface ComponentConfig<A> {
 /**
  * Methods for the framework to manipulate a component.
  */
-export interface ComponentControls extends Connectable {
+export interface ComponentHandle extends DOMHandle {
   $$children: Writable<Markup[]>;
   outputs?: object;
 }
@@ -188,7 +188,7 @@ export function getSecrets(ctx: ComponentContext): ContextSecrets {
 ||      Component Initialization       ||
 \*=====================================*/
 
-export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls {
+export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
   const appContext = config.appContext;
   const elementContext = { ...config.elementContext };
   const $$children = new Writable(config.children ?? []);
@@ -313,47 +313,26 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
       config.appContext.crashCollector.crash({ error, componentName: ctx.name });
     },
 
-    observe(readable: any, callback: any) {
-      const readables: Readable<any>[] = [];
-
-      if (Array.isArray(readable) && readable.every(Readable.isReadable)) {
-        readables.push(...readable);
-      } else if (Readable.isReadable(readable)) {
-        readables.push(readable);
-      } else {
-        throw new TypeError(`Expected one Readable or an array of Readables as the first argument.`);
-      }
-
-      if (readables.length === 0) {
-        throw new TypeError(`Expected at least one readable.`);
-      }
-
-      const start = (): StopFunction => {
-        if (readables.length > 1) {
-          return Readable.merge(readables, callback).observe(() => {});
-        } else {
-          return readables[0].observe(callback);
-        }
-      };
+    observe(readables: any, callback: any) {
+      const observer = observeMany(readables, callback);
 
       if (isConnected) {
         // If called when the component is connected, we assume this code is in a lifecycle hook
         // where it will be triggered at some point again after the component is reconnected.
-        stopObserverCallbacks.push(start());
+        observer.start();
+        stopObserverCallbacks.push(observer.stop);
       } else {
         // This should only happen if called in the body of the setup function.
         // This code is not always re-run between when a component is disconnected and reconnected.
         connectedCallbacks.push(() => {
-          stopObserverCallbacks.push(start());
+          observer.start();
+          stopObserverCallbacks.push(observer.stop);
         });
       }
     },
 
     outlet() {
-      return new Markup(
-        { type: "$dynamic", attributes: { value: $$children }, children: null },
-        (config) => new Dynamic({ ...config, readable: $$children })
-      );
+      return makeMarkup("$dynamic", { value: $$children });
     },
   };
 
@@ -378,7 +357,7 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
   let outputs: object | undefined;
 
   // Either the markup from a view or the outlet from a store.
-  let connectable: Connectable | undefined;
+  let rendered: DOMHandle | undefined;
 
   async function initialize(parent: Node, after?: Node) {
     let result: unknown;
@@ -397,16 +376,17 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
       throw error;
     }
 
-    if (result instanceof Markup || result === null) {
+    const renderContext = { app: appContext, element: elementContext };
+
+    if (result === null) {
+      // Do nothing.
+    } else if (isMarkup(result) || isArrayOf<Markup>(isMarkup, result)) {
       // Result is a view.
-      connectable = result?.create({ appContext, elementContext });
-    } else if (isArrayOf((x) => x instanceof Markup, result)) {
-      // Result is a view with multiple root elements.
-      connectable = new Dynamic({ appContext, elementContext, readable: new Readable(result) });
-    } else if (typeof result === "object" && !Array.isArray(result)) {
+      rendered = getRenderHandle(renderMarkupToDOM(result, renderContext));
+    } else if (isObject(result)) {
       // Result is a store.
       outputs = result;
-      connectable = new Dynamic({ appContext, elementContext, readable: $$children });
+      rendered = getRenderHandle(renderMarkupToDOM(makeMarkup("$dynamic", { value: $$children }), renderContext));
       elementContext.stores = new Map([...elementContext.stores.entries()]);
       elementContext.stores.set(config.component, { store: config.component, instance: controls });
     } else {
@@ -423,7 +403,7 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
     }
   }
 
-  const controls: ComponentControls = {
+  const controls: ComponentHandle = {
     $$children,
 
     get outputs() {
@@ -431,10 +411,10 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
     },
 
     get node() {
-      return connectable!.node;
+      return rendered?.node!;
     },
 
-    get isConnected() {
+    get connected() {
       return isConnected;
     },
 
@@ -447,8 +427,8 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
         await initialize(parent, after);
       }
 
-      if (connectable) {
-        await connectable.connect(parent, after);
+      if (rendered) {
+        await rendered.connect(parent, after);
       }
 
       if (!wasConnected) {
@@ -475,8 +455,8 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
         await callback();
       }
 
-      if (connectable) {
-        await connectable.disconnect();
+      if (rendered) {
+        await rendered.disconnect();
       }
 
       isConnected = false;
@@ -490,6 +470,10 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentControls 
         const callback = stopObserverCallbacks.shift()!;
         callback();
       }
+    },
+
+    async setChildren() {
+      $$children;
     },
   };
 

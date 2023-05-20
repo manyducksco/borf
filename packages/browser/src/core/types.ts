@@ -8,7 +8,7 @@ import { type Store } from "./component.js";
 import { type Readable } from "./classes/Readable.js";
 import { type Writable } from "./classes/Writable.js";
 import { type Ref } from "./classes/Ref.js";
-import { type Markup } from "./classes/Markup.js";
+import { type Markup } from "./markup.js";
 
 /**
  * Value will be read by the component.
@@ -49,11 +49,13 @@ export interface BuiltInStores {
 
 export interface Connectable {
   readonly node: Node;
-  readonly isConnected: boolean;
+  readonly connected: boolean;
 
   connect(parent: Node, after?: Node): Promise<void>;
   disconnect(): Promise<void>;
 }
+
+export type Stringable = { toString(): string };
 
 export type MaybeReadable<T> = T extends Readable<any> ? T : T | Readable<T> | Readable<Exclude<T, undefined>>;
 

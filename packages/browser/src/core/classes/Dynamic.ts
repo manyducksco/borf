@@ -1,7 +1,7 @@
-import type { Connectable, Renderable } from "../types";
+import type { Renderable } from "../types";
 
 import { typeOf } from "@borf/bedrock";
-import { toMarkup } from "./Markup.js";
+import { DOMHandle, getRenderHandle, renderMarkupToDOM, toMarkup } from "../markup.js";
 import { isRenderable } from "../utils/isRenderable.js";
 import { Readable, type StopFunction } from "./Readable.js";
 import { type AppContext, type ElementContext } from "./App.js";
@@ -16,9 +16,9 @@ interface DynamicOptions<T> {
 /**
  * Displays dynamic children without a parent element.
  */
-export class Dynamic<T> implements Connectable {
+export class Dynamic<T> implements DOMHandle {
   #node = document.createComment("Dynamic");
-  #connectedViews: Connectable[] = [];
+  #connectedViews: DOMHandle[] = [];
   #stopCallback?: StopFunction;
   #readable;
   #render?: (value: T) => Renderable;
@@ -29,7 +29,7 @@ export class Dynamic<T> implements Connectable {
     return this.#node;
   }
 
-  get isConnected() {
+  get connected() {
     return this.#node.parentNode != null;
   }
 
@@ -44,7 +44,7 @@ export class Dynamic<T> implements Connectable {
   }
 
   async connect(parent: Node, after?: Node) {
-    if (!this.isConnected) {
+    if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
       this.#stopCallback = this.#readable.observe((value: T) => {
@@ -57,6 +57,7 @@ export class Dynamic<T> implements Connectable {
         }
 
         if (!isRenderable(newValue)) {
+          console.error(newValue);
           throw new TypeError(
             `Dynamic received invalid value to render. Got type: ${typeOf(newValue)}, value: ${newValue}`
           );
@@ -77,11 +78,13 @@ export class Dynamic<T> implements Connectable {
       this.#stopCallback = undefined;
     }
 
-    if (this.isConnected) {
+    if (this.connected) {
       await this.#cleanup();
       this.#node.parentNode!.removeChild(this.#node);
     }
   }
+
+  async setChildren() {}
 
   async #cleanup() {
     while (this.#connectedViews.length > 0) {
@@ -94,7 +97,7 @@ export class Dynamic<T> implements Connectable {
   async #update(...children: Renderable[]) {
     await this.#cleanup();
 
-    if (children == null || !this.isConnected) {
+    if (children == null || !this.connected) {
       return;
     }
 
@@ -102,11 +105,13 @@ export class Dynamic<T> implements Connectable {
 
     for (const child of formattedChildren) {
       const previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
-      const view = child.create({ appContext: this.#appContext, elementContext: this.#elementContext });
+      const handle = getRenderHandle(
+        renderMarkupToDOM(child, { app: this.#appContext, element: this.#elementContext })
+      );
 
-      await view.connect(this.node.parentNode!, previous);
+      await handle.connect(this.node.parentNode!, previous);
 
-      this.#connectedViews.push(view);
+      this.#connectedViews.push(handle);
     }
   }
 }
