@@ -9,7 +9,7 @@ import { makeMarkup } from "../markup.js";
 export function when(value: Readable<any>, then?: Renderable, otherwise?: Renderable) {
   return makeMarkup("$dynamic", {
     value,
-    render: () => {
+    render: (value) => {
       if (value) {
         return then;
       }

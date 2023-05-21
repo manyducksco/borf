@@ -1,16 +1,10 @@
-import type { Connectable, Renderable } from "../types";
+import type { Renderable } from "../types";
 
-import { Markup, makeMarkup, toMarkup } from "../markup.js";
+import { DOMHandle, DOMMarkup, Markup, getRenderHandle, makeMarkup, renderMarkupToDOM, toMarkup } from "../markup.js";
 import { Readable, type ValuesOfReadables } from "../classes/Readable.js";
 import { observeMany } from "../utils/observeMany.js";
-import { isFunction, isString } from "@borf/bedrock";
 import { deepEqual } from "../utils/deepEqual";
 import { AppContext, ElementContext } from "../classes/App";
-
-type VNode = {
-  markup: Markup;
-  connectable: Connectable;
-};
 
 /**
  * Observes a readable value while this component is connected. Calls `render` each time the value changes.
@@ -51,124 +45,94 @@ export interface VirtualConfig {
   elementContext: ElementContext;
 }
 
-export function makeVirtual(config: VirtualConfig) {
+export function makeVirtual(config: VirtualConfig): DOMHandle {
   let isConnected = false;
 
-  const node = document.createComment(" virtual ");
-  const closingNode = document.createComment(" /virtual ");
+  const node = document.createComment("virtual");
+  const closingNode = document.createComment("/virtual");
 
-  let currentItems: VNode[] = [];
+  let currentItems: DOMMarkup[] = [];
 
   const observer = observeMany(config.readables, (...values) => {
     if (!isConnected) {
       return;
     }
 
-    const rendered = config.render(...values);
-    const markup = toMarkup(rendered);
+    const renderable = config.render(...values);
+    const nextItems = toMarkup(renderable);
 
-    patch(node, config, currentItems, markup).catch((error) =>
-      config.appContext.crashCollector.crash({ error, componentName: "virtual" })
-    );
+    // Compare current and next items, patching where changes have occurred.
 
-    console.log(markup);
+    patch(currentItems, nextItems)
+      .then((patched) => {
+        currentItems = patched;
+      })
+      .catch((error) => config.appContext.crashCollector.crash({ error, componentName: "virtual" }));
   });
 
-  async function cleanup() {
-    while (currentItems.length > 0) {
-      // NOTE: Awaiting this disconnect causes problems when transitioning out old elements while new ones are transitioning in.
-      // Not awaiting seems to fix this, but may cause problems with error handling or other render order things. Keep an eye on it.
-      currentItems.pop()?.connectable.disconnect();
-    }
-  }
-
-  // TODO: Actually diff. This is just destroying and recreating everything.
-  // async function update(items: Markup[]) {
-  //   await cleanup();
-
-  //   const newItems: VNode[] = [];
-
-  //   for (const markup of items) {
-  //     const previous = currentItems[currentItems.length - 1]?.connectable.node || node;
-  //     const connectable = markup.create(config);
-
-  //     await connectable.connect(node.parentNode!, previous);
-
-  //     newItems.push({ markup, connectable });
-  //   }
-
-  //   node.parentNode!.insertBefore(closingNode, newItems[currentItems.length - 1]?.connectable.node?.nextSibling);
-
-  //   currentItems = newItems;
-  // }
-
-  async function patch(node: Node, config: VirtualConfig, currentItems: VNode[], items: Markup[]) {
-    const length = Math.max(currentItems.length, items.length);
-
-    const removedItems: VNode[] = [];
-    const newItems: VNode[] = [];
+  async function patch(current: DOMMarkup[], next: Markup[]) {
+    const patched: DOMMarkup[] = [];
+    const length = Math.max(current.length, next.length);
 
     for (let i = 0; i < length; i++) {
-      // Compare old item to new.
+      if (!current[i] && next[i]) {
+        // item was added
+        patched[i] = createNode(next[i]);
+        await patched[i].handle.connect(node.parentNode!, patched[i - 1]?.handle.node ?? node);
+      } else if (current[i] && !next[i]) {
+        // item was removed
+        current[i].handle.disconnect();
+      } else {
+        // current and next both exist (or both don't exist, but that shouldn't happen.)
 
-      console.log({ i, current: currentItems[i], next: items[i] });
+        console.log("both exist", current[i], next[i]);
 
-      if (currentItems[i] && items[i]) {
-        // TODO: Take `id` attribute into account to reuse items.
-        if (currentItems[i].markup.type === items[i].type) {
-          // Try to reuse existing element.
-
-          if (deepEqual(currentItems[i].markup.attributes, items[i].attributes)) {
-            // No changes needed if attributes are equal.
-            // TODO: What about children?
-            console.log("elements are equal");
-            // await patch(currentItems[i].connectable.node, config, currentItems[i].markup.children ?? [], items[i].children);
-          } else {
-            const markup = items[i];
-
-            if (isString(markup.type)) {
-              // TODO: Patch HTML element. For now we replace.
-              const connectable = markup.create(config);
-              newItems[i] = { markup, connectable };
-              removedItems.push(currentItems[i]);
-            } else if (isFunction(markup.type)) {
-              // Replace component.
-              const connectable = markup.create(config);
-              newItems[i] = { markup, connectable };
-              removedItems.push(currentItems[i]);
-            }
-          }
+        if (current[i].type !== next[i].type) {
+          // replace
+          patched[i] = createNode(next[i]);
+          current[i].handle.disconnect();
+          await patched[i].handle.connect(node.parentNode!, patched[i - 1]?.handle.node ?? node);
         } else {
-          // Replace item.
-          const markup = items[i];
-          const connectable = markup.create(config);
-          newItems[i] = { markup, connectable };
-          removedItems.push(currentItems[i]);
+          const sameAttrs = deepEqual(current[i].attributes, next[i].attributes);
+
+          if (sameAttrs) {
+            // reuse element, but diff children. have setChildren do diffing?
+            console.log("same attrs: reuse");
+
+            const children = renderMarkupToDOM(next[i].children ?? [], {
+              app: config.appContext,
+              element: config.elementContext,
+            });
+
+            patched[i] = { ...current[i], children };
+            patched[i].handle.setChildren(children);
+          } else {
+            // replace (TODO: patch attrs in place if possible)
+            console.log("different attrs: replace");
+            patched[i] = createNode(next[i]);
+            current[i].handle.disconnect();
+          }
+
+          await patched[i].handle.connect(node.parentNode!, patched[i - 1]?.handle.node ?? node);
         }
-      } else if (!currentItems[i] && items[i]) {
-        // Add item.
-        const markup = items[i];
-        const connectable = markup.create(config);
-        newItems[i] = { markup, connectable };
-      } else if (currentItems[i] && !items[i]) {
-        // Remove item.
-        removedItems.push(currentItems[i]);
       }
     }
 
-    currentItems = newItems;
+    console.log({ current, next, patched });
 
-    console.log({ removedItems, currentItems });
+    return patched;
+  }
 
-    for (const item of removedItems) {
-      await item.connectable.disconnect();
-    }
+  function createNode(markup: Markup): DOMMarkup {
+    const handle = getRenderHandle(
+      renderMarkupToDOM(markup, { app: config.appContext, element: config.elementContext })
+    );
 
-    for (const item of currentItems) {
-      const previous = currentItems[currentItems.length - 1]?.connectable.node || node;
-
-      await item.connectable.connect(node.parentNode!, previous);
-    }
+    return {
+      ...markup,
+      handle,
+      children: markup.children?.map(createNode),
+    };
   }
 
   return {
@@ -194,28 +158,43 @@ export function makeVirtual(config: VirtualConfig) {
     async disconnect() {
       if (isConnected) {
         observer.stop();
-        await cleanup();
+
+        while (currentItems.length > 0) {
+          // NOTE: Awaiting this disconnect causes problems when transitioning out old elements while new ones are transitioning in.
+          // Not awaiting seems to fix this, but may cause problems with error handling or other render order things. Keep an eye on it.
+          await currentItems.pop()?.handle.disconnect();
+        }
+
         node.remove();
         closingNode.remove();
         isConnected = false;
       }
     },
+
+    async setChildren() {},
   };
 }
 
 /*
 
-Starting with the existing tree vs a newly constructed tree, recursively compare each node.
+Starting with the existing list of DOM nodes vs a newly constructed list of DOM nodes, recursively compare each node and children.
 
-- If the element type is different:
-  - If both are HTML elements, replace the existing element with the new one but pass the same children (which may not need to be replaced). Diff children.
-  - If the new element is a component, replace with an instance of the new component.
-  - If types are different, replace.
-- If the element type is the same:
-  - If HTML elements, update attributes and diff children.
-  - If components:
-    - If the component constructor is the same:
-      - If the attributes are deep equal, keep the old instance. Update $$children.
+- If there is no DOM node at the same index:
+  - Create and attach new DOM node.
+- If there is a DOM node at the same index:
+  - If the element type is different:
+    - If both are HTML elements, replace the existing element with the new one but pass the same children (which may not need to be replaced). Diff children.
+    - If the new element is a component, replace with an instance of the new component.
+    - If types are different, replace.
+  - If the element type is the same:
+    - If HTML elements, update attributes and diff children.
+    - If $special elements ($dynamic, $repeat, $text, $virtual):
+      - If the attributes are equal, keep the old instance.
+      - If the attributes are different, recreate the element.
+    - If components:
+      - If the attributes are equal, keep the old instance and set children.
       - If the attributes are different, recreate the component.
+
+Q: How would keying by `id` work?
 
 */

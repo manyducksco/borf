@@ -264,7 +264,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
               if (parentLayer) {
                 parentLayer.handle.setChildren(rendered);
               } else {
-                appContext.rootView!.$$children.value = rendered;
+                appContext.rootView!.setChildren(rendered);
               }
             });
 

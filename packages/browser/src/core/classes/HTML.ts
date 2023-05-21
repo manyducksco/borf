@@ -5,7 +5,8 @@ import { Readable, type StopFunction } from "./Readable.js";
 import { Writable } from "./Writable.js";
 import { type Connectable } from "../types.js";
 import { type AppContext, type ElementContext } from "./App.js";
-import { Markup, DOMMarkup, renderMarkupToDOM } from "../markup.js";
+import { DOMMarkup, Markup, renderMarkupToDOM } from "../markup.js";
+import { deepEqual } from "../utils/deepEqual.js";
 
 type HTMLOptions = {
   appContext: AppContext;
@@ -39,6 +40,8 @@ export class HTML implements Connectable {
       elementContext.isSVG = true;
     }
 
+    // console.log({ tag, attributes, children });
+
     // Create node with the appropriate constructor.
     if (elementContext.isSVG) {
       this.#node = document.createElementNS("http://www.w3.org/2000/svg", tag);
@@ -71,7 +74,9 @@ export class HTML implements Connectable {
     }
 
     this.#attributes = omit(["ref"], normalizedAttrs);
-    this.#children = children?.flatMap((c) => renderMarkupToDOM(c, { app: appContext, element: elementContext })) ?? [];
+    this.#children = (children?.flatMap((c) =>
+      (c as any).handle ? c : renderMarkupToDOM(c, { app: appContext, element: elementContext })
+    ) ?? []) as DOMMarkup[];
 
     this.#appContext = appContext;
     this.#elementContext = elementContext;
@@ -110,13 +115,45 @@ export class HTML implements Connectable {
     }
   }
 
-  async setChildren(markup: DOMMarkup[]) {
-    // const rendered = markup.flatMap((m) =>
-    //   m.hasOwnProperty("handle")
-    //     ? (m as RenderedMarkup)
-    //     : renderMarkup(m, { app: this.#appContext, element: this.#elementContext })
-    // );
-    // TODO: Diff and replace
+  async setChildren(next: DOMMarkup[]) {
+    const current = this.#children;
+    const patched: DOMMarkup[] = [];
+    const length = Math.max(current.length, next.length);
+
+    for (let i = 0; i < length; i++) {
+      if (!current[i] && next[i]) {
+        // item was added
+        patched[i] = next[i];
+        await patched[i].handle.connect(this.#node, patched[i - 1]?.handle.node);
+      } else if (current[i] && !next[i]) {
+        // item was removed
+        current[i].handle.disconnect();
+      } else {
+        // current and next both exist (or both don't exist, but that shouldn't happen.)
+        if (current[i].type !== next[i].type) {
+          // replace
+          patched[i] = next[i];
+          current[i].handle.disconnect();
+          await patched[i].handle.connect(this.#node, patched[i - 1]?.handle.node);
+        } else {
+          const sameAttrs = deepEqual(current[i].attributes, next[i].attributes);
+
+          if (sameAttrs) {
+            // reuse element, but diff children. have setChildren do diffing?
+            const children = next[i].children ?? [];
+            patched[i] = { ...current[i], children };
+            patched[i].handle.setChildren(children);
+          } else {
+            // replace (TODO: patch attrs in place if possible)
+            patched[i] = next[i];
+            await patched[i].handle.connect(this.#node, current[i].handle.node);
+            current[i].handle.disconnect();
+          }
+        }
+      }
+    }
+
+    this.#children = patched;
   }
 }
 

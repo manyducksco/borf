@@ -9,6 +9,7 @@ import { AppContext, ElementContext } from "./classes/App";
 import { Text } from "./classes/Text";
 import { Dynamic } from "./classes/Dynamic";
 import { Repeat } from "./classes/Repeat";
+import { makeVirtual } from "./helpers/virtual";
 
 const MARKUP = Symbol("Markup");
 
@@ -115,18 +116,25 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
           break;
         case "$dynamic":
           handle = new Dynamic({
-            readable: Readable.isReadable(item.attributes!.value)
-              ? item.attributes!.value
-              : new Readable(item.attributes!.value),
+            readable: item.attributes!.value,
+            render: item.attributes!.render,
             appContext: ctx.app,
             elementContext: ctx.element,
           });
           break;
         case "$repeat":
           handle = new Repeat({
-            readable: item.attributes!.readable,
+            readable: item.attributes!.value,
             render: item.attributes!.render,
             key: item.attributes!.key,
+            appContext: ctx.app,
+            elementContext: ctx.element,
+          });
+          break;
+        case "$virtual":
+          handle = makeVirtual({
+            readables: item.attributes!.readables,
+            render: item.attributes!.render,
             appContext: ctx.app,
             elementContext: ctx.element,
           });
@@ -143,11 +151,6 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
       }
     } else {
       throw new TypeError(`Expected a string or component function. Got: ${item.type}`);
-    }
-
-    if (handle == null) {
-      console.error(item);
-      throw new TypeError(`No render handle.`);
     }
 
     return {

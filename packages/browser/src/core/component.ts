@@ -170,7 +170,6 @@ interface ComponentConfig<A> {
  * Methods for the framework to manipulate a component.
  */
 export interface ComponentHandle extends DOMHandle {
-  $$children: Writable<Markup[]>;
   outputs?: object;
 }
 
@@ -404,8 +403,6 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
   }
 
   const controls: ComponentHandle = {
-    $$children,
-
     get outputs() {
       return outputs;
     },
@@ -472,8 +469,8 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
       }
     },
 
-    async setChildren() {
-      $$children;
+    async setChildren(markup) {
+      $$children.value = markup;
     },
   };
 
