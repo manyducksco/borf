@@ -44,12 +44,37 @@ type ElementFn<State, Attrs> = (c: ElementContext<State, Attrs>) => void;
 
 export function element<State = DefaultState, Attrs = DefaultAttrs>(
   tag: string,
+  observedAttrs: keyof Attrs[],
   fn: ElementFn<State, Attrs>
+): void;
+
+export function element<State = DefaultState, Attrs = DefaultAttrs>(
+  tag: string,
+  fn: ElementFn<State, Attrs>
+): void;
+
+export function element<State = DefaultState, Attrs = DefaultAttrs>(
+  tag: string,
+  ...args: any[]
 ) {
+  let observedAttrs: string[] = [];
+  let fn: ElementFn<State, Attrs>;
+
+  if (args.length === 2) {
+    observedAttrs = args[0];
+    fn = args[1];
+  } else {
+    fn = args[0];
+  }
+
   if ("customElements" in window) {
     customElements.define(
       tag,
       class extends Elemental<State, Attrs> {
+        static get observedAttributes() {
+          return observedAttrs;
+        }
+
         _fn = fn;
       },
       {}
@@ -290,6 +315,15 @@ class Elemental<State, Attrs> extends HTMLElement {
     );
   }
 
+  attributeChangedCallback(
+    property: keyof Attrs,
+    oldValue: any,
+    newValue: any
+  ) {
+    this._attributes[property] = newValue;
+    this._render();
+  }
+
   _toVNodes(nodes: (VNode | string | number | boolean)[]) {
     return nodes
       .filter((c) => c != null && c !== false)
@@ -344,10 +378,10 @@ class Elemental<State, Attrs> extends HTMLElement {
       }
     }
 
-    if (el instanceof Elemental) {
-      el._attributes = node.attributes;
-      el._render();
-    }
+    // if (el instanceof Elemental) {
+    //   el._attributes = node.attributes;
+    //   el._render();
+    // }
 
     return el;
   }
@@ -379,10 +413,10 @@ class Elemental<State, Attrs> extends HTMLElement {
       }
     }
 
-    if (current instanceof Elemental) {
-      current._attributes = nextAttrs;
-      current._render();
-    }
+    // if (current instanceof Elemental) {
+    //   current._attributes = nextAttrs;
+    //   current._render();
+    // }
 
     this._patch(
       current,

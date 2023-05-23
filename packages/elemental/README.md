@@ -1,6 +1,8 @@
 # `@borf/elemental`
 
-A package for Borf-flavored web components (A.K.A. custom elements). Perfect for adding components to an existing website without rewriting it all in a full JavaScript framework.
+> NOTE: This library is extremely early in development and is probably broken in a lot of ways. Use at your own risk.
+
+A novel way to write web components (A.K.A. custom elements). Perfect for adding components to an existing website without rewriting it all in a full JavaScript framework.
 
 In a JS file (`elements.js`):
 
@@ -49,17 +51,6 @@ element("elemental-example", (c) => {
         <h1>${attrs.title}</h1>
         <slot />
       </div>
-    `;
-  });
-
-  // applied to rendered content (dynamic just like render function)
-  c.styles((state, attrs) => {
-    return css`
-      h1 {
-        color: "red";
-        font-weight: ${state.value > 7 ? "bold" : undefined};
-        font-size: ${state.value}px;
-      }
     `;
   });
 });

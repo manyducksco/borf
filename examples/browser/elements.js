@@ -51,7 +51,9 @@ element("el-header", (c) => {
   });
 });
 
-element("test-nested", (c) => {
+// optional second argument which is an array of observedAttributes
+// in other words, attributes which will trigger a render when set
+element("test-nested", ["label"], (c) => {
   c.render((state, attrs) => {
     return html`<p style="color:red">${attrs.label}</p>`;
   });

@@ -10,8 +10,7 @@
   "scripts": {
     "test": "ava",
     "test:watch": "npm run test -- --watch",
-    "build": "tsc",
-    "start": "tsc --watch"
+    "build": "tsc && node build.js"
   },
   "keywords": [
     "web app",
@@ -24,24 +23,18 @@
   "exports": {
     ".": {
       "import": "./lib/index.js",
-      "types": "./index.d.ts"
+      "types": "./lib/index.d.ts"
     }
-  },
-  "dependencies": {
-    "@borf/bedrock": "^3.0.0",
-    "@borf/browser": "^0.45.1",
-    "htm": "^3.1.1",
-    "immer": "^10.0.2",
-    "simple-color-hash": "^1.0.2"
   },
   "devDependencies": {
     "@ava/typescript": "^4.0.0",
     "@types/sinon": "^10.0.14",
     "ava": "^5.2.0",
-    "csstype": "^3.1.2",
+    "esbuild": "^0.17.19",
+    "htm": "^3.1.1",
+    "simple-color-hash": "^1.0.2",
     "sinon": "^15.0.4",
-    "typescript": "^5.0.4",
-    "zod": "^3.21.4"
+    "typescript": "^5.0.4"
   },
   "ava": {
     "typescript": {
