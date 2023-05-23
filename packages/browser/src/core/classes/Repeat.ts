@@ -71,7 +71,9 @@ export class Repeat<T> implements DOMHandle {
     }
   }
 
-  async setChildren() {}
+  async setChildren() {
+    console.warn("setChildren is not implemented for repeat()");
+  }
 
   async #cleanup() {
     while (this.#connectedItems.length > 0) {

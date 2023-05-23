@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "",
   "main": "lib/index.js",
-  "types": "./index.d.ts",
+  "types": "lib/index.d.ts",
   "type": "module",
   "sideEffects": false,
   "repository": "https://github.com/manyducksco/borf",
@@ -31,6 +31,7 @@
     "@borf/bedrock": "^3.0.0",
     "@borf/browser": "^0.45.1",
     "htm": "^3.1.1",
+    "immer": "^10.0.2",
     "simple-color-hash": "^1.0.2"
   },
   "devDependencies": {

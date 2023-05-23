@@ -26,6 +26,7 @@
     "@borf/bedrock": "file:../packages/bedrock",
     "@borf/browser": "file:../packages/browser",
     "@borf/build": "file:../packages/build",
+    "@borf/elemental": "file:../packages/elemental",
     "@borf/server": "file:../packages/server",
     "@vitest/browser": "^0.29.8",
     "@vitest/ui": "^0.29.8",

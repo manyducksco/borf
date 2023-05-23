@@ -707,9 +707,9 @@ export interface ElementAttributes<T extends HTMLElement> extends GlobalAttribut
   children?: any;
 
   /**
-   * A binding that receives a reference to the DOM element.
+   * A Ref object or function that receives the DOM node when rendered.
    */
-  ref?: Ref<any>;
+  ref?: Ref<any> | ((node: T) => unknown);
 }
 
 /**

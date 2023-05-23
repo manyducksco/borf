@@ -84,7 +84,9 @@ export class Dynamic<T> implements DOMHandle {
     }
   }
 
-  async setChildren() {}
+  async setChildren() {
+    console.warn("setChildren is not implemented for Dynamic");
+  }
 
   async #cleanup() {
     while (this.#connectedViews.length > 0) {

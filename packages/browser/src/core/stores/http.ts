@@ -13,7 +13,7 @@ interface HTTPStoreAttrs {
  * so it's the perfect way to handle things like auth headers and permission checks for API calls.
  */
 export function HTTPStore(attrs: HTTPStoreAttrs, ctx: ComponentContext) {
-  ctx.name = "borf:http";
+  ctx.name = "borf/http";
 
   const fetch = attrs.fetch ?? getDefaultFetch();
 

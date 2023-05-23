@@ -83,10 +83,6 @@ export function makeVirtual(config: VirtualConfig): DOMHandle {
         // item was removed
         current[i].handle.disconnect();
       } else {
-        // current and next both exist (or both don't exist, but that shouldn't happen.)
-
-        console.log("both exist", current[i], next[i]);
-
         if (current[i].type !== next[i].type) {
           // replace
           patched[i] = createNode(next[i]);
@@ -96,9 +92,7 @@ export function makeVirtual(config: VirtualConfig): DOMHandle {
           const sameAttrs = deepEqual(current[i].attributes, next[i].attributes);
 
           if (sameAttrs) {
-            // reuse element, but diff children. have setChildren do diffing?
-            console.log("same attrs: reuse");
-
+            // reuse element. the handle will do its own diffing to update children.
             const children = renderMarkupToDOM(next[i].children ?? [], {
               app: config.appContext,
               element: config.elementContext,
@@ -108,7 +102,6 @@ export function makeVirtual(config: VirtualConfig): DOMHandle {
             patched[i].handle.setChildren(children);
           } else {
             // replace (TODO: patch attrs in place if possible)
-            console.log("different attrs: replace");
             patched[i] = createNode(next[i]);
             current[i].handle.disconnect();
           }
@@ -118,7 +111,11 @@ export function makeVirtual(config: VirtualConfig): DOMHandle {
       }
     }
 
-    console.log({ current, next, patched });
+    // Make sure closing <!--/virtual--> is at the end.
+    const lastPatchedNode = patched[patched.length - 1]?.handle.node;
+    if (!lastPatchedNode || closingNode.previousSibling !== lastPatchedNode) {
+      node.parentNode!.insertBefore(closingNode, lastPatchedNode?.nextSibling || node.nextSibling || null);
+    }
 
     return patched;
   }
@@ -171,7 +168,9 @@ export function makeVirtual(config: VirtualConfig): DOMHandle {
       }
     },
 
-    async setChildren() {},
+    async setChildren() {
+      console.warn("setChildren is not implemented for virtual()");
+    },
   };
 }
 

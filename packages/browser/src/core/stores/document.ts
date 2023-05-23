@@ -5,7 +5,7 @@ type ScreenOrientation = "landscape" | "portrait";
 type ColorScheme = "light" | "dark";
 
 export function DocumentStore(_: {}, ctx: ComponentContext) {
-  ctx.name = "borf:page";
+  ctx.name = "borf/document";
 
   const $$title = new Writable(document.title);
   const $$visibility = new Writable(document.visibilityState);

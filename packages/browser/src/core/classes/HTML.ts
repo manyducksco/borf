@@ -68,6 +68,8 @@ export class HTML implements Connectable {
     if (normalizedAttrs.ref) {
       if (Ref.isRef(normalizedAttrs.ref)) {
         normalizedAttrs.ref.element = this.#node;
+      } else if (isFunction(normalizedAttrs.ref)) {
+        normalizedAttrs.ref(this.#node);
       } else {
         throw new Error("Expected an instance of Ref. Got: " + attributes.ref);
       }

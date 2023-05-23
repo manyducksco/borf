@@ -40,7 +40,7 @@ export interface MarkupAttributes {
 }
 
 export function isMarkup(value: unknown): value is Markup {
-  return isObject(value) && value[MARKUP] === MARKUP;
+  return isObject(value) && value[MARKUP] === true;
 }
 
 export function toMarkup(renderables: Renderable | Renderable[]): Markup[] {
@@ -79,7 +79,7 @@ export function makeMarkup<I>(
   ...children: Renderable[]
 ) {
   return {
-    [MARKUP]: MARKUP,
+    [MARKUP]: true,
     type,
     attributes,
     children: toMarkup(children),

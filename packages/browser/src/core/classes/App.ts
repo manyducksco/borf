@@ -164,7 +164,7 @@ export class App implements AppRouter {
 
   #options: AppOptions = {
     debug: {
-      filter: "*,-borf:*",
+      filter: "*,-borf/*",
       log: "development", // Only print logs in development.
       warn: "development", // Only print warnings in development.
       error: true, // Always print errors.
@@ -249,7 +249,7 @@ export class App implements AppRouter {
   main<A extends Record<string, any>>(view: View<A>, attributes?: A) {
     if (this.#mainView.type !== DefaultRootView) {
       this.#appContext.debugHub
-        .channel({ name: "borf:App" })
+        .channel({ name: "borf/App" })
         .warn(`Root view is already defined. Only the final main call will take effect.`);
     }
 
@@ -429,7 +429,7 @@ export class App implements AppRouter {
   configure(callback: ConfigureCallback) {
     if (this.#configureCallback !== undefined) {
       this.#appContext.debugHub
-        .channel({ name: "borf:App" })
+        .channel({ name: "borf/App" })
         .warn(`Configure callback is already defined. Only the final configure call will take effect.`);
     }
 
@@ -494,9 +494,9 @@ export class App implements AppRouter {
       const { store, attributes, exports } = item;
 
       // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
-      // Built-in globals get an additional 'borf:' prefix so it's clear messages are from the framework.
-      // 'borf:*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
-      const channelPrefix = isString(key) ? "borf:store" : "store";
+      // Built-in globals get an additional 'borf/' prefix so it's clear messages are from the framework.
+      // 'borf/*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
+      const channelPrefix = isString(key) ? "borf/store" : "store";
       const label = isString(key) ? key : store.name ?? "(anonymous)";
       const config = {
         appContext,

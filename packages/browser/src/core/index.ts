@@ -9,13 +9,11 @@ export { Ref } from "./classes/Ref.js";
 export { html } from "./markup.js";
 export { when } from "./helpers/when.js";
 export { unless } from "./helpers/unless.js";
+export { repeat } from "./helpers/repeat.js";
 export { virtual } from "./helpers/virtual.js";
 
-// Markup (obsolete with virtual?)
-export { repeat } from "./helpers/repeat.js";
+// obsolete with virtual? seems like it's a less efficient version of the same thing.
 export { observe } from "./helpers/observe.js";
-
-// If virtual -> render, export only html and render. No need for others?
 
 // Types
 export type { HTTPMiddleware } from "./stores/http.js";

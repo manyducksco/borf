@@ -102,7 +102,7 @@ type RouterStoreAttrs = {
 // ----- Code ----- //
 
 export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: ComponentContext) {
-  ctx.name = "borf:router";
+  ctx.name = "borf/router";
 
   const { appContext, elementContext } = getSecrets(ctx);
 
@@ -246,7 +246,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
           const activeLayer = activeLayers[i];
 
           if (activeLayer?.id !== matchedLayer.id) {
-            ctx.info(`replacing layer@${i} (active: ${activeLayer?.id}, matched: ${matchedLayer.id})`);
+            ctx.info(`replacing layer ${i} (active id: ${activeLayer?.id}, matched id: ${matchedLayer.id})`);
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];

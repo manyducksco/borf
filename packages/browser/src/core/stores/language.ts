@@ -4,6 +4,7 @@ import { assertObject, isFunction, isObject, isPromise, typeOf } from "@borf/bed
 import { Readable } from "../classes/Readable.js";
 import { Writable } from "../classes/Writable.js";
 import { type ComponentContext } from "../component.js";
+import { deepEqual } from "../utils/deepEqual.js";
 
 // ----- Types ----- //
 
@@ -37,7 +38,7 @@ type LanguageAttrs = {
 // ----- Code ----- //
 
 export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext) {
-  ctx.name = "borf:language";
+  ctx.name = "borf/language";
 
   const languages = new Map<string, Language>();
 
@@ -55,6 +56,28 @@ export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext)
 
   // Fallback labels for missing state and data.
   const $noLanguageValue = new Readable("[NO LANGUAGE SET]");
+
+  // Cache readable translations by key and values.
+  // Return a cached one instead of creating a new, identical mapped value.
+  // The same keys are typically used in many places across the app.
+
+  // TODO: Keep an eye on this for memory leaks. Keeping a bunch of unused alternates with varied values might be an issue.
+  const translationCache: [
+    key: string,
+    values: Record<string, Stringable | Readable<Stringable>> | undefined,
+    readable: Readable<string>
+  ][] = [];
+
+  function getCached(
+    key: string,
+    values?: Record<string, Stringable | Readable<Stringable>>
+  ): Readable<string> | undefined {
+    for (const entry of translationCache) {
+      if (entry[0] === key && deepEqual(entry[1], values)) {
+        return entry[2];
+      }
+    }
+  }
 
   /**
    * Replaces {{placeholders}} with values in translated strings.
@@ -116,6 +139,11 @@ export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext)
         return $noLanguageValue;
       }
 
+      const cached = getCached(key, values);
+      if (cached) {
+        return cached;
+      }
+
       if (values) {
         const readableValues: Record<string, Readable<any>> = {};
 
@@ -129,7 +157,7 @@ export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext)
         // that contains the translation with interpolated observable values.
         const readableEntries = Object.entries(readableValues);
         if (readableEntries.length > 0) {
-          return Readable.merge([$$translation, ...readableEntries.map((x) => x[1])], (t, ...entryValues) => {
+          const readable = Readable.merge([$$translation, ...readableEntries.map((x) => x[1])], (t, ...entryValues) => {
             const entries = entryValues.map((_, i) => readableEntries[i]);
             const mergedValues = {
               ...values,
@@ -143,10 +171,14 @@ export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext)
             const result = resolve(t, key) || `[NO TRANSLATION: ${key}]`;
             return replaceMustaches(result, mergedValues);
           });
+
+          translationCache.push([key, values, readable]);
+
+          return readable;
         }
       }
 
-      return $$translation.map((t) => {
+      const readable = $$translation.map((t) => {
         let result = resolve(t, key) || `[NO TRANSLATION: ${key}]`;
 
         if (values) {
@@ -155,6 +187,10 @@ export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext)
 
         return result;
       });
+
+      translationCache.push([key, values, readable]);
+
+      return readable;
     },
   };
 }

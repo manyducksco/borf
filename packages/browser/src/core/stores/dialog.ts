@@ -12,7 +12,7 @@ interface DialogAttrs {
  * TODO: Describe this better.
  */
 export function DialogStore(_: {}, ctx: ComponentContext) {
-  ctx.name = "borf:dialog";
+  ctx.name = "borf/dialog";
 
   const { appContext, elementContext } = getSecrets(ctx);
 

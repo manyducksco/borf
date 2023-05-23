@@ -5,18 +5,63 @@ A package for Borf-flavored web components (A.K.A. custom elements). Perfect for
 In a JS file (`elements.js`):
 
 ```js
-import { defineElement, html, Outlet } from "https://unpkg.com/@borf/elemental";
+import { element, html, css } from "https://unpkg.com/@borf/elemental";
 
-defineElement("example-view", function ExampleView({ title }) {
-  // Elemental uses tagged template literals to get close to
-  // JSX while staying drop-in compatible with web browsers.
-  return html`
-    <div>
-      <h1>${title}</h1>
+// What if this actually does use VDOM?
+// State is stored inside the instance
+element("elemental-example", (c) => {
+  // function takes a context object:
+  c.log(c);
 
-      <${Outlet} />
-    </div>
-  `;
+  // for debugging
+  c.debug("printed when window.ELEMENTAL_LOG_LEVEL >= 'debug' or 0");
+  c.info("fyi");
+  c.log("message");
+  c.warn("bad!");
+  c.error("really bad!!");
+
+  // access state
+  c.get();
+  c.get("value");
+  c.set({ value: 5 });
+  c.set("value", 5);
+
+  // listen for events (these two are only emitted inside the component)
+  c.on("connect", () => {
+    c.log("view is now connected");
+  });
+  c.on("disconnect", () => {
+    c.log("view is now disconnected");
+  });
+
+  // including standard DOM events
+  c.on("click", () => {
+    c.log("a click event bubbled up");
+  });
+
+  // emit custom events (listen to this one with 'onexplode')
+  c.emit("explode", { message: "BOOM!" });
+
+  // render with virtual DOM which doesn't eat your whole function scope
+  c.render((state, attrs) => {
+    return html`
+      <div>
+        <h1>${attrs.title}</h1>
+        <slot />
+      </div>
+    `;
+  });
+
+  // applied to rendered content (dynamic just like render function)
+  c.styles((state, attrs) => {
+    return css`
+      h1 {
+        color: "red";
+        font-weight: ${state.value > 7 ? "bold" : undefined};
+        font-size: ${state.value}px;
+      }
+    `;
+  });
 });
 ```
 
@@ -25,9 +70,9 @@ In an HTML file (`index.html`):
 ```html
 <html>
   <body>
-    <example-view title="This is a header!">
+    <elemental-example title="This is a header!">
       <p>This is a child of the elemental view</p>
-    </example-view>
+    </elemental-example>
 
     <script src="./elements.js" type="module"></script>
   </body>
@@ -36,7 +81,4 @@ In an HTML file (`index.html`):
 
 ## Questions / Design
 
-- Does this support built-in stores (`http`, `document`, `router`, `language`)? Leaning toward no.
-- Should attributes be written in HTML in `kebab-case` but passed to the component in `camelCase`? HTML is not case sensitive and JS is, and JS doesn't deal well with dashes in property names.
-- Re-exports a subset of hooks and classes from `@borf/browser`. Meant to be used as an alternative.
-- No "page-level" stores, just local ones as custom elements?
+- Should attributes be written in HTML in `kebab-case` but passed to the element in `camelCase`? HTML is not case sensitive but JS is, and JS doesn't deal well with dashes in property names.

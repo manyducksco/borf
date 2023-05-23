@@ -1,3 +1,5 @@
+import "./elements.js";
+
 import { App, html } from "@borf/browser";
 
 import { CounterStore } from "./globals/CounterStore";
