@@ -100,13 +100,19 @@
 </head>
 
 <body>
-  <el-header title="Title here.">
+  <el-header title="Title here." onincrement="handleEvent" ondecrement="handleEvent">
     Content here.
   </el-header>
 
   <div id="app"></div>
 
   <script type="module" src="./browser/app.jsx"></script>
+
+  <script>
+    function handleEvent(e) {
+      console.log(e);
+    }
+  </script>
 </body>
 
 </html>

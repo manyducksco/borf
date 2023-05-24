@@ -24,6 +24,7 @@ element("el-header", (c) => {
       ...current,
       value: current.value + 1,
     }));
+    c.emit("increment", c.get("value"));
   };
 
   const decrement = () => {
@@ -31,9 +32,12 @@ element("el-header", (c) => {
       ...current,
       value: current.value - 1,
     }));
+    c.emit("decrement", c.get("value"));
   };
 
   c.render((state, attrs) => {
+    c.info("rendering", { state, attrs });
+
     return html`
       <header>
         <h1>${attrs.title ?? "Default Title"}</h1>

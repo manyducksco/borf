@@ -9,12 +9,10 @@ In a JS file (`elements.js`):
 ```js
 import { element, html, css } from "https://unpkg.com/@borf/elemental";
 
-// What if this actually does use VDOM?
-// State is stored inside the instance
-element("elemental-example", (c) => {
-  // function takes a context object:
-  c.log(c);
-
+// Define a new element with its HTML tag name,
+// (optional) array of observed attributes which will cause a re-render when they are set,
+// and a callback function that defines the element
+element("elemental-example", ["title"], (c) => {
   // for debugging
   c.debug("printed when window.ELEMENTAL_LOG_LEVEL >= 'debug' or 0");
   c.info("fyi");
@@ -22,13 +20,13 @@ element("elemental-example", (c) => {
   c.warn("bad!");
   c.error("really bad!!");
 
-  // access state
+  // access element's internal state
   c.get();
   c.get("value");
   c.set({ value: 5 });
   c.set("value", 5);
 
-  // listen for events (these two are only emitted inside the component)
+  // listen for events ('connect' and 'disconnect' are only emitted inside the element)
   c.on("connect", () => {
     c.log("view is now connected");
   });
@@ -36,7 +34,7 @@ element("elemental-example", (c) => {
     c.log("view is now disconnected");
   });
 
-  // including standard DOM events
+  // also standard DOM events
   c.on("click", () => {
     c.log("a click event bubbled up");
   });

@@ -135,24 +135,6 @@ class Elemental<State, Attrs> extends HTMLElement {
 
   _initialized = false;
 
-  _render() {
-    if (!this._initialized) return;
-
-    const children = this.shadowRoot!.childNodes;
-    const rendered = this._renderCallback(this._state, this._attributes);
-
-    let next: VNode[] = [];
-    if (rendered != null) {
-      if (Array.isArray(rendered)) {
-        next = rendered;
-      } else {
-        next = [rendered];
-      }
-    }
-
-    this._patch(this.shadowRoot!, [...children], next);
-  }
-
   constructor() {
     super();
 
@@ -165,8 +147,20 @@ class Elemental<State, Attrs> extends HTMLElement {
     const attributes = this._attributes as any;
 
     for (const name of this.getAttributeNames()) {
-      attributes[name] = this.getAttribute(name);
+      let attr = this.getAttribute(name);
+      if (name.startsWith("on") && typeof attr === "string") {
+        attr = (0, eval)(attr);
+      }
+      attributes[name] = attr;
     }
+
+    for (const name in attributes) {
+      if (name.startsWith("on")) {
+        this.addEventListener(name.slice(2), attributes[name]);
+      }
+    }
+
+    console.log(attributes);
 
     this._context = {
       get debug() {
@@ -277,7 +271,9 @@ class Elemental<State, Attrs> extends HTMLElement {
       },
 
       emit(event: string, detail?: any) {
-        self.dispatchEvent(new CustomEvent(event, { detail }));
+        self.dispatchEvent(
+          new CustomEvent(event, { detail, bubbles: true, cancelable: true })
+        );
       },
 
       render(callback) {
@@ -324,28 +320,61 @@ class Elemental<State, Attrs> extends HTMLElement {
     this._render();
   }
 
-  _toVNodes(nodes: (VNode | string | number | boolean)[]) {
-    return nodes
-      .filter((c) => c != null && c !== false)
-      .map((c) => {
-        if (
-          typeof c === "string" ||
-          typeof c === "number" ||
-          typeof c === "boolean"
-        ) {
-          return {
-            type: "@text",
-            attributes: { value: String(c) },
-            children: [],
-          } as VNode;
-        }
+  _render() {
+    if (!this._initialized) return;
 
-        if (typeof c.type === "string" && c.hasOwnProperty("attributes")) {
-          return c;
-        }
+    const exposedAttrs: any = {};
 
-        throw new TypeError(`Unexpected child type: ${c}`);
-      });
+    for (const name in this._attributes) {
+      if (!name.startsWith("on")) {
+        exposedAttrs[name] = this._attributes[name];
+      }
+    }
+
+    const children = this.shadowRoot!.childNodes;
+    const rendered = this._renderCallback(this._state, exposedAttrs);
+
+    let next: VNode[] = [];
+    if (rendered != null) {
+      if (Array.isArray(rendered)) {
+        next = rendered;
+      } else {
+        next = [rendered];
+      }
+    }
+
+    this._patch(this.shadowRoot!, [...children], next);
+  }
+
+  _patch(root: Node, children: Node[], next: VNode[]) {
+    const length = Math.max(children.length, next.length);
+
+    for (let i = 0; i < length; i++) {
+      const dom = children[i];
+      const vnode = next[i];
+
+      if (!dom && vnode) {
+        // item was added
+        const node = this._createNode(vnode);
+        root.appendChild(node);
+      } else if (dom && !vnode) {
+        // item was removed
+        dom.parentNode?.removeChild(dom);
+      } else if (dom instanceof Text && vnode.type === "@text") {
+        // update text
+        dom.textContent = vnode.attributes.value;
+      } else if (
+        dom instanceof Element &&
+        dom.tagName.toLowerCase() === vnode.type
+      ) {
+        this._updateNode(dom, vnode);
+      } else {
+        // replace
+        const node = this._createNode(vnode);
+        root.insertBefore(node, dom.nextSibling);
+        dom.parentNode?.removeChild(dom);
+      }
+    }
   }
 
   _createNode(node: VNode): Node {
@@ -357,10 +386,17 @@ class Elemental<State, Attrs> extends HTMLElement {
 
     if (node.attributes) {
       for (const name in node.attributes) {
-        if (
-          name.startsWith("on") &&
-          typeof node.attributes[name] === "function"
-        ) {
+        if (name.startsWith("on")) {
+          let attr: any;
+
+          if (typeof node.attributes[name] === "string") {
+            attr = (0, eval)(node.attributes[name]);
+          } else {
+            attr = node.attributes[name];
+          }
+
+          console.log(name, attr);
+
           el.addEventListener(name.slice(2), node.attributes[name]);
         } else {
           el.setAttribute(name, node.attributes[name]);
@@ -406,17 +442,21 @@ class Elemental<State, Attrs> extends HTMLElement {
         if (name.startsWith("on")) {
           // TODO: I don't think this is removing the old listener. If you define new functions inside render they keep stacking.
           current.removeEventListener(name.slice(2), currentAttrs[name]);
-          current.addEventListener(name.slice(2), nextAttrs[name]);
+
+          let attr: any;
+
+          if (typeof nextAttrs[name] === "string") {
+            attr = (0, eval)(nextAttrs[name]);
+          } else {
+            attr = nextAttrs[name];
+          }
+
+          current.addEventListener(name.slice(2), attr);
         } else {
           current.setAttribute(name, nextAttrs[name]);
         }
       }
     }
-
-    // if (current instanceof Elemental) {
-    //   current._attributes = nextAttrs;
-    //   current._render();
-    // }
 
     this._patch(
       current,
@@ -425,34 +465,27 @@ class Elemental<State, Attrs> extends HTMLElement {
     );
   }
 
-  _patch(root: Node, children: Node[], next: VNode[]) {
-    const length = Math.max(children.length, next.length);
+  _toVNodes(nodes: (VNode | string | number | boolean)[]) {
+    return nodes
+      .filter((c) => c != null && c !== false)
+      .map((c) => {
+        if (
+          typeof c === "string" ||
+          typeof c === "number" ||
+          typeof c === "boolean"
+        ) {
+          return {
+            type: "@text",
+            attributes: { value: String(c) },
+            children: [],
+          } as VNode;
+        }
 
-    for (let i = 0; i < length; i++) {
-      const dom = children[i];
-      const vnode = next[i];
+        if (typeof c.type === "string" && c.hasOwnProperty("attributes")) {
+          return c;
+        }
 
-      if (!dom && vnode) {
-        // item was added
-        const node = this._createNode(vnode);
-        root.appendChild(node);
-      } else if (dom && !vnode) {
-        // item was removed
-        dom.parentNode?.removeChild(dom);
-      } else if (dom instanceof Text && vnode.type === "@text") {
-        // update text
-        dom.textContent = vnode.attributes.value;
-      } else if (
-        dom instanceof Element &&
-        dom.tagName.toLowerCase() === vnode.type
-      ) {
-        this._updateNode(dom, vnode);
-      } else {
-        // replace
-        const node = this._createNode(vnode);
-        root.insertBefore(node, dom.nextSibling);
-        dom.parentNode?.removeChild(dom);
-      }
-    }
+        throw new TypeError(`Unexpected child type: ${c}`);
+      });
   }
 }
