@@ -4,6 +4,7 @@ import type { AppContext } from "./App";
 import type { DebugChannel } from "../DebugHub";
 
 import path from "node:path";
+import fs from "node:fs";
 import send from "send";
 import { type RouteMatch, isFunction, isString } from "@borf/bedrock";
 import { Router } from "../Router.js";
@@ -24,6 +25,11 @@ export interface HandlerContext<ReqBody = any> extends DebugChannel {
   req: Request<ReqBody>;
   res: Response<any>;
   use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+
+  /**
+   * Respond with a static file.
+   */
+  file(path: string): void;
 }
 
 export function makeRequestListener(appContext: AppContext, router: Router): RequestListener {
@@ -84,11 +90,17 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
 
     const matched = router.matchRoute(req.method!, req.url!);
 
-    if (matched) {
+    if (matched && matched.pattern !== "/*") {
+      // Skip '/*' fallback handler; it is used after every other type of handling fails.
       await handleMatchedRequest(appContext, req, res, matched, headers);
     } else if (!canServeStatic(req, channel)) {
-      res.writeHead(404, { ...headers.toJSON(), "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Route not found." }));
+      if (matched && matched.pattern === "/*") {
+        // Use '/*' fallback handler
+        await handleMatchedRequest(appContext, req, res, matched, headers);
+      } else {
+        res.writeHead(404, { ...headers.toJSON(), "Content-Type": "application/json" });
+        res.end(JSON.stringify({ message: "Route not found." }));
+      }
     } else {
       req.url = normalizePath(req.url!);
 
@@ -99,9 +111,19 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
         match = appContext.staticCache.get(fallback);
       }
 
+      // Attempt to fall back to index.html if one exists
+      if (!match && req.url === "/") {
+        match = appContext.staticCache.get("/index.html");
+      }
+
       if (!match) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ message: "Route not found." }));
+        if (matched && matched.pattern === "/*") {
+          // Use '/*' fallback handler
+          await handleMatchedRequest(appContext, req, res, matched, headers);
+        } else {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ message: "Route not found." }));
+        }
         return;
       }
 
@@ -213,6 +235,26 @@ export async function handleMatchedRequest(
 
       throw new Error(`Store '${store.name}' is not registered on this app.`);
     },
+    file(pathname: string) {
+      // TODO: Check static directories if relative, otherwise serve file directly.
+      // Set headers based on file metadata. Use the send package if possible.
+      pathname = normalizePath(pathname);
+      const file = appContext.staticCache.get(pathname);
+
+      if (file) {
+        const fullPath = path.join(file.source, file.path);
+        ctx.res.headers.set("content-type", file.type ?? "application/octet-stream");
+        ctx.res.body = fs.createReadStream(fullPath);
+      } else {
+        ctx.res.status = 404;
+      }
+    },
+    // json(object: any) {
+
+    // },
+    // html(template: string) {
+
+    // }
   };
 
   const debugChannel = appContext.debugHub.channel({ name: `${req.method?.toUpperCase()} ${req.url}` });

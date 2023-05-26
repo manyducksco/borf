@@ -220,6 +220,9 @@ export class RouterTester {
 
           throw new Error(`Store '${store.name}' is not registered on this app.`);
         },
+        file(path: string) {
+          // TODO: Implement
+        },
       };
 
       const debugChannel = appContext.debugHub.channel({ name: `${req.method?.toUpperCase()} ${req.url}` });
