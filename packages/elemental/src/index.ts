@@ -5,6 +5,20 @@ export const html = htm.bind((type, attributes, ...children) => {
   return { type, attributes, children } as VNode;
 });
 
+export const css = (strings: TemplateStringsArray, ...values: any[]) => {
+  let concat = "";
+
+  // Just re-assemble again. The string will be compared and replaced as a whole.
+  for (let i = 0; i < strings.length; i++) {
+    concat += strings[i];
+    if (values[i]) {
+      concat += values[i];
+    }
+  }
+
+  return concat;
+};
+
 type DefaultState = Record<string, any>;
 type DefaultAttrs = Record<string, any>;
 
@@ -37,7 +51,7 @@ type ElementContext<State, Attrs> = {
     callback: (state: State, attrs: Attrs) => VNode | VNode[] | null
   ): void;
 
-  // styles(callback: (state: State, attrs: Attrs) => string): void;
+  styles(callback: (state: State, attrs: Attrs) => string): void;
 };
 
 type ElementFn<State, Attrs> = (c: ElementContext<State, Attrs>) => void;
@@ -128,10 +142,12 @@ class Elemental<State, Attrs> extends HTMLElement {
   _disconnect?: () => void;
   _update?: (attributes?: Attrs, children?: VNode[]) => void;
   _renderCallback!: (state: State, attrs: Attrs) => VNode | VNode[] | null;
+  _stylesCallback?: (state: State, attrs: Attrs) => string;
 
   _state = {} as State;
   _attributes = {} as Attrs;
   _context: ElementContext<State, Attrs>;
+  _styleElement?: HTMLStyleElement;
 
   _initialized = false;
 
@@ -159,8 +175,6 @@ class Elemental<State, Attrs> extends HTMLElement {
         this.addEventListener(name.slice(2), attributes[name]);
       }
     }
-
-    console.log(attributes);
 
     this._context = {
       get debug() {
@@ -279,6 +293,10 @@ class Elemental<State, Attrs> extends HTMLElement {
       render(callback) {
         self._renderCallback = callback;
       },
+
+      styles(callback) {
+        self._stylesCallback = callback;
+      },
     };
   }
 
@@ -334,6 +352,22 @@ class Elemental<State, Attrs> extends HTMLElement {
     const children = this.shadowRoot!.childNodes;
     const rendered = this._renderCallback(this._state, exposedAttrs);
 
+    if (this._stylesCallback) {
+      const styles = this._stylesCallback(this._state, exposedAttrs);
+
+      if (this._styleElement) {
+        if (this._styleElement.textContent !== styles) {
+          this._styleElement.textContent = styles;
+        }
+      } else {
+        this._styleElement = document.createElement("style");
+        if (this._styleElement.textContent !== styles) {
+          this._styleElement.textContent = styles;
+        }
+        this.shadowRoot!.appendChild(this._styleElement);
+      }
+    }
+
     let next: VNode[] = [];
     if (rendered != null) {
       if (Array.isArray(rendered)) {
@@ -343,7 +377,11 @@ class Elemental<State, Attrs> extends HTMLElement {
       }
     }
 
-    this._patch(this.shadowRoot!, [...children], next);
+    this._patch(
+      this.shadowRoot!,
+      [...children].filter((c) => c !== this._styleElement),
+      next
+    );
   }
 
   _patch(root: Node, children: Node[], next: VNode[]) {
@@ -386,7 +424,9 @@ class Elemental<State, Attrs> extends HTMLElement {
 
     if (node.attributes) {
       for (const name in node.attributes) {
-        if (name.startsWith("on")) {
+        if (name === "ref") {
+          node.attributes[name](el);
+        } else if (name.startsWith("on")) {
           let attr: any;
 
           if (typeof node.attributes[name] === "string") {
@@ -413,11 +453,6 @@ class Elemental<State, Attrs> extends HTMLElement {
         el.appendChild(child);
       }
     }
-
-    // if (el instanceof Elemental) {
-    //   el._attributes = node.attributes;
-    //   el._render();
-    // }
 
     return el;
   }
