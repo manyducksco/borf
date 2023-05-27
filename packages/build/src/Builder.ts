@@ -332,8 +332,8 @@ export class Builder {
         });
       };
 
-      const ctx = await esbuild.context({
-        ...makeConfig({
+      const buildContext = await esbuild.context(
+        makeConfig({
           entryPoints: [this.#browserEntryPath!],
           entryNames: "[dir]/client.[hash]",
           outdir: path.join(this.#outputPath, "static"),
@@ -348,57 +348,25 @@ export class Builder {
               },
             }),
           ],
-        }),
-        incremental: true,
-      });
-
-      let clientBundle: BuildResult;
+        })
+      );
 
       const buildClient = async () => {
         const end = new Timer();
 
-        if (clientBundle) {
-          try {
-            const incremental = await clientBundle.rebuild();
+        try {
+          const incremental = await buildContext.rebuild();
 
-            await updateClientFiles(incremental);
-            events.emit("client built");
+          await updateClientFiles(incremental);
+          events.emit("client built");
 
-            log.client("rebuilt in", "%c" + end.formatted);
-          } catch (err) {}
-        } else {
-          try {
-            clientBundle = await esbuild.build({
-              ...makeConfig({
-                entryPoints: [this.#browserEntryPath!],
-                entryNames: "[dir]/client.[hash]",
-                outdir: path.join(this.#outputPath, "static"),
-                minify: buildOptions.minify,
-                plugins: [
-                  stylePlugin({
-                    postcss: {
-                      plugins: this.#config.browser?.postcss?.plugins || [],
-                    },
-                    cssModulesOptions: {
-                      generateScopedName: generateScopedClassName,
-                    },
-                  }),
-                ],
-              }),
-              incremental: true,
-            });
-
-            await updateClientFiles(clientBundle);
-            events.emit("client built");
-
-            log.client("built in", "%c" + end.formatted);
-          } catch (err) {
-            console.error(err);
-          }
+          log.client("rebuilt in", "%c" + end.formatted);
+        } catch (err) {
+          // console.error(err);
         }
       };
 
-      const triggerBuild = makeTimeoutTrigger(buildClient, 100);
+      const triggerBuild = makeTimeoutTrigger(buildClient, 200);
 
       clientWatcher.on("all", triggerBuild);
 
@@ -423,12 +391,13 @@ export class Builder {
         stdout: false,
         env: {
           PORT: serverPort,
+          NODE_ENV: "development",
         },
       })
         .on("start", () => {
           setTimeout(() => {
             hold.resolve();
-          }, 100);
+          }, 200);
         })
         .on("stdout", (buffer) => {
           log.server(buffer.toString());
@@ -532,7 +501,7 @@ export class Builder {
 }
 
 interface WriteClientFilesOptions {
-  clientBundle: BuildResult | BuildIncremental;
+  clientBundle: BuildResult;
   projectRoot: string;
   staticPath: string;
   buildStaticPath: string;
@@ -555,6 +524,8 @@ export async function writeClientFiles({
   isDevelopment = false,
 }: WriteClientFilesOptions) {
   const writtenFiles = [];
+
+  console.log("client bundle", clientBundle);
 
   for (const file of clientBundle.outputFiles!) {
     let filePath;

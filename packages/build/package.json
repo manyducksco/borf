@@ -1,6 +1,6 @@
 {
   "name": "@borf/build",
-  "version": "0.10.25",
+  "version": "0.10.26",
   "description": "Build system in a box for Borf apps.",
   "main": "lib/index.js",
   "type": "module",
