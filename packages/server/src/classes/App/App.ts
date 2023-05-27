@@ -118,9 +118,12 @@ export class App extends Router {
     this.#options = merge(this.#options, options ?? {});
 
     if (this.#options.mode === "production") {
+      // TODO: Add a way to keep some static directories uncached.
+      // Until then, all files are read from disk every time.
       this.#cache = new NoCache();
+      // this.#cache = new StaticCache();
     } else {
-      this.#cache = new StaticCache();
+      this.#cache = new NoCache();
     }
 
     const debugHub = new DebugHub(this.#options.debug);
