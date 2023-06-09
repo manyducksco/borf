@@ -1,4 +1,4 @@
-import { CounterStore } from "../../globals/CounterStore.js";
+import { CounterStore } from "../../stores/CounterStore.js";
 import { ExampleFrame } from "../../views/ExampleFrame/index.js";
 
 /**

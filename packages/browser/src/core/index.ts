@@ -15,6 +15,10 @@ export { virtual } from "./helpers/virtual.js";
 // obsolete with virtual? seems like it's a less efficient version of the same thing.
 export { observe } from "./helpers/observe.js";
 
+// Flow
+export { FlowStore } from "./flow/FlowStore.js";
+export { Flow } from "./flow/Flow.js";
+
 // Types
 export type { HTTPMiddleware } from "./stores/http.js";
 export type { Read, Write, InputType } from "./types.js";

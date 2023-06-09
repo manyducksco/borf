@@ -2,7 +2,7 @@
   "include": ["src"],
   "compilerOptions": {
     "target": "es2022",
-    "module": "CommonJS",
+    "module": "es2022",
     "rootDir": "src",
     "moduleResolution": "node",
     "baseUrl": "src",

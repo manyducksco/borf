@@ -128,8 +128,8 @@ export class App extends Router {
 
     const debugHub = new DebugHub(this.#options.debug);
     const crashCollector = new CrashCollector({
-      onCrash: (entry) => {},
-      onReport: (entry) => {},
+      onCrash: (entry) => { },
+      onReport: (entry) => { },
       sendStackTrace: this.#options.mode === "development",
     });
 

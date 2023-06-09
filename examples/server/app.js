@@ -8,6 +8,8 @@ const app = new App({
 const PORT = process.env.PORT || 4000;
 
 app.cors();
+app.fallback("index.html");
+app.static(); // Required to be able to serve static files. Probably add this by default for `static` folder.
 // app.fallback();
 // app.fallback("/some/weird/place/index.html");
 // app.static();
@@ -147,8 +149,7 @@ async function AsyncHeader(_, ctx) {
     setTimeout(() => {
       resolve(html`<div class="container">${ctx.outlet()}</div>`);
     }, Math.random() * 300);
-  })
-  
+  });
 }
 
 // Listen for HTTP requests on localhost at specified port number.

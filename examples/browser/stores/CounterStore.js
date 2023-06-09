@@ -15,7 +15,7 @@ export function CounterStore(_, ctx) {
   return {
     $current: $$current.toReadable(),
     reset() {
-      $$current.set(0);
+      $$current.value = 0;
     },
   };
 }

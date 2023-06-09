@@ -82,14 +82,30 @@ export class NoCache implements Cache {
       const fileName = filePath.replace(entry.path, "");
       const targetPath = path.join(entry.source, fileName);
 
-      if (fs.existsSync(targetPath)) {
-        const hasGZ = fs.existsSync(targetPath + ".gz");
+
+
+      if (fs.existsSync(targetPath) && !fs.statSync(targetPath).isDirectory()) {
+        const type = mime.lookup(targetPath);
+        const charset = mime.charsets.lookup(type, "application/octet-stream");
+        const gzip = fs.existsSync(targetPath + ".gz");
+        const href = path.normalize(targetPath.replace(entry.source, entry.path));
+
+        console.log({
+          href,
+          path: fileName,
+          type,
+          charset,
+          source: entry.source,
+          gz: gzip ? filePath + ".gz" : undefined,
+        });
 
         return {
-          source: entry.source,
+          href,
           path: fileName,
-          href: filePath,
-          gz: hasGZ ? filePath + ".gz" : undefined,
+          type,
+          charset,
+          source: entry.source,
+          gz: gzip ? filePath + ".gz" : undefined,
         };
       }
     }

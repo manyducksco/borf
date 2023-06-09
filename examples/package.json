@@ -9,7 +9,7 @@
     "start:prod": "node server/app.js",
     "start": "vite",
     "build": "vite build",
-    "viewer": "woofe-viewer ./client",
+    "viewer": "borf viewer ./client",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "prepublishOnly": "npm run build"
@@ -25,20 +25,13 @@
   "devDependencies": {
     "@borf/bedrock": "file:../packages/bedrock",
     "@borf/browser": "file:../packages/browser",
-    "@borf/build": "file:../packages/build",
     "@borf/elemental": "file:../packages/elemental",
     "@borf/server": "file:../packages/server",
-    "@vitest/browser": "^0.29.8",
-    "@vitest/ui": "^0.29.8",
     "borf": "file:../packages/borf",
     "htm": "^3.1.1",
-    "vite": "^4.2.1",
-    "vitest": "^0.29.8",
-    "webdriverio": "^8.6.9",
     "zod": "^3.21.4"
   },
   "dependencies": {
-    "dedent": "^0.7.0",
-    "ramda": "^0.28.0"
+    "dedent": "^0.7.0"
   }
 }

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Demo</title>
+
+    <style>
+      *,
+      *:before,
+      *:after {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background-color: #251e2d;
+        color: #ede0fa;
+        line-height: 1.418;
+        font-size: 18px;
+
+        font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir,
+          segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto,
+          arial, sans-serif;
+      }
+
+      button,
+      input {
+        font-size: inherit;
+        font-family: inherit;
+      }
+
+      button {
+        font-size: 0.9rem;
+        padding: 0.4rem;
+        background-color: #755497;
+        color: #fff;
+        font-weight: bold;
+        border: none;
+      }
+
+      @media (hover: hover) {
+        button:hover {
+          cursor: pointer;
+          background-color: #825ea5;
+        }
+      }
+
+      input[type="range"] {
+        appearance: none;
+        /* Hides the slider so that custom slider can be made */
+        width: 100%;
+        /* Specific width is required for Firefox. */
+        background: transparent;
+        /* Otherwise white in Chrome */
+      }
+
+      input[type="range"]:focus {
+        outline: none;
+        /* Removes the blue border. You should probably do some kind of focus styling for accessibility reasons though. */
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        height: 18px;
+        width: 18px;
+        border-radius: 50%;
+        background: #000;
+        border: 2px solid #ede0fa;
+        cursor: pointer;
+        margin-top: -14px;
+        box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        height: 18px;
+        width: 18px;
+        border-radius: 50%;
+        background: #000;
+        border: 2px solid #ede0fa;
+        cursor: pointer;
+      }
+
+      input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 2px;
+        cursor: pointer;
+        background: #48375a;
+      }
+
+      input[type="range"]:focus::-webkit-slider-runnable-track {
+        background: #48375a;
+      }
+
+      input[type="range"]::-moz-range-track {
+        width: 100%;
+        height: 2px;
+        cursor: pointer;
+        background: #48375a;
+      }
+    </style>
+  </head>
+
+  <body>
+    <el-header
+      title="Title here."
+      onincrement="handleEvent"
+      ondecrement="handleEvent"
+    >
+      Content here.
+    </el-header>
+
+    <div id="app"></div>
+
+    <script>
+      function handleEvent(e) {
+        console.log(e);
+      }
+    </script>
+  </body>
+</html>

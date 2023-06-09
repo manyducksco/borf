@@ -107,6 +107,8 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
       let fallback = appContext.fallback ? normalizePath(appContext.fallback) : null;
       let match = appContext.staticCache.get(req.url);
 
+
+
       if (fallback && canServeFallback(req, channel)) {
         match = appContext.staticCache.get(fallback);
       }
@@ -115,6 +117,8 @@ export function makeRequestListener(appContext: AppContext, router: Router): Req
       if (!match && req.url === "/") {
         match = appContext.staticCache.get("/index.html");
       }
+
+      console.log({ fallback, match, url: req.url });
 
       if (!match) {
         if (matched && matched.pattern === "/*") {

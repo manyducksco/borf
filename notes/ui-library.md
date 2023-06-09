@@ -27,9 +27,10 @@ class Example extends View {
     // Gap and padding are in units, which are defined on a FlowLayoutStore. Here 1 unit is 4px.
 
     return (
-      <FlowLayoutStore unit="4px">
-        <FlowRight
-          breakpoints={{ "800": { gap: 3, fill: 0.5 } }}
+      <FlowStore unit="4px">
+        <Flow
+          right
+          breakpoints={{ 800: { gap: 3, fill: 0.5 } }}
           gap={2}
           padding={4}
           align="center"
@@ -40,9 +41,9 @@ class Example extends View {
           {/* Children will flow from left to right with 8px gap between each item and 16px padding around */}
           {/* Content scrolls horizontally */}
 
-          <FlowDown>{/* Children flow top to bottom */}</FlowDown>
-        </FlowRight>
-      </FlowLayoutStore>
+          <Flow down>{/* Children flow top to bottom */}</Flow>
+        </Flow>
+      </FlowStore>
     );
   },
 }

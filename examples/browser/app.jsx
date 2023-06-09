@@ -2,8 +2,8 @@ import "./elements.js";
 
 import { App, html } from "@borf/browser";
 
-import { CounterStore } from "./globals/CounterStore";
-import { MouseStore } from "./globals/MouseStore";
+import { CounterStore } from "./stores/CounterStore";
+import { MouseStore } from "./stores/MouseStore";
 
 import { AppLayout } from "./views/AppLayout";
 
@@ -41,7 +41,7 @@ const app = new App({
     warn: true,
     error: true,
   },
-  mode: import.meta.env.MODE,
+  // mode: import.meta.env.MODE,
 });
 
 // ----- Language Support ----- //
@@ -77,30 +77,6 @@ app.store(MouseStore);
 // ----- Root View & Routing ----- //
 
 app.main(AppLayout);
-
-// app.main((_, ctx) => {
-//   const markup = (
-//     <section class="container">
-//       <header>
-//         <Heading title={"title"} />
-//       </header>
-
-//       <ul>
-//         <li>Item One</li>
-//         <li>Item Two</li>
-//         <li>Item Three</li>
-//       </ul>
-//     </section>
-//   );
-
-//   console.log(markup);
-
-//   return markup;
-// });
-
-async function Heading({ title }) {
-  return <h1>{title}</h1>;
-}
 
 app.route("/examples", null, (sub) => {
   sub.route("/spring-animation", SpringAnimation);

@@ -1,4 +1,4 @@
-import { Builder } from "@borf/build";
+import { Builder } from "borf";
 
 export default Builder.configure({
   browser: {

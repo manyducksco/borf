@@ -1,4 +1,4 @@
-import { MouseStore } from "../../globals/MouseStore";
+import { MouseStore } from "../../stores/MouseStore";
 import styles from "./AppLayout.module.css";
 
 export async function AppLayout(_, ctx) {
