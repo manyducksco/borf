@@ -92,13 +92,13 @@ export function DialogStore(_: {}, ctx: ComponentContext) {
       current.push(instance!);
     });
 
-    const stop = $$open.observe((value) => {
+    const stopObserver = $$open.observe((value) => {
       if (!value) {
-        close();
+        closeDialog();
       }
     });
 
-    return function close() {
+    function closeDialog() {
       $$dialogs.update((current) => {
         current.splice(
           current.findIndex((x) => x === instance),
@@ -107,8 +107,10 @@ export function DialogStore(_: {}, ctx: ComponentContext) {
       });
       instance = undefined;
 
-      stop();
-    };
+      stopObserver();
+    }
+
+    return closeDialog;
   }
 
   return {
