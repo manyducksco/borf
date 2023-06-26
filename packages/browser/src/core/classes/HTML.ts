@@ -24,6 +24,9 @@ export class HTML implements Connectable {
   #appContext;
   #elementContext;
 
+  // Prevents 'onclickaway' handlers from firing in the same cycle in which the element is connected.
+  #canClickAway = false;
+
   get node() {
     return this.#node;
   }
@@ -94,12 +97,16 @@ export class HTML implements Connectable {
         await child.handle.connect(this.#node);
       }
 
-      applyAttributes(this.#node, this.#attributes, this.#stopCallbacks);
-      if (this.#attributes.style) applyStyles(this.#node, this.#attributes.style, this.#stopCallbacks);
-      if (this.#attributes.class) applyClasses(this.#node, this.#attributes.class, this.#stopCallbacks);
+      this.#applyAttributes(this.#node, this.#attributes);
+      if (this.#attributes.style) this.#applyStyles(this.#node, this.#attributes.style, this.#stopCallbacks);
+      if (this.#attributes.class) this.#applyClasses(this.#node, this.#attributes.class, this.#stopCallbacks);
     }
 
     parent.insertBefore(this.#node, after?.nextSibling ?? null);
+
+    setTimeout(() => {
+      this.#canClickAway = true;
+    }, 0);
   }
 
   async disconnect() {
@@ -109,6 +116,8 @@ export class HTML implements Connectable {
       }
 
       this.#node.parentNode!.removeChild(this.#node);
+
+      this.#canClickAway = false;
 
       for (const stop of this.#stopCallbacks) {
         stop();
@@ -157,178 +166,193 @@ export class HTML implements Connectable {
 
     this.#children = patched;
   }
-}
 
-function applyAttributes(
-  element: HTMLElement | SVGElement,
-  attrs: Record<string, unknown>,
-  stopCallbacks: StopFunction[]
-) {
-  for (const key in attrs) {
-    const value = attrs[key];
+  #applyAttributes(element: HTMLElement | SVGElement, attrs: Record<string, unknown>) {
+    for (const key in attrs) {
+      const value = attrs[key];
 
-    // Bind or set value depending on its type.
-    if (key === "value") {
-      if (Readable.isReadable(value)) {
-        stopCallbacks.push(
-          value.observe((current) => {
-            (element as any).value = String(current);
-          })
-        );
+      // Bind or set value depending on its type.
+      if (key === "value") {
+        if (Readable.isReadable(value)) {
+          this.#stopCallbacks.push(
+            value.observe((current) => {
+              (element as any).value = String(current);
+            })
+          );
 
-        if (Writable.isWritable(value)) {
-          const listener: EventListener = (e) => {
-            const updated = toTypeOf(value.value, (e.currentTarget as HTMLInputElement).value);
-            value.value = updated;
+          if (Writable.isWritable(value)) {
+            const listener: EventListener = (e) => {
+              const updated = toTypeOf(value.value, (e.currentTarget as HTMLInputElement).value);
+              value.value = updated;
+            };
+
+            element.addEventListener("input", listener);
+
+            this.#stopCallbacks.push(() => {
+              element.removeEventListener("input", listener);
+            });
+          }
+        } else {
+          (element as any).value = String(value);
+        }
+      } else if (eventAttrs.includes(key.toLowerCase())) {
+        const eventName = key.slice(2).toLowerCase();
+
+        if (eventName === "clickaway") {
+          const listener = (e: Event) => {
+            if (this.#canClickAway && !element.contains(e.target as any)) {
+              if (Readable.isReadable<(e: Event) => void>(value)) {
+                value.value(e);
+              } else {
+                (value as (e: Event) => void)(e);
+              }
+            }
           };
 
-          element.addEventListener("input", listener);
+          window.addEventListener("click", listener);
 
-          stopCallbacks.push(() => {
-            element.removeEventListener("input", listener);
+          this.#stopCallbacks.push(() => {
+            window.removeEventListener("click", listener);
+          });
+        } else {
+          const listener: (e: Event) => void = Readable.isReadable<(e: Event) => void>(value)
+            ? (e: Event) => value.value(e)
+            : (value as (e: Event) => void);
+
+          element.addEventListener(eventName, listener);
+
+          this.#stopCallbacks.push(() => {
+            element.removeEventListener(eventName, listener);
           });
         }
-      } else {
-        (element as any).value = String(value);
+      } else if (!privateAttrs.includes(key)) {
+        const isBoolean = booleanAttrs.includes(key);
+
+        if (Readable.isReadable(value)) {
+          this.#stopCallbacks.push(
+            value.observe((current) => {
+              if (current) {
+                element.setAttribute(key, isBoolean ? "" : current.toString());
+              } else {
+                element.removeAttribute(key);
+              }
+            })
+          );
+        } else if (value) {
+          element.setAttribute(key, isBoolean ? "" : String(value));
+        }
       }
-    } else if (eventAttrs.includes(key.toLowerCase())) {
-      const eventName = key.slice(2).toLowerCase();
-      const listener: (e: Event) => void = Readable.isReadable<(e: Event) => void>(value)
-        ? (e: Event) => value.value(e)
-        : (value as (e: Event) => void);
+    }
+  }
 
-      element.addEventListener(eventName, listener);
+  #applyStyles(element: HTMLElement | SVGElement, styles: Record<string, any>, stopCallbacks: StopFunction[]) {
+    const propStopCallbacks: StopFunction[] = [];
 
-      stopCallbacks.push(() => {
-        element.removeEventListener(eventName, listener);
+    if (Readable.isReadable<object>(styles)) {
+      let unapply: () => void;
+
+      const stop = styles.observe((current) => {
+        requestAnimationFrame(() => {
+          if (isFunction(unapply)) {
+            unapply();
+          }
+          element.style.cssText = "";
+          unapply = this.#applyStyles(element, current, stopCallbacks);
+        });
       });
-    } else if (!privateAttrs.includes(key)) {
-      const isBoolean = booleanAttrs.includes(key);
 
-      if (Readable.isReadable(value)) {
-        stopCallbacks.push(
-          value.observe((current) => {
+      stopCallbacks.push(stop);
+      propStopCallbacks.push(stop);
+    } else if (isObject(styles)) {
+      styles = styles as Record<string, any>;
+
+      for (const key in styles) {
+        const value = styles[key];
+
+        // Set style property or attribute.
+        const setProperty = key.startsWith("--")
+          ? (key: string, value: string | null) => element.style.setProperty(key, value)
+          : (key: string, value: string | null) => (element.style[key as any] = value ?? "");
+
+        if (Readable.isReadable<any>(value)) {
+          const stop = value.observe((current) => {
             if (current) {
-              element.setAttribute(key, isBoolean ? "" : current.toString());
+              setProperty(key, current);
             } else {
-              element.removeAttribute(key);
+              element.style.removeProperty(key);
             }
-          })
-        );
-      } else if (value) {
-        element.setAttribute(key, isBoolean ? "" : String(value));
-      }
-    }
-  }
-}
+          });
 
-function applyStyles(element: HTMLElement | SVGElement, styles: Record<string, any>, stopCallbacks: StopFunction[]) {
-  const propStopCallbacks: StopFunction[] = [];
-
-  if (Readable.isReadable<object>(styles)) {
-    let unapply: () => void;
-
-    const stop = styles.observe((current) => {
-      requestAnimationFrame(() => {
-        if (isFunction(unapply)) {
-          unapply();
+          stopCallbacks.push(stop);
+          propStopCallbacks.push(stop);
+        } else if (isString(value)) {
+          setProperty(key, value);
+        } else if (isNumber(value)) {
+          setProperty(key, value + "px");
+        } else {
+          throw new TypeError(`Style properties should be strings, $states or numbers. Got (${key}: ${value})`);
         }
-        element.style.cssText = "";
-        unapply = applyStyles(element, current, stopCallbacks);
-      });
-    });
-
-    stopCallbacks.push(stop);
-    propStopCallbacks.push(stop);
-  } else if (isObject(styles)) {
-    styles = styles as Record<string, any>;
-
-    for (const key in styles) {
-      const value = styles[key];
-
-      // Set style property or attribute.
-      const setProperty = key.startsWith("--")
-        ? (key: string, value: string | null) => element.style.setProperty(key, value)
-        : (key: string, value: string | null) => (element.style[key as any] = value ?? "");
-
-      if (Readable.isReadable<any>(value)) {
-        const stop = value.observe((current) => {
-          if (current) {
-            setProperty(key, current);
-          } else {
-            element.style.removeProperty(key);
-          }
-        });
-
-        stopCallbacks.push(stop);
-        propStopCallbacks.push(stop);
-      } else if (isString(value)) {
-        setProperty(key, value);
-      } else if (isNumber(value)) {
-        setProperty(key, value + "px");
-      } else {
-        throw new TypeError(`Style properties should be strings, $states or numbers. Got (${key}: ${value})`);
       }
+    } else {
+      throw new TypeError(`Expected style property to be a string, $state, or object. Got: ${styles}`);
     }
-  } else {
-    throw new TypeError(`Expected style property to be a string, $state, or object. Got: ${styles}`);
+
+    return function unapply() {
+      for (const stop of propStopCallbacks) {
+        stop();
+        stopCallbacks.splice(stopCallbacks.indexOf(stop), 1);
+      }
+    };
   }
 
-  return function unapply() {
-    for (const stop of propStopCallbacks) {
-      stop();
-      stopCallbacks.splice(stopCallbacks.indexOf(stop), 1);
-    }
-  };
-}
+  #applyClasses(element: HTMLElement | SVGElement, classes: unknown, stopCallbacks: StopFunction[]) {
+    const classStopCallbacks: StopFunction[] = [];
 
-function applyClasses(element: HTMLElement | SVGElement, classes: unknown, stopCallbacks: StopFunction[]) {
-  const classStopCallbacks: StopFunction[] = [];
+    if (Readable.isReadable(classes)) {
+      let unapply: () => void;
 
-  if (Readable.isReadable(classes)) {
-    let unapply: () => void;
+      const stop = classes.observe((current) => {
+        requestAnimationFrame(() => {
+          if (isFunction(unapply)) {
+            unapply();
+          }
+          element.removeAttribute("class");
+          unapply = this.#applyClasses(element, current, stopCallbacks);
+        });
+      });
 
-    const stop = classes.observe((current) => {
-      requestAnimationFrame(() => {
-        if (isFunction(unapply)) {
-          unapply();
+      stopCallbacks.push(stop);
+      classStopCallbacks.push(stop);
+    } else {
+      const mapped = getClassMap(classes);
+
+      for (const name in mapped) {
+        const value = mapped[name];
+
+        if (Readable.isReadable(value)) {
+          const stop = value.observe((current) => {
+            if (current) {
+              element.classList.add(name);
+            } else {
+              element.classList.remove(name);
+            }
+          });
+
+          stopCallbacks.push(stop);
+          classStopCallbacks.push(stop);
+        } else if (value) {
+          element.classList.add(name);
         }
-        element.removeAttribute("class");
-        unapply = applyClasses(element, current, stopCallbacks);
-      });
-    });
-
-    stopCallbacks.push(stop);
-    classStopCallbacks.push(stop);
-  } else {
-    const mapped = getClassMap(classes);
-
-    for (const name in mapped) {
-      const value = mapped[name];
-
-      if (Readable.isReadable(value)) {
-        const stop = value.observe((current) => {
-          if (current) {
-            element.classList.add(name);
-          } else {
-            element.classList.remove(name);
-          }
-        });
-
-        stopCallbacks.push(stop);
-        classStopCallbacks.push(stop);
-      } else if (value) {
-        element.classList.add(name);
       }
     }
-  }
 
-  return function unapply() {
-    for (const stop of classStopCallbacks) {
-      stop();
-      stopCallbacks.splice(stopCallbacks.indexOf(stop), 1);
-    }
-  };
+    return function unapply() {
+      for (const stop of classStopCallbacks) {
+        stop();
+        stopCallbacks.splice(stopCallbacks.indexOf(stop), 1);
+      }
+    };
+  }
 }
 
 function getClassMap(classes: unknown) {
@@ -390,7 +414,6 @@ const booleanAttrs = [
   "default",
   "defer",
   "disabled",
-  "draggable",
   "formnovalidate",
   "hidden",
   "ismap",
@@ -412,6 +435,7 @@ const booleanAttrs = [
 
 const eventAttrs = [
   "onclick",
+  "onclickaway",
   "ondblclick",
   "onmousedown",
   "onmouseup",

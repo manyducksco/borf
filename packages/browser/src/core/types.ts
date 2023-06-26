@@ -333,6 +333,10 @@ export interface HTMLGlobalEvents {
    */
   onclick: EventHandler<PointerEvent>;
   /**
+   * A custom event handler in Borf. Fires the callback function when any element other than this one is clicked.
+   */
+  onclickaway: EventHandler<PointerEvent>;
+  /**
    * The `close` event is fired on an `HTMLDialogElement` object when the dialog it represents has been closed.
    *
    * This event is not cancelable and does not bubble.
