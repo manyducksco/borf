@@ -32,7 +32,7 @@ type LanguageAttrs = {
   /**
    * Default language to load on startup
    */
-  currentLanguage: string;
+  currentLanguage?: string;
 };
 
 // ----- Code ----- //

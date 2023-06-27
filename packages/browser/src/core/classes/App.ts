@@ -425,6 +425,8 @@ export class App implements AppRouter {
   /**
    * Runs `callback` after app-level stores are connected to the app, but before views are connected to the DOM.
    * Use this function to run async configuration code before displaying content to the user.
+   *
+   * Note that this will delay content being displayed on the screen, so using some kind of splash screen is recommended.
    */
   configure(callback: ConfigureCallback) {
     if (this.#configureCallback !== undefined) {
@@ -466,6 +468,7 @@ export class App implements AppRouter {
       ...language,
       attributes: {
         languages: Object.fromEntries(this.#languages.entries()),
+        currentLanguage: this.#currentLanguage,
       },
     });
 
