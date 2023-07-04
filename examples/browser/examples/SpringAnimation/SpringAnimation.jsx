@@ -1,4 +1,4 @@
-import { Readable, Writable, Spring } from "@borf/browser";
+import { Readable, Spring, Writable } from "@borf/browser";
 import dedent from "dedent";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
@@ -116,10 +116,10 @@ export function SpringAnimation(attrs, ctx) {
 }
 
 export function Examples(attrs, ctx) {
-  const $stiffness = ctx.asReadable(attrs.stiffness); // Amount of stiffness or tension in the spring.
-  const $mass = ctx.asReadable(attrs.mass); // How heavy the spring is.
-  const $damping = ctx.asReadable(attrs.damping); // Amount of smoothing. Affects the speed of transitions.
-  const $velocity = ctx.asReadable(attrs.velocity); // How much force the spring's motion begins with.
+  const $stiffness = Readable.from(attrs.stiffness); // Amount of stiffness or tension in the spring.
+  const $mass = Readable.from(attrs.mass); // How heavy the spring is.
+  const $damping = Readable.from(attrs.damping); // Amount of smoothing. Affects the speed of transitions.
+  const $velocity = Readable.from(attrs.velocity); // How much force the spring's motion begins with.
 
   const spring = new Spring(0, {
     stiffness: $stiffness,

@@ -1,10 +1,9 @@
-import type { Renderable } from "../types";
-
 import { typeOf } from "@borf/bedrock";
-import { DOMHandle, getRenderHandle, renderMarkupToDOM, toMarkup } from "../markup.js";
+import { type AppContext, type ElementContext } from "../App.js";
+import { Readable, type StopFunction } from "../state.js";
+import type { Renderable } from "../types";
 import { isRenderable } from "../utils/isRenderable.js";
-import { Readable, type StopFunction } from "./Readable.js";
-import { type AppContext, type ElementContext } from "./App.js";
+import { DOMHandle, getRenderHandle, renderMarkupToDOM, toMarkup } from "./index.js";
 
 interface DynamicOptions<T> {
   appContext: AppContext;

@@ -1,14 +1,13 @@
 import type * as CSS from "csstype";
-import { type HTTPStore } from "./stores/http.js";
-import { type DialogStore } from "./stores/dialog.js";
-import { type LanguageStore } from "./stores/language.js";
-import { type DocumentStore } from "./stores/document.js";
-import { type RouterStore } from "./stores/router.js";
+import { type Ref } from "./Ref.js";
 import { type Store } from "./component.js";
-import { type Readable } from "./classes/Readable.js";
-import { type Writable } from "./classes/Writable.js";
-import { type Ref } from "./classes/Ref.js";
-import { type Markup } from "./markup.js";
+import { type Markup } from "./markup/index.js";
+import { type Readable, type Writable } from "./state.js";
+import { type DialogStore } from "./stores/dialog.js";
+import { type DocumentStore } from "./stores/document.js";
+import { type HTTPStore } from "./stores/http.js";
+import { type LanguageStore } from "./stores/language.js";
+import { type RouterStore } from "./stores/router.js";
 
 /**
  * Value will be read by the component.
@@ -404,19 +403,19 @@ export interface HTMLGlobalEvents {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragover_event
    */
-  ondragover: EventHandler<Event>;
+  ondragover: EventHandler<DragEvent>;
   /**
    * The `dragstart` event is fired when the user starts dragging an element or text selection.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragstart_event
    */
-  ondragstart: EventHandler<Event>;
+  ondragstart: EventHandler<DragEvent>;
   /**
    * The drop event is fired when an element or text selection is dropped on a valid drop target.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drop_event
    */
-  ondrop: EventHandler<PointerEvent>;
+  ondrop: EventHandler<DragEvent>;
   /**
    * The `durationchange` event is fired when the `duration` attribute of a media element (`<audio>`, `<video>`) has been updated.
    *

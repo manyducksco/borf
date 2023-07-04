@@ -1,5 +1,5 @@
-import { Writable } from "../classes/Writable.js";
 import { type ComponentContext } from "../component.js";
+import { Writable } from "../state.js";
 
 type ScreenOrientation = "landscape" | "portrait";
 type ColorScheme = "light" | "dark";

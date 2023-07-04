@@ -1,39 +1,15 @@
-import type { Renderable, Read, Write, Value, BuiltInStores } from "./types";
-
 import { isArrayOf, isObject, typeOf } from "@borf/bedrock";
-import { DOMHandle, Markup, getRenderHandle, isMarkup, makeMarkup, renderMarkupToDOM } from "./markup.js";
-import { Readable, type ValuesOfReadables } from "./classes/Readable.js";
-import { Writable } from "./classes/Writable.js";
-import { type AppContext, type ElementContext } from "./classes/App.js";
-import { type DebugChannel } from "./classes/DebugHub.js";
+import { type AppContext, type ElementContext } from "./App.js";
+import { type DebugChannel } from "./DebugHub.js";
+import { DOMHandle, Markup, getRenderHandle, isMarkup, makeMarkup, renderMarkupToDOM } from "./markup/index.js";
+import { Readable, Writable, type ValuesOfReadables } from "./state.js";
+import type { BuiltInStores, Renderable } from "./types";
 import { observeMany } from "./utils/observeMany.js";
 
 export type Component<A> = (attributes: A, context: ComponentContext) => unknown;
 export type Store<A, E> = (attributes: A, context: ComponentContext) => E | Promise<E>;
 export type View<A> = (attributes: A, context: ComponentContext) => Markup | null | Promise<Markup | null>;
 
-interface AsValueOptions<T> {
-  /**
-   * The default value if `value` is undefined.
-   */
-  default: T;
-}
-
-interface AsReadableOptions<T> {
-  /**
-   * The default value if `value` is undefined.
-   */
-  default: Exclude<T, undefined>;
-}
-
-interface AsWritableOptions<T> {
-  /**
-   * The default value if `value` is undefined.
-   */
-  default: T;
-}
-
-// TODO: Rename when hooks are phased out.
 export interface ComponentContext extends DebugChannel {
   /**
    * Returns the nearest parent instance or app instance of `store`.
@@ -43,57 +19,6 @@ export interface ComponentContext extends DebugChannel {
    * Returns an instance of a built-in store.
    */
   use<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-
-  /**
-   * Returns the current value of an attribute.
-   */
-  asValue<T>(value: Read<T>): Value<T>;
-  /**
-   * Returns the current value of an attribute.
-   */
-  asValue<T>(value: Read<T>, options: AsValueOptions<T>): Value<Exclude<T, undefined>>;
-  /**
-   * Returns the current value of an attribute.
-   */
-  asValue<T>(value?: Read<T>): Value<T | undefined>;
-  /**
-   * Returns the current value of an attribute.
-   */
-  asValue<T>(value: Read<T> | undefined, options: AsValueOptions<T>): Value<Exclude<T, undefined>>;
-
-  /**
-   * Returns a Readable binding to a Read or Write attribute.
-   */
-  asReadable<T>(value: Read<T>): Readable<T>;
-  /**
-   * Returns a Readable binding to a Read or Write attribute.
-   */
-  asReadable<T>(value: Read<T>, options: AsReadableOptions<T>): Readable<Exclude<T, undefined>>;
-  /**
-   * Returns a Readable binding to a Read or Write attribute.
-   */
-  asReadable<T>(value?: Read<T>): Readable<T | undefined>;
-  /**
-   * Returns a Readable binding to a Read or Write attribute.
-   */
-  asReadable<T>(value: Read<T> | undefined, options: AsReadableOptions<T>): Readable<Exclude<T, undefined>>;
-
-  /**
-   * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
-   */
-  asWritable<T>(value: Write<T> | T): Writable<T>;
-  /**
-   * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
-   */
-  asWritable<T>(value: Write<T> | T, options: AsWritableOptions<T>): Writable<T>;
-  /**
-   * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
-   */
-  asWritable<T>(value?: Write<T> | T): Writable<T | undefined>;
-  /**
-   * Returns a Writable binding to an attribute value. Changes to this writable will propagate to the original Writable.
-   */
-  asWritable<T>(value: Write<T> | T | undefined, options: AsWritableOptions<T>): Writable<T>;
 
   /**
    * Runs `callback` and awaits its promise before `onConnected` callbacks are called.
@@ -252,44 +177,6 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
         componentName: ctx.name,
         error: new Error(`Store '${name}' is not registered on this app.`),
       });
-    },
-
-    asValue<T>(value?: Read<T>, options?: AsValueOptions<T>) {
-      if (Readable.isReadable<T>(value)) {
-        return value.value;
-      } else {
-        if (value != null) {
-          return value;
-        }
-
-        return options?.default;
-      }
-    },
-
-    asReadable<T>(value?: Read<T>, options?: AsReadableOptions<T>) {
-      if (Readable.isReadable<T>(value)) {
-        return value;
-      } else {
-        if (value != null) {
-          return new Readable(value);
-        }
-
-        return new Readable(options?.default);
-      }
-    },
-
-    asWritable<T>(value?: Write<T> | T, options?: AsWritableOptions<T>) {
-      if (Writable.isWritable<T>(value)) {
-        return value;
-      } else if (Readable.isReadable<T>(value)) {
-        throw new Error(`Value must be writable. Got: ${value}`);
-      } else {
-        if (value != null) {
-          return new Writable(value);
-        }
-
-        return new Writable(options?.default);
-      }
     },
 
     onConnected(callback: () => any) {

@@ -7,11 +7,9 @@
   "scripts": {
     "serve": "borf serve",
     "start:prod": "node server/app.js",
-    "start": "vite",
-    "build": "vite build",
+    "start": "borf serve",
+    "build": "borf build",
     "viewer": "borf viewer ./client",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

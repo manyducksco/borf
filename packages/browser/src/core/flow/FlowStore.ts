@@ -1,4 +1,4 @@
-import { Readable } from "../classes/Readable.js";
+import { Readable } from "../state.js";
 import { ComponentContext } from "../component.js";
 
 export interface FlowDefaultAttributes {

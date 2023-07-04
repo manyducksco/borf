@@ -1,7 +1,6 @@
-import { makeComponent, getSecrets, type View, type ComponentContext, Component } from "../component.js";
-import { Writable } from "../classes/Writable.js";
-
-import { type DOMHandle } from "../markup.js";
+import { getSecrets, makeComponent, type Component, type ComponentContext, type View } from "../component.js";
+import { type DOMHandle } from "../markup/index.js";
+import { Writable } from "../state.js";
 
 interface DialogAttrs {
   $$open: Writable<boolean>;

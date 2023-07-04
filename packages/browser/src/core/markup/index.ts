@@ -1,15 +1,20 @@
-import type { Renderable, Stringable } from "./types";
-
-import htm from "htm/mini";
 import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock";
-import { makeComponent, type Component } from "./component.js";
-import { HTML } from "./classes/HTML.js";
-import { Readable } from "./classes/Readable";
-import { AppContext, ElementContext } from "./classes/App";
-import { Text } from "./classes/Text";
-import { Dynamic } from "./classes/Dynamic";
-import { Repeat } from "./classes/Repeat";
-import { makeVirtual } from "./helpers/virtual";
+import htm from "htm/mini";
+import { AppContext, ElementContext } from "../App";
+import { Dynamic } from "./Dynamic";
+import { HTML } from "./HTML.js";
+import { Text } from "./Text";
+import { makeComponent, type Component } from "../component.js";
+import { Readable } from "../state";
+import type { Renderable, Stringable } from "../types";
+import { Repeat } from "./repeat.js";
+import { makeVirtual } from "./virtual";
+
+export { observe } from "./observe.js";
+export { repeat } from "./repeat.js";
+export { unless } from "./unless.js";
+export { virtual } from "./virtual.js";
+export { when } from "./when.js";
 
 const MARKUP = Symbol("Markup");
 

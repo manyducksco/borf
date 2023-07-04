@@ -29,7 +29,7 @@ router.$$query.update((current) => {
 });
 
 function ExampleView(attrs, ctx) {
-  const $$title = ctx.asWritable(attrs.title, { default: "Default Title" });
+  const $$title = Writable.from(attrs.title ?? "Default Title");
 
   // value=${$$title} is not nice
   return html`<input type="text" value=${$$title} />`;
@@ -60,7 +60,7 @@ router.wQuery.update((current) => {
 
 function ExampleView(attrs, ctx) {
   // attrs.title must be undefined or a Writable
-  const wTitle = ctx.asWritable(attrs.title, { default: "Default Title" });
+  const wTitle = Writable.from(attrs.title ?? "Default Title");
 
   // automatic two-way binding to `title` because it's a Writable
   return html`<input type="text" value=${wTitle} />`;
@@ -89,7 +89,7 @@ router.__query.update((current) => {
 
 function ExampleView(attrs, ctx) {
   // attrs.title must be undefined or a Writable
-  const __title = ctx.asWritable(attrs.title, { default: "Default Title" });
+  const __title = Writable.from(attrs.title ?? "Default Title");
 
   // automatic two-way binding to `title` because it's a Writable
   return html`<input type="text" value=${__title} />`;
@@ -122,7 +122,7 @@ router.query$$.update((current) => {
 
 function ExampleView(attrs, ctx) {
   // attrs.title must be undefined or a Writable
-  const title$$ = ctx.asWritable(attrs.title$$, { default: "Default Title" });
+  const title$$ = Writable.from(attrs.title$$ ?? "Default Title");
 
   // automatic two-way binding to `title` because it's a Writable
   return html`<input type="text" value=${title$$} />`;
@@ -157,7 +157,7 @@ You also can't get the naming convention wrong and cause confusion (though this 
 ```js
 function ExampleView(attrs, ctx) {
   // attrs.title must be undefined or a Writable
-  const title = ctx.asWritable(attrs.title, { default: "Default Title" });
+  const title = Writable.from(attrs.title ?? "Default Title");
 
   // automatic two-way binding to `title` because it's a Writable
   return html`<input type="text" value=${title} />`;

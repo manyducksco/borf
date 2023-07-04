@@ -1,5 +1,4 @@
-import { Readable } from "./Readable.js";
-import { Writable } from "./Writable.js";
+import { Readable, Writable } from "./state.js";
 
 interface SpringOptions {
   /**
@@ -46,10 +45,10 @@ export class Spring extends Readable<number> {
 
     this.#current = new Writable(initialValue);
 
-    this.#mass = options.mass ?? 1;
-    this.#stiffness = options.stiffness ?? 100;
-    this.#damping = options.damping ?? 10;
-    this.#velocity = options.velocity ?? 0;
+    this.#mass = options.mass ?? 2;
+    this.#stiffness = options.stiffness ?? 1200;
+    this.#damping = options.damping ?? 160;
+    this.#velocity = options.velocity ?? 5;
   }
 
   /**
@@ -97,6 +96,7 @@ export class Spring extends Readable<number> {
         amplitude.sample(proportion);
         if (amplitude.value && amplitude.value < 0.001) {
           this.#currentAnimationId = undefined;
+          this.#current.value = value;
         }
 
         window.requestAnimationFrame(step);

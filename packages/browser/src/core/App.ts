@@ -1,44 +1,44 @@
 import {
-  type Route,
-  isObject,
-  typeOf,
-  isFunction,
   assertFunction,
-  assertString,
-  patternToFragments,
-  isString,
   assertInstanceOf,
   assertObject,
-  splitPath,
-  resolvePath,
+  assertString,
+  isFunction,
+  isObject,
+  isString,
   joinPath,
+  patternToFragments,
+  resolvePath,
   sortRoutes,
+  splitPath,
+  typeOf,
+  type Route,
 } from "@borf/bedrock";
-import { merge } from "../utils/merge.js";
-import { DialogStore } from "../stores/dialog.js";
-import { HTTPStore } from "../stores/http.js";
-import { LanguageStore, type LanguageConfig } from "../stores/language.js";
-import { DocumentStore } from "../stores/document.js";
-import {
-  RouterStore,
-  type RouterOptions,
-  type RouteLayer,
-  type RouteConfig,
-  type RedirectContext,
-} from "../stores/router.js";
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
-import { type StopFunction } from "./Readable.js";
-import { Markup, html, makeMarkup } from "../markup.js";
-import { type BuiltInStores } from "../types.js";
 import {
-  makeComponent,
-  type View,
-  type Store,
-  type ComponentHandle,
-  type ComponentContext,
   Component,
-} from "../component.js";
+  makeComponent,
+  type ComponentContext,
+  type ComponentHandle,
+  type Store,
+  type View,
+} from "./component.js";
+import { Markup, html, makeMarkup } from "./markup/index.js";
+import { type StopFunction } from "./state.js";
+import { DialogStore } from "./stores/dialog.js";
+import { DocumentStore } from "./stores/document.js";
+import { HTTPStore } from "./stores/http.js";
+import { LanguageStore, type LanguageConfig } from "./stores/language.js";
+import {
+  RouterStore,
+  type RedirectContext,
+  type RouteConfig,
+  type RouteLayer,
+  type RouterOptions,
+} from "./stores/router.js";
+import { type BuiltInStores } from "./types.js";
+import { merge } from "./utils/merge.js";
 
 // ----- Types ----- //
 

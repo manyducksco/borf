@@ -1,4 +1,4 @@
-import { Readable, type ValuesOfReadables, type StopFunction } from "../classes/Readable.js";
+import { Readable, type ValuesOfReadables, type StopFunction } from "../state.js";
 
 type ObserverControls = {
   start: () => void;

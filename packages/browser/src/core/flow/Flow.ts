@@ -1,6 +1,6 @@
-import { Readable } from "../classes/Readable.js";
+import { Readable } from "../state.js";
 import { ComponentContext } from "../component.js";
-import { html } from "../markup.js";
+import { html } from "../markup/index.js";
 import { type FlowDefaultAttributes, FlowStore } from "./FlowStore.js";
 
 export interface FlowAttributes extends FlowDefaultAttributes {

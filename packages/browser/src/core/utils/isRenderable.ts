@@ -1,8 +1,8 @@
 import type { Renderable } from "../types";
 
 import { isArrayOf } from "@borf/bedrock";
-import { isMarkup } from "../markup.js";
-import { Readable } from "../classes/Readable.js";
+import { isMarkup } from "../markup/index.js";
+import { Readable } from "../state.js";
 
 export function isRenderable(value: unknown): value is Renderable {
   return (

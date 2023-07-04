@@ -67,7 +67,7 @@ app.language("ja", {
 });
 
 // Auto-detect language, falling back to en-US if no appropriate match is found.
-app.setLanguage("auto", "en-US");
+// app.setLanguage("auto", "en-US");
 
 // ----- Stores ----- //
 

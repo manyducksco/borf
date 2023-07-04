@@ -1,7 +1,6 @@
 import test from "ava";
 import sinon from "sinon";
-import { Readable } from "./Readable.js";
-import { Writable } from "./Writable.js";
+import { Readable, Writable } from "./state.js";
 
 test("basic functionality test", (t) => {
   const $$writable = new Writable("writable");

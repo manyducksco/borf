@@ -1,10 +1,9 @@
+import { AppContext, ElementContext } from "../App";
+import { Readable, type ValuesOfReadables } from "../state.js";
 import type { Renderable } from "../types";
-
-import { DOMHandle, DOMMarkup, Markup, getRenderHandle, makeMarkup, renderMarkupToDOM, toMarkup } from "../markup.js";
-import { Readable, type ValuesOfReadables } from "../classes/Readable.js";
-import { observeMany } from "../utils/observeMany.js";
 import { deepEqual } from "../utils/deepEqual";
-import { AppContext, ElementContext } from "../classes/App";
+import { observeMany } from "../utils/observeMany.js";
+import { DOMHandle, DOMMarkup, Markup, getRenderHandle, makeMarkup, renderMarkupToDOM, toMarkup } from "./index.js";
 
 /**
  * Observes a readable value while this component is connected. Calls `render` each time the value changes.

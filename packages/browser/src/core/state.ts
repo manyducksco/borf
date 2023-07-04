@@ -1,7 +1,8 @@
-import { type Writable } from "./Writable.js";
-import { deepEqual } from "../utils/deepEqual.js";
+import { produce } from "immer";
+import { deepEqual } from "./utils/deepEqual.js";
 
 export const READABLE = Symbol("Readable");
+export const WRITABLE = Symbol("Writable");
 
 // Symbol to mark an observed value as unobserved. Callbacks are always called once for unobserved values.
 const UNOBSERVED = Symbol("Unobserved");
@@ -36,6 +37,19 @@ export class Readable<T> {
    */
   static isReadable<T>(readable: any): readable is Readable<T> {
     return readable != null && typeof readable === "object" && readable[READABLE] == true;
+  }
+
+  /**
+   * Creates a new Readable that carries the value of `source`.
+   */
+  static from<T>(source: Writable<T> | Readable<T> | T): Readable<T> {
+    if (Writable.isWritable<T>(source)) {
+      return source.map((x) => x);
+    } else if (Readable.isReadable<T>(source)) {
+      return source;
+    } else {
+      return new Readable<T>(source);
+    }
   }
 
   /**
@@ -289,5 +303,98 @@ class MergedReadable<Rs extends Readable<any>[], T> extends Readable<T> {
       stop();
     }
     this.#stopCallbacks = [];
+  }
+}
+
+/**
+ * Read-write observable state container.
+ *
+ * Using the `$$name` convention for instance names (two '$' to indicate both readability + writability) may help with code clarity.
+ */
+export class Writable<T> extends Readable<T> {
+  [READABLE] = true;
+  [WRITABLE] = true;
+
+  static isWritable<T>(writable: any): writable is Writable<T> {
+    return writable != null && typeof writable === "object" && writable[WRITABLE] === true;
+  }
+
+  /**
+   * Creates a new Writable that carries the value of `source`.
+   */
+  static from<T>(source: Writable<T> | Readable<T> | T): Writable<T> {
+    if (Writable.isWritable<T>(source)) {
+      return source;
+    } else if (Readable.isReadable<T>(source)) {
+      throw new Error(`Can't convert Readable into a Writable.`);
+    } else {
+      return new Writable<T>(source);
+    }
+  }
+
+  #value: T;
+  #observers: ObserveCallback<T>[] = [];
+
+  #notifyObservers() {
+    for (const callback of this.#observers) {
+      callback(this.#value);
+    }
+  }
+
+  constructor(initialValue: T) {
+    super(initialValue);
+
+    this.#value = initialValue;
+  }
+
+  /**
+   * Value currently stored in this Writable. Setting it will notify all observers of the new value.
+   */
+  get value() {
+    return this.#value;
+  }
+
+  set value(newValue) {
+    if (!deepEqual(this.#value, newValue)) {
+      this.#value = newValue;
+      this.#notifyObservers();
+    }
+  }
+
+  map<N>(transform: (value: T) => N): Readable<N> {
+    return new MappedReadable<T, N>(this, transform);
+  }
+
+  observe(callback: ObserveCallback<T>): StopFunction {
+    const observers = this.#observers;
+
+    callback(this.value);
+    observers.push(callback);
+
+    return function stop() {
+      observers.splice(observers.indexOf(callback), 1);
+    };
+  }
+
+  /**
+   * Takes a `callback` function that receives the current value and returns a new value.
+   */
+  update(callback: (value: T) => T): void;
+
+  /**
+   * Takes a `callback` function that receives the current value and modifies it.
+   */
+  update(callback: (value: T) => void): void;
+
+  update(callback: (value: T) => T | void) {
+    // Use immer to derive a new state
+    this.value = produce(this.#value, callback);
+  }
+
+  /**
+   * Returns a read-only version of this Writable.
+   */
+  toReadable() {
+    return new Readable(this);
   }
 }
