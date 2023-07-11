@@ -207,11 +207,9 @@ export class RouterTester {
         }
       }
 
-      const parsedBody: ReqBody | undefined = options?.body;
-
       const ctx: Omit<HandlerContext, keyof DebugChannel> = {
         cache: {},
-        req: new Request(req, match, parsedBody),
+        req: new Request(req, match),
         res: new Response<any>({}),
         use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T> {
           if (appContext.stores.has(store)) {

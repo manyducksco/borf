@@ -12,7 +12,6 @@ import { Request } from "../Request.js";
 import { Response } from "../Response.js";
 import { Headers } from "../Headers.js";
 import { isHTML, render } from "../../html.js";
-import { parseBody } from "../../helpers/parseBody.js";
 import { type Store } from "../../component.js";
 
 export type { RequestListener };
@@ -222,11 +221,9 @@ export async function handleMatchedRequest(
   matched: RouteMatch,
   headers?: Headers
 ) {
-  const parsedBody = await parseBody(req);
-
   const ctx: Omit<HandlerContext, keyof DebugChannel> = {
     cache: {},
-    req: new Request(req, matched, parsedBody),
+    req: new Request(req, matched),
     res: new Response<any>({ headers }),
     use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T> {
       if (appContext.stores.has(store)) {
