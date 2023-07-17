@@ -2,6 +2,12 @@
 
 Yet another attempt at coming up with a class based API.
 
+## What does this solve?
+
+- Types can be inferred based on the class. Existing function components need to import ComponentContext for type suggestions.
+
+## Examples
+
 ```tsx
 import { Store, View, Writable, use } from "@borf/browser";
 

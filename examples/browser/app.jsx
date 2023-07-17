@@ -1,6 +1,6 @@
 import "./elements.js";
 
-import { App, html } from "@borf/browser";
+import { App, Ref, html } from "@borf/browser";
 
 import { CounterStore } from "./stores/CounterStore";
 import { MouseStore } from "./stores/MouseStore";
@@ -77,6 +77,24 @@ app.store(MouseStore);
 // ----- Root View & Routing ----- //
 
 app.main(AppLayout);
+
+// Testing why nested refs aren't getting the correct element.
+app.route("/test/nested-refs", (attrs, ctx) => {
+  const containerRef = new Ref();
+  const headerRef = new Ref();
+  const textRef = new Ref();
+
+  ctx.onConnected(() => {
+    ctx.log({ containerRef, headerRef, textRef });
+  });
+
+  return <section ref={containerRef} class="container">
+    <header ref={headerRef} class="header">
+      <h1 ref={textRef} class="text">Header</h1>
+    </header>
+    <p>Content</p>
+  </section>
+});
 
 app.route("/examples", null, (sub) => {
   sub.route("/spring-animation", SpringAnimation);

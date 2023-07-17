@@ -93,8 +93,8 @@ export function makeVirtual(config: VirtualConfig): DOMHandle {
           if (sameAttrs) {
             // reuse element. the handle will do its own diffing to update children.
             const children = renderMarkupToDOM(next[i].children ?? [], {
-              app: config.appContext,
-              element: config.elementContext,
+              appContext: config.appContext,
+              elementContext: config.elementContext,
             });
 
             patched[i] = { ...current[i], children };
@@ -121,7 +121,7 @@ export function makeVirtual(config: VirtualConfig): DOMHandle {
 
   function createNode(markup: Markup): DOMMarkup {
     const handle = getRenderHandle(
-      renderMarkupToDOM(markup, { app: config.appContext, element: config.elementContext })
+      renderMarkupToDOM(markup, { appContext: config.appContext, elementContext: config.elementContext })
     );
 
     return {

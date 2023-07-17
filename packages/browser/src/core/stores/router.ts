@@ -249,7 +249,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];
-            const renderContext = { app: appContext, element: elementContext };
+            const renderContext = { appContext, elementContext };
 
             const rendered = renderMarkupToDOM(matchedLayer.markup, renderContext);
             const handle = getRenderHandle(rendered);

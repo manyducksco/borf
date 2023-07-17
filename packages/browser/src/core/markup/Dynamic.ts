@@ -3,7 +3,7 @@ import { type AppContext, type ElementContext } from "../App.js";
 import { Readable, type StopFunction } from "../state.js";
 import type { Renderable } from "../types";
 import { isRenderable } from "../utils/isRenderable.js";
-import { DOMHandle, getRenderHandle, renderMarkupToDOM, toMarkup } from "./index.js";
+import { getRenderHandle, renderMarkupToDOM, toMarkup, type DOMHandle } from "./index.js";
 
 interface DynamicOptions<T> {
   appContext: AppContext;
@@ -96,6 +96,7 @@ export class Dynamic<T> implements DOMHandle {
   }
 
   async #update(...children: Renderable[]) {
+    console.log("updating", this.#readable.value, children);
     await this.#cleanup();
 
     if (children == null || !this.connected) {
@@ -107,7 +108,7 @@ export class Dynamic<T> implements DOMHandle {
     for (const child of formattedChildren) {
       const previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
       const handle = getRenderHandle(
-        renderMarkupToDOM(child, { app: this.#appContext, element: this.#elementContext })
+        renderMarkupToDOM(child, { appContext: this.#appContext, elementContext: this.#elementContext })
       );
 
       await handle.connect(this.node.parentNode!, previous);

@@ -94,8 +94,8 @@ export function makeMarkup<I>(
 export const html = htm.bind(makeMarkup);
 
 interface RenderContext {
-  app: AppContext;
-  element: ElementContext;
+  appContext: AppContext;
+  elementContext: ElementContext;
 }
 
 export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext): DOMMarkup[] {
@@ -109,8 +109,8 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
         component: item.type as Component<any>,
         attributes: item.attributes,
         children: item.children,
-        appContext: ctx.app,
-        elementContext: ctx.element,
+        appContext: ctx.appContext,
+        elementContext: ctx.elementContext,
       });
     } else if (isString(item.type)) {
       switch (item.type) {
@@ -123,8 +123,8 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
           handle = new Dynamic({
             readable: item.attributes!.value,
             render: item.attributes!.render,
-            appContext: ctx.app,
-            elementContext: ctx.element,
+            appContext: ctx.appContext,
+            elementContext: ctx.elementContext,
           });
           break;
         case "$repeat":
@@ -132,16 +132,16 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
             readable: item.attributes!.value,
             render: item.attributes!.render,
             key: item.attributes!.key,
-            appContext: ctx.app,
-            elementContext: ctx.element,
+            appContext: ctx.appContext,
+            elementContext: ctx.elementContext,
           });
           break;
         case "$virtual":
           handle = makeVirtual({
             readables: item.attributes!.readables,
             render: item.attributes!.render,
-            appContext: ctx.app,
-            elementContext: ctx.element,
+            appContext: ctx.appContext,
+            elementContext: ctx.elementContext,
           });
           break;
         default:
@@ -149,8 +149,8 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
             tag: item.type,
             attributes: item.attributes,
             children: item.children,
-            appContext: ctx.app,
-            elementContext: ctx.element,
+            appContext: ctx.appContext,
+            elementContext: ctx.elementContext,
           });
           break;
       }

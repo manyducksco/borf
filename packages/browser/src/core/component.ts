@@ -208,7 +208,7 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
         observer.start();
         stopObserverCallbacks.push(observer.stop);
       } else {
-        // This should only happen if called in the body of the setup function.
+        // This should only happen if called in the body of the component function.
         // This code is not always re-run between when a component is disconnected and reconnected.
         connectedCallbacks.push(() => {
           observer.start();
@@ -262,7 +262,7 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
       throw error;
     }
 
-    const renderContext = { app: appContext, element: elementContext };
+    const renderContext = { appContext, elementContext };
 
     if (result === null) {
       // Do nothing.

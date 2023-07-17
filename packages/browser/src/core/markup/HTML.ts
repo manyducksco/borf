@@ -2,10 +2,9 @@ import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "../App.js";
 import { Ref } from "../Ref.js";
 import { Readable, Writable, type StopFunction } from "../state.js";
-import { type Connectable } from "../types.js";
 import { deepEqual } from "../utils/deepEqual.js";
 import { omit } from "../utils/omit.js";
-import { DOMMarkup, Markup, renderMarkupToDOM } from "./index.js";
+import { renderMarkupToDOM, type DOMHandle, type DOMMarkup, type Markup } from "./index.js";
 
 type HTMLOptions = {
   appContext: AppContext;
@@ -15,7 +14,7 @@ type HTMLOptions = {
   children?: Markup[];
 };
 
-export class HTML implements Connectable {
+export class HTML implements DOMHandle {
   #node;
   #attributes;
   #children;
@@ -42,13 +41,15 @@ export class HTML implements Connectable {
       elementContext.isSVG = true;
     }
 
-    // console.log({ tag, attributes, children });
-
     // Create node with the appropriate constructor.
     if (elementContext.isSVG) {
       this.#node = document.createElementNS("http://www.w3.org/2000/svg", tag);
     } else {
       this.#node = document.createElement(tag);
+    }
+
+    if (tag === "canvas") {
+      console.log({ node: this.#node, tag, attributes, children });
     }
 
     const normalizedAttrs: Record<string, any> = {};
@@ -58,6 +59,7 @@ export class HTML implements Connectable {
 
       switch (normalized) {
         case "classname":
+          // TODO: Print a warning in dev mode that this isn't technically correct?
           normalizedAttrs["class"] = attributes[key];
           break;
         default:
@@ -66,7 +68,7 @@ export class HTML implements Connectable {
       }
     }
 
-    // Set ref if present.
+    // Set ref if present. Refs can be a Ref object or a function that receives the node.
     if (normalizedAttrs.ref) {
       if (Ref.isRef(normalizedAttrs.ref)) {
         normalizedAttrs.ref.element = this.#node;
@@ -79,7 +81,7 @@ export class HTML implements Connectable {
 
     this.#attributes = omit(["ref"], normalizedAttrs);
     this.#children = (children?.flatMap((c) =>
-      (c as any).handle ? c : renderMarkupToDOM(c, { app: appContext, element: elementContext })
+      (c as any).handle ? c : renderMarkupToDOM(c, { appContext, elementContext })
     ) ?? []) as DOMMarkup[];
 
     this.#appContext = appContext;
