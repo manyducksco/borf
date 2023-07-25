@@ -1,11 +1,12 @@
 import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { AppContext, ElementContext } from "../App";
-import { Dynamic } from "./Dynamic";
-import { HTML } from "./HTML.js";
-import { Text } from "./Text";
-import { makeView, type View } from "../view.js";
 import { Readable } from "../state";
 import type { Renderable, Stringable } from "../types";
+import { makeView, type View } from "../view.js";
+import { Dynamic } from "./Dynamic";
+import { HTML } from "./HTML.js";
+import { Outlet } from "./Outlet.js";
+import { Text } from "./Text";
 import { Repeat } from "./repeat.js";
 
 export { observe } from "./observe.js";
@@ -15,23 +16,24 @@ export { when } from "./when.js";
 
 const MARKUP = Symbol("Markup");
 
+/**
+ * Markup is a set of element metadata that hasn't been rendered to a DOMHandle yet.
+ */
 export interface Markup {
   type: string | View<any>;
   attributes?: Record<string, any>;
   children?: Markup[];
 }
 
+/**
+ * DOMHandle is the generic interface for an element that can be manipulated by the framework.
+ */
 export interface DOMHandle {
   readonly node?: Node;
   readonly connected: boolean;
   connect(parent: Node, after?: Node): Promise<void>;
   disconnect(): Promise<void>;
-  setChildren(markup: Markup[]): Promise<void>;
-}
-
-export interface DOMMarkup extends Markup {
-  children?: DOMMarkup[];
-  handle: DOMHandle;
+  setChildren(children: DOMHandle[]): Promise<void>;
 }
 
 export interface MarkupAttributes {
@@ -43,6 +45,10 @@ export interface MarkupAttributes {
 
 export function isMarkup(value: unknown): value is Markup {
   return isObject(value) && value[MARKUP] === true;
+}
+
+export function isDOMHandle(value: unknown): value is DOMHandle {
+  return isObject(value) && isFunction(value.connect) && isFunction(value.disconnect);
 }
 
 export function toMarkup(renderables: Renderable | Renderable[]): Markup[] {
@@ -89,14 +95,12 @@ interface RenderContext {
   elementContext: ElementContext;
 }
 
-export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext): DOMMarkup[] {
+export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext): DOMHandle[] {
   const items = isArray(markup) ? markup : [markup];
 
   return items.map((item) => {
-    let handle!: DOMHandle;
-
     if (isFunction(item.type)) {
-      handle = makeView({
+      return makeView({
         view: item.type as View<any>,
         attributes: item.attributes,
         children: item.children,
@@ -106,55 +110,50 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
     } else if (isString(item.type)) {
       switch (item.type) {
         case "$text":
-          handle = new Text({
+          return new Text({
             value: item.attributes!.value,
           });
-          break;
         case "$dynamic":
-          handle = new Dynamic({
+          return new Dynamic({
             readable: item.attributes!.value,
             render: item.attributes!.render,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });
-          break;
         case "$repeat":
-          handle = new Repeat({
+          return new Repeat({
             readable: item.attributes!.value,
             render: item.attributes!.render,
             key: item.attributes!.key,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });
-          break;
+        case "$outlet":
+          return new Outlet(item.attributes!.$children);
         default:
-          handle = new HTML({
+          if (item.type.startsWith("$")) {
+            throw new Error(`Unknown markup type: ${item.type}`);
+          }
+          return new HTML({
             tag: item.type,
             attributes: item.attributes,
             children: item.children,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });
-          break;
       }
     } else {
-      throw new TypeError(`Expected a string or component function. Got: ${item.type}`);
+      throw new TypeError(`Expected a string or view function. Got: ${item.type}`);
     }
-
-    return {
-      ...item,
-      handle,
-      children: item.children ? renderMarkupToDOM(item.children, ctx) : undefined,
-    };
   });
 }
 
 /**
  * Gets a single handle that controls one or more RenderedMarkups as one.
  */
-export function getRenderHandle(rendered: DOMMarkup[]): DOMHandle {
-  if (rendered.length === 1) {
-    return rendered[0].handle;
+export function getRenderHandle(handles: DOMHandle[]): DOMHandle {
+  if (handles.length === 1) {
+    return handles[0];
   }
 
   const node = document.createComment("renderHandle");
@@ -171,17 +170,17 @@ export function getRenderHandle(rendered: DOMMarkup[]): DOMHandle {
     async connect(parent: Node, after?: Node) {
       parent.insertBefore(node, after ? after : null);
 
-      for (const item of rendered) {
-        const previous = rendered[rendered.length - 1]?.handle.node ?? node;
-        await item.handle.connect(parent, previous);
+      for (const handle of handles) {
+        const previous = handles[handles.length - 1]?.node ?? node;
+        await handle.connect(parent, previous);
       }
 
       isConnected = true;
     },
     async disconnect() {
       if (isConnected) {
-        for (const item of rendered) {
-          item.handle.disconnect();
+        for (const handle of handles) {
+          handle.disconnect();
         }
 
         node.remove();

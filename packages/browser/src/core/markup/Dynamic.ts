@@ -3,7 +3,7 @@ import { type AppContext, type ElementContext } from "../App.js";
 import { Readable, type StopFunction } from "../state.js";
 import type { Renderable } from "../types";
 import { isRenderable } from "../utils/isRenderable.js";
-import { getRenderHandle, renderMarkupToDOM, toMarkup, type DOMHandle } from "./index.js";
+import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "./index.js";
 
 interface DynamicOptions<T> {
   appContext: AppContext;
@@ -102,13 +102,20 @@ export class Dynamic<T> implements DOMHandle {
       return;
     }
 
-    const formattedChildren = toMarkup(children);
+    const renderContext = { appContext: this.#appContext, elementContext: this.#elementContext };
 
-    for (const child of formattedChildren) {
+    const handles: DOMHandle[] = children.map((c) => {
+      if (isDOMHandle(c)) {
+        return c;
+      } else if (isMarkup(c)) {
+        return getRenderHandle(renderMarkupToDOM(c, renderContext));
+      } else {
+        return getRenderHandle(renderMarkupToDOM(toMarkup(c), renderContext));
+      }
+    });
+
+    for (const handle of handles) {
       const previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
-      const handle = getRenderHandle(
-        renderMarkupToDOM(child, { appContext: this.#appContext, elementContext: this.#elementContext })
-      );
 
       await handle.connect(this.node.parentNode!, previous);
 

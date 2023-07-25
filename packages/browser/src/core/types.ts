@@ -94,18 +94,13 @@ export interface HTMLGlobalAttributes {
    * array of strings and class maps.
    *
    * @example
-   * m.div({ class: "one-class" })
+   * <div class="one-class" />
    *
-   * m.div({ class: ["array", "of", "classes"] })
+   * <div class={["array", "of", "classes"]} />
    *
-   * m.div({
-   *   class: {
-   *     applied: true,
-   *     notApplied: false
-   *   }
-   * })
+   * <div class={{ applied: true, notApplied: false }} />
    *
-   * m.div({ class: ["class", "class2", { "conditional": $value }] })
+   * <div class={["class", "class2", { "conditional": $value }]} />
    */
   class: string | ClassMap | Array<string | ClassMap | (string | ClassMap)[]>;
 

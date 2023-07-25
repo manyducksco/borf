@@ -4,7 +4,7 @@ import { Ref } from "../Ref.js";
 import { Readable, Writable, type StopFunction } from "../state.js";
 import { deepEqual } from "../utils/deepEqual.js";
 import { omit } from "../utils/omit.js";
-import { renderMarkupToDOM, type DOMHandle, type DOMMarkup, type Markup } from "./index.js";
+import { renderMarkupToDOM, type DOMHandle, type Markup, getRenderHandle } from "./index.js";
 
 type HTMLOptions = {
   appContext: AppContext;
@@ -17,7 +17,7 @@ type HTMLOptions = {
 export class HTML implements DOMHandle {
   #node;
   #attributes;
-  #children;
+  #children: DOMHandle[];
   #stopCallbacks: StopFunction[] = [];
   #appContext;
   #elementContext;
@@ -48,10 +48,6 @@ export class HTML implements DOMHandle {
       this.#node = document.createElement(tag);
     }
 
-    if (tag === "canvas") {
-      console.log({ node: this.#node, tag, attributes, children });
-    }
-
     const normalizedAttrs: Record<string, any> = {};
 
     for (const key in attributes) {
@@ -80,9 +76,7 @@ export class HTML implements DOMHandle {
     }
 
     this.#attributes = omit(["ref"], normalizedAttrs);
-    this.#children = (children?.flatMap((c) =>
-      (c as any).handle ? c : renderMarkupToDOM(c, { appContext, elementContext })
-    ) ?? []) as DOMMarkup[];
+    this.#children = children ? renderMarkupToDOM(children, { appContext, elementContext }) : [];
 
     this.#appContext = appContext;
     this.#elementContext = elementContext;
@@ -95,7 +89,7 @@ export class HTML implements DOMHandle {
 
     if (!this.connected) {
       for (const child of this.#children) {
-        await child.handle.connect(this.#node);
+        await child.connect(this.#node);
       }
 
       this.#applyAttributes(this.#node, this.#attributes);
@@ -113,7 +107,7 @@ export class HTML implements DOMHandle {
   async disconnect() {
     if (this.connected) {
       for (const child of this.#children) {
-        await child.handle.disconnect();
+        await child.disconnect();
       }
 
       this.#node.parentNode!.removeChild(this.#node);
@@ -127,41 +121,41 @@ export class HTML implements DOMHandle {
     }
   }
 
-  async setChildren(next: DOMMarkup[]) {
+  async setChildren(next: DOMHandle[]) {
     const current = this.#children;
-    const patched: DOMMarkup[] = [];
+    const patched: DOMHandle[] = [];
     const length = Math.max(current.length, next.length);
 
     for (let i = 0; i < length; i++) {
       if (!current[i] && next[i]) {
         // item was added
         patched[i] = next[i];
-        await patched[i].handle.connect(this.#node, patched[i - 1]?.handle.node);
+        await patched[i].connect(this.#node, patched[i - 1]?.node);
       } else if (current[i] && !next[i]) {
         // item was removed
-        current[i].handle.disconnect();
+        current[i].disconnect();
       } else {
         // current and next both exist (or both don't exist, but that shouldn't happen.)
-        if (current[i].type !== next[i].type) {
-          // replace
-          patched[i] = next[i];
-          current[i].handle.disconnect();
-          await patched[i].handle.connect(this.#node, patched[i - 1]?.handle.node);
-        } else {
-          const sameAttrs = deepEqual(current[i].attributes, next[i].attributes);
+        // if (current[i].node!.nodeType !== next[i].node!.nodeType) {
+        // replace
+        patched[i] = next[i];
+        current[i].disconnect();
+        await patched[i].connect(this.#node, patched[i - 1]?.node);
+        // } else {
+        //   const sameAttrs = deepEqual(current[i].attributes, next[i].attributes);
 
-          if (sameAttrs) {
-            // reuse element, but diff children. have setChildren do diffing?
-            const children = next[i].children ?? [];
-            patched[i] = { ...current[i], children };
-            patched[i].handle.setChildren(children);
-          } else {
-            // replace (TODO: patch attrs in place if possible)
-            patched[i] = next[i];
-            await patched[i].handle.connect(this.#node, current[i].handle.node);
-            current[i].handle.disconnect();
-          }
-        }
+        //   if (sameAttrs) {
+        //     // reuse element, but diff children. have setChildren do diffing?
+        //     const children = next[i].children ?? [];
+        //     patched[i] = { ...current[i], children };
+        //     patched[i].handle.setChildren(children);
+        //   } else {
+        //     // replace (TODO: patch attrs in place if possible)
+        //     patched[i] = next[i];
+        //     await patched[i].connect(this.#node, current[i].node);
+        //     current[i].disconnect();
+        //   }
+        // }
       }
     }
 

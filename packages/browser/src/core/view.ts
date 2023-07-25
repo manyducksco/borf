@@ -121,7 +121,9 @@ interface ViewConfig<A> {
 export function makeView<A>(config: ViewConfig<A>): DOMHandle {
   const appContext = config.appContext;
   const elementContext = { ...config.elementContext };
-  const $$children = new Writable(config.children ?? []);
+  const $$children = new Writable<DOMHandle[]>(
+    renderMarkupToDOM(config.children ?? [], { appContext, elementContext })
+  );
 
   let isConnected = false;
 
@@ -205,7 +207,7 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
     },
 
     outlet() {
-      return makeMarkup("$dynamic", { value: $$children });
+      return makeMarkup("$outlet", { $children: $$children.toReadable() });
     },
   };
 
@@ -328,8 +330,8 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
       }
     },
 
-    async setChildren(markup) {
-      $$children.value = markup;
+    async setChildren(children) {
+      $$children.value = children;
     },
   };
 
