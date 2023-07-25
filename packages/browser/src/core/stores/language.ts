@@ -1,5 +1,5 @@
 import { assertObject, isFunction, isObject, isPromise, typeOf } from "@borf/bedrock";
-import { type ComponentContext } from "../component.js";
+import { type StoreContext } from "../store.js";
 import { Readable, Writable } from "../state.js";
 import { type Stringable } from "../types";
 import { deepEqual } from "../utils/deepEqual.js";
@@ -19,7 +19,7 @@ export interface LanguageConfig {
   translation: Translation | (() => Translation) | (() => Promise<Translation>);
 }
 
-type LanguageAttrs = {
+type LanguageOptions = {
   /**
    * Languages supported by the app (as added with App.addLanguage)
    */
@@ -35,17 +35,17 @@ type LanguageAttrs = {
 
 // ----- Code ----- //
 
-export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext) {
-  ctx.name = "borf/language";
+export async function LanguageStore(c: StoreContext<LanguageOptions>) {
+  c.name = "borf/language";
 
   const languages = new Map<string, Language>();
 
   // Convert languages into Language instances.
-  Object.entries(attrs.languages).forEach(([tag, config]) => {
+  Object.entries(c.options.languages).forEach(([tag, config]) => {
     languages.set(tag, new Language(tag, config));
   });
 
-  ctx.info(
+  c.info(
     `app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
   );
 
@@ -88,12 +88,12 @@ export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext)
   }
 
   // TODO: Determine and load default language.
-  const currentLanguage = attrs.currentLanguage
-    ? languages.get(attrs.currentLanguage)
+  const currentLanguage = c.options.currentLanguage
+    ? languages.get(c.options.currentLanguage)
     : languages.get([...languages.keys()][0]);
 
   if (currentLanguage != null) {
-    ctx.info(`current language is '${currentLanguage.tag}'`);
+    c.info(`current language is '${currentLanguage.tag}'`);
 
     const translation = await currentLanguage.getTranslation();
 
@@ -118,10 +118,10 @@ export async function LanguageStore(attrs: LanguageAttrs, ctx: ComponentContext)
         $$language.value = tag;
         $$translation.value = translation;
 
-        ctx.info("set language to " + tag);
+        c.info("set language to " + tag);
       } catch (error) {
         if (error instanceof Error) {
-          ctx.crash(error);
+          c.crash(error);
         }
       }
     },

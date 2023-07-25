@@ -96,7 +96,6 @@ export class Dynamic<T> implements DOMHandle {
   }
 
   async #update(...children: Renderable[]) {
-    console.log("updating", this.#readable.value, children);
     await this.#cleanup();
 
     if (children == null || !this.connected) {

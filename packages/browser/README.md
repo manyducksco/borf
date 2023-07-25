@@ -15,29 +15,61 @@ Code examples are written using [JSX](https://react.dev/learn/writing-markup-wit
 
 Like most other frameworks, `@borf/browser` is built around the idea of _components_. Borf has two types of components&mdash;Views and Stores&mdash;which are both written as functions, and differ only in what kind of value they return and how they can be used within the framework.
 
-### Components: Views
+### Views
 
 Views return `Markup` objects, which are used to construct and manage a tree of DOM elements. `Markup` objects are typically created by writing JSX.
 
 ```js
-function LayoutView(attrs, ctx) {
+function ExampleView() {
   return (
     <div>
-      <h1>Title</h1>
-      <MessageView message="This is passed to OtherView" />
+      <h1>Hello!</h1>
+      <p>This is a really simple view.</p>
     </div>
   );
 }
+```
 
-function MessageView(attrs, ctx) {
-  return <p>{attrs.message}</p>;
+`Markup` objects can also be created with the `makeMarkup` function.
+
+```js
+import { makeMarkup } from "borf";
+
+function ExampleView() {
+  // Arguments are (tag, props, ...children)
+  return makeMarkup(
+    "div",
+    null,
+    makeMarkup("h1", null, "Hello!"),
+    makeMarkup("p", null, "This is a really simple view.")
+  );
 }
 ```
 
-Components don't have direct access to their children. Instead, the component context object (passed as the second argument to any component function) has an `outlet` method that can be used to display children at a location of your choosing.
+That doesn't look great. If you'd like to use `borf` in an environment that doesn't support JSX, like a normal browser without running through a compiler, you can use the `htm` library.
 
 ```js
-function ContentBox(attrs, ctx) {
+import htm from "htm";
+import { makeMarkup } from "borf";
+
+const html = htm.bind(makeMarkup);
+
+function ExampleView() {
+  return html`
+    <div>
+      <h1>Hello!</h1>
+      <p>This is a really simple view.</p>
+    </div>
+  `;
+}
+```
+
+> TODO: Passing props
+
+Views don't have direct access to their children. Instead, the component context object (passed as the second argument to any component function) has an `outlet` method that can be used to display children at a location of your choosing.
+
+```js
+function ContentBox(props, c) {
   return (
     <div
       style={{
@@ -45,12 +77,12 @@ function ContentBox(attrs, ctx) {
         border: "1px dashed orange",
       }}
     >
-      {ctx.outlet()}
+      {c.outlet()}
     </div>
   );
 }
 
-function LayoutView(attrs, ctx) {
+function ExampleView() {
   return (
     <ContentBox>
       <h1>Hello</h1>
@@ -60,41 +92,74 @@ function LayoutView(attrs, ctx) {
 }
 ```
 
-### Components: Stores
+### Stores
 
 Stores return a plain JavaScript object, a single instance of which is shared amongst child components via the context's `use` method. Stores don't display anything, but they are useful for scoping common state to a limited area of your component tree.
 
 ```js
-function LayoutView(attrs, ctx) {
-  return (
-    <MessageStore>
-      <h1>Title</h1>
-      <MessageView />
-    </MessageStore>
-  );
-}
+import { App } from "borf";
 
-function MessageStore(attrs, ctx) {
+const app = new App();
+
+// We define a store that just exports a message.
+function MessageStore() {
   return {
-    message: "This is the message",
+    message: "Hello from the message store!",
   };
 }
 
-function MessageView(attrs, ctx) {
-  const store = ctx.use(MessageStore);
+// Register it on the app instance.
+app.store(MessageStore);
 
+// We define a view that uses our store.
+// All instances of MessageView will share just one instance of MessageStore.
+function MessageView(props, c) {
+  const store = c.use(MessageStore);
   return <p>{store.message}</p>;
 }
+
+// And a layout view with five MessageViews inside.
+function LayoutView() {
+  return (
+    <div>
+      <h1>Title</h1>
+      <MessageView />
+      <MessageView />
+      <MessageView />
+      <MessageView />
+      <MessageView />
+    </div>
+  );
+}
+
+app.main(LayoutView);
+
+app.connect("#app");
+```
+
+The output:
+
+```html
+<div id="app">
+  <div>
+    <h1>Title</h1>
+    <p>Hello from the message store!</p>
+    <p>Hello from the message store!</p>
+    <p>Hello from the message store!</p>
+    <p>Hello from the message store!</p>
+    <p>Hello from the message store!</p>
+  </div>
+</div>
 ```
 
 ### Dynamic State: Readables and Writables
 
 Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a state change. All data that needs to change is stored in a Readable or a Writable. By storing values in these containers, and slotting these containers into your DOM nodes, only those elements which are directly affected by that change update when changes occur.
 
-> Borf's convention is dollar signs at the start of variable names to mark them as dynamic. A `$single` means Readable and a `$$double` means Writable. Another way to think of this is that `$` represents how many 'ways' the binding goes; one-way (read only) or two-way (read-write).
+> Borf's convention is dollar signs at the start of variable names to mark them as dynamic. A `$single` means Readable and a `$$double` means Writable. Another way to think of this is that `$` represents how many 'ways' the binding goes; one-way (`$` = read only) or two-way (`$$` = read-write).
 
 ```jsx
-import { Writable } from "@borf/browser";
+import { Writable } from "borf";
 
 function LayoutView(attrs, ctx) {
   return (

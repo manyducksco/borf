@@ -1,7 +1,7 @@
 import { isObject } from "@borf/bedrock";
-import { type ComponentContext } from "../component.js";
+import { type StoreContext } from "../store.js";
 
-interface HTTPStoreAttrs {
+interface HTTPStoreOptions {
   /**
    * The fetch function to use for requests. Pass this to mock for testing.
    */
@@ -12,10 +12,10 @@ interface HTTPStoreAttrs {
  * A simple HTTP client with middleware support. Middleware applies to all requests made through this store,
  * so it's the perfect way to handle things like auth headers and permission checks for API calls.
  */
-export function HTTPStore(attrs: HTTPStoreAttrs, ctx: ComponentContext) {
-  ctx.name = "borf/http";
+export function HTTPStore(c: StoreContext<HTTPStoreOptions>) {
+  c.name = "borf/http";
 
-  const fetch = attrs.fetch ?? getDefaultFetch();
+  const fetch = c.options.fetch ?? getDefaultFetch();
 
   const middleware: HTTPMiddleware[] = [];
 

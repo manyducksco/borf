@@ -16,15 +16,9 @@ import {
 } from "@borf/bedrock";
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
-import {
-  Component,
-  makeComponent,
-  type ComponentContext,
-  type ComponentHandle,
-  type Store,
-  type View,
-} from "./component.js";
-import { Markup, html, makeMarkup } from "./markup/index.js";
+import { makeStore, type Store } from "./store.js";
+import { makeView, type ViewContext, type View } from "./view.js";
+import { DOMHandle, Markup, makeMarkup } from "./markup/index.js";
 import { type StopFunction } from "./state.js";
 import { DialogStore } from "./stores/dialog.js";
 import { DocumentStore } from "./stores/document.js";
@@ -65,7 +59,7 @@ export interface AppContext {
   stores: Map<keyof BuiltInStores | StoreRegistration["store"], StoreRegistration>;
   mode: "development" | "production";
   rootElement?: HTMLElement;
-  rootView?: ComponentHandle;
+  rootView?: DOMHandle;
 }
 
 export interface ElementContext {
@@ -77,11 +71,10 @@ export interface ElementContext {
 /**
  * An object kept in App for each store registered with `addStore`.
  */
-export interface StoreRegistration<A = any> {
-  store: Store<A, any>;
-  exports?: Store<A, any>;
-  attributes?: A;
-  instance?: ComponentHandle;
+export interface StoreRegistration<O = any> {
+  store: Store<O, any>;
+  options?: O;
+  instance?: ReturnType<typeof makeStore>;
 }
 
 interface AppRouter {
@@ -135,7 +128,7 @@ type ConfigureCallback = (ctx: ConfigureContext) => void | Promise<void>;
  * It does nothing but render routes.
  */
 
-function DefaultRootView(_: {}, ctx: ComponentContext) {
+function DefaultRootView(_: {}, ctx: ViewContext) {
   return ctx.outlet();
 }
 
@@ -202,9 +195,7 @@ export class App implements AppRouter {
     const routerStore = this.#stores.get("router")!;
     this.#stores.set("router", {
       ...routerStore,
-      attributes: {
-        options: options.router,
-      },
+      options: options.router,
     });
 
     // Crash collector is used by components to handle crashes and errors.
@@ -217,8 +208,8 @@ export class App implements AppRouter {
       if (severity === "crash") {
         await this.disconnect();
 
-        const instance = makeComponent({
-          component: DefaultCrashPage,
+        const instance = makeView({
+          view: DefaultCrashPage,
           appContext: this.#appContext,
           elementContext: this.#elementContext,
           // channelPrefix: "crash",
@@ -262,16 +253,14 @@ export class App implements AppRouter {
     return this;
   }
 
-  store<A>(store: Store<A, any>, attributes?: A): this;
-
   /**
    * Makes this store accessible from any other component in the app, except for stores registered before this one.
    */
-  store<A>(store: Store<A, any>, attributes?: A) {
+  store<O>(store: Store<O, any>, options?: O) {
     let config: StoreRegistration | undefined;
 
     if (isFunction(store)) {
-      config = { store, attributes };
+      config = { store, options };
     } else {
       throw new TypeError(`Expected a store function. Got type: ${typeOf(store)}, value: ${store}`);
     }
@@ -466,7 +455,7 @@ export class App implements AppRouter {
     const language = this.#stores.get("language")!;
     this.#stores.set("language", {
       ...language,
-      attributes: {
+      options: {
         languages: Object.fromEntries(this.#languages.entries()),
         currentLanguage: this.#currentLanguage,
       },
@@ -476,7 +465,7 @@ export class App implements AppRouter {
     const router = this.#stores.get("router")!;
     this.#stores.set("router", {
       ...router,
-      attributes: {
+      options: {
         options: this.#options.router,
         routes: this.#routes,
       },
@@ -485,16 +474,16 @@ export class App implements AppRouter {
     debugChannel.info(`total routes: ${this.#routes.length}`);
 
     // First, initialize the root view. The router store needs this to connect the initial route.
-    appContext.rootView = makeComponent({
-      component: this.#mainView.type as Component<any>,
+    appContext.rootView = makeView({
+      view: this.#mainView.type as View<any>,
       attributes: this.#mainView.attributes,
       appContext,
       elementContext,
     });
 
-    // Initialize global stores.
+    // Initialize stores.
     for (let [key, item] of this.#stores.entries()) {
-      const { store, attributes, exports } = item;
+      const { store, options } = item;
 
       // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
       // Built-in globals get an additional 'borf/' prefix so it's clear messages are from the framework.
@@ -502,35 +491,24 @@ export class App implements AppRouter {
       const channelPrefix = isString(key) ? "borf/store" : "store";
       const label = isString(key) ? key : store.name ?? "(anonymous)";
       const config = {
+        store,
         appContext,
         elementContext,
         channelPrefix,
         label,
-        attributes: attributes ?? {},
+        options: options ?? {},
       };
 
-      let instance: ComponentHandle | undefined;
+      const instance = makeStore(config);
 
-      if (exports) {
-        if (typeof exports === "function") {
-          instance = makeComponent({ ...config, component: exports });
-        }
-      } else {
-        instance = makeComponent({ ...config, component: store });
-      }
-
-      assertObject(instance, "Value of 'exports' is not an object. Got type: %t, value: %v");
+      await instance.setup();
 
       // Add instance and mark as ready.
       this.#stores.set(key, { ...item, instance });
     }
 
-    const storeParent = document.createElement("div");
-
     for (const { instance } of this.#stores.values()) {
-      await instance!.connect(storeParent);
-
-      assertObject(instance!.outputs, "Store setup function must return an object. Got type: %t, value: %v");
+      await instance!.connect();
     }
 
     if (this.#configureCallback) {
@@ -540,7 +518,6 @@ export class App implements AppRouter {
     }
 
     // Then connect the root view.
-
     await appContext.rootView!.connect(appContext.rootElement);
 
     // The app is now connected.
@@ -557,16 +534,16 @@ export class App implements AppRouter {
       // Remove the root view from the page (runs teardown callbacks on all connected views).
       await appContext.rootView!.disconnect();
 
-      // The app is considered disconnected at this point.
+      // The app is considered disconnected at this point
       this.#isConnected = false;
 
-      // Stop all observers.
+      // Stop all observers
       for (const stop of this.#stopCallbacks) {
         stop();
       }
       this.#stopCallbacks = [];
 
-      // Send final afterDisconnect signal to stores.
+      // Disconnect stores
       for (const { instance } of this.#stores.values()) {
         await instance!.disconnect();
       }
@@ -665,40 +642,47 @@ export class App implements AppRouter {
   }
 }
 
-type CrashPageAttrs = {
+type CrashPageProps = {
   message: string;
   error: Error;
   componentName: string;
 };
 
-function DefaultCrashPage({ message, error, componentName }: CrashPageAttrs) {
-  return html`
-    <div
-      style=${{
+function DefaultCrashPage({ message, error, componentName }: CrashPageProps) {
+  return makeMarkup(
+    "div",
+    {
+      style: {
         backgroundColor: "#880000",
         color: "#fff",
         padding: "2rem",
         position: "fixed",
         inset: 0,
         fontSize: "20px",
-      }}
-    >
-      <h1 style=${{ marginBottom: "0.5rem" }}>The app has crashed</h1>
-      <p style=${{ marginBottom: "0.25rem" }}>
-        <span style=${{ fontFamily: "monospace" }}>${componentName}</span> says:
-      </p>
-
-      <blockquote
-        style=${{
+      },
+    },
+    makeMarkup("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
+    makeMarkup(
+      "p",
+      { style: { marginBottom: "0.25rem" } },
+      makeMarkup("span", { style: { fontFamily: "monospace" } }, componentName),
+      " says:"
+    ),
+    makeMarkup(
+      "blockquote",
+      {
+        style: {
           backgroundColor: "#991111",
           padding: "0.25em",
           borderRadius: "6px",
           fontFamily: "monospace",
           marginBottom: "1rem",
-        }}
-      >
-        <span
-          style=${{
+        },
+      },
+      makeMarkup(
+        "span",
+        {
+          style: {
             display: "inline-block",
             backgroundColor: "red",
             padding: "0.1em 0.4em",
@@ -706,15 +690,12 @@ function DefaultCrashPage({ message, error, componentName }: CrashPageAttrs) {
             borderRadius: "4px",
             fontSize: "0.9em",
             fontWeight: "bold",
-          }}
-        >
-          ${error.name}
-        </span>
-
-        ${message}
-      </blockquote>
-
-      <p>Please see the browser console for details.</p>
-    </div>
-  `;
+          },
+        },
+        error.name
+      ),
+      message
+    ),
+    makeMarkup("p", {}, "Please see the browser console for details.")
+  );
 }

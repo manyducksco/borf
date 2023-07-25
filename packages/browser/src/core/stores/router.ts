@@ -1,6 +1,6 @@
 import { isFunction, isString, joinPath, matchRoutes, parseQueryParams, resolvePath, type Route } from "@borf/bedrock";
 import { createBrowserHistory, createHashHistory, type History, type Listener } from "history";
-import { getSecrets, type ComponentContext } from "../component.js";
+import { getStoreSecrets, type StoreContext } from "../store.js";
 import { DOMHandle, getRenderHandle, Markup, renderMarkupToDOM } from "../markup/index.js";
 import { Writable } from "../state.js";
 import { type Stringable } from "../types";
@@ -83,40 +83,32 @@ interface NavigateOptions {
   replace?: boolean;
 }
 
-/**
- * Inputs passed to the RouterStore when the app is connected.
- */
-type RouterStoreAttrs = {
-  /**
-   * Router options passed through the 'router' field in the app config.
-   */
-  options: RouterOptions;
-
+interface RouterStoreOptions extends RouterOptions {
   /**
    * An instance of Router with the app's routes preloaded.
    */
   routes: Route<RouteConfig["meta"]>[];
-};
+}
 
 // ----- Code ----- //
 
-export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: ComponentContext) {
-  ctx.name = "borf/router";
+export function RouterStore(c: StoreContext<RouterStoreOptions>) {
+  c.name = "borf/router";
 
-  const { appContext, elementContext } = getSecrets(ctx);
+  const { appContext, elementContext } = getStoreSecrets(c);
 
   let history: History;
 
-  if (options.history) {
-    history = options.history;
-  } else if (options.hash) {
+  if (c.options.history) {
+    history = c.options.history;
+  } else if (c.options.hash) {
     history = createHashHistory();
   } else {
     history = createBrowserHistory();
   }
 
   // Test redirects to make sure all possible redirect targets actually exist.
-  for (const route of routes) {
+  for (const route of c.options.routes) {
     if (route.meta.redirect) {
       let redirectPath: string;
 
@@ -128,7 +120,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
         throw new TypeError(`Expected a string or redirect function. Got: ${route.meta.redirect}`);
       }
 
-      const match = matchRoutes(routes, redirectPath, {
+      const match = matchRoutes(c.options.routes, redirectPath, {
         willMatch(r) {
           return r !== route;
         },
@@ -149,7 +141,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
   let isRouteChange = false;
 
   // Update URL when query changes
-  ctx.observe($$query, (current) => {
+  c.observe($$query, (current) => {
     // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
@@ -168,7 +160,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
     });
   });
 
-  ctx.onConnected(() => {
+  c.onConnected(() => {
     history.listen(onRouteChange);
     onRouteChange(history);
 
@@ -199,7 +191,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
       $$query.value = parseQueryParams(location.search);
     }
 
-    const matched = matchRoutes(routes, location.pathname);
+    const matched = matchRoutes(c.options.routes, location.pathname);
 
     if (!matched) {
       $$pattern.value = null;
@@ -210,7 +202,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
       return;
     }
 
-    ctx.info(`matched route '${matched.pattern}'`);
+    c.info(`matched route '${matched.pattern}'`);
 
     if (matched.meta.redirect != null) {
       if (typeof matched.meta.redirect === "string") {
@@ -222,7 +214,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
 
         // TODO: Update this code to work with new `{param}` style. Looks like it's still for `:params`
 
-        ctx.info(`redirecting to '${path}'`);
+        c.info(`redirecting to '${path}'`);
         history.replace(path);
       } else if (typeof matched.meta.redirect === "function") {
         // TODO: Implement redirect by function.
@@ -245,7 +237,7 @@ export function RouterStore({ options, routes }: RouterStoreAttrs, ctx: Componen
           const activeLayer = activeLayers[i];
 
           if (activeLayer?.id !== matchedLayer.id) {
-            ctx.info(`replacing layer ${i} (active id: ${activeLayer?.id}, matched id: ${matchedLayer.id})`);
+            c.info(`replacing layer ${i} (active id: ${activeLayer?.id}, matched id: ${matchedLayer.id})`);
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];

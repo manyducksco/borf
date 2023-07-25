@@ -1,4 +1,5 @@
-import { getSecrets, makeComponent, type Component, type ComponentContext, type View } from "../component.js";
+import { makeView, type View } from "../view.js";
+import { getStoreSecrets, type StoreContext } from "../store.js";
 import { type DOMHandle } from "../markup/index.js";
 import { Writable } from "../state.js";
 
@@ -10,10 +11,10 @@ interface DialogAttrs {
  * Manages dialogs. Also known as modals.
  * TODO: Describe this better.
  */
-export function DialogStore(_: {}, ctx: ComponentContext) {
-  ctx.name = "borf/dialog";
+export function DialogStore(c: StoreContext) {
+  c.name = "borf/dialog";
 
-  const { appContext, elementContext } = getSecrets(ctx);
+  const { appContext, elementContext } = getStoreSecrets(c);
 
   const container = document.createElement("div");
   container.style.position = "fixed";
@@ -32,7 +33,7 @@ export function DialogStore(_: {}, ctx: ComponentContext) {
   let activeDialogs: DOMHandle[] = [];
 
   // Diff dialogs when value is updated, adding and removing dialogs as necessary.
-  ctx.observe($$dialogs, (dialogs) => {
+  c.observe($$dialogs, (dialogs) => {
     requestAnimationFrame(() => {
       let removed: DOMHandle[] = [];
       let added: DOMHandle[] = [];
@@ -72,7 +73,7 @@ export function DialogStore(_: {}, ctx: ComponentContext) {
     });
   });
 
-  ctx.onDisconnected(() => {
+  c.onDisconnected(() => {
     if (container.parentNode) {
       document.body.removeChild(container);
     }
@@ -81,8 +82,8 @@ export function DialogStore(_: {}, ctx: ComponentContext) {
   function open<I extends DialogAttrs>(view: View<I>, inputs?: Omit<I, "$$open">) {
     const $$open = new Writable(true);
 
-    let instance: DOMHandle | undefined = makeComponent({
-      component: view as Component<unknown>,
+    let instance: DOMHandle | undefined = makeView({
+      view: view as View<unknown>,
       appContext,
       elementContext,
       attributes: { ...inputs, $$open },

@@ -1,5 +1,5 @@
 import { type AppContext, type ElementContext } from "../App.js";
-import { makeComponent, type ComponentContext } from "../component.js";
+import { makeView, type ViewContext } from "../view.js";
 import { makeMarkup, type DOMHandle, type Markup } from "./index.js";
 import { Readable, Writable, type StopFunction } from "../state.js";
 
@@ -25,7 +25,7 @@ import { Readable, Writable, type StopFunction } from "../state.js";
  */
 export function repeat<T>(
   value: Readable<T[]>,
-  render: ($value: Readable<T>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null,
+  render: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null,
   key?: (value: T, index: number) => string | number
 ): Markup {
   return makeMarkup("$repeat", { value, render, key });
@@ -37,7 +37,7 @@ interface RepeatOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
   readable: Readable<T[]>;
-  render: ($value: Readable<T>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null;
+  render: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
   key?: (value: T, index: number) => string | number | symbol;
 }
 
@@ -57,7 +57,7 @@ export class Repeat<T> implements DOMHandle {
   #connectedItems: ConnectedItem<T>[] = [];
   #appContext;
   #elementContext;
-  #render: ($value: Readable<T>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null;
+  #render: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
   #keyFn: (value: T, index: number) => string | number | symbol;
 
   get node() {
@@ -153,8 +153,8 @@ export class Repeat<T> implements DOMHandle {
           key: potential.key,
           $$value,
           $$index,
-          handle: makeComponent({
-            component: RepeatItemView,
+          handle: makeView({
+            view: RepeatItemView,
             appContext: this.#appContext,
             elementContext: this.#elementContext,
             attributes: { $value: $$value.toReadable(), $index: $$index.toReadable(), render: this.#render },
@@ -175,9 +175,9 @@ export class Repeat<T> implements DOMHandle {
 interface RepeatItemAttrs {
   $value: Readable<any>;
   $index: Readable<number>;
-  render: ($value: Readable<any>, $index: Readable<number>, ctx: ComponentContext) => Markup | Markup[] | null;
+  render: ($value: Readable<any>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
 }
 
-function RepeatItemView({ $value, $index, render }: RepeatItemAttrs, ctx: ComponentContext) {
+function RepeatItemView({ $value, $index, render }: RepeatItemAttrs, ctx: ViewContext) {
   return render($value, $index, ctx);
 }

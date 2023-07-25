@@ -1,5 +1,5 @@
-import { type ComponentContext } from "../component.js";
+import { type ViewContext } from "../view.js";
 
-export function Fragment(_: {}, ctx: ComponentContext) {
+export function Fragment(_: {}, ctx: ViewContext) {
   return ctx.outlet();
 }

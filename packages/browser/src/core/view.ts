@@ -1,55 +1,68 @@
-import { isArrayOf, isObject, typeOf } from "@borf/bedrock";
+import { isArrayOf, typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DebugChannel } from "./DebugHub.js";
-import { DOMHandle, Markup, getRenderHandle, isMarkup, makeMarkup, renderMarkupToDOM } from "./markup/index.js";
+import {
+  getRenderHandle,
+  isMarkup,
+  makeMarkup,
+  renderMarkupToDOM,
+  type DOMHandle,
+  type Markup,
+} from "./markup/index.js";
 import { Readable, Writable, type ValuesOfReadables } from "./state.js";
-import type { BuiltInStores, Renderable } from "./types";
+import { type Store } from "./store.js";
+import type { BuiltInStores, Renderable } from "./types.js";
 import { observeMany } from "./utils/observeMany.js";
 
-export type Component<A> = (attributes: A, context: ComponentContext) => unknown;
-export type Store<A, E> = (attributes: A, context: ComponentContext) => E | Promise<E>;
-export type View<A> = (attributes: A, context: ComponentContext) => Markup | null | Promise<Markup | null>;
+/*=====================================*\
+||                Types                ||
+\*=====================================*/
 
-export interface ComponentContext extends DebugChannel {
+export type View<A> = (
+  attributes: A,
+  context: ViewContext
+) => Markup | Markup[] | null | Promise<Markup | Markup[] | null>;
+
+export interface ViewContext extends DebugChannel {
   /**
-   * Returns the nearest parent instance or app instance of `store`.
+   * Returns the shared instance of `store`.
    */
   use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
   /**
-   * Returns an instance of a built-in store.
+   * Returns the shared instance of a built-in store.
    */
   use<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
 
   /**
    * Runs `callback` and awaits its promise before `onConnected` callbacks are called.
-   * Component is not considered connected until all `beforeConnect` promises resolve.
+   * View is not considered connected until all `beforeConnect` promises resolve.
    */
   beforeConnect(callback: () => Promise<any>): void;
 
   /**
-   * Runs `callback` after this component is connected.
+   * Runs `callback` after this view is connected.
    */
   onConnected(callback: () => any): void;
 
   /**
    * Runs `callback` and awaits its promise before `onDisconnected` callbacks are called.
-   * Component is not removed from the DOM until all `beforeDisconnect` promises resolve.
+   * View is not removed from the DOM until all `beforeDisconnect` promises resolve.
    */
   beforeDisconnect(callback: () => Promise<any>): void;
 
   /**
-   * Runs `callback` after this component is disconnected.
+   * Runs `callback` after this view is disconnected.
    */
   onDisconnected(callback: () => any): void;
 
   /**
-   * The name of this component for logging and debugging purposes.
+   * The name of this view for logging and debugging purposes.
    */
   name: string;
 
   /**
-   * Sets loading content to be displayed while this component's setup is pending.
-   * Only takes effect if this component function is async.
+   * Sets loading content to be displayed while this view's promise is pending.
+   * Only takes effect if this view function is async.
    */
   loader: Renderable;
 
@@ -59,60 +72,53 @@ export interface ComponentContext extends DebugChannel {
   crash(error: Error): void;
 
   /**
-   * Observes a readable value while this component is connected. Calls `callback` each time the value changes.
+   * Observes a readable value while this view is connected. Calls `callback` each time the value changes.
    */
   observe<T>(readable: Readable<T>, callback: (value: T) => void): void;
 
   /**
-   * Observes a set of readable values while this component is connected.
+   * Observes a set of readable values while this view is connected.
    * Calls `callback` with each value in the same order as `readables` each time any of their values change.
    */
   observe<T extends Readable<any>[], V>(readables: [...T], callback: (...values: ValuesOfReadables<T>) => void): void;
 
   /**
-   * Returns a Markup element that displays this component's children.
+   * Returns a Markup element that displays this view's children.
    */
   outlet(): Markup;
-}
-
-export interface ContextSecrets {
-  appContext: AppContext;
-  elementContext: ElementContext;
-}
-
-/**
- * Parameters passed to the makeComponent function.
- */
-interface ComponentConfig<A> {
-  component: Component<A>;
-  appContext: AppContext;
-  elementContext: ElementContext;
-  attributes: A;
-  children?: Markup[];
-}
-
-/**
- * Methods for the framework to manipulate a component.
- */
-export interface ComponentHandle extends DOMHandle {
-  outputs?: object;
 }
 
 /*=====================================*\
 ||          Context Accessors          ||
 \*=====================================*/
 
-const SECRETS = Symbol("SECRETS");
+export interface ViewContextSecrets {
+  appContext: AppContext;
+  elementContext: ElementContext;
+}
 
-export function getSecrets(ctx: ComponentContext): ContextSecrets {
+const SECRETS = Symbol("VIEW_SECRETS");
+
+export function getViewSecrets(ctx: ViewContext): ViewContextSecrets {
   return (ctx as any)[SECRETS];
 }
 
 /*=====================================*\
-||      Component Initialization       ||
+||              View Init              ||
 \*=====================================*/
 
-export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
+/**
+ * Parameters passed to the makeView function.
+ */
+interface ViewConfig<A> {
+  view: View<A>;
+  appContext: AppContext;
+  elementContext: ElementContext;
+  attributes: A;
+  children?: Markup[];
+}
+
+export function makeView<A>(config: ViewConfig<A>): DOMHandle {
   const appContext = config.appContext;
   const elementContext = { ...config.elementContext };
   const $$children = new Writable(config.children ?? []);
@@ -126,8 +132,8 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
   const beforeConnectCallbacks: (() => Promise<any>)[] = [];
   const beforeDisconnectCallbacks: (() => Promise<any>)[] = [];
 
-  const ctx: Omit<ComponentContext, keyof DebugChannel> = {
-    name: config.component.name ?? "anonymous",
+  const ctx: Omit<ViewContext, keyof DebugChannel> = {
+    name: config.view.name ?? "anonymous",
     loader: null,
 
     use(store: keyof BuiltInStores | Store<any, any>) {
@@ -135,42 +141,23 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
 
       if (typeof store === "string") {
         name = store as keyof BuiltInStores;
-
-        if (appContext.stores.has(store)) {
-          const _store = appContext.stores.get(store)!;
-
-          if (!_store.instance) {
-            appContext.crashCollector.crash({
-              componentName: ctx.name,
-              error: new Error(
-                `Store '${store}' was accessed before it was set up. Make sure '${store}' is registered before components that access it.`
-              ),
-            });
-          }
-
-          return _store.instance!.outputs;
-        }
       } else {
         name = store.name;
+      }
 
-        if (elementContext.stores.has(store)) {
-          return elementContext.stores.get(store)!.instance!.outputs;
+      if (appContext.stores.has(store)) {
+        const _store = appContext.stores.get(store)!;
+
+        if (!_store.instance) {
+          appContext.crashCollector.crash({
+            componentName: ctx.name,
+            error: new Error(
+              `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
+            ),
+          });
         }
 
-        if (appContext.stores.has(store)) {
-          const _store = appContext.stores.get(store)!;
-
-          if (!_store.instance) {
-            appContext.crashCollector.crash({
-              componentName: ctx.name,
-              error: new Error(
-                `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
-              ),
-            });
-          }
-
-          return _store.instance!.outputs;
-        }
+        return _store.instance!.exports;
       }
 
       appContext.crashCollector.crash({
@@ -236,11 +223,8 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
     value: {
       appContext,
       elementContext,
-    } as ContextSecrets,
+    } as ViewContextSecrets,
   });
-
-  // Exported object from store. This is undefined for views.
-  let outputs: object | undefined;
 
   // Either the markup from a view or the outlet from a store.
   let rendered: DOMHandle | undefined;
@@ -249,7 +233,7 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
     let result: unknown;
 
     try {
-      result = config.component(config.attributes, ctx as ComponentContext);
+      result = config.view(config.attributes, ctx as ViewContext);
 
       if (result instanceof Promise) {
         // TODO: Handle loading states
@@ -269,31 +253,19 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
     } else if (isMarkup(result) || isArrayOf<Markup>(isMarkup, result)) {
       // Result is a view.
       rendered = getRenderHandle(renderMarkupToDOM(result, renderContext));
-    } else if (isObject(result)) {
-      // Result is a store.
-      outputs = result;
-      rendered = getRenderHandle(renderMarkupToDOM(makeMarkup("$dynamic", { value: $$children }), renderContext));
-      elementContext.stores = new Map([...elementContext.stores.entries()]);
-      elementContext.stores.set(config.component, { store: config.component, instance: controls });
     } else {
       console.warn(result, config);
       // Result is not usable.
       appContext.crashCollector.crash({
         error: new TypeError(
-          `Expected '${
-            config.component.name
-          }' function to return Markup or null for a view, or an object for a store. Got: ${typeOf(result)}`
+          `Expected '${config.view.name}' function to return Markup or null. Got: ${typeOf(result)}`
         ),
         componentName: ctx.name,
       });
     }
   }
 
-  const controls: ComponentHandle = {
-    get outputs() {
-      return outputs;
-    },
-
+  const handle: DOMHandle = {
     get node() {
       return rendered?.node!;
     },
@@ -361,5 +333,5 @@ export function makeComponent<A>(config: ComponentConfig<A>): ComponentHandle {
     },
   };
 
-  return controls;
+  return handle;
 }

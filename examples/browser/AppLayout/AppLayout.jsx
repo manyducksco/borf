@@ -1,4 +1,4 @@
-import { MouseStore } from "../../stores/MouseStore";
+import { MouseStore } from "../stores/MouseStore";
 import styles from "./AppLayout.module.css";
 
 export async function AppLayout(_, ctx) {
@@ -50,9 +50,6 @@ export async function AppLayout(_, ctx) {
               />
             </li>
             <li>
-              <NavLink path="/examples/local-stores" name="Local Stores" />
-            </li>
-            <li>
               <NavLink
                 path="/examples/passing-attributes"
                 name="Passing Attributes"
@@ -60,9 +57,6 @@ export async function AppLayout(_, ctx) {
             </li>
             <li>
               <NavLink path="/examples/http-requests" name="HTTP Requests" />
-            </li>
-            <li>
-              <NavLink path="/examples/virtual" name="Virtual" />
             </li>
           </ul>
         </section>

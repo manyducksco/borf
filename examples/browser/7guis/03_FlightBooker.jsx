@@ -76,7 +76,7 @@ export default function (_, ctx) {
             value={$$startDate}
             pattern={"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$"}
             oninput={(e) => {
-              $$startDateIsValid.set(!e.target.validity.patternMismatch);
+              $$startDateIsValid.value = !e.target.validity.patternMismatch;
             }}
           />
         </div>
@@ -87,7 +87,7 @@ export default function (_, ctx) {
             disabled={$$flightType.map((t) => t === "one-way flight")}
             pattern={/^\d{2}\.\d{2}\.\d{4}$/}
             oninput={(e) => {
-              $$returnDateIsValid.set(!e.target.validity.patternMismatch);
+              $$returnDateIsValid.value = !e.target.validity.patternMismatch;
             }}
           />
         </div>

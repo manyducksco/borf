@@ -1,25 +1,22 @@
 import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock";
-import htm from "htm/mini";
 import { AppContext, ElementContext } from "../App";
 import { Dynamic } from "./Dynamic";
 import { HTML } from "./HTML.js";
 import { Text } from "./Text";
-import { makeComponent, type Component } from "../component.js";
+import { makeView, type View } from "../view.js";
 import { Readable } from "../state";
 import type { Renderable, Stringable } from "../types";
 import { Repeat } from "./repeat.js";
-import { makeVirtual } from "./virtual";
 
 export { observe } from "./observe.js";
 export { repeat } from "./repeat.js";
 export { unless } from "./unless.js";
-export { virtual } from "./virtual.js";
 export { when } from "./when.js";
 
 const MARKUP = Symbol("Markup");
 
 export interface Markup {
-  type: string | Component<any>;
+  type: string | View<any>;
   attributes?: Record<string, any>;
   children?: Markup[];
 }
@@ -70,19 +67,15 @@ export function toMarkup(renderables: Renderable | Renderable[]): Markup[] {
     });
 }
 
-export function makeMarkup<T extends keyof MarkupAttributes>(type: T, attributes: MarkupAttributes[T]): Markup;
-
-export function makeMarkup<I>(
-  type: string | Component<I>,
-  attributes?: I | Record<string, any>,
+export function makeMarkup<T extends keyof MarkupAttributes>(
+  type: T,
+  attributes: MarkupAttributes[T],
   ...children: Renderable[]
 ): Markup;
 
-export function makeMarkup<I>(
-  type: string | Component<I>,
-  attributes?: I | Record<string, any>,
-  ...children: Renderable[]
-) {
+export function makeMarkup<I>(type: View<I>, attributes?: I, ...children: Renderable[]): Markup;
+
+export function makeMarkup<I>(type: string | View<I>, attributes?: I, ...children: Renderable[]) {
   return {
     [MARKUP]: true,
     type,
@@ -90,8 +83,6 @@ export function makeMarkup<I>(
     children: toMarkup(children),
   };
 }
-
-export const html = htm.bind(makeMarkup);
 
 interface RenderContext {
   appContext: AppContext;
@@ -105,8 +96,8 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
     let handle!: DOMHandle;
 
     if (isFunction(item.type)) {
-      handle = makeComponent({
-        component: item.type as Component<any>,
+      handle = makeView({
+        view: item.type as View<any>,
         attributes: item.attributes,
         children: item.children,
         appContext: ctx.appContext,
@@ -136,14 +127,6 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
             elementContext: ctx.elementContext,
           });
           break;
-        case "$virtual":
-          handle = makeVirtual({
-            readables: item.attributes!.readables,
-            render: item.attributes!.render,
-            appContext: ctx.appContext,
-            elementContext: ctx.elementContext,
-          });
-          break;
         default:
           handle = new HTML({
             tag: item.type,
@@ -164,10 +147,6 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
       children: item.children ? renderMarkupToDOM(item.children, ctx) : undefined,
     };
   });
-}
-
-export function patchMarkup(current: DOMMarkup[], next: Markup[]): DOMMarkup[] {
-  return [];
 }
 
 /**

@@ -1,11 +1,11 @@
-import { type ComponentContext } from "../component.js";
+import { type StoreContext } from "../store.js";
 import { Writable } from "../state.js";
 
 type ScreenOrientation = "landscape" | "portrait";
 type ColorScheme = "light" | "dark";
 
-export function DocumentStore(_: {}, ctx: ComponentContext) {
-  ctx.name = "borf/document";
+export function DocumentStore(c: StoreContext) {
+  c.name = "borf/document";
 
   const $$title = new Writable(document.title);
   const $$visibility = new Writable(document.visibilityState);
@@ -14,7 +14,7 @@ export function DocumentStore(_: {}, ctx: ComponentContext) {
 
   /* ----- Title and Visibility ----- */
 
-  ctx.observe($$title, (current) => {
+  c.observe($$title, (current) => {
     document.title = current;
   });
 
@@ -51,13 +51,13 @@ export function DocumentStore(_: {}, ctx: ComponentContext) {
   /* ----- Lifecycle ----- */
 
   // Listen for changes while connected.
-  ctx.onConnected(function () {
+  c.onConnected(function () {
     landscapeQuery.addEventListener("change", onOrientationChange);
     colorSchemeQuery.addEventListener("change", onColorChange);
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("focus", onFocus);
   });
-  ctx.onDisconnected(function () {
+  c.onDisconnected(function () {
     landscapeQuery.removeEventListener("change", onOrientationChange);
     colorSchemeQuery.removeEventListener("change", onColorChange);
     document.removeEventListener("visibilitychange", onVisibilityChange);

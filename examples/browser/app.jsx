@@ -1,20 +1,16 @@
-import "./elements.js";
-
-import { App, Ref, html } from "@borf/browser";
+import { App, Ref } from "@borf/browser";
 
 import { CounterStore } from "./stores/CounterStore";
 import { MouseStore } from "./stores/MouseStore";
 
-import { AppLayout } from "./views/AppLayout";
+import { AppLayout } from "./AppLayout";
 
 import { CounterWithStore } from "./examples/CounterWithStore";
 import { CrashHandling } from "./examples/CrashHandling";
 import { Languages } from "./examples/Languages";
-import { LocalStores } from "./examples/LocalStores";
 import { SpringAnimation } from "./examples/SpringAnimation";
 import { PassingAttributes } from "./examples/PassingAttributes";
 import { HTTPRequests } from "./examples/HTTPRequests";
-import { Virtual } from "./examples/Virtual";
 
 import { RenderOrderTest } from "./views/RenderOrderTest";
 
@@ -79,21 +75,27 @@ app.store(MouseStore);
 app.main(AppLayout);
 
 // Testing why nested refs aren't getting the correct element.
-app.route("/test/nested-refs", (attrs, ctx) => {
+app.route("/test/nested-refs", (props, c) => {
+  c.name = "Nested Refs";
+
   const containerRef = new Ref();
   const headerRef = new Ref();
   const textRef = new Ref();
 
-  ctx.onConnected(() => {
-    ctx.log({ containerRef, headerRef, textRef });
+  c.onConnected(() => {
+    c.log({ containerRef, headerRef, textRef });
   });
 
-  return <section ref={containerRef} class="container">
-    <header ref={headerRef} class="header">
-      <h1 ref={textRef} class="text">Header</h1>
-    </header>
-    <p>Content</p>
-  </section>
+  return (
+    <section ref={containerRef} class="container">
+      <header ref={headerRef} class="header">
+        <h1 ref={textRef} class="text">
+          Header
+        </h1>
+      </header>
+      <p>Content</p>
+    </section>
+  );
 });
 
 app.route("/examples", null, (sub) => {
@@ -101,10 +103,8 @@ app.route("/examples", null, (sub) => {
   sub.route("/languages", Languages);
   sub.route("/crash-handling", CrashHandling);
   sub.route("/counter-with-store", CounterWithStore);
-  sub.route("/local-stores", LocalStores);
   sub.route("/passing-attributes", PassingAttributes);
   sub.route("/http-requests", HTTPRequests);
-  sub.route("/virtual", Virtual);
   sub.redirect("*", "./spring-animation");
 });
 
@@ -125,10 +125,10 @@ app
   .redirect("/router-test/*", "/router-test/one");
 
 app.route("/multiple-element-root", function MultipleElementRoot() {
-  return html`
-    <h1>View with Multiple Root Elements</h1>
-    <p>You can't do this with JSX!</p>
-  `;
+  return [
+    <h1>View with Multiple Root Elements</h1>,
+    <p>You can't do this with React!</p>,
+  ];
 });
 
 app.route(

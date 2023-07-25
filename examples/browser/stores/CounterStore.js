@@ -3,10 +3,10 @@ import { Writable } from "@borf/browser";
 /**
  * Keeps a counter that auto-increments each second.
  */
-export function CounterStore(_, ctx) {
+export function CounterStore(c) {
   const $$current = new Writable(0);
 
-  ctx.onConnected(() => {
+  c.onConnected(() => {
     setInterval(() => {
       $$current.update((x) => x + 1);
     }, 1000);
