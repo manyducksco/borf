@@ -7,12 +7,12 @@ import { Dynamic } from "./Dynamic";
 import { HTML } from "./HTML.js";
 import { Outlet } from "./Outlet.js";
 import { Text } from "./Text";
-import { Repeat } from "./repeat.js";
+import { Repeat } from "./_repeat.js";
 
-export { observe } from "./observe.js";
-export { repeat } from "./repeat.js";
-export { unless } from "./unless.js";
-export { when } from "./when.js";
+export { observe } from "./_observe.js";
+export { repeat } from "./_repeat.js";
+export { unless } from "./_unless.js";
+export { when } from "./_when.js";
 
 const MARKUP = Symbol("Markup");
 

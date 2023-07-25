@@ -1,5 +1,5 @@
 import { Readable } from "../state.js";
-import type { Renderable } from "../types";
+import type { Renderable } from "../types.js";
 import { makeMarkup } from "./index.js";
 
 /**
