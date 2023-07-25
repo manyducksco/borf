@@ -11,13 +11,127 @@ This README is written for web developers and hobbyists with a solid understandi
 
 Code examples are written using [JSX](https://react.dev/learn/writing-markup-with-jsx) syntax.
 
+## Examples
+
+The best way to understand a library is to see it in action. The following examples show what `borf` can do. After the examples, we'll dig into the concepts in more depth.
+
+### Example: Hello World
+
+The simplest possible app. Displays an `<h1>` inside the element with id `app`.
+
+```js
+import { App } from "borf";
+
+const app = new App();
+
+app.main(() => {
+  return <h1>Hello World!</h1>;
+});
+
+app.connect("#app");
+```
+
+### Example: Greeter
+
+A modified Hello World in which the user can change the name through a text input. Demonstrates the use of Writable for dynamic state.
+
+Any HTML attribute can take a Writable or Readable as a value and will update automatically when its value changes.
+
+```js
+import { App, Writable } from "borf";
+
+const app = new App();
+
+app.main(() => {
+  const $$name = new Writable("World");
+
+  return (
+    <div>
+      <h1>Hello {$$name}!</h1>
+      <input
+        value={$$name}
+        oninput={(e) => {
+          $$name.value = e.target.value;
+        }}
+      />
+    </div>
+  );
+});
+
+app.connect("#app");
+```
+
+### Example: Counter with Store
+
+A counter that stores a number that can be incremented or decremented using buttons. This example uses a store to keep that state in one place while it is accessed from multiple views.
+
+```js
+import { App, Writable } from "borf";
+
+const app = new App();
+
+function CounterStore() {
+  const $$count = new Writable(0);
+
+  return {
+    $count: $$count.toReadable(),
+    increment: () => {
+      $$count.value += 1;
+    },
+    decrement: () => {
+      $$count.value -= 1;
+    },
+  };
+}
+
+app.store(CounterStore);
+
+function Layout() {
+  return (
+    <div>
+      <CounterDisplay />
+      <CounterControls />
+    </div>
+  );
+}
+
+function CounterDisplay(props, c) {
+  const counter = c.use(CounterStore);
+
+  return <h1>{counter.$count}</h1>;
+}
+
+function CounterControls() {
+  const counter = c.use(CounterStore);
+
+  return (
+    <div>
+      <button onClick={counter.increment}>+1</button>
+      <button onClick={counter.decrement}>-1</button>
+    </div>
+  );
+}
+
+app.main(Layout);
+
+app.connect("#app");
+```
+
 ## Concepts
 
-Like most other frameworks, `@borf/browser` is built around the idea of _components_. Borf has two types of components&mdash;Views and Stores&mdash;which are both written as functions, and differ only in what kind of value they return and how they can be used within the framework.
+- App
+- Readable & Writable
+- Views
+  - Markup
+  - Props
+  - Context
+  - Helpers (`when`, `unless`, `repeat`, `observe`)
+- Stores
+  - Context
 
 ### Views
 
-Views return `Markup` objects, which are used to construct and manage a tree of DOM elements. `Markup` objects are typically created by writing JSX.
+Views return `Markup` objects, which represent a tree of DOM elements. `Markup` objects are typically created by writing JSX.
 
 ```js
 function ExampleView() {
@@ -46,7 +160,7 @@ function ExampleView() {
 }
 ```
 
-That doesn't look great. If you'd like to use `borf` in an environment that doesn't support JSX, like a normal browser without running through a compiler, you can use the `htm` library.
+That doesn't look great. If you'd like to use `borf` in an environment that doesn't support JSX, like in a browser without running a build step, you can use the [`htm`](https://github.com/developit/htm) library.
 
 ```js
 import htm from "htm";
@@ -64,9 +178,11 @@ function ExampleView() {
 }
 ```
 
-> TODO: Passing props
+#### TODO: Passing props
 
-Views don't have direct access to their children. Instead, the component context object (passed as the second argument to any component function) has an `outlet` method that can be used to display children at a location of your choosing.
+#### Displaying Children
+
+Views don't have direct access to their children. Instead, the context object (passed as the second argument to a view function) has an `outlet` method that can be used to display children at a location of your choosing.
 
 ```js
 function ContentBox(props, c) {
@@ -90,6 +206,15 @@ function ExampleView() {
     </ContentBox>
   );
 }
+```
+
+The output of `ExampleView`:
+
+```html
+<div style="padding: 1rem; border: 1px dashed orange">
+  <h1>Hello</h1>
+  <p>This is inside the box.</p>
+</div>
 ```
 
 ### Stores
