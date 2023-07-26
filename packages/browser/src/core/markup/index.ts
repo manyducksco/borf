@@ -1,13 +1,13 @@
 import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { AppContext, ElementContext } from "../App";
-import { Readable } from "../state";
+import { Readable, ValuesOfReadables } from "../state";
 import type { Renderable, Stringable } from "../types";
 import { ViewContext, makeView, type View } from "../view.js";
 import { Conditional } from "./Conditional.js";
 import { HTML } from "./HTML.js";
 import { Observer } from "./Observer";
 import { Outlet } from "./Outlet.js";
-import { Repeat } from "./Repeat.js";
+import { Repeat } from "../Repeat.js";
 import { Text } from "./Text";
 
 /*===========================*\
@@ -142,10 +142,16 @@ export function repeat<T>(value: Readable<T[]> | T[], ...args: any): Markup {
   return makeMarkup("$repeat", { $items, render, key });
 }
 
-// TODO: Accept multiple observables
-export function observe<T>(readable: Readable<T>, render: (value: T) => Renderable) {
+export function observe<T>(readable: Readable<T>, render: (value: T) => T): Markup;
+
+export function observe<R extends Readable<any>[], T>(
+  readables: [...R],
+  render: (...values: ValuesOfReadables<R>) => T
+): Markup;
+
+export function observe<T>(source: Readable<T> | Readable<any>[], render: (...args: any) => any) {
   return makeMarkup("$observer", {
-    value: readable,
+    readables: isArray(source) ? source : [source],
     render,
   });
 }
@@ -195,7 +201,7 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
           });
         case "$observer":
           return new Observer({
-            readable: item.attributes!.value,
+            readables: item.attributes!.readables,
             render: item.attributes!.render,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
@@ -221,7 +227,7 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
 }
 
 /**
- * Gets a single handle that controls one or more RenderedMarkups as one.
+ * Combines one or more DOMHandles into a single DOMHandle.
  */
 export function getRenderHandle(handles: DOMHandle[]): DOMHandle {
   if (handles.length === 1) {

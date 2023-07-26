@@ -3,25 +3,26 @@ import { type AppContext, type ElementContext } from "../App.js";
 import { Readable, type StopFunction } from "../state.js";
 import type { Renderable } from "../types.js";
 import { isRenderable } from "../utils/isRenderable.js";
+import { observeMany } from "../utils/observeMany.js";
 import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "./index.js";
 
-interface ObserverOptions<T> {
+interface ObserverOptions {
   appContext: AppContext;
   elementContext: ElementContext;
-  readable: Readable<T>;
-  render?: (value: T) => Renderable;
+  readables: Readable<any>[];
+  render: (...values: any) => Renderable;
 }
 
 /**
  * Displays dynamic children without a parent element.
  */
-export class Observer<T> implements DOMHandle {
+export class Observer implements DOMHandle {
   node: Node;
   endNode: Node;
   connectedViews: DOMHandle[] = [];
   stopCallback?: StopFunction;
-  readable;
-  render?: (value: T) => Renderable;
+  readables;
+  render: (...values: any) => Renderable;
   appContext;
   elementContext;
 
@@ -29,45 +30,40 @@ export class Observer<T> implements DOMHandle {
     return this.node.parentNode != null;
   }
 
-  constructor({ readable, render, appContext, elementContext }: ObserverOptions<T>) {
-    this.readable = readable;
+  constructor({ readables, render, appContext, elementContext }: ObserverOptions) {
+    this.readables = readables;
     this.appContext = appContext;
     this.elementContext = elementContext;
+    this.render = render;
 
     this.node = document.createComment("Observer");
     this.endNode = document.createComment("/Observer");
-
-    if (render) {
-      this.render = render;
-    }
   }
 
   async connect(parent: Node, after?: Node) {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
-      this.stopCallback = this.readable.observe((value: T) => {
-        let newValue: unknown;
+      const controls = observeMany(this.readables, (...values) => {
+        const rendered = this.render(...values);
 
-        if (this.render) {
-          newValue = this.render(value);
-        } else {
-          newValue = value;
-        }
-
-        if (!isRenderable(newValue)) {
-          console.error(newValue);
+        if (!isRenderable(rendered)) {
+          console.error(rendered);
           throw new TypeError(
-            `Observer received invalid value to render. Got type: ${typeOf(newValue)}, value: ${newValue}`
+            `Observer received invalid value to render. Got type: ${typeOf(rendered)}, value: ${rendered}`
           );
         }
 
-        if (Array.isArray(newValue)) {
-          this.#update(...newValue);
+        if (Array.isArray(rendered)) {
+          this.update(...rendered);
         } else {
-          this.#update(newValue);
+          this.update(rendered);
         }
       });
+
+      controls.start();
+
+      this.stopCallback = controls.stop;
     }
   }
 
@@ -95,7 +91,7 @@ export class Observer<T> implements DOMHandle {
     }
   }
 
-  async #update(...children: Renderable[]) {
+  async update(...children: Renderable[]) {
     await this.cleanup();
 
     if (children == null || !this.connected) {
