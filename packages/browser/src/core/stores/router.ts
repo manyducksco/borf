@@ -1,7 +1,7 @@
 import { isFunction, isString, joinPath, matchRoutes, parseQueryParams, resolvePath, type Route } from "@borf/bedrock";
 import { createBrowserHistory, createHashHistory, type History, type Listener } from "history";
 import { getStoreSecrets, type StoreContext } from "../store.js";
-import { DOMHandle, getRenderHandle, Markup, renderMarkupToDOM } from "../markup/index.js";
+import { DOMHandle, getRenderHandle, Markup, renderMarkupToDOM } from "../markup.js";
 import { Writable } from "../state.js";
 import { type Stringable } from "../types";
 import { catchLinks } from "../utils/catchLinks.js";

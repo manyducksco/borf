@@ -18,7 +18,7 @@ import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
 import { makeStore, type Store } from "./store.js";
 import { makeView, type ViewContext, type View } from "./view.js";
-import { DOMHandle, Markup, makeMarkup } from "./markup/index.js";
+import { DOMHandle, Markup, makeMarkup } from "./markup.js";
 import { type StopFunction } from "./state.js";
 import { DialogStore } from "./stores/dialog.js";
 import { DocumentStore } from "./stores/document.js";

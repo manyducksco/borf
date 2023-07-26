@@ -1,14 +1,7 @@
 import { isArrayOf, typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DebugChannel } from "./DebugHub.js";
-import {
-  getRenderHandle,
-  isMarkup,
-  makeMarkup,
-  renderMarkupToDOM,
-  type DOMHandle,
-  type Markup,
-} from "./markup/index.js";
+import { getRenderHandle, isMarkup, makeMarkup, renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
 import { Readable, Writable, type ValuesOfReadables } from "./state.js";
 import { type Store } from "./store.js";
 import type { BuiltInStores, Renderable } from "./types.js";

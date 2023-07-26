@@ -1,10 +1,10 @@
 import { typeOf } from "@borf/bedrock";
-import { type AppContext, type ElementContext } from "../App.js";
-import { Readable, type StopFunction } from "../state.js";
-import type { Renderable } from "../types.js";
-import { isRenderable } from "../utils/isRenderable.js";
-import { observeMany } from "../utils/observeMany.js";
-import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "./index.js";
+import { type AppContext, type ElementContext } from "./App.js";
+import { Readable, type StopFunction } from "./state.js";
+import type { Renderable } from "./types.js";
+import { isRenderable } from "./utils/isRenderable.js";
+import { observeMany } from "./utils/observeMany.js";
+import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "./markup.js";
 
 interface ObserverOptions {
   appContext: AppContext;

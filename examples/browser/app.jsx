@@ -14,6 +14,7 @@ import { PassingAttributes } from "./examples/PassingAttributes";
 import { HTTPRequests } from "./examples/HTTPRequests";
 
 import { RenderOrderTest } from "./views/RenderOrderTest";
+import { ObserverTest } from "./views/ObserverTest";
 
 import SevenGUIs from "./7guis";
 import Counter from "./7guis/01_Counter";
@@ -153,6 +154,7 @@ app.route(
 
 app.route("/tests", null, (sub) => {
   sub.route("/render-order", RenderOrderTest);
+  sub.route("/observer", ObserverTest);
 });
 
 // For any route not registered, redirect to a route that does exist.

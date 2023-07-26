@@ -1,6 +1,6 @@
 import { makeView, type View } from "../view.js";
 import { getStoreSecrets, type StoreContext } from "../store.js";
-import { type DOMHandle } from "../markup/index.js";
+import { type DOMHandle } from "../markup.js";
 import { Writable } from "../state.js";
 
 interface DialogAttrs {

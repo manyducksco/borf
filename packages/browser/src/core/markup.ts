@@ -1,14 +1,14 @@
 import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock";
-import { AppContext, ElementContext } from "../App";
-import { Readable, ValuesOfReadables } from "../state";
-import type { Renderable, Stringable } from "../types";
-import { ViewContext, makeView, type View } from "../view.js";
+import { type AppContext, type ElementContext } from "./App.js";
+import { Readable, type ValuesOfReadables } from "./state.js";
+import type { Renderable, Stringable } from "./types.js";
+import { ViewContext, makeView, type View } from "./view.js";
 import { Conditional } from "./Conditional.js";
 import { HTML } from "./HTML.js";
-import { Observer } from "./Observer";
+import { Observer } from "./Observer.js";
 import { Outlet } from "./Outlet.js";
-import { Repeat } from "../Repeat.js";
-import { Text } from "./Text";
+import { Repeat } from "./Repeat.js";
+import { Text } from "./Text.js";
 
 /*===========================*\
 ||           Markup          ||

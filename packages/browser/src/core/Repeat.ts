@@ -1,7 +1,7 @@
 import { type AppContext, type ElementContext } from "./App.js";
 import { Readable, Writable, type StopFunction } from "./state.js";
 import { makeView, type ViewContext } from "./view.js";
-import { type DOMHandle, type Markup } from "./markup/index.js";
+import { type DOMHandle, type Markup } from "./markup.js";
 
 // ----- Types ----- //
 

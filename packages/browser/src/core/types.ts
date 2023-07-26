@@ -1,7 +1,7 @@
 import type * as CSS from "csstype";
 import { type Ref } from "./Ref.js";
 import { type Store } from "./store.js";
-import { type Markup } from "./markup/index.js";
+import { type Markup } from "./markup.js";
 import { type Readable, type Writable } from "./state.js";
 import { type DialogStore } from "./stores/dialog.js";
 import { type DocumentStore } from "./stores/document.js";

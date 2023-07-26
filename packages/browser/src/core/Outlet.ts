@@ -1,5 +1,5 @@
-import { Readable, StopFunction } from "../state.js";
-import { type DOMHandle } from "./index.js";
+import { Readable, StopFunction } from "./state.js";
+import { type DOMHandle } from "./markup.js";
 
 /**
  * Manages an array of DOMHandles.

@@ -1,9 +1,9 @@
 import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
-import { type AppContext, type ElementContext } from "../App.js";
-import { Ref } from "../Ref.js";
-import { Readable, Writable, type StopFunction } from "../state.js";
-import { omit } from "../utils/omit.js";
-import { renderMarkupToDOM, type DOMHandle, type Markup } from "./index.js";
+import { type AppContext, type ElementContext } from "./App.js";
+import { Ref } from "./Ref.js";
+import { Readable, Writable, type StopFunction } from "./state.js";
+import { omit } from "./utils/omit.js";
+import { renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
 
 type HTMLOptions = {
   appContext: AppContext;

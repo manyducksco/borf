@@ -1,7 +1,7 @@
-import { type AppContext, type ElementContext } from "../App.js";
-import { type Readable, type StopFunction } from "../state.js";
-import { type Renderable } from "../types.js";
-import { type Markup, type DOMHandle, toMarkup, renderMarkupToDOM } from "./index.js";
+import { type AppContext, type ElementContext } from "./App.js";
+import { type Readable, type StopFunction } from "./state.js";
+import { type Renderable } from "./types.js";
+import { type Markup, type DOMHandle, toMarkup, renderMarkupToDOM } from "./markup.js";
 
 export interface ConditionalConfig {
   $predicate: Readable<any>;
