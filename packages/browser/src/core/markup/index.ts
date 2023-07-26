@@ -2,13 +2,13 @@ import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock
 import { AppContext, ElementContext } from "../App";
 import { Readable } from "../state";
 import type { Renderable, Stringable } from "../types";
-import { makeView, ViewContext, type View } from "../view.js";
+import { ViewContext, makeView, type View } from "../view.js";
 import { Conditional } from "./Conditional.js";
-import { Observer } from "./Observer";
 import { HTML } from "./HTML.js";
+import { Observer } from "./Observer";
 import { Outlet } from "./Outlet.js";
+import { Repeat } from "./Repeat.js";
 import { Text } from "./Text";
-import { Repeat } from "./_repeat.js";
 
 /*===========================*\
 ||           Markup          ||
@@ -194,7 +194,6 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
             elementContext: ctx.elementContext,
           });
         case "$observer":
-          // TODO: Replace with Observer
           return new Observer({
             readable: item.attributes!.value,
             render: item.attributes!.render,
