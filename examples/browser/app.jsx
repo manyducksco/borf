@@ -5,6 +5,7 @@ import { MouseStore } from "./stores/MouseStore";
 
 import { AppLayout } from "./AppLayout";
 
+import { ConditionalRendering } from "./examples/ConditionalRendering";
 import { CounterWithStore } from "./examples/CounterWithStore";
 import { CrashHandling } from "./examples/CrashHandling";
 import { Languages } from "./examples/Languages";
@@ -99,6 +100,7 @@ app.route("/test/nested-refs", (props, c) => {
 });
 
 app.route("/examples", null, (sub) => {
+  sub.route("/conditional-rendering", ConditionalRendering);
   sub.route("/spring-animation", SpringAnimation);
   sub.route("/languages", Languages);
   sub.route("/crash-handling", CrashHandling);

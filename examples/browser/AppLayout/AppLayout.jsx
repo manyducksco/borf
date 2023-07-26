@@ -33,6 +33,12 @@ export async function AppLayout(_, ctx) {
           <ul class={styles.navList}>
             <li>
               <NavLink
+                path="/examples/conditional-rendering"
+                name="Conditional Rendering"
+              />
+            </li>
+            <li>
+              <NavLink
                 path="/examples/spring-animation"
                 name="Spring Animation"
               />

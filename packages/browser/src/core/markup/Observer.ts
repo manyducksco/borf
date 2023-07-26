@@ -1,11 +1,11 @@
 import { typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "../App.js";
 import { Readable, type StopFunction } from "../state.js";
-import type { Renderable } from "../types";
+import type { Renderable } from "../types.js";
 import { isRenderable } from "../utils/isRenderable.js";
 import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "./index.js";
 
-interface DynamicOptions<T> {
+interface ObserverOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
   readable: Readable<T>;
@@ -15,30 +15,30 @@ interface DynamicOptions<T> {
 /**
  * Displays dynamic children without a parent element.
  */
-export class Dynamic<T> implements DOMHandle {
-  #node = document.createComment("Dynamic");
-  #connectedViews: DOMHandle[] = [];
-  #stopCallback?: StopFunction;
-  #readable;
-  #render?: (value: T) => Renderable;
-  #appContext;
-  #elementContext;
-
-  get node() {
-    return this.#node;
-  }
+export class Observer<T> implements DOMHandle {
+  node: Node;
+  endNode: Node;
+  connectedViews: DOMHandle[] = [];
+  stopCallback?: StopFunction;
+  readable;
+  render?: (value: T) => Renderable;
+  appContext;
+  elementContext;
 
   get connected() {
-    return this.#node.parentNode != null;
+    return this.node.parentNode != null;
   }
 
-  constructor({ readable, render, appContext, elementContext }: DynamicOptions<T>) {
-    this.#readable = readable;
-    this.#appContext = appContext;
-    this.#elementContext = elementContext;
+  constructor({ readable, render, appContext, elementContext }: ObserverOptions<T>) {
+    this.readable = readable;
+    this.appContext = appContext;
+    this.elementContext = elementContext;
+
+    this.node = document.createComment("Observer");
+    this.endNode = document.createComment("/Observer");
 
     if (render) {
-      this.#render = render;
+      this.render = render;
     }
   }
 
@@ -46,11 +46,11 @@ export class Dynamic<T> implements DOMHandle {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
-      this.#stopCallback = this.#readable.observe((value: T) => {
+      this.stopCallback = this.readable.observe((value: T) => {
         let newValue: unknown;
 
-        if (this.#render) {
-          newValue = this.#render(value);
+        if (this.render) {
+          newValue = this.render(value);
         } else {
           newValue = value;
         }
@@ -58,7 +58,7 @@ export class Dynamic<T> implements DOMHandle {
         if (!isRenderable(newValue)) {
           console.error(newValue);
           throw new TypeError(
-            `Dynamic received invalid value to render. Got type: ${typeOf(newValue)}, value: ${newValue}`
+            `Observer received invalid value to render. Got type: ${typeOf(newValue)}, value: ${newValue}`
           );
         }
 
@@ -72,14 +72,14 @@ export class Dynamic<T> implements DOMHandle {
   }
 
   async disconnect() {
-    if (this.#stopCallback) {
-      this.#stopCallback();
-      this.#stopCallback = undefined;
+    if (this.stopCallback) {
+      this.stopCallback();
+      this.stopCallback = undefined;
     }
 
     if (this.connected) {
-      await this.#cleanup();
-      this.#node.parentNode!.removeChild(this.#node);
+      await this.cleanup();
+      this.node.parentNode!.removeChild(this.node);
     }
   }
 
@@ -87,39 +87,37 @@ export class Dynamic<T> implements DOMHandle {
     console.warn("setChildren is not implemented for Dynamic");
   }
 
-  async #cleanup() {
-    while (this.#connectedViews.length > 0) {
+  async cleanup() {
+    while (this.connectedViews.length > 0) {
       // NOTE: Awaiting this disconnect causes problems when transitioning out old elements while new ones are transitioning in.
       // Not awaiting seems to fix this, but may cause problems with error handling or other render order things. Keep an eye on it.
-      this.#connectedViews.pop()?.disconnect();
+      this.connectedViews.pop()?.disconnect();
     }
   }
 
   async #update(...children: Renderable[]) {
-    await this.#cleanup();
+    await this.cleanup();
 
     if (children == null || !this.connected) {
       return;
     }
 
-    const renderContext = { appContext: this.#appContext, elementContext: this.#elementContext };
-
     const handles: DOMHandle[] = children.map((c) => {
       if (isDOMHandle(c)) {
         return c;
       } else if (isMarkup(c)) {
-        return getRenderHandle(renderMarkupToDOM(c, renderContext));
+        return getRenderHandle(renderMarkupToDOM(c, this));
       } else {
-        return getRenderHandle(renderMarkupToDOM(toMarkup(c), renderContext));
+        return getRenderHandle(renderMarkupToDOM(toMarkup(c), this));
       }
     });
 
     for (const handle of handles) {
-      const previous = this.#connectedViews[this.#connectedViews.length - 1]?.node || this.node;
+      const previous = this.connectedViews.at(-1)?.node || this.node;
 
       await handle.connect(this.node.parentNode!, previous);
 
-      this.#connectedViews.push(handle);
+      this.connectedViews.push(handle);
     }
   }
 }

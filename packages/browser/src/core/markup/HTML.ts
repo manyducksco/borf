@@ -2,9 +2,8 @@ import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "../App.js";
 import { Ref } from "../Ref.js";
 import { Readable, Writable, type StopFunction } from "../state.js";
-import { deepEqual } from "../utils/deepEqual.js";
 import { omit } from "../utils/omit.js";
-import { renderMarkupToDOM, type DOMHandle, type Markup, getRenderHandle } from "./index.js";
+import { renderMarkupToDOM, type DOMHandle, type Markup } from "./index.js";
 
 type HTMLOptions = {
   appContext: AppContext;
@@ -15,19 +14,15 @@ type HTMLOptions = {
 };
 
 export class HTML implements DOMHandle {
-  #node;
-  #attributes;
-  #children: DOMHandle[];
-  #stopCallbacks: StopFunction[] = [];
-  #appContext;
-  #elementContext;
+  node;
+  attributes;
+  children: DOMHandle[];
+  stopCallbacks: StopFunction[] = [];
+  appContext;
+  elementContext;
 
   // Prevents 'onclickaway' handlers from firing in the same cycle in which the element is connected.
-  #canClickAway = false;
-
-  get node() {
-    return this.#node;
-  }
+  canClickAway = false;
 
   get connected() {
     return this.node.parentNode != null;
@@ -43,9 +38,9 @@ export class HTML implements DOMHandle {
 
     // Create node with the appropriate constructor.
     if (elementContext.isSVG) {
-      this.#node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      this.node = document.createElementNS("http://www.w3.org/2000/svg", tag);
     } else {
-      this.#node = document.createElement(tag);
+      this.node = document.createElement(tag);
     }
 
     const normalizedAttrs: Record<string, any> = {};
@@ -67,19 +62,19 @@ export class HTML implements DOMHandle {
     // Set ref if present. Refs can be a Ref object or a function that receives the node.
     if (normalizedAttrs.ref) {
       if (Ref.isRef(normalizedAttrs.ref)) {
-        normalizedAttrs.ref.element = this.#node;
+        normalizedAttrs.ref.element = this.node;
       } else if (isFunction(normalizedAttrs.ref)) {
-        normalizedAttrs.ref(this.#node);
+        normalizedAttrs.ref(this.node);
       } else {
         throw new Error("Expected an instance of Ref. Got: " + attributes.ref);
       }
     }
 
-    this.#attributes = omit(["ref"], normalizedAttrs);
-    this.#children = children ? renderMarkupToDOM(children, { appContext, elementContext }) : [];
+    this.attributes = omit(["ref"], normalizedAttrs);
+    this.children = children ? renderMarkupToDOM(children, { appContext, elementContext }) : [];
 
-    this.#appContext = appContext;
-    this.#elementContext = elementContext;
+    this.appContext = appContext;
+    this.elementContext = elementContext;
   }
 
   async connect(parent: Node, after?: Node) {
@@ -88,41 +83,41 @@ export class HTML implements DOMHandle {
     }
 
     if (!this.connected) {
-      for (const child of this.#children) {
-        await child.connect(this.#node);
+      for (const child of this.children) {
+        await child.connect(this.node);
       }
 
-      this.#applyAttributes(this.#node, this.#attributes);
-      if (this.#attributes.style) this.#applyStyles(this.#node, this.#attributes.style, this.#stopCallbacks);
-      if (this.#attributes.class) this.#applyClasses(this.#node, this.#attributes.class, this.#stopCallbacks);
+      this.applyAttributes(this.node, this.attributes);
+      if (this.attributes.style) this.applyStyles(this.node, this.attributes.style, this.stopCallbacks);
+      if (this.attributes.class) this.applyClasses(this.node, this.attributes.class, this.stopCallbacks);
     }
 
-    parent.insertBefore(this.#node, after?.nextSibling ?? null);
+    parent.insertBefore(this.node, after?.nextSibling ?? null);
 
     setTimeout(() => {
-      this.#canClickAway = true;
+      this.canClickAway = true;
     }, 0);
   }
 
   async disconnect() {
     if (this.connected) {
-      for (const child of this.#children) {
+      for (const child of this.children) {
         await child.disconnect();
       }
 
-      this.#node.parentNode!.removeChild(this.#node);
+      this.node.parentNode?.removeChild(this.node);
 
-      this.#canClickAway = false;
+      this.canClickAway = false;
 
-      for (const stop of this.#stopCallbacks) {
+      for (const stop of this.stopCallbacks) {
         stop();
       }
-      this.#stopCallbacks = [];
+      this.stopCallbacks = [];
     }
   }
 
   async setChildren(next: DOMHandle[]) {
-    const current = this.#children;
+    const current = this.children;
     const patched: DOMHandle[] = [];
     const length = Math.max(current.length, next.length);
 
@@ -130,7 +125,7 @@ export class HTML implements DOMHandle {
       if (!current[i] && next[i]) {
         // item was added
         patched[i] = next[i];
-        await patched[i].connect(this.#node, patched[i - 1]?.node);
+        await patched[i].connect(this.node, patched[i - 1]?.node);
       } else if (current[i] && !next[i]) {
         // item was removed
         current[i].disconnect();
@@ -140,7 +135,7 @@ export class HTML implements DOMHandle {
         // replace
         patched[i] = next[i];
         current[i].disconnect();
-        await patched[i].connect(this.#node, patched[i - 1]?.node);
+        await patched[i].connect(this.node, patched[i - 1]?.node);
         // } else {
         //   const sameAttrs = deepEqual(current[i].attributes, next[i].attributes);
 
@@ -159,17 +154,17 @@ export class HTML implements DOMHandle {
       }
     }
 
-    this.#children = patched;
+    this.children = patched;
   }
 
-  #applyAttributes(element: HTMLElement | SVGElement, attrs: Record<string, unknown>) {
+  applyAttributes(element: HTMLElement | SVGElement, attrs: Record<string, unknown>) {
     for (const key in attrs) {
       const value = attrs[key];
 
       // Bind or set value depending on its type.
       if (key === "value") {
         if (Readable.isReadable(value)) {
-          this.#stopCallbacks.push(
+          this.stopCallbacks.push(
             value.observe((current) => {
               (element as any).value = String(current);
             })
@@ -183,7 +178,7 @@ export class HTML implements DOMHandle {
 
             element.addEventListener("input", listener);
 
-            this.#stopCallbacks.push(() => {
+            this.stopCallbacks.push(() => {
               element.removeEventListener("input", listener);
             });
           }
@@ -195,7 +190,7 @@ export class HTML implements DOMHandle {
 
         if (eventName === "clickaway") {
           const listener = (e: Event) => {
-            if (this.#canClickAway && !element.contains(e.target as any)) {
+            if (this.canClickAway && !element.contains(e.target as any)) {
               if (Readable.isReadable<(e: Event) => void>(value)) {
                 value.value(e);
               } else {
@@ -206,7 +201,7 @@ export class HTML implements DOMHandle {
 
           window.addEventListener("click", listener);
 
-          this.#stopCallbacks.push(() => {
+          this.stopCallbacks.push(() => {
             window.removeEventListener("click", listener);
           });
         } else {
@@ -216,7 +211,7 @@ export class HTML implements DOMHandle {
 
           element.addEventListener(eventName, listener);
 
-          this.#stopCallbacks.push(() => {
+          this.stopCallbacks.push(() => {
             element.removeEventListener(eventName, listener);
           });
         }
@@ -224,7 +219,7 @@ export class HTML implements DOMHandle {
         const isBoolean = booleanAttrs.includes(key);
 
         if (Readable.isReadable(value)) {
-          this.#stopCallbacks.push(
+          this.stopCallbacks.push(
             value.observe((current) => {
               if (current) {
                 element.setAttribute(key, isBoolean ? "" : current.toString());
@@ -240,7 +235,7 @@ export class HTML implements DOMHandle {
     }
   }
 
-  #applyStyles(element: HTMLElement | SVGElement, styles: Record<string, any>, stopCallbacks: StopFunction[]) {
+  applyStyles(element: HTMLElement | SVGElement, styles: Record<string, any>, stopCallbacks: StopFunction[]) {
     const propStopCallbacks: StopFunction[] = [];
 
     if (Readable.isReadable<object>(styles)) {
@@ -252,7 +247,7 @@ export class HTML implements DOMHandle {
             unapply();
           }
           element.style.cssText = "";
-          unapply = this.#applyStyles(element, current, stopCallbacks);
+          unapply = this.applyStyles(element, current, stopCallbacks);
         });
       });
 
@@ -300,7 +295,7 @@ export class HTML implements DOMHandle {
     };
   }
 
-  #applyClasses(element: HTMLElement | SVGElement, classes: unknown, stopCallbacks: StopFunction[]) {
+  applyClasses(element: HTMLElement | SVGElement, classes: unknown, stopCallbacks: StopFunction[]) {
     const classStopCallbacks: StopFunction[] = [];
 
     if (Readable.isReadable(classes)) {
@@ -312,7 +307,7 @@ export class HTML implements DOMHandle {
             unapply();
           }
           element.removeAttribute("class");
-          unapply = this.#applyClasses(element, current, stopCallbacks);
+          unapply = this.applyClasses(element, current, stopCallbacks);
         });
       });
 

@@ -5,7 +5,7 @@ export { Spring } from "./Spring.js";
 export { Readable, Writable } from "./state.js";
 
 // Markup
-export { makeMarkup, observe, repeat, unless, when } from "./markup/index.js";
+export { makeMarkup, cond, repeat, observe } from "./markup/index.js";
 
 // Fragment
 export { Fragment } from "./views/Fragment.js";

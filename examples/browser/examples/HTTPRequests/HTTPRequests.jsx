@@ -1,4 +1,4 @@
-import { Readable, Writable, when } from "@borf/browser";
+import { Readable, Writable, cond } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 /**
@@ -41,7 +41,7 @@ export function HTTPRequests(_, ctx) {
       <div style={{ display: "flex", flexFlow: "column nowrap" }}>
         <button onclick={onclick}>Get Dog</button>
         {$label}
-        {when($$url, <img style={{ maxWidth: 300 }} src={$$url} />)}
+        {cond($$url, <img style={{ maxWidth: 300 }} src={$$url} />)}
       </div>
     </ExampleFrame>
   );

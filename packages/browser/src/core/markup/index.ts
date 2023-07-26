@@ -2,17 +2,17 @@ import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock
 import { AppContext, ElementContext } from "../App";
 import { Readable } from "../state";
 import type { Renderable, Stringable } from "../types";
-import { makeView, type View } from "../view.js";
-import { Dynamic } from "./Dynamic";
+import { makeView, ViewContext, type View } from "../view.js";
+import { Conditional } from "./Conditional.js";
+import { Observer } from "./Observer";
 import { HTML } from "./HTML.js";
 import { Outlet } from "./Outlet.js";
 import { Text } from "./Text";
 import { Repeat } from "./_repeat.js";
 
-export { observe } from "./_observe.js";
-export { repeat } from "./_repeat.js";
-export { unless } from "./_unless.js";
-export { when } from "./_when.js";
+/*===========================*\
+||           Markup          ||
+\*===========================*/
 
 const MARKUP = Symbol("Markup");
 
@@ -34,13 +34,6 @@ export interface DOMHandle {
   connect(parent: Node, after?: Node): Promise<void>;
   disconnect(): Promise<void>;
   setChildren(children: DOMHandle[]): Promise<void>;
-}
-
-export interface MarkupAttributes {
-  $text: { value: Stringable | Readable<Stringable> };
-  $dynamic: { value: Readable<any>; render?: (value: any) => Renderable };
-  $repeat: { value: Readable<any[]>; render: any; key?: (value: any, index: number) => string | number };
-  [tag: string]: Record<string, any>;
 }
 
 export function isMarkup(value: unknown): value is Markup {
@@ -73,6 +66,13 @@ export function toMarkup(renderables: Renderable | Renderable[]): Markup[] {
     });
 }
 
+export interface MarkupAttributes {
+  $text: { value: Stringable | Readable<Stringable> };
+  $cond: { $predicate: Readable<any>; thenContent?: Renderable; elseContent?: Renderable };
+  $repeat: { $items: Readable<any[]>; render: any; key?: (value: any, index: number) => string | number };
+  [tag: string]: Record<string, any>;
+}
+
 export function makeMarkup<T extends keyof MarkupAttributes>(
   type: T,
   attributes: MarkupAttributes[T],
@@ -89,6 +89,70 @@ export function makeMarkup<I>(type: string | View<I>, attributes?: I, ...childre
     children: toMarkup(children),
   };
 }
+
+/*===========================*\
+||        Markup Utils       ||
+\*===========================*/
+
+/**
+ * Displays `thenContent` when `predicate` holds a truthy value, or `elseContent` otherwise.
+ */
+export function cond(predicate: any | Readable<any>, thenContent?: Renderable, elseContent?: Renderable): Markup {
+  const $predicate = Readable.from(predicate);
+
+  return makeMarkup("$cond", {
+    $predicate,
+    thenContent,
+    elseContent,
+  });
+}
+
+/**
+ * Renders once for each item in `values`. Dynamically adds and removes views as items change.
+ * For complex objects with an ID, define a `key` function to select that ID.
+ * Object identity (`===`) will be used for comparison if no `key` function is passed.
+ */
+export function repeat<T>(
+  value: Readable<T[]> | T[],
+  render: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null
+): Markup;
+
+/**
+ * Renders once for each item in `values`. Dynamically adds and removes views as items change.
+ * Items are compared for equality based on the values returned from the `key` function.
+ */
+export function repeat<T>(
+  value: Readable<T[]> | T[],
+  key: (value: T, index: number) => string | number,
+  render: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null
+): Markup;
+
+export function repeat<T>(value: Readable<T[]> | T[], ...args: any): Markup {
+  const $items = Readable.from(value);
+  let render;
+  let key;
+
+  if (args.length === 1) {
+    render = args[0];
+  } else if (args.length === 2) {
+    key = args[0];
+    render = args[1];
+  }
+
+  return makeMarkup("$repeat", { $items, render, key });
+}
+
+// TODO: Accept multiple observables
+export function observe<T>(readable: Readable<T>, render: (value: T) => Renderable) {
+  return makeMarkup("$observer", {
+    value: readable,
+    render,
+  });
+}
+
+/*===========================*\
+||           Render          ||
+\*===========================*/
 
 interface RenderContext {
   appContext: AppContext;
@@ -113,18 +177,27 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
           return new Text({
             value: item.attributes!.value,
           });
-        case "$dynamic":
-          return new Dynamic({
-            readable: item.attributes!.value,
-            render: item.attributes!.render,
+        case "$cond":
+          return new Conditional({
+            $predicate: item.attributes!.$predicate,
+            thenContent: item.attributes!.thenContent,
+            elseContent: item.attributes!.elseContent,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });
         case "$repeat":
           return new Repeat({
-            readable: item.attributes!.value,
+            $items: item.attributes!.$items,
             render: item.attributes!.render,
             key: item.attributes!.key,
+            appContext: ctx.appContext,
+            elementContext: ctx.elementContext,
+          });
+        case "$observer":
+          // TODO: Replace with Observer
+          return new Observer({
+            readable: item.attributes!.value,
+            render: item.attributes!.render,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });

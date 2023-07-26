@@ -1,4 +1,4 @@
-import { Readable, when } from "@borf/browser";
+import { Readable, cond } from "@borf/browser";
 import styles from "./ExampleFrame.module.css";
 
 export function ExampleFrame(attrs, ctx) {
@@ -11,7 +11,7 @@ export function ExampleFrame(attrs, ctx) {
         <h2 class={styles.title}>{$title}</h2>
       </header>
 
-      {when(
+      {cond(
         $about,
         <div class={styles.about}>
           <div class={styles.symbol}>⌘</div>
