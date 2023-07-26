@@ -207,7 +207,11 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
             elementContext: ctx.elementContext,
           });
         case "$outlet":
-          return new Outlet(item.attributes!.$children);
+          return new Outlet({
+            $children: item.attributes!.$children,
+            appContext: ctx.appContext,
+            elementContext: ctx.elementContext,
+          });
         default:
           if (item.type.startsWith("$")) {
             throw new Error(`Unknown markup type: ${item.type}`);

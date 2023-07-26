@@ -1,5 +1,12 @@
-import { Readable, StopFunction } from "./state.js";
+import { type ElementContext, type AppContext } from "./App.js";
 import { type DOMHandle } from "./markup.js";
+import { type Readable, type StopFunction } from "./state.js";
+
+export interface OutletConfig {
+  $children: Readable<DOMHandle[]>;
+  appContext: AppContext;
+  elementContext: ElementContext;
+}
 
 /**
  * Manages an array of DOMHandles.
@@ -10,11 +17,21 @@ export class Outlet implements DOMHandle {
   $children: Readable<DOMHandle[]>;
   stopCallback?: StopFunction;
   connectedChildren: DOMHandle[] = [];
+  appContext: AppContext;
+  elementContext: ElementContext;
 
-  constructor($children: Readable<DOMHandle[]>) {
-    this.$children = $children;
-    this.node = document.createComment("Outlet");
-    this.endNode = document.createComment("/Outlet");
+  constructor(config: OutletConfig) {
+    this.$children = config.$children;
+    this.appContext = config.appContext;
+    this.elementContext = config.elementContext;
+
+    if (this.appContext.mode === "development") {
+      this.node = document.createComment("Outlet");
+      this.endNode = document.createComment("/Outlet");
+    } else {
+      this.node = document.createTextNode("");
+      this.endNode = document.createTextNode("");
+    }
   }
 
   get connected() {
@@ -59,12 +76,13 @@ export class Outlet implements DOMHandle {
       await child.connect(this.node.parentElement!, previous?.node);
     }
 
-    this.node.textContent = `Outlet (${newChildren.length} ${newChildren.length === 1 ? "child" : "children"})`;
-
-    this.node.parentElement?.insertBefore(
-      this.endNode,
-      this.connectedChildren[this.connectedChildren.length - 1]?.node?.nextSibling ?? null
-    );
+    if (this.appContext.mode === "development") {
+      this.node.textContent = `Outlet (${newChildren.length} ${newChildren.length === 1 ? "child" : "children"})`;
+      this.node.parentElement?.insertBefore(
+        this.endNode,
+        this.connectedChildren[this.connectedChildren.length - 1]?.node?.nextSibling ?? null
+      );
+    }
   }
 
   async setChildren(children: DOMHandle[]) {}

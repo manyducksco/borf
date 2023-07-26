@@ -29,8 +29,13 @@ export class Conditional implements DOMHandle {
     this.appContext = config.appContext;
     this.elementContext = config.elementContext;
 
-    this.node = document.createComment("Conditional");
-    this.endNode = document.createComment("/Conditional");
+    if (this.appContext.mode === "development") {
+      this.node = document.createComment("Conditional");
+      this.endNode = document.createComment("/Conditional");
+    } else {
+      this.node = document.createTextNode("");
+      this.endNode = document.createTextNode("");
+    }
   }
 
   get connected() {
@@ -40,7 +45,9 @@ export class Conditional implements DOMHandle {
   async connect(parent: Node, after?: Node | undefined) {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
-      parent.insertBefore(this.endNode, this.node.nextSibling);
+      if (this.appContext.mode === "development") {
+        parent.insertBefore(this.endNode, this.node.nextSibling);
+      }
 
       this.stopCallback = this.$predicate.observe((value) => {
         this.update(value);
@@ -89,7 +96,9 @@ export class Conditional implements DOMHandle {
       }
     }
 
-    this.node.textContent = `Conditional (${value ? "truthy" : "falsy"})`;
+    if (this.appContext.mode === "development") {
+      this.node.textContent = `Conditional (${value ? "truthy" : "falsy"})`;
+    }
   }
 
   async setChildren(children: DOMHandle[]): Promise<void> {}

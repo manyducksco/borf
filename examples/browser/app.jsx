@@ -40,6 +40,7 @@ const app = new App({
     error: true,
   },
   // mode: import.meta.env.MODE,
+  mode: "development",
 });
 
 // ----- Language Support ----- //

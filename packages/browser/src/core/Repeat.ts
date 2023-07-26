@@ -23,7 +23,8 @@ type ConnectedItem<T> = {
 // ----- Code ----- //
 
 export class Repeat<T> implements DOMHandle {
-  node = document.createComment("Repeat");
+  node: Node;
+  endNode: Node;
   $items: Readable<T[]>;
   stopCallback?: StopFunction;
   connectedItems: ConnectedItem<T>[] = [];
@@ -33,7 +34,7 @@ export class Repeat<T> implements DOMHandle {
   keyFn: (value: T, index: number) => string | number | symbol;
 
   get connected() {
-    return this.node?.parentNode != null;
+    return this.node.parentNode != null;
   }
 
   constructor({ appContext, elementContext, $items, render, key }: RepeatOptions<T>) {
@@ -43,6 +44,14 @@ export class Repeat<T> implements DOMHandle {
     this.$items = $items;
     this.render = render;
     this.keyFn = key ?? ((x) => x as any);
+
+    if (appContext.mode === "development") {
+      this.node = document.createComment("Repeat");
+      this.endNode = document.createComment("/Repeat");
+    } else {
+      this.node = document.createTextNode("");
+      this.endNode = document.createTextNode("");
+    }
   }
 
   async connect(parent: Node, after?: Node) {
@@ -62,7 +71,8 @@ export class Repeat<T> implements DOMHandle {
     }
 
     if (this.connected) {
-      this.node.parentNode!.removeChild(this.node);
+      this.node.parentNode?.removeChild(this.node);
+      this.endNode.parentNode?.removeChild(this.endNode);
     }
   }
 
@@ -132,11 +142,20 @@ export class Repeat<T> implements DOMHandle {
     }
 
     // Reconnect to ensure order. Lifecycle hooks won't be run again if the view is already connected.
-    for (const item of newItems) {
-      await item.handle.connect(this.node.parentNode!);
+    for (let i = 0; i < newItems.length; i++) {
+      const item = newItems[i];
+      const previous = newItems[i - 1]?.handle.node ?? this.node;
+      await item.handle.connect(this.node.parentNode!, previous);
     }
 
     this.connectedItems = newItems;
+
+    if (this.appContext.mode === "development") {
+      this.node.textContent = `Repeat (${newItems.length} item${newItems.length === 1 ? "" : "s"})`;
+
+      const lastItem = newItems.at(-1)?.handle.node ?? this.node;
+      this.node.parentNode?.insertBefore(this.endNode, lastItem.nextSibling);
+    }
   }
 }
 
