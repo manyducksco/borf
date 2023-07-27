@@ -11,7 +11,8 @@
     "test": "ava",
     "test:watch": "npm run test -- --watch",
     "build": "tsc && node build.js",
-    "start": "tsc --watch"
+    "start": "tsc --watch",
+    "prepublishOnly": "NODE_ENV=production npm run build"
   },
   "keywords": [
     "web app",
