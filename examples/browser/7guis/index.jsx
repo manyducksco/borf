@@ -1,4 +1,4 @@
-export default function (attrs, ctx) {
+export default function (props, c) {
   return (
     <div>
       <p style={{ padding: "1rem 1rem 0 1rem" }}>
@@ -7,7 +7,7 @@ export default function (attrs, ctx) {
         evaluating UI frameworks.
       </p>
 
-      <div>{ctx.outlet()}</div>
+      <div>{c.outlet()}</div>
     </div>
   );
 }

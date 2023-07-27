@@ -1,9 +1,9 @@
 import { Readable, cond } from "@borf/browser";
 import styles from "./ExampleFrame.module.css";
 
-export function ExampleFrame(attrs, ctx) {
-  const $title = Readable.from(attrs.title);
-  const $about = Readable.from(attrs.about);
+export function ExampleFrame(props, c) {
+  const $title = Readable.from(props.title);
+  const $about = Readable.from(props.about);
 
   return (
     <article class={styles.frame}>
@@ -19,7 +19,7 @@ export function ExampleFrame(attrs, ctx) {
         </div>
       )}
 
-      <div class={styles.content}>{ctx.outlet()}</div>
+      <div class={styles.content}>{c.outlet()}</div>
     </article>
   );
 }

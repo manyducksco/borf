@@ -69,7 +69,18 @@ export function toMarkup(renderables: Renderable | Renderable[]): Markup[] {
 export interface MarkupAttributes {
   $text: { value: Stringable | Readable<Stringable> };
   $cond: { $predicate: Readable<any>; thenContent?: Renderable; elseContent?: Renderable };
-  $repeat: { $items: Readable<any[]>; render: any; key?: (value: any, index: number) => string | number };
+  $repeat: {
+    $items: Readable<any[]>;
+    keyFn: (value: any, index: number) => string | number | symbol;
+    renderFn: ($item: Readable<any>, $index: Readable<number>, c: ViewContext) => Markup | Markup[] | null;
+  };
+  $observer: {
+    readables: Readable<any>[];
+    renderFn: (...items: any) => Renderable;
+  };
+  $outlet: {
+    $children: Readable<DOMHandle[]>;
+  };
   [tag: string]: Record<string, any>;
 }
 
@@ -95,7 +106,7 @@ export function makeMarkup<I>(type: string | View<I>, attributes?: I, ...childre
 \*===========================*/
 
 /**
- * Displays `thenContent` when `predicate` holds a truthy value, or `elseContent` otherwise.
+ * Displays content conditionally. When `predicate` holds a truthy value, `thenContent` is displayed; when `predicate` holds a falsy value, `elseContent` is displayed.
  */
 export function cond(predicate: any | Readable<any>, thenContent?: Renderable, elseContent?: Renderable): Markup {
   const $predicate = Readable.from(predicate);
@@ -108,51 +119,36 @@ export function cond(predicate: any | Readable<any>, thenContent?: Renderable, e
 }
 
 /**
- * Renders once for each item in `values`. Dynamically adds and removes views as items change.
- * For complex objects with an ID, define a `key` function to select that ID.
- * Object identity (`===`) will be used for comparison if no `key` function is passed.
+ * Calls `renderFn` for each item in `items`. Dynamically adds and removes views as items change.
+ * The result of `keyFn` is used to compare items and decide if item was added, removed or updated.
  */
 export function repeat<T>(
-  value: Readable<T[]> | T[],
-  render: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null
-): Markup;
+  items: Readable<T[]> | T[],
+  keyFn: (value: T, index: number) => string | number | symbol,
+  renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null
+): Markup {
+  const $items = Readable.from(items);
 
-/**
- * Renders once for each item in `values`. Dynamically adds and removes views as items change.
- * Items are compared for equality based on the values returned from the `key` function.
- */
-export function repeat<T>(
-  value: Readable<T[]> | T[],
-  key: (value: T, index: number) => string | number,
-  render: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null
-): Markup;
-
-export function repeat<T>(value: Readable<T[]> | T[], ...args: any): Markup {
-  const $items = Readable.from(value);
-  let render;
-  let key;
-
-  if (args.length === 1) {
-    render = args[0];
-  } else if (args.length === 2) {
-    key = args[0];
-    render = args[1];
-  }
-
-  return makeMarkup("$repeat", { $items, render, key });
+  return makeMarkup("$repeat", { $items, keyFn, renderFn });
 }
 
-export function observe<T>(readable: Readable<T>, render: (value: T) => T): Markup;
+/**
+ * Calls `render` for each new value of `observed`, displaying the result of the `render` function.
+ */
+export function observe<T>(observed: Readable<T>, renderFn: (value: T) => Renderable): Markup;
 
-export function observe<R extends Readable<any>[], T>(
-  readables: [...R],
-  render: (...values: ValuesOfReadables<R>) => T
+/**
+ * Calls `render` for each new value of`observed`, displaying the result of the `render` function.
+ */
+export function observe<R extends Readable<any>[]>(
+  observed: [...R],
+  renderFn: (...values: ValuesOfReadables<R>) => Renderable
 ): Markup;
 
-export function observe<T>(source: Readable<T> | Readable<any>[], render: (...args: any) => any) {
+export function observe<T>(observed: Readable<T> | Readable<any>[], renderFn: (...args: any) => Renderable) {
   return makeMarkup("$observer", {
-    readables: isArray(source) ? source : [source],
-    render,
+    readables: isArray(observed) ? observed : [observed],
+    renderFn,
   });
 }
 
@@ -179,39 +175,49 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
       });
     } else if (isString(item.type)) {
       switch (item.type) {
-        case "$text":
+        case "$text": {
+          const attrs = item.attributes! as MarkupAttributes["$text"];
           return new Text({
-            value: item.attributes!.value,
+            value: attrs.value,
           });
-        case "$cond":
+        }
+        case "$cond": {
+          const attrs = item.attributes! as MarkupAttributes["$cond"];
           return new Conditional({
-            $predicate: item.attributes!.$predicate,
-            thenContent: item.attributes!.thenContent,
-            elseContent: item.attributes!.elseContent,
+            $predicate: attrs.$predicate,
+            thenContent: attrs.thenContent,
+            elseContent: attrs.elseContent,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });
-        case "$repeat":
+        }
+        case "$repeat": {
+          const attrs = item.attributes! as MarkupAttributes["$repeat"];
           return new Repeat({
-            $items: item.attributes!.$items,
-            render: item.attributes!.render,
-            key: item.attributes!.key,
+            $items: attrs.$items,
+            keyFn: attrs.keyFn,
+            renderFn: attrs.renderFn,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });
-        case "$observer":
+        }
+        case "$observer": {
+          const attrs = item.attributes! as MarkupAttributes["$observer"];
           return new Observer({
-            readables: item.attributes!.readables,
-            render: item.attributes!.render,
+            readables: attrs.readables,
+            renderFn: attrs.renderFn,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });
-        case "$outlet":
+        }
+        case "$outlet": {
+          const attrs = item.attributes! as MarkupAttributes["$outlet"];
           return new Outlet({
-            $children: item.attributes!.$children,
+            $children: attrs.$children,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });
+        }
         default:
           if (item.type.startsWith("$")) {
             throw new Error(`Unknown markup type: ${item.type}`);

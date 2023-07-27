@@ -56,18 +56,22 @@ export default function (_, ctx) {
               $$flightType.set(e.target.value);
             }}
           >
-            {repeat(new Readable(flightTypes), ($type) => {
-              const $selected = Readable.merge(
-                [$type, $$flightType],
-                (x, y) => x === y
-              );
+            {repeat(
+              flightTypes,
+              (t) => t,
+              ($type) => {
+                const $selected = Readable.merge(
+                  [$type, $$flightType],
+                  (x, y) => x === y
+                );
 
-              return (
-                <option value={$type} selected={$selected}>
-                  {$type}
-                </option>
-              );
-            })}
+                return (
+                  <option value={$type} selected={$selected}>
+                    {$type}
+                  </option>
+                );
+              }
+            )}
           </select>
         </div>
 

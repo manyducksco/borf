@@ -10,7 +10,7 @@ interface ObserverOptions {
   appContext: AppContext;
   elementContext: ElementContext;
   readables: Readable<any>[];
-  render: (...values: any) => Renderable;
+  renderFn: (...values: any) => Renderable;
 }
 
 /**
@@ -22,7 +22,7 @@ export class Observer implements DOMHandle {
   connectedViews: DOMHandle[] = [];
   stopCallback?: StopFunction;
   readables;
-  render: (...values: any) => Renderable;
+  renderFn: (...values: any) => Renderable;
   appContext;
   elementContext;
 
@@ -30,11 +30,11 @@ export class Observer implements DOMHandle {
     return this.node.parentNode != null;
   }
 
-  constructor({ readables, render, appContext, elementContext }: ObserverOptions) {
+  constructor({ readables, renderFn, appContext, elementContext }: ObserverOptions) {
     this.readables = readables;
     this.appContext = appContext;
     this.elementContext = elementContext;
-    this.render = render;
+    this.renderFn = renderFn;
 
     this.node = document.createComment("Observer");
     this.endNode = document.createComment("/Observer");
@@ -45,7 +45,7 @@ export class Observer implements DOMHandle {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
       const controls = observeMany(this.readables, (...values) => {
-        const rendered = this.render(...values);
+        const rendered = this.renderFn(...values);
 
         if (!isRenderable(rendered)) {
           console.error(rendered);

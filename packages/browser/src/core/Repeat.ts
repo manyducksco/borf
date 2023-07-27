@@ -9,8 +9,8 @@ interface RepeatOptions<T> {
   appContext: AppContext;
   elementContext: ElementContext;
   $items: Readable<T[]>;
-  render: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
-  key?: (value: T, index: number) => string | number | symbol;
+  keyFn: (value: T, index: number) => string | number | symbol;
+  renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
 }
 
 type ConnectedItem<T> = {
@@ -30,20 +30,20 @@ export class Repeat<T> implements DOMHandle {
   connectedItems: ConnectedItem<T>[] = [];
   appContext;
   elementContext;
-  render: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
+  renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
   keyFn: (value: T, index: number) => string | number | symbol;
 
   get connected() {
     return this.node.parentNode != null;
   }
 
-  constructor({ appContext, elementContext, $items, render, key }: RepeatOptions<T>) {
+  constructor({ appContext, elementContext, $items, renderFn, keyFn }: RepeatOptions<T>) {
     this.appContext = appContext;
     this.elementContext = elementContext;
 
     this.$items = $items;
-    this.render = render;
-    this.keyFn = key ?? ((x) => x as any);
+    this.renderFn = renderFn;
+    this.keyFn = keyFn;
 
     if (appContext.mode === "development") {
       this.node = document.createComment("Repeat");
@@ -135,7 +135,7 @@ export class Repeat<T> implements DOMHandle {
             view: RepeatItemView,
             appContext: this.appContext,
             elementContext: this.elementContext,
-            attributes: { $value: $$value.toReadable(), $index: $$index.toReadable(), render: this.render },
+            attributes: { $value: $$value.toReadable(), $index: $$index.toReadable(), renderFn: this.renderFn },
           }),
         };
       }
@@ -162,9 +162,9 @@ export class Repeat<T> implements DOMHandle {
 interface RepeatItemAttrs {
   $value: Readable<any>;
   $index: Readable<number>;
-  render: ($value: Readable<any>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
+  renderFn: ($value: Readable<any>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
 }
 
-function RepeatItemView({ $value, $index, render }: RepeatItemAttrs, ctx: ViewContext) {
-  return render($value, $index, ctx);
+function RepeatItemView({ $value, $index, renderFn }: RepeatItemAttrs, ctx: ViewContext) {
+  return renderFn($value, $index, ctx);
 }

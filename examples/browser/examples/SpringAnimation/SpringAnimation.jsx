@@ -7,7 +7,7 @@ import styles from "./SpringAnimation.module.css";
 /**
  * Demonstrates the use of Spring for animation.
  */
-export function SpringAnimation(attrs, ctx) {
+export function SpringAnimation(props, c) {
   const $$stiffness = new Writable(1549);
   const $$mass = new Writable(7);
   const $$damping = new Writable(83);
@@ -110,16 +110,16 @@ export function SpringAnimation(attrs, ctx) {
     </ExampleFrame>
   );
 
-  ctx.log(markup);
+  c.log(markup);
 
   return markup;
 }
 
-export function Examples(attrs, ctx) {
-  const $stiffness = Readable.from(attrs.stiffness); // Amount of stiffness or tension in the spring.
-  const $mass = Readable.from(attrs.mass); // How heavy the spring is.
-  const $damping = Readable.from(attrs.damping); // Amount of smoothing. Affects the speed of transitions.
-  const $velocity = Readable.from(attrs.velocity); // How much force the spring's motion begins with.
+export function Examples(props, c) {
+  const $stiffness = Readable.from(props.stiffness); // Amount of stiffness or tension in the spring.
+  const $mass = Readable.from(props.mass); // How heavy the spring is.
+  const $damping = Readable.from(props.damping); // Amount of smoothing. Affects the speed of transitions.
+  const $velocity = Readable.from(props.velocity); // How much force the spring's motion begins with.
 
   const spring = new Spring(0, {
     stiffness: $stiffness,
@@ -137,7 +137,7 @@ export function Examples(attrs, ctx) {
       });
   };
 
-  ctx.onConnected(() => {
+  c.onConnected(() => {
     animate();
   });
 

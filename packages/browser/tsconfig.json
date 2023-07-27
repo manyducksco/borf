@@ -6,6 +6,7 @@
     "rootDir": "src",
     "moduleResolution": "node",
     // "baseUrl": "src",
+    "emitDeclarationOnly": true,
     "allowJs": true,
     "checkJs": false,
     "declaration": true,

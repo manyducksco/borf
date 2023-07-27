@@ -3,3 +3,4 @@ src/
 .prettierrc.json
 tsconfig.json
 tsconfig.tsbuildinfo
+esbuild-meta.json

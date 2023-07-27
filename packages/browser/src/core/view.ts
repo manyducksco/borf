@@ -127,7 +127,7 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
   const beforeConnectCallbacks: (() => Promise<any>)[] = [];
   const beforeDisconnectCallbacks: (() => Promise<any>)[] = [];
 
-  const ctx: Omit<ViewContext, keyof DebugChannel> = {
+  const c: Omit<ViewContext, keyof DebugChannel> = {
     name: config.view.name ?? "anonymous",
     loader: null,
 
@@ -145,10 +145,8 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
 
         if (!_store.instance) {
           appContext.crashCollector.crash({
-            componentName: ctx.name,
-            error: new Error(
-              `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
-            ),
+            componentName: c.name,
+            error: new Error(`Store '${name}' is not registered on this app.`),
           });
         }
 
@@ -156,7 +154,7 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
       }
 
       appContext.crashCollector.crash({
-        componentName: ctx.name,
+        componentName: c.name,
         error: new Error(`Store '${name}' is not registered on this app.`),
       });
     },
@@ -178,7 +176,7 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
     },
 
     crash(error: Error) {
-      config.appContext.crashCollector.crash({ error, componentName: ctx.name });
+      config.appContext.crashCollector.crash({ error, componentName: c.name });
     },
 
     observe(readables: any, callback: any) {
@@ -206,13 +204,13 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
 
   const debugChannel = appContext.debugHub.channel({
     get name() {
-      return ctx.name;
+      return c.name;
     },
   });
 
-  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debugChannel));
+  Object.defineProperties(c, Object.getOwnPropertyDescriptors(debugChannel));
 
-  Object.defineProperty(ctx, SECRETS, {
+  Object.defineProperty(c, SECRETS, {
     enumerable: false,
     configurable: false,
     value: {
@@ -221,14 +219,13 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
     } as ViewContextSecrets,
   });
 
-  // Either the markup from a view or the outlet from a store.
   let rendered: DOMHandle | undefined;
 
   async function initialize(parent: Node, after?: Node) {
     let result: unknown;
 
     try {
-      result = config.view(config.attributes, ctx as ViewContext);
+      result = config.view(config.attributes, c as ViewContext);
 
       if (result instanceof Promise) {
         // TODO: Handle loading states
@@ -236,26 +233,22 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
       }
     } catch (error) {
       if (error instanceof Error) {
-        appContext.crashCollector.crash({ error, componentName: ctx.name });
+        appContext.crashCollector.crash({ error, componentName: c.name });
       }
       throw error;
     }
 
-    const renderContext = { appContext, elementContext };
-
     if (result === null) {
       // Do nothing.
     } else if (isMarkup(result) || isArrayOf<Markup>(isMarkup, result)) {
-      // Result is a view.
-      rendered = getRenderHandle(renderMarkupToDOM(result, renderContext));
+      rendered = getRenderHandle(renderMarkupToDOM(result, { appContext, elementContext }));
     } else {
       console.warn(result, config);
-      // Result is not usable.
       appContext.crashCollector.crash({
         error: new TypeError(
           `Expected '${config.view.name}' function to return Markup or null. Got: ${typeOf(result)}`
         ),
-        componentName: ctx.name,
+        componentName: c.name,
       });
     }
   }

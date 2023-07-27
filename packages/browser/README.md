@@ -101,7 +101,7 @@ function CounterDisplay(props, c) {
   return <h1>{counter.$count}</h1>;
 }
 
-function CounterControls() {
+function CounterControls(props, c) {
   const counter = c.use(CounterStore);
 
   return (
@@ -120,16 +120,39 @@ app.connect("#app");
 ## Concepts
 
 - App
+  - Main view
+  - Routes (link to routing section)
+  - Stores
+    - Built-in stores
 - Readable & Writable
+  - map
+  - merge
 - Views
   - Markup
   - Props
   - Context
-  - Helpers (`when`, `unless`, `repeat`, `observe`)
+  - Dynamic content (`cond`, `repeat`, `observe`)
 - Stores
   - Context
+- Routing
+  - Nested routes
+- Transitions & Animation
+  - Spring
+  - Transition lifecycle (beforeConnect/beforeDisconnect)
+
+### App
+
+#### Main view
+
+#### Routes
+
+#### Stores
+
+### Readable & Writable
 
 ### Views
+
+#### Markup
 
 Views return `Markup` objects, which represent a tree of DOM elements. `Markup` objects are typically created by writing JSX.
 
@@ -219,7 +242,7 @@ The output of `ExampleView`:
 
 ### Stores
 
-Stores return a plain JavaScript object, a single instance of which is shared amongst child components via the context's `use` method. Stores don't display anything, but they are useful for scoping common state to a limited area of your component tree.
+Stores return a plain JavaScript object, a single instance of which is shared via the `use` method in view and store contexts. Stores are helpful for keeping persistent state at a specific place in the app for access in many places.
 
 ```js
 import { App } from "borf";
@@ -286,7 +309,7 @@ Borf has no virtual DOM or re-rendering. Components are set up once, and everyth
 ```jsx
 import { Writable } from "borf";
 
-function LayoutView(attrs, ctx) {
+function LayoutView(props, c) {
   return (
     <div class="layout">
       <CounterStore>
@@ -296,7 +319,7 @@ function LayoutView(attrs, ctx) {
   );
 }
 
-function CounterStore(attrs, ctx) {
+function CounterStore(props, c) {
   const $$current = new Writable(0);
 
   return {
@@ -316,9 +339,9 @@ function CounterStore(attrs, ctx) {
   };
 }
 
-function CounterView(attrs, ctx) {
+function CounterView(props, c) {
   // Returns the instance of CounterStore which happens to be the direct parent of CounterView.
-  const counter = ctx.use(CounterStore);
+  const counter = c.use(CounterStore);
 
   return (
     <div>
@@ -340,7 +363,7 @@ In the following example, typing in the input box immediately updates the text i
 ```js
 import { Writable } from "@borf/browser";
 
-function ExampleView(attrs, ctx) {
+function ExampleView(props, c) {
   const $$value = new Writable("Your Name");
 
   return (
@@ -383,7 +406,7 @@ The `@borf/browser` package has a set of four functions that handle conditionals
 ```jsx
 import { Writable, when, unless, repeat, observe } from "@borf/browser";
 
-function PizzaBuilderView(attrs, ctx) {
+function PizzaBuilderView(props, c) {
   const $$toppings = new Writable(["Pineapple", "Jalapeño", "Sausage"]);
   const $$showToppingInput = new Writable(false);
   const $$tempTopping = new Writable("");
@@ -411,34 +434,28 @@ function PizzaBuilderView(attrs, ctx) {
           <h2>Current Toppings</h2>
         </header>
         <ul>
-          {repeat($$toppings, ($topping, $index) => {
-            const removeTopping = () => {
-              $$toppings.update((toppings) => {
-                toppings.splice($index.value, 1);
-              });
-            };
+          {repeat(
+            $$toppings,
+            (t) => t,
+            ($topping, $index) => {
+              const removeTopping = () => {
+                $$toppings.update((toppings) => {
+                  toppings.splice($index.value, 1);
+                });
+              };
 
-            return (
-              <li>
-                #{$index}: {$topping} <button onclick={removeTopping}>Remove</button>
-              </li>
-            );
-          })}
+              return (
+                <li>
+                  #{$index}: {$topping} <button onclick={removeTopping}>Remove</button>
+                </li>
+              );
+            }
+          )}
         </ul>
 
-        {unless(
+        {cond(
           $$showToppingInput,
-          <button
-            onclick={() => {
-              $$showToppingInput.value = true;
-            }}
-          >
-            Add Topping
-          </button>
-        )}
 
-        {when(
-          $$showToppingInput,
           <form
             onsubmit={(e) => {
               e.preventDefault();
@@ -446,7 +463,15 @@ function PizzaBuilderView(attrs, ctx) {
             }}
           >
             <input value={$$tempTopping} />
-          </form>
+          </form>,
+
+          <button
+            onclick={() => {
+              $$showToppingInput.value = true;
+            }}
+          >
+            Add Topping
+          </button>
         )}
       </section>
     </div>

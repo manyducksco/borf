@@ -100,6 +100,7 @@ export default function (_, ctx) {
           >
             {repeat(
               $filteredPeople,
+              (person) => person.id,
               ($person) => {
                 const $id = $person.map((p) => p.id);
                 const $name = $person.map((p) => p.name);
@@ -110,8 +111,7 @@ export default function (_, ctx) {
                     {$surname}, {$name}
                   </option>
                 );
-              },
-              (person) => person.id
+              }
             )}
           </select>
         </div>
