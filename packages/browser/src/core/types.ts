@@ -50,6 +50,48 @@ export type Stringable = { toString(): string };
 
 export type MaybeReadable<T> = T extends Readable<any> ? T : T | Readable<T> | Readable<Exclude<T, undefined>>;
 
+// TODO: Rework types as props
+export interface GlobalProps {
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/accesskey
+   */
+  accessKey: string;
+
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize
+   */
+  autoCapitalize: "off" | "on" | "none" | "sentences" | "words" | "characters";
+
+  /**
+   * Indicates that this element should be focused as soon as it is connected to the DOM.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autofocus
+   */
+  autoFocus: boolean;
+
+  /**
+   * CSS classes to be applied to this element. In addition to the standard space-separated list of class names,
+   * this attribute is expanded in Borf to also support a class map object with class names as keys and booleans as values.
+   * Class names in a class map will be applied to the element while their values are true. Also supports an
+   * array of strings and class maps.
+   *
+   * @example
+   * <div class="one-class" />
+   *
+   * <div class={["array", "of", "classes"]} />
+   *
+   * <div class={{ applied: true, notApplied: false }} />
+   *
+   * <div class={["class", "class2", { "conditional": $value }]} />
+   */
+  class: string | ClassMap | Array<string | ClassMap | (string | ClassMap)[]>;
+
+  /**
+   * Makes the element's content editable by the user. In modern times, this is commonly used as the basis for web-based text editors.
+   */
+  contentEditable: boolean;
+}
+
 /**
  * The set of HTML attributes supported by all HTML elements.
  */
