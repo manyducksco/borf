@@ -115,8 +115,8 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
       try {
         const translation = await lang.getTranslation();
 
-        $$language.value = tag;
         $$translation.value = translation;
+        $$language.value = tag;
 
         c.info("set language to " + tag);
       } catch (error) {
