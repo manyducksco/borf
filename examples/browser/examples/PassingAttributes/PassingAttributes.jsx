@@ -1,4 +1,4 @@
-import { Writable } from "@borf/browser";
+import { writable } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 import styles from "./PassingAttributes.module.css";
@@ -7,7 +7,7 @@ import styles from "./PassingAttributes.module.css";
  * Demonstrates passing attributes to a subview.
  */
 export function PassingAttributes() {
-  const $$message = new Writable("Hello");
+  const $$message = writable("Hello");
 
   return (
     <ExampleFrame title="Input Bindings">
@@ -36,7 +36,7 @@ function SubView({ $$message }) {
       <button
         onclick={() => {
           // Writing $$message here updates the original $$message in the superview.
-          $$message.value = "Hello";
+          $$message.set("Hello");
         }}
       >
         Reset State

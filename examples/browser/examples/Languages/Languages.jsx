@@ -1,3 +1,4 @@
+import { computed } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 import styles from "./Languages.module.css";
@@ -20,9 +21,10 @@ export function Languages(_, ctx) {
         {supportedLanguages.map((tag) => (
           <button
             class={{
-              [styles.active]: $currentLanguage.map((lang) => {
-                return lang === tag;
-              }),
+              [styles.active]: computed(
+                $currentLanguage,
+                (lang) => lang === tag
+              ),
             }}
             onclick={() => {
               setLanguage(tag);

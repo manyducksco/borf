@@ -1,4 +1,4 @@
-import { Readable, Spring, Writable } from "@borf/browser";
+import { readable, spring, writable, computed } from "@borf/browser";
 import dedent from "dedent";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
@@ -8,24 +8,24 @@ import styles from "./SpringAnimation.module.css";
  * Demonstrates the use of Spring for animation.
  */
 export function SpringAnimation(props, c) {
-  const $$stiffness = new Writable(1549);
-  const $$mass = new Writable(7);
-  const $$damping = new Writable(83);
-  const $$velocity = new Writable(14);
+  const $$stiffness = writable(1549);
+  const $$mass = writable(7);
+  const $$damping = writable(83);
+  const $$velocity = writable(14);
 
   const preset = (stiffness, mass, damping, velocity) => () => {
-    $$stiffness.value = stiffness;
-    $$mass.value = mass;
-    $$damping.value = damping;
-    $$velocity.value = velocity;
+    $$stiffness.set(stiffness);
+    $$mass.set(mass);
+    $$damping.set(damping);
+    $$velocity.set(velocity);
   };
 
   // Render the current settings as a code snippet to copy and paste.
-  const $codeSnippet = Readable.merge(
+  const $codeSnippet = computed(
     [$$stiffness, $$mass, $$damping, $$velocity],
     (s, m, d, v) => {
       return dedent`
-        const spring = new Spring(0, {
+        const $spring = spring(0, {
           stiffness: ${s},
           mass: ${m},
           damping: ${d},
@@ -37,7 +37,7 @@ export function SpringAnimation(props, c) {
 
   const markup = (
     <ExampleFrame title="Spring Animation">
-      <p>The shapes below are animated by a single spring.</p>
+      <p>The shapes below are animated by one spring.</p>
 
       <Examples
         stiffness={$$stiffness}
@@ -110,18 +110,16 @@ export function SpringAnimation(props, c) {
     </ExampleFrame>
   );
 
-  c.log(markup);
-
   return markup;
 }
 
 export function Examples(props, c) {
-  const $stiffness = Readable.from(props.stiffness); // Amount of stiffness or tension in the spring.
-  const $mass = Readable.from(props.mass); // How heavy the spring is.
-  const $damping = Readable.from(props.damping); // Amount of smoothing. Affects the speed of transitions.
-  const $velocity = Readable.from(props.velocity); // How much force the spring's motion begins with.
+  const $stiffness = readable(props.stiffness); // Amount of stiffness or tension in the spring.
+  const $mass = readable(props.mass); // How heavy the spring is.
+  const $damping = readable(props.damping); // Amount of smoothing. Affects the speed of transitions.
+  const $velocity = readable(props.velocity); // How much force the spring's motion begins with.
 
-  const spring = new Spring(0, {
+  const $spring = spring(0, {
     stiffness: $stiffness,
     mass: $mass,
     damping: $damping,
@@ -129,9 +127,9 @@ export function Examples(props, c) {
   });
 
   const animate = async () => {
-    return spring
+    return $spring
       .to(1)
-      .then(() => spring.to(0))
+      .then(() => $spring.to(0))
       .then(() => {
         animate();
       });
@@ -150,7 +148,7 @@ export function Examples(props, c) {
             height: 24,
             borderRadius: "50%",
             backgroundColor: "red",
-            transform: spring.map((x) => `translateX(${x * 160 - 80}%)`),
+            transform: computed($spring, (x) => `translateX(${x * 160 - 80}%)`),
           }}
         />
       </div>
@@ -161,8 +159,9 @@ export function Examples(props, c) {
             position: "absolute",
             inset: "0 0.5rem",
             backgroundColor: "orange",
-            transform: spring.map(
-              (current) => `translateY(${90 - (1 - current) * 60}%)`
+            transform: computed(
+              $spring,
+              (x) => `translateY(${90 - (1 - x) * 60}%)`
             ),
           }}
         />
@@ -175,7 +174,7 @@ export function Examples(props, c) {
             width: 36,
             height: 36,
             backgroundColor: "purple",
-            transform: spring.map((x) => `scale(${0.5 + x * 1})`),
+            transform: computed($spring, (x) => `scale(${0.5 + x})`),
           }}
         />
       </div>
@@ -188,7 +187,7 @@ export function Examples(props, c) {
             height: 60,
             backgroundColor: "white",
             transformOrigin: "bottom center",
-            transform: spring.map((x) => `rotate(${45 + x * -90}deg)`),
+            transform: computed($spring, (x) => `rotate(${45 + x * -90}deg)`),
           }}
         />
       </div>

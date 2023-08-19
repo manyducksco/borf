@@ -2,7 +2,7 @@ import { isFunction, isString, joinPath, matchRoutes, parseQueryParams, resolveP
 import { createBrowserHistory, createHashHistory, type History, type Listener } from "history";
 import { getStoreSecrets, type StoreContext } from "../store.js";
 import { DOMHandle, getRenderHandle, Markup, renderMarkupToDOM } from "../markup.js";
-import { Writable } from "../state.js";
+import { readable, writable } from "../state.js";
 import { type Stringable } from "../types";
 import { catchLinks } from "../utils/catchLinks.js";
 
@@ -132,10 +132,10 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
     }
   }
 
-  const $$pattern = new Writable<string | null>(null);
-  const $$path = new Writable("");
-  const $$params = new Writable<ParsedParams>({});
-  const $$query = new Writable<ParsedQuery>({});
+  const $$pattern = writable<string | null>(null);
+  const $$path = writable("");
+  const $$params = writable<ParsedParams>({});
+  const $$query = writable<ParsedQuery>({});
 
   // Track and skip updating the URL when the change came from URL navigation
   let isRouteChange = false;
@@ -188,17 +188,17 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
       lastQuery = location.search;
 
       isRouteChange = true;
-      $$query.value = parseQueryParams(location.search);
+      $$query.set(parseQueryParams(location.search));
     }
 
     const matched = matchRoutes(c.options.routes, location.pathname);
 
     if (!matched) {
-      $$pattern.value = null;
-      $$path.value = location.pathname;
-      $$params.value = {
+      $$pattern.set(null);
+      $$path.set(location.pathname);
+      $$params.set({
         wildcard: location.pathname,
-      };
+      });
       return;
     }
 
@@ -223,11 +223,11 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
         throw new TypeError(`Redirect must either be a path string or a function.`);
       }
     } else {
-      $$path.value = matched.path;
-      $$params.value = matched.params;
+      $$path.set(matched.path);
+      $$params.set(matched.params);
 
-      if (matched.pattern !== $$pattern.value) {
-        $$pattern.value = matched.pattern;
+      if (matched.pattern !== $$pattern.get()) {
+        $$pattern.set(matched.pattern);
 
         const layers = matched.meta.layers!;
 
@@ -292,17 +292,17 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
     /**
      * The currently matched route pattern, if any.
      */
-    $pattern: $$pattern.toReadable(),
+    $pattern: readable($$pattern),
 
     /**
      * The current URL path.
      */
-    $path: $$path.toReadable(),
+    $path: readable($$path),
 
     /**
      * The current named path params.
      */
-    $params: $$params.toReadable(),
+    $params: readable($$params),
 
     /**
      * The current query params. Changes to this object will be reflected in the URL.

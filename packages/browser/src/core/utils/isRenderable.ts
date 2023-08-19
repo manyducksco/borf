@@ -2,7 +2,7 @@ import type { Renderable } from "../types";
 
 import { isArrayOf } from "@borf/bedrock";
 import { isMarkup } from "../markup.js";
-import { Readable } from "../state.js";
+import { isReadable } from "../state.js";
 
 export function isRenderable(value: unknown): value is Renderable {
   return (
@@ -11,7 +11,7 @@ export function isRenderable(value: unknown): value is Renderable {
     typeof value === "string" ||
     typeof value === "number" ||
     isMarkup(value) ||
-    Readable.isReadable(value) ||
+    isReadable(value) ||
     isArrayOf(isRenderable, value)
   );
 }

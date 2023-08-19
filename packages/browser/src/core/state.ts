@@ -1,16 +1,11 @@
-import { produce } from "immer";
 import { deepEqual } from "./utils/deepEqual.js";
-
-export const READABLE = Symbol("Readable");
-export const WRITABLE = Symbol("Writable");
 
 // Symbol to mark an observed value as unobserved. Callbacks are always called once for unobserved values.
 const UNOBSERVED = Symbol("Unobserved");
 
-/**
- * Callback function to receive new values as they are written.
- */
-export type ObserveCallback<T> = (value: T) => void;
+/*==============================*\
+||             Types            ||
+\*==============================*/
 
 /**
  * Stops the observer that created it when called.
@@ -20,381 +15,273 @@ export type StopFunction = () => void;
 /**
  * Extracts value types from an array of Readables.
  */
-export type ValuesOfReadables<T extends Readable<any>[]> = {
+export type ReadableValues<T extends Readable<any>[]> = {
   [K in keyof T]: T[K] extends Readable<infer U> ? U : never;
 };
 
-/**
- * Read-only observable state container.
- *
- * Using the `$name` convention for instance names (one '$' to indicate readability) may help with code clarity.
- */
-export class Readable<T> {
-  [READABLE] = true;
+export type Unwrapped<T> = T extends Readable<infer U> ? U : T;
+
+export interface Readable<T> {
+  /**
+   * Returns the current value.
+   */
+  get(): T;
 
   /**
-   * Determines if an object is a Readable.
+   * Receives the latest value with `callback` whenever the value changes.
    */
-  static isReadable<T>(readable: any): readable is Readable<T> {
-    return readable != null && typeof readable === "object" && readable[READABLE] == true;
-  }
+  observe(callback: (currentValue: T) => void): StopFunction;
+}
+
+export interface Writable<T> extends Readable<T> {
+  /**
+   * Sets a new value.
+   */
+  set(value: T): void;
 
   /**
-   * Creates a new Readable that carries the value of `source`.
+   * Passes the current value to `callback` and takes `callback`'s return value as the new value.
    */
-  static from<T>(source: Writable<T> | Readable<T> | T): Readable<T> {
-    if (Writable.isWritable<T>(source)) {
-      return source.map((x) => x);
-    } else if (Readable.isReadable<T>(source)) {
-      return source;
-    } else {
-      return new Readable<T>(source);
-    }
-  }
+  update(callback: (currentValue: T) => T): void;
+}
 
-  /**
-   * Merges multiple Readables into one.
-   *
-   * @param readables - An array of Readables to merge.
-   * @param merge - A function that takes the values of the Readables in the order they were passed, and returns the value of the new Readable.
-   */
-  static merge<R extends Readable<any>[], T>(
-    readables: [...R],
-    merge: (...values: ValuesOfReadables<R>) => T
-  ): Readable<T> {
-    return new MergedReadable(readables, merge);
-  }
+/*==============================*\
+||           Utilities          ||
+\*==============================*/
 
-  /**
-   * If value is a Readable, returns that readable's value. Otherwise, returns that value as-is.
-   * Writables are also Readables, so this will unwrap Writables as well.
-   */
-  static unwrap<T>(valueOrReadable: T | Readable<T>): T {
-    if (Readable.isReadable<T>(valueOrReadable)) {
-      return valueOrReadable.value;
-    } else {
-      return valueOrReadable;
-    }
-  }
+export function isReadable<T>(value: any): value is Readable<T> {
+  return (
+    value != null && typeof value === "object" && typeof value.get === "function" && typeof value.observe === "function"
+  );
+}
 
-  #source?: Readable<T>; // If present, this Readable acts as a proxy. Mainly used to provide read-only access to a Writable value.
-  #observers: ObserveCallback<T>[] = [];
-  #value: T;
+export function isWritable<T>(value: any): value is Writable<T> {
+  return isReadable(value) && typeof (value as any).set === "function" && typeof (value as any).update === "function";
+}
 
-  /**
-   * Creates a Readable from a Writable. Equivalent to `$writable.toReadable()`.
-   */
-  constructor(writable: Writable<T>);
+/*==============================*\
+||          readable()          ||
+\*==============================*/
 
-  /**
-   * Creates a Readable from another Readable.
-   */
-  constructor(readable: Readable<T>);
+export function readable<T>(value: Writable<T>): Readable<Unwrapped<T>>;
+export function readable<T>(value: Readable<T>): Readable<Unwrapped<T>>;
+export function readable<T>(value: undefined): Readable<T | undefined>;
+export function readable<T>(value: T): Readable<Unwrapped<T>>;
 
-  /**
-   * Creates a Readable with a constant value.
-   */
-  constructor(initialValue: T);
-
-  constructor(init: Readable<T> | T) {
-    if (Readable.isReadable<T>(init)) {
-      this.#source = init;
-      this.#value = init.value;
-    } else {
-      this.#value = init;
-    }
-  }
-
-  /**
-   * The value currently stored in this Readable.
-   */
-  get value(): T {
-    if (this.#source) {
-      return this.#source.value;
-    }
-    return this.#value;
-  }
-
-  /**
-   * Takes a function and calls it with `value` whenever `value` changes.
-   * Returns a new Readable containing the latest return value of your transform function.
-   *
-   * Transform functions must not have side effects.
-   */
-  map<N>(transform: (value: T) => N): Readable<N> {
-    return new MappedReadable<T, N>(this.#source ?? this, transform);
-  }
-
-  /**
-   * Takes a function and passes `value` to it whenever `value` changes. Returns a function that stops the observer when called.
-   *
-   * Calling the stop function is important as you can cause memory leaks by adding observers without eventually removing them.
-   * Be mindful of this and consider using `ctx.observe($readable, callback)` in Views and Stores. That function
-   * will take care of cleaning up observers when the component is disconnected.
-   */
-  observe(callback: ObserveCallback<T>): StopFunction {
-    if (this.#source) {
-      return this.#source.observe(callback);
-    }
-
-    const observers = this.#observers;
-    callback(this.value); // Make initial call with current value.
-    observers.push(callback);
-
-    return function stop() {
-      // Remove callback from array so it isn't called again.
-      observers.splice(observers.indexOf(callback), 1);
+export function readable(value: unknown): Readable<any> {
+  // Return a proxy Readable with the value of this Writable.
+  if (isWritable(value)) {
+    return {
+      get: value.get,
+      observe: value.observe,
     };
   }
 
-  toString() {
-    return String(this.value);
+  // Return the same Readable.
+  if (isReadable(value)) {
+    return value;
   }
+
+  // Return a new Readable.
+  return {
+    get: () => value,
+    observe: (callback) => {
+      callback(value); // call with current value
+      return function stop() {}; // value can never change, so this function is not implemented
+    },
+  };
 }
 
-/**
- * Readable with a value derived by transforming the value of another Readable.
- */
-export class MappedReadable<F, T> extends Readable<T> {
-  [READABLE] = true;
+/*==============================*\
+||          writable()          ||
+\*==============================*/
 
-  #readable: Readable<F>;
-  #transform: (value: F) => T;
+export function writable<T>(value: Writable<T>): Writable<Unwrapped<T>>;
+export function writable<T>(value: Readable<T>): void; // TODO: How to throw a type error in TS before runtime?
+export function writable<T>(value: undefined): Writable<T | undefined>;
+export function writable<T>(value: T): Writable<Unwrapped<T>>;
 
-  constructor(readable: Readable<F>, transform: (value: F) => T) {
-    super(transform(readable.value));
-
-    this.#readable = readable;
-    this.#transform = transform;
+export function writable(value: unknown): Writable<any> {
+  // Return the same Writable.
+  if (isWritable(value)) {
+    return value;
   }
 
-  get value() {
-    return this.#transform(this.#readable.value);
+  // Throw error; can't add write access to a Readable.
+  if (isReadable(value)) {
+    throw new TypeError(`Failed to convert Readable into a Writable; can't add write access to a read-only value.`);
   }
 
-  map<N>(transform: (value: T) => N): Readable<N> {
-    return new MappedReadable<T, N>(this, transform);
-  }
+  const observers: ((currentValue: any) => void)[] = [];
 
-  observe(callback: ObserveCallback<T>): StopFunction {
-    let lastObserved: T = UNOBSERVED as T;
+  let currentValue = value;
 
-    return this.#readable.observe((value) => {
-      const observed = this.#transform(value);
+  // Return a new Writable.
+  return {
+    // ----- Readable ----- //
 
-      if (!deepEqual(observed, lastObserved)) {
-        lastObserved = observed;
-        callback(observed);
+    get: () => currentValue,
+    observe: (callback) => {
+      observers.push(callback); // add observer
+
+      callback(currentValue); // call with current value
+
+      // return function to remove observer
+      return function stop() {
+        observers.splice(observers.indexOf(callback), 1);
+      };
+    },
+
+    // ----- Writable ----- //
+
+    set: (newValue) => {
+      if (!deepEqual(currentValue, newValue)) {
+        currentValue = newValue;
+        for (const callback of observers) {
+          callback(currentValue);
+        }
       }
-    });
-  }
+    },
+    update: (callback) => {
+      const newValue = callback(currentValue);
+      if (!deepEqual(currentValue, newValue)) {
+        currentValue = newValue;
+        for (const callback of observers) {
+          callback(currentValue);
+        }
+      }
+    },
+  };
 }
 
-/**
- * Readable with a value derived from several other Readables.
- */
-class MergedReadable<Rs extends Readable<any>[], T> extends Readable<T> {
-  [READABLE] = true;
+/*==============================*\
+||          computed()          ||
+\*==============================*/
 
-  #readables: Rs;
-  #readableValues: any[] = [];
-  #mergedValue?: T;
+export function computed<I, O>(readable: Readable<I>, compute: (currentValue: I) => O): Readable<O>;
 
-  #merge: (...values: ValuesOfReadables<Rs>) => T;
+export function computed<I extends Readable<any>[], O>(
+  readables: [...I],
+  compute: (...currentValues: ReadableValues<I>) => O
+): Readable<O>;
 
-  // Callback functions awaiting the latest `value`.
-  #observers: ObserveCallback<T>[] = [];
+export function computed(...args: any): Readable<any> {
+  if (isReadable(args[0]) && typeof args[1] === "function") {
+    const readable = args[0];
+    const compute = args[1];
 
-  // True when actively observing changes to #readables.
-  #isObserving = false;
+    return {
+      get: () => compute(readable.get()),
+      observe: (callback) => {
+        let lastValue: any = UNOBSERVED;
 
-  // Stop functions from #readables observers.
-  #stopCallbacks: StopFunction[] = [];
+        return readable.observe((currentValue) => {
+          const computedValue = compute(currentValue);
 
-  constructor(readables: [...Rs], merge: (...values: ValuesOfReadables<Rs>) => T) {
-    super(undefined as any);
-
-    this.#readables = readables;
-    this.#merge = merge;
-  }
-
-  get value() {
-    if (this.#isObserving) {
-      return this.#mergedValue!;
-    } else {
-      return this.#merge(...(this.#readables.map((s) => s.value) as ValuesOfReadables<Rs>));
-    }
-  }
-
-  map<R>(transform: (value: T) => R): Readable<R> {
-    return new MappedReadable<T, R>(this, transform);
-  }
-
-  observe(callback: ObserveCallback<T>): StopFunction {
-    const self = this;
-
-    self.#observers.push(callback);
-
-    if (self.#isObserving) {
-      callback(this.#mergedValue!);
-    } else {
-      self.#startObservingSources();
-    }
-
-    return function stop() {
-      self.#observers.splice(self.#observers.indexOf(callback), 1);
-
-      if (self.#observers.length === 0) {
-        self.#stopObservingSources();
-      }
+          if (!deepEqual(computedValue, lastValue)) {
+            lastValue = computedValue;
+            callback(computedValue);
+          }
+        });
+      },
     };
-  }
+  } else if (Array.isArray(args[0]) && typeof args[1] === "function") {
+    const readables = args[0];
+    const compute = args[1];
 
-  /**
-   * Calculates a new `#currentValue` and notifies observers if different.
-   *
-   * @param force - Notify observers even if the new value is deepEqual to the previous value.
-   */
-  #updateValue(force = false) {
-    const value = this.#merge(...(this.#readableValues as ValuesOfReadables<Rs>));
+    const observers: ((currentValues: any) => void)[] = [];
 
-    // Skip equality check on initial subscription to guarantee
-    // that observers receive an initial value, even if undefined.
-    if (force || !deepEqual(value, this.#mergedValue)) {
-      this.#mergedValue = value;
+    let stopCallbacks: StopFunction[] = [];
+    let isObserving = false;
+    let observedValues: any[] = [];
+    let computedValue: any = UNOBSERVED;
 
-      for (const callback of this.#observers) {
-        callback(this.#mergedValue);
+    function updateValue() {
+      const value = compute(...observedValues);
+
+      // Skip equality check on initial subscription to guarantee
+      // that observers receive an initial value, even if undefined.
+      if (!deepEqual(value, computedValue)) {
+        computedValue = value;
+
+        for (const callback of observers) {
+          callback(computedValue);
+        }
       }
     }
-  }
 
-  /**
-   * Start observing `#readables` and merging new values.
-   */
-  #startObservingSources() {
-    if (!this.#isObserving) {
-      for (let i = 0; i < this.#readables.length; i++) {
-        const source = this.#readables[i];
+    function startObserving() {
+      if (isObserving) return;
 
-        this.#stopCallbacks.push(
-          source.observe((value) => {
-            this.#readableValues[i] = value;
+      for (let i = 0; i < readables.length; i++) {
+        const readable = readables[i];
 
-            if (this.#isObserving) {
-              this.#updateValue();
+        stopCallbacks.push(
+          readable.observe((value: any) => {
+            observedValues[i] = value;
+
+            if (isObserving) {
+              updateValue();
             }
           })
         );
       }
 
-      this.#isObserving = true;
-      this.#updateValue(true);
+      isObserving = true;
+      observedValues = readables.map((x) => x.get());
+      updateValue();
     }
-  }
 
-  /**
-   * Stop observing #readables.
-   */
-  #stopObservingSources() {
-    this.#isObserving = false;
+    function stopObserving() {
+      isObserving = false;
 
-    for (const stop of this.#stopCallbacks) {
-      stop();
+      for (const callback of stopCallbacks) {
+        callback();
+      }
+      stopCallbacks = [];
     }
-    this.#stopCallbacks = [];
+
+    return {
+      get: () => {
+        if (isObserving) {
+          return computedValue;
+        } else {
+          return compute(...readables.map((x) => x.get()));
+        }
+      },
+      observe: (callback) => {
+        observers.push(callback);
+
+        if (isObserving) {
+          callback(computedValue);
+        } else {
+          startObserving();
+        }
+
+        return function stop() {
+          observers.splice(observers.indexOf(callback), 1);
+
+          if (observers.length === 0) {
+            stopObserving();
+          }
+        };
+      },
+    };
+  } else {
+    throw new TypeError(`Called with incorrect arguments.`);
   }
 }
 
-/**
- * Read-write observable state container.
- *
- * Using the `$$name` convention for instance names (two '$' to indicate both readability + writability) may help with code clarity.
- */
-export class Writable<T> extends Readable<T> {
-  [READABLE] = true;
-  [WRITABLE] = true;
+/*==============================*\
+||           unwrap()           ||
+\*==============================*/
 
-  static isWritable<T>(writable: any): writable is Writable<T> {
-    return writable != null && typeof writable === "object" && writable[WRITABLE] === true;
+export function unwrap<T>(value: Readable<T> | T): T;
+
+export function unwrap(value: any) {
+  if (isReadable(value)) {
+    return value.get();
   }
 
-  /**
-   * Creates a new Writable that carries the value of `source`.
-   */
-  static from<T>(source: Writable<T> | Readable<T> | T): Writable<T> {
-    if (Writable.isWritable<T>(source)) {
-      return source;
-    } else if (Readable.isReadable<T>(source)) {
-      throw new Error(`Can't convert Readable into a Writable.`);
-    } else {
-      return new Writable<T>(source);
-    }
-  }
-
-  #value: T;
-  #observers: ObserveCallback<T>[] = [];
-
-  #notifyObservers() {
-    for (const callback of this.#observers) {
-      callback(this.#value);
-    }
-  }
-
-  constructor(initialValue: T) {
-    super(initialValue);
-
-    this.#value = initialValue;
-  }
-
-  /**
-   * Value currently stored in this Writable. Setting it will notify all observers of the new value.
-   */
-  get value() {
-    return this.#value;
-  }
-
-  set value(newValue) {
-    if (!deepEqual(this.#value, newValue)) {
-      this.#value = newValue;
-      this.#notifyObservers();
-    }
-  }
-
-  map<N>(transform: (value: T) => N): Readable<N> {
-    return new MappedReadable<T, N>(this, transform);
-  }
-
-  observe(callback: ObserveCallback<T>): StopFunction {
-    const observers = this.#observers;
-
-    callback(this.value);
-    observers.push(callback);
-
-    return function stop() {
-      observers.splice(observers.indexOf(callback), 1);
-    };
-  }
-
-  /**
-   * Takes a `callback` function that receives the current value and returns a new value.
-   */
-  update(callback: (value: T) => T): void;
-
-  /**
-   * Takes a `callback` function that receives the current value and modifies it.
-   */
-  update(callback: (value: T) => void): void;
-
-  update(callback: (value: T) => T | void) {
-    // Use immer to derive a new state
-    this.value = produce(this.#value, callback);
-  }
-
-  /**
-   * Returns a read-only version of this Writable.
-   */
-  toReadable() {
-    return new Readable(this);
-  }
+  return value;
 }

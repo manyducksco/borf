@@ -1,5 +1,5 @@
 // This import makes sense when built
-import { makeMarkup, Fragment } from "../index.js";
+import { m, Fragment } from "../index.js";
 
 export { Fragment };
 
@@ -7,14 +7,14 @@ export { Fragment };
  * JSX function for elements with dynamic children.
  */
 export function jsx(element, props, key) {
-  return makeMarkup(element, props ? { ...omit(["children", "key"], props) } : undefined, ...[props.children]);
+  return m(element, props ? { ...omit(["children", "key"], props) } : undefined, ...[props.children]);
 }
 
 /**
  * JSX function for elements with static children.
  */
 export function jsxs(element, props, key) {
-  return makeMarkup(element, props ? { ...omit(["children", "key"], props) } : undefined, props.children);
+  return m(element, props ? { ...omit(["children", "key"], props) } : undefined, props.children);
 }
 
 function omit(keys, object) {

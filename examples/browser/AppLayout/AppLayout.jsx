@@ -1,25 +1,26 @@
+import { computed } from "@borf/browser";
 import { MouseStore } from "../stores/MouseStore";
 import styles from "./AppLayout.module.css";
 
-export async function AppLayout(_, ctx) {
-  ctx.name = "🐕";
-  ctx.loader = <h1>This app is loading!</h1>;
-  ctx.log("hi");
+export async function AppLayout(_, c) {
+  c.name = "🐕";
+  c.loader = <h1>This app is loading!</h1>;
+  c.log("hi");
 
-  const { $$title, $visibility } = ctx.use("document");
-  const { $position } = ctx.use(MouseStore);
+  const { $$title, $visibility } = c.use("document");
+  const { $position } = c.use(MouseStore);
 
   // Should throw an error that results in crash page being shown.
   // const crap = useStore("not-exist");
   // console.log(crap);
 
   // Display current mouse coordinates as tab title
-  ctx.observe($position, (pos) => {
+  c.observe($position, (pos) => {
     $$title.value = `x:${Math.round(pos.x)} y:${Math.round(pos.y)}`;
   });
 
-  ctx.observe($visibility, (status) => {
-    ctx.log(`visibility: ${status}`);
+  c.observe($visibility, (status) => {
+    c.log(`visibility: ${status}`);
   });
 
   const markup = (
@@ -60,6 +61,9 @@ export async function AppLayout(_, ctx) {
                 path="/examples/passing-attributes"
                 name="Passing Attributes"
               />
+            </li>
+            <li>
+              <NavLink path="/examples/raw-elements" name="Raw Elements" />
             </li>
             <li>
               <NavLink path="/examples/http-requests" name="HTTP Requests" />
@@ -122,19 +126,19 @@ export async function AppLayout(_, ctx) {
         </section>
       </nav>
 
-      {ctx.outlet()}
+      {c.outlet()}
     </div>
   );
 
-  ctx.log(markup);
+  c.log(markup);
 
   return markup;
 }
 
-function NavLink({ path, name }, ctx) {
-  const { $path } = ctx.use("router");
+function NavLink({ path, name }, c) {
+  const { $path } = c.use("router");
 
-  const $active = $path.map((routerPath) => {
+  const $active = computed($path, (routerPath) => {
     return routerPath.startsWith(path);
   });
 

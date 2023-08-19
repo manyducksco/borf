@@ -1,5 +1,5 @@
 import { type AppContext, type ElementContext } from "./App.js";
-import { Readable, Writable, type StopFunction } from "./state.js";
+import { readable, writable, type Readable, type Writable, type StopFunction } from "./state.js";
 import { makeView, type ViewContext } from "./view.js";
 import { type DOMHandle, type Markup } from "./markup.js";
 
@@ -120,12 +120,12 @@ export class Repeat<T> implements DOMHandle {
       const connected = this.connectedItems.find((item) => item.key === potential.key);
 
       if (connected) {
-        connected.$$value.value = potential.value;
-        connected.$$index.value = potential.index;
+        connected.$$value.set(potential.value);
+        connected.$$index.set(potential.index);
         newItems[potential.index] = connected;
       } else {
-        const $$value = new Writable(potential.value);
-        const $$index = new Writable(potential.index);
+        const $$value = writable(potential.value) as Writable<T>;
+        const $$index = writable(potential.index);
 
         newItems[potential.index] = {
           key: potential.key,
@@ -135,7 +135,7 @@ export class Repeat<T> implements DOMHandle {
             view: RepeatItemView,
             appContext: this.appContext,
             elementContext: this.elementContext,
-            attributes: { $value: $$value.toReadable(), $index: $$index.toReadable(), renderFn: this.renderFn },
+            attributes: { $value: readable($$value), $index: readable($$index), renderFn: this.renderFn },
           }),
         };
       }

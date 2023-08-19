@@ -3,7 +3,7 @@
 ### Builder Config
 
 ```js
-import { Builder } from "@borf/build";
+import {Builder} from "@borf/build";
 
 export default Builder.define({
   client: {
@@ -31,11 +31,13 @@ An app is data hydraulics, where the state is hydraulic fluid getting pushed aro
 
 ### API rework
 
-Why? You end up typing these function names a lot. Your code is easier to read and write if they are shorter because there is less information to process. More attention goes toward deciphering the meaning of the code than goes toward reading the labels the framework makes you use to access things.
+Why? You end up typing these function names a lot. Your code is easier to read and write if they are shorter because
+there is less information to process. More attention goes toward deciphering the meaning of the code than goes toward
+reading the labels the framework makes you use to access things.
 
 ```js
-import { App, html } from "https://unpkg.com/@borf/browser";
-import { ExampleStore } from "./stores/ExampleStore.js";
+import {App, html} from "https://unpkg.com/@borf/browser";
+import {ExampleStore} from "./stores/ExampleStore.js";
 
 const app = new App();
 
@@ -56,7 +58,8 @@ app.main(function Main(_, ctx) {
 });
 
 // app.addRoute -> app.route
-app.route("/example", (attrs, ctx) => {});
+app.route("/example", (attrs, ctx) => {
+});
 
 // app.addRedirect -> app.redirect
 app.redirect("*", "/example");
@@ -95,7 +98,7 @@ app.connect("#app");
 ### State Machines
 
 ```js
-const machine = new Machine(({ state, transition }) => {
+const machine = new Machine(({state, transition}) => {
   state("off", transition("toggle", "on"));
   state("on", transition("toggle", "off"));
 });
@@ -109,4 +112,81 @@ machine.value; // "off"
 ctx.observe(machine, (state) => {
   ctx.log("state changed", state);
 });
+```
+
+### Standalone functions API
+
+What if the API was structured as standalone functions rather than classes?
+
+```jsx
+import {
+  App,
+  writable,
+  readable,
+  computed,
+  repeat,
+  cond,
+  isReadable,
+  isWritable,
+} from "@borf/browser";
+
+// Readable and Writable are rewritten as functions
+const $$count = writable(5);
+const $factor = readable(2);
+
+// Ref is a plain function
+const someRef = ref();
+
+// readable/writable take readables and writables as well (replaces Readable.from and Writable.from)
+const $count = readable($$count);
+const $factor2 = readable($factor); // returns the same instance of $factor
+const $$factor2 = writable($factor); // throws an error; cannot convert readable to a writable
+
+// Unwraps a possibly readable value (replaces Readable.unwrap)
+const count = unwrap($$count);
+
+// `computed` replaces .map() and Readable.merge()
+const $multiplied = computed([$$count, $factor], (c, f) => c * f);
+
+// Go back to .get() and .set() instead of .value getter/setter
+$$count.get()
+$$count.set(12)
+
+// Remove immer from .update() to drop some weight
+$$count.update((current) => current + 1);
+
+// (but you can still import and use it)
+$$complex.update(produce(state => {
+  state.value1 = 2;
+  state.value2 = 3;
+}))
+
+// Keep observe unchanged
+const stop = $$count.observe(value => {
+  // side effects
+});
+
+<div>
+  // Current observe() helper replaced by a readable with a renderable in it
+  {computed([$$something, $somethingElse], (value1, value2) => {
+    return <h1>{value1} <span>{value2}</span></h1>
+  })}
+
+  {repeat($value, x => x.id, ($item, $index, c) => {
+    return <li>{$item}</li>
+  })}
+</div>
+
+// Go back to exporting m() function for markup out of the box
+m("div", [
+  computed([$$something, $somethingElse], (value1, value2) => {
+    return m("h1", value1, m("span", value2));
+  }),
+
+  repeat($value, x => x.id, ($item, $index, c) => {
+    return m("li", $item);
+  }),
+
+  cond($condition, m("div", "truthy"), m("div", "falsy")),
+]);
 ```

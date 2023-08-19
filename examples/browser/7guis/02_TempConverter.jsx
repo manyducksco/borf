@@ -1,10 +1,10 @@
-import { Writable } from "@borf/browser";
+import { readable, writable, computed } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function (_, ctx) {
-  ctx.name = "7GUIs:TempConverter";
+export default function (_, c) {
+  c.name = "7GUIs:TempConverter";
 
-  const $$celsius = new Writable(10);
+  const $$celsius = writable(10);
 
   const setCelsius = (c) => {
     $$celsius.set(c);
@@ -14,8 +14,8 @@ export default function (_, ctx) {
     $$celsius.set((f - 32) * (5 / 9));
   };
 
-  const $celsius = $$celsius.toReadable();
-  const $fahrenheit = $celsius.map((c) => c * (9 / 5) + 32);
+  const $celsius = readable($$celsius);
+  const $fahrenheit = computed($celsius, (c) => c * (9 / 5) + 32);
 
   return (
     <ExampleFrame title="2. Temperature Converter">

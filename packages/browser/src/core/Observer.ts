@@ -115,5 +115,12 @@ export class Observer implements DOMHandle {
 
       this.connectedViews.push(handle);
     }
+
+    if (this.appContext.mode === "development") {
+      const lastNode = this.connectedViews.at(-1)?.node;
+      if (this.endNode.previousSibling !== lastNode) {
+        this.node.parentNode!.insertBefore(this.endNode, lastNode?.nextSibling ?? null);
+      }
+    }
   }
 }

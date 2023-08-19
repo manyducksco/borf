@@ -1,4 +1,4 @@
-import { Writable, Readable, repeat } from "@borf/browser";
+import { writable, readable, computed, repeat } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 const flightTypes = ["one-way flight", "return flight"];
@@ -27,17 +27,17 @@ function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
-export default function (_, ctx) {
-  ctx.name = "7GUIs:FlightBooker";
+export default function (_, c) {
+  c.name = "7GUIs:FlightBooker";
 
-  const $$flightType = new Writable(flightTypes[0]);
-  const $$startDate = new Writable(formatDate(new Date()));
-  const $$returnDate = new Writable(formatDate(new Date()));
-  const $$startDateIsValid = new Writable(true);
-  const $$returnDateIsValid = new Writable(true);
+  const $$flightType = writable(flightTypes[0]);
+  const $$startDate = writable(formatDate(new Date()));
+  const $$returnDate = writable(formatDate(new Date()));
+  const $$startDateIsValid = writable(true);
+  const $$returnDateIsValid = writable(true);
 
   // Concatenate date states and convert through a function into a new state.
-  const $formIsValid = Readable.merge(
+  const $formIsValid = computed(
     [$$startDateIsValid, $$returnDateIsValid],
     (x, y) => x && y
   );
@@ -60,7 +60,7 @@ export default function (_, ctx) {
               flightTypes,
               (t) => t,
               ($type) => {
-                const $selected = Readable.merge(
+                const $selected = computed(
                   [$type, $$flightType],
                   (x, y) => x === y
                 );
@@ -80,7 +80,7 @@ export default function (_, ctx) {
             value={$$startDate}
             pattern={"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$"}
             oninput={(e) => {
-              $$startDateIsValid.value = !e.target.validity.patternMismatch;
+              $$startDateIsValid.set(!e.target.validity.patternMismatch);
             }}
           />
         </div>
@@ -88,16 +88,16 @@ export default function (_, ctx) {
         <div>
           <input
             value={$$returnDate}
-            disabled={$$flightType.map((t) => t === "one-way flight")}
+            disabled={computed($$flightType, (t) => t === "one-way flight")}
             pattern={/^\d{2}\.\d{2}\.\d{4}$/}
             oninput={(e) => {
-              $$returnDateIsValid.value = !e.target.validity.patternMismatch;
+              $$returnDateIsValid.set(!e.target.validity.patternMismatch);
             }}
           />
         </div>
 
         <div>
-          <button disabled={$formIsValid.map((x) => !x)}>Book</button>
+          <button disabled={computed($formIsValid, (x) => !x)}>Book</button>
         </div>
       </form>
     </ExampleFrame>

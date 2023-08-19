@@ -1,8 +1,8 @@
-import { cond, Writable } from "@borf/browser";
+import { cond, writable } from "@borf/browser";
 import { ExampleFrame } from "./ExampleFrame";
 
 export function RenderOrderTest(_, ctx) {
-  const $$isTrue = new Writable(true);
+  const $$isTrue = writable(true);
 
   let interval;
 

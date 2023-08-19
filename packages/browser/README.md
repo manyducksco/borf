@@ -3,24 +3,29 @@
 ![bundle size](https://img.shields.io/bundlephobia/min/@borf/browser)
 ![bundle size](https://img.shields.io/bundlephobia/minzip/@borf/browser)
 
-This is the front-end portion of [Borf](https://www.borfjs.com). It handles things like components, [routing](#routing), data binding, logging, and crash handling, all out-of-the-box, aiming to cover the common needs of modern web apps while striking a balance between features and size.
+This is the front-end portion of [Borf](https://www.borfjs.com). It handles things like components, [routing](#routing),
+data binding, logging, and crash handling, all out-of-the-box, aiming to cover the common needs of modern web apps while
+striking a balance between features and size.
 
 ## About this README
 
-This README is written for web developers and hobbyists with a solid understanding of web browser technologies such as HTML, JavaScript, and the DOM. Related terms are used with little or no explanation. It may be helpful (but not required) to have experience building apps with another framework like React, Angular, or Vue.
+This README is written for web developers and hobbyists with a solid understanding of web browser technologies such as
+HTML, JavaScript, and the DOM. Related terms are used with little or no explanation. It may be helpful (but not
+required) to have experience building apps with another framework like React, Angular, or Vue.
 
 Code examples are written using [JSX](https://react.dev/learn/writing-markup-with-jsx) syntax.
 
 ## Examples
 
-The best way to understand a library is to see it in action. The following examples show what `borf` can do. After the examples, we'll dig into the concepts in more depth.
+The best way to understand a library is to see it in action. The following examples show what `borf` can do. After the
+examples, we'll dig into the concepts in more depth.
 
 ### Example: Hello World
 
 The simplest possible app. Displays an `<h1>` inside the element with id `app`.
 
 ```js
-import { App } from "borf";
+import {App} from "borf";
 
 const app = new App();
 
@@ -33,12 +38,13 @@ app.connect("#app");
 
 ### Example: Greeter
 
-A modified Hello World in which the user can change the name through a text input. Demonstrates the use of Writable for dynamic state.
+A modified Hello World in which the user can change the name through a text input. Demonstrates the use of Writable for
+dynamic state.
 
 Any HTML attribute can take a Writable or Readable as a value and will update automatically when its value changes.
 
 ```js
-import { App, Writable } from "borf";
+import {App, Writable} from "borf";
 
 const app = new App();
 
@@ -63,10 +69,11 @@ app.connect("#app");
 
 ### Example: Counter with Store
 
-A counter that stores a number that can be incremented or decremented using buttons. This example uses a store to keep that state in one place while it is accessed from multiple views.
+A counter that stores a number that can be incremented or decremented using buttons. This example uses a store to keep
+that state in one place while it is accessed from multiple views.
 
 ```js
-import { App, Writable } from "borf";
+import {App, Writable} from "borf";
 
 const app = new App();
 
@@ -89,8 +96,8 @@ app.store(CounterStore);
 function Layout() {
   return (
     <div>
-      <CounterDisplay />
-      <CounterControls />
+      <CounterDisplay/>
+      <CounterControls/>
     </div>
   );
 }
@@ -154,7 +161,8 @@ app.connect("#app");
 
 #### Markup
 
-Views return `Markup` objects, which represent a tree of DOM elements. `Markup` objects are typically created by writing JSX.
+Views return `Markup` objects, which represent a tree of DOM elements. `Markup` objects are typically created by writing
+JSX.
 
 ```js
 function ExampleView() {
@@ -170,7 +178,7 @@ function ExampleView() {
 `Markup` objects can also be created with the `makeMarkup` function.
 
 ```js
-import { makeMarkup } from "borf";
+import {makeMarkup} from "borf";
 
 function ExampleView() {
   // Arguments are (tag, props, ...children)
@@ -183,11 +191,12 @@ function ExampleView() {
 }
 ```
 
-That doesn't look great. If you'd like to use `borf` in an environment that doesn't support JSX, like in a browser without running a build step, you can use the [`htm`](https://github.com/developit/htm) library.
+That doesn't look great. If you'd like to use `borf` in an environment that doesn't support JSX, like in a browser
+without running a build step, you can use the [`htm`](https://github.com/developit/htm) library.
 
 ```js
 import htm from "htm";
-import { makeMarkup } from "borf";
+import {makeMarkup} from "borf";
 
 const html = htm.bind(makeMarkup);
 
@@ -205,7 +214,8 @@ function ExampleView() {
 
 #### Displaying Children
 
-Views don't have direct access to their children. Instead, the context object (passed as the second argument to a view function) has an `outlet` method that can be used to display children at a location of your choosing.
+Views don't have direct access to their children. Instead, the context object (passed as the second argument to a view
+function) has an `outlet` method that can be used to display children at a location of your choosing.
 
 ```js
 function ContentBox(props, c) {
@@ -234,6 +244,7 @@ function ExampleView() {
 The output of `ExampleView`:
 
 ```html
+
 <div style="padding: 1rem; border: 1px dashed orange">
   <h1>Hello</h1>
   <p>This is inside the box.</p>
@@ -242,10 +253,11 @@ The output of `ExampleView`:
 
 ### Stores
 
-Stores return a plain JavaScript object, a single instance of which is shared via the `use` method in view and store contexts. Stores are helpful for keeping persistent state at a specific place in the app for access in many places.
+Stores return a plain JavaScript object, a single instance of which is shared via the `use` method in view and store
+contexts. Stores are helpful for keeping persistent state at a specific place in the app for access in many places.
 
 ```js
-import { App } from "borf";
+import {App} from "borf";
 
 const app = new App();
 
@@ -271,11 +283,11 @@ function LayoutView() {
   return (
     <div>
       <h1>Title</h1>
-      <MessageView />
-      <MessageView />
-      <MessageView />
-      <MessageView />
-      <MessageView />
+      <MessageView/>
+      <MessageView/>
+      <MessageView/>
+      <MessageView/>
+      <MessageView/>
     </div>
   );
 }
@@ -288,6 +300,7 @@ app.connect("#app");
 The output:
 
 ```html
+
 <div id="app">
   <div>
     <h1>Title</h1>
@@ -302,18 +315,23 @@ The output:
 
 ### Dynamic State: Readables and Writables
 
-Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a state change. All data that needs to change is stored in a Readable or a Writable. By storing values in these containers, and slotting these containers into your DOM nodes, only those elements which are directly affected by that change update when changes occur.
+Borf has no virtual DOM or re-rendering. Components are set up once, and everything beyond that is a side effect of a
+state change. All data that needs to change is stored in a Readable or a Writable. By storing values in these
+containers, and slotting these containers into your DOM nodes, only those elements which are directly affected by that
+change update when changes occur.
 
-> Borf's convention is dollar signs at the start of variable names to mark them as dynamic. A `$single` means Readable and a `$$double` means Writable. Another way to think of this is that `$` represents how many 'ways' the binding goes; one-way (`$` = read only) or two-way (`$$` = read-write).
+> Borf's convention is dollar signs at the start of variable names to mark them as dynamic. A `$single` means Readable
+> and a `$$double` means Writable. Another way to think of this is that `$` represents how many 'ways' the binding goes;
+> one-way (`$` = read only) or two-way (`$$` = read-write).
 
 ```jsx
-import { Writable } from "borf";
+import {Writable} from "borf";
 
 function LayoutView(props, c) {
   return (
     <div class="layout">
       <CounterStore>
-        <CounterView />
+        <CounterView/>
       </CounterStore>
     </div>
   );
@@ -356,12 +374,13 @@ function CounterView(props, c) {
 }
 ```
 
-Any HTML attribute can take a Readable. The `<input>` element even has a special behavior with Writables; the input value is automatically two-way bound if you pass a Writable as the `value` attribute.
+Any HTML attribute can take a Readable. The `<input>` element even has a special behavior with Writables; the input
+value is automatically two-way bound if you pass a Writable as the `value` attribute.
 
 In the following example, typing in the input box immediately updates the text in the `<p>` tag above it.
 
 ```js
-import { Writable } from "@borf/browser";
+import {Writable} from "@borf/browser";
 
 function ExampleView(props, c) {
   const $$value = new Writable("Your Name");
@@ -372,7 +391,7 @@ function ExampleView(props, c) {
 
       <div>
         <label for="name-input">Your Name Here</label>
-        <input id="name-input" value={$$value} />
+        <input id="name-input" value={$$value}/>
       </div>
     </div>
   );
@@ -381,7 +400,9 @@ function ExampleView(props, c) {
 
 #### Mapped Readables
 
-One of Borf's most important features is the ability to `.map` existing values to create a new ones. By mapping, you can extrude your core data into whatever shape you need for views. Only the core data remains writable, and everything else stays in sync.
+One of Borf's most important features is the ability to `.map` existing values to create a new ones. By mapping, you can
+extrude your core data into whatever shape you need for views. Only the core data remains writable, and everything else
+stays in sync.
 
 ```js
 const $$number = new Writable(152);
@@ -399,12 +420,15 @@ console.log($quadrupled.value); // 1000
 
 ### Dynamic Views
 
-We have established that views are only called once. We have established that dynamic values are stored in Readables and Writables so they can change after that initial setup. Naturally, any changes to what a view displays after setup also has to be the result of data stored in a Readable or Writable.
+We have established that views are only called once. We have established that dynamic values are stored in Readables and
+Writables so they can change after that initial setup. Naturally, any changes to what a view displays after setup also
+has to be the result of data stored in a Readable or Writable.
 
-The `@borf/browser` package has a set of four functions that handle conditionals, loops and more off-the-wall rendering needs based on the values of a Readable or Writable.
+The `@borf/browser` package has a set of four functions that handle conditionals, loops and more off-the-wall rendering
+needs based on the values of a Readable or Writable.
 
 ```jsx
-import { Writable, when, unless, repeat, observe } from "@borf/browser";
+import {Writable, when, unless, repeat, observe} from "@borf/browser";
 
 function PizzaBuilderView(props, c) {
   const $$toppings = new Writable(["Pineapple", "Jalapeño", "Sausage"]);
@@ -446,7 +470,8 @@ function PizzaBuilderView(props, c) {
 
               return (
                 <li>
-                  #{$index}: {$topping} <button onclick={removeTopping}>Remove</button>
+                  #{$index}: {$topping}
+                  <button onclick={removeTopping}>Remove</button>
                 </li>
               );
             }
@@ -462,7 +487,7 @@ function PizzaBuilderView(props, c) {
               addTopping();
             }}
           >
-            <input value={$$tempTopping} />
+            <input value={$$tempTopping}/>
           </form>,
 
           <button
@@ -492,29 +517,39 @@ function PizzaBuilderView(props, c) {
 > ...
 
 ```js
-import { App } from "@borf/browser";
+import {App} from "@borf/browser";
 ```
 
 #### Routing
 
-`@borf/browser` makes heavy use of client-side routing. You can define as many routes as you have views, and the URL will determine which one the app shows at any given time. By building an app around routes, lots of things one expects from a web app will just work; back and forward buttons, sharable URLs, bookmarks, etc.
+`@borf/browser` makes heavy use of client-side routing. You can define as many routes as you have views, and the URL
+will determine which one the app shows at any given time. By building an app around routes, lots of things one expects
+from a web app will just work; back and forward buttons, sharable URLs, bookmarks, etc.
 
 Routing in Borf is aesthetically inspired by [choo.js](https://www.choo.io/docs/routing)
-with technical inspiration from [@reach/router](https://reach.tech/router/), as routes are matched by highest specificity regardless of the order they were registered. This avoids some confusing situations that come up with order-based routers like that of `express`. On the other hand, order-based routers can support regular expressions as patterns which Borf's router cannot.
+with technical inspiration from [@reach/router](https://reach.tech/router/), as routes are matched by highest
+specificity regardless of the order they were registered. This avoids some confusing situations that come up with
+order-based routers like that of `express`. On the other hand, order-based routers can support regular expressions as
+patterns which Borf's router cannot.
 
 #### Route Patterns
 
-Routes are defined with strings called patterns. A pattern defines the shape the URL path must match, with special placeholders for variables that appear within the route. Values matched by those placeholders are parsed out and exposed to your code (`router` store, `$params` readable). Below are some examples of patterns and how they work.
+Routes are defined with strings called patterns. A pattern defines the shape the URL path must match, with special
+placeholders for variables that appear within the route. Values matched by those placeholders are parsed out and exposed
+to your code (`router` store, `$params` readable). Below are some examples of patterns and how they work.
 
 - Static: `/this/is/static` has no params and will match only when the route is exactly `/this/is/static`.
-- Numeric params: `/users/{#id}/edit` has the named param `{#id}` which matches numbers only, such as `123` or `52`. The resulting value will be parsed as a number.
-- Generic params: `/users/{name}` has the named param `{name}` which matches anything in that position in the path. The resulting value will be a string.
-- Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that in params as `wildcard`. `*` is valid only at the end of a route.
+- Numeric params: `/users/{#id}/edit` has the named param `{#id}` which matches numbers only, such as `123` or `52`. The
+  resulting value will be parsed as a number.
+- Generic params: `/users/{name}` has the named param `{name}` which matches anything in that position in the path. The
+  resulting value will be a string.
+- Wildcard: `/users/*` will match anything beginning with `/users` and store everything after that in params
+  as `wildcard`. `*` is valid only at the end of a route.
 
 Now, here are some route examples in the context of an app:
 
 ```js
-import { PersonDetails, ThingIndex, ThingDetails, ThingEdit, ThingDelete } from "./components.js";
+import {PersonDetails, ThingIndex, ThingDetails, ThingEdit, ThingDelete} from "./components.js";
 
 const app = new App();
 
@@ -531,7 +566,9 @@ app
   });
 ```
 
-As you may have inferred from the code above, when the URL matches a pattern the corresponding view is displayed. If we visit `/people/john`, we will see the `PersonDetails` view and the params will be `{ name: "john" }`. Params can be accessed inside those views through the built-in `router` store.
+As you may have inferred from the code above, when the URL matches a pattern the corresponding view is displayed. If we
+visit `/people/john`, we will see the `PersonDetails` view and the params will be `{ name: "john" }`. Params can be
+accessed inside those views through the built-in `router` store.
 
 ```js
 function PersonDetails(_, ctx) {
@@ -539,10 +576,10 @@ function PersonDetails(_, ctx) {
   const router = ctx.getStore("router");
 
   // Info about the current route is exported as a set of Readables. Query params are also Writable through $$query:
-  const { $path, $pattern, $params, $$query } = router;
+  const {$path, $pattern, $params, $$query} = router;
 
   // Functions are exported for navigation:
-  const { back, forward, navigate } = router;
+  const {back, forward, navigate} = router;
 
   back(); // Step back in the history to the previous route, if any.
   back(2); // Hit the back button twice.
@@ -554,9 +591,9 @@ function PersonDetails(_, ctx) {
   navigate("https://www.example.com/another/site"); // Navigate to another domain entirely.
 
   // Three ways to confirm with the user that they wish to navigate before actually doing it.
-  navigate("/another/page", { prompt: true });
-  navigate("/another/page", { prompt: "Are you sure you want to leave and go to /another/page?" });
-  navigate("/another/page", { prompt: PromptView });
+  navigate("/another/page", {prompt: true});
+  navigate("/another/page", {prompt: "Are you sure you want to leave and go to /another/page?"});
+  navigate("/another/page", {prompt: PromptView});
 
   // Get the live value of `{name}` from the current path.
   const $name = $params.map((p) => p.name);

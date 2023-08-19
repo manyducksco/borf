@@ -1,5 +1,5 @@
 import { type StoreContext } from "../store.js";
-import { Writable } from "../state.js";
+import { writable, readable } from "../state.js";
 
 type ScreenOrientation = "landscape" | "portrait";
 type ColorScheme = "light" | "dark";
@@ -7,10 +7,10 @@ type ColorScheme = "light" | "dark";
 export function DocumentStore(c: StoreContext) {
   c.name = "borf/document";
 
-  const $$title = new Writable(document.title);
-  const $$visibility = new Writable(document.visibilityState);
-  const $$orientation = new Writable<ScreenOrientation>("landscape");
-  const $$colorScheme = new Writable<ColorScheme>("light");
+  const $$title = writable(document.title);
+  const $$visibility = writable(document.visibilityState);
+  const $$orientation = writable<ScreenOrientation>("landscape");
+  const $$colorScheme = writable<ColorScheme>("light");
 
   /* ----- Title and Visibility ----- */
 
@@ -19,11 +19,11 @@ export function DocumentStore(c: StoreContext) {
   });
 
   const onVisibilityChange = () => {
-    $$visibility.value = document.visibilityState;
+    $$visibility.set(document.visibilityState);
   };
 
   const onFocus = () => {
-    $$visibility.value = "visible";
+    $$visibility.set("visible");
   };
 
   /* ----- Orientation ----- */
@@ -31,7 +31,7 @@ export function DocumentStore(c: StoreContext) {
   const landscapeQuery = window.matchMedia("(orientation: landscape)");
 
   function onOrientationChange(e: MediaQueryList | MediaQueryListEvent) {
-    $$orientation.value = e.matches ? "landscape" : "portrait";
+    $$orientation.set(e.matches ? "landscape" : "portrait");
   }
 
   // Read initial orientation.
@@ -42,7 +42,7 @@ export function DocumentStore(c: StoreContext) {
   const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
   function onColorChange(e: MediaQueryList | MediaQueryListEvent) {
-    $$colorScheme.value = e.matches ? "dark" : "light";
+    $$colorScheme.set(e.matches ? "dark" : "light");
   }
 
   // Read initial color scheme.
@@ -68,8 +68,8 @@ export function DocumentStore(c: StoreContext) {
 
   return {
     $$title,
-    $visibility: $$visibility.toReadable(),
-    $orientation: $$orientation.toReadable(),
-    $colorScheme: $$colorScheme.toReadable(),
+    $visibility: readable($$visibility),
+    $orientation: readable($$orientation),
+    $colorScheme: readable($$colorScheme),
   };
 }

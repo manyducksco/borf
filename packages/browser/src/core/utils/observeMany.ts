@@ -1,4 +1,4 @@
-import { Readable, type ValuesOfReadables, type StopFunction } from "../state.js";
+import { Readable, type ReadableValues, type StopFunction, computed, isReadable } from "../state.js";
 
 type ObserverControls = {
   start: () => void;
@@ -16,7 +16,7 @@ export function observeMany<T>(readable: Readable<T>, callback: (value: T) => vo
  */
 export function observeMany<T extends Readable<any>[], V>(
   readables: [...T],
-  callback: (...values: ValuesOfReadables<T>) => void
+  callback: (...values: ReadableValues<T>) => void
 ): ObserverControls;
 
 /**
@@ -25,9 +25,9 @@ export function observeMany<T extends Readable<any>[], V>(
 export function observeMany(readable: any, callback: any) {
   const readables: Readable<any>[] = [];
 
-  if (Array.isArray(readable) && readable.every(Readable.isReadable)) {
+  if (Array.isArray(readable) && readable.every(isReadable)) {
     readables.push(...readable);
-  } else if (Readable.isReadable(readable)) {
+  } else if (isReadable(readable)) {
     readables.push(readable);
   } else {
     throw new TypeError(`Expected one Readable or an array of Readables as the first argument.`);
@@ -43,7 +43,7 @@ export function observeMany(readable: any, callback: any) {
     start() {
       if (!_stop) {
         if (readables.length > 1) {
-          _stop = Readable.merge(readables, callback).observe(() => {});
+          _stop = computed(readables, callback).observe(() => {});
         } else {
           _stop = readables[0].observe(callback);
         }

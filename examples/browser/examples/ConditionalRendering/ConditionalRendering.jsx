@@ -1,8 +1,8 @@
-import { Writable, cond } from "@borf/browser";
+import { writable, computed, cond } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 export function ConditionalRendering(_, c) {
-  const $$show = new Writable(true);
+  const $$show = writable(true);
 
   return (
     <ExampleFrame title="Conditional Rendering">
@@ -12,16 +12,16 @@ export function ConditionalRendering(_, c) {
         <div>
           <button
             onclick={() => {
-              $$show.value = false;
+              $$show.set(false);
             }}
-            disabled={$$show.map((x) => !x)}
+            disabled={computed($$show, (x) => !x)}
           >
             Hide
           </button>
 
           <button
             onclick={() => {
-              $$show.value = true;
+              $$show.set(true);
             }}
             disabled={$$show}
           >

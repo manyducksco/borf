@@ -1,21 +1,21 @@
-import { Writable, repeat } from "@borf/browser";
+import { writable, readable, computed, repeat } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function (_, ctx) {
-  ctx.name = "7GUIs:CRUD";
+export default function (_, c) {
+  c.name = "7GUIs:CRUD";
 
-  const $$people = new Writable([
+  const $$people = writable([
     { id: 1, name: "Hans", surname: "Emil" },
     { id: 2, name: "Max", surname: "Mustermann" },
     { id: 3, name: "Roman", surname: "Tisch" },
   ]);
-  const $$nextId = new Writable(4);
-  const $$selectedId = new Writable(1);
-  const $$nameInput = new Writable("");
-  const $$surnameInput = new Writable("");
-  const $$filterPrefix = new Writable("");
+  const $$nextId = writable(4);
+  const $$selectedId = writable(1);
+  const $$nameInput = writable("");
+  const $$surnameInput = writable("");
+  const $$filterPrefix = writable("");
 
-  const $filteredPeople = Readable.merge(
+  const $filteredPeople = computed(
     [$$people, $$filterPrefix],
     (people, prefix) => {
       if (prefix.trim() === "") {
@@ -59,8 +59,8 @@ export default function (_, ctx) {
     });
   }
 
-  ctx.observe($$people, (people) => {
-    ctx.log(people);
+  c.observe($$people, (people) => {
+    c.log(people);
   });
 
   // Deletes the selected person.
@@ -73,8 +73,8 @@ export default function (_, ctx) {
   }
 
   // Update fields when selection changes.
-  ctx.observe($$selectedId, (id) => {
-    const person = $$people.value.find((p) => p.id === id);
+  c.observe($$selectedId, (id) => {
+    const person = $$people.get().find((p) => p.id === id);
 
     if (person) {
       $$nameInput.set(person.name);
@@ -91,9 +91,9 @@ export default function (_, ctx) {
         <div>
           <select
             size={8}
-            value={$$selectedId.toReadable()}
+            value={readable($$selectedId)}
             onchange={(e) => {
-              ctx.log(e.target, e.target.value);
+              c.log(e.target, e.target.value);
 
               $$selectedId.set(Number(e.target.value));
             }}
@@ -102,9 +102,9 @@ export default function (_, ctx) {
               $filteredPeople,
               (person) => person.id,
               ($person) => {
-                const $id = $person.map((p) => p.id);
-                const $name = $person.map((p) => p.name);
-                const $surname = $person.map((p) => p.surname);
+                const $id = computed($person, (p) => p.id);
+                const $name = computed($person, (p) => p.name);
+                const $surname = computed($person, (p) => p.surname);
 
                 return (
                   <option value={$id}>

@@ -1,11 +1,11 @@
-import { Writable } from "@borf/browser";
+import { writable, computed } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 export default function (_, ctx) {
   ctx.name = "7GUIs:Timer";
 
-  const $$duration = new Writable(10); // duration in seconds
-  const $$elapsed = new Writable(0); // elapsed time in seconds
+  const $$duration = writable(10); // duration in seconds
+  const $$elapsed = writable(0); // elapsed time in seconds
 
   let lastTick = null;
   let stopped = false;
@@ -14,8 +14,8 @@ export default function (_, ctx) {
     if (!stopped) {
       const now = Date.now();
 
-      const elapsed = $$elapsed.value;
-      const duration = $$duration.value;
+      const elapsed = $$elapsed.get();
+      const duration = $$duration.get();
 
       // Only update if $elapsed hasn't yet reached $duration
       if (elapsed < duration) {
@@ -46,7 +46,7 @@ export default function (_, ctx) {
         <div>
           Elapsed Time: <progress max={$$duration} value={$$elapsed} />
         </div>
-        <div>{$$elapsed.map((seconds) => seconds.toFixed(1))}</div>
+        <div>{computed($$elapsed, (seconds) => seconds.toFixed(1))}</div>
         <div>
           Duration:{" "}
           <input type="range" min={0} max={30} step={0.1} value={$$duration} />
@@ -54,7 +54,7 @@ export default function (_, ctx) {
         <div>
           <button
             onclick={() => {
-              $$elapsed.value = 0;
+              $$elapsed.set(0);
             }}
           >
             Reset

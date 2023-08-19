@@ -1,6 +1,6 @@
 import { assertObject, isFunction, isObject, isPromise, typeOf } from "@borf/bedrock";
 import { type StoreContext } from "../store.js";
-import { Readable, Writable } from "../state.js";
+import { readable, writable, type Readable, type Writable, computed } from "../state.js";
 import { type Stringable } from "../types";
 import { deepEqual } from "../utils/deepEqual.js";
 
@@ -21,7 +21,7 @@ export interface LanguageConfig {
 
 type LanguageOptions = {
   /**
-   * Languages supported by the app (as added with App.addLanguage)
+   * Languages supported by the app (as added with App.language())
    */
   languages: {
     [tag: string]: LanguageConfig;
@@ -49,11 +49,11 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
     `app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
   );
 
-  const $$language = new Writable<string | undefined>(undefined);
-  const $$translation = new Writable<Translation | undefined>(undefined);
+  const $$language = writable<string | undefined>(undefined);
+  const $$translation = writable<Translation | undefined>(undefined);
 
   // Fallback labels for missing state and data.
-  const $noLanguageValue = new Readable("[NO LANGUAGE SET]");
+  const $noLanguageValue = readable("[NO LANGUAGE SET]");
 
   // Cache readable translations by key and values.
   // Return a cached one instead of creating a new, identical mapped value.
@@ -97,12 +97,12 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
 
     const translation = await currentLanguage.getTranslation();
 
-    $$language.value = currentLanguage.tag;
-    $$translation.value = translation;
+    $$language.set(currentLanguage.tag);
+    $$translation.set(translation);
   }
 
   return {
-    $currentLanguage: $$language.toReadable(),
+    $currentLanguage: readable($$language),
     supportedLanguages: [...languages.keys()],
 
     async setLanguage(tag: string) {
@@ -115,8 +115,8 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
       try {
         const translation = await lang.getTranslation();
 
-        $$translation.value = translation;
-        $$language.value = tag;
+        $$translation.set(translation);
+        $$language.set(tag);
 
         c.info("set language to " + tag);
       } catch (error) {
@@ -133,7 +133,7 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
      * @param values - A map of {{placeholder}} names and the values to replace them with.
      */
     translate(key: string, values?: Record<string, Stringable | Readable<Stringable>>): Readable<string> {
-      if (!$$language.value) {
+      if (!$$language.get()) {
         return $noLanguageValue;
       }
 
@@ -155,7 +155,7 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
         // that contains the translation with interpolated observable values.
         const readableEntries = Object.entries(readableValues);
         if (readableEntries.length > 0) {
-          const readable = Readable.merge([$$translation, ...readableEntries.map((x) => x[1])], (t, ...entryValues) => {
+          const merged = computed([$$translation, ...readableEntries.map((x) => x[1])], (t, ...entryValues) => {
             const entries = entryValues.map((_, i) => readableEntries[i]);
             const mergedValues = {
               ...values,
@@ -170,13 +170,13 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
             return replaceMustaches(result, mergedValues);
           });
 
-          translationCache.push([key, values, readable]);
+          translationCache.push([key, values, merged]);
 
-          return readable;
+          return merged;
         }
       }
 
-      const readable = $$translation.map((t) => {
+      const $replaced = computed($$translation, (t) => {
         let result = resolve(t, key) || `[NO TRANSLATION: ${key}]`;
 
         if (values) {
@@ -186,9 +186,9 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
         return result;
       });
 
-      translationCache.push([key, values, readable]);
+      translationCache.push([key, values, $replaced]);
 
-      return readable;
+      return $replaced;
     },
   };
 }

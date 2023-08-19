@@ -1,8 +1,8 @@
 import { isArrayOf, typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DebugChannel } from "./DebugHub.js";
-import { getRenderHandle, isMarkup, makeMarkup, renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
-import { Readable, Writable, type ValuesOfReadables } from "./state.js";
+import { getRenderHandle, isMarkup, m, renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
+import { readable, type Readable, writable, type ReadableValues } from "./state.js";
 import { type Store } from "./store.js";
 import type { BuiltInStores, Renderable } from "./types.js";
 import { observeMany } from "./utils/observeMany.js";
@@ -21,6 +21,7 @@ export interface ViewContext extends DebugChannel {
    * Returns the shared instance of `store`.
    */
   use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+
   /**
    * Returns the shared instance of a built-in store.
    */
@@ -73,7 +74,7 @@ export interface ViewContext extends DebugChannel {
    * Observes a set of readable values while this view is connected.
    * Calls `callback` with each value in the same order as `readables` each time any of their values change.
    */
-  observe<T extends Readable<any>[], V>(readables: [...T], callback: (...values: ValuesOfReadables<T>) => void): void;
+  observe<T extends Readable<any>[], V>(readables: [...T], callback: (...values: ReadableValues<T>) => void): void;
 
   /**
    * Returns a Markup element that displays this view's children.
@@ -114,9 +115,7 @@ interface ViewConfig<A> {
 export function makeView<A>(config: ViewConfig<A>): DOMHandle {
   const appContext = config.appContext;
   const elementContext = { ...config.elementContext };
-  const $$children = new Writable<DOMHandle[]>(
-    renderMarkupToDOM(config.children ?? [], { appContext, elementContext })
-  );
+  const $$children = writable<DOMHandle[]>(renderMarkupToDOM(config.children ?? [], { appContext, elementContext }));
 
   let isConnected = false;
 
@@ -198,7 +197,7 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
     },
 
     outlet() {
-      return makeMarkup("$outlet", { $children: $$children.toReadable() });
+      return m("$outlet", { $children: readable($$children) });
     },
   };
 
@@ -240,13 +239,15 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
 
     if (result === null) {
       // Do nothing.
+    } else if (result instanceof Node) {
+      rendered = getRenderHandle(renderMarkupToDOM(m("$node", { value: result }), { appContext, elementContext }));
     } else if (isMarkup(result) || isArrayOf<Markup>(isMarkup, result)) {
       rendered = getRenderHandle(renderMarkupToDOM(result, { appContext, elementContext }));
     } else {
       console.warn(result, config);
       appContext.crashCollector.crash({
         error: new TypeError(
-          `Expected '${config.view.name}' function to return Markup or null. Got: ${typeOf(result)}`
+          `Expected '${config.view.name}' function to return a DOM node, Markup element or null. Got: ${typeOf(result)}`
         ),
         componentName: c.name,
       });
@@ -317,7 +318,7 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
     },
 
     async setChildren(children) {
-      $$children.value = children;
+      $$children.set(children);
     },
   };
 

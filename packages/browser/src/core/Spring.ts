@@ -1,158 +1,122 @@
-import { Readable, Writable } from "./state.js";
+import { type Readable, writable, unwrap } from "./state.js";
 
 interface SpringOptions {
   /**
    * How heavy the spring is.
    */
-  mass?: number;
+  mass?: number | Readable<number>;
 
   /**
    * Amount of stiffness or tension in the spring.
    */
-  stiffness?: number;
+  stiffness?: number | Readable<number>;
 
   /**
    * Amount of smoothing. Affects the speed of transitions.
    */
-  damping?: number;
+  damping?: number | Readable<number>;
 
   /**
    * How much force the spring's motion begins with.
    */
-  velocity?: number;
+  velocity?: number | Readable<number>;
 }
 
-export class Spring extends Readable<number> {
-  /**
-   * Determines if an object is a Spring.
-   */
-  static isSpring(value: unknown): value is Spring {
-    return value instanceof Spring;
-  }
+export interface Spring extends Readable<number> {
+  to(newValue: number, options?: SpringOptions): Promise<void>;
 
-  #current;
+  snapTo(newValue: number): Promise<void>;
 
-  #mass;
-  #stiffness;
-  #damping;
-  #velocity;
+  animate(startValue: number, endValue: number, options?: SpringOptions): Promise<void>;
+}
 
-  #nextId = 0;
-  #currentAnimationId?: number;
+export function spring(initialValue: number, options?: SpringOptions): Spring {
+  const mass = options?.mass ?? 2;
+  const stiffness = options?.stiffness ?? 1200;
+  const damping = options?.damping ?? 160;
+  const velocity = options?.velocity ?? 5;
 
-  constructor(initialValue = 0, options: SpringOptions = {}) {
-    super(initialValue);
+  const $$currentValue = writable(initialValue);
 
-    this.#current = new Writable(initialValue);
+  let nextId = 0;
+  let currentAnimationId: number | undefined;
 
-    this.#mass = options.mass ?? 2;
-    this.#stiffness = options.stiffness ?? 1200;
-    this.#damping = options.damping ?? 160;
-    this.#velocity = options.velocity ?? 5;
-  }
+  const snapTo = async (newValue: number) => {
+    currentAnimationId = undefined;
+    $$currentValue.set(newValue);
+  };
 
-  /**
-   * Sets the Spring's value without animating.
-   */
-  async snapTo(value: number) {
-    this.#currentAnimationId = undefined;
-    this.#current.value = value;
-  }
-
-  /**
-   * Animate from the current value to a new value. Returns a Promise that resolves when the transition is finished.
-   */
-  async to(value: number, options?: SpringOptions) {
+  const to = async (endValue: number, options?: SpringOptions) => {
     // Act like snap if user prefers reduced motion.
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mediaQuery.matches) {
-      return this.snapTo(value);
+      return snapTo(endValue);
     }
 
     return new Promise<void>((resolve) => {
-      const id = this.#nextId++;
+      const id = nextId++;
       const amplitude = makeAmplitudeMeasurer();
-      const solver = new SpringSolver({
-        mass: options?.mass ?? this.#mass,
-        stiffness: options?.stiffness ?? this.#stiffness,
-        damping: options?.damping ?? this.#damping,
-        velocity: options?.velocity ?? this.#velocity,
+      const solve = makeSpringSolver({
+        mass: options?.mass ?? mass,
+        stiffness: options?.stiffness ?? stiffness,
+        damping: options?.damping ?? damping,
+        velocity: options?.velocity ?? velocity,
       });
       const startTime = Date.now();
-      const startValue = this.#current.value;
+      const startValue = $$currentValue.get();
 
       const step = () => {
-        if (this.#currentAnimationId !== id) {
+        if (currentAnimationId !== id) {
           resolve();
           return;
         }
 
         const elapsedTime = Date.now() - startTime;
-        const proportion = solver.solve(elapsedTime / 1000);
+        const proportion = solve(elapsedTime / 1000);
 
-        this.#current.value = startValue + (value - startValue) * proportion;
+        $$currentValue.set(startValue + (endValue - startValue) * proportion);
 
         // End animation when amplitude falls below threshold.
         amplitude.sample(proportion);
         if (amplitude.value && amplitude.value < 0.001) {
-          this.#currentAnimationId = undefined;
-          this.#current.value = value;
+          currentAnimationId = undefined;
+          $$currentValue.set(endValue);
         }
 
         window.requestAnimationFrame(step);
       };
 
-      this.#currentAnimationId = id;
+      currentAnimationId = id;
       window.requestAnimationFrame(step);
     });
-  }
+  };
 
-  /**
-   * Animate from a set starting value to an ending value. Returns a Promise that resolves when the transition is finished.
-   */
-  async animate(startValue: number, endValue: number) {
-    this.#current.value = startValue;
-    return this.to(endValue);
-  }
+  const animate = async (startValue: number, endValue: number, options?: SpringOptions) => {
+    // Act like snap if user prefers reduced motion.
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mediaQuery.matches) {
+      return snapTo(endValue);
+    }
 
-  /**
-   * Current value of the spring.
-   */
-  get value() {
-    return this.#current.value;
-  }
+    return snapTo(startValue).then(() => to(endValue, options));
+  };
 
-  map<R>(transform: (value: number) => R): Readable<R> {
-    return this.#current.map(transform);
-  }
-
-  observe(callback: (value: number) => void) {
-    return this.#current.observe(callback);
-  }
+  return {
+    get: $$currentValue.get,
+    observe: $$currentValue.observe,
+    to,
+    snapTo,
+    animate,
+  };
 }
 
-class SpringSolver {
-  $mass: Readable<number>;
-  $stiffness: Readable<number>;
-  $damping: Readable<number>;
-  $velocity: Readable<number>;
-
-  constructor({ mass, stiffness, damping, velocity }: Required<Omit<SpringOptions, "initialValue">>) {
-    this.$mass = new Readable(mass);
-    this.$stiffness = new Readable(stiffness);
-    this.$damping = new Readable(damping);
-    this.$velocity = new Readable(velocity);
-  }
-
-  /**
-   * Solves for the current value of the spring based on `t` number of seconds elapsed from the start of the animation.
-   */
-  solve(t: number) {
-    // Getting the variables each time allows the values to change as the spring is animating.
-    const mass = this.$mass.value;
-    const stiffness = this.$stiffness.value;
-    const damping = this.$damping.value;
-    const initialVelocity = this.$velocity.value;
+function makeSpringSolver(options: Required<SpringOptions>) {
+  return function solve(t: number) {
+    // Unwrapping the variables each time allows readable values to change as the spring is animating.
+    const mass = unwrap(options.mass);
+    const stiffness = unwrap(options.stiffness);
+    const damping = unwrap(options.damping);
+    const initialVelocity = unwrap(options.velocity);
 
     const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
     const speed = Math.sqrt(stiffness / mass);
@@ -172,7 +136,7 @@ class SpringSolver {
     }
 
     return 1 - position;
-  }
+  };
 }
 
 function makeAmplitudeMeasurer() {

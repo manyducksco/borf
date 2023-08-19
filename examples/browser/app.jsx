@@ -1,4 +1,4 @@
-import { App, Ref } from "@borf/browser";
+import { App, ref } from "@borf/browser";
 
 import { CounterStore } from "./stores/CounterStore";
 import { MouseStore } from "./stores/MouseStore";
@@ -12,9 +12,9 @@ import { Languages } from "./examples/Languages";
 import { SpringAnimation } from "./examples/SpringAnimation";
 import { PassingAttributes } from "./examples/PassingAttributes";
 import { HTTPRequests } from "./examples/HTTPRequests";
+import { RawElements } from "./examples/RawElements";
 
 import { RenderOrderTest } from "./views/RenderOrderTest";
-import { ObserverTest } from "./views/ObserverTest";
 
 import SevenGUIs from "./7guis";
 import Counter from "./7guis/01_Counter";
@@ -81,9 +81,9 @@ app.main(AppLayout);
 app.route("/test/nested-refs", (props, c) => {
   c.name = "Nested Refs";
 
-  const containerRef = new Ref();
-  const headerRef = new Ref();
-  const textRef = new Ref();
+  const containerRef = ref();
+  const headerRef = ref();
+  const textRef = ref();
 
   c.onConnected(() => {
     c.log({ containerRef, headerRef, textRef });
@@ -109,6 +109,7 @@ app.route("/examples", null, (sub) => {
   sub.route("/counter-with-store", CounterWithStore);
   sub.route("/passing-attributes", PassingAttributes);
   sub.route("/http-requests", HTTPRequests);
+  sub.route("/raw-elements", RawElements);
   sub.redirect("*", "./spring-animation");
 });
 
@@ -155,7 +156,6 @@ app.route(
 
 app.route("/tests", null, (sub) => {
   sub.route("/render-order", RenderOrderTest);
-  sub.route("/observer", ObserverTest);
 });
 
 // For any route not registered, redirect to a route that does exist.

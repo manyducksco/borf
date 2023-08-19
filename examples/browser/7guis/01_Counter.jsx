@@ -1,18 +1,22 @@
-import { Writable } from "@borf/browser";
+import { writable, computed } from "@borf/browser";
 import { ExampleFrame } from "../views/ExampleFrame";
 
-export default function (_, ctx) {
-  ctx.name = "7GUIs:Counter";
+export default function (_, c) {
+  c.name = "7GUIs:Counter";
 
-  const $$count = new Writable(0);
+  const $$count = writable(0);
 
   return (
     <ExampleFrame title="1. Counter">
       <div>
-        <input type="text" value={$$count.toReadable()} readonly />
+        <input
+          type="text"
+          value={computed($$count, (x) => x.toString())}
+          readonly
+        />
         <button
           onclick={() => {
-            $$count.value += 1;
+            $$count.update((x) => x + 1);
           }}
         >
           Increment

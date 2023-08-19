@@ -1,10 +1,10 @@
-import { Writable } from "@borf/browser";
+import { readable, writable } from "@borf/browser";
 
 /**
  * Keeps a counter that auto-increments each second.
  */
 export function CounterStore(c) {
-  const $$current = new Writable(0);
+  const $$current = writable(0);
 
   c.onConnected(() => {
     setInterval(() => {
@@ -13,9 +13,9 @@ export function CounterStore(c) {
   });
 
   return {
-    $current: $$current.toReadable(),
+    $current: readable($$current),
     reset() {
-      $$current.value = 0;
+      $$current.set(0);
     },
   };
 }

@@ -18,7 +18,7 @@ import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
 import { makeStore, type Store } from "./store.js";
 import { makeView, type ViewContext, type View } from "./view.js";
-import { DOMHandle, Markup, makeMarkup } from "./markup.js";
+import { DOMHandle, Markup, m } from "./markup.js";
 import { type StopFunction } from "./state.js";
 import { DialogStore } from "./stores/dialog.js";
 import { DocumentStore } from "./stores/document.js";
@@ -147,7 +147,7 @@ export class App implements AppRouter {
     ["language", { store: LanguageStore }],
   ]);
   #languages = new Map<string, LanguageConfig>();
-  #mainView: Markup = makeMarkup(DefaultRootView, {});
+  #mainView: Markup = m(DefaultRootView, {});
   #currentLanguage?: string;
   #appContext: AppContext;
   #elementContext: ElementContext = {
@@ -245,7 +245,7 @@ export class App implements AppRouter {
     }
 
     if (typeof view === "function") {
-      this.#mainView = makeMarkup(view, attributes);
+      this.#mainView = m(view, attributes);
     } else {
       throw new TypeError(`Expected a view function. Got type: ${typeOf(view)}, value: ${view}`);
     }
@@ -609,7 +609,7 @@ export class App implements AppRouter {
       throw new TypeError(`Route '${route.pattern}' expected a view function. Got: ${route.view}`);
     }
 
-    const markup = makeMarkup(view);
+    const markup = m(view);
     const layer: RouteLayer = { id: this.#layerId++, markup };
 
     // Parse nested routes if they exist.
@@ -649,7 +649,7 @@ type CrashPageProps = {
 };
 
 function DefaultCrashPage({ message, error, componentName }: CrashPageProps) {
-  return makeMarkup(
+  return m(
     "div",
     {
       style: {
@@ -661,14 +661,14 @@ function DefaultCrashPage({ message, error, componentName }: CrashPageProps) {
         fontSize: "20px",
       },
     },
-    makeMarkup("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
-    makeMarkup(
+    m("h1", { style: { marginBottom: "0.5rem" } }, "The app has crashed"),
+    m(
       "p",
       { style: { marginBottom: "0.25rem" } },
-      makeMarkup("span", { style: { fontFamily: "monospace" } }, componentName),
+      m("span", { style: { fontFamily: "monospace" } }, componentName),
       " says:"
     ),
-    makeMarkup(
+    m(
       "blockquote",
       {
         style: {
@@ -679,7 +679,7 @@ function DefaultCrashPage({ message, error, componentName }: CrashPageProps) {
           marginBottom: "1rem",
         },
       },
-      makeMarkup(
+      m(
         "span",
         {
           style: {
@@ -696,6 +696,6 @@ function DefaultCrashPage({ message, error, componentName }: CrashPageProps) {
       ),
       message
     ),
-    makeMarkup("p", {}, "Please see the browser console for details.")
+    m("p", {}, "Please see the browser console for details.")
   );
 }

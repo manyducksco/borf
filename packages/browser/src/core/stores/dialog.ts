@@ -1,7 +1,7 @@
 import { makeView, type View } from "../view.js";
 import { getStoreSecrets, type StoreContext } from "../store.js";
 import { type DOMHandle } from "../markup.js";
-import { Writable } from "../state.js";
+import { Writable, writable } from "../state.js";
 
 interface DialogAttrs {
   $$open: Writable<boolean>;
@@ -28,7 +28,7 @@ export function DialogStore(c: StoreContext) {
    * A first-in-last-out queue of dialogs. The last one appears on top.
    * This way if a dialog opens another dialog the new dialog stacks.
    */
-  const $$dialogs = new Writable<DOMHandle[]>([]);
+  const $$dialogs = writable<DOMHandle[]>([]);
 
   let activeDialogs: DOMHandle[] = [];
 
@@ -80,7 +80,7 @@ export function DialogStore(c: StoreContext) {
   });
 
   function open<I extends DialogAttrs>(view: View<I>, inputs?: Omit<I, "$$open">) {
-    const $$open = new Writable(true);
+    const $$open = writable(true);
 
     let instance: DOMHandle | undefined = makeView({
       view: view as View<unknown>,
@@ -89,7 +89,7 @@ export function DialogStore(c: StoreContext) {
       attributes: { ...inputs, $$open },
     });
     $$dialogs.update((current) => {
-      current.push(instance!);
+      return [...current, instance!];
     });
 
     const stopObserver = $$open.observe((value) => {
@@ -100,10 +100,7 @@ export function DialogStore(c: StoreContext) {
 
     function closeDialog() {
       $$dialogs.update((current) => {
-        current.splice(
-          current.findIndex((x) => x === instance),
-          1
-        );
+        return current.filter((x) => x !== instance);
       });
       instance = undefined;
 

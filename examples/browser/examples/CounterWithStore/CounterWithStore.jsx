@@ -1,3 +1,4 @@
+import { computed } from "@borf/browser";
 import { CounterStore } from "../../stores/CounterStore.js";
 import { ExampleFrame } from "../../views/ExampleFrame/index.js";
 
@@ -6,7 +7,7 @@ import { ExampleFrame } from "../../views/ExampleFrame/index.js";
  */
 export function CounterWithStore(_, ctx) {
   const { $current, reset } = ctx.use(CounterStore);
-  const $label = $current.map((n) => `the number is: ${n}`);
+  const $label = computed($current, (n) => `the number is: ${n}`);
 
   return (
     <ExampleFrame title="Shared State with Stores">

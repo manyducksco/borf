@@ -1,7 +1,15 @@
 import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
-import { Ref } from "./Ref.js";
-import { Readable, Writable, type StopFunction } from "./state.js";
+import { isRef } from "./Ref.js";
+import {
+  readable,
+  writable,
+  isReadable,
+  isWritable,
+  type Readable,
+  type Writable,
+  type StopFunction,
+} from "./state.js";
 import { omit } from "./utils/omit.js";
 import { renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
 
@@ -61,8 +69,8 @@ export class HTML implements DOMHandle {
 
     // Set ref if present. Refs can be a Ref object or a function that receives the node.
     if (normalizedAttrs.ref) {
-      if (Ref.isRef(normalizedAttrs.ref)) {
-        normalizedAttrs.ref.element = this.node;
+      if (isRef(normalizedAttrs.ref)) {
+        normalizedAttrs.ref.current = this.node;
       } else if (isFunction(normalizedAttrs.ref)) {
         normalizedAttrs.ref(this.node);
       } else {
@@ -163,17 +171,17 @@ export class HTML implements DOMHandle {
 
       // Bind or set value depending on its type.
       if (key === "value") {
-        if (Readable.isReadable(value)) {
+        if (isReadable(value)) {
           this.stopCallbacks.push(
             value.observe((current) => {
               (element as any).value = String(current);
             })
           );
 
-          if (Writable.isWritable(value)) {
+          if (isWritable(value)) {
             const listener: EventListener = (e) => {
-              const updated = toTypeOf(value.value, (e.currentTarget as HTMLInputElement).value);
-              value.value = updated;
+              const updated = toTypeOf(value.get(), (e.currentTarget as HTMLInputElement).value);
+              value.set(updated);
             };
 
             element.addEventListener("input", listener);
@@ -191,8 +199,8 @@ export class HTML implements DOMHandle {
         if (eventName === "clickaway") {
           const listener = (e: Event) => {
             if (this.canClickAway && !element.contains(e.target as any)) {
-              if (Readable.isReadable<(e: Event) => void>(value)) {
-                value.value(e);
+              if (isReadable<(e: Event) => void>(value)) {
+                value.get()(e);
               } else {
                 (value as (e: Event) => void)(e);
               }
@@ -205,8 +213,8 @@ export class HTML implements DOMHandle {
             window.removeEventListener("click", listener);
           });
         } else {
-          const listener: (e: Event) => void = Readable.isReadable<(e: Event) => void>(value)
-            ? (e: Event) => value.value(e)
+          const listener: (e: Event) => void = isReadable<(e: Event) => void>(value)
+            ? (e: Event) => value.get()(e)
             : (value as (e: Event) => void);
 
           element.addEventListener(eventName, listener);
@@ -218,7 +226,7 @@ export class HTML implements DOMHandle {
       } else if (!privateAttrs.includes(key)) {
         const isBoolean = booleanAttrs.includes(key);
 
-        if (Readable.isReadable(value)) {
+        if (isReadable(value)) {
           this.stopCallbacks.push(
             value.observe((current) => {
               if (current) {
@@ -238,7 +246,7 @@ export class HTML implements DOMHandle {
   applyStyles(element: HTMLElement | SVGElement, styles: Record<string, any>, stopCallbacks: StopFunction[]) {
     const propStopCallbacks: StopFunction[] = [];
 
-    if (Readable.isReadable<object>(styles)) {
+    if (isReadable<object>(styles)) {
       let unapply: () => void;
 
       const stop = styles.observe((current) => {
@@ -264,7 +272,7 @@ export class HTML implements DOMHandle {
           ? (key: string, value: string | null) => element.style.setProperty(key, value)
           : (key: string, value: string | null) => (element.style[key as any] = value ?? "");
 
-        if (Readable.isReadable<any>(value)) {
+        if (isReadable<any>(value)) {
           const stop = value.observe((current) => {
             if (current) {
               setProperty(key, current);
@@ -298,7 +306,7 @@ export class HTML implements DOMHandle {
   applyClasses(element: HTMLElement | SVGElement, classes: unknown, stopCallbacks: StopFunction[]) {
     const classStopCallbacks: StopFunction[] = [];
 
-    if (Readable.isReadable(classes)) {
+    if (isReadable(classes)) {
       let unapply: () => void;
 
       const stop = classes.observe((current) => {
@@ -319,7 +327,7 @@ export class HTML implements DOMHandle {
       for (const name in mapped) {
         const value = mapped[name];
 
-        if (Readable.isReadable(value)) {
+        if (isReadable(value)) {
           const stop = value.observe((current) => {
             if (current) {
               element.classList.add(name);

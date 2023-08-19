@@ -90,6 +90,8 @@ export interface GlobalProps {
    * Makes the element's content editable by the user. In modern times, this is commonly used as the basis for web-based text editors.
    */
   contentEditable: boolean;
+
+  // scrollTop: number;
 }
 
 /**

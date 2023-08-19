@@ -1,6 +1,6 @@
 import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
-import { Readable, type ValuesOfReadables } from "./state.js";
+import { readable, isReadable, type Readable, type ReadableValues } from "./state.js";
 import type { Renderable, Stringable } from "./types.js";
 import { ViewContext, makeView, type View } from "./view.js";
 import { Conditional } from "./Conditional.js";
@@ -31,8 +31,11 @@ export interface Markup {
 export interface DOMHandle {
   readonly node?: Node;
   readonly connected: boolean;
+
   connect(parent: Node, after?: Node): Promise<void>;
+
   disconnect(): Promise<void>;
+
   setChildren(children: DOMHandle[]): Promise<void>;
 }
 
@@ -53,12 +56,23 @@ export function toMarkup(renderables: Renderable | Renderable[]): Markup[] {
     .flat(Infinity)
     .filter((x) => x !== null && x !== undefined && x !== false)
     .map((x) => {
+      if (x instanceof Node) {
+        return m("$node", { value: x });
+      }
+
       if (isMarkup(x)) {
         return x;
       }
 
-      if (isString(x) || isNumber(x) || Readable.isReadable(x)) {
-        return makeMarkup("$text", { value: x });
+      if (isString(x) || isNumber(x)) {
+        return m("$text", { value: x });
+      }
+
+      if (isReadable(x)) {
+        return m("$observer", {
+          readables: [x],
+          renderFn: (x) => x,
+        });
       }
 
       console.error(x);
@@ -81,18 +95,22 @@ export interface MarkupAttributes {
   $outlet: {
     $children: Readable<DOMHandle[]>;
   };
+  $node: {
+    value: Node;
+  };
+
   [tag: string]: Record<string, any>;
 }
 
-export function makeMarkup<T extends keyof MarkupAttributes>(
+export function m<T extends keyof MarkupAttributes>(
   type: T,
   attributes: MarkupAttributes[T],
   ...children: Renderable[]
 ): Markup;
 
-export function makeMarkup<I>(type: View<I>, attributes?: I, ...children: Renderable[]): Markup;
+export function m<I>(type: View<I>, attributes?: I, ...children: Renderable[]): Markup;
 
-export function makeMarkup<I>(type: string | View<I>, attributes?: I, ...children: Renderable[]) {
+export function m<I>(type: string | View<I>, attributes?: I, ...children: Renderable[]) {
   return {
     [MARKUP]: true,
     type,
@@ -109,9 +127,9 @@ export function makeMarkup<I>(type: string | View<I>, attributes?: I, ...childre
  * Displays content conditionally. When `predicate` holds a truthy value, `thenContent` is displayed; when `predicate` holds a falsy value, `elseContent` is displayed.
  */
 export function cond(predicate: any | Readable<any>, thenContent?: Renderable, elseContent?: Renderable): Markup {
-  const $predicate = Readable.from(predicate);
+  const $predicate = readable(predicate);
 
-  return makeMarkup("$cond", {
+  return m("$cond", {
     $predicate,
     thenContent,
     elseContent,
@@ -127,30 +145,30 @@ export function repeat<T>(
   keyFn: (value: T, index: number) => string | number | symbol,
   renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null
 ): Markup {
-  const $items = Readable.from(items);
+  const $items = readable(items);
 
-  return makeMarkup("$repeat", { $items, keyFn, renderFn });
+  return m("$repeat", { $items, keyFn, renderFn });
 }
 
 /**
  * Calls `render` for each new value of `observed`, displaying the result of the `render` function.
  */
-export function observe<T>(observed: Readable<T>, renderFn: (value: T) => Renderable): Markup;
+//export function observe<T>(observed: Readable<T>, renderFn: (value: T) => Renderable): Markup;
 
 /**
  * Calls `render` for each new value of`observed`, displaying the result of the `render` function.
  */
-export function observe<R extends Readable<any>[]>(
-  observed: [...R],
-  renderFn: (...values: ValuesOfReadables<R>) => Renderable
-): Markup;
-
-export function observe<T>(observed: Readable<T> | Readable<any>[], renderFn: (...args: any) => Renderable) {
-  return makeMarkup("$observer", {
-    readables: isArray(observed) ? observed : [observed],
-    renderFn,
-  });
-}
+//export function observe<R extends Readable<any>[]>(
+//  observed: [...R],
+//  renderFn: (...values: ReadableValues<R>) => Renderable
+//): Markup;
+//
+//export function observe<T>(observed: Readable<T> | Readable<any>[], renderFn: (...args: any) => Renderable) {
+//  return m("$observer", {
+//    readables: isArray(observed) ? observed : [observed],
+//    renderFn,
+//  });
+//}
 
 /*===========================*\
 ||           Render          ||
@@ -159,6 +177,33 @@ export function observe<T>(observed: Readable<T> | Readable<any>[], renderFn: (.
 interface RenderContext {
   appContext: AppContext;
   elementContext: ElementContext;
+}
+
+/**
+ * Wraps any plain DOM node in a DOMHandle interface.
+ */
+class NodeHandle implements DOMHandle {
+  node: Node;
+
+  get connected() {
+    return this.node.parentNode != null;
+  }
+
+  constructor(node: Node) {
+    this.node = node;
+  }
+
+  async connect(parent: Node, after?: Node) {
+    parent.insertBefore(this.node, after?.nextSibling ?? null);
+  }
+
+  async disconnect() {
+    if (this.node.parentNode) {
+      this.node.parentNode.removeChild(this.node);
+    }
+  }
+
+  async setChildren(children: DOMHandle[]) {}
 }
 
 export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext): DOMHandle[] {
@@ -175,6 +220,10 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
       });
     } else if (isString(item.type)) {
       switch (item.type) {
+        case "$node": {
+          const attrs = item.attributes! as MarkupAttributes["$node"];
+          return new NodeHandle(attrs.value);
+        }
         case "$text": {
           const attrs = item.attributes! as MarkupAttributes["$text"];
           return new Text({

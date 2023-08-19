@@ -6,7 +6,7 @@ esbuild
     entryPoints: ["src/index.ts"],
     bundle: true,
     metafile: true,
-    minify: process.env.NODE_ENV === "production",
+    // minify: process.env.NODE_ENV === "production",
     outdir: "lib",
     format: "esm",
   })

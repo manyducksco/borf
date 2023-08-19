@@ -1,4 +1,4 @@
-import { Readable, type StopFunction } from "./state.js";
+import { isReadable, type Readable, type StopFunction } from "./state.js";
 import { type DOMHandle } from "./markup.js";
 
 interface Stringable {
@@ -24,7 +24,7 @@ export class Text implements DOMHandle {
 
   async connect(parent: Node, after: Node | null = null) {
     if (!this.connected) {
-      if (Readable.isReadable<Stringable>(this.value)) {
+      if (isReadable<Stringable>(this.value)) {
         this.stopCallback = this.value.observe((value) => {
           this.update(value);
         });

@@ -1,16 +1,17 @@
-import { Readable, Writable, cond } from "@borf/browser";
+import { readable, writable, computed, cond } from "@borf/browser";
 import { ExampleFrame } from "../../views/ExampleFrame";
 
 /**
  * Demonstrates HTTP requests with the built-in `http` store.
  */
-export function HTTPRequests(_, ctx) {
-  const $$loading = new Writable(false);
-  const $$url = new Writable();
+export function HTTPRequests(_, c) {
+  const $$loading = writable(false);
+  const $$url = writable();
 
-  const http = ctx.use("http");
+  const http = c.use("http");
 
-  const $label = Readable.merge([$$loading, $$url], (loading, url) => {
+  const $label = computed([$$loading, $$url], (loading, url) => {
+    c.log("computing label", { loading, url });
     if (loading) {
       return "LOADING...";
     } else {
@@ -19,7 +20,7 @@ export function HTTPRequests(_, ctx) {
   });
 
   function onclick() {
-    $$loading.value = true;
+    $$loading.set(true);
 
     http
       .get("https://dog.ceo/api/breeds/image/random", {
@@ -28,11 +29,11 @@ export function HTTPRequests(_, ctx) {
         },
       })
       .then((res) => {
-        $$url.value = res.body.message;
+        $$url.set(res.body.message);
       })
-      .catch(ctx.crash)
+      .catch(c.crash)
       .finally(() => {
-        $$loading.value = false;
+        $$loading.set(false);
       });
   }
 

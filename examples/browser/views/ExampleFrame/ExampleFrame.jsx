@@ -1,9 +1,9 @@
-import { Readable, cond } from "@borf/browser";
+import { readable, cond } from "@borf/browser";
 import styles from "./ExampleFrame.module.css";
 
 export function ExampleFrame(props, c) {
-  const $title = Readable.from(props.title);
-  const $about = Readable.from(props.about);
+  const $title = readable(props.title);
+  const $about = readable(props.about);
 
   return (
     <article class={styles.frame}>

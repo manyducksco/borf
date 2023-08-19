@@ -1,7 +1,7 @@
 import { isObject, typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DebugChannel } from "./DebugHub.js";
-import { Readable, type ValuesOfReadables } from "./state.js";
+import { Readable, type ReadableValues } from "./state.js";
 import type { BuiltInStores } from "./types.js";
 import { observeMany } from "./utils/observeMany.js";
 
@@ -50,7 +50,7 @@ export interface StoreContext<Options = any> extends DebugChannel {
    * Observes a set of readable values while this store is connected.
    * Calls `callback` with each value in the same order as `readables` each time any of their values change.
    */
-  observe<T extends Readable<any>[], V>(readables: [...T], callback: (...values: ValuesOfReadables<T>) => void): void;
+  observe<T extends Readable<any>[], V>(readables: [...T], callback: (...values: ReadableValues<T>) => void): void;
 
   /**
    * Options this store was initialized with.
