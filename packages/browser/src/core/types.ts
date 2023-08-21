@@ -48,51 +48,647 @@ export interface BuiltInStores {
 
 export type Stringable = { toString(): string };
 
-export type MaybeReadable<T> = T extends Readable<any> ? T : T | Readable<T> | Readable<Exclude<T, undefined>>;
+// export type MaybeReadable<T> = T extends Readable<any> ? T : T | Readable<T> | Readable<Exclude<T, undefined>>;
+export type MaybeReadable<T> = T | Readable<T> | Readable<T | undefined>;
 
-// TODO: Rework types as props
-export interface GlobalProps {
+// type OptionalProp<T> = T | Readable<T> | Readable<T | undefined>;
+// type RequiredProp<T> = T | Readable<T>;
+
+type AutoCapitalizeValues = "off" | "on" | "none" | "sentences" | "words" | "characters";
+type ContentEditableValues = true | false | "true" | "false" | "plaintext-only" | "inherit";
+type ClassListValues = string | ClassMap | Array<string | ClassMap | (string | ClassMap)[]>;
+type DirValues = "ltr" | "rtl" | "auto";
+type EnterKeyHintValues = "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
+type HiddenValues = true | false | "until-found";
+type InputModeValues = "decimal" | "email" | "none" | "numeric" | "search" | "tel" | "text" | "url";
+
+/**
+ * Properties common to all Elements.
+ */
+export interface ElementProps {
   /**
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/accesskey
+   * CSS classes to be applied to this element. In addition to the standard space-separated list of class names,
+   * this property also supports a class map object with class names as keys and booleans as values.
+   * Class names in a class map will be applied to the element while their values are true. Also supports an
+   * array of strings and class maps.
+   *
+   * @example
+   * <div classList="one-class" />
+   *
+   * <div classList={"one-class"} />
+   *
+   * <div classList={["array", "of", "classes"]} />
+   *
+   * <div classList={{ applied: true, notApplied: false }} />
+   *
+   * <div classList={["class", "class2", { "conditional": $value }]} />
    */
-  accessKey: string;
+  classList?: ClassListValues | Readable<ClassListValues> | Readable<ClassListValues | undefined>;
+
+  /**
+   * A unique string to identify this element.
+   */
+  id?: string | Readable<string> | Readable<string | undefined>;
+
+  /**
+   * Scroll position from the left (on the X axis), if this element is scrollable.
+   */
+  scrollLeft?: number | Readable<number> | Readable<number | undefined>;
+
+  /**
+   * Scroll position from the top (on the Y axis) if this element is scrollable.
+   */
+  scrollTop?: number | Readable<number> | Readable<number | undefined>;
+
+  /*=================================*\
+  ||              Events             ||
+  \*=================================*/
+
+  /**
+   * Fired when a CSS animation unexpectedly aborts.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationcancel_event
+   */
+  onAnimationCancel?:
+    | EventHandler<AnimationEvent>
+    | Readable<EventHandler<AnimationEvent>>
+    | Readable<EventHandler<AnimationEvent> | undefined>;
+
+  /**
+   * Fired when a CSS animation completes.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event
+   */
+  onAnimationEnd?:
+    | EventHandler<AnimationEvent>
+    | Readable<EventHandler<AnimationEvent>>
+    | Readable<EventHandler<AnimationEvent> | undefined>;
+
+  /**
+   * Fired when an iteration of a CSS animation completes.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationiteration_event
+   */
+  onAnimationIteration?:
+    | EventHandler<AnimationEvent>
+    | Readable<EventHandler<AnimationEvent>>
+    | Readable<EventHandler<AnimationEvent> | undefined>;
+
+  /**
+   * Fired when a CSS animation starts.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationstart_event
+   */
+  onAnimationStart?:
+    | EventHandler<AnimationEvent>
+    | Readable<EventHandler<AnimationEvent>>
+    | Readable<EventHandler<AnimationEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device's non-primary button is pressed and released while the pointer is inside the element.
+   * With a mouse, this would typically be any button other than left click.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event
+   */
+  onAuxClick?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when the element has lost focus. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event
+   */
+  onBlur?:
+    | EventHandler<FocusEvent>
+    | Readable<EventHandler<FocusEvent>>
+    | Readable<EventHandler<FocusEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device is pressed and released while the pointer is inside the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event
+   */
+  onClick?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device is pressed and released while the pointer is outside the element.
+   *
+   * NOTE: This is a custom event that isn't supported natively by browsers.
+   */
+  onClickOutside?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when a text composition system (such as a Chinese/Japanese IME) completes or cancels the current composition session.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event
+   */
+  onCompositionEnd?:
+    | EventHandler<CompositionEvent>
+    | Readable<EventHandler<CompositionEvent>>
+    | Readable<EventHandler<CompositionEvent> | undefined>;
+
+  /**
+   * Fired when a text composition system (such as a Chinese/Japanese IME) starts a new composition session.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionstart_event
+   */
+  onCompositionStart?:
+    | EventHandler<CompositionEvent>
+    | Readable<EventHandler<CompositionEvent>>
+    | Readable<EventHandler<CompositionEvent> | undefined>;
+
+  /**
+   * Fired when a new character is received from a session in a text composition system (such as a Chinese/Japanese IME).
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionupdate_event
+   */
+  onCompositionUpdate?:
+    | EventHandler<CompositionEvent>
+    | Readable<EventHandler<CompositionEvent>>
+    | Readable<EventHandler<CompositionEvent> | undefined>;
+
+  // onContextMenu: Deliberately unimplemented due to lack of support in iOS Safari and by extension all iOS webviews.
+
+  /**
+   * Fired when a pointing device button is rapidly clicked twice while the pointer is inside the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event
+   */
+  onDoubleClick?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when the element has received focus. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event
+   */
+  onFocus?:
+    | EventHandler<FocusEvent>
+    | Readable<EventHandler<FocusEvent>>
+    | Readable<EventHandler<FocusEvent> | undefined>;
+
+  /**
+   * Fired when an element has received focus. Fired after `onFocus`. Unlike `onFocus`, this event does bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event
+   */
+  onFocusIn?:
+    | EventHandler<FocusEvent>
+    | Readable<EventHandler<FocusEvent>>
+    | Readable<EventHandler<FocusEvent> | undefined>;
+
+  /**
+   * Fired when an element has lost focus. Fired after `onBlur`. Unlike `onBlur`, this event does bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event
+   */
+  onFocusOut?:
+    | EventHandler<FocusEvent>
+    | Readable<EventHandler<FocusEvent>>
+    | Readable<EventHandler<FocusEvent> | undefined>;
+
+  /**
+   * Fired when an element enters or exits fullscreen mode.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/fullscreenchange_event
+   */
+  onFullscreenChange?: EventHandler<Event> | Readable<EventHandler<Event>> | Readable<EventHandler<Event> | undefined>;
+
+  /**
+   * Fired when the browser can't switch to fullscreen mode.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/fullscreenerror_event
+   */
+  onFullscreenError?: EventHandler<Event> | Readable<EventHandler<Event>> | Readable<EventHandler<Event> | undefined>;
+
+  /**
+   * Fired when a key on the keyboard is pressed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
+   */
+  onKeyDown?:
+    | EventHandler<KeyboardEvent>
+    | Readable<EventHandler<KeyboardEvent>>
+    | Readable<EventHandler<KeyboardEvent> | undefined>;
+
+  /**
+   * Fired when a key on the keyboard is released.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keyup_event
+   */
+  onKeyUp?:
+    | EventHandler<KeyboardEvent>
+    | Readable<EventHandler<KeyboardEvent>>
+    | Readable<EventHandler<KeyboardEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device button is pressed while the pointer is inside the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
+   */
+  onMouseDown?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device enters the bounds of an element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseenter_event
+   */
+  onMouseEnter?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device leaves the bounds of an element. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseleave_event
+   */
+  onMouseLeave?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device is moved while inside the bounds of an element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
+   */
+  onMouseMove?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device leaves the bounds of an element or one of its children. Unlike `onMouseLeave`, this event does bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
+   */
+  onMouseOut?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device enters the bounds of an element or one of its children.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseover_event
+   */
+  onMouseOver?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when a pointing device button is released while the pointer is inside the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
+   */
+  onMouseUp?:
+    | EventHandler<MouseEvent>
+    | Readable<EventHandler<MouseEvent>>
+    | Readable<EventHandler<MouseEvent> | undefined>;
+
+  /**
+   * Fired when the browser determines there are unlikely to be any more pointer events.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointercancel_event
+   */
+  onPointerCancel?:
+    | EventHandler<PointerEvent>
+    | Readable<EventHandler<PointerEvent>>
+    | Readable<EventHandler<PointerEvent> | undefined>;
+
+  /**
+   * Fired when a pointer becomes active inside the bounds of an element.
+   * For a mouse, this is when a button is pressed. For a touchscreen, this is when a finger makes contact.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerdown_event
+   */
+  onPointerDown?:
+    | EventHandler<PointerEvent>
+    | Readable<EventHandler<PointerEvent>>
+    | Readable<EventHandler<PointerEvent> | undefined>;
+
+  /**
+   * Fired when a pointer is moved into the boundary of an element or one of its children.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerenter_event
+   */
+  onPointerEnter?:
+    | EventHandler<PointerEvent>
+    | Readable<EventHandler<PointerEvent>>
+    | Readable<EventHandler<PointerEvent> | undefined>;
+
+  /**
+   * Fired when a pointer is moved outside the boundary of an element or one of its children.
+   * For a mouse, this is when a button is released. For a touchscreen, this is when a finger leaves the screen.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerleave_event
+   */
+  onPointerLeave?:
+    | EventHandler<PointerEvent>
+    | Readable<EventHandler<PointerEvent>>
+    | Readable<EventHandler<PointerEvent> | undefined>;
+
+  /**
+   * Fired when a pointer changes coordinates inside the bounds of an element or one of its children.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointermove_event
+   */
+  onPointerMove?:
+    | EventHandler<PointerEvent>
+    | Readable<EventHandler<PointerEvent>>
+    | Readable<EventHandler<PointerEvent> | undefined>;
+
+  /**
+   * Fired when a pointer is no longer in contact with an element or its children.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerout_event
+   */
+  onPointerOut?:
+    | EventHandler<PointerEvent>
+    | Readable<EventHandler<PointerEvent>>
+    | Readable<EventHandler<PointerEvent> | undefined>;
+
+  /**
+   * Fired when a pointer is moved into the boundary of an element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerover_event
+   */
+  onPointerOver?:
+    | EventHandler<PointerEvent>
+    | Readable<EventHandler<PointerEvent>>
+    | Readable<EventHandler<PointerEvent> | undefined>;
+
+  /**
+   * Fired when a pointer is no longer active.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerup_event
+   */
+  onPointerUp?:
+    | EventHandler<PointerEvent>
+    | Readable<EventHandler<PointerEvent>>
+    | Readable<EventHandler<PointerEvent> | undefined>;
+
+  /**
+   * Fired when an element has been scrolled.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scroll_event
+   */
+  onScroll?: EventHandler<Event> | Readable<EventHandler<Event>> | Readable<EventHandler<Event> | undefined>;
+
+  /**
+   * Fired when scrolling has completed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollend_event
+   */
+  onScrollEnd?: EventHandler<Event> | Readable<EventHandler<Event>> | Readable<EventHandler<Event> | undefined>;
+
+  /**
+   * Fired when one or more touch points have been disrupted.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchcancel_event
+   */
+  onTouchCancel?:
+    | EventHandler<TouchEvent>
+    | Readable<EventHandler<TouchEvent>>
+    | Readable<EventHandler<TouchEvent> | undefined>;
+
+  /**
+   * Fired when one or more touch points are removed from the touch surface.
+   * NOTE: This does not mean all touches are finished in the case of a multitouch gesture.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchend_event
+   */
+  onTouchEnd?:
+    | EventHandler<TouchEvent>
+    | Readable<EventHandler<TouchEvent>>
+    | Readable<EventHandler<TouchEvent> | undefined>;
+
+  /**
+   * Fired when one or more touch points are moved along the touch surface.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchmove_event
+   */
+  onTouchMove?:
+    | EventHandler<TouchEvent>
+    | Readable<EventHandler<TouchEvent>>
+    | Readable<EventHandler<TouchEvent> | undefined>;
+
+  /**
+   * Fired when one or more touch points are placed on the touch surface.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchstart_event
+   */
+  onTouchStart?:
+    | EventHandler<TouchEvent>
+    | Readable<EventHandler<TouchEvent>>
+    | Readable<EventHandler<TouchEvent> | undefined>;
+
+  /**
+   * Fired when a CSS transition is cancelled.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitioncancel_event
+   */
+  onTransitionCancel?:
+    | EventHandler<TransitionEvent>
+    | Readable<EventHandler<TransitionEvent>>
+    | Readable<EventHandler<TransitionEvent> | undefined>;
+
+  /**
+   * Fired when a CSS transition has completed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionend_event
+   */
+  onTransitionEnd?:
+    | EventHandler<TransitionEvent>
+    | Readable<EventHandler<TransitionEvent>>
+    | Readable<EventHandler<TransitionEvent> | undefined>;
+
+  /**
+   * Fired when a CSS transition is first created.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionrun_event
+   */
+  onTransitionRun?:
+    | EventHandler<TransitionEvent>
+    | Readable<EventHandler<TransitionEvent>>
+    | Readable<EventHandler<TransitionEvent> | undefined>;
+
+  /**
+   * Fired when a CSS transition starts playing (after any `transition-delay` has elapsed).
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionstart_event
+   */
+  onTransitionStart?:
+    | EventHandler<TransitionEvent>
+    | Readable<EventHandler<TransitionEvent>>
+    | Readable<EventHandler<TransitionEvent> | undefined>;
+
+  /**
+   * Fired when a wheel button on a pointing device is rotated.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
+   */
+  onWheel?:
+    | EventHandler<WheelEvent>
+    | Readable<EventHandler<WheelEvent>>
+    | Readable<EventHandler<WheelEvent> | undefined>;
+}
+
+export interface HTMLElementProps extends ElementProps {
+  /**
+   * Sets the key a user can press to jump to this element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/accessKey
+   */
+  accessKey?: string | Readable<string> | Readable<string | undefined>;
 
   /**
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize
    */
-  autoCapitalize: "off" | "on" | "none" | "sentences" | "words" | "characters";
+  autoCapitalize?: AutoCapitalizeValues | Readable<AutoCapitalizeValues> | Readable<AutoCapitalizeValues | undefined>;
 
   /**
    * Indicates that this element should be focused as soon as it is connected to the DOM.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autofocus
    */
-  autoFocus: boolean;
+  autoFocus?: boolean | Readable<boolean> | Readable<boolean | undefined>;
 
   /**
-   * CSS classes to be applied to this element. In addition to the standard space-separated list of class names,
-   * this attribute is expanded in Borf to also support a class map object with class names as keys and booleans as values.
-   * Class names in a class map will be applied to the element while their values are true. Also supports an
-   * array of strings and class maps.
+   * Makes the element's content editable by the user. This is commonly used as the basis for web-based text editors.
    *
-   * @example
-   * <div class="one-class" />
-   *
-   * <div class={["array", "of", "classes"]} />
-   *
-   * <div class={{ applied: true, notApplied: false }} />
-   *
-   * <div class={["class", "class2", { "conditional": $value }]} />
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/contentEditable
    */
-  class: string | ClassMap | Array<string | ClassMap | (string | ClassMap)[]>;
+  contentEditable?:
+    | ContentEditableValues
+    | Readable<ContentEditableValues>
+    | Readable<ContentEditableValues | undefined>;
 
   /**
-   * Makes the element's content editable by the user. In modern times, this is commonly used as the basis for web-based text editors.
+   * Specifies text directionality of the content of this element. Some languages, such as Arabic, are written from right to left (specified here as "rtl").
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dir
    */
-  contentEditable: boolean;
+  dir?: DirValues | Readable<DirValues> | Readable<DirValues | undefined>;
 
-  // scrollTop: number;
+  /**
+   * Provides a hint for on-screen keyboards about what will happen when the Enter key is pressed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/enterKeyHint
+   */
+  enterKeyHint?: EnterKeyHintValues | Readable<EnterKeyHintValues> | Readable<EnterKeyHintValues | undefined>;
+
+  /**
+   * Indicates that the browser should not render this content. Maps to the `hidden` attribute.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden
+   */
+  hidden?: HiddenValues | Readable<HiddenValues> | Readable<HiddenValues | undefined>;
+
+  inert?: boolean | Readable<boolean> | Readable<boolean | undefined>;
+
+  inputMode?: InputModeValues | Readable<InputModeValues> | Readable<InputModeValues | undefined>;
+
+  lang?: string | Readable<string> | Readable<string | undefined>;
+
+  nonce?: string | Readable<string> | Readable<string | undefined>;
+
+  /**
+   * TODO: Add support. Currently experimental.
+   */
+  popover?: never;
+
+  tabIndex?: number | Readable<number> | Readable<number | undefined>;
+
+  title?: string | Readable<string> | Readable<string | undefined>;
 }
+
+export interface SVGElementProps extends ElementProps {}
+
+/**
+ * Mapping of event props to event names.
+ */
+export const eventPropsToNames = {
+  // ----- Element events ----- //
+
+  onAnimationCancel: "animationcancel",
+  onAnimationEnd: "animationend",
+  onAnimationIteration: "animationiteration",
+  onAnimationStart: "animationstart",
+  onAuxClick: "auxclick",
+  onBlur: "blur",
+  onClick: "click",
+  onCompositionEnd: "compositionend",
+  onCompositionStart: "compositionstart",
+  onCompositionUpdate: "compositionupdate",
+  onDoubleClick: "dblclick",
+  onFocus: "focus",
+  onFocusIn: "focusin",
+  onFocusOut: "focusout",
+  onFullscreenChange: "fullscreenchange",
+  onFullscreenError: "fullscreenerror",
+  onKeyDown: "keydown",
+  onKeyUp: "keyup",
+  onMouseDown: "mousedown",
+  onMouseEnter: "mouseenter",
+  onMouseLeave: "mouseleave",
+  onMouseMove: "mousemove",
+  onMouseOut: "mouseout",
+  onMouseOver: "mouseover",
+  onMouseUp: "mouseup",
+  onPointerCancel: "pointercancel",
+  onPointerDown: "pointerdown",
+  onPointerEnter: "pointerenter",
+  onPointerLeave: "pointerleave",
+  onPointerMove: "pointermove",
+  onPointerOut: "pointerout",
+  onPointerOver: "pointerover",
+  onPointerUp: "pointerup",
+  onScroll: "scroll",
+  onScrollEnd: "scrollend",
+  onTouchCancel: "touchcancel",
+  onTouchEnd: "touchend",
+  onTouchMove: "touchmove",
+  onTouchStart: "touchstart",
+  onTransitionCancel: "transitioncancel",
+  onTransitionEnd: "transitionend",
+  onTransitionRun: "transitionrun",
+  onTransitionStart: "transitionstart",
+  onWheel: "wheel",
+
+  // ----- HTMLElement events ----- //
+
+  onBeforeInput: "beforeinput",
+  onChange: "change",
+  onCopy: "copy",
+  onCut: "cut",
+  onDrag: "drag",
+  onDragEnd: "dragend",
+  onDragEnter: "dragenter",
+  onDragLeave: "dragleave",
+  onDragOver: "dragover",
+  onDragStart: "dragstart",
+  onDrop: "drop",
+  onError: "error",
+  onInput: "input",
+  onLoad: "load",
+  onPaste: "paste",
+};
 
 /**
  * The set of HTML attributes supported by all HTML elements.
@@ -746,6 +1342,18 @@ export interface ElementAttributes<T extends HTMLElement> extends GlobalAttribut
   ref?: Ref<any> | ((node: T) => unknown);
 }
 
+export interface HTMLPropsFor<E extends HTMLElement> extends HTMLElementProps {
+  /**
+   * For TypeScript support; child elements passed through JSX.
+   */
+  children?: any;
+
+  /**
+   * A Ref object or function that receives the DOM node when rendered.
+   */
+  ref?: Ref<E>;
+}
+
 /**
  * The following elements are defined based on the WHATWG HTML spec:
  * https://html.spec.whatwg.org/multipage/#toc-semantics
@@ -755,9 +1363,9 @@ export interface ElementAttributes<T extends HTMLElement> extends GlobalAttribut
 || 4.3                       Sections ||
 \*====================================*/
 
-export interface ArticleElementAttributes extends ElementAttributes<HTMLAnchorElement> {}
+interface ArticleElementAttributes extends ElementAttributes<HTMLAnchorElement> {}
 
-export interface SectionElementAttributes extends ElementAttributes<HTMLElement> {}
+interface SectionElementAttributes extends ElementAttributes<HTMLElement> {}
 
 interface NavElementAttributes extends ElementAttributes<HTMLElement> {}
 
@@ -2856,6 +3464,12 @@ interface ButtonElementAttributes extends ElementAttributes<HTMLButtonElement> {
   value?: MaybeReadable<string | undefined>;
 }
 
+export type ButtonTypeValues = "submit" | "reset" | "button";
+interface ButtonElementProps extends HTMLPropsFor<HTMLButtonElement> {
+  disabled?: boolean | Readable<boolean> | Readable<boolean | undefined>;
+  type?: ButtonTypeValues | Readable<ButtonTypeValues> | Readable<ButtonTypeValues | undefined>;
+}
+
 // TODO: Add complete doc comments
 interface SelectElementAttributes extends ElementAttributes<HTMLSelectElement> {
   autocomplete?: MaybeReadable<"off" | "on" | string | undefined>;
@@ -2985,6 +3599,7 @@ export interface IntrinsicElements {
   input: InputElementAttributes;
 
   button: ButtonElementAttributes;
+  // button: ButtonElementProps;
 
   select: SelectElementAttributes;
 

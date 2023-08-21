@@ -2,7 +2,7 @@ import { isArrayOf, typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DebugChannel } from "./DebugHub.js";
 import { getRenderHandle, isMarkup, m, renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
-import { readable, type Readable, writable, type ReadableValues } from "./state.js";
+import { isReadable, readable, writable, type Readable, type ReadableValues } from "./state.js";
 import { type Store } from "./store.js";
 import type { BuiltInStores, Renderable } from "./types.js";
 import { observeMany } from "./utils/observeMany.js";
@@ -11,10 +11,12 @@ import { observeMany } from "./utils/observeMany.js";
 ||                Types                ||
 \*=====================================*/
 
-export type View<A> = (
-  attributes: A,
-  context: ViewContext
-) => Markup | Markup[] | null | Promise<Markup | Markup[] | null>;
+/**
+ * Any valid value that a View can return.
+ */
+export type ViewResult = Node | Readable<any> | Markup | Markup[] | null;
+
+export type View<A> = (attributes: A, context: ViewContext) => ViewResult | Promise<ViewResult>;
 
 export interface ViewContext extends DebugChannel {
   /**
@@ -243,11 +245,17 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
       rendered = getRenderHandle(renderMarkupToDOM(m("$node", { value: result }), { appContext, elementContext }));
     } else if (isMarkup(result) || isArrayOf<Markup>(isMarkup, result)) {
       rendered = getRenderHandle(renderMarkupToDOM(result, { appContext, elementContext }));
+    } else if (isReadable(result)) {
+      rendered = getRenderHandle(
+        renderMarkupToDOM(m("$observer", { readables: [result], renderFn: (x) => x }), { appContext, elementContext })
+      );
     } else {
       console.warn(result, config);
       appContext.crashCollector.crash({
         error: new TypeError(
-          `Expected '${config.view.name}' function to return a DOM node, Markup element or null. Got: ${typeOf(result)}`
+          `Expected '${
+            config.view.name
+          }' function to return a DOM node, Markup element, Readable or null. Got: ${typeOf(result)}`
         ),
         componentName: c.name,
       });

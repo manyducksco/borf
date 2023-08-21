@@ -1,14 +1,14 @@
 import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
-import { readable, isReadable, type Readable, type ReadableValues } from "./state.js";
-import type { Renderable, Stringable } from "./types.js";
-import { ViewContext, makeView, type View } from "./view.js";
 import { Conditional } from "./Conditional.js";
 import { HTML } from "./HTML.js";
 import { Observer } from "./Observer.js";
 import { Outlet } from "./Outlet.js";
 import { Repeat } from "./Repeat.js";
 import { Text } from "./Text.js";
+import { isReadable, readable, type Readable } from "./state.js";
+import type { Renderable, Stringable } from "./types.js";
+import { makeView, type View, type ViewContext, type ViewResult } from "./view.js";
 
 /*===========================*\
 ||           Markup          ||
@@ -86,7 +86,7 @@ export interface MarkupAttributes {
   $repeat: {
     $items: Readable<any[]>;
     keyFn: (value: any, index: number) => string | number | symbol;
-    renderFn: ($item: Readable<any>, $index: Readable<number>, c: ViewContext) => Markup | Markup[] | null;
+    renderFn: ($item: Readable<any>, $index: Readable<number>, c: ViewContext) => ViewResult;
   };
   $observer: {
     readables: Readable<any>[];
@@ -143,7 +143,7 @@ export function cond(predicate: any | Readable<any>, thenContent?: Renderable, e
 export function repeat<T>(
   items: Readable<T[]> | T[],
   keyFn: (value: T, index: number) => string | number | symbol,
-  renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null
+  renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => ViewResult
 ): Markup {
   const $items = readable(items);
 

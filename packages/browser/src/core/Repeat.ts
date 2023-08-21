@@ -1,7 +1,7 @@
 import { type AppContext, type ElementContext } from "./App.js";
-import { readable, writable, type Readable, type Writable, type StopFunction } from "./state.js";
-import { makeView, type ViewContext } from "./view.js";
-import { type DOMHandle, type Markup } from "./markup.js";
+import { type DOMHandle } from "./markup.js";
+import { readable, writable, type Readable, type StopFunction, type Writable } from "./state.js";
+import { makeView, type ViewContext, type ViewResult } from "./view.js";
 
 // ----- Types ----- //
 
@@ -10,7 +10,7 @@ interface RepeatOptions<T> {
   elementContext: ElementContext;
   $items: Readable<T[]>;
   keyFn: (value: T, index: number) => string | number | symbol;
-  renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
+  renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => ViewResult;
 }
 
 type ConnectedItem<T> = {
@@ -30,7 +30,7 @@ export class Repeat<T> implements DOMHandle {
   connectedItems: ConnectedItem<T>[] = [];
   appContext;
   elementContext;
-  renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
+  renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => ViewResult;
   keyFn: (value: T, index: number) => string | number | symbol;
 
   get connected() {
@@ -162,7 +162,7 @@ export class Repeat<T> implements DOMHandle {
 interface RepeatItemAttrs {
   $value: Readable<any>;
   $index: Readable<number>;
-  renderFn: ($value: Readable<any>, $index: Readable<number>, ctx: ViewContext) => Markup | Markup[] | null;
+  renderFn: ($value: Readable<any>, $index: Readable<number>, ctx: ViewContext) => ViewResult;
 }
 
 function RepeatItemView({ $value, $index, renderFn }: RepeatItemAttrs, ctx: ViewContext) {

@@ -66,9 +66,10 @@ export function isWritable<T>(value: any): value is Writable<T> {
 export function readable<T>(value: Writable<T>): Readable<Unwrapped<T>>;
 export function readable<T>(value: Readable<T>): Readable<Unwrapped<T>>;
 export function readable<T>(value: undefined): Readable<T | undefined>;
+export function readable<T>(): Readable<T | undefined>;
 export function readable<T>(value: T): Readable<Unwrapped<T>>;
 
-export function readable(value: unknown): Readable<any> {
+export function readable(value?: unknown): Readable<any> {
   // Return a proxy Readable with the value of this Writable.
   if (isWritable(value)) {
     return {
@@ -99,9 +100,10 @@ export function readable(value: unknown): Readable<any> {
 export function writable<T>(value: Writable<T>): Writable<Unwrapped<T>>;
 export function writable<T>(value: Readable<T>): void; // TODO: How to throw a type error in TS before runtime?
 export function writable<T>(value: undefined): Writable<T | undefined>;
+export function writable<T>(): Writable<T | undefined>;
 export function writable<T>(value: T): Writable<Unwrapped<T>>;
 
-export function writable(value: unknown): Writable<any> {
+export function writable(value?: unknown): Writable<any> {
   // Return the same Writable.
   if (isWritable(value)) {
     return value;
