@@ -140,9 +140,17 @@ export class HTML implements DOMHandle {
   applyProps(element: HTMLElement | SVGElement, props: Record<string, unknown>) {
     const attachProp = <T>(value: Readable<T> | T, callback: (value: T) => void) => {
       if (isReadable(value)) {
-        this.stopCallbacks.push(value.observe(callback));
+        this.stopCallbacks.push(
+          value.observe((value) => {
+            this.appContext.queueUpdate(() => {
+              callback(value);
+            });
+          })
+        );
       } else {
-        callback(value);
+        this.appContext.queueUpdate(() => {
+          callback(value);
+        });
       }
     };
 
@@ -263,6 +271,19 @@ export class HTML implements DOMHandle {
             });
             break;
 
+          case "checked":
+            attachProp(value, (current) => {
+              (element as any).checked = current;
+
+              // Set attribute also or styles don't take effect.
+              if (current) {
+                element.setAttribute("checked", "");
+              } else {
+                element.removeAttribute("checked");
+              }
+            });
+            break;
+
           // Attribute-aliased props
           case "exportParts":
           case "part":
@@ -309,7 +330,7 @@ export class HTML implements DOMHandle {
       let unapply: () => void;
 
       const stop = styles.observe((current) => {
-        requestAnimationFrame(() => {
+        this.appContext.queueUpdate(() => {
           if (isFunction(unapply)) {
             unapply();
           }
@@ -333,11 +354,13 @@ export class HTML implements DOMHandle {
 
         if (isReadable<any>(value)) {
           const stop = value.observe((current) => {
-            if (current) {
-              setProperty(key, current);
-            } else {
-              element.style.removeProperty(key);
-            }
+            this.appContext.queueUpdate(() => {
+              if (current) {
+                setProperty(key, current);
+              } else {
+                element.style.removeProperty(key);
+              }
+            });
           });
 
           stopCallbacks.push(stop);
@@ -369,7 +392,7 @@ export class HTML implements DOMHandle {
       let unapply: () => void;
 
       const stop = classes.observe((current) => {
-        requestAnimationFrame(() => {
+        this.appContext.queueUpdate(() => {
           if (isFunction(unapply)) {
             unapply();
           }
@@ -388,11 +411,13 @@ export class HTML implements DOMHandle {
 
         if (isReadable(value)) {
           const stop = value.observe((current) => {
-            if (current) {
-              element.classList.add(name);
-            } else {
-              element.classList.remove(name);
-            }
+            this.appContext.queueUpdate(() => {
+              if (current) {
+                element.classList.add(name);
+              } else {
+                element.classList.remove(name);
+              }
+            });
           });
 
           stopCallbacks.push(stop);

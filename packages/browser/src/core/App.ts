@@ -1,7 +1,6 @@
 import {
   assertFunction,
   assertInstanceOf,
-  assertObject,
   assertString,
   isFunction,
   isObject,
@@ -15,11 +14,10 @@ import {
   type Route,
 } from "@borf/bedrock";
 import { CrashCollector } from "./CrashCollector.js";
-import { DebugHub, type DebugOptions } from "./DebugHub.js";
-import { initStore, type Store } from "./store.js";
-import { initView, type ViewContext, type View } from "./view.js";
+import { DebugHub, type DebugChannel, type DebugOptions } from "./DebugHub.js";
 import { DOMHandle, Markup, m } from "./markup.js";
 import { type StopFunction } from "./state.js";
+import { initStore, type Store } from "./store.js";
 import { DialogStore } from "./stores/dialog.js";
 import { DocumentStore } from "./stores/document.js";
 import { HTTPStore } from "./stores/http.js";
@@ -33,6 +31,7 @@ import {
 } from "./stores/router.js";
 import { type BuiltInStores } from "./types.js";
 import { merge } from "./utils/merge.js";
+import { initView, type View, type ViewContext } from "./view.js";
 
 // ----- Types ----- //
 
@@ -60,6 +59,11 @@ export interface AppContext {
   mode: "development" | "production";
   rootElement?: HTMLElement;
   rootView?: DOMHandle;
+
+  /**
+   * Perform DOM updates on next animation frame. Returns a promise that resolves once the changes are applied.
+   */
+  queueUpdate: (callback: () => void) => void;
 }
 
 export interface ElementContext {
@@ -153,6 +157,7 @@ export class App implements AppRouter {
   #elementContext: ElementContext = {
     stores: new Map(),
   };
+  #debugChannel: DebugChannel;
   #configureCallback?: ConfigureCallback;
 
   #options: AppOptions = {
@@ -171,6 +176,10 @@ export class App implements AppRouter {
   // Routes are prepared by the app and added to this router,
   // which is passed to and used by the `router` store to handle navigation.
   #routes: Route<RouteConfig["meta"]>[] = [];
+
+  // True while the app is actively running DOM updates.
+  #updating = false;
+  #queuedUpdates: (() => void)[] = [];
 
   /**
    * Whether the app is connected to the DOM.
@@ -231,7 +240,35 @@ export class App implements AppRouter {
       stores: this.#stores,
       mode: options.mode!,
       // $dialogs - added by dialog store
+      queueUpdate: (callback) => {
+        this.#queuedUpdates.push(callback);
+
+        if (!this.#updating && this.isConnected) {
+          this.#updating = true;
+          this.#runUpdates();
+        }
+      },
     };
+
+    this.#debugChannel = this.#appContext.debugHub.channel({ name: "borf/App" });
+  }
+
+  #runUpdates() {
+    if (!this.isConnected || this.#queuedUpdates.length === 0) {
+      this.#updating = false;
+    }
+
+    if (!this.#updating) return;
+
+    requestAnimationFrame(() => {
+      this.#debugChannel.info(`Batching ${this.#queuedUpdates.length} queued DOM update(s)`);
+
+      for (const callback of this.#queuedUpdates) {
+        callback();
+      }
+      this.#queuedUpdates = [];
+      this.#runUpdates();
+    });
   }
 
   /**
@@ -239,9 +276,7 @@ export class App implements AppRouter {
    */
   main<A extends Record<string, any>>(view: View<A>, attributes?: A) {
     if (this.#mainView.type !== DefaultRootView) {
-      this.#appContext.debugHub
-        .channel({ name: "borf/App" })
-        .warn(`Root view is already defined. Only the final main call will take effect.`);
+      this.#debugChannel.warn(`Root view is already defined. Only the final main call will take effect.`);
     }
 
     if (typeof view === "function") {
@@ -419,9 +454,7 @@ export class App implements AppRouter {
    */
   configure(callback: ConfigureCallback) {
     if (this.#configureCallback !== undefined) {
-      this.#appContext.debugHub
-        .channel({ name: "borf/App" })
-        .warn(`Configure callback is already defined. Only the final configure call will take effect.`);
+      this.#debugChannel.warn(`Configure callback is already defined. Only the final configure call will take effect.`);
     }
 
     this.#configureCallback = callback;
@@ -444,7 +477,7 @@ export class App implements AppRouter {
 
     const appContext = this.#appContext;
     const elementContext = this.#elementContext;
-    const debugChannel = this.#appContext.debugHub.channel({ name: "App" });
+    const debugChannel = this.#debugChannel;
 
     appContext.rootElement = element!;
 
@@ -471,7 +504,7 @@ export class App implements AppRouter {
       },
     });
 
-    debugChannel.info(`total routes: ${this.#routes.length}`);
+    debugChannel.info(`Total routes: ${this.#routes.length}`);
 
     // First, initialize the root view. The router store needs this to connect the initial route.
     appContext.rootView = initView({

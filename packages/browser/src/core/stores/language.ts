@@ -46,7 +46,7 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
   });
 
   c.info(
-    `app supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
+    `App supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
   );
 
   const $$language = writable<string | undefined>(undefined);
@@ -93,7 +93,7 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
     : languages.get([...languages.keys()][0]);
 
   if (currentLanguage != null) {
-    c.info(`current language is '${currentLanguage.tag}'`);
+    c.info(`Current language is '${currentLanguage.tag}'.`);
 
     const translation = await currentLanguage.getTranslation();
 

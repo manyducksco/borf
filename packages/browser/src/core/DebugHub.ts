@@ -47,7 +47,7 @@ export interface DebugChannel {
  * Changing the filter here determines what kind of messages are printed across the app.
  */
 export class DebugHub {
-  #filter: string | RegExp = "*,-borf:*";
+  #filter: string | RegExp = "*,-borf/*";
   #matcher;
   #console;
   #options;

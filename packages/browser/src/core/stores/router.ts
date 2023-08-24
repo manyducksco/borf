@@ -202,7 +202,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
       return;
     }
 
-    c.info(`matched route '${matched.pattern}'`);
+    c.info(`Matched route: '${matched.pattern}'`);
 
     if (matched.meta.redirect != null) {
       if (typeof matched.meta.redirect === "string") {
@@ -214,7 +214,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
 
         // TODO: Update this code to work with new `{param}` style. Looks like it's still for `:params`
 
-        c.info(`redirecting to '${path}'`);
+        c.info(`Redirecting to: '${path}'`);
         history.replace(path);
       } else if (typeof matched.meta.redirect === "function") {
         // TODO: Implement redirect by function.
@@ -237,7 +237,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
           const activeLayer = activeLayers[i];
 
           if (activeLayer?.id !== matchedLayer.id) {
-            c.info(`replacing layer ${i} (active id: ${activeLayer?.id}, matched id: ${matchedLayer.id})`);
+            c.info(`Replacing layer ${i} (active ID: ${activeLayer?.id}, matched ID: ${matchedLayer.id})`);
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];

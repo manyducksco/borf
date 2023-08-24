@@ -82,6 +82,14 @@ export interface ViewContext extends DebugChannel {
    * Returns a Markup element that displays this view's children.
    */
   outlet(): Markup;
+
+  /**
+   * Takes a callback that performs DOM mutations and queues it to be processed in the app's next batched update.
+   * This is the same path views use internally to make updates to DOM nodes.
+   * Use this when updating the DOM yourself to prevent [layout thrashing](https://web.dev/avoid-large-complex-layouts-and-layout-thrashing/)
+   * and improve app performance.
+   */
+  queueUpdate(callback: () => void): void;
 }
 
 /*=====================================*\
@@ -129,8 +137,8 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
   const stopObserverCallbacks: (() => void)[] = [];
   const connectedCallbacks: (() => any)[] = [];
   const disconnectedCallbacks: (() => any)[] = [];
-  const beforeConnectCallbacks: (() => Promise<any>)[] = [];
-  const beforeDisconnectCallbacks: (() => Promise<any>)[] = [];
+  const beforeConnectCallbacks: (() => void | Promise<void>)[] = [];
+  const beforeDisconnectCallbacks: (() => void | Promise<void>)[] = [];
 
   const c: Omit<ViewContext, keyof DebugChannel> = {
     name: config.view.name ?? "anonymous",
@@ -164,19 +172,19 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
       });
     },
 
-    onConnected(callback: () => any) {
+    onConnected(callback) {
       connectedCallbacks.push(callback);
     },
 
-    onDisconnected(callback: () => any) {
+    onDisconnected(callback) {
       disconnectedCallbacks.push(callback);
     },
 
-    beforeConnect(callback: () => Promise<any>) {
+    beforeConnect(callback) {
       beforeConnectCallbacks.push(callback);
     },
 
-    beforeDisconnect(callback: () => Promise<any>) {
+    beforeDisconnect(callback) {
       beforeDisconnectCallbacks.push(callback);
     },
 
@@ -205,6 +213,8 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
     outlet() {
       return m("$outlet", { $children: readable($$children) });
     },
+
+    queueUpdate: appContext.queueUpdate,
   };
 
   const debugChannel = appContext.debugHub.channel({
