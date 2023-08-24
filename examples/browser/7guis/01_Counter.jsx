@@ -11,7 +11,8 @@ export default function (_, c) {
       <div>
         <input
           type="text"
-          value={computed($$count, (x) => x.toString())}
+          // value={computed($$count, (x) => x.toString())}
+          value={$$count}
           readonly
         />
         <button

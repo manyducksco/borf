@@ -16,8 +16,8 @@ import {
 } from "@borf/bedrock";
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugOptions } from "./DebugHub.js";
-import { makeStore, type Store } from "./store.js";
-import { makeView, type ViewContext, type View } from "./view.js";
+import { initStore, type Store } from "./store.js";
+import { initView, type ViewContext, type View } from "./view.js";
 import { DOMHandle, Markup, m } from "./markup.js";
 import { type StopFunction } from "./state.js";
 import { DialogStore } from "./stores/dialog.js";
@@ -74,7 +74,7 @@ export interface ElementContext {
 export interface StoreRegistration<O = any> {
   store: Store<O, any>;
   options?: O;
-  instance?: ReturnType<typeof makeStore>;
+  instance?: ReturnType<typeof initStore>;
 }
 
 interface AppRouter {
@@ -208,12 +208,12 @@ export class App implements AppRouter {
       if (severity === "crash") {
         await this.disconnect();
 
-        const instance = makeView({
+        const instance = initView({
           view: DefaultCrashPage,
           appContext: this.#appContext,
           elementContext: this.#elementContext,
           // channelPrefix: "crash",
-          attributes: {
+          props: {
             message: error.message,
             error: error,
             componentName,
@@ -474,9 +474,9 @@ export class App implements AppRouter {
     debugChannel.info(`total routes: ${this.#routes.length}`);
 
     // First, initialize the root view. The router store needs this to connect the initial route.
-    appContext.rootView = makeView({
+    appContext.rootView = initView({
       view: this.#mainView.type as View<any>,
-      attributes: this.#mainView.attributes,
+      props: this.#mainView.props,
       appContext,
       elementContext,
     });
@@ -499,7 +499,7 @@ export class App implements AppRouter {
         options: options ?? {},
       };
 
-      const instance = makeStore(config);
+      const instance = initStore(config);
 
       await instance.setup();
 

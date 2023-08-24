@@ -16,7 +16,7 @@ import { observeMany } from "./utils/observeMany.js";
  */
 export type ViewResult = Node | Readable<any> | Markup | Markup[] | null;
 
-export type View<A> = (attributes: A, context: ViewContext) => ViewResult | Promise<ViewResult>;
+export type View<P> = (props: P, context: ViewContext) => ViewResult | Promise<ViewResult>;
 
 export interface ViewContext extends DebugChannel {
   /**
@@ -33,23 +33,23 @@ export interface ViewContext extends DebugChannel {
    * Runs `callback` and awaits its promise before `onConnected` callbacks are called.
    * View is not considered connected until all `beforeConnect` promises resolve.
    */
-  beforeConnect(callback: () => Promise<any>): void;
+  beforeConnect(callback: () => Promise<void> | void): void;
 
   /**
    * Runs `callback` after this view is connected.
    */
-  onConnected(callback: () => any): void;
+  onConnected(callback: () => void): void;
 
   /**
    * Runs `callback` and awaits its promise before `onDisconnected` callbacks are called.
    * View is not removed from the DOM until all `beforeDisconnect` promises resolve.
    */
-  beforeDisconnect(callback: () => Promise<any>): void;
+  beforeDisconnect(callback: () => Promise<void> | void): void;
 
   /**
    * Runs `callback` after this view is disconnected.
    */
-  onDisconnected(callback: () => any): void;
+  onDisconnected(callback: () => void): void;
 
   /**
    * The name of this view for logging and debugging purposes.
@@ -103,18 +103,22 @@ export function getViewSecrets(ctx: ViewContext): ViewContextSecrets {
 ||              View Init              ||
 \*=====================================*/
 
+export function view<P>(callback: View<P>) {
+  return callback;
+}
+
 /**
  * Parameters passed to the makeView function.
  */
-interface ViewConfig<A> {
-  view: View<A>;
+interface ViewConfig<P> {
+  view: View<P>;
   appContext: AppContext;
   elementContext: ElementContext;
-  attributes: A;
+  props: P;
   children?: Markup[];
 }
 
-export function makeView<A>(config: ViewConfig<A>): DOMHandle {
+export function initView<P>(config: ViewConfig<P>): DOMHandle {
   const appContext = config.appContext;
   const elementContext = { ...config.elementContext };
   const $$children = writable<DOMHandle[]>(renderMarkupToDOM(config.children ?? [], { appContext, elementContext }));
@@ -226,7 +230,7 @@ export function makeView<A>(config: ViewConfig<A>): DOMHandle {
     let result: unknown;
 
     try {
-      result = config.view(config.attributes, c as ViewContext);
+      result = config.view(config.props, c as ViewContext);
 
       if (result instanceof Promise) {
         // TODO: Handle loading states

@@ -2,7 +2,9 @@
 export { App } from "./App.js";
 export { ref } from "./Ref.js";
 export { spring } from "./Spring.js";
-export { readable, writable, computed, unwrap } from "./state.js";
+export { readable, writable, computed, unwrap, isReadable, isWritable } from "./state.js";
+//export { view } from "./view.js";
+//export { store } from "./store.js";
 
 // Markup
 export { m, cond, repeat } from "./markup.js";

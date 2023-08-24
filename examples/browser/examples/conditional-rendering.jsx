@@ -1,7 +1,7 @@
 import { writable, computed, cond } from "@borf/browser";
-import { ExampleFrame } from "../../views/ExampleFrame";
+import { ExampleFrame } from "../views/ExampleFrame";
 
-export function ConditionalRendering(_, c) {
+export default function ConditionalRendering(_, c) {
   const $$show = writable(true);
 
   return (

@@ -1,10 +1,10 @@
 import { readable, writable, computed, cond } from "@borf/browser";
-import { ExampleFrame } from "../../views/ExampleFrame";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 /**
  * Demonstrates HTTP requests with the built-in `http` store.
  */
-export function HTTPRequests(_, c) {
+export default function HTTPRequests(_, c) {
   const $$loading = writable(false);
   const $$url = writable();
 
@@ -31,10 +31,7 @@ export function HTTPRequests(_, c) {
       .then((res) => {
         $$url.set(res.body.message);
       })
-      .catch(c.crash)
-      .finally(() => {
-        $$loading.set(false);
-      });
+      .catch(c.crash);
   }
 
   return (
@@ -42,7 +39,16 @@ export function HTTPRequests(_, c) {
       <div style={{ display: "flex", flexFlow: "column nowrap" }}>
         <button onclick={onclick}>Get Dog</button>
         {$label}
-        {cond($$url, <img style={{ maxWidth: 300 }} src={$$url} />)}
+        {cond(
+          $$url,
+          <img
+            style={{ maxWidth: 300 }}
+            src={$$url}
+            onload={() => {
+              $$loading.set(false);
+            }}
+          />
+        )}
       </div>
     </ExampleFrame>
   );

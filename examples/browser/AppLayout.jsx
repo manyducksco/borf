@@ -1,5 +1,5 @@
 import { computed } from "@borf/browser";
-import { MouseStore } from "../stores/MouseStore";
+import { MouseStore } from "./stores/MouseStore";
 import styles from "./AppLayout.module.css";
 
 export async function AppLayout(_, c) {
@@ -67,6 +67,12 @@ export async function AppLayout(_, c) {
             </li>
             <li>
               <NavLink path="/examples/http-requests" name="HTTP Requests" />
+            </li>
+            <li>
+              <NavLink
+                path="/examples/deeply-nested-observers"
+                name="Deeply Nested Observers"
+              />
             </li>
           </ul>
         </section>

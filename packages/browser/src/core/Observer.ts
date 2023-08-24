@@ -1,6 +1,6 @@
 import { typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
-import { Readable, type StopFunction } from "./state.js";
+import { Readable } from "./state.js";
 import type { Renderable } from "./types.js";
 import { isRenderable } from "./utils/isRenderable.js";
 import { observeMany } from "./utils/observeMany.js";
@@ -20,58 +20,51 @@ export class Observer implements DOMHandle {
   node: Node;
   endNode: Node;
   connectedViews: DOMHandle[] = [];
-  stopCallback?: StopFunction;
-  readables;
   renderFn: (...values: any) => Renderable;
   appContext;
   elementContext;
+  observerControls;
 
   get connected() {
     return this.node.parentNode != null;
   }
 
   constructor({ readables, renderFn, appContext, elementContext }: ObserverOptions) {
-    this.readables = readables;
     this.appContext = appContext;
     this.elementContext = elementContext;
     this.renderFn = renderFn;
 
     this.node = document.createComment("Observer");
     this.endNode = document.createComment("/Observer");
+
+    this.observerControls = observeMany(readables, (...values) => {
+      const rendered = this.renderFn(...values);
+
+      if (!isRenderable(rendered)) {
+        console.error(rendered);
+        throw new TypeError(
+          `Observer received invalid value to render. Got type: ${typeOf(rendered)}, value: ${rendered}`
+        );
+      }
+
+      if (Array.isArray(rendered)) {
+        this.update(...rendered);
+      } else {
+        this.update(rendered);
+      }
+    });
   }
 
   async connect(parent: Node, after?: Node) {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
-      const controls = observeMany(this.readables, (...values) => {
-        const rendered = this.renderFn(...values);
-
-        if (!isRenderable(rendered)) {
-          console.error(rendered);
-          throw new TypeError(
-            `Observer received invalid value to render. Got type: ${typeOf(rendered)}, value: ${rendered}`
-          );
-        }
-
-        if (Array.isArray(rendered)) {
-          this.update(...rendered);
-        } else {
-          this.update(rendered);
-        }
-      });
-
-      controls.start();
-
-      this.stopCallback = controls.stop;
+      this.observerControls.start();
     }
   }
 
   async disconnect() {
-    if (this.stopCallback) {
-      this.stopCallback();
-      this.stopCallback = undefined;
-    }
+    this.observerControls.stop();
 
     if (this.connected) {
       await this.cleanup();

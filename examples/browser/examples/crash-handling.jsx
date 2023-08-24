@@ -1,6 +1,6 @@
-import { ExampleFrame } from "../../views/ExampleFrame";
+import { ExampleFrame } from "../views/ExampleFrame";
 
-export function CrashHandling(_, ctx) {
+export default function CrashHandling(_, ctx) {
   return (
     <ExampleFrame title="Crash Handling">
       <div>

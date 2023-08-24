@@ -12,31 +12,35 @@ import {
 } from "./state.js";
 import { omit } from "./utils/omit.js";
 import { renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
+//import { eventPropsToEventNames } from "./types.js";
+
+//const eventHandlerProps = Object.values(eventPropsToEventNames).map((event) => "on" + event);
+const isCamelCaseEventName = (key: string) => /^on[A-Z]/.test(key);
 
 type HTMLOptions = {
   appContext: AppContext;
   elementContext: ElementContext;
   tag: string;
-  attributes?: any;
+  props?: any;
   children?: Markup[];
 };
 
 export class HTML implements DOMHandle {
   node;
-  attributes;
+  props: Record<string, any>;
   children: DOMHandle[];
   stopCallbacks: StopFunction[] = [];
   appContext;
   elementContext;
 
-  // Prevents 'onclickaway' handlers from firing in the same cycle in which the element is connected.
+  // Prevents 'onClickOutside' handlers from firing in the same cycle in which the element is connected.
   canClickAway = false;
 
   get connected() {
     return this.node.parentNode != null;
   }
 
-  constructor({ tag, attributes, children, appContext, elementContext }: HTMLOptions) {
+  constructor({ tag, props, children, appContext, elementContext }: HTMLOptions) {
     elementContext = { ...elementContext };
 
     // This and all nested views will be created as SVG elements.
@@ -51,34 +55,19 @@ export class HTML implements DOMHandle {
       this.node = document.createElement(tag);
     }
 
-    const normalizedAttrs: Record<string, any> = {};
-
-    for (const key in attributes) {
-      const normalized = key.toLowerCase();
-
-      switch (normalized) {
-        case "classname":
-          // TODO: Print a warning in dev mode that this isn't technically correct?
-          normalizedAttrs["class"] = attributes[key];
-          break;
-        default:
-          normalizedAttrs[key] = attributes[key];
-          break;
-      }
-    }
-
     // Set ref if present. Refs can be a Ref object or a function that receives the node.
-    if (normalizedAttrs.ref) {
-      if (isRef(normalizedAttrs.ref)) {
-        normalizedAttrs.ref.current = this.node;
-      } else if (isFunction(normalizedAttrs.ref)) {
-        normalizedAttrs.ref(this.node);
+    if (props.ref) {
+      if (isRef(props.ref)) {
+        props.ref.current = this.node;
       } else {
-        throw new Error("Expected an instance of Ref. Got: " + attributes.ref);
+        throw new Error("Expected an instance of Ref. Got: " + props.ref);
       }
     }
 
-    this.attributes = omit(["ref"], normalizedAttrs);
+    this.props = {
+      ...omit(["ref", "class", "className"], props),
+      class: props.className ?? props.class,
+    };
     this.children = children ? renderMarkupToDOM(children, { appContext, elementContext }) : [];
 
     this.appContext = appContext;
@@ -95,9 +84,9 @@ export class HTML implements DOMHandle {
         await child.connect(this.node);
       }
 
-      this.applyAttributes(this.node, this.attributes);
-      if (this.attributes.style) this.applyStyles(this.node, this.attributes.style, this.stopCallbacks);
-      if (this.attributes.class) this.applyClasses(this.node, this.attributes.class, this.stopCallbacks);
+      this.applyProps(this.node, this.props);
+      if (this.props.style) this.applyStyles(this.node, this.props.style, this.stopCallbacks);
+      if (this.props.class) this.applyClasses(this.node, this.props.class, this.stopCallbacks);
     }
 
     parent.insertBefore(this.node, after?.nextSibling ?? null);
@@ -137,107 +126,177 @@ export class HTML implements DOMHandle {
       } else if (current[i] && !next[i]) {
         // item was removed
         current[i].disconnect();
-      } else {
-        // current and next both exist (or both don't exist, but that shouldn't happen.)
-        // if (current[i].node!.nodeType !== next[i].node!.nodeType) {
-        // replace
+      } else if (current[i] != next[i]) {
+        // item was replaced
         patched[i] = next[i];
         current[i].disconnect();
         await patched[i].connect(this.node, patched[i - 1]?.node);
-        // } else {
-        //   const sameAttrs = deepEqual(current[i].attributes, next[i].attributes);
-
-        //   if (sameAttrs) {
-        //     // reuse element, but diff children. have setChildren do diffing?
-        //     const children = next[i].children ?? [];
-        //     patched[i] = { ...current[i], children };
-        //     patched[i].handle.setChildren(children);
-        //   } else {
-        //     // replace (TODO: patch attrs in place if possible)
-        //     patched[i] = next[i];
-        //     await patched[i].connect(this.#node, current[i].node);
-        //     current[i].disconnect();
-        //   }
-        // }
       }
     }
 
     this.children = patched;
   }
 
-  applyAttributes(element: HTMLElement | SVGElement, attrs: Record<string, unknown>) {
-    for (const key in attrs) {
-      const value = attrs[key];
+  applyProps(element: HTMLElement | SVGElement, props: Record<string, unknown>) {
+    const attachProp = <T>(value: Readable<T> | T, callback: (value: T) => void) => {
+      if (isReadable(value)) {
+        this.stopCallbacks.push(value.observe(callback));
+      } else {
+        callback(value);
+      }
+    };
 
-      // Bind or set value depending on its type.
-      if (key === "value") {
-        if (isReadable(value)) {
-          this.stopCallbacks.push(
-            value.observe((current) => {
-              (element as any).value = String(current);
-            })
-          );
-
-          if (isWritable(value)) {
-            const listener: EventListener = (e) => {
-              const updated = toTypeOf(value.get(), (e.currentTarget as HTMLInputElement).value);
-              value.set(updated);
-            };
-
-            element.addEventListener("input", listener);
-
-            this.stopCallbacks.push(() => {
-              element.removeEventListener("input", listener);
-            });
-          }
-        } else {
-          (element as any).value = String(value);
-        }
-      } else if (eventAttrs.includes(key.toLowerCase())) {
-        const eventName = key.slice(2).toLowerCase();
-
-        if (eventName === "clickaway") {
-          const listener = (e: Event) => {
-            if (this.canClickAway && !element.contains(e.target as any)) {
-              if (isReadable<(e: Event) => void>(value)) {
-                value.get()(e);
-              } else {
-                (value as (e: Event) => void)(e);
-              }
+    if (this.elementContext.isSVG) {
+      for (const key in props) {
+        if (!privateProps.includes(key)) {
+          attachProp(props[key], (current) => {
+            if (current != null) {
+              element.setAttribute(key, String(props[key]));
+            } else {
+              element.removeAttribute(key);
             }
-          };
-
-          window.addEventListener("click", listener);
-
-          this.stopCallbacks.push(() => {
-            window.removeEventListener("click", listener);
           });
-        } else {
+        }
+      }
+      return;
+    }
+
+    for (const key in props) {
+      const value = props[key];
+
+      if (key === "attributes") {
+        const values = value as Record<string, any>;
+        // Set attributes directly without mapping props
+        for (const name in values) {
+          attachProp(values[name], (current) => {
+            if (current == null) {
+              (element as any).removeAttribute(name);
+            } else {
+              (element as any).setAttribute(name, String(current));
+            }
+          });
+        }
+      } else if (key === "eventListeners") {
+        const values = value as Record<string, any>;
+
+        for (const name in values) {
           const listener: (e: Event) => void = isReadable<(e: Event) => void>(value)
             ? (e: Event) => value.get()(e)
             : (value as (e: Event) => void);
 
-          element.addEventListener(eventName, listener);
+          element.addEventListener(name, listener);
 
           this.stopCallbacks.push(() => {
-            element.removeEventListener(eventName, listener);
+            element.removeEventListener(name, listener);
           });
         }
-      } else if (!privateAttrs.includes(key)) {
-        const isBoolean = booleanAttrs.includes(key);
+      } else if (key === "$$value") {
+        if (!isWritable(value)) {
+          throw new TypeError(`$$value property must be a Writable. Got: ${value} (${typeof value})`);
+        }
 
-        if (isReadable(value)) {
-          this.stopCallbacks.push(
-            value.observe((current) => {
-              if (current) {
-                element.setAttribute(key, isBoolean ? "" : current.toString());
+        attachProp(value, (current) => {
+          (element as any).value = String(current);
+        });
+
+        const listener: EventListener = (e) => {
+          const updated = toTypeOf(value.get(), (e.currentTarget as HTMLInputElement).value);
+          value.set(updated);
+        };
+
+        element.addEventListener("input", listener);
+
+        this.stopCallbacks.push(() => {
+          element.removeEventListener("input", listener);
+        });
+      } else if (key === "onClickOutside" || key === "onclickoutside") {
+        const listener = (e: Event) => {
+          if (this.canClickAway && !element.contains(e.target as any)) {
+            if (isReadable<(e: Event) => void>(value)) {
+              value.get()(e);
+            } else {
+              (value as (e: Event) => void)(e);
+            }
+          }
+        };
+
+        const options = { capture: true };
+
+        window.addEventListener("click", listener, options);
+
+        this.stopCallbacks.push(() => {
+          window.removeEventListener("click", listener, options);
+        });
+      } else if (isCamelCaseEventName(key)) {
+        const eventName = key.slice(2).toLowerCase();
+
+        const listener: (e: Event) => void = isReadable<(e: Event) => void>(value)
+          ? (e: Event) => value.get()(e)
+          : (value as (e: Event) => void);
+
+        element.addEventListener(eventName, listener);
+
+        this.stopCallbacks.push(() => {
+          element.removeEventListener(eventName, listener);
+        });
+      } else if (key.includes("-")) {
+        // Names with dashes in them are not valid prop names, so they are treated as attributes.
+        attachProp(value, (current) => {
+          if (current == null) {
+            element.removeAttribute(key);
+          } else {
+            element.setAttribute(key, String(current));
+          }
+        });
+      } else if (!privateProps.includes(key)) {
+        switch (key) {
+          case "contentEditable":
+          case "value":
+            attachProp(value, (current) => {
+              (element as any)[key] = String(current);
+            });
+            break;
+
+          case "for":
+            attachProp(value, (current) => {
+              (element as any).htmlFor = current;
+            });
+            break;
+
+          // Attribute-aliased props
+          case "exportParts":
+          case "part":
+          case "translate": {
+            const _key = key.toLowerCase();
+            attachProp(value, (current) => {
+              if (current == undefined) {
+                element.removeAttribute(_key);
               } else {
-                element.removeAttribute(key);
+                element.setAttribute(_key, String(current));
               }
-            })
-          );
-        } else if (value) {
-          element.setAttribute(key, isBoolean ? "" : String(value));
+            });
+            break;
+          }
+
+          case "autocomplete":
+          case "autocapitalize":
+            attachProp(value, (current) => {
+              if (typeof current === "string") {
+                (element as any).autocomplete = current;
+              } else if (current) {
+                (element as any).autocomplete = "on";
+              } else {
+                (element as any).autocomplete = "off";
+              }
+            });
+            break;
+
+          default: {
+            attachProp(value, (current) => {
+              (element as any)[key] = current;
+            });
+            break;
+          }
         }
       }
     }
@@ -398,77 +457,35 @@ function toTypeOf<T>(target: T, source: unknown): T | unknown {
 }
 
 // Attributes in this list will not be forwarded to the DOM node.
-const privateAttrs = ["ref", "children", "class", "value", "style", "data"];
+const privateProps = ["ref", "children", "class", "style", "data"];
 
-const booleanAttrs = [
-  "allowfullscreen",
-  "async",
-  "autocomplete",
-  "autofocus",
-  "autoplay",
-  "checked",
-  "contenteditable",
-  "controls",
-  "default",
-  "defer",
-  "disabled",
-  "formnovalidate",
-  "hidden",
-  "ismap",
-  "itemscope",
-  "loop",
-  "multiple",
-  "muted",
-  "nomodule",
-  "open",
-  "playsinline",
-  "readonly",
-  "required",
-  "reversed",
-  "selected",
-  "spellcheck",
-  "translate",
-  "truespeed",
-];
-
-const eventAttrs = [
-  "onclick",
-  "onclickaway",
-  "ondblclick",
-  "onmousedown",
-  "onmouseup",
-  "onmouseover",
-  "onmousemove",
-  "onmouseout",
-  "onmouseenter",
-  "onmouseleave",
-  "ontouchcancel",
-  "ontouchend",
-  "ontouchmove",
-  "ontouchstart",
-  "ondragstart",
-  "ondrag",
-  "ondragenter",
-  "ondragleave",
-  "ondragover",
-  "ondrop",
-  "ondragend",
-  "onkeydown",
-  "onkeypress",
-  "onkeyup",
-  "onunload",
-  "onabort",
-  "onerror",
-  "onresize",
-  "onscroll",
-  "onselect",
-  "onchange",
-  "onsubmit",
-  "onreset",
-  "onfocus",
-  "onblur",
-  "oninput",
-  "onanimationend",
-  "onanimationiteration",
-  "onanimationstart",
-];
+//const booleanAttrs = [
+//  "allowfullscreen",
+//  "async",
+//  "autocomplete",
+//  "autofocus",
+//  "autoplay",
+//  "checked",
+//  "contenteditable",
+//  "controls",
+//  "default",
+//  "defer",
+//  "disabled",
+//  "formnovalidate",
+//  "hidden",
+//  "ismap",
+//  "itemscope",
+//  "loop",
+//  "multiple",
+//  "muted",
+//  "nomodule",
+//  "open",
+//  "playsinline",
+//  "readonly",
+//  "required",
+//  "reversed",
+//  "selected",
+//  "spellcheck",
+//  "translate",
+//  "truespeed",
+//];

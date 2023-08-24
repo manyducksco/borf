@@ -1,4 +1,5 @@
 import { writable, readable, computed, repeat } from "@borf/browser";
+import { produce } from "immer";
 import { ExampleFrame } from "../views/ExampleFrame";
 
 export default function (_, c) {
@@ -35,11 +36,14 @@ export default function (_, c) {
     const surnameInput = $$surnameInput.get();
 
     $$people.update((current) => {
-      current.push({
-        id,
-        name: nameInput,
-        surname: surnameInput,
-      });
+      return [
+        ...current,
+        {
+          id,
+          name: nameInput,
+          surname: surnameInput,
+        },
+      ];
     });
 
     $$nextId.update((current) => current + 1);
@@ -51,12 +55,14 @@ export default function (_, c) {
     const nameInput = $$nameInput.get();
     const surnameInput = $$surnameInput.get();
 
-    $$people.update((current) => {
-      const person = current.find((p) => p.id === selectedId);
+    $$people.update(
+      produce((current) => {
+        const person = current.find((p) => p.id === selectedId);
 
-      person.name = nameInput;
-      person.surname = surnameInput;
-    });
+        person.name = nameInput;
+        person.surname = surnameInput;
+      })
+    );
   }
 
   c.observe($$people, (people) => {
@@ -86,13 +92,13 @@ export default function (_, c) {
     <ExampleFrame title="5. CRUD">
       <div>
         <div>
-          Filter prefix: <input value={$$filterPrefix} />
+          Filter prefix: <input $$value={$$filterPrefix} />
         </div>
         <div>
           <select
             size={8}
-            value={readable($$selectedId)}
-            onchange={(e) => {
+            value={$$selectedId}
+            onChange={(e) => {
               c.log(e.target, e.target.value);
 
               $$selectedId.set(Number(e.target.value));
@@ -116,13 +122,13 @@ export default function (_, c) {
           </select>
         </div>
         <div>
-          <input value={$$nameInput} />
-          <input value={$$surnameInput} />
+          <input $$value={$$nameInput} />
+          <input $$value={$$surnameInput} />
         </div>
         <div>
-          <button onclick={create}>Create</button>
-          <button onclick={update}>Update</button>
-          <button onclick={del}>Delete</button>
+          <button onClick={create}>Create</button>
+          <button onClick={update}>Update</button>
+          <button onClick={del}>Delete</button>
         </div>
       </div>
     </ExampleFrame>

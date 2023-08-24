@@ -1,7 +1,7 @@
 import { computed } from "@borf/browser";
-import { ExampleFrame } from "../../views/ExampleFrame";
+import { ExampleFrame } from "../views/ExampleFrame";
 
-import styles from "./Languages.module.css";
+import styles from "./languages.module.css";
 
 const languageLabels = {
   "en-US": "American",
@@ -9,7 +9,7 @@ const languageLabels = {
   ja: "日本語",
 };
 
-export function Languages(_, ctx) {
+export default function Languages(_, ctx) {
   const { translate, setLanguage, supportedLanguages, $currentLanguage } =
     ctx.use("language");
 

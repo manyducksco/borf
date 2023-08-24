@@ -1,6 +1,21 @@
 import test from "node:test";
 import assert from "node:assert";
-import { readable, writable, computed, unwrap } from "../lib/index.js";
+import { readable, writable, computed, unwrap, isReadable, isWritable } from "../lib/index.js";
+
+test("isReadable, isWritable: returns correct results", (t) => {
+  const $$writable = writable(5);
+  const $readable = readable($$writable);
+  const $computed = computed($readable, (x) => x * 2);
+
+  assert.strictEqual(isWritable($$writable), true);
+  assert.strictEqual(isReadable($$writable), true);
+
+  assert.strictEqual(isWritable($readable), false);
+  assert.strictEqual(isReadable($readable), true);
+
+  assert.strictEqual(isWritable($computed), false);
+  assert.strictEqual(isReadable($computed), true);
+});
 
 test("readable, writable, computed: basic functionality", (t) => {
   const $$writable = writable("writable");
@@ -110,7 +125,7 @@ test("readable, writable, computed: observer called with initial value when regi
   assert.deepEqual(cObserver1.mock.calls[0].arguments, [10]);
   cStop1();
 
-  // Computed (single source)
+  // Computed (multi source)
   const cObserver2 = t.mock.fn();
   const cStop2 = $multi.observe(cObserver2);
   assert.strictEqual(cObserver2.mock.calls.length, 1);

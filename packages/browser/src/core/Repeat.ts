@@ -1,7 +1,7 @@
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DOMHandle } from "./markup.js";
 import { readable, writable, type Readable, type StopFunction, type Writable } from "./state.js";
-import { makeView, type ViewContext, type ViewResult } from "./view.js";
+import { initView, type ViewContext, type ViewResult } from "./view.js";
 
 // ----- Types ----- //
 
@@ -131,11 +131,11 @@ export class Repeat<T> implements DOMHandle {
           key: potential.key,
           $$value,
           $$index,
-          handle: makeView({
+          handle: initView({
             view: RepeatItemView,
             appContext: this.appContext,
             elementContext: this.elementContext,
-            attributes: { $value: readable($$value), $index: readable($$index), renderFn: this.renderFn },
+            props: { $value: readable($$value), $index: readable($$index), renderFn: this.renderFn },
           }),
         };
       }
@@ -159,12 +159,12 @@ export class Repeat<T> implements DOMHandle {
   }
 }
 
-interface RepeatItemAttrs {
+interface RepeatItemProps {
   $value: Readable<any>;
   $index: Readable<number>;
   renderFn: ($value: Readable<any>, $index: Readable<number>, ctx: ViewContext) => ViewResult;
 }
 
-function RepeatItemView({ $value, $index, renderFn }: RepeatItemAttrs, ctx: ViewContext) {
+function RepeatItemView({ $value, $index, renderFn }: RepeatItemProps, ctx: ViewContext) {
   return renderFn($value, $index, ctx);
 }

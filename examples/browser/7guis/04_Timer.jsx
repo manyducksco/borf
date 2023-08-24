@@ -49,11 +49,17 @@ export default function (_, ctx) {
         <div>{computed($$elapsed, (seconds) => seconds.toFixed(1))}</div>
         <div>
           Duration:{" "}
-          <input type="range" min={0} max={30} step={0.1} value={$$duration} />
+          <input
+            type="range"
+            min={0}
+            max={30}
+            step={0.1}
+            $$value={$$duration}
+          />
         </div>
         <div>
           <button
-            onclick={() => {
+            onClick={() => {
               $$elapsed.set(0);
             }}
           >

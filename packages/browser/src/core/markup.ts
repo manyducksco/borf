@@ -8,7 +8,7 @@ import { Repeat } from "./Repeat.js";
 import { Text } from "./Text.js";
 import { isReadable, readable, type Readable } from "./state.js";
 import type { Renderable, Stringable } from "./types.js";
-import { makeView, type View, type ViewContext, type ViewResult } from "./view.js";
+import { initView, type View, type ViewContext, type ViewResult } from "./view.js";
 
 /*===========================*\
 ||           Markup          ||
@@ -21,7 +21,7 @@ const MARKUP = Symbol("Markup");
  */
 export interface Markup {
   type: string | View<any>;
-  attributes?: Record<string, any>;
+  props?: Record<string, any>;
   children?: Markup[];
 }
 
@@ -110,11 +110,11 @@ export function m<T extends keyof MarkupAttributes>(
 
 export function m<I>(type: View<I>, attributes?: I, ...children: Renderable[]): Markup;
 
-export function m<I>(type: string | View<I>, attributes?: I, ...children: Renderable[]) {
+export function m<P>(type: string | View<P>, props?: P, ...children: Renderable[]) {
   return {
     [MARKUP]: true,
     type,
-    attributes,
+    props,
     children: toMarkup(children),
   };
 }
@@ -149,26 +149,6 @@ export function repeat<T>(
 
   return m("$repeat", { $items, keyFn, renderFn });
 }
-
-/**
- * Calls `render` for each new value of `observed`, displaying the result of the `render` function.
- */
-//export function observe<T>(observed: Readable<T>, renderFn: (value: T) => Renderable): Markup;
-
-/**
- * Calls `render` for each new value of`observed`, displaying the result of the `render` function.
- */
-//export function observe<R extends Readable<any>[]>(
-//  observed: [...R],
-//  renderFn: (...values: ReadableValues<R>) => Renderable
-//): Markup;
-//
-//export function observe<T>(observed: Readable<T> | Readable<any>[], renderFn: (...args: any) => Renderable) {
-//  return m("$observer", {
-//    readables: isArray(observed) ? observed : [observed],
-//    renderFn,
-//  });
-//}
 
 /*===========================*\
 ||           Render          ||
@@ -211,9 +191,9 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
 
   return items.map((item) => {
     if (isFunction(item.type)) {
-      return makeView({
+      return initView({
         view: item.type as View<any>,
-        attributes: item.attributes,
+        props: item.props,
         children: item.children,
         appContext: ctx.appContext,
         elementContext: ctx.elementContext,
@@ -221,17 +201,17 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
     } else if (isString(item.type)) {
       switch (item.type) {
         case "$node": {
-          const attrs = item.attributes! as MarkupAttributes["$node"];
+          const attrs = item.props! as MarkupAttributes["$node"];
           return new NodeHandle(attrs.value);
         }
         case "$text": {
-          const attrs = item.attributes! as MarkupAttributes["$text"];
+          const attrs = item.props! as MarkupAttributes["$text"];
           return new Text({
             value: attrs.value,
           });
         }
         case "$cond": {
-          const attrs = item.attributes! as MarkupAttributes["$cond"];
+          const attrs = item.props! as MarkupAttributes["$cond"];
           return new Conditional({
             $predicate: attrs.$predicate,
             thenContent: attrs.thenContent,
@@ -241,7 +221,7 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
           });
         }
         case "$repeat": {
-          const attrs = item.attributes! as MarkupAttributes["$repeat"];
+          const attrs = item.props! as MarkupAttributes["$repeat"];
           return new Repeat({
             $items: attrs.$items,
             keyFn: attrs.keyFn,
@@ -251,7 +231,7 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
           });
         }
         case "$observer": {
-          const attrs = item.attributes! as MarkupAttributes["$observer"];
+          const attrs = item.props! as MarkupAttributes["$observer"];
           return new Observer({
             readables: attrs.readables,
             renderFn: attrs.renderFn,
@@ -260,7 +240,7 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
           });
         }
         case "$outlet": {
-          const attrs = item.attributes! as MarkupAttributes["$outlet"];
+          const attrs = item.props! as MarkupAttributes["$outlet"];
           return new Outlet({
             $children: attrs.$children,
             appContext: ctx.appContext,
@@ -273,7 +253,7 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
           }
           return new HTML({
             tag: item.type,
-            attributes: item.attributes,
+            props: item.props,
             children: item.children,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,

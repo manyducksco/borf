@@ -1,9 +1,9 @@
-import { makeView, type View } from "../view.js";
+import { initView, type View } from "../view.js";
 import { getStoreSecrets, type StoreContext } from "../store.js";
 import { type DOMHandle } from "../markup.js";
 import { Writable, writable } from "../state.js";
 
-interface DialogAttrs {
+interface DialogProps {
   $$open: Writable<boolean>;
 }
 
@@ -79,14 +79,14 @@ export function DialogStore(c: StoreContext) {
     }
   });
 
-  function open<I extends DialogAttrs>(view: View<I>, inputs?: Omit<I, "$$open">) {
+  function open<P extends DialogProps>(view: View<P>, props?: Omit<P, "$$open">) {
     const $$open = writable(true);
 
-    let instance: DOMHandle | undefined = makeView({
+    let instance: DOMHandle | undefined = initView({
       view: view as View<unknown>,
       appContext,
       elementContext,
-      attributes: { ...inputs, $$open },
+      props: { ...props, $$open },
     });
     $$dialogs.update((current) => {
       return [...current, instance!];

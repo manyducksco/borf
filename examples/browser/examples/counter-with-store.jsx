@@ -1,11 +1,11 @@
 import { computed } from "@borf/browser";
-import { CounterStore } from "../../stores/CounterStore.js";
-import { ExampleFrame } from "../../views/ExampleFrame/index.js";
+import { CounterStore } from "../stores/CounterStore.js";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 /**
  * Component with controls and a mapped label based on a readable inside a store.
  */
-export function CounterWithStore(_, ctx) {
+export default function CounterWithStore(_, ctx) {
   const { $current, reset } = ctx.use(CounterStore);
   const $label = computed($current, (n) => `the number is: ${n}`);
 

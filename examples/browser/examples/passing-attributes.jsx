@@ -1,12 +1,10 @@
 import { writable } from "@borf/browser";
-import { ExampleFrame } from "../../views/ExampleFrame";
-
-import styles from "./PassingAttributes.module.css";
+import { ExampleFrame } from "../views/ExampleFrame";
 
 /**
  * Demonstrates passing attributes to a subview.
  */
-export function PassingAttributes() {
+export default function PassingAttributes() {
   const $$message = writable("Hello");
 
   return (
@@ -17,7 +15,7 @@ export function PassingAttributes() {
           the same Writable.
         </p>
 
-        <input type="text" value={$$message} />
+        <input type="text" $$value={$$message} />
         <hr />
 
         <SubView $$message={$$message} />

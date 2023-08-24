@@ -16,6 +16,7 @@ export interface StoreContext<Options = any> extends DebugChannel {
    * Returns the shared instance of `store`.
    */
   use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+
   /**
    * Returns the shared instance of a built-in store.
    */
@@ -77,6 +78,10 @@ export function getStoreSecrets(c: StoreContext): StoreContextSecrets {
 ||             Store Init              ||
 \*=====================================*/
 
+export function store<O>(callback: Store<any, O>) {
+  return callback;
+}
+
 /**
  * Parameters passed to the makeStore function.
  */
@@ -87,7 +92,7 @@ interface StoreConfig<O> {
   options: O;
 }
 
-export function makeStore<O>(config: StoreConfig<O>) {
+export function initStore<O>(config: StoreConfig<O>) {
   const appContext = config.appContext;
   const elementContext = config.elementContext;
 

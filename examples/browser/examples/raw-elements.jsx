@@ -1,7 +1,7 @@
-import { ExampleFrame } from "../../views/ExampleFrame";
+import { ExampleFrame } from "../views/ExampleFrame";
 import { computed, writable } from "@borf/browser";
 
-export function RawElements(props, c) {
+export default function RawElements(props, c) {
   const $$headerLevel = writable(1);
   const $$headerText = writable("This is the header!");
 

@@ -1,13 +1,13 @@
 import { readable, spring, writable, computed } from "@borf/browser";
 import dedent from "dedent";
-import { ExampleFrame } from "../../views/ExampleFrame";
+import { ExampleFrame } from "../views/ExampleFrame";
 
-import styles from "./SpringAnimation.module.css";
+import styles from "./spring-animation.module.css";
 
 /**
  * Demonstrates the use of Spring for animation.
  */
-export function SpringAnimation(props, c) {
+export default function SpringAnimation(props, c) {
   const $$stiffness = writable(1549);
   const $$mass = writable(7);
   const $$damping = writable(83);
@@ -69,31 +69,31 @@ export function SpringAnimation(props, c) {
 
       <ul class={styles.presetList}>
         <li>
-          <button class={styles.presetButton} onclick={preset(1845, 1, 28, 0)}>
+          <button class={styles.presetButton} onClick={preset(1845, 1, 28, 0)}>
             Clunky
           </button>
         </li>
 
         <li>
-          <button class={styles.presetButton} onclick={preset(1354, 7, 66, 0)}>
+          <button class={styles.presetButton} onClick={preset(1354, 7, 66, 0)}>
             Marshmallowy
           </button>
         </li>
 
         <li>
-          <button class={styles.presetButton} onclick={preset(2000, 5, 400, 3)}>
+          <button class={styles.presetButton} onClick={preset(2000, 5, 400, 3)}>
             Corporate
           </button>
         </li>
 
         <li>
-          <button class={styles.presetButton} onclick={preset(648, 1, 28, 0)}>
+          <button class={styles.presetButton} onClick={preset(648, 1, 28, 0)}>
             Punchy
           </button>
         </li>
 
         <li>
-          <button class={styles.presetButton} onclick={preset(841, 41, 301, 0)}>
+          <button class={styles.presetButton} onClick={preset(841, 41, 301, 0)}>
             Smooth
           </button>
         </li>
@@ -209,7 +209,7 @@ function ControlGroup({ label, min, max, $$value }) {
         type="range"
         min={min}
         max={max}
-        value={$$value}
+        $$value={$$value}
       />
     </div>
   );

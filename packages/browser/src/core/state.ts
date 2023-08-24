@@ -175,13 +175,13 @@ export function computed(...args: any): Readable<any> {
     return {
       get: () => compute(readable.get()),
       observe: (callback) => {
-        let lastValue: any = UNOBSERVED;
+        let lastComputedValue: any = UNOBSERVED;
 
         return readable.observe((currentValue) => {
           const computedValue = compute(currentValue);
 
-          if (!deepEqual(computedValue, lastValue)) {
-            lastValue = computedValue;
+          if (!deepEqual(computedValue, lastComputedValue)) {
+            lastComputedValue = computedValue;
             callback(computedValue);
           }
         });
@@ -196,15 +196,15 @@ export function computed(...args: any): Readable<any> {
     let stopCallbacks: StopFunction[] = [];
     let isObserving = false;
     let observedValues: any[] = [];
-    let computedValue: any = UNOBSERVED;
+    let latestComputedValue: any = UNOBSERVED;
 
     function updateValue() {
-      const value = compute(...observedValues);
+      const computedValue = compute(...observedValues);
 
       // Skip equality check on initial subscription to guarantee
       // that observers receive an initial value, even if undefined.
-      if (!deepEqual(value, computedValue)) {
-        computedValue = value;
+      if (!deepEqual(computedValue, latestComputedValue)) {
+        latestComputedValue = computedValue;
 
         for (const callback of observers) {
           callback(computedValue);
@@ -246,19 +246,20 @@ export function computed(...args: any): Readable<any> {
     return {
       get: () => {
         if (isObserving) {
-          return computedValue;
+          return latestComputedValue;
         } else {
           return compute(...readables.map((x) => x.get()));
         }
       },
       observe: (callback) => {
-        observers.push(callback);
-
-        if (isObserving) {
-          callback(computedValue);
-        } else {
+        // First start observing
+        if (!isObserving) {
           startObserving();
         }
+
+        // Then call callback and add it to observers for future changes
+        callback(latestComputedValue);
+        observers.push(callback);
 
         return function stop() {
           observers.splice(observers.indexOf(callback), 1);

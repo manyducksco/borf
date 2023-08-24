@@ -1,1 +1,0 @@
-export { PassingAttributes } from "./PassingAttributes";

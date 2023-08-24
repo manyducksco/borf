@@ -1,7 +1,7 @@
 import type * as CSS from "csstype";
 import { type Ref } from "./Ref.js";
 import { type Store } from "./store.js";
-import { type Markup } from "./markup.js";
+import { m, type Markup } from "./markup.js";
 import { type Readable, type Writable } from "./state.js";
 import { type DialogStore } from "./stores/dialog.js";
 import { type DocumentStore } from "./stores/document.js";
@@ -51,10 +51,10 @@ export type Stringable = { toString(): string };
 // export type MaybeReadable<T> = T extends Readable<any> ? T : T | Readable<T> | Readable<Exclude<T, undefined>>;
 export type MaybeReadable<T> = T | Readable<T> | Readable<T | undefined>;
 
-// type OptionalProp<T> = T | Readable<T> | Readable<T | undefined>;
-// type RequiredProp<T> = T | Readable<T>;
+type OptionalProperty<T> = T | Readable<T> | Readable<T | undefined>;
+type RequiredProperty<T> = T | Readable<T>;
 
-type AutoCapitalizeValues = "off" | "on" | "none" | "sentences" | "words" | "characters";
+type AutocapitalizeValues = "off" | "on" | "none" | "sentences" | "words" | "characters";
 type ContentEditableValues = true | false | "true" | "false" | "plaintext-only" | "inherit";
 type ClassListValues = string | ClassMap | Array<string | ClassMap | (string | ClassMap)[]>;
 type DirValues = "ltr" | "rtl" | "auto";
@@ -67,38 +67,120 @@ type InputModeValues = "decimal" | "email" | "none" | "numeric" | "search" | "te
  */
 export interface ElementProps {
   /**
+   * HTML attributes to assign to the element.
+   */
+  attributes?: OptionalProperty<Record<string, any>>;
+
+  /**
+   * Object of event listeners.
+   */
+  eventListeners?: OptionalProperty<Record<string, EventHandler<Event>>>; // TODO: Define full types for events in this object.
+
+  /**
+   * CSS classes to be applied to this element. In addition to the standard space-separated list of class names,
+   * this property also supports a class map object with class names as keys and booleans as values.
+   * Class names in a class map will be applied to the element while their values are true. Also supports an
+   * array of strings and class maps.
+   *
+   * Alias of `className`.
+   *
+   * @example
+   * <div class="one-class" />
+   *
+   * <div class={"one-class"} />
+   *
+   * <div class={["array", "of", "classes"]} />
+   *
+   * <div class={{ applied: true, notApplied: false }} />
+   *
+   * <div class={["class", "class2", { "conditional": $value }]} />
+   */
+  class?: OptionalProperty<ClassListValues>;
+
+  /**
    * CSS classes to be applied to this element. In addition to the standard space-separated list of class names,
    * this property also supports a class map object with class names as keys and booleans as values.
    * Class names in a class map will be applied to the element while their values are true. Also supports an
    * array of strings and class maps.
    *
    * @example
-   * <div classList="one-class" />
+   * <div className="one-class" />
    *
-   * <div classList={"one-class"} />
+   * <div className={"one-class"} />
    *
-   * <div classList={["array", "of", "classes"]} />
+   * <div className={["array", "of", "classes"]} />
    *
-   * <div classList={{ applied: true, notApplied: false }} />
+   * <div className={{ applied: true, notApplied: false }} />
    *
-   * <div classList={["class", "class2", { "conditional": $value }]} />
+   * <div className={["class", "class2", { "conditional": $value }]} />
    */
-  classList?: ClassListValues | Readable<ClassListValues> | Readable<ClassListValues | undefined>;
+  className?: OptionalProperty<ClassListValues>;
 
   /**
    * A unique string to identify this element.
    */
-  id?: string | Readable<string> | Readable<string | undefined>;
+  id?: OptionalProperty<string>;
 
   /**
    * Scroll position from the left (on the X axis), if this element is scrollable.
    */
-  scrollLeft?: number | Readable<number> | Readable<number | undefined>;
+  scrollLeft?: OptionalProperty<number>;
 
   /**
    * Scroll position from the top (on the Y axis) if this element is scrollable.
    */
-  scrollTop?: number | Readable<number> | Readable<number | undefined>;
+  scrollTop?: OptionalProperty<number>;
+
+  /**
+   * Enables or disables checking for spelling errors in an element's content.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/spellcheck
+   */
+  spellcheck?: OptionalProperty<boolean>;
+
+  /**
+   * Specifies whether an element's content should be translated when the page is localized.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/translate
+   */
+  translate?: OptionalProperty<boolean>;
+
+  /*=================================*\
+  ||     Attribute-aliased Props     ||
+  \*=================================*/
+
+  /* This section includes props that don't truly exist as props on DOM nodes, but instead map to HTML attributes.
+     These attributes can be set through props on Markup elements. */
+
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/exportparts
+   */
+  exportParts?: OptionalProperty<string>;
+
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/part
+   */
+  part?: OptionalProperty<string>;
+
+  /**
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/slot
+   */
+  slot?: OptionalProperty<string>;
+
+  /**
+   * Inline styles applied to the element. Can be passed as a string or as an object.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/style
+   */
+  style?:
+    | string
+    | CSSProperties
+    | Readable<string>
+    | Readable<CSSProperties>
+    | Readable<string | CSSProperties>
+    | Readable<string | undefined>
+    | Readable<CSSProperties | undefined>
+    | Readable<string | CSSProperties | undefined>;
 
   /*=================================*\
   ||              Events             ||
@@ -109,40 +191,28 @@ export interface ElementProps {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationcancel_event
    */
-  onAnimationCancel?:
-    | EventHandler<AnimationEvent>
-    | Readable<EventHandler<AnimationEvent>>
-    | Readable<EventHandler<AnimationEvent> | undefined>;
+  onAnimationCancel?: OptionalProperty<EventHandler<AnimationEvent>>;
 
   /**
    * Fired when a CSS animation completes.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event
    */
-  onAnimationEnd?:
-    | EventHandler<AnimationEvent>
-    | Readable<EventHandler<AnimationEvent>>
-    | Readable<EventHandler<AnimationEvent> | undefined>;
+  onAnimationEnd?: OptionalProperty<EventHandler<AnimationEvent>>;
 
   /**
    * Fired when an iteration of a CSS animation completes.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationiteration_event
    */
-  onAnimationIteration?:
-    | EventHandler<AnimationEvent>
-    | Readable<EventHandler<AnimationEvent>>
-    | Readable<EventHandler<AnimationEvent> | undefined>;
+  onAnimationIteration?: OptionalProperty<EventHandler<AnimationEvent>>;
 
   /**
    * Fired when a CSS animation starts.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationstart_event
    */
-  onAnimationStart?:
-    | EventHandler<AnimationEvent>
-    | Readable<EventHandler<AnimationEvent>>
-    | Readable<EventHandler<AnimationEvent> | undefined>;
+  onAnimationStart?: OptionalProperty<EventHandler<AnimationEvent>>;
 
   /**
    * Fired when a pointing device's non-primary button is pressed and released while the pointer is inside the element.
@@ -150,70 +220,49 @@ export interface ElementProps {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event
    */
-  onAuxClick?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onAuxClick?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when the element has lost focus. This event does not bubble.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event
    */
-  onBlur?:
-    | EventHandler<FocusEvent>
-    | Readable<EventHandler<FocusEvent>>
-    | Readable<EventHandler<FocusEvent> | undefined>;
+  onBlur?: OptionalProperty<EventHandler<FocusEvent>>;
 
   /**
    * Fired when a pointing device is pressed and released while the pointer is inside the element.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event
    */
-  onClick?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onClick?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when a pointing device is pressed and released while the pointer is outside the element.
    *
    * NOTE: This is a custom event that isn't supported natively by browsers.
    */
-  onClickOutside?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onClickOutside?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when a text composition system (such as a Chinese/Japanese IME) completes or cancels the current composition session.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event
    */
-  onCompositionEnd?:
-    | EventHandler<CompositionEvent>
-    | Readable<EventHandler<CompositionEvent>>
-    | Readable<EventHandler<CompositionEvent> | undefined>;
+  onCompositionEnd?: OptionalProperty<EventHandler<CompositionEvent>>;
 
   /**
    * Fired when a text composition system (such as a Chinese/Japanese IME) starts a new composition session.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionstart_event
    */
-  onCompositionStart?:
-    | EventHandler<CompositionEvent>
-    | Readable<EventHandler<CompositionEvent>>
-    | Readable<EventHandler<CompositionEvent> | undefined>;
+  onCompositionStart?: OptionalProperty<EventHandler<CompositionEvent>>;
 
   /**
    * Fired when a new character is received from a session in a text composition system (such as a Chinese/Japanese IME).
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionupdate_event
    */
-  onCompositionUpdate?:
-    | EventHandler<CompositionEvent>
-    | Readable<EventHandler<CompositionEvent>>
-    | Readable<EventHandler<CompositionEvent> | undefined>;
+  onCompositionUpdate?: OptionalProperty<EventHandler<CompositionEvent>>;
 
   // onContextMenu: Deliberately unimplemented due to lack of support in iOS Safari and by extension all iOS webviews.
 
@@ -222,154 +271,112 @@ export interface ElementProps {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event
    */
-  onDoubleClick?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onDblClick?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when the element has received focus. This event does not bubble.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event
    */
-  onFocus?:
-    | EventHandler<FocusEvent>
-    | Readable<EventHandler<FocusEvent>>
-    | Readable<EventHandler<FocusEvent> | undefined>;
+  onFocus?: OptionalProperty<EventHandler<FocusEvent>>;
 
   /**
    * Fired when an element has received focus. Fired after `onFocus`. Unlike `onFocus`, this event does bubble.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event
    */
-  onFocusIn?:
-    | EventHandler<FocusEvent>
-    | Readable<EventHandler<FocusEvent>>
-    | Readable<EventHandler<FocusEvent> | undefined>;
+  onFocusIn?: OptionalProperty<EventHandler<FocusEvent>>;
 
   /**
    * Fired when an element has lost focus. Fired after `onBlur`. Unlike `onBlur`, this event does bubble.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event
    */
-  onFocusOut?:
-    | EventHandler<FocusEvent>
-    | Readable<EventHandler<FocusEvent>>
-    | Readable<EventHandler<FocusEvent> | undefined>;
+  onFocusOut?: OptionalProperty<EventHandler<FocusEvent>>;
 
   /**
    * Fired when an element enters or exits fullscreen mode.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/fullscreenchange_event
    */
-  onFullscreenChange?: EventHandler<Event> | Readable<EventHandler<Event>> | Readable<EventHandler<Event> | undefined>;
+  onFullscreenChange?: OptionalProperty<EventHandler<Event>>;
 
   /**
    * Fired when the browser can't switch to fullscreen mode.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/fullscreenerror_event
    */
-  onFullscreenError?: EventHandler<Event> | Readable<EventHandler<Event>> | Readable<EventHandler<Event> | undefined>;
+  onFullscreenError?: OptionalProperty<EventHandler<Event>>;
 
   /**
    * Fired when a key on the keyboard is pressed.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
    */
-  onKeyDown?:
-    | EventHandler<KeyboardEvent>
-    | Readable<EventHandler<KeyboardEvent>>
-    | Readable<EventHandler<KeyboardEvent> | undefined>;
+  onKeyDown?: OptionalProperty<EventHandler<KeyboardEvent>>;
 
   /**
    * Fired when a key on the keyboard is released.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keyup_event
    */
-  onKeyUp?:
-    | EventHandler<KeyboardEvent>
-    | Readable<EventHandler<KeyboardEvent>>
-    | Readable<EventHandler<KeyboardEvent> | undefined>;
+  onKeyUp?: OptionalProperty<EventHandler<KeyboardEvent>>;
 
   /**
    * Fired when a pointing device button is pressed while the pointer is inside the element.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
    */
-  onMouseDown?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onMouseDown?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when a pointing device enters the bounds of an element.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseenter_event
    */
-  onMouseEnter?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onMouseEnter?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when a pointing device leaves the bounds of an element. This event does not bubble.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseleave_event
    */
-  onMouseLeave?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onMouseLeave?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when a pointing device is moved while inside the bounds of an element.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
    */
-  onMouseMove?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onMouseMove?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when a pointing device leaves the bounds of an element or one of its children. Unlike `onMouseLeave`, this event does bubble.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
    */
-  onMouseOut?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onMouseOut?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when a pointing device enters the bounds of an element or one of its children.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseover_event
    */
-  onMouseOver?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onMouseOver?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when a pointing device button is released while the pointer is inside the element.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
    */
-  onMouseUp?:
-    | EventHandler<MouseEvent>
-    | Readable<EventHandler<MouseEvent>>
-    | Readable<EventHandler<MouseEvent> | undefined>;
+  onMouseUp?: OptionalProperty<EventHandler<MouseEvent>>;
 
   /**
    * Fired when the browser determines there are unlikely to be any more pointer events.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointercancel_event
    */
-  onPointerCancel?:
-    | EventHandler<PointerEvent>
-    | Readable<EventHandler<PointerEvent>>
-    | Readable<EventHandler<PointerEvent> | undefined>;
+  onPointerCancel?: OptionalProperty<EventHandler<PointerEvent>>;
 
   /**
    * Fired when a pointer becomes active inside the bounds of an element.
@@ -377,20 +384,14 @@ export interface ElementProps {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerdown_event
    */
-  onPointerDown?:
-    | EventHandler<PointerEvent>
-    | Readable<EventHandler<PointerEvent>>
-    | Readable<EventHandler<PointerEvent> | undefined>;
+  onPointerDown?: OptionalProperty<EventHandler<PointerEvent>>;
 
   /**
    * Fired when a pointer is moved into the boundary of an element or one of its children.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerenter_event
    */
-  onPointerEnter?:
-    | EventHandler<PointerEvent>
-    | Readable<EventHandler<PointerEvent>>
-    | Readable<EventHandler<PointerEvent> | undefined>;
+  onPointerEnter?: OptionalProperty<EventHandler<PointerEvent>>;
 
   /**
    * Fired when a pointer is moved outside the boundary of an element or one of its children.
@@ -398,74 +399,56 @@ export interface ElementProps {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerleave_event
    */
-  onPointerLeave?:
-    | EventHandler<PointerEvent>
-    | Readable<EventHandler<PointerEvent>>
-    | Readable<EventHandler<PointerEvent> | undefined>;
+  onPointerLeave?: OptionalProperty<EventHandler<PointerEvent>>;
 
   /**
    * Fired when a pointer changes coordinates inside the bounds of an element or one of its children.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointermove_event
    */
-  onPointerMove?:
-    | EventHandler<PointerEvent>
-    | Readable<EventHandler<PointerEvent>>
-    | Readable<EventHandler<PointerEvent> | undefined>;
+  onPointerMove?: OptionalProperty<EventHandler<PointerEvent>>;
 
   /**
    * Fired when a pointer is no longer in contact with an element or its children.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerout_event
    */
-  onPointerOut?:
-    | EventHandler<PointerEvent>
-    | Readable<EventHandler<PointerEvent>>
-    | Readable<EventHandler<PointerEvent> | undefined>;
+  onPointerOut?: OptionalProperty<EventHandler<PointerEvent>>;
 
   /**
    * Fired when a pointer is moved into the boundary of an element.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerover_event
    */
-  onPointerOver?:
-    | EventHandler<PointerEvent>
-    | Readable<EventHandler<PointerEvent>>
-    | Readable<EventHandler<PointerEvent> | undefined>;
+  onPointerOver?: OptionalProperty<EventHandler<PointerEvent>>;
 
   /**
    * Fired when a pointer is no longer active.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerup_event
    */
-  onPointerUp?:
-    | EventHandler<PointerEvent>
-    | Readable<EventHandler<PointerEvent>>
-    | Readable<EventHandler<PointerEvent> | undefined>;
+  onPointerUp?: OptionalProperty<EventHandler<PointerEvent>>;
 
   /**
    * Fired when an element has been scrolled.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scroll_event
    */
-  onScroll?: EventHandler<Event> | Readable<EventHandler<Event>> | Readable<EventHandler<Event> | undefined>;
+  onScroll?: OptionalProperty<EventHandler<Event>>;
 
   /**
    * Fired when scrolling has completed.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollend_event
    */
-  onScrollEnd?: EventHandler<Event> | Readable<EventHandler<Event>> | Readable<EventHandler<Event> | undefined>;
+  onScrollEnd?: OptionalProperty<EventHandler<Event>>;
 
   /**
    * Fired when one or more touch points have been disrupted.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchcancel_event
    */
-  onTouchCancel?:
-    | EventHandler<TouchEvent>
-    | Readable<EventHandler<TouchEvent>>
-    | Readable<EventHandler<TouchEvent> | undefined>;
+  onTouchCancel?: OptionalProperty<EventHandler<TouchEvent>>;
 
   /**
    * Fired when one or more touch points are removed from the touch surface.
@@ -473,80 +456,381 @@ export interface ElementProps {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchend_event
    */
-  onTouchEnd?:
-    | EventHandler<TouchEvent>
-    | Readable<EventHandler<TouchEvent>>
-    | Readable<EventHandler<TouchEvent> | undefined>;
+  onTouchEnd?: OptionalProperty<EventHandler<TouchEvent>>;
 
   /**
    * Fired when one or more touch points are moved along the touch surface.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchmove_event
    */
-  onTouchMove?:
-    | EventHandler<TouchEvent>
-    | Readable<EventHandler<TouchEvent>>
-    | Readable<EventHandler<TouchEvent> | undefined>;
+  onTouchMove?: OptionalProperty<EventHandler<TouchEvent>>;
 
   /**
    * Fired when one or more touch points are placed on the touch surface.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchstart_event
    */
-  onTouchStart?:
-    | EventHandler<TouchEvent>
-    | Readable<EventHandler<TouchEvent>>
-    | Readable<EventHandler<TouchEvent> | undefined>;
+  onTouchStart?: OptionalProperty<EventHandler<TouchEvent>>;
 
   /**
    * Fired when a CSS transition is cancelled.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitioncancel_event
    */
-  onTransitionCancel?:
-    | EventHandler<TransitionEvent>
-    | Readable<EventHandler<TransitionEvent>>
-    | Readable<EventHandler<TransitionEvent> | undefined>;
+  onTransitionCancel?: OptionalProperty<EventHandler<TransitionEvent>>;
 
   /**
    * Fired when a CSS transition has completed.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionend_event
    */
-  onTransitionEnd?:
-    | EventHandler<TransitionEvent>
-    | Readable<EventHandler<TransitionEvent>>
-    | Readable<EventHandler<TransitionEvent> | undefined>;
+  onTransitionEnd?: OptionalProperty<EventHandler<TransitionEvent>>;
 
   /**
    * Fired when a CSS transition is first created.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionrun_event
    */
-  onTransitionRun?:
-    | EventHandler<TransitionEvent>
-    | Readable<EventHandler<TransitionEvent>>
-    | Readable<EventHandler<TransitionEvent> | undefined>;
+  onTransitionRun?: OptionalProperty<EventHandler<TransitionEvent>>;
 
   /**
    * Fired when a CSS transition starts playing (after any `transition-delay` has elapsed).
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionstart_event
    */
-  onTransitionStart?:
-    | EventHandler<TransitionEvent>
-    | Readable<EventHandler<TransitionEvent>>
-    | Readable<EventHandler<TransitionEvent> | undefined>;
+  onTransitionStart?: OptionalProperty<EventHandler<TransitionEvent>>;
 
   /**
    * Fired when a wheel button on a pointing device is rotated.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
    */
-  onWheel?:
-    | EventHandler<WheelEvent>
-    | Readable<EventHandler<WheelEvent>>
-    | Readable<EventHandler<WheelEvent> | undefined>;
+  onWheel?: OptionalProperty<EventHandler<WheelEvent>>;
+
+  /*=================================*\
+  ||         Event Properties        ||
+  \*=================================*/
+
+  /**
+   * Fired when a CSS animation unexpectedly aborts.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationcancel_event
+   */
+  onanimationcancel?: OptionalProperty<EventHandler<AnimationEvent>>;
+
+  /**
+   * Fired when a CSS animation completes.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event
+   */
+  onanimationend?: OptionalProperty<EventHandler<AnimationEvent>>;
+
+  /**
+   * Fired when an iteration of a CSS animation completes.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationiteration_event
+   */
+  onanimationiteration?: OptionalProperty<EventHandler<AnimationEvent>>;
+
+  /**
+   * Fired when a CSS animation starts.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationstart_event
+   */
+  onanimationstart?: OptionalProperty<EventHandler<AnimationEvent>>;
+
+  /**
+   * Fired when a pointing device's non-primary button is pressed and released while the pointer is inside the element.
+   * With a mouse, this would typically be any button other than left click.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event
+   */
+  onauxclick?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when the element has lost focus. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event
+   */
+  onblur?: OptionalProperty<EventHandler<FocusEvent>>;
+
+  /**
+   * Fired when a pointing device is pressed and released while the pointer is inside the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event
+   */
+  onclick?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when a pointing device is pressed and released while the pointer is outside the element.
+   *
+   * NOTE: This is a custom event that isn't supported natively by browsers.
+   */
+  onclickoutside?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when a text composition system (such as a Chinese/Japanese IME) completes or cancels the current composition session.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event
+   */
+  oncompositionend?: OptionalProperty<EventHandler<CompositionEvent>>;
+
+  /**
+   * Fired when a text composition system (such as a Chinese/Japanese IME) starts a new composition session.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionstart_event
+   */
+  oncompositionstart?: OptionalProperty<EventHandler<CompositionEvent>>;
+
+  /**
+   * Fired when a new character is received from a session in a text composition system (such as a Chinese/Japanese IME).
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionupdate_event
+   */
+  oncompositionupdate?: OptionalProperty<EventHandler<CompositionEvent>>;
+
+  // onContextMenu: Deliberately unimplemented due to lack of support in iOS Safari and by extension all iOS webviews.
+
+  /**
+   * Fired when a pointing device button is rapidly clicked twice while the pointer is inside the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event
+   */
+  ondblclick?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when the element has received focus. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event
+   */
+  onfocus?: OptionalProperty<EventHandler<FocusEvent>>;
+
+  /**
+   * Fired when an element has received focus. Fired after `onFocus`. Unlike `onFocus`, this event does bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focusin_event
+   */
+  onfocusin?: OptionalProperty<EventHandler<FocusEvent>>;
+
+  /**
+   * Fired when an element has lost focus. Fired after `onBlur`. Unlike `onBlur`, this event does bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focusout_event
+   */
+  onfocusout?: OptionalProperty<EventHandler<FocusEvent>>;
+
+  /**
+   * Fired when an element enters or exits fullscreen mode.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/fullscreenchange_event
+   */
+  onfullscreenchange?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the browser can't switch to fullscreen mode.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/fullscreenerror_event
+   */
+  onfullscreenerror?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when a key on the keyboard is pressed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
+   */
+  onkeydown?: OptionalProperty<EventHandler<KeyboardEvent>>;
+
+  /**
+   * Fired when a key on the keyboard is released.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keyup_event
+   */
+  onkeyup?: OptionalProperty<EventHandler<KeyboardEvent>>;
+
+  /**
+   * Fired when a pointing device button is pressed while the pointer is inside the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
+   */
+  onmousedown?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when a pointing device enters the bounds of an element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseenter_event
+   */
+  onmouseenter?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when a pointing device leaves the bounds of an element. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseleave_event
+   */
+  onmouseleave?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when a pointing device is moved while inside the bounds of an element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
+   */
+  onmousemove?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when a pointing device leaves the bounds of an element or one of its children. Unlike `onMouseLeave`, this event does bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
+   */
+  onmouseout?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when a pointing device enters the bounds of an element or one of its children.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseover_event
+   */
+  onmouseover?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when a pointing device button is released while the pointer is inside the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
+   */
+  onmouseup?: OptionalProperty<EventHandler<MouseEvent>>;
+
+  /**
+   * Fired when the browser determines there are unlikely to be any more pointer events.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointercancel_event
+   */
+  onpointercancel?: OptionalProperty<EventHandler<PointerEvent>>;
+
+  /**
+   * Fired when a pointer becomes active inside the bounds of an element.
+   * For a mouse, this is when a button is pressed. For a touchscreen, this is when a finger makes contact.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerdown_event
+   */
+  onpointerdown?: OptionalProperty<EventHandler<PointerEvent>>;
+
+  /**
+   * Fired when a pointer is moved into the boundary of an element or one of its children.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerenter_event
+   */
+  onpointerenter?: OptionalProperty<EventHandler<PointerEvent>>;
+
+  /**
+   * Fired when a pointer is moved outside the boundary of an element or one of its children.
+   * For a mouse, this is when a button is released. For a touchscreen, this is when a finger leaves the screen.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerleave_event
+   */
+  onpointerleave?: OptionalProperty<EventHandler<PointerEvent>>;
+
+  /**
+   * Fired when a pointer changes coordinates inside the bounds of an element or one of its children.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointermove_event
+   */
+  onpointermove?: OptionalProperty<EventHandler<PointerEvent>>;
+
+  /**
+   * Fired when a pointer is no longer in contact with an element or its children.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerout_event
+   */
+  onpointerout?: OptionalProperty<EventHandler<PointerEvent>>;
+
+  /**
+   * Fired when a pointer is moved into the boundary of an element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerover_event
+   */
+  onpointerover?: OptionalProperty<EventHandler<PointerEvent>>;
+
+  /**
+   * Fired when a pointer is no longer active.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/pointerup_event
+   */
+  onpointerup?: OptionalProperty<EventHandler<PointerEvent>>;
+
+  /**
+   * Fired when an element has been scrolled.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scroll_event
+   */
+  onscroll?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when scrolling has completed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollend_event
+   */
+  onscrollend?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when one or more touch points have been disrupted.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchcancel_event
+   */
+  ontouchcancel?: OptionalProperty<EventHandler<TouchEvent>>;
+
+  /**
+   * Fired when one or more touch points are removed from the touch surface.
+   * NOTE: This does not mean all touches are finished in the case of a multitouch gesture.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchend_event
+   */
+  ontouchend?: OptionalProperty<EventHandler<TouchEvent>>;
+
+  /**
+   * Fired when one or more touch points are moved along the touch surface.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchmove_event
+   */
+  ontouchmove?: OptionalProperty<EventHandler<TouchEvent>>;
+
+  /**
+   * Fired when one or more touch points are placed on the touch surface.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchstart_event
+   */
+  ontouchstart?: OptionalProperty<EventHandler<TouchEvent>>;
+
+  /**
+   * Fired when a CSS transition is cancelled.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitioncancel_event
+   */
+  ontransitioncancel?: OptionalProperty<EventHandler<TransitionEvent>>;
+
+  /**
+   * Fired when a CSS transition has completed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionend_event
+   */
+  ontransitionend?: OptionalProperty<EventHandler<TransitionEvent>>;
+
+  /**
+   * Fired when a CSS transition is first created.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionrun_event
+   */
+  ontransitionrun?: OptionalProperty<EventHandler<TransitionEvent>>;
+
+  /**
+   * Fired when a CSS transition starts playing (after any `transition-delay` has elapsed).
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionstart_event
+   */
+  ontransitionstart?: OptionalProperty<EventHandler<TransitionEvent>>;
+
+  /**
+   * Fired when a wheel button on a pointing device is rotated.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
+   */
+  onwheel?: OptionalProperty<EventHandler<WheelEvent>>;
 }
 
 export interface HTMLElementProps extends ElementProps {
@@ -555,67 +839,341 @@ export interface HTMLElementProps extends ElementProps {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/accessKey
    */
-  accessKey?: string | Readable<string> | Readable<string | undefined>;
+  accessKey?: OptionalProperty<string>;
 
   /**
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize
    */
-  autoCapitalize?: AutoCapitalizeValues | Readable<AutoCapitalizeValues> | Readable<AutoCapitalizeValues | undefined>;
+  autocapitalize?: OptionalProperty<AutocapitalizeValues>;
 
   /**
    * Indicates that this element should be focused as soon as it is connected to the DOM.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autofocus
    */
-  autoFocus?: boolean | Readable<boolean> | Readable<boolean | undefined>;
+  autofocus?: OptionalProperty<boolean>;
 
   /**
    * Makes the element's content editable by the user. This is commonly used as the basis for web-based text editors.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/contentEditable
    */
-  contentEditable?:
-    | ContentEditableValues
-    | Readable<ContentEditableValues>
-    | Readable<ContentEditableValues | undefined>;
+  contentEditable?: OptionalProperty<ContentEditableValues>;
 
   /**
    * Specifies text directionality of the content of this element. Some languages, such as Arabic, are written from right to left (specified here as "rtl").
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dir
    */
-  dir?: DirValues | Readable<DirValues> | Readable<DirValues | undefined>;
+  dir?: OptionalProperty<DirValues>;
+
+  /**
+   * Indicates that this element is draggable, that is, that the user can initiate a drag and drop operation with it.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  draggable?: OptionalProperty<boolean>;
 
   /**
    * Provides a hint for on-screen keyboards about what will happen when the Enter key is pressed.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/enterKeyHint
    */
-  enterKeyHint?: EnterKeyHintValues | Readable<EnterKeyHintValues> | Readable<EnterKeyHintValues | undefined>;
+  enterKeyHint?: OptionalProperty<EnterKeyHintValues>;
 
   /**
    * Indicates that the browser should not render this content. Maps to the `hidden` attribute.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/hidden
    */
-  hidden?: HiddenValues | Readable<HiddenValues> | Readable<HiddenValues | undefined>;
+  hidden?: OptionalProperty<HiddenValues>;
 
-  inert?: boolean | Readable<boolean> | Readable<boolean | undefined>;
+  /**
+   * Indicates that this element is completely non-interactive. Elements receive no user input events while inert.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/inert
+   */
+  inert?: OptionalProperty<boolean>;
 
-  inputMode?: InputModeValues | Readable<InputModeValues> | Readable<InputModeValues | undefined>;
+  /**
+   * Provides a hint about the type of data that might be entered while editing the element.
+   * Can affect the display of virtual keyboards.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/inputMode
+   */
+  inputMode?: OptionalProperty<InputModeValues>;
 
-  lang?: string | Readable<string> | Readable<string | undefined>;
+  /**
+   * The base language of the element's attributes and text content.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/lang
+   */
+  lang?: OptionalProperty<string>;
 
-  nonce?: string | Readable<string> | Readable<string | undefined>;
+  // TODO: Allow nonce? This seems to be primarily used to inject scripts, which generally isn't done done in an SPA.
+  // nonce?: string | Readable<string> | Readable<string | undefined>;
 
   /**
    * TODO: Add support. Currently experimental.
    */
-  popover?: never;
+  // popover?: never;
 
-  tabIndex?: number | Readable<number> | Readable<number | undefined>;
+  /**
+   * This element's position in the tab order, or the order this element will be focused as the user cycles through elements with the tab key.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/tabIndex
+   */
+  tabIndex?: OptionalProperty<number>;
 
-  title?: string | Readable<string> | Readable<string | undefined>;
+  /**
+   * The title of the element, which is typically displayed in a tooltip when the user hovers the mouse over the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/title
+   */
+  title?: OptionalProperty<string>;
+
+  /*=================================*\
+  ||     Attribute-aliased Props     ||
+  \*=================================*/
+
+  /* This section includes props that don't truly exist as props on DOM nodes, but instead map to HTML attributes.
+     These attributes can be set through props on Markup elements. */
+
+  // TODO: `is` (https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/is)
+
+  // TODO: `item*` microdata attributes
+
+  /*=================================*\
+  ||              Events             ||
+  \*=================================*/
+
+  /**
+   * Fired when the value of an `<input>` or `<textarea>` element (or any element with `contentEditable` enabled) is about to be modified.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/beforeinput_event
+   */
+  onBeforeInput?: OptionalProperty<EventHandler<InputEvent>>;
+
+  /**
+   * Fired when the user modifies the value of an `<input>`, `<textarea>` or `<select>` element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event
+   */
+  onChange?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user copies some content to the clipboard.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/copy_event
+   */
+  onCopy?: OptionalProperty<EventHandler<ClipboardEvent>>;
+
+  /**
+   * Fired when the user cuts some content to the clipboard.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/cut_event
+   */
+  onCut?: OptionalProperty<EventHandler<ClipboardEvent>>;
+
+  /**
+   * Fired periodically as the user is dragging in the context of a drag and drop operation.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drag_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  onDrag?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a drag operation ends.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragend_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  onDragEnd?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a dragged element or content enters a drop target.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragenter_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  onDragEnter?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a dragged element or content leaves a drop target.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragleave_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  onDragLeave?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired periodically as the user is dragging an element or content over a drop target.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragover_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  onDragOver?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a user begins dragging an element or content.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragstart_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  onDragStart?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a dragged element or content is dropped onto a drop target.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drop_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  onDrop?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a resource failed to load, for example, if the `src` can't be resolved on an `<image>` element. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/error_event
+   */
+  onError?: OptionalProperty<EventHandler<UIEvent | Event>>;
+
+  /**
+   * Fired when a resource failed to load, for example, if the `src` can't be resolved on an `<image>` element. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/input_event
+   */
+  onInput?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when a resource was successfully loaded, for example, when the `src` is loaded for an `<image>` element. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event
+   */
+  onLoad?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user pastes some content from the clipboard.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/paste_event
+   */
+  onPaste?: OptionalProperty<EventHandler<ClipboardEvent>>;
+
+  /*=================================*\
+  ||        Event Properties         ||
+  \*=================================*/
+
+  /**
+   * Fired when the value of an `<input>` or `<textarea>` element (or any element with `contentEditable` enabled) is about to be modified.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/beforeinput_event
+   */
+  onbeforeinput?: OptionalProperty<EventHandler<InputEvent>>;
+
+  /**
+   * Fired when the user modifies the value of an `<input>`, `<textarea>` or `<select>` element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event
+   */
+  onchange?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user copies some content to the clipboard.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/copy_event
+   */
+  oncopy?: OptionalProperty<EventHandler<ClipboardEvent>>;
+
+  /**
+   * Fired when the user cuts some content to the clipboard.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/cut_event
+   */
+  oncut?: OptionalProperty<EventHandler<ClipboardEvent>>;
+
+  /**
+   * Fired periodically as the user is dragging in the context of a drag and drop operation.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drag_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  ondrag?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a drag operation ends.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragend_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  ondragend?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a dragged element or content enters a drop target.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragenter_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  ondragenter?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a dragged element or content leaves a drop target.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragleave_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  ondragleave?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired periodically as the user is dragging an element or content over a drop target.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragover_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  ondragover?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a user begins dragging an element or content.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragstart_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  ondragstart?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a dragged element or content is dropped onto a drop target.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drop_event
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API
+   */
+  ondrop?: OptionalProperty<EventHandler<DragEvent>>;
+
+  /**
+   * Fired when a resource failed to load, for example, if the `src` can't be resolved on an `<image>` element. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/error_event
+   */
+  onerror?: OptionalProperty<EventHandler<UIEvent | Event>>;
+
+  /**
+   * Fired when a resource failed to load, for example, if the `src` can't be resolved on an `<image>` element. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/input_event
+   */
+  oninput?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when a resource was successfully loaded, for example, when the `src` is loaded for an `<image>` element. This event does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/load_event
+   */
+  onload?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user pastes some content from the clipboard.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/paste_event
+   */
+  onpaste?: OptionalProperty<EventHandler<ClipboardEvent>>;
 }
 
 export interface SVGElementProps extends ElementProps {}
@@ -623,7 +1181,7 @@ export interface SVGElementProps extends ElementProps {}
 /**
  * Mapping of event props to event names.
  */
-export const eventPropsToNames = {
+export const eventPropsToEventNames = {
   // ----- Element events ----- //
 
   onAnimationCancel: "animationcancel",
@@ -688,6 +1246,42 @@ export const eventPropsToNames = {
   onInput: "input",
   onLoad: "load",
   onPaste: "paste",
+
+  // ----- HTMLMediaElement events ----- //
+
+  onAbort: "abort",
+  onCanPlay: "canplay",
+  onCanPlayThrough: "canplaythrough",
+  onDurationChange: "durationchange",
+  onEmptied: "emptied",
+  onEncrypted: "encrypted",
+  onEnded: "ended",
+  onLoadedData: "loadeddata",
+  onLoadedMetadata: "loadedmetadata",
+  onLoadStart: "loadstart",
+  onPause: "pause",
+  onPlay: "play",
+  onPlaying: "playing",
+  onProgress: "progress",
+  onRateChange: "ratechange",
+  onSeeked: "seeked",
+  onSeeking: "seeking",
+  onStalled: "stalled",
+  onSuspend: "suspend",
+  onTimeUpdate: "timeupdate",
+  onVolumeChange: "volumechange",
+  onWaiting: "waiting",
+
+  // ----- HTMLFormElement events ----- //
+
+  onFormData: "formdata",
+  onReset: "reset",
+  onSubmit: "submit",
+
+  // ----- HTMLInputElement events ----- //
+
+  onInvalid: "invalid",
+  onSelect: "select",
 };
 
 /**
@@ -893,7 +1487,7 @@ export interface Styles extends CSS.Properties, CSS.PropertiesHyphen {
 }
 
 export type CSSProperties = {
-  [K in keyof Styles]: any;
+  [K in keyof Styles]: OptionalProperty<Styles[K]>;
 };
 
 export interface ClassMap {
@@ -902,435 +1496,7 @@ export interface ClassMap {
 
 export type EventHandler<E> = (event: E) => void;
 
-/**
- * Events supported by all HTML elements.
- */
-export interface HTMLGlobalEvents {
-  /**
-   * The `auxclick` event is fired at an Element when a non-primary pointing device button
-   * (any mouse button other than the primary—usually leftmost—button) has been pressed
-   * and released both within the same element.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event
-   */
-  onauxclick: EventHandler<PointerEvent>;
-  /**
-   * The `beforeinput` event fires when the value of an `<input>` or `<textarea>` element is about to be modified.
-   * The event also applies to elements with `contenteditable` enabled, and to any element when `designMode` is turned on.
-   *
-   * This allows web apps to override text edit behavior before the browser modifies the DOM tree, and provides more control
-   * over input events to improve performance.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/beforeinput_event
-   */
-  onbeforeinput: EventHandler<InputEvent>;
-
-  onbeforematch: EventHandler<Event>;
-  /**
-   * The `blur` event fires when an element has lost focus.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/blur_event
-   */
-  onblur: EventHandler<Event>;
-  /**
-   * The `cancel` event fires on a `<dialog>` when the user instructs the browser that they wish to dismiss the current open dialog.
-   * For example, the browser might fire this event when the user presses the `Esc` key or clicks a "Close dialog" button which is part of the browser's UI.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/cancel_event
-   */
-  oncancel: EventHandler<Event>;
-
-  /**
-   * The `change` event is fired for `<input>`, `<select>`, and `<textarea>` elements when the user modifies the element's value.
-   * Unlike the `input` event, the change event is not necessarily fired for each alteration to an element's value.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/change_event
-   */
-  onchange: EventHandler<Event>;
-  /**
-   * An element receives a `click` event when a pointing device button (such as a mouse's primary mouse button) is both pressed
-   * and released while the pointer is located inside the element.
-   *
-   * `click` fires after both the `mousedown` and `mouseup` events have fired, in that order.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/click_event
-   */
-  onclick: EventHandler<PointerEvent>;
-  /**
-   * A custom event handler in Borf. Fires the callback function when any element other than this one is clicked.
-   */
-  onclickaway: EventHandler<PointerEvent>;
-  /**
-   * The `close` event is fired on an `HTMLDialogElement` object when the dialog it represents has been closed.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/close_event
-   */
-  onclose: EventHandler<Event>;
-
-  oncontextlost: EventHandler<Event>;
-  /**
-   * The `contextmenu` event fires when the user attempts to open a context menu.
-   * This event is typically triggered by clicking the right mouse button, or by pressing the context menu key.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/contextmenu_event
-   */
-  oncontextmenu: EventHandler<PointerEvent>;
-
-  oncontextrestored: EventHandler<Event>;
-  /**
-   * The `cuechange` event fires when a `TextTrack` has changed the currently displaying cues.
-   * The event is fired on both the `TextTrack` and the `HTMLTrackElement` in which it's being presented, if any.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLTrackElement/cuechange_event
-   */
-  oncuechange: EventHandler<Event>;
-  /**
-   * The `dblclick` event fires when a pointing device button (such as a mouse's primary button) is double-clicked;
-   * that is, when it's rapidly clicked twice on a single element within a very short span of time.
-   *
-   * `dblclick` fires after two `click` events (and by extension, after two pairs of `mousedown` and `mouseup` events).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/dblclick_event
-   */
-  ondblclick: EventHandler<MouseEvent>;
-  /**
-   * The `drag` event is fired every few hundred milliseconds as an element or text selection is being dragged by the user.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drag_event
-   */
-  ondrag: EventHandler<DragEvent>;
-  /**
-   * The `dragend` event is fired when a drag operation is being ended (by releasing a mouse button or hitting the escape key).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragend_event
-   */
-  ondragend: EventHandler<DragEvent>;
-  /**
-   * The `dragenter` event is fired when a dragged element or text selection enters a valid drop target.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragenter_event
-   */
-  ondragenter: EventHandler<DragEvent>;
-  /**
-   * The `dragleave` event is fired when a dragged element or text selection leaves a valid drop target.
-   *
-   * This event is not cancelable.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragleave_event
-   */
-  ondragleave: EventHandler<DragEvent>;
-  /**
-   * The `dragover` event is fired when an element or text selection is being dragged over a valid drop target (every few hundred milliseconds).
-   *
-   * The event is fired on the drop target(s).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragover_event
-   */
-  ondragover: EventHandler<DragEvent>;
-  /**
-   * The `dragstart` event is fired when the user starts dragging an element or text selection.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dragstart_event
-   */
-  ondragstart: EventHandler<DragEvent>;
-  /**
-   * The drop event is fired when an element or text selection is dropped on a valid drop target.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/drop_event
-   */
-  ondrop: EventHandler<DragEvent>;
-  /**
-   * The `durationchange` event is fired when the `duration` attribute of a media element (`<audio>`, `<video>`) has been updated.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/durationchange_event
-   */
-  ondurationchange: EventHandler<Event>;
-  /**
-   * The `error` event is fired on an `Element` object when a resource failed to load, or can't be used.
-   * For example, if a script has an execution error or an image can't be found or is invalid.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/error_event
-   */
-  onerror: EventHandler<ErrorEvent>;
-  /**
-   * The `focus` event fires when an element has received focus.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/focus_event
-   */
-  onfocus: EventHandler<Event>;
-  /**
-   * The `formdata` event fires after the entry list representing the form's data is constructed.
-   * This happens when the form is submitted, but can also be triggered by the invocation of a `FormData()` constructor.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/formdata_event
-   */
-  onformdata: EventHandler<FormDataEvent>;
-  /**
-   * The `input` event fires when the value of an `<input>`, `<select>`, or `<textarea>` element has been changed.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/input_event
-   */
-  oninput: EventHandler<InputEvent>;
-  /**
-   * The `invalid` event fires when a submittable element has been checked for validity and doesn't satisfy its constraints.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event
-   */
-  oninvalid: EventHandler<Event>;
-  /**
-   * The` keydown` event is fired when a key is pressed.
-   *
-   * Unlike the `keypress` event, the `keydown` event is fired for all keys, regardless of whether they produce a character value.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
-   */
-  onkeydown: EventHandler<KeyboardEvent>;
-  /**
-   * The `keypress` event is fired when a key that produces a character value is pressed down.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keypress_event
-   * @deprecated
-   */
-  onkeypress: EventHandler<KeyboardEvent>;
-  /**
-   * The `keyup` event is fired when a key is released.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/keyup_event
-   */
-  onkeyup: EventHandler<KeyboardEvent>;
-
-  onload: EventHandler<Event>;
-  /**
-   * The `loadeddata` event is fired when the frame at the current playback position of the media has finished loading; often the first frame.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event
-   */
-  onloadeddata: EventHandler<Event>;
-  /**
-   * The `loadedmetadata` event is fired when the metadata has been loaded.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event
-   */
-  onloadedmetadata: EventHandler<Event>;
-  /**
-   * The `loadstart` event is fired when the browser has started to load a resource.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadstart_event
-   */
-  onloadstart: EventHandler<Event>;
-  /**
-   * The `mousedown` event is fired at an element when a pointing device button is pressed while the pointer is inside the element.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousedown_event
-   */
-  onmousedown: EventHandler<MouseEvent>;
-  /**
-   * The `mouseenter` event is fired at an element when a pointing device (usually a mouse) is initially moved
-   * so that its hotspot is within the element at which the event was fired.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseenter_event
-   */
-  onmouseenter: EventHandler<MouseEvent>;
-  /**
-   * The `mouseleave` event is fired at an element when the cursor of a pointing device (usually a mouse) is moved out of it.
-   *
-   * `mouseleave` and `mouseout` are similar but differ in that `mouseleave` does not bubble and `mouseout` does.
-   * This means that `mouseleave` is fired when the pointer has exited the element and all of its descendants,
-   * whereas `mouseout` is fired when the pointer leaves the element or leaves one of the element's descendants
-   * (even if the pointer is still within the element).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseleave_event
-   */
-  onmouseleave: EventHandler<MouseEvent>;
-  /**
-   * The `mousemove` event is fired at an element when a pointing device (usually a mouse) is moved while the cursor's hotspot is inside it.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mousemove_event
-   */
-  onmousemove: EventHandler<MouseEvent>;
-  /**
-   * The `mouseout` event is fired at an element when a pointing device (usually a mouse) is used to move the cursor
-   * so that it is no longer contained within the element or one of its children.
-   *
-   * `mouseout` is also delivered to an element if the cursor enters a child element, because the child element obscures the visible area of the element.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseout_event
-   */
-  onmouseout: EventHandler<MouseEvent>;
-  /**
-   * The `mouseover` event is fired at an element when a pointing device (such as a mouse or trackpad) is used
-   * to move the cursor onto the element or one of its child elements.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseover_event
-   */
-  onmouseover: EventHandler<MouseEvent>;
-  /**
-   * The `mouseup` event is fired at an element when a button on a pointing device (such as a mouse or trackpad) is released while the pointer is located inside it.
-   *
-   * `mouseup` events are the counterpoint to `mousedown` events.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/mouseup_event
-   */
-  onmouseup: EventHandler<MouseEvent>;
-  /**
-   * The `reset` event fires when a `<form>` is reset.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reset_event
-   */
-  onreset: EventHandler<Event>;
-  /**
-   * The `scroll` event fires when an element has been scrolled.
-   *
-   * **Note:** In iOS UIWebViews, scroll events are not fired while scrolling is taking place; they are only fired after the scrolling has completed.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/scroll_event
-   */
-  onscroll: EventHandler<Event>;
-  /**
-   * The `select` event fires when some text has been selected.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/select_event
-   */
-  onselect: EventHandler<Event>;
-  /**
-   * The `slotchange` event is fired on a `<slot>` element when the node(s) contained in that slot change.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLSlotElement/slotchange_event
-   */
-  onslotchange: EventHandler<Event>;
-  /**
-   * The `submit` event fires when a `<form>` is submitted.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/submit_event
-   */
-  onsubmit: EventHandler<SubmitEvent>;
-
-  /**
-   * The `touchcancel` event is fired when one or more touch points have been disrupted in an
-   * implementation-specific manner (for example, too many touch points are created).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchcancel_event
-   */
-  ontouchcancel: EventHandler<TouchEvent>;
-
-  /**
-   * The `touchend` event fires when one or more touch points are removed from the touch surface.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchend_event
-   */
-  ontouchend: EventHandler<TouchEvent>;
-
-  /**
-   * The `touchstart` event is fired when one or more touch points are placed on the touch surface.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchstart_event
-   */
-  ontouchstart: EventHandler<TouchEvent>;
-
-  /**
-   * The `touchmove` event is fired when one or more touch points are moved along the touch surface.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/touchmove_event
-   */
-  ontouchmove: EventHandler<TouchEvent>;
-
-  /**
-   * The `toggle` event fires when the open/closed state of a `<details>` element is toggled.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDetailsElement/toggle_event
-   */
-  ontoggle: EventHandler<Event>;
-  /**
-   * The `animationend` event is fired when a CSS Animation has completed. If the animation aborts before reaching completion,
-   * such as if the element is removed from the DOM or the animation is removed from the element, the `animationend` event is not fired.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event
-   */
-  onanimationend: EventHandler<Event>;
-  /**
-   * The `animationiteration` event is fired when an iteration of a CSS Animation ends, and another one begins.
-   * This event does not occur at the same time as the `animationend` event, and therefore does not occur for animations
-   * with an `animation-iteration-count` of one.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationiteration_event
-   */
-  onanimationiteration: EventHandler<Event>;
-  /**
-   * The `animationstart` event is fired when a CSS Animation has started. If there is an `animation-delay`, this event will fire
-   * once the delay period has expired. A negative delay will cause the event to fire with an `elapsedTime` equal to the absolute value
-   * of the delay (and, correspondingly, the animation will begin playing at that time index into the sequence).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/animationstart_event
-   */
-  onanimationstart: EventHandler<Event>;
-  /**
-   * The `transitionend` event is fired when a CSS transition has completed. In the case where a transition is removed before completion,
-   * such as if the `transition-property` is removed or `display` is set to `none`, then the event will not be generated.
-   *
-   * The `transitionend` event is fired in both directions - as it finishes transitioning to the transitioned state,
-   * and when it fully reverts to the default or non-transitioned state. If there is no transition delay or duration,
-   * if both are 0s or neither is declared, there is no transition, and none of the transition events are fired.
-   * If the `transitioncancel` event is fired, the `transitionend` event will not fire.
-   *
-   * This event is not cancelable.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/transitionend_event
-   */
-  ontransitionend: EventHandler<Event>;
-  /**
-   * The `wheel` event fires when the user rotates a wheel button on a pointing device (typically a mouse).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
-   */
-  onwheel: EventHandler<WheelEvent>;
-}
-
-export interface HTMLDocumentAndElementEvents {
-  /**
-   * The `copy` event fires when the user initiates a copy action through the browser's user interface.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/copy_event
-   */
-  oncopy: EventHandler<ClipboardEvent>;
-  /**
-   * The `cut` event is fired when the user has initiated a "cut" action through the browser's user interface.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/cut_event
-   */
-  oncut: EventHandler<Event>;
-  /**
-   * The `paste` event is fired when the user has initiated a "paste" action through the browser's user interface.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/Element/paste_event
-   */
-  onpaste: EventHandler<Event>;
-}
-
-type PartialGlobals = Partial<HTMLGlobalAttributes>;
-
-type GlobalAttributes = {
-  [K in keyof PartialGlobals]: MaybeReadable<PartialGlobals[K]>;
-};
-
-type PartialEvents = Partial<HTMLGlobalEvents> & Partial<HTMLDocumentAndElementEvents>;
-
-type GlobalEvents = {
-  [K in keyof PartialEvents]: MaybeReadable<PartialEvents[K]>;
-};
-
-export interface ElementAttributes<T extends HTMLElement> extends GlobalAttributes, GlobalEvents {
+export interface PropertiesOf<E extends HTMLElement> extends HTMLElementProps {
   /**
    * For TypeScript support; child elements passed through JSX.
    */
@@ -1339,19 +1505,7 @@ export interface ElementAttributes<T extends HTMLElement> extends GlobalAttribut
   /**
    * A Ref object or function that receives the DOM node when rendered.
    */
-  ref?: Ref<any> | ((node: T) => unknown);
-}
-
-export interface HTMLPropsFor<E extends HTMLElement> extends HTMLElementProps {
-  /**
-   * For TypeScript support; child elements passed through JSX.
-   */
-  children?: any;
-
-  /**
-   * A Ref object or function that receives the DOM node when rendered.
-   */
-  ref?: Ref<E>;
+  ref?: Ref<E> | Ref<HTMLElement> | Ref<Element>;
 }
 
 /**
@@ -1362,34 +1516,6 @@ export interface HTMLPropsFor<E extends HTMLElement> extends HTMLElementProps {
 /*====================================*\
 || 4.3                       Sections ||
 \*====================================*/
-
-interface ArticleElementAttributes extends ElementAttributes<HTMLAnchorElement> {}
-
-interface SectionElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface NavElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface AsideElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface H1ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
-
-interface H2ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
-
-interface H3ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
-
-interface H4ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
-
-interface H5ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
-
-interface H6ElementAttributes extends ElementAttributes<HTMLHeadingElement> {}
-
-interface HgroupElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface HeaderElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface FooterElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface AddressElementAttributes extends ElementAttributes<HTMLElement> {}
 
 export interface IntrinsicElements {
   /**
@@ -1404,7 +1530,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-article-element
    */
-  article: ArticleElementAttributes;
+  article: PropertiesOf<HTMLElement>;
 
   /**
    * The `section` element represents a generic section of a document or application. A section, in this context,
@@ -1412,14 +1538,14 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-section-element
    */
-  section: SectionElementAttributes;
+  section: PropertiesOf<HTMLElement>;
 
   /**
    * The `nav` element represents a section of a page that links to other pages or to parts within the page: a section with navigation links.
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-nav-element
    */
-  nav: NavElementAttributes;
+  nav: PropertiesOf<HTMLElement>;
 
   /**
    * The `aside` element represents a section of a page that consists of content that is tangentially related
@@ -1431,49 +1557,49 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-aside-element
    */
-  aside: AsideElementAttributes;
+  aside: PropertiesOf<HTMLElement>;
 
   /**
    * A heading for a top-level section.
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
    */
-  h1: H1ElementAttributes;
+  h1: PropertiesOf<HTMLHeadingElement>;
 
   /**
    * A heading for a subsection.
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
    */
-  h2: H2ElementAttributes;
+  h2: PropertiesOf<HTMLHeadingElement>;
 
   /**
    * A heading for a sub-subsection.
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
    */
-  h3: H3ElementAttributes;
+  h3: PropertiesOf<HTMLHeadingElement>;
 
   /**
    * A heading for a sub-sub-subsection.
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
    */
-  h4: H4ElementAttributes;
+  h4: PropertiesOf<HTMLHeadingElement>;
 
   /**
    * A heading for a sub-sub-sub-subsection.
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
    */
-  h5: H5ElementAttributes;
+  h5: PropertiesOf<HTMLHeadingElement>;
 
   /**
    * A heading for a sub-sub-sub-subsection.
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-h1,-h2,-h3,-h4,-h5,-and-h6-elements
    */
-  h6: H6ElementAttributes;
+  h6: PropertiesOf<HTMLHeadingElement>;
 
   /**
    * The `hgroup` element represents a heading and related content. The element may be used to group an
@@ -1490,14 +1616,14 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-hgroup-element
    */
-  hgroup: HgroupElementAttributes;
+  hgroup: PropertiesOf<HTMLElement>;
 
   /**
    * The `header` element represents a group of introductory or navigational aids.
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-header-element
    */
-  header: HeaderElementAttributes;
+  header: PropertiesOf<HTMLElement>;
 
   /**
    * The `footer` element represents a footer for its nearest ancestor `article`, `aside`, `nav`, or `section`,
@@ -1509,7 +1635,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-footer-element
    */
-  footer: FooterElementAttributes;
+  footer: PropertiesOf<HTMLElement>;
 
   /**
    * The `address` element represents the contact information for its nearest `article` or `body` element ancestor.
@@ -1517,72 +1643,12 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/sections.html#the-address-element
    */
-  address: AddressElementAttributes;
+  address: PropertiesOf<HTMLElement>;
 }
 
 /*====================================*\
 || 4.4               Grouping content ||
 \*====================================*/
-
-interface PElementAttributes extends ElementAttributes<HTMLParagraphElement> {}
-
-interface HrElementAttributes extends ElementAttributes<HTMLHRElement> {}
-
-interface PreElementAttributes extends ElementAttributes<HTMLPreElement> {}
-
-interface BlockquoteElementAttributes extends ElementAttributes<HTMLQuoteElement> {
-  /**
-   * Link to the source of the quotation. Must be a valid URL potentially surrounded by spaces.
-   *
-   * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-blockquote-cite
-   */
-  cite?: MaybeReadable<string | undefined>;
-}
-
-interface OlElementAttributes extends ElementAttributes<HTMLOListElement> {
-  /**
-   * Indicates that the list is a descending list (..., 3, 2, 1).
-   * If the attribute is omitted, the list is an ascending list (1, 2, 3, ...).
-   *
-   * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-ol-reversed
-   */
-  reversed?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * Starting value of the list.
-   *
-   * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-ol-start
-   */
-  start?: MaybeReadable<number | undefined>;
-
-  /**
-   * The `type` attribute can be used to specify the kind of marker to use in the list,
-   * in the cases where that matters (e.g. because items are to be referenced by their number/letter).
-   *
-   * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-ol-type
-   */
-  type?: MaybeReadable<"l" | "a" | "A" | "i" | "I" | undefined>;
-}
-
-interface UlElementAttributes extends ElementAttributes<HTMLUListElement> {}
-
-interface MenuElementAttributes extends ElementAttributes<HTMLMenuElement> {}
-
-interface LiElementAttributes extends ElementAttributes<HTMLLIElement> {}
-
-interface DlElementAttributes extends ElementAttributes<HTMLDListElement> {}
-
-interface DtElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface DdElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface FigureElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface FigcaptionElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface MainElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface DivElementAttributes extends ElementAttributes<HTMLDivElement> {}
 
 export interface IntrinsicElements {
   /**
@@ -1590,7 +1656,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
    */
-  p: PElementAttributes;
+  p: PropertiesOf<HTMLParagraphElement>;
 
   /**
    * The `hr` element represents a paragraph-level thematic break, e.g. a scene change in a story,
@@ -1598,7 +1664,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-hr-element
    */
-  hr: HrElementAttributes;
+  hr: PropertiesOf<HTMLHRElement>;
 
   /**
    * The `pre` element represents a block of preformatted text, in which structure is represented
@@ -1606,14 +1672,14 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-pre-element
    */
-  pre: PreElementAttributes;
+  pre: PropertiesOf<HTMLPreElement>;
 
   /**
    * The `blockquote` element represents a section that is quoted from another source.
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-blockquote-element
    */
-  blockquote: BlockquoteElementAttributes;
+  blockquote: HTMLQuoteElementProps;
 
   /**
    * The `ol` element represents a list of items, where the items have been intentionally ordered,
@@ -1621,7 +1687,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-ol-element
    */
-  ol: OlElementAttributes;
+  ol: HTMLOListElementProps;
 
   /**
    * The `ul` element represents a list of items, where the order of the items is not important —
@@ -1629,7 +1695,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-ul-element
    */
-  ul: UlElementAttributes;
+  ul: PropertiesOf<HTMLUListElement>;
 
   /**
    * The `menu` element represents a toolbar consisting of its contents, in the form of
@@ -1638,7 +1704,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-menu-element
    */
-  menu: MenuElementAttributes;
+  menu: PropertiesOf<HTMLMenuElement>;
 
   /**
    * The `li` element represents a list item. If its parent element is an `ol`, `ul`, or `menu` element,
@@ -1646,7 +1712,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-li-element
    */
-  li: LiElementAttributes;
+  li: PropertiesOf<HTMLLIElement>;
 
   /**
    * The `dl` element represents an association list consisting of zero or more name-value groups
@@ -1655,21 +1721,21 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-dl-element
    */
-  dl: DlElementAttributes;
+  dl: PropertiesOf<HTMLDListElement>;
 
   /**
    * The `dt` element represents the term, or name, part of a term-description group in a description list (`dl` element).
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-dt-element
    */
-  dt: DtElementAttributes;
+  dt: PropertiesOf<HTMLElement>;
 
   /**
    * The `dd` element represents the description, definition, or value, part of a term-description group in a description list (`dl` element).
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-dd-element
    */
-  dd: DdElementAttributes;
+  dd: PropertiesOf<HTMLElement>;
 
   /**
    * The `figure` element represents some [flow content](https://html.spec.whatwg.org/multipage/dom.html#flow-content-2),
@@ -1678,7 +1744,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-figure-element
    */
-  figure: FigureElementAttributes;
+  figure: PropertiesOf<HTMLElement>;
 
   /**
    * The `figcaption` element represents a caption or legend for the rest of the contents of the
@@ -1686,7 +1752,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-figcaption-element
    */
-  figcaption: FigcaptionElementAttributes;
+  figcaption: PropertiesOf<HTMLElement>;
 
   /**
    * The `main` element represents the dominant contents of the document. A document must not
@@ -1694,7 +1760,7 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-main-element
    */
-  main: MainElementAttributes;
+  main: PropertiesOf<HTMLElement>;
 
   /**
    * The `div` element has no special meaning at all. It represents its children.
@@ -1705,231 +1771,46 @@ export interface IntrinsicElements {
    *
    * @see https://html.spec.whatwg.org/multipage/grouping-content.html#the-div-element
    */
-  div: DivElementAttributes;
+  div: PropertiesOf<HTMLDivElement>;
+}
+
+interface HTMLQuoteElementProps extends PropertiesOf<HTMLQuoteElement> {
+  /**
+   * Link to the source of the quotation. Must be a valid URL potentially surrounded by spaces.
+   *
+   * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-blockquote-cite
+   */
+  cite?: OptionalProperty<string>;
+}
+
+interface HTMLOListElementProps extends PropertiesOf<HTMLOListElement> {
+  /**
+   * Indicates that the list is a descending list (..., 3, 2, 1).
+   * If the attribute is omitted, the list is an ascending list (1, 2, 3, ...).
+   *
+   * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-ol-reversed
+   */
+  reversed?: OptionalProperty<boolean>;
+
+  /**
+   * Starting value of the list.
+   *
+   * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-ol-start
+   */
+  start?: OptionalProperty<number>;
+
+  /**
+   * The `type` attribute can be used to specify the kind of marker to use in the list,
+   * in the cases where that matters (e.g. because items are to be referenced by their number/letter).
+   *
+   * @see https://html.spec.whatwg.org/multipage/grouping-content.html#attr-ol-type
+   */
+  type?: OptionalProperty<"l" | "a" | "A" | "i" | "I">;
 }
 
 /*====================================*\
 || 4.5           Text-level semantics ||
 \*====================================*/
-
-export interface AnchorElementAttributes extends ElementAttributes<HTMLAnchorElement> {
-  /**
-   * A hyperlink address. Must be a valid URL potentially surrounded by spaces.
-   *
-   * @see https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
-   */
-  href?: MaybeReadable<string | undefined>;
-
-  /**
-   * Where to display the linked URL, as the name for a browsing context (a tab, window, or `<iframe>`)
-   *
-   * A common usage is `target: "_blank"` to cause a link to open in a new tab.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-target
-   */
-  target?: MaybeReadable<"_self" | "_blank" | "parent" | "_top" | undefined>;
-
-  /**
-   * Causes the browser to treat the linked URL as a download. Can be used with or without a value.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-download
-   */
-  download?: MaybeReadable<string | undefined>;
-
-  /**
-   * A space-separated list of URLs. When the link is followed, the browser will send `POST` requests with the body PING to the URLs.
-   * Typically for tracking.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-ping
-   */
-  ping?: MaybeReadable<string | undefined>;
-
-  /**
-   * The relationship of the linked URL as space-separated [link types](https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-hreflang
-   */
-  rel?: MaybeReadable<string | undefined>;
-
-  /**
-   * Hints at the human language of the linked URL. No built-in functionality.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-hreflang
-   */
-  hreflang?: MaybeReadable<string | undefined>;
-
-  /**
-   * Hints at the linked URL's format with a [MIME type](https://developer.mozilla.org/en-US/docs/Glossary/MIME_type). No built-in functionality.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-type
-   */
-  type?: MaybeReadable<string | undefined>;
-
-  /**
-   * How much of the [referrer](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer)
-   * to send when following the link.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-referrerpolicy
-   */
-  referrerpolicy?: MaybeReadable<
-    | "no-referrer"
-    | "no-referrer-when-downgrade"
-    | "origin"
-    | "origin-when-cross-origin"
-    | "same-origin"
-    | "strict-origin"
-    | "strict-origin-when-cross-origin"
-    | "unsafe-url"
-    | undefined
-  >;
-}
-
-interface EmElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface StrongElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface SmallElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface SElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface CiteElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface QElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface DfnElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface AbbrElementAttributes extends ElementAttributes<HTMLElement> {
-  /**
-   * Provides an expansion for the abbreviation or acronym when a full expansion is not present.
-   * This provides a hint to user agents on how to announce/display the content while informing all users what the abbreviation means.
-   * If present, `title` must contain this full description and nothing else.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/abbr
-   */
-  title?: MaybeReadable<string | undefined>;
-}
-
-interface RubyElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface RtElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface RpElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface DataElementAttributes extends ElementAttributes<HTMLDataElement> {
-  /**
-   * Specifies the machine-readable translation of the content of the element.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/data
-   */
-  value?: MaybeReadable<any>;
-}
-
-interface TimeElementAttributes extends ElementAttributes<HTMLTimeElement> {
-  /**
-   * Indicates the time and/or date of the element. Must be in one of the formats below:
-   *
-   *
-   * a valid year string
-   * ```
-   * 2011
-   * ```
-   *
-   * a valid month string
-   * ```
-   * 2011-11
-   * ```
-   *
-   * a valid date string
-   * ```
-   * 2011-11-18
-   * ```
-   *
-   * a valid yearless date string
-   * ```
-   * 11-18
-   * ```
-   *
-   * a valid week string
-   * ```
-   * 2011-W47
-   * ```
-   *
-   * a valid time string
-   * ```
-   * 14:54
-   * 14:54:39
-   * 14:54:39.929
-   * ```
-   *
-   * a valid local date and time string
-   * ```
-   * 2011-11-18T14:54:39.929
-   * 2011-11-18 14:54:39.929
-   * ```
-   *
-   * a valid global date and time string
-   * ```
-   * 2011-11-18T14:54:39.929Z
-   * 2011-11-18T14:54:39.929-0400
-   * 2011-11-18T14:54:39.929-04:00
-   * 2011-11-18 14:54:39.929Z
-   * 2011-11-18 14:54:39.929-0400
-   * 2011-11-18 14:54:39.929-04:00
-   * ```
-   *
-   * a valid duration string
-   * ```
-   * PT4H18M3S
-   * ```
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
-   */
-  datetime?: MaybeReadable<string | undefined>;
-}
-
-interface CodeElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface VarElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface SampElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface KbdElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface SubElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface SupElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface IElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface BElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface UElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface MarkElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface BdiElementAttributes extends ElementAttributes<HTMLElement> {
-  /**
-   * Directionality of the text inside the `<bdi>` element. Can be `rtl` for languages read right-to-left and `ltr` for languages read left-to-right. Defaults to `auto`.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdi
-   */
-  dir?: MaybeReadable<"auto" | "rtl" | "ltr" | undefined>;
-}
-
-interface BdoElementAttributes extends ElementAttributes<HTMLElement> {
-  /**
-   * Directionality of the text inside the `<bdo>` element. Can be `rtl` for languages read right-to-left and `ltr` for languages read left-to-right. Defaults to `auto`.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdo
-   */
-  dir?: MaybeReadable<"auto" | "rtl" | "ltr" | undefined>;
-}
-
-interface SpanElementAttributes extends ElementAttributes<HTMLSpanElement> {}
-
-interface BrElementAttributes extends ElementAttributes<HTMLBRElement> {}
-
-interface WbrElementAttributes extends ElementAttributes<HTMLElement> {}
 
 export interface IntrinsicElements {
   /**
@@ -1940,21 +1821,21 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a
    */
-  a: AnchorElementAttributes;
+  a: HTMLAnchorElementProps;
 
   /**
    * Marks text that has stress emphasis. The `<em>` element can be nested, each level of nesting indicating a greater degree of emphasis.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/em
    */
-  em: EmElementAttributes;
+  em: PropertiesOf<HTMLElement>;
 
   /**
    * Indicates that its contents have strong importance, seriousness, or urgency. Browsers typically render the contents in bold type.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/strong
    */
-  strong: StrongElementAttributes;
+  strong: PropertiesOf<HTMLElement>;
 
   /**
    * Represents side-comments and small print, like copyright and legal text.
@@ -1962,7 +1843,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/small
    */
-  small: SmallElementAttributes;
+  small: PropertiesOf<HTMLElement>;
 
   /**
    * Renders text with a strikethrough, or a line through it. Use the `<s>` element to represent things that are no longer relevant or no longer accurate.
@@ -1970,14 +1851,14 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/s
    */
-  s: SElementAttributes;
+  s: PropertiesOf<HTMLElement>;
 
   /**
    * Used to describe a reference to a cited creative work, and must include the title of that work.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/cite
    */
-  cite: CiteElementAttributes;
+  cite: PropertiesOf<HTMLElement>;
 
   /**
    * indicates that the enclosed text is a short inline quotation. Most modern browsers implement this by surrounding the text in quotation marks.
@@ -1985,7 +1866,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/q
    */
-  q: QElementAttributes;
+  q: PropertiesOf<HTMLElement>;
 
   /**
    * Used to indicate the term being defined within the context of a definition phrase or sentence.
@@ -1993,7 +1874,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dfn
    */
-  dfn: DfnElementAttributes;
+  dfn: PropertiesOf<HTMLElement>;
 
   /**
    * Indicates an abbreviation or acronym. Provide a full expansion of the term in plain text on first use, along with the `<abbr>` to mark up the abbreviation.
@@ -2001,14 +1882,14 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/abbr
    */
-  abbr: AbbrElementAttributes;
+  abbr: HTMLAbbrElementProps;
 
   /**
    * Represents small annotations that are rendered above, below, or next to base text, usually used for showing the pronunciation of East Asian characters.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ruby
    */
-  ruby: RubyElementAttributes;
+  ruby: PropertiesOf<HTMLElement>;
 
   /**
    * Specifies the ruby text component of a ruby annotation, which is used to provide pronunciation, translation,
@@ -2016,7 +1897,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/rt
    */
-  rt: RtElementAttributes;
+  rt: PropertiesOf<HTMLElement>;
 
   /**
    * Provide a fall-back parentheses for browsers that do not support display of ruby annotations using the `<ruby>` element.
@@ -2024,7 +1905,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/rp
    */
-  rp: RpElementAttributes;
+  rp: PropertiesOf<HTMLElement>;
 
   /**
    * Wraps a piece of content, providing an additional machine-readable version in a `value` attribute.
@@ -2032,7 +1913,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/data
    */
-  data: DataElementAttributes;
+  data: HTMLDataElementProps;
 
   /**
    * Represents a specific period in time. It may include the `datetime` attribute to translate dates into machine-readable format,
@@ -2040,7 +1921,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
    */
-  time: TimeElementAttributes;
+  time: HTMLTimeElementProps;
 
   /**
    * Displays its contents styled in a fashion intended to indicate that the text is a short fragment of computer code.
@@ -2050,7 +1931,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/code
    */
-  code: CodeElementAttributes;
+  code: PropertiesOf<HTMLElement>;
 
   /**
    * Represents the name of a variable in a mathematical expression or a programming context.
@@ -2058,35 +1939,35 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/var
    */
-  var: VarElementAttributes;
+  var: PropertiesOf<HTMLElement>;
 
   /**
    * Represents `<samp>`le output from a computer program. Displayed with a monospace font by default.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/samp
    */
-  samp: SampElementAttributes;
+  samp: PropertiesOf<HTMLElement>;
 
   /**
    * Represents text a user would input with keyboard, voice, or another text entry device.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/kbd
    */
-  kbd: KbdElementAttributes;
+  kbd: PropertiesOf<HTMLElement>;
 
   /**
    * Represents a superscript (like the 2 in E=mc2).
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sup
    */
-  sup: SupElementAttributes;
+  sup: PropertiesOf<HTMLElement>;
 
   /**
    * Represents a subscript (like the 2 in H2O).
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/sub
    */
-  sub: SubElementAttributes;
+  sub: PropertiesOf<HTMLElement>;
 
   /**
    * The _idiomatic text_ element.
@@ -2097,7 +1978,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/i
    */
-  i: IElementAttributes;
+  i: PropertiesOf<HTMLElement>;
 
   /**
    * The _Bring Attention To_ element.
@@ -2107,7 +1988,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/b
    */
-  b: BElementAttributes;
+  b: PropertiesOf<HTMLElement>;
 
   /**
    * The _Unarticulated Annotation_ (Underline) element.
@@ -2117,7 +1998,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/u
    */
-  u: UElementAttributes;
+  u: PropertiesOf<HTMLElement>;
 
   /**
    * The _Mark Text_ element.
@@ -2127,7 +2008,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/mark
    */
-  mark: MarkElementAttributes;
+  mark: PropertiesOf<HTMLElement>;
 
   /**
    * The _Bidirectional Isolate__ element.
@@ -2137,7 +2018,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdi
    */
-  bdi: BdiElementAttributes;
+  bdi: PropertiesOf<HTMLElement>;
 
   /**
    * The _Bidirectional Text Override_ element.
@@ -2146,7 +2027,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/bdo
    */
-  bdo: BdoElementAttributes;
+  bdo: PropertiesOf<HTMLElement>;
 
   /**
    * The _Content Span_ element.
@@ -2159,7 +2040,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/span
    */
-  span: SpanElementAttributes;
+  span: PropertiesOf<HTMLSpanElement>;
 
   /**
    * The _Line Break_ element.
@@ -2169,7 +2050,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/br
    */
-  br: BrElementAttributes;
+  br: PropertiesOf<HTMLBRElement>;
 
   /**
    * The _Line Break Opportunity_ element.
@@ -2179,7 +2060,161 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/wbr
    */
-  wbr: WbrElementAttributes;
+  wbr: PropertiesOf<HTMLElement>;
+}
+
+interface HTMLAnchorElementProps extends PropertiesOf<HTMLAnchorElement> {
+  /**
+   * A hyperlink address. Must be a valid URL potentially surrounded by spaces.
+   *
+   * @see https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element
+   */
+  href?: OptionalProperty<string>;
+
+  /**
+   * Where to display the linked URL, as the name for a browsing context (a tab, window, or `<iframe>`)
+   *
+   * A common usage is `target: "_blank"` to cause a link to open in a new tab.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-target
+   */
+  target?: OptionalProperty<"_self" | "_blank" | "parent" | "_top">;
+
+  /**
+   * Causes the browser to treat the linked URL as a download. Can be used with or without a value.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-download
+   */
+  download?: OptionalProperty<string>;
+
+  /**
+   * A space-separated list of URLs. When the link is followed, the browser will send `POST` requests with the body PING to the URLs.
+   * Typically for tracking.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-ping
+   */
+  ping?: OptionalProperty<string>;
+
+  /**
+   * The relationship of the linked URL as space-separated [link types](https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types).
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-hreflang
+   */
+  rel?: OptionalProperty<string>;
+
+  /**
+   * Hints at the human language of the linked URL. No built-in functionality.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-hreflang
+   */
+  hrefLang?: OptionalProperty<string>;
+
+  /**
+   * Hints at the linked URL's format with a [MIME type](https://developer.mozilla.org/en-US/docs/Glossary/MIME_type). No built-in functionality.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-type
+   */
+  type?: OptionalProperty<string>;
+
+  /**
+   * How much of the [referrer](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referer)
+   * to send when following the link.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-referrerpolicy
+   */
+  referrerPolicy?: OptionalProperty<
+    | "no-referrer"
+    | "no-referrer-when-downgrade"
+    | "origin"
+    | "origin-when-cross-origin"
+    | "same-origin"
+    | "strict-origin"
+    | "strict-origin-when-cross-origin"
+    | "unsafe-url"
+  >;
+}
+
+interface HTMLAbbrElementProps extends PropertiesOf<HTMLElement> {
+  /**
+   * Provides an expansion for the abbreviation or acronym when a full expansion is not present.
+   * This provides a hint to user agents on how to announce/display the content while informing all users what the abbreviation means.
+   * If present, `title` must contain this full description and nothing else.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/abbr
+   */
+  title?: OptionalProperty<string>;
+}
+
+interface HTMLDataElementProps extends PropertiesOf<HTMLDataElement> {
+  /**
+   * Specifies the machine-readable translation of the content of the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/data
+   */
+  value?: OptionalProperty<string>;
+}
+
+interface HTMLTimeElementProps extends PropertiesOf<HTMLTimeElement> {
+  /**
+   * Indicates the time and/or date of the element. Must be in one of the formats below:
+   *
+   *
+   * a valid year string
+   * ```
+   * 2011
+   * ```
+   *
+   * a valid month string
+   * ```
+   * 2011-11
+   * ```
+   *
+   * a valid date string
+   * ```
+   * 2011-11-18
+   * ```
+   *
+   * a valid yearless date string
+   * ```
+   * 11-18
+   * ```
+   *
+   * a valid week string
+   * ```
+   * 2011-W47
+   * ```
+   *
+   * a valid time string
+   * ```
+   * 14:54
+   * 14:54:39
+   * 14:54:39.929
+   * ```
+   *
+   * a valid local date and time string
+   * ```
+   * 2011-11-18T14:54:39.929
+   * 2011-11-18 14:54:39.929
+   * ```
+   *
+   * a valid global date and time string
+   * ```
+   * 2011-11-18T14:54:39.929Z
+   * 2011-11-18T14:54:39.929-0400
+   * 2011-11-18T14:54:39.929-04:00
+   * 2011-11-18 14:54:39.929Z
+   * 2011-11-18 14:54:39.929-0400
+   * 2011-11-18 14:54:39.929-04:00
+   * ```
+   *
+   * a valid duration string
+   * ```
+   * PT4H18M3S
+   * ```
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
+   */
+  datetime?: OptionalProperty<string>;
 }
 
 /*====================================*\
@@ -2192,13 +2227,36 @@ export interface IntrinsicElements {
 || 4.7                          Edits ||
 \*====================================*/
 
-interface ModElementAttributes extends ElementAttributes<HTMLModElement> {
+export interface IntrinsicElements {
+  /**
+   * The _Inserted Text_ element.
+   *
+   * Represents a range of text that has been added to a document. You can use the `<del>` element to similarly
+   * represent a range of text that has been deleted from the document.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ins
+   */
+  ins: ModElementProps;
+
+  /**
+   * The _Deleted Text_ element.
+   *
+   * Represents a range of text that has been deleted from a document. This can be used when blueprints "track changes"
+   * or source code diff information, for example. The `<ins>` element can be used for the opposite purpose: to indicate
+   * text that has been added to the document.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/del
+   */
+  del: ModElementProps;
+}
+
+interface ModElementProps extends PropertiesOf<HTMLModElement> {
   /**
    * A URL pointing to content that explains this change.
    * User agents may allow users to follow such citation links, but they are primarily intended for private use
    * (e.g., by server-side scripts collecting statistics about a site's edits), not for readers.
    */
-  cite?: MaybeReadable<string | undefined>;
+  cite?: OptionalProperty<string>;
 
   /**
    * Indicates the time and/or date of the element. Must be in one of the formats below:
@@ -2259,759 +2317,12 @@ interface ModElementAttributes extends ElementAttributes<HTMLModElement> {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/time
    */
-  datetime?: MaybeReadable<string | undefined>;
-}
-
-interface InsElementAttributes extends ModElementAttributes {}
-
-interface DelElementAttributes extends ModElementAttributes {}
-
-export interface IntrinsicElements {
-  /**
-   * The _Inserted Text_ element.
-   *
-   * Represents a range of text that has been added to a document. You can use the `<del>` element to similarly
-   * represent a range of text that has been deleted from the document.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/ins
-   */
-  ins: InsElementAttributes;
-
-  /**
-   * The _Deleted Text_ element.
-   *
-   * Represents a range of text that has been deleted from a document. This can be used when blueprints "track changes"
-   * or source code diff information, for example. The `<ins>` element can be used for the opposite purpose: to indicate
-   * text that has been added to the document.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/del
-   */
-  del: DelElementAttributes;
+  datetime?: OptionalProperty<string>;
 }
 
 /*====================================*\
 || 4.8               Embedded Content ||
 \*====================================*/
-
-// picture
-// source
-// img
-// iframe
-// embed
-// object
-// video
-// audio
-// track
-// map
-// area
-
-interface HTMLMediaElementEvents {
-  /**
-   * The `abort` event is fired when the resource was not fully loaded, but not as the result of an error.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/abort_event
-   */
-  onabort: EventHandler<Event>;
-  /**
-   * The `canplay` event is fired when the user agent can play the media, but estimates that not enough data has been loaded
-   * to play the media up to its end without having to stop for further buffering of content.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event
-   */
-  oncanplay: EventHandler<Event>;
-  /**
-   * The `canplaythrough` event is fired when the user agent can play the media, and estimates that enough data has been loaded
-   * to play the media up to its end without having to stop for further buffering of content.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
-   */
-  oncanplaythrough: EventHandler<Event>;
-  /**
-   * The `emptied` event is fired when the media has become empty; for example, this event is sent if the media has already been loaded
-   * (or partially loaded), and the `load()` method is called to reload it.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event
-   */
-  onemptied: EventHandler<Event>;
-  /**
-   * The `ended` event is fired when playback or streaming has stopped because the end of the media was reached or because no further data is available.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ended_event
-   */
-  onended: EventHandler<Event>;
-  /**
-   * The `pause` event is sent when a request to pause an activity is handled and the activity has entered its paused state,
-   * most commonly after the media has been paused through a call to the element's `pause()` method.
-   *
-   * The event is sent once the `pause()` method returns and after the media element's `paused` property has been changed to `true`.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
-   */
-  onpause: EventHandler<Event>;
-  /**
-   * The `play` event is fired when the `paused` property is changed from `true` to `false`, as a result of the `play` method, or the `autoplay` attribute.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
-   */
-  onplay: EventHandler<Event>;
-  /**
-   * The `playing` event is fired after playback is first started, and whenever it is restarted.
-   * For example, it is fired when playback resumes after having been paused or delayed due to lack of data.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playing_event
-   */
-  onplaying: EventHandler<Event>;
-  /**
-   * The `progress` event is fired periodically as the browser loads a resource.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
-   */
-  onprogress: EventHandler<Event>;
-  /**
-   * The `ratechange` event is fired when the playback rate has changed.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ratechange_event
-   */
-  onratechange: EventHandler<Event>;
-  /**
-   * The `seeked` event is fired when a seek operation completed, the current playback position has changed, and the Boolean `seeking` attribute is changed to `false`.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeked_event
-   */
-  onseeked: EventHandler<Event>;
-  /**
-   * The `seeking` event is fired when a seek operation starts, meaning the Boolean `seeking` attribute has changed to `true` and the media is seeking a new position.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeking_event
-   */
-  onseeking: EventHandler<Event>;
-  /**
-   * The `stalled` event is fired when the user agent is trying to fetch media data, but data is unexpectedly not forthcoming.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/stalled_event
-   */
-  onstalled: EventHandler<Event>;
-  /**
-   * The `suspend` event is fired when media data loading has been suspended.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/suspend_event
-   */
-  onsuspend: EventHandler<Event>;
-  /**
-   * The `timeupdate` event is fired when the time indicated by the `currentTime` attribute has been updated.
-   *
-   * The event frequency is dependent on the system load, but will be thrown between about 4Hz and 66Hz(assuming the event handlers don't take longer than 250ms to run).
-   * User agents are encouraged to vary the frequency of the event based on the system load and the average cost of processing the event each time,
-   * so that the UI updates are not any more frequent than the user agent can comfortably handle while decoding the video.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/timeupdate_event
-   */
-  ontimeupdate: EventHandler<Event>;
-  /**
-   * The `volumechange` event is fired when the volume has changed.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volumechange_event
-   */
-  onvolumechange: EventHandler<Event>;
-  /**
-   * The `waiting` event is fired when playback has stopped because of a temporary lack of data.
-   *
-   * This event is not cancelable and does not bubble.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waiting_event
-   */
-  onwaiting: EventHandler<Event>;
-}
-
-interface HTMLMediaElementAttributes<T extends HTMLElement> extends ElementAttributes<T>, HTMLMediaElementEvents {}
-
-interface PictureElementAttributes extends ElementAttributes<HTMLPictureElement> {}
-
-interface SourceElementAttributes extends ElementAttributes<HTMLSourceElement> {
-  /**
-   * The [MIME type](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types) of the resource,
-   * optionally with a [`codecs` parameter](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/codecs_parameter).
-   */
-  type?: MaybeReadable<string | undefined>;
-
-  /**
-   * URL of the media resource.
-   *
-   * Required if the source element's parent is an `<audio>` or `<video>` element, not allowed for `<picture>` elements.
-   */
-  src?: MaybeReadable<string | undefined>;
-
-  /**
-   * A list of one or more strings, separated by commas, indicating a set of possible images represented by the source for the browser to use.
-   *
-   * Required if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-srcset
-   */
-  srcset?: MaybeReadable<string | undefined>;
-
-  /**
-   * A list of source sizes that describes the final width of the image. Each source size consists of a comma-separated
-   * list of media condition-length pairs. This information is used by the browser to determine, before laying the page out,
-   * which image defined in `srcset` to use. Please note that `sizes` will have its effect only if width dimension
-   * descriptors are provided with `srcset` instead of pixel ratio values (`200w` instead of `2x` for example).
-   *
-   * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-sizes
-   */
-  sizes?: MaybeReadable<string | undefined>;
-
-  /**
-   * Media query of the resource's intended media.
-   *
-   * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-media
-   */
-  media?: MaybeReadable<string | undefined>;
-
-  /**
-   * The intrinsic height of the image, in pixels. Must be an integer without a unit.
-   *
-   * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-height
-   */
-  height?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * The intrinsic width of the image, in pixels. Must be an integer without a unit.
-   *
-   * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-width
-   */
-  width?: MaybeReadable<string | number | undefined>;
-}
-
-interface ImgElementAttributes extends ElementAttributes<HTMLImageElement> {
-  /**
-   * Defines an alternative text description of the image.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-alt
-   */
-  alt?: MaybeReadable<string | undefined>;
-
-  /**
-   * Indicates if the fetching of the image must be done using a CORS request.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-crossorigin
-   */
-  crossorigin?: MaybeReadable<"anonymous" | "use-credentials" | undefined>;
-
-  /**
-   * Provides an image decoding hint to the browser.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-decoding
-   */
-  decoding?: MaybeReadable<"sync" | "async" | "auto" | undefined>;
-
-  /**
-   * Provides a hint of the relative priority to use when fetching the image.
-   *
-   * @experimental
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-fetchpriority
-   */
-  fetchpriority?: MaybeReadable<"high" | "low" | "auto" | undefined>;
-
-  /**
-   * The intrinsic height of the image, in pixels. Must be an integer without a unit.
-   */
-  height?: MaybeReadable<string | undefined> | MaybeReadable<number | undefined>;
-
-  /**
-   * The intrinsic width of the image, in pixels. Must be an integer without a unit.
-   */
-  width?: MaybeReadable<string | undefined> | MaybeReadable<number | undefined>;
-
-  /**
-   * Indicates that the image is part of a [server-side map](https://en.wikipedia.org/wiki/Image_map#Server-side).
-   * If so, the coordinates where the user clicked on the image are sent to the server.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-ismap
-   */
-  ismap?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * Indicates how the browser should load the image.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-loading
-   */
-  loading?: MaybeReadable<"eager" | "lazy" | undefined>;
-
-  /**
-   * A string indicating which referrer to use when fetching the resource.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-referrerpolicy
-   */
-  referrerpolicy?: MaybeReadable<
-    | "no-referrer"
-    | "no-referrer-when-downgrade"
-    | "origin"
-    | "origin-when-cross-origin"
-    | "same-origin"
-    | "strict-origin"
-    | "strict-origin-when-cross-origin"
-    | "unsafe-url"
-    | undefined
-  >;
-
-  /**
-   * One or more strings separated by commas, indicating a set of source sizes.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-sizes
-   */
-  sizes?: MaybeReadable<string | undefined>;
-
-  /**
-   * The image URL. Required.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-src
-   */
-  src: MaybeReadable<string>;
-
-  /**
-   * One or more strings separated by commas, indicating possible image sources for the user agent to use.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-srcset
-   */
-  srcset?: MaybeReadable<string | undefined>;
-
-  /**
-   * The partial URL (starting with #) of an [image map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map)
-   * associated with the element.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-usemap
-   */
-  usemap?: MaybeReadable<string | undefined>;
-}
-
-interface IframeElementAttributes extends ElementAttributes<HTMLIFrameElement> {
-  /**
-   * Specifies a [feature policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Feature_Policy) for the `<iframe>`.
-   * The policy defines what features are available to the `<iframe>` based on the origin of the request
-   * (e.g. access to the microphone, camera, battery, web-share API, etc.).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Feature_Policy/Using_Feature_Policy#the_iframe_allow_attribute
-   */
-  allow?: MaybeReadable<string | undefined>;
-
-  /**
-   * A [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) enforced for the embedded resource.
-   * See [HTMLIFrameElement.csp](https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/csp) for details.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-csp
-   */
-  csp?: MaybeReadable<string | undefined>;
-
-  /**
-   * Provides a hint of the relative priority to use when fetching the iframe document.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-fetchpriority
-   */
-  fetchpriority?: MaybeReadable<"high" | "low" | "auto" | undefined>;
-
-  /**
-   * The height of the frame in CSS pixels. Default is `150`.
-   */
-  height?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * The width of the frame in CSS pixels. Default is `300`.
-   */
-  width?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * Indicates how the browser should load the iframe.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-loading
-   */
-  loading?: MaybeReadable<"eager" | "lazy" | undefined>;
-
-  /**
-   * A targetable name for the embedded browsing context. This can be used in the `target` attribute of the
-   * `<a>`, `<form>`, or `<base>` elements; the `formtarget` attribute of the `<input>` or `<button>` elements;
-   * or the `windowName` parameter in the [`window.open()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/open) method.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-name
-   */
-  name?: MaybeReadable<string | undefined>;
-
-  /**
-   * A string indicating which referrer to use when fetching the resource.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-referrerpolicy
-   */
-  referrerpolicy?: MaybeReadable<
-    | "no-referrer"
-    | "no-referrer-when-downgrade"
-    | "origin"
-    | "origin-when-cross-origin"
-    | "same-origin"
-    | "strict-origin"
-    | "strict-origin-when-cross-origin"
-    | "unsafe-url"
-    | undefined
-  >;
-
-  /**
-   * Applies extra restrictions to the content in the frame. The value of the attribute can either be empty to apply
-   * all restrictions, or [space-separated tokens to lift particular restrictions](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-sandbox).
-   */
-  sandbox?: MaybeReadable<string | undefined>;
-
-  /**
-   * The URL of the page to embed.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-src
-   */
-  src?: MaybeReadable<string | undefined>;
-
-  /**
-   * Inline HTML to embed, overriding the `src` attribute. If a browser does not support the `srcdoc` attribute,
-   * it will fall back to the URL in the `src` attribute.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-srcdoc
-   */
-  srcdoc?: MaybeReadable<string | undefined>;
-}
-
-interface EmbedElementAttributes extends ElementAttributes<HTMLEmbedElement> {
-  /**
-   * The displayed height of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
-   */
-  height?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * The displayed width of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
-   */
-  width?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * The URL of the resource being embedded.
-   */
-  src?: MaybeReadable<string | undefined>;
-
-  /**
-   * The [MIME type](https://developer.mozilla.org/en-US/docs/Glossary/MIME_type) to use to select the plug-in to instantiate.
-   */
-  type?: MaybeReadable<string | undefined>;
-}
-
-interface ObjectElementAttributes extends ElementAttributes<HTMLObjectElement> {
-  /**
-   * The displayed height of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
-   */
-  height?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * The displayed width of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
-   */
-  width?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * The address of the resource as a valid URL. At least one of `data` and `type` must be defined.
-   */
-  data?: MaybeReadable<string | undefined>;
-
-  /**
-   * The [MIME type](https://developer.mozilla.org/en-US/docs/Glossary/MIME_type) of the resource specified by data.
-   * At least one of `data` and `type` must be defined.
-   */
-  type?: MaybeReadable<string | undefined>;
-
-  /**
-   * The form element, if any, that the object element is associated with (its form owner).
-   * The value of the attribute must be an ID of a `<form>` element in the same document.
-   */
-  form?: MaybeReadable<string | undefined>;
-
-  /**
-   * The name of valid browsing context (HTML5), or the name of the control (HTML 4).
-   */
-  name?: MaybeReadable<string | undefined>;
-
-  /**
-   * A hash-name reference to a `<map>` element; that is a '#' followed by the value of a name of a map element.
-   */
-  usemap?: MaybeReadable<string | undefined>;
-}
-
-interface VideoElementAttributes extends HTMLMediaElementAttributes<HTMLVideoElement> {
-  /**
-   * If specified, the video automatically begins to play back as soon as it can do so without stopping to finish loading the data.
-   *
-   * In some browsers (e.g. Chrome 70.0) autoplay doesn't work if no `muted` attribute is present.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-autoplay
-   */
-  autoplay?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * If this attribute is present, the browser will offer controls to allow the user to control video playback,
-   * including volume, seeking, and pause/resume playback.
-   */
-  controls?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * Indicates whether to use CORS to fetch the related video. If not present, the resource is fetched without
-   * a CORS request.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-crossorigin
-   */
-  crossorigin?: MaybeReadable<"anonymous" | "use-credentials" | undefined>;
-
-  /**
-   * The height of the video's display area, in CSS pixels. This must be an absolute value; percentages are not allowed.
-   */
-  height?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * The width of the video's display area, in CSS pixels. This must be an absolute value; percentages are not allowed.
-   */
-  width?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * If true, the browser will automatically seek back to the start upon reaching the end of the video.
-   */
-  loop?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * Indicates whether the audio will be initially silenced. Its default value is `false`.
-   */
-  muted?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * Indicates that the video is to be played "inline", that is within the element's playback area.
-   * Note that the absence of this attribute does not imply that the video will always be played in fullscreen.
-   */
-  playsinline?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * A URL for an image to be shown while the video is downloading. If this attribute isn't specified, nothing is
-   * displayed until the first frame is available, then the first frame is shown as the poster frame.
-   */
-  poster?: MaybeReadable<string | undefined>;
-
-  /**
-   * Provides a hint to the browser about what the author thinks will lead to the best user experience regarding
-   * what content is loaded before the video is played.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-preload
-   */
-  preload?: MaybeReadable<"none" | "metadata" | "auto" | "" | undefined>;
-
-  /**
-   * The URL of the content to embed. This is optional; you may instead use the `<source>` element within the
-   * `<video>` element to specify the video to embed.
-   */
-  src?: MaybeReadable<string | undefined>;
-}
-
-interface AudioElementAttributes extends HTMLMediaElementAttributes<HTMLAudioElement> {
-  /**
-   * If specified, the audio will automatically begin playback as soon as it can do so, without waiting for the
-   * entire audio file to finish downloading.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio#attr-autoplay
-   */
-  autoplay?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * If this attribute is present, the browser will offer controls to allow the user to control audio playback,
-   * including volume, seeking, and pause/resume playback.
-   */
-  controls?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * Indicates whether to use CORS to fetch the related audio file. If not present, the resource is fetched without
-   * a CORS request.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-crossorigin
-   */
-  crossorigin?: MaybeReadable<"anonymous" | "use-credentials" | undefined>;
-
-  /**
-   * If true, the audio player will automatically seek back to the start upon reaching the end of the audio.
-   */
-  loop?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * Indicates whether the audio will be initially silenced. Its default value is `false`.
-   */
-  muted?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * Provides a hint to the browser about what the author thinks will lead to the best user experience regarding
-   * what content is loaded before the audio is played.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-preload
-   */
-  preload?: MaybeReadable<"none" | "metadata" | "auto" | "" | undefined>;
-
-  /**
-   * The URL of the audio to embed. This is optional; you may instead use the `<source>` element within the
-   * `<audio>` element to specify the video to embed.
-   */
-  src?: MaybeReadable<string | undefined>;
-}
-
-interface TrackElementAttributes extends ElementAttributes<HTMLTrackElement> {
-  /**
-   * Indicates that the track should be enabled unless the user's preferences indicate that another track
-   * is more appropriate. This may only be used on one track element per media element.
-   */
-  default?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * How the text track is meant to be used. If omitted the default kind is `subtitles`.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track#attr-kind
-   */
-  kind?: MaybeReadable<"subtitles" | "captions" | "descriptions" | "chapters" | "metadata" | undefined>;
-
-  /**
-   * A user-readable title of the text track which is used by the browser when listing available text tracks.
-   */
-  label?: MaybeReadable<string | undefined>;
-
-  /**
-   * Address of the track (`.vtt` file). Must be a valid URL. This attribute must be specified and its URL value
-   * must have the same origin as the document — unless the `<audio>` or `<video>` parent element of the track
-   * element has a `crossorigin` attribute.
-   */
-  src: MaybeReadable<string>;
-
-  /**
-   * Language of the track text data. It must be a valid [BCP 47 language tag](https://r12a.github.io/app-subtags/).
-   * If the `kind` attribute is set to `subtitles`, then `srclang` must be defined.
-   */
-  srclang: MaybeReadable<string | undefined>;
-}
-
-interface MapElementAttributes extends ElementAttributes<HTMLMapElement> {
-  /**
-   * Gives the map a name so that it can be referenced. The attribute must be present and must have a non-empty value
-   * with no space characters. The value of the name attribute must not be equal to the value of the name attribute
-   * of another `<map>` element in the same document. If the `id` attribute is also specified, both attributes must
-   * have the same value.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map#attr-name
-   */
-  name: MaybeReadable<string>;
-}
-
-interface AreaElementAttributes extends ElementAttributes<HTMLAreaElement> {
-  /**
-   * A text string alternative to display on browsers that do not display images. The text should be phrased
-   * so that it presents the user with the same kind of choice as the image would offer when displayed without
-   * the alternative text. This attribute is required only if the `href` attribute is used.
-   */
-  alt?: MaybeReadable<string | undefined>;
-
-  /**
-   * The shape of the associated hot spot.
-   */
-  shape?: MaybeReadable<"rect" | "circle" | "poly" | "default" | undefined>;
-
-  /**
-   * Details the coordinates of the `shape` attribute in size, shape, and placement of an `<area>`.
-   * This attribute must not be used if `shape` is set to `default`.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area#attr-coords
-   */
-  coords?: MaybeReadable<string | undefined>;
-
-  /**
-   * If present, indicates that the author intends the hyperlink to be used for downloading a resource.
-   * See `<a>` for [a full description of the `download` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-download).
-   */
-  download?: MaybeReadable<string | undefined>;
-
-  /**
-   * The hyperlink target for the area. Its value is a valid URL. This attribute may be omitted; if so,
-   * the `<area>` element does not represent a hyperlink.
-   */
-  href?: MaybeReadable<string | undefined>;
-
-  /**
-   * Contains a space-separated list of URLs to which, when the hyperlink is followed, `POST` requests with the body
-   * `PING` will be sent by the browser (in the background). Typically used for tracking.
-   */
-  ping?: MaybeReadable<string | undefined>;
-
-  /**
-   * A string indicating which referrer to use when fetching the resource.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area#attr-referrerpolicy
-   */
-  referrerpolicy?: MaybeReadable<
-    | "no-referrer"
-    | "no-referrer-when-downgrade"
-    | "origin"
-    | "origin-when-cross-origin"
-    | "same-origin"
-    | "strict-origin"
-    | "strict-origin-when-cross-origin"
-    | "unsafe-url"
-    | undefined
-  >;
-
-  /**
-   * For anchors containing the `href` attribute, this attribute specifies the relationship of the target object
-   * to the link object. The value is a space-separated list of [link types values](https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types).
-   * The values and their semantics will be registered by some authority that might have meaning to the document author.
-   * The default relationship, if no other is given, is void. Use this attribute only if the `href` attribute is present.
-   */
-  rel?: MaybeReadable<string | undefined>;
-
-  /**
-   * Where to display the linked URL, as the name for a browsing context (a tab, window, or `<iframe>`)
-   *
-   * A common usage is `target: "_blank"` to cause a link to open in a new tab.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area#attr-target
-   */
-  target?: MaybeReadable<"_self" | "_blank" | "parent" | "_top" | undefined>;
-}
 
 export interface IntrinsicElements {
   /**
@@ -3022,7 +2333,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/picture
    */
-  picture: PictureElementAttributes;
+  picture: PropertiesOf<HTMLPictureElement>;
 
   /**
    * The _Media or Image Source_ element.
@@ -3032,7 +2343,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source
    */
-  source: SourceElementAttributes;
+  source: HTMLSourceElementProps;
 
   /**
    * The _Image Embed_ element.
@@ -3041,7 +2352,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img
    */
-  img: ImgElementAttributes;
+  img: HTMLImageElementProps;
 
   /**
    * The _Inline Frame_ element.
@@ -3051,7 +2362,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe
    */
-  iframe: IframeElementAttributes;
+  iframe: HTMLIFrameElementProps;
 
   /**
    * The _Embed External Content_ element.
@@ -3064,7 +2375,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/embed
    */
-  embed: EmbedElementAttributes;
+  embed: HTMLEmbedElementProps;
 
   /**
    * The _External Object_ element.
@@ -3074,7 +2385,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/object
    */
-  object: ObjectElementAttributes;
+  object: HTMLObjectElementProps;
 
   /**
    * The _Video Embed_ element.
@@ -3084,7 +2395,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video
    */
-  video: VideoElementAttributes;
+  video: HTMLVideoElementProps;
 
   /**
    * The _Embed Audio_ element.
@@ -3094,7 +2405,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/audio
    */
-  audio: AudioElementAttributes;
+  audio: HTMLMediaElementProps<HTMLAudioElement>;
 
   /**
    * The _Embed Text Track_ element.
@@ -3103,7 +2414,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track
    */
-  track: TrackElementAttributes;
+  track: HTMLTrackElementProps;
 
   /**
    * The _Image Map_ element.
@@ -3113,7 +2424,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map
    */
-  map: MapElementAttributes;
+  map: HTMLMapElementProps;
 
   /**
    * The _Image Map Area_ element.
@@ -3123,60 +2434,1092 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area
    */
-  area: AreaElementAttributes;
+  area: HTMLAreaElementProps;
+}
+
+interface HTMLMediaElementProps<T extends HTMLMediaElement> extends HTMLElementProps, PropertiesOf<T> {
+  /**
+   * Play the media automatically when it loads.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/autoplay
+   */
+  autoplay?: OptionalProperty<boolean>;
+
+  /**
+   * Display playback controls.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/controls
+   */
+  controls?: OptionalProperty<boolean>;
+
+  /**
+   * Indicates whether to use CORS to fetch the media. If not present the media is fetched without a CORS request.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/crossOrigin
+   */
+  crossOrigin?: OptionalProperty<"anonymous" | "use-credentials">;
+
+  /**
+   * Indicates whether the media will start over automatically once the end is reached.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loop
+   */
+  loop?: OptionalProperty<boolean>;
+
+  /**
+   * Indicates whether the media element will play audio. A value of `true` will prevent audio playback.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/muted
+   */
+  muted?: OptionalProperty<boolean>;
+
+  /**
+   * Indicates whether the media element is paused.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/paused
+   */
+  paused?: OptionalProperty<boolean>;
+
+  /**
+   * Controls the rate at which the media is played back. 1.0 is normal speed, 0.5 is half speed and 2.0 is double speed, though any value is allowed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playbackRate
+   */
+  playbackRate?: OptionalProperty<number>;
+
+  /**
+   * When `true` the pitch is adjusted to compensate for changes in `playbackRate`. Defaults to `true`.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/preservesPitch
+   */
+  preservesPitch?: OptionalProperty<boolean>;
+
+  /**
+   * Tells the browser what to preload before the user begins playing the media.
+   *
+   * - `none` will preload nothing.
+   * - `metadata` will preload only metadata such as length.
+   * - `auto` or `""` will allow preloading of the entire file before playback begins.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video#attr-preload
+   */
+  preload?: OptionalProperty<"none" | "metadata" | "auto" | "">;
+
+  /**
+   * The URL of a media resource to use in the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/src
+   */
+  src?: OptionalProperty<string>;
+
+  /**
+   * An object containing a media resource to use in the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/srcObject
+   */
+  srcObject?:
+    | MediaStream
+    | MediaSource
+    | Blob
+    | File
+    | Readable<MediaStream>
+    | Readable<MediaStream | undefined>
+    | Readable<MediaSource>
+    | Readable<MediaSource | undefined>
+    | Readable<Blob>
+    | Readable<Blob | undefined>
+    | Readable<File>
+    | Readable<File | undefined>;
+
+  /**
+   * The current audio volume of the media element. Must be a number between 0 and 1.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volume
+   */
+  volume?: OptionalProperty<number>;
+
+  /*=================================*\
+  ||              Events             ||
+  \*=================================*/
+
+  /**
+   * Fired when the resource was not fully loaded, but not as the result of an error.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/abort_event
+   */
+  onAbort?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user agent can play the media, but estimates that not enough data has been loaded
+   * to play the media up to its end without having to stop for further buffering of content.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event
+   */
+  onCanPlay?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user agent can play the media, and estimates that enough data has been loaded
+   * to play the media up to its end without having to stop for further buffering of content.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
+   */
+  onCanPlayThrough?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the duration attribute has been updated.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/durationchange_event
+   */
+  onDurationChange?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the media has become empty; for example, this event is sent if the media has already been loaded
+   * (or partially loaded), and the `load()` method is called to reload it.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event
+   */
+  onEmptied?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the media encounters some initialization data indicating it is encrypted.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/encrypted_event
+   */
+  onEncrypted?: OptionalProperty<EventHandler<MediaEncryptedEvent>>;
+
+  /**
+   * Fired when playback or streaming has stopped because the end of the media was reached or because no further data is available.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ended_event
+   */
+  onEnded?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the frame at the current playback position of the media has finished loading.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event
+   */
+  onLoadedData?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when metadata has been loaded.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event
+   */
+  onLoadedMetadata?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the browser has started to load a resource.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadstart_event
+   */
+  onLoadStart?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when media is paused.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
+   */
+  onPause?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when `paused` changes to false and media playback resumes.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
+   */
+  onPlay?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired after playback is first started, and whenever it is restarted.
+   * For example, it is fired when playback resumes after having been paused or delayed due to lack of data.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playing_event
+   */
+  onPlaying?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired periodically as the browser loads a resource.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
+   */
+  onProgress?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the playback rate has changed.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ratechange_event
+   */
+  onRateChange?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when a seek operation completed, the current playback position has changed, and the Boolean `seeking` attribute is changed to `false`.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeked_event
+   */
+  onSeeked?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when a seek operation starts, meaning the Boolean `seeking` attribute has changed to `true` and the media is seeking a new position.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeking_event
+   */
+  onSeeking?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user agent is trying to fetch media data, but data is unexpectedly not forthcoming.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/stalled_event
+   */
+  onStalled?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when media data loading has been suspended.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/suspend_event
+   */
+  onSuspend?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the time indicated by the `currentTime` attribute has been updated.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/timeupdate_event
+   */
+  onTimeUpdate?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the volume has changed.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volumechange_event
+   */
+  onVolumeChange?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when playback has stopped because of a temporary lack of data.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waiting_event
+   */
+  onWaiting?: OptionalProperty<EventHandler<Event>>;
+
+  /*=================================*\
+  ||         Event Properties        ||
+  \*=================================*/
+
+  /**
+   * Fired when the resource was not fully loaded, but not as the result of an error.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/abort_event
+   */
+  onabort?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user agent can play the media, but estimates that not enough data has been loaded
+   * to play the media up to its end without having to stop for further buffering of content.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplay_event
+   */
+  oncanplay?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user agent can play the media, and estimates that enough data has been loaded
+   * to play the media up to its end without having to stop for further buffering of content.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canplaythrough_event
+   */
+  oncanplaythrough?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the duration attribute has been updated.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/durationchange_event
+   */
+  ondurationchange?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the media has become empty; for example, this event is sent if the media has already been loaded
+   * (or partially loaded), and the `load()` method is called to reload it.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/emptied_event
+   */
+  onemptied?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the media encounters some initialization data indicating it is encrypted.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/encrypted_event
+   */
+  onencrypted?: OptionalProperty<EventHandler<MediaEncryptedEvent>>;
+
+  /**
+   * Fired when playback or streaming has stopped because the end of the media was reached or because no further data is available.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ended_event
+   */
+  onended?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the frame at the current playback position of the media has finished loading.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadeddata_event
+   */
+  onloadeddata?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when metadata has been loaded.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadedmetadata_event
+   */
+  onloadedmetadata?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the browser has started to load a resource.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/loadstart_event
+   */
+  onloadstart?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when media is paused.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/pause_event
+   */
+  onpause?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when `paused` changes to false and media playback resumes.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play_event
+   */
+  onplay?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired after playback is first started, and whenever it is restarted.
+   * For example, it is fired when playback resumes after having been paused or delayed due to lack of data.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/playing_event
+   */
+  onplaying?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired periodically as the browser loads a resource.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/progress_event
+   */
+  onprogress?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the playback rate has changed.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/ratechange_event
+   */
+  onratechange?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when a seek operation completed, the current playback position has changed, and the Boolean `seeking` attribute is changed to `false`.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeked_event
+   */
+  onseeked?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when a seek operation starts, meaning the Boolean `seeking` attribute has changed to `true` and the media is seeking a new position.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/seeking_event
+   */
+  onseeking?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the user agent is trying to fetch media data, but data is unexpectedly not forthcoming.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/stalled_event
+   */
+  onstalled?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when media data loading has been suspended.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/suspend_event
+   */
+  onsuspend?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the time indicated by the `currentTime` attribute has been updated.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/timeupdate_event
+   */
+  ontimeupdate?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when the volume has changed.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/volumechange_event
+   */
+  onvolumechange?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when playback has stopped because of a temporary lack of data.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/waiting_event
+   */
+  onwaiting?: OptionalProperty<EventHandler<Event>>;
+}
+
+interface HTMLVideoElementProps extends HTMLMediaElementProps<HTMLVideoElement> {
+  /**
+   * The height of the video's display area in CSS pixels. This must be an absolute value; percentages are not allowed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement
+   */
+  height?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * The width of the video's display area in CSS pixels. This must be an absolute value; percentages are not allowed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement
+   */
+  width?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * A URL for an image to show while video data is loading. If this attribute isn't specified, nothing is
+   * displayed until the first frame is available, then the first frame is shown as the poster frame.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLVideoElement
+   */
+  poster?: OptionalProperty<string | undefined>;
+
+  /**
+   * Indicates that the video is to be played _inline_, that is within the element's playback area.
+   * Note that the absence of this attribute does not imply that the video will always be played in fullscreen.
+   */
+  playsInline?: OptionalProperty<boolean>;
+}
+
+interface HTMLSourceElementProps extends PropertiesOf<HTMLSourceElement> {
+  /**
+   * The [MIME type](https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types) of the resource.
+   */
+  type?: OptionalProperty<string>;
+
+  /**
+   * URL of the media resource.
+   *
+   * Required if the source element's parent is an `<audio>` or `<video>` element, not allowed for `<picture>` elements.
+   */
+  src?: OptionalProperty<string>;
+
+  /**
+   * A list of one or more strings, separated by commas, indicating a set of possible images represented by the source for the browser to use.
+   *
+   * Required if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-srcset
+   */
+  srcset?: OptionalProperty<string>;
+
+  /**
+   * A list of source sizes that describes the final width of the image. Each source size consists of a comma-separated
+   * list of media condition-length pairs. This information is used by the browser to determine, before laying the page out,
+   * which image defined in `srcset` to use. Please note that `sizes` will have its effect only if width dimension
+   * descriptors are provided with `srcset` instead of pixel ratio values (`200w` instead of `2x` for example).
+   *
+   * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-sizes
+   */
+  sizes?: OptionalProperty<string>;
+
+  /**
+   * Media query of the resource's intended media.
+   *
+   * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-media
+   */
+  media?: OptionalProperty<string>;
+
+  /**
+   * The height of the image in pixels. Must be an integer without a unit.
+   *
+   * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-height
+   */
+  height?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * The width of the image in pixels. Must be an integer without a unit.
+   *
+   * Allowed if the source element's parent is a `<picture>` element, not allowed for `<audio>` or `<video>` elements.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/source#attr-width
+   */
+  width?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+}
+
+interface HTMLImageElementProps extends PropertiesOf<HTMLImageElement> {
+  /**
+   * Defines an alternative text description of the image. This can be displayed visually when the image
+   * cannot be loaded, but also provides a description of the content to users accessing the site with a screen reader.
+   *
+   * This is a required property for accessibility. If the image truly can't be described, pass an empty string.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/alt
+   */
+  alt: RequiredProperty<string>;
+
+  /**
+   * Indicates whether to use CORS to fetch the image. If not present the image is fetched without a CORS request.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/crossOrigin
+   */
+  crossOrigin?: OptionalProperty<"anonymous" | "use-credentials">;
+
+  /**
+   * Tells the browser whether it should render the image synchronously (waiting for the image before displaying other content)
+   * or asynchronously (displaying other content and loading image in later). Each browser has its own defaults.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/decoding
+   */
+  decoding?: OptionalProperty<"sync" | "async" | "auto">;
+
+  /**
+   * Provides a hint of the relative priority to use when fetching the image.
+   *
+   * @experimental
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#attr-fetchpriority
+   */
+  // fetchpriority?: MaybeReadable<"high" | "low" | "auto" | undefined>;
+  // TODO: Not supporting experimental features just yet (Firefox and Safari do not support)
+
+  /**
+   * The height of the image in CSS pixels. Must be an integer without a unit.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/height
+   */
+  height?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * The width of the image in CSS pixels. Must be an integer without a unit.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/width
+   */
+  width?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * Indicates that the image is part of a [server-side map](https://en.wikipedia.org/wiki/Image_map#Server-side).
+   * If so, the coordinates where the user clicked on the image are sent to the server.
+   *
+   * This property is only valid if this image is inside an `<a>` tag.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/isMap
+   */
+  isMap?: OptionalProperty<boolean>;
+
+  /**
+   * Indicates how the browser should load the image when it is located outside the viewport.
+   *
+   * - `eager` will load the image as soon as the `<img>` tag is processed.
+   * - `lazy` will attempt to wait until just before the user scrolls the image into view.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/loading
+   */
+  loading?: OptionalProperty<"eager" | "lazy">;
+
+  /**
+   * A string indicating which referrer to use when fetching the resource.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/referrerPolicy
+   */
+  referrerPolicy?: OptionalProperty<
+    | "no-referrer"
+    | "no-referrer-when-downgrade"
+    | "origin"
+    | "origin-when-cross-origin"
+    | "same-origin"
+    | "strict-origin"
+    | "strict-origin-when-cross-origin"
+    | "unsafe-url"
+  >;
+
+  /**
+   * One or more strings separated by commas, indicating a set of source sizes.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/sizes
+   */
+  sizes?: MaybeReadable<string>;
+
+  /**
+   * The image URL.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/src
+   */
+  src: RequiredProperty<string>;
+
+  /**
+   * Identifies one or more image candidate strings separated by commas. Note that the `sizes` property
+   * must also be present or `srcset` will be ignored.
+   *
+   * @example "header640.png 640w, header960.png 960w, header1024.png 1024w"
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/srcset
+   */
+  srcset?: OptionalProperty<string>;
+
+  /**
+   * The partial URL (starting with #) of an [image map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map)
+   * associated with the element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/useMap
+   */
+  useMap?: OptionalProperty<string>;
+}
+
+interface HTMLIFrameElementProps extends PropertiesOf<HTMLIFrameElement> {
+  /**
+   * Specifies a [feature policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Feature_Policy) for the `<iframe>`.
+   * The policy defines what features are available to the `<iframe>` based on the origin of the request
+   * (e.g. access to the microphone, camera, battery, web-share API, etc.).
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Feature_Policy/Using_Feature_Policy#the_iframe_allow_attribute
+   */
+  allow?: OptionalProperty<string>;
+
+  allowFullscreen?: OptionalProperty<boolean>;
+
+  /**
+   * The height of the frame in CSS pixels.
+   */
+  height?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * The width of the frame in CSS pixels.
+   */
+  width?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * Indicates how the browser should load the iframe.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-loading
+   */
+  loading?: OptionalProperty<"eager" | "lazy">;
+
+  /**
+   * A targetable name for the embedded browsing context. This can be used in the `target` attribute of the
+   * `<a>`, `<form>`, or `<base>` elements; the `formtarget` attribute of the `<input>` or `<button>` elements;
+   * or the `windowName` parameter in the [`window.open()`](https://developer.mozilla.org/en-US/docs/Web/API/Window/open) method.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-name
+   */
+  name?: OptionalProperty<string>;
+
+  /**
+   * Applies extra restrictions to the content in the frame. The value of the attribute can either be empty to apply
+   * all restrictions, or [space-separated tokens to lift particular restrictions](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-sandbox).
+   */
+  sandbox?: OptionalProperty<string>;
+
+  /**
+   * A string indicating which referrer to send when fetching the resource.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/referrerPolicy
+   */
+  referrerPolicy?: OptionalProperty<
+    | "no-referrer"
+    | "no-referrer-when-downgrade"
+    | "origin"
+    | "origin-when-cross-origin"
+    | "same-origin"
+    | "strict-origin"
+    | "strict-origin-when-cross-origin"
+    | "unsafe-url"
+  >;
+
+  /**
+   * The URL of the page to embed.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/src
+   */
+  src?: OptionalProperty<string>;
+
+  /**
+   * Inline HTML to embed, overriding the `src` attribute. If a browser does not support the `srcdoc` attribute,
+   * it will fall back to the URL in the `src` attribute.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement/srcdoc
+   */
+  srcdoc?: OptionalProperty<string>;
+}
+
+interface HTMLEmbedElementProps extends PropertiesOf<HTMLEmbedElement> {
+  /**
+   * The displayed height of the resource in CSS pixels.
+   */
+  height?: OptionalProperty<string>;
+
+  /**
+   * The displayed width of the resource in CSS pixels.
+   */
+  width?: OptionalProperty<string>;
+
+  /**
+   * The URL of the resource being embedded.
+   */
+  src?: OptionalProperty<string>;
+
+  /**
+   * The [MIME type](https://developer.mozilla.org/en-US/docs/Glossary/MIME_type) to use to select the plug-in to instantiate.
+   */
+  type?: OptionalProperty<string>;
+}
+
+interface HTMLObjectElementProps extends PropertiesOf<HTMLObjectElement> {
+  /**
+   * The displayed height of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
+   */
+  height?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * The displayed width of the resource, in CSS pixels. This must be an absolute value; percentages are not allowed.
+   */
+  width?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * The address of the resource as a valid URL. At least one of `data` and `type` must be defined.
+   */
+  data?: OptionalProperty<string>;
+
+  /**
+   * The [MIME type](https://developer.mozilla.org/en-US/docs/Glossary/MIME_type) of the resource specified by data.
+   * At least one of `data` and `type` must be defined.
+   */
+  type?: OptionalProperty<string>;
+
+  /**
+   * The form element, if any, that the object element is associated with (its form owner).
+   * The value of the attribute must be an ID of a `<form>` element in the same document.
+   */
+  form?: OptionalProperty<string>;
+
+  /**
+   * The name of valid browsing context (HTML5), or the name of the control (HTML 4).
+   */
+  name?: OptionalProperty<string>;
+
+  /**
+   * A hash-name reference to a `<map>` element; that is a '#' followed by the value of a name of a map element.
+   */
+  useMap?: OptionalProperty<string>;
+}
+
+interface HTMLTrackElementProps extends PropertiesOf<HTMLTrackElement> {
+  /**
+   * Indicates that the track should be enabled unless the user's preferences indicate that another track
+   * is more appropriate. This may only be used on one track element per media element.
+   */
+  default?: OptionalProperty<boolean>;
+
+  /**
+   * How the text track is meant to be used. If omitted the default kind is `subtitles`.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/track#attr-kind
+   */
+  kind?: OptionalProperty<"subtitles" | "captions" | "descriptions" | "chapters" | "metadata">;
+
+  /**
+   * A user-readable title of the text track which is used by the browser when listing available text tracks.
+   */
+  label?: OptionalProperty<string>;
+
+  /**
+   * Address of the track (`.vtt` file). Must be a valid URL. This attribute must be specified and its URL value
+   * must have the same origin as the document — unless the `<audio>` or `<video>` parent element of the track
+   * element has a `crossorigin` attribute.
+   */
+  src: RequiredProperty<string>;
+
+  /**
+   * Language of the track text data. It must be a valid [BCP 47 language tag](https://r12a.github.io/app-subtags/).
+   * If the `kind` attribute is set to `subtitles`, then `srclang` must be defined.
+   */
+  srclang?: OptionalProperty<string>;
+}
+
+interface HTMLMapElementProps extends PropertiesOf<HTMLMapElement> {
+  /**
+   * Gives the map a name so that it can be referenced. The attribute must be present and must have a non-empty value
+   * with no space characters. The value of the name attribute must not be equal to the value of the name attribute
+   * of another `<map>` element in the same document. If the `id` attribute is also specified, both attributes must
+   * have the same value.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/map#attr-name
+   */
+  name: RequiredProperty<string>;
+}
+
+interface HTMLAreaElementProps extends PropertiesOf<HTMLAreaElement> {
+  /**
+   * A text string alternative to display on browsers that do not display images. The text should be phrased
+   * so that it presents the user with the same kind of choice as the image would offer when displayed without
+   * the alternative text. This attribute is required only if the `href` attribute is used.
+   */
+  alt?: OptionalProperty<string>;
+
+  /**
+   * The shape of the associated hot spot.
+   */
+  shape?: OptionalProperty<"rect" | "circle" | "poly" | "default">;
+
+  /**
+   * Details the coordinates of the `shape` attribute in size, shape, and placement of an `<area>`.
+   * This attribute must not be used if `shape` is set to `default`.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area#attr-coords
+   */
+  coords?: OptionalProperty<string>;
+
+  /**
+   * If present, indicates that the author intends the hyperlink to be used for downloading a resource.
+   * See `<a>` for [a full description of the `download` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#attr-download).
+   */
+  download?: OptionalProperty<string>;
+
+  /**
+   * The hyperlink target for the area. Its value is a valid URL. This attribute may be omitted; if so,
+   * the `<area>` element does not represent a hyperlink.
+   */
+  href?: OptionalProperty<string>;
+
+  /**
+   * Contains a space-separated list of URLs to which, when the hyperlink is followed, `POST` requests with the body
+   * `PING` will be sent by the browser (in the background). Typically used for tracking.
+   */
+  ping?: OptionalProperty<string>;
+
+  /**
+   * A string indicating which referrer to use when fetching the resource.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area#attr-referrerpolicy
+   */
+  referrerPolicy?: OptionalProperty<
+    | "no-referrer"
+    | "no-referrer-when-downgrade"
+    | "origin"
+    | "origin-when-cross-origin"
+    | "same-origin"
+    | "strict-origin"
+    | "strict-origin-when-cross-origin"
+    | "unsafe-url"
+  >;
+
+  /**
+   * For anchors containing the `href` attribute, this attribute specifies the relationship of the target object
+   * to the link object. The value is a space-separated list of [link types values](https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types).
+   * The values and their semantics will be registered by some authority that might have meaning to the document author.
+   * The default relationship, if no other is given, is void. Use this attribute only if the `href` attribute is present.
+   */
+  rel?: OptionalProperty<string>;
+
+  /**
+   * Where to display the linked URL, as the name for a browsing context (a tab, window, or `<iframe>`)
+   *
+   * A common usage is `target: "_blank"` to cause a link to open in a new tab.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/area#attr-target
+   */
+  target?: OptionalProperty<"_self" | "_blank" | "parent" | "_top">;
 }
 
 /*====================================*\
-    || 4.9                   Tabular Data ||
-    \*====================================*/
+|| 4.9                   Tabular Data ||
+\*====================================*/
 
-// table
-// caption
-// colgroup
-// col
-// tbody
-// thead
-// tfoot
-// tr
-// td
-// th
+export interface IntrinsicElements {
+  /**
+   * The _Table_ element.
+   *
+   * Represents tabular data — that is, information presented in a two-dimensional table comprised of rows and columns
+   * of cells containing data.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
+   */
+  table: PropertiesOf<HTMLTableElement>;
 
-interface TableElementAttributes extends ElementAttributes<HTMLTableElement> {}
+  /**
+   * The _Table Caption_ element.
+   *
+   * Specifies the caption (or title) of a table.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/caption
+   */
+  caption: PropertiesOf<HTMLTableCaptionElement>;
 
-interface TableCaptionElementAttributes extends ElementAttributes<HTMLTableCaptionElement> {}
+  /**
+   * The _Table Column Group_ element.
+   *
+   * Defines a group of columns within a table.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/colgroup
+   */
+  colgroup: HTMLTableColgroupElementProps;
 
-interface TableColgroupElementAttributes extends ElementAttributes<HTMLTableColElement> {
+  /**
+   * The _Table Column_ element.
+   *
+   * Defines a column within a table and is used for defining common semantics on all common cells.
+   * It is generally found within a `<colgroup>` element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/col
+   */
+  col: HTMLTableColElementProps;
+
+  /**
+   * The _Table Body_ element.
+   *
+   * Encapsulates a set of table rows (`<tr>` elements), indicating that they comprise the body of the table (`<table>`).
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody
+   */
+  tbody: PropertiesOf<HTMLTableSectionElement>;
+
+  /**
+   * The _Table Head_ element.
+   *
+   * Defines a set of rows defining the head of the columns of the table.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
+   */
+  thead: PropertiesOf<HTMLTableSectionElement>;
+
+  /**
+   * The _Table Foot_ element.
+   *
+   * Defines a set of rows summarizing the columns of the table.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tfoot
+   */
+  tfoot: PropertiesOf<HTMLTableSectionElement>;
+
+  /**
+   * The _Table Row_ element.
+   *
+   * Defines a row of cells in a table. The row's cells can then be established using a mix of `<td>` (data cell)
+   * and `<th>` (header cell) elements.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tr
+   */
+  tr: PropertiesOf<HTMLTableRowElement>;
+
+  /**
+   * The _Table Data Cell_ element.
+   *
+   * Defines a cell of a table that contains data.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td
+   */
+  td: HTMLTableCellElementProps;
+
+  /**
+   * The _Table Header_ element.
+   *
+   * Defines a cell as header of a group of table cells. The exact nature of this group is defined by the
+   * `scope` and `headers` attributes.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/th
+   */
+  th: HTMLTableHeaderElementProps;
+}
+
+interface HTMLTableColgroupElementProps extends PropertiesOf<HTMLTableColElement> {
   /**
    * A positive integer indicating the number of consecutive columns the `<colgroup>` element spans.
    * If not present, its default value is `1`.
    *
    * The `span` attribute is not permitted if there are one or more `<col>` elements within the `<colgroup>`.
    */
-  span?: MaybeReadable<number | undefined>;
+  span?: OptionalProperty<number>;
 }
 
-interface TableColElementAttributes extends ElementAttributes<HTMLTableColElement> {
+interface HTMLTableColElementProps extends PropertiesOf<HTMLTableColElement> {
   /**
    * A positive integer indicating the number of consecutive columns the `<col>` element spans.
    * If not present, its default value is `1`.
    */
-  span?: MaybeReadable<number | undefined>;
+  span?: OptionalProperty<number>;
 }
 
-interface TableBodyElementAttributes extends ElementAttributes<HTMLTableSectionElement> {}
-
-interface TableHeadElementAttributes extends ElementAttributes<HTMLTableSectionElement> {}
-
-interface TableFootElementAttributes extends ElementAttributes<HTMLTableSectionElement> {}
-
-interface TableRowElementAttributes extends ElementAttributes<HTMLTableRowElement> {}
-
-interface TableCellElementAttributes extends ElementAttributes<HTMLTableCellElement> {
+interface HTMLTableCellElementProps extends PropertiesOf<HTMLTableCellElement> {
   /**
    * A positive integer value that indicates for how many columns the cell extends. Its default value is `1`.
    * Values higher than 1000 will be considered as incorrect and will be set to the default value.
    */
-  colspan?: MaybeReadable<number | undefined>;
+  colSpan?: OptionalProperty<number>;
 
   /**
    * A non-negative integer value that indicates for how many rows the cell extends. Its default value is `1`;
@@ -3185,19 +3528,19 @@ interface TableCellElementAttributes extends ElementAttributes<HTMLTableCellElem
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td#attr-rowspan
    */
-  rowspan?: MaybeReadable<number | undefined>;
+  rowSpan?: OptionalProperty<number>;
 
   /**
    * A list of space-separated strings, each corresponding to the `id` attribute of the `<th>` elements that apply to this element.
    */
-  headers?: MaybeReadable<string | undefined>;
+  headers?: OptionalProperty<string>;
 }
 
-interface TableHeaderElementAttributes extends TableCellElementAttributes {
+interface HTMLTableHeaderElementProps extends HTMLTableCellElementProps {
   /**
    * A short abbreviated description of the cell's content. Some user-agents, such as speech readers, may present this description before the content itself.
    */
-  abbr?: MaybeReadable<string | undefined>;
+  abbr?: OptionalProperty<string>;
 
   /**
    * Defines the cells that the `<th>` element relates to.
@@ -3210,150 +3553,108 @@ interface TableHeaderElementAttributes extends TableCellElementAttributes {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/th#attr-scope
    */
-  scope?: MaybeReadable<"row" | "col" | "rowgroup" | "colgroup" | undefined>;
-}
-
-export interface IntrinsicElements {
-  /**
-   * The _Table_ element.
-   *
-   * Represents tabular data — that is, information presented in a two-dimensional table comprised of rows and columns
-   * of cells containing data.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
-   */
-  table: TableElementAttributes;
-
-  /**
-   * The _Table Caption_ element.
-   *
-   * Specifies the caption (or title) of a table.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/caption
-   */
-  caption: TableCaptionElementAttributes;
-
-  /**
-   * The _Table Column Group_ element.
-   *
-   * Defines a group of columns within a table.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/colgroup
-   */
-  colgroup: TableColgroupElementAttributes;
-
-  /**
-   * The _Table Column_ element.
-   *
-   * Defines a column within a table and is used for defining common semantics on all common cells.
-   * It is generally found within a `<colgroup>` element.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/col
-   */
-  col: TableColElementAttributes;
-
-  /**
-   * The _Table Body_ element.
-   *
-   * Encapsulates a set of table rows (`<tr>` elements), indicating that they comprise the body of the table (`<table>`).
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody
-   */
-  tbody: TableBodyElementAttributes;
-
-  /**
-   * The _Table Head_ element.
-   *
-   * Defines a set of rows defining the head of the columns of the table.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
-   */
-  thead: TableHeadElementAttributes;
-
-  /**
-   * The _Table Foot_ element.
-   *
-   * Defines a set of rows summarizing the columns of the table.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tfoot
-   */
-  tfoot: TableFootElementAttributes;
-
-  /**
-   * The _Table Row_ element.
-   *
-   * Defines a row of cells in a table. The row's cells can then be established using a mix of `<td>` (data cell)
-   * and `<th>` (header cell) elements.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tr
-   */
-  tr: TableRowElementAttributes;
-
-  /**
-   * The _Table Data Cell_ element.
-   *
-   * Defines a cell of a table that contains data.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td
-   */
-  td: TableCellElementAttributes;
-
-  /**
-   * The _Table Header_ element.
-   *
-   * Defines a cell as header of a group of table cells. The exact nature of this group is defined by the
-   * `scope` and `headers` attributes.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/th
-   */
-  th: TableHeaderElementAttributes;
+  scope?: OptionalProperty<"row" | "col" | "rowgroup" | "colgroup">;
 }
 
 /*====================================*\
 || 4.10                         Forms ||
 \*====================================*/
 
-// form
-// label
-// input
-// button
-// select
-// datalist
-// optgroup
-// option
-// textarea
-// output
-// progress
-// meter
-// fieldset
-// legend
+export interface IntrinsicElements {
+  /**
+   * Contains a group of interactive elements for taking input from a user.
+   * This can be anything from a chat box with a submit button to a full page tax form.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form
+   */
+  form: FormElementProps;
 
-interface FormElementAttributes extends ElementAttributes<HTMLFormElement> {
+  /**
+   * Provides a text label that describes another element.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label
+   */
+  label: HTMLLabelElementProps;
+
+  input: HTMLInputElementProps;
+
+  button: ButtonElementProps;
+
+  select: HTMLSelectElementProps;
+
+  datalist: PropertiesOf<HTMLDataListElement>;
+
+  optgroup: HTMLOptGroupElementProps;
+
+  option: HTMLOptionElementProps;
+
+  textarea: HTMLTextAreaElementProps;
+
+  output: HTMLOutputElementProps;
+
+  /**
+   * Displays a finite progress indicator.
+   */
+  progress: HTMLProgressElementProps;
+
+  /**
+   * Displays a value within a finite range. Think gas gauge or progress bar.
+   * Consider the simpler [`<progress>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) element for progress bars.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter
+   */
+  meter: HTMLMeterElementProps;
+
+  /**
+   * Contains and names a group of related form controls.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/fieldset
+   */
+  fieldset: HTMLFieldSetElementProps;
+
+  /**
+   * Provides a caption for a parent `<fieldset>`.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/legend
+   */
+  legend: PropertiesOf<HTMLLegendElement>;
+}
+
+type AutocompleteValues = boolean | "off" | "on";
+
+interface FormElementProps extends PropertiesOf<HTMLFormElement> {
   /**
    * Indicates whether input elements can by default have their values automatically completed by the browser.
    * `autocomplete` attributes on form elements override it on `<form>`.
    *
    * @see \https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#attr-autocomplete
    */
-  autocomplete?: MaybeReadable<"off" | "on" | undefined>;
+  autocomplete?: OptionalProperty<AutocompleteValues>;
 
   /**
    * The `name` of the form. The value must not be the empty string, and must be unique among the form elements
    * in the forms collection that it is in, if any.
    */
-  name?: MaybeReadable<string | undefined>;
+  name?: OptionalProperty<string>;
 
-  rel?: MaybeReadable<string | undefined>;
+  rel?: OptionalProperty<string>;
 
   /**
    * The URL that handles the form submission.
    */
-  action?: MaybeReadable<string | undefined>;
+  action?: OptionalProperty<string>;
 
   /**
    * The [MIME type](https://en.wikipedia.org/wiki/Media_type) of the form data, when the form has a `method` of `post`.
+   * Alias to `encoding`.
    */
-  enctype?: MaybeReadable<"application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain" | undefined>;
+  enctype?: OptionalProperty<"application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain" | string>;
+
+  /**
+   * The [MIME type](https://en.wikipedia.org/wiki/Media_type) of the form data, when the form has a `method` of `post`.
+   * Alias to `enctype`.
+   */
+  encoding?: OptionalProperty<"application/x-www-form-urlencoded" | "multipart/form-data" | "text/plain" | string>;
 
   /**
    * The HTTP method to use when submitting the form. A value of `"dialog"` is valid when the form is inside a `<dialog`>
@@ -3361,30 +3662,91 @@ interface FormElementAttributes extends ElementAttributes<HTMLFormElement> {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#attr-method
    */
-  method?: MaybeReadable<"post" | "POST" | "get" | "GET" | "dialog" | undefined>;
+  method?: OptionalProperty<"post" | "POST" | "get" | "GET" | "dialog" | string>;
 
   /**
    * If true, prevents the form from being validated when submitted.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#attr-novalidate
    */
-  novalidate?: MaybeReadable<boolean | undefined>;
+  noValidate?: OptionalProperty<boolean>;
 
   /**
    * Name of the browsing context to display the response to the form's submission.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form#attr-target
    */
-  target?: MaybeReadable<"_self" | "_blank" | "_parent" | "_top" | string | undefined>;
+  target?: OptionalProperty<"_self" | "_blank" | "_parent" | "_top" | string>;
+
+  /*====================================*\
+  || Events                             ||
+  \*====================================*/
+
+  /**
+   * Fires after the entry list representing the form's data is constructed.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/formdata_event
+   */
+  onFormData?: OptionalProperty<EventHandler<FormDataEvent>>;
+
+  /**
+   * Fires when a `<form>` is reset.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reset_event
+   */
+  onReset?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fires when a `<form>` is submitted.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/submit_event
+   */
+  onSubmit?: OptionalProperty<EventHandler<SubmitEvent>>;
+
+  /*====================================*\
+  || Event Properties                   ||
+  \*====================================*/
+
+  /**
+   * Fires after the entry list representing the form's data is constructed.
+   *
+   * This event is not cancelable and does not bubble.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/formdata_event
+   */
+  onformdata?: OptionalProperty<EventHandler<FormDataEvent>>;
+
+  /**
+   * Fires when a `<form>` is reset.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/reset_event
+   */
+  onreset?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fires when a `<form>` is submitted.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLFormElement/submit_event
+   */
+  onsubmit?: OptionalProperty<EventHandler<SubmitEvent>>;
 }
 
-interface LabelElementAttributes extends ElementAttributes<HTMLLabelElement> {
+interface HTMLLabelElementProps extends PropertiesOf<HTMLLabelElement> {
   /**
-   * An `id` for the element the `<label>` labels.
+   * An `id` for the element the label labels.
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label#attr-for
    */
-  for?: MaybeReadable<string | undefined>;
+  htmlFor?: OptionalProperty<string>;
+
+  /**
+   * An `id` for the element the label labels. Alias to `htmlFor` property.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label#attr-for
+   */
+  for?: OptionalProperty<string>;
 }
 
 export type InputType =
@@ -3412,233 +3774,205 @@ export type InputType =
   | "button";
 
 // TODO: Add complete doc comments
-interface InputElementAttributes extends ElementAttributes<HTMLInputElement> {
-  accept?: MaybeReadable<string | undefined>;
-  alt?: MaybeReadable<string | undefined>;
-  autocomplete?: MaybeReadable<"off" | "on" | string | undefined>;
-  checked?: MaybeReadable<boolean | undefined>;
-  dirname?: MaybeReadable<string | undefined>;
-  disabled?: MaybeReadable<boolean | undefined>;
-  form?: MaybeReadable<string | undefined>;
-  formaction?: MaybeReadable<string | undefined>;
-  formenctype?: MaybeReadable<string | undefined>;
-  formmethod?: MaybeReadable<string | undefined>;
-  formnovalidate?: MaybeReadable<boolean | undefined>;
-  formtarget?: MaybeReadable<string | undefined>;
-  height?: MaybeReadable<string | number | undefined>;
-  list?: MaybeReadable<string | undefined>;
-  max?: MaybeReadable<string | number | undefined>;
-  maxlength?: MaybeReadable<number | undefined>;
-  min?: MaybeReadable<string | number | undefined>;
-  minlength?: MaybeReadable<number | undefined>;
-  multiple?: MaybeReadable<boolean | undefined>;
-  name?: MaybeReadable<string | undefined>;
-  pattern?: MaybeReadable<string | RegExp | undefined>;
-  placeholder?: MaybeReadable<string | undefined>;
-  popovertarget?: MaybeReadable<string | undefined>;
-  popovertargetaction?: MaybeReadable<"toggle" | "show" | "hide" | undefined>;
-  readonly?: MaybeReadable<boolean | undefined>;
-  required?: MaybeReadable<boolean | undefined>;
-  size?: MaybeReadable<number | undefined>;
-  src?: MaybeReadable<string | undefined>;
-  step?: MaybeReadable<number | undefined>;
-  type?: MaybeReadable<InputType | undefined>;
-  value?: Writable<string> | Readable<string> | string;
-  width?: MaybeReadable<string | number | undefined>;
-  title?: MaybeReadable<string | undefined>;
-}
+interface HTMLInputElementProps extends PropertiesOf<HTMLInputElement> {
+  accept?: OptionalProperty<string>;
+  alt?: OptionalProperty<string>;
+  autocomplete?: OptionalProperty<AutocompleteValues>;
+  checked?: OptionalProperty<boolean>;
+  dirName?: OptionalProperty<string>;
+  disabled?: OptionalProperty<boolean>;
+  form?: OptionalProperty<string>;
+  formAction?: OptionalProperty<string>;
+  formEnctype?: OptionalProperty<string>;
+  formMethod?: OptionalProperty<string>;
+  formNoValidate?: OptionalProperty<boolean>;
+  formTarget?: OptionalProperty<string>;
+  height?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+  list?: OptionalProperty<string>;
+  max?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+  maxLength?: OptionalProperty<number>;
+  min?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+  minLength?: OptionalProperty<number>;
+  multiple?: OptionalProperty<boolean>;
+  name?: OptionalProperty<string>;
+  pattern?: OptionalProperty<string | RegExp> | OptionalProperty<string> | OptionalProperty<RegExp>;
+  placeholder?: OptionalProperty<string>;
+  popoverTarget?: OptionalProperty<string>;
+  popoverTargetAction?: OptionalProperty<"toggle" | "show" | "hide">;
+  readOnly?: OptionalProperty<boolean>;
+  required?: OptionalProperty<boolean>;
+  size?: OptionalProperty<number>;
+  src?: OptionalProperty<string>;
+  step?: OptionalProperty<number>;
+  type?: OptionalProperty<InputType>;
+  value?: OptionalProperty<string>;
 
-// TODO: Add complete doc comments
-interface ButtonElementAttributes extends ElementAttributes<HTMLButtonElement> {
-  disabled?: MaybeReadable<boolean | undefined>;
-  form?: MaybeReadable<string | undefined>;
-  formaction?: MaybeReadable<string | undefined>;
-  formenctype?: MaybeReadable<string | undefined>;
-  formmethod?: MaybeReadable<string | undefined>;
-  formnovalidate?: MaybeReadable<boolean | undefined>;
-  formtarget?: MaybeReadable<string | undefined>;
-  name?: MaybeReadable<string | undefined>;
-  popovertarget?: MaybeReadable<string | undefined>;
-  popovertargetaction?: MaybeReadable<"toggle" | "show" | "hide" | undefined>;
-  type?: MaybeReadable<"submit" | "reset" | "button" | undefined>;
-  value?: MaybeReadable<string | undefined>;
+  /**
+   * Takes a Writable and sets up two-way binding with it.
+   * Any time the user changes the value of this input, that value will be written back to the Writable.
+   */
+  $$value?: Writable<string>;
+
+  width?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+  title?: OptionalProperty<string>;
+
+  /*====================================*\
+  || Events                             ||
+  \*====================================*/
+
+  /**
+   * Fired when a submittable element has been checked for validity and doesn't satisfy its constraints.
+   * When a form is submitted, `invalid` events are fired at each form control that is invalid.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event
+   */
+  onInvalid?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when text has been selected.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/select_event
+   */
+  onSelect?: OptionalProperty<EventHandler<Event>>;
+
+  /*====================================*\
+  || Event Properties                   ||
+  \*====================================*/
+
+  /**
+   * Fired when a submittable element has been checked for validity and doesn't satisfy its constraints.
+   * When a form is submitted, `invalid` events are fired at each form control that is invalid.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/invalid_event
+   */
+  oninvalid?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * Fired when text has been selected.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/select_event
+   */
+  onselect?: OptionalProperty<EventHandler<Event>>;
 }
 
 export type ButtonTypeValues = "submit" | "reset" | "button";
-interface ButtonElementProps extends HTMLPropsFor<HTMLButtonElement> {
-  disabled?: boolean | Readable<boolean> | Readable<boolean | undefined>;
-  type?: ButtonTypeValues | Readable<ButtonTypeValues> | Readable<ButtonTypeValues | undefined>;
+
+interface ButtonElementProps extends PropertiesOf<HTMLButtonElement> {
+  disabled?: OptionalProperty<boolean>;
+  form?: OptionalProperty<string>;
+  formAction?: OptionalProperty<string>;
+  formEnctype?: OptionalProperty<string>;
+  formMethod?: OptionalProperty<string>;
+  formNoValidate?: OptionalProperty<boolean>;
+  formTarget?: OptionalProperty<string>;
+  name?: OptionalProperty<string>;
+  popoverTarget?: OptionalProperty<string>;
+  popoverTargetAction?: OptionalProperty<"toggle" | "show" | "hide">;
+  type?: OptionalProperty<ButtonTypeValues>;
+  value?: OptionalProperty<string>;
 }
 
 // TODO: Add complete doc comments
-interface SelectElementAttributes extends ElementAttributes<HTMLSelectElement> {
-  autocomplete?: MaybeReadable<"off" | "on" | string | undefined>;
-  disabled?: MaybeReadable<boolean | undefined>;
-  form?: MaybeReadable<string | undefined>;
-  multiple?: MaybeReadable<boolean | undefined>;
-  name?: MaybeReadable<string | undefined>;
-  required?: MaybeReadable<boolean | undefined>;
-  size?: MaybeReadable<number | undefined>;
-  value?: MaybeReadable<string | undefined>;
+interface HTMLSelectElementProps extends PropertiesOf<HTMLSelectElement> {
+  autocomplete?: OptionalProperty<AutocompleteValues>;
+  disabled?: OptionalProperty<boolean>;
+  form?: OptionalProperty<string>;
+  multiple?: OptionalProperty<boolean>;
+  name?: OptionalProperty<string>;
+  required?: OptionalProperty<boolean>;
+  size?: OptionalProperty<number>;
+  value?: OptionalProperty<string>;
 }
 
 // TODO: Add complete doc comments
-interface DatalistElementAttributes extends ElementAttributes<HTMLDataListElement> {}
-
-// TODO: Add complete doc comments
-interface OptgroupElementAttributes extends ElementAttributes<HTMLOptGroupElement> {
-  disabled?: MaybeReadable<boolean | undefined>;
-  label?: MaybeReadable<string | undefined>;
+interface HTMLOptGroupElementProps extends PropertiesOf<HTMLOptGroupElement> {
+  disabled?: OptionalProperty<boolean>;
+  label?: OptionalProperty<string>;
 }
 
 // TODO: Add complete doc comments
-interface OptionElementAttributes extends ElementAttributes<HTMLOptionElement> {
-  disabled?: MaybeReadable<boolean | undefined>;
-  label?: MaybeReadable<string | undefined>;
-  selected?: MaybeReadable<boolean | undefined>;
-  value?: MaybeReadable<string | undefined>;
+interface HTMLOptionElementProps extends PropertiesOf<HTMLOptionElement> {
+  disabled?: OptionalProperty<boolean>;
+  label?: OptionalProperty<string>;
+  selected?: OptionalProperty<boolean>;
+  value?: OptionalProperty<string>;
 }
 
 // TODO: Add complete doc comments
-interface TextareaElementAttributes extends ElementAttributes<HTMLTextAreaElement> {
-  autocomplete?: MaybeReadable<"off" | "on" | string | undefined>;
-  cols?: MaybeReadable<number | undefined>;
-  dirname?: MaybeReadable<string | undefined>;
-  disabled?: MaybeReadable<boolean | undefined>;
-  form?: MaybeReadable<string | undefined>;
-  maxlength?: MaybeReadable<number | undefined>;
-  minlength?: MaybeReadable<number | undefined>;
-  name?: MaybeReadable<string | undefined>;
-  placeholder?: MaybeReadable<string | undefined>;
-  readonly?: MaybeReadable<boolean | undefined>;
-  required?: MaybeReadable<boolean | undefined>;
-  rows?: MaybeReadable<number | undefined>;
-  wrap?: MaybeReadable<"soft" | "hard" | undefined>;
-  value?: MaybeReadable<string | undefined>;
+interface HTMLTextAreaElementProps extends PropertiesOf<HTMLTextAreaElement> {
+  autocomplete?: OptionalProperty<AutocompleteValues>;
+  cols?: OptionalProperty<number>;
+  dirname?: OptionalProperty<string>;
+  disabled?: OptionalProperty<boolean>;
+  form?: OptionalProperty<string>;
+  maxLength?: OptionalProperty<number>;
+  minLength?: OptionalProperty<number>;
+  name?: OptionalProperty<string>;
+  placeholder?: OptionalProperty<string>;
+  readOnly?: OptionalProperty<boolean>;
+  required?: OptionalProperty<boolean>;
+  rows?: OptionalProperty<number>;
+  wrap?: OptionalProperty<"soft" | "hard">;
+  value?: OptionalProperty<string>;
+  $$value?: Writable<string>;
 }
 
 // TODO: Add complete doc comments
-interface OutputElementAttributes extends ElementAttributes<HTMLOutputElement> {
-  for?: MaybeReadable<string | undefined>;
-  form?: MaybeReadable<string | undefined>;
-  name?: MaybeReadable<string | undefined>;
+interface HTMLOutputElementProps extends PropertiesOf<HTMLOutputElement> {
+  for?: OptionalProperty<string>;
+  form?: OptionalProperty<string>;
+  name?: OptionalProperty<string>;
 }
 
-interface ProgressElementAttributes extends ElementAttributes<HTMLProgressElement> {
-  value?: MaybeReadable<number | undefined>;
-  max?: MaybeReadable<number | undefined>;
+interface HTMLProgressElementProps extends PropertiesOf<HTMLProgressElement> {
+  value?: OptionalProperty<number>;
+  max?: OptionalProperty<number>;
 }
 
-interface MeterElementAttributes extends ElementAttributes<HTMLMeterElement> {
+interface HTMLMeterElementProps extends PropertiesOf<HTMLMeterElement> {
   /**
    * The current value displayed by this meter. Must be between `min` and `max`, which default to 0 and 1 respectively.
    */
-  value?: MaybeReadable<number | undefined>;
+  value?: OptionalProperty<number>;
 
   /**
    * The minimum value this meter can display. Defaults to 0.
    */
-  min?: MaybeReadable<number | undefined>;
+  min?: OptionalProperty<number>;
 
   /**
    * The maximum value this meter can display. Defaults to 1.
    */
-  max?: MaybeReadable<number | undefined>;
+  max?: OptionalProperty<number>;
 
   /**
    * If `value` is between `min` and `low` it is considered "low". You would charge your phone
    * if your battery meter was in this range. The browser may display values in this range in red.
    */
-  low?: MaybeReadable<number | undefined>;
+  low?: OptionalProperty<number>;
 
   /**
    * If `value` is between `high` and `max` it is considered "high". You just took your phone off the charger
    * if your battery meter is in this range. The browser may display values in this range in green.
    */
-  high?: MaybeReadable<number | undefined>;
+  high?: OptionalProperty<number>;
 
   /**
    * The ideal `value`.
    */
-  optimum?: MaybeReadable<number | undefined>;
+  optimum?: OptionalProperty<number>;
 }
 
-interface FieldsetElementAttributes extends ElementAttributes<HTMLFieldSetElement> {
+interface HTMLFieldSetElementProps extends PropertiesOf<HTMLFieldSetElement> {
   /**
    * If true, all form controls inside this fieldset are disabled.
    */
-  disabled?: MaybeReadable<boolean | undefined>;
-
-  // This may be the worst attribute I've ever heard of. Not sure it's worth adding.
-  // form?: MaybeObservable<string | undefined>;
+  disabled?: OptionalProperty<boolean>;
 
   /**
    * The name of this group of inputs.
    */
-  name?: MaybeReadable<string | undefined>;
-}
-
-interface LegendElementAttributes extends ElementAttributes<HTMLLegendElement> {}
-
-export interface IntrinsicElements {
-  /**
-   * Contains a group of interactive elements for taking input from a user.
-   * This can be anything from a chat box with a submit button to a full page tax form.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/form
-   */
-  form: FormElementAttributes;
-
-  /**
-   * Provides a text label that describes another element.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/label
-   */
-  label: LabelElementAttributes;
-
-  input: InputElementAttributes;
-
-  button: ButtonElementAttributes;
-  // button: ButtonElementProps;
-
-  select: SelectElementAttributes;
-
-  datalist: DatalistElementAttributes;
-
-  optgroup: OptgroupElementAttributes;
-
-  option: OptionElementAttributes;
-
-  textarea: TextareaElementAttributes;
-
-  output: OutputElementAttributes;
-
-  /**
-   * Displays a finite progress indicator.
-   */
-  progress: ProgressElementAttributes;
-
-  /**
-   * Displays a value within a finite range. Think gas gauge or progress bar.
-   * Consider the simpler [`<progress>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/progress) element for progress bars.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meter
-   */
-  meter: MeterElementAttributes;
-
-  /**
-   * Contains and names a group of related form controls.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/fieldset
-   */
-  fieldset: FieldsetElementAttributes;
-
-  /**
-   * Provides a caption for a parent `<fieldset>`.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/legend
-   */
-  legend: LegendElementAttributes;
+  name?: OptionalProperty<string>;
 }
 
 /*====================================*\
@@ -3649,34 +3983,6 @@ export interface IntrinsicElements {
 // summary
 // dialog
 
-interface DetailsElementAttributes extends ElementAttributes<HTMLDetailsElement> {
-  /**
-   * Indicates whether the contents of the <details> element are currently visible.
-   * The details are shown when this attribute is true, hidden when false.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/details
-   */
-  open?: MaybeReadable<boolean | undefined>;
-
-  /**
-   * The `toggle` event is fired when the `open`/`closed` state of a `<details>` element is toggled.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDetailsElement/toggle_event
-   */
-  ontoggle?: EventHandler<Event>;
-}
-
-interface SummaryElementAttributes extends ElementAttributes<HTMLElement> {}
-
-interface DialogElementAttributes extends ElementAttributes<HTMLDialogElement> {
-  /**
-   * Indicates that the dialog is active and can be interacted with. When the `open` attribute is not set, the dialog
-   * shouldn't be shown to the user. It is recommended to use the `.show()` or `.showModal()` methods to render dialogs,
-   * rather than the `open` attribute.
-   */
-  open?: MaybeReadable<boolean | undefined>;
-}
-
 export interface IntrinsicElements {
   /**
    * The _Details disclosure_ element.
@@ -3686,7 +3992,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/details
    */
-  details: DetailsElementAttributes;
+  details: HTMLDetailsElementProps;
 
   /**
    * The _Disclosure Summary_ element.
@@ -3696,7 +4002,7 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/summary
    */
-  summary: SummaryElementAttributes;
+  summary: PropertiesOf<HTMLElement>;
 
   /**
    * The _Dialog_ element.
@@ -3705,7 +4011,40 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/dialog
    */
-  dialog: DialogElementAttributes;
+  dialog: HTMLDialogElementProps;
+}
+
+interface HTMLDetailsElementProps extends PropertiesOf<HTMLDetailsElement> {
+  /**
+   * Indicates whether the contents of the <details> element are currently visible.
+   * The details are shown when this attribute is true, hidden when false.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/details
+   */
+  open?: OptionalProperty<boolean>;
+
+  /**
+   * The `toggle` event is fired when the `open`/`closed` state of a `<details>` element is toggled.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDetailsElement/toggle_event
+   */
+  ontoggle?: OptionalProperty<EventHandler<Event>>;
+
+  /**
+   * The `toggle` event is fired when the `open`/`closed` state of a `<details>` element is toggled.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLDetailsElement/toggle_event
+   */
+  onToggle?: OptionalProperty<EventHandler<Event>>;
+}
+
+interface HTMLDialogElementProps extends PropertiesOf<HTMLDialogElement> {
+  /**
+   * Indicates that the dialog is active and can be interacted with. When the `open` attribute is not set, the dialog
+   * shouldn't be shown to the user. It is recommended to use the `.show()` or `.showModal()` methods to render dialogs,
+   * rather than the `open` attribute.
+   */
+  open?: OptionalProperty<boolean>;
 }
 
 /*====================================*\
@@ -3716,23 +4055,6 @@ export interface IntrinsicElements {
 // UNSUPPORTED noscript
 // UNSUPPORTED template
 // UNSUPPORTED slot
-// canvas
-
-interface CanvasElementAttributes extends ElementAttributes<HTMLCanvasElement> {
-  /**
-   * The width of the coordinate space in CSS pixels. Defaults to 300.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#attributes
-   */
-  width?: MaybeReadable<string | number | undefined>;
-
-  /**
-   * The height of the coordinate space in CSS pixels. Defaults to 150.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#attributes
-   */
-  height?: MaybeReadable<string | number | undefined>;
-}
 
 export interface IntrinsicElements {
   /**
@@ -3743,5 +4065,21 @@ export interface IntrinsicElements {
    *
    * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas
    */
-  canvas: CanvasElementAttributes;
+  canvas: HTMLCanvasElementProps;
+}
+
+interface HTMLCanvasElementProps extends PropertiesOf<HTMLCanvasElement> {
+  /**
+   * The width of the coordinate space in CSS pixels. Defaults to 300.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#attributes
+   */
+  width?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
+
+  /**
+   * The height of the coordinate space in CSS pixels. Defaults to 150.
+   *
+   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#attributes
+   */
+  height?: OptionalProperty<string | number> | OptionalProperty<string> | OptionalProperty<number>;
 }

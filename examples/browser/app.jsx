@@ -5,14 +5,15 @@ import { MouseStore } from "./stores/MouseStore";
 
 import { AppLayout } from "./AppLayout";
 
-import { ConditionalRendering } from "./examples/ConditionalRendering";
-import { CounterWithStore } from "./examples/CounterWithStore";
-import { CrashHandling } from "./examples/CrashHandling";
-import { Languages } from "./examples/Languages";
-import { SpringAnimation } from "./examples/SpringAnimation";
-import { PassingAttributes } from "./examples/PassingAttributes";
-import { HTTPRequests } from "./examples/HTTPRequests";
-import { RawElements } from "./examples/RawElements";
+import ConditionalRendering from "./examples/conditional-rendering.jsx";
+import CounterWithStore from "./examples/counter-with-store.jsx";
+import CrashHandling from "./examples/crash-handling.jsx";
+import Languages from "./examples/languages.jsx";
+import SpringAnimation from "./examples/spring-animation.jsx";
+import PassingAttributes from "./examples/passing-attributes.jsx";
+import HTTPRequests from "./examples/http-requests.jsx";
+import RawElements from "./examples/raw-elements.jsx";
+import DeeplyNestedObservers from "./examples/deeply-nested-observers.jsx";
 
 import { RenderOrderTest } from "./views/RenderOrderTest";
 
@@ -110,6 +111,7 @@ app.route("/examples", null, (sub) => {
   sub.route("/passing-attributes", PassingAttributes);
   sub.route("/http-requests", HTTPRequests);
   sub.route("/raw-elements", RawElements);
+  sub.route("/deeply-nested-observers", DeeplyNestedObservers);
   sub.redirect("*", "./spring-animation");
 });
 

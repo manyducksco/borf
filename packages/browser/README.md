@@ -3,6 +3,9 @@
 ![bundle size](https://img.shields.io/bundlephobia/min/@borf/browser)
 ![bundle size](https://img.shields.io/bundlephobia/minzip/@borf/browser)
 
+> WARNING: This package is very early in development. There are frequent breaking changes, many bugs and undocumented
+> or incorrectly documented features, and READMEs don't get updated in a timely manner.
+
 This is the front-end portion of [Borf](https://www.borfjs.com). It handles things like components, [routing](#routing),
 data binding, logging, and crash handling, all out-of-the-box, aiming to cover the common needs of modern web apps while
 striking a balance between features and size.
@@ -25,7 +28,7 @@ examples, we'll dig into the concepts in more depth.
 The simplest possible app. Displays an `<h1>` inside the element with id `app`.
 
 ```js
-import {App} from "borf";
+import { App } from "borf";
 
 const app = new App();
 
@@ -44,20 +47,20 @@ dynamic state.
 Any HTML attribute can take a Writable or Readable as a value and will update automatically when its value changes.
 
 ```js
-import {App, Writable} from "borf";
+import { App, writable } from "borf";
 
 const app = new App();
 
 app.main(() => {
-  const $$name = new Writable("World");
+  const $$name = writable("World");
 
   return (
     <div>
       <h1>Hello {$$name}!</h1>
       <input
         value={$$name}
-        oninput={(e) => {
-          $$name.value = e.target.value;
+        onInput={(e) => {
+          $$name.set(e.target.value);
         }}
       />
     </div>
@@ -73,20 +76,20 @@ A counter that stores a number that can be incremented or decremented using butt
 that state in one place while it is accessed from multiple views.
 
 ```js
-import {App, Writable} from "borf";
+import { App, writable, readable } from "borf";
 
 const app = new App();
 
 function CounterStore() {
-  const $$count = new Writable(0);
+  const $$count = writable(0);
 
   return {
-    $count: $$count.toReadable(),
+    $count: readable($$count),
     increment: () => {
-      $$count.value += 1;
+      $$count.update(n => n + 1);
     },
     decrement: () => {
-      $$count.value -= 1;
+      $$count.update(n => n - 1);
     },
   };
 }
@@ -132,13 +135,15 @@ app.connect("#app");
   - Stores
     - Built-in stores
 - Readable & Writable
-  - map
-  - merge
+  - writable
+  - readable
+  - computed
+  - unwrap
 - Views
   - Markup
   - Props
   - Context
-  - Dynamic content (`cond`, `repeat`, `observe`)
+  - Dynamic content (`cond`, `repeat`, `computed` with element values)
 - Stores
   - Context
 - Routing
@@ -161,49 +166,48 @@ app.connect("#app");
 
 #### Markup
 
-Views return `Markup` objects, which represent a tree of DOM elements. `Markup` objects are typically created by writing
-JSX.
+Views return `Markup` objects, which represent a tree of DOM nodes. `Markup` objects are typically created by writing
+JSX. While JSX looks like HTML, what you are actually passing is DOM node properties.
 
 ```js
 function ExampleView() {
   return (
-    <div>
-      <h1>Hello!</h1>
+    <div className="container">
+      <h1 style={{ fontWeight: "bold" }}>Hello!</h1>
       <p>This is a really simple view.</p>
     </div>
   );
 }
 ```
 
-`Markup` objects can also be created with the `makeMarkup` function.
+`Markup` objects can also be created with the `m` function if you prefer to run your JavaScript code directly in the
+browser without compilation.
 
 ```js
-import {makeMarkup} from "borf";
+import { m } from "borf";
 
 function ExampleView() {
   // Arguments are (tag, props, ...children)
-  return makeMarkup(
-    "div",
-    null,
-    makeMarkup("h1", null, "Hello!"),
-    makeMarkup("p", null, "This is a really simple view.")
-  );
+  return m("div", { className: "container" }, [
+    m("h1", { style: { fontWeight: "bold" } }, ["Hello!"]),
+    m("p", null, ["This is a really simple view."])
+  ]);
 }
 ```
 
-That doesn't look great. If you'd like to use `borf` in an environment that doesn't support JSX, like in a browser
-without running a build step, you can use the [`htm`](https://github.com/developit/htm) library.
+Another option is the fantastic [`htm`](https://github.com/developit/htm) library which simply binds the `m` function
+and allows you to write in a JSX-like syntax that runs in the browser.
 
 ```js
 import htm from "htm";
-import {makeMarkup} from "borf";
+import { m } from "borf";
 
-const html = htm.bind(makeMarkup);
+const html = htm.bind(m);
 
 function ExampleView() {
   return html`
-    <div>
-      <h1>Hello!</h1>
+    <div className="container">
+      <h1 style=${{ fontWeight: "bold" }}>Hello!</h1>
       <p>This is a really simple view.</p>
     </div>
   `;
@@ -257,7 +261,7 @@ Stores return a plain JavaScript object, a single instance of which is shared vi
 contexts. Stores are helpful for keeping persistent state at a specific place in the app for access in many places.
 
 ```js
-import {App} from "borf";
+import { App } from "borf";
 
 const app = new App();
 
@@ -325,34 +329,34 @@ change update when changes occur.
 > one-way (`$` = read only) or two-way (`$$` = read-write).
 
 ```jsx
-import {Writable} from "borf";
+import { writable, readable, StoreProvider } from "borf";
 
 function LayoutView(props, c) {
   return (
     <div class="layout">
-      <CounterStore>
-        <CounterView/>
-      </CounterStore>
+      <StoreProvider store={CounterStore}>
+        <CounterView />
+      </StoreProvider>
     </div>
   );
 }
 
 function CounterStore(props, c) {
-  const $$current = new Writable(0);
+  const $$current = writable(0);
 
   return {
     // Expose value as a Readable.
     // The value can only be changed from outside using the methods below.
-    $current: $$current.toReadable(),
+    $current: readable($$current),
 
     increment: () => {
-      $$current.value += 1;
+      $$current.update(n => n + 1);
     },
     decrement: () => {
-      $$current.value -= 1;
+      $$current.update(n => n - 1);
     },
     reset: () => {
-      $$current.value = 0;
+      $$current.set(0);
     },
   };
 }
@@ -380,7 +384,7 @@ value is automatically two-way bound if you pass a Writable as the `value` attri
 In the following example, typing in the input box immediately updates the text in the `<p>` tag above it.
 
 ```js
-import {Writable} from "@borf/browser";
+import { Writable } from "@borf/browser";
 
 function ExampleView(props, c) {
   const $$value = new Writable("Your Name");
@@ -428,7 +432,7 @@ The `@borf/browser` package has a set of four functions that handle conditionals
 needs based on the values of a Readable or Writable.
 
 ```jsx
-import {Writable, when, unless, repeat, observe} from "@borf/browser";
+import { Writable, when, unless, repeat, observe } from "@borf/browser";
 
 function PizzaBuilderView(props, c) {
   const $$toppings = new Writable(["Pineapple", "Jalapeño", "Sausage"]);
@@ -487,7 +491,7 @@ function PizzaBuilderView(props, c) {
               addTopping();
             }}
           >
-            <input value={$$tempTopping}/>
+            <input value={$$tempTopping} />
           </form>,
 
           <button
@@ -517,7 +521,7 @@ function PizzaBuilderView(props, c) {
 > ...
 
 ```js
-import {App} from "@borf/browser";
+import { App } from "@borf/browser";
 ```
 
 #### Routing
@@ -549,7 +553,7 @@ to your code (`router` store, `$params` readable). Below are some examples of pa
 Now, here are some route examples in the context of an app:
 
 ```js
-import {PersonDetails, ThingIndex, ThingDetails, ThingEdit, ThingDelete} from "./components.js";
+import { PersonDetails, ThingIndex, ThingDetails, ThingEdit, ThingDelete } from "./components.js";
 
 const app = new App();
 
@@ -576,10 +580,10 @@ function PersonDetails(_, ctx) {
   const router = ctx.getStore("router");
 
   // Info about the current route is exported as a set of Readables. Query params are also Writable through $$query:
-  const {$path, $pattern, $params, $$query} = router;
+  const { $path, $pattern, $params, $$query } = router;
 
   // Functions are exported for navigation:
-  const {back, forward, navigate} = router;
+  const { back, forward, navigate } = router;
 
   back(); // Step back in the history to the previous route, if any.
   back(2); // Hit the back button twice.
@@ -591,9 +595,9 @@ function PersonDetails(_, ctx) {
   navigate("https://www.example.com/another/site"); // Navigate to another domain entirely.
 
   // Three ways to confirm with the user that they wish to navigate before actually doing it.
-  navigate("/another/page", {prompt: true});
-  navigate("/another/page", {prompt: "Are you sure you want to leave and go to /another/page?"});
-  navigate("/another/page", {prompt: PromptView});
+  navigate("/another/page", { prompt: true });
+  navigate("/another/page", { prompt: "Are you sure you want to leave and go to /another/page?" });
+  navigate("/another/page", { prompt: PromptView });
 
   // Get the live value of `{name}` from the current path.
   const $name = $params.map((p) => p.name);
