@@ -1,4 +1,4 @@
-import { type Readable, writable, unwrap } from "./state.js";
+import { unwrap, writable, type Readable, type Writable } from "./state.js";
 
 interface SpringOptions {
   /**
@@ -22,12 +22,18 @@ interface SpringOptions {
   velocity?: number | Readable<number>;
 }
 
-export interface Spring extends Readable<number> {
-  to(newValue: number, options?: SpringOptions): Promise<void>;
+export interface Spring extends Writable<number> {
+  /**
+   * Takes a new value and animates to it. Returns a promise that resolves when the animation ends.
+   * Optionally takes a set of override spring options to animate with.
+   */
+  animateTo(newValue: number, options?: SpringOptions): Promise<void>;
 
+  /**
+   * Takes a new value and immediately sets the spring's value to it without animating.
+   * Returns a promise that resolves after the new value is set.
+   */
   snapTo(newValue: number): Promise<void>;
-
-  animate(startValue: number, endValue: number, options?: SpringOptions): Promise<void>;
 }
 
 export function spring(initialValue: number, options?: SpringOptions): Spring {
@@ -46,7 +52,7 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
     $$currentValue.set(newValue);
   };
 
-  const to = async (endValue: number, options?: SpringOptions) => {
+  const animateTo = async (endValue: number, options?: SpringOptions) => {
     // Act like snap if user prefers reduced motion.
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mediaQuery.matches) {
@@ -91,22 +97,19 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
     });
   };
 
-  const animate = async (startValue: number, endValue: number, options?: SpringOptions) => {
-    // Act like snap if user prefers reduced motion.
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (mediaQuery.matches) {
-      return snapTo(endValue);
-    }
-
-    return snapTo(startValue).then(() => to(endValue, options));
-  };
-
   return {
     get: $$currentValue.get,
     observe: $$currentValue.observe,
-    to,
+    set: (newValue) => {
+      animateTo(newValue);
+    },
+    update: (callback) => {
+      const newValue = callback($$currentValue.get());
+      animateTo(newValue);
+    },
+
+    animateTo,
     snapTo,
-    animate,
   };
 }
 

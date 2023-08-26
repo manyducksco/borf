@@ -26,6 +26,8 @@
     "@borf/elemental": "file:../packages/elemental",
     "@borf/server": "file:../packages/server",
     "borf": "file:../packages/borf",
+    "d3-scale": "^1.0.7",
+    "d3-selection": "^1.4.2",
     "htm": "^3.1.1",
     "immer": "^10.0.2",
     "zod": "^3.21.4"

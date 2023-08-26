@@ -18,7 +18,7 @@ export class Conditional implements DOMHandle {
   stopCallback?: StopFunction;
   thenContent?: Markup[];
   elseContent?: Markup[];
-  connectedContent?: DOMHandle[];
+  connectedContent: DOMHandle[] = [];
   appContext: AppContext;
   elementContext: ElementContext;
 
@@ -61,12 +61,10 @@ export class Conditional implements DOMHandle {
       this.stopCallback = undefined;
     }
 
-    if (this.connectedContent) {
-      for (const handle of this.connectedContent) {
-        handle.disconnect();
-      }
-      this.connectedContent = undefined;
+    for (const handle of this.connectedContent) {
+      handle.disconnect();
     }
+    this.connectedContent = [];
 
     if (this.connected) {
       this.node.parentNode?.removeChild(this.node);
@@ -75,12 +73,10 @@ export class Conditional implements DOMHandle {
   }
 
   async update(value: any) {
-    if (this.connectedContent) {
-      for (const handle of this.connectedContent) {
-        await handle.disconnect();
-      }
-      this.connectedContent = undefined;
+    for (const handle of this.connectedContent) {
+      await handle.disconnect();
     }
+    this.connectedContent = [];
 
     if (value && this.thenContent) {
       this.connectedContent = renderMarkupToDOM(this.thenContent, this);
@@ -88,12 +84,10 @@ export class Conditional implements DOMHandle {
       this.connectedContent = renderMarkupToDOM(this.elseContent, this);
     }
 
-    if (this.connectedContent) {
-      for (let i = 0; i < this.connectedContent.length; i++) {
-        const handle = this.connectedContent[i];
-        const previous = this.connectedContent[i - 1]?.node ?? this.node;
-        await handle.connect(this.node.parentNode!, previous);
-      }
+    for (let i = 0; i < this.connectedContent.length; i++) {
+      const handle = this.connectedContent[i];
+      const previous = this.connectedContent[i - 1]?.node ?? this.node;
+      await handle.connect(this.node.parentNode!, previous);
     }
 
     if (this.appContext.mode === "development") {

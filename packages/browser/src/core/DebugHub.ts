@@ -1,5 +1,6 @@
 import colorHash from "simple-color-hash";
 import { type CrashCollector } from "./CrashCollector.js";
+import { isString } from "@borf/bedrock";
 
 export type DebugOptions = {
   /**
@@ -9,6 +10,11 @@ export type DebugOptions = {
    * @example "store:*,-store:test" // matches everything starting with "store" except "store:test"
    */
   filter?: string | RegExp;
+
+  /**
+   * Print info messages when true. Default: true for development builds, false for production builds.
+   */
+  info?: boolean | "development";
 
   /**
    * Print log messages when true. Default: true for development builds, false for production builds.
@@ -77,7 +83,11 @@ export class DebugHub {
       get info() {
         const name = options.name;
 
-        if (hubOptions.mode !== "development" || hubOptions.log === false || !match(name)) {
+        if (
+          hubOptions.info === false ||
+          (isString(hubOptions.info) && hubOptions.info !== hubOptions.mode) ||
+          !match(name)
+        ) {
           return noOp;
         } else {
           const label = `%c${name}`;
@@ -88,7 +98,11 @@ export class DebugHub {
       get log() {
         const name = options.name;
 
-        if (hubOptions.log === false || !match(name)) {
+        if (
+          hubOptions.log === false ||
+          (isString(hubOptions.log) && hubOptions.log !== hubOptions.mode) ||
+          !match(name)
+        ) {
           return noOp;
         } else {
           const label = `%c${name}`;
@@ -99,7 +113,11 @@ export class DebugHub {
       get warn() {
         const name = options.name;
 
-        if (hubOptions.warn === false || !match(name)) {
+        if (
+          hubOptions.warn === false ||
+          (isString(hubOptions.warn) && hubOptions.warn !== hubOptions.mode) ||
+          !match(name)
+        ) {
           return noOp;
         } else {
           const label = `%c${name}`;
@@ -110,7 +128,11 @@ export class DebugHub {
       get error() {
         const name = options.name;
 
-        if (hubOptions.error === false || !match(name)) {
+        if (
+          hubOptions.error === false ||
+          (isString(hubOptions.error) && hubOptions.error !== hubOptions.mode) ||
+          !match(name)
+        ) {
           return noOp;
         } else {
           const label = `%c${name}`;

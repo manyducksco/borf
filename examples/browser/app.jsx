@@ -25,6 +25,7 @@ import Timer from "./7guis/04_Timer";
 import CRUD from "./7guis/05_CRUD";
 import CircleDrawer from "./7guis/06_CircleDrawer";
 import Cells from "./7guis/07_Cells";
+import BorfFractals from "./examples/fractals";
 
 /*===========================*\
 ||            App            ||
@@ -103,6 +104,7 @@ app.route("/test/nested-refs", (props, c) => {
 });
 
 app.route("/examples", null, (sub) => {
+  sub.route("/fractals", BorfFractals);
   sub.route("/conditional-rendering", ConditionalRendering);
   sub.route("/spring-animation", SpringAnimation);
   sub.route("/languages", Languages);

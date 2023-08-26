@@ -1,6 +1,6 @@
 {
   "name": "@borf/browser",
-  "version": "0.54.0",
+  "version": "0.55.0",
   "description": "Front-end components, routing and state management.",
   "main": "lib/index.js",
   "types": "./index.d.ts",
@@ -42,6 +42,7 @@
     "@borf/bedrock": "^3.1.0",
     "fetch-ponyfill": "^7.1.0",
     "history": "^5.3.0",
+    "nanoid": "^4.0.2",
     "simple-color-hash": "^1.0.2"
   },
   "devDependencies": {
@@ -49,7 +50,7 @@
     "csstype": "^3.1.2",
     "esbuild": "^0.19.2",
     "prettier": "^2.8.8",
-    "typescript": "^5.1.6",
+    "typescript": "^5.2.2",
     "zod": "^3.22.2"
   }
 }

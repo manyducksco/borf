@@ -1,17 +1,10 @@
 import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
+import { nanoid } from "nanoid";
 import { type AppContext, type ElementContext } from "./App.js";
 import { isRef } from "./Ref.js";
-import {
-  readable,
-  writable,
-  isReadable,
-  isWritable,
-  type Readable,
-  type Writable,
-  type StopFunction,
-} from "./state.js";
-import { omit } from "./utils/omit.js";
 import { renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
+import { isReadable, isWritable, type Readable, type StopFunction } from "./state.js";
+import { omit } from "./utils/omit.js";
 //import { eventPropsToEventNames } from "./types.js";
 
 //const eventHandlerProps = Object.values(eventPropsToEventNames).map((event) => "on" + event);
@@ -32,6 +25,7 @@ export class HTML implements DOMHandle {
   stopCallbacks: StopFunction[] = [];
   appContext;
   elementContext;
+  uniqueId = nanoid();
 
   // Prevents 'onClickOutside' handlers from firing in the same cycle in which the element is connected.
   canClickAway = false;
@@ -53,6 +47,11 @@ export class HTML implements DOMHandle {
       this.node = document.createElementNS("http://www.w3.org/2000/svg", tag);
     } else {
       this.node = document.createElement(tag);
+    }
+
+    // Add unique ID to attributes for debugging purposes.
+    if (appContext.mode === "development") {
+      this.node.dataset.uniqueId = this.uniqueId;
     }
 
     // Set ref if present. Refs can be a Ref object or a function that receives the node.
@@ -137,37 +136,26 @@ export class HTML implements DOMHandle {
     this.children = patched;
   }
 
+  getUpdateKey(type: string, value: string | number) {
+    return `${this.uniqueId}:${type}:${value}`;
+  }
+
   applyProps(element: HTMLElement | SVGElement, props: Record<string, unknown>) {
-    const attachProp = <T>(value: Readable<T> | T, callback: (value: T) => void) => {
+    const attachProp = <T>(value: Readable<T> | T, callback: (value: T) => void, updateKey: string) => {
       if (isReadable(value)) {
         this.stopCallbacks.push(
           value.observe((value) => {
             this.appContext.queueUpdate(() => {
               callback(value);
-            });
+            }, updateKey);
           })
         );
       } else {
         this.appContext.queueUpdate(() => {
           callback(value);
-        });
+        }, updateKey);
       }
     };
-
-    if (this.elementContext.isSVG) {
-      for (const key in props) {
-        if (!privateProps.includes(key)) {
-          attachProp(props[key], (current) => {
-            if (current != null) {
-              element.setAttribute(key, String(props[key]));
-            } else {
-              element.removeAttribute(key);
-            }
-          });
-        }
-      }
-      return;
-    }
 
     for (const key in props) {
       const value = props[key];
@@ -176,13 +164,17 @@ export class HTML implements DOMHandle {
         const values = value as Record<string, any>;
         // Set attributes directly without mapping props
         for (const name in values) {
-          attachProp(values[name], (current) => {
-            if (current == null) {
-              (element as any).removeAttribute(name);
-            } else {
-              (element as any).setAttribute(name, String(current));
-            }
-          });
+          attachProp(
+            values[name],
+            (current) => {
+              if (current == null) {
+                (element as any).removeAttribute(name);
+              } else {
+                (element as any).setAttribute(name, String(current));
+              }
+            },
+            this.getUpdateKey("attr", name)
+          );
         }
       } else if (key === "eventListeners") {
         const values = value as Record<string, any>;
@@ -203,9 +195,13 @@ export class HTML implements DOMHandle {
           throw new TypeError(`$$value property must be a Writable. Got: ${value} (${typeof value})`);
         }
 
-        attachProp(value, (current) => {
-          (element as any).value = String(current);
-        });
+        attachProp(
+          value,
+          (current) => {
+            (element as any).value = String(current);
+          },
+          this.getUpdateKey("prop", "value")
+        );
 
         const listener: EventListener = (e) => {
           const updated = toTypeOf(value.get(), (e.currentTarget as HTMLInputElement).value);
@@ -249,74 +245,116 @@ export class HTML implements DOMHandle {
         });
       } else if (key.includes("-")) {
         // Names with dashes in them are not valid prop names, so they are treated as attributes.
-        attachProp(value, (current) => {
-          if (current == null) {
-            element.removeAttribute(key);
-          } else {
-            element.setAttribute(key, String(current));
-          }
-        });
+        attachProp(
+          value,
+          (current) => {
+            if (current == null) {
+              element.removeAttribute(key);
+            } else {
+              element.setAttribute(key, String(current));
+            }
+          },
+          this.getUpdateKey("attr", key)
+        );
       } else if (!privateProps.includes(key)) {
-        switch (key) {
-          case "contentEditable":
-          case "value":
-            attachProp(value, (current) => {
-              (element as any)[key] = String(current);
-            });
-            break;
-
-          case "for":
-            attachProp(value, (current) => {
-              (element as any).htmlFor = current;
-            });
-            break;
-
-          case "checked":
-            attachProp(value, (current) => {
-              (element as any).checked = current;
-
-              // Set attribute also or styles don't take effect.
-              if (current) {
-                element.setAttribute("checked", "");
+        if (this.elementContext.isSVG) {
+          attachProp(
+            value,
+            (current) => {
+              if (current != null) {
+                element.setAttribute(key, String(props[key]));
               } else {
-                element.removeAttribute("checked");
+                element.removeAttribute(key);
               }
-            });
-            break;
+            },
+            this.getUpdateKey("attr", key)
+          );
+        } else {
+          switch (key) {
+            case "contentEditable":
+            case "value":
+              attachProp(
+                value,
+                (current) => {
+                  (element as any)[key] = String(current);
+                },
+                this.getUpdateKey("prop", key)
+              );
+              break;
 
-          // Attribute-aliased props
-          case "exportParts":
-          case "part":
-          case "translate": {
-            const _key = key.toLowerCase();
-            attachProp(value, (current) => {
-              if (current == undefined) {
-                element.removeAttribute(_key);
-              } else {
-                element.setAttribute(_key, String(current));
-              }
-            });
-            break;
-          }
+            case "for":
+              attachProp(
+                value,
+                (current) => {
+                  (element as any).htmlFor = current;
+                },
+                this.getUpdateKey("prop", "htmlFor")
+              );
+              break;
 
-          case "autocomplete":
-          case "autocapitalize":
-            attachProp(value, (current) => {
-              if (typeof current === "string") {
-                (element as any).autocomplete = current;
-              } else if (current) {
-                (element as any).autocomplete = "on";
-              } else {
-                (element as any).autocomplete = "off";
-              }
-            });
-            break;
+            case "checked":
+              attachProp(
+                value,
+                (current) => {
+                  (element as any).checked = current;
 
-          default: {
-            attachProp(value, (current) => {
-              (element as any)[key] = current;
-            });
-            break;
+                  // Set attribute also or styles don't take effect.
+                  if (current) {
+                    element.setAttribute("checked", "");
+                  } else {
+                    element.removeAttribute("checked");
+                  }
+                },
+                this.getUpdateKey("prop", "checked")
+              );
+              break;
+
+            // Attribute-aliased props
+            case "exportParts":
+            case "part":
+            case "translate": {
+              const _key = key.toLowerCase();
+              attachProp(
+                value,
+                (current) => {
+                  if (current == undefined) {
+                    element.removeAttribute(_key);
+                  } else {
+                    element.setAttribute(_key, String(current));
+                  }
+                },
+                this.getUpdateKey("attr", _key)
+              );
+              break;
+            }
+
+            case "autocomplete":
+            case "autocapitalize":
+              attachProp(
+                value,
+                (current) => {
+                  if (typeof current === "string") {
+                    (element as any).autocomplete = current;
+                  } else if (current) {
+                    (element as any).autocomplete = "on";
+                  } else {
+                    (element as any).autocomplete = "off";
+                  }
+                },
+                this.getUpdateKey("prop", key)
+              );
+              break;
+
+            default: {
+              attachProp(
+                value,
+                (current) => {
+                  (element as any)[key] = current;
+                },
+                this.getUpdateKey("prop", key)
+              );
+              break;
+            }
           }
         }
       }
@@ -336,7 +374,7 @@ export class HTML implements DOMHandle {
           }
           element.style.cssText = "";
           unapply = this.applyStyles(element, current, stopCallbacks);
-        });
+        }, this.getUpdateKey("styles", "*"));
       });
 
       stopCallbacks.push(stop);
@@ -360,7 +398,7 @@ export class HTML implements DOMHandle {
               } else {
                 element.style.removeProperty(key);
               }
-            });
+            }, this.getUpdateKey("style", key));
           });
 
           stopCallbacks.push(stop);
@@ -398,7 +436,7 @@ export class HTML implements DOMHandle {
           }
           element.removeAttribute("class");
           unapply = this.applyClasses(element, current, stopCallbacks);
-        });
+        }, this.getUpdateKey("attr", "class"));
       });
 
       stopCallbacks.push(stop);
@@ -417,7 +455,7 @@ export class HTML implements DOMHandle {
               } else {
                 element.classList.remove(name);
               }
-            });
+            }, this.getUpdateKey("attr", "class"));
           });
 
           stopCallbacks.push(stop);

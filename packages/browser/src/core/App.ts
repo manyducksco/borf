@@ -62,8 +62,9 @@ export interface AppContext {
 
   /**
    * Perform DOM updates on next animation frame. Returns a promise that resolves once the changes are applied.
+   * If a key is passed, only the latest callback in a batch with a specified key will be called.
    */
-  queueUpdate: (callback: () => void) => void;
+  queueUpdate: (callback: () => void, key?: string) => void;
 }
 
 export interface ElementContext {
@@ -179,7 +180,11 @@ export class App implements AppRouter {
 
   // True while the app is actively running DOM updates.
   #updating = false;
-  #queuedUpdates: (() => void)[] = [];
+  // Keyed updates ensure only the most recent callback queued with a certain key
+  // will be called, keeping DOM operations to a minimum.
+  #queuedUpdatesKeyed = new Map<string, () => void>();
+  // All unkeyed updates are run on every batch.
+  #queuedUpdatesUnkeyed: (() => void)[] = [];
 
   /**
    * Whether the app is connected to the DOM.
@@ -240,8 +245,12 @@ export class App implements AppRouter {
       stores: this.#stores,
       mode: options.mode!,
       // $dialogs - added by dialog store
-      queueUpdate: (callback) => {
-        this.#queuedUpdates.push(callback);
+      queueUpdate: (callback, key) => {
+        if (key) {
+          this.#queuedUpdatesKeyed.set(key, callback);
+        } else {
+          this.#queuedUpdatesUnkeyed.push(callback);
+        }
 
         if (!this.#updating && this.isConnected) {
           this.#updating = true;
@@ -254,19 +263,29 @@ export class App implements AppRouter {
   }
 
   #runUpdates() {
-    if (!this.isConnected || this.#queuedUpdates.length === 0) {
+    const totalQueued = this.#queuedUpdatesKeyed.size + this.#queuedUpdatesUnkeyed.length;
+
+    if (!this.isConnected || totalQueued === 0) {
       this.#updating = false;
     }
 
     if (!this.#updating) return;
 
     requestAnimationFrame(() => {
-      this.#debugChannel.info(`Batching ${this.#queuedUpdates.length} queued DOM update(s)`);
+      this.#debugChannel.info(
+        `Batching ${this.#queuedUpdatesKeyed.size + this.#queuedUpdatesUnkeyed.length} queued DOM update(s).`
+      );
 
-      for (const callback of this.#queuedUpdates) {
+      for (const callback of this.#queuedUpdatesKeyed.values()) {
         callback();
       }
-      this.#queuedUpdates = [];
+      this.#queuedUpdatesKeyed.clear();
+
+      for (const callback of this.#queuedUpdatesUnkeyed) {
+        callback();
+      }
+      this.#queuedUpdatesUnkeyed = [];
+
       this.#runUpdates();
     });
   }

@@ -1,4 +1,5 @@
 import { isArrayOf, typeOf } from "@borf/bedrock";
+import { nanoid } from "nanoid";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DebugChannel } from "./DebugHub.js";
 import { getRenderHandle, isMarkup, m, renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
@@ -19,6 +20,11 @@ export type ViewResult = Node | Readable<any> | Markup | Markup[] | null;
 export type View<P> = (props: P, context: ViewContext) => ViewResult | Promise<ViewResult>;
 
 export interface ViewContext extends DebugChannel {
+  /**
+   * A string ID unique to this view.
+   */
+  readonly uniqueId: string;
+
   /**
    * Returns the shared instance of `store`.
    */
@@ -76,7 +82,7 @@ export interface ViewContext extends DebugChannel {
    * Observes a set of readable values while this view is connected.
    * Calls `callback` with each value in the same order as `readables` each time any of their values change.
    */
-  observe<T extends Readable<any>[], V>(readables: [...T], callback: (...values: ReadableValues<T>) => void): void;
+  observe<T extends Readable<any>[]>(readables: [...T], callback: (...values: ReadableValues<T>) => void): void;
 
   /**
    * Returns a Markup element that displays this view's children.
@@ -84,12 +90,15 @@ export interface ViewContext extends DebugChannel {
   outlet(): Markup;
 
   /**
-   * Takes a callback that performs DOM mutations and queues it to be processed in the app's next batched update.
-   * This is the same path views use internally to make updates to DOM nodes.
+   * Takes a callback that performs DOM mutations and queues it to be batched with the app's own updates.
+   *
    * Use this when updating the DOM yourself to prevent [layout thrashing](https://web.dev/avoid-large-complex-layouts-and-layout-thrashing/)
    * and improve app performance.
+   *
+   * @param callback - Callback function to be called on next frame.
+   * @param key - Identifier for this update; only the most recently queued callback with a particular key will be called.
    */
-  queueUpdate(callback: () => void): void;
+  queueUpdate(callback: () => void, key?: string): void;
 }
 
 /*=====================================*\
@@ -140,7 +149,13 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
   const beforeConnectCallbacks: (() => void | Promise<void>)[] = [];
   const beforeDisconnectCallbacks: (() => void | Promise<void>)[] = [];
 
+  const uniqueId = nanoid();
+
   const c: Omit<ViewContext, keyof DebugChannel> = {
+    get uniqueId() {
+      return uniqueId;
+    },
+
     name: config.view.name ?? "anonymous",
     loader: null,
 
@@ -214,7 +229,15 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
       return m("$outlet", { $children: readable($$children) });
     },
 
-    queueUpdate: appContext.queueUpdate,
+    queueUpdate: (callback, key) => {
+      if (key) {
+        // Scope key to this view to avoid collisions with updates from elsewhere.
+        // I can't think of a legitimate use case for updates from two views sharing the same key.
+        key = `${uniqueId}:${key}`;
+      }
+
+      appContext.queueUpdate(callback, key);
+    },
   };
 
   const debugChannel = appContext.debugHub.channel({

@@ -119,7 +119,7 @@ export function Examples(props, c) {
   const $damping = readable(props.damping); // Amount of smoothing. Affects the speed of transitions.
   const $velocity = readable(props.velocity); // How much force the spring's motion begins with.
 
-  const $spring = spring(0, {
+  const $$spring = spring(0, {
     stiffness: $stiffness,
     mass: $mass,
     damping: $damping,
@@ -127,9 +127,9 @@ export function Examples(props, c) {
   });
 
   const animate = async () => {
-    return $spring
-      .to(1)
-      .then(() => $spring.to(0))
+    return $$spring
+      .animateTo(1)
+      .then(() => $$spring.animateTo(0))
       .then(() => {
         animate();
       });
@@ -148,7 +148,10 @@ export function Examples(props, c) {
             height: 24,
             borderRadius: "50%",
             backgroundColor: "red",
-            transform: computed($spring, (x) => `translateX(${x * 160 - 80}%)`),
+            transform: computed(
+              $$spring,
+              (x) => `translateX(${x * 160 - 80}%)`
+            ),
           }}
         />
       </div>
@@ -160,7 +163,7 @@ export function Examples(props, c) {
             inset: "0 0.5rem",
             backgroundColor: "orange",
             transform: computed(
-              $spring,
+              $$spring,
               (x) => `translateY(${90 - (1 - x) * 60}%)`
             ),
           }}
@@ -174,7 +177,7 @@ export function Examples(props, c) {
             width: 36,
             height: 36,
             backgroundColor: "purple",
-            transform: computed($spring, (x) => `scale(${0.5 + x})`),
+            transform: computed($$spring, (x) => `scale(${0.5 + x})`),
           }}
         />
       </div>
@@ -187,7 +190,7 @@ export function Examples(props, c) {
             height: 60,
             backgroundColor: "white",
             transformOrigin: "bottom center",
-            transform: computed($spring, (x) => `rotate(${45 + x * -90}deg)`),
+            transform: computed($$spring, (x) => `rotate(${45 + x * -90}deg)`),
           }}
         />
       </div>

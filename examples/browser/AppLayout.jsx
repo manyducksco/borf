@@ -33,6 +33,9 @@ export async function AppLayout(_, c) {
 
           <ul class={styles.navList}>
             <li>
+              <NavLink path="/examples/fractals" name="Fractals" />
+            </li>
+            <li>
               <NavLink
                 path="/examples/conditional-rendering"
                 name="Conditional Rendering"
