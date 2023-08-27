@@ -27,13 +27,25 @@ export interface ViewContext extends DebugChannel {
 
   /**
    * Returns the shared instance of `store`.
+   * @deprecated
    */
   use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
 
   /**
    * Returns the shared instance of a built-in store.
+   * @deprecated
    */
   use<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+
+  /**
+   * Returns the shared instance of `store`.
+   */
+  getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+
+  /**
+   * Returns the shared instance of a built-in store.
+   */
+  getStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
 
   /**
    * Runs `callback` and awaits its promise before `onConnected` callbacks are called.
@@ -137,7 +149,11 @@ interface ViewConfig<P> {
 
 export function initView<P>(config: ViewConfig<P>): DOMHandle {
   const appContext = config.appContext;
-  const elementContext = { ...config.elementContext };
+  const elementContext = {
+    ...config.elementContext,
+    stores: new Map(),
+    parent: config.elementContext,
+  };
   const $$children = writable<DOMHandle[]>(renderMarkupToDOM(config.children ?? [], { appContext, elementContext }));
 
   let isConnected = false;
@@ -151,7 +167,7 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
 
   const uniqueId = nanoid();
 
-  const c: Omit<ViewContext, keyof DebugChannel> = {
+  const ctx: Omit<ViewContext, keyof DebugChannel | "use"> = {
     get uniqueId() {
       return uniqueId;
     },
@@ -159,7 +175,7 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
     name: config.view.name ?? "anonymous",
     loader: null,
 
-    use(store: keyof BuiltInStores | Store<any, any>) {
+    getStore(store: keyof BuiltInStores | Store<any, any>) {
       let name: string;
 
       if (typeof store === "string") {
@@ -168,12 +184,22 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
         name = store.name;
       }
 
+      if (typeof store !== "string") {
+        let ec: ElementContext | undefined = elementContext;
+        while (ec) {
+          if (ec.stores.has(store)) {
+            return ec.stores.get(store)?.instance!.exports;
+          }
+          ec = ec.parent;
+        }
+      }
+
       if (appContext.stores.has(store)) {
         const _store = appContext.stores.get(store)!;
 
         if (!_store.instance) {
           appContext.crashCollector.crash({
-            componentName: c.name,
+            componentName: ctx.name,
             error: new Error(`Store '${name}' is not registered on this app.`),
           });
         }
@@ -182,7 +208,7 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
       }
 
       appContext.crashCollector.crash({
-        componentName: c.name,
+        componentName: ctx.name,
         error: new Error(`Store '${name}' is not registered on this app.`),
       });
     },
@@ -204,7 +230,7 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
     },
 
     crash(error: Error) {
-      config.appContext.crashCollector.crash({ error, componentName: c.name });
+      config.appContext.crashCollector.crash({ error, componentName: ctx.name });
     },
 
     observe(readables: any, callback: any) {
@@ -242,13 +268,20 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
 
   const debugChannel = appContext.debugHub.channel({
     get name() {
-      return c.name;
+      return ctx.name;
     },
   });
 
-  Object.defineProperties(c, Object.getOwnPropertyDescriptors(debugChannel));
+  Object.defineProperty(ctx, "use", {
+    value: (store: any) => {
+      debugChannel.warn("ctx.use is deprecated; use ctx.getStore instead");
+      return ctx.getStore(store);
+    },
+  });
 
-  Object.defineProperty(c, SECRETS, {
+  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debugChannel));
+
+  Object.defineProperty(ctx, SECRETS, {
     enumerable: false,
     configurable: false,
     value: {
@@ -263,7 +296,7 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
     let result: unknown;
 
     try {
-      result = config.view(config.props, c as ViewContext);
+      result = config.view(config.props, ctx as ViewContext);
 
       if (result instanceof Promise) {
         // TODO: Handle loading states
@@ -271,7 +304,7 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
       }
     } catch (error) {
       if (error instanceof Error) {
-        appContext.crashCollector.crash({ error, componentName: c.name });
+        appContext.crashCollector.crash({ error, componentName: ctx.name });
       }
       throw error;
     }
@@ -294,7 +327,7 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
             config.view.name
           }' function to return a DOM node, Markup element, Readable or null. Got: ${typeOf(result)}`
         ),
-        componentName: c.name,
+        componentName: ctx.name,
       });
     }
   }

@@ -14,6 +14,9 @@ import PassingAttributes from "./examples/passing-attributes.jsx";
 import HTTPRequests from "./examples/http-requests.jsx";
 import RawElements from "./examples/raw-elements.jsx";
 import DeeplyNestedObservers from "./examples/deeply-nested-observers.jsx";
+import BorfFractals from "./examples/fractals";
+import ScopedStores from "./examples/scoped-stores";
+import DynamicList from "./examples/dynamic-list";
 
 import { RenderOrderTest } from "./views/RenderOrderTest";
 
@@ -25,7 +28,6 @@ import Timer from "./7guis/04_Timer";
 import CRUD from "./7guis/05_CRUD";
 import CircleDrawer from "./7guis/06_CircleDrawer";
 import Cells from "./7guis/07_Cells";
-import BorfFractals from "./examples/fractals";
 
 /*===========================*\
 ||            App            ||
@@ -113,7 +115,9 @@ app.route("/examples", null, (sub) => {
   sub.route("/passing-attributes", PassingAttributes);
   sub.route("/http-requests", HTTPRequests);
   sub.route("/raw-elements", RawElements);
+  sub.route("/scoped-stores", ScopedStores);
   sub.route("/deeply-nested-observers", DeeplyNestedObservers);
+  sub.route("/dynamic-list", DynamicList);
   sub.redirect("*", "./spring-animation");
 });
 

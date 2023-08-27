@@ -3,7 +3,7 @@
 ### Builder Config
 
 ```js
-import {Builder} from "@borf/build";
+import { Builder } from "@borf/build";
 
 export default Builder.define({
   client: {
@@ -36,8 +36,8 @@ there is less information to process. More attention goes toward deciphering the
 reading the labels the framework makes you use to access things.
 
 ```js
-import {App, html} from "https://unpkg.com/@borf/browser";
-import {ExampleStore} from "./stores/ExampleStore.js";
+import { App, html } from "https://unpkg.com/@borf/browser";
+import { ExampleStore } from "./stores/ExampleStore.js";
 
 const app = new App();
 
@@ -58,8 +58,7 @@ app.main(function Main(_, ctx) {
 });
 
 // app.addRoute -> app.route
-app.route("/example", (attrs, ctx) => {
-});
+app.route("/example", (attrs, ctx) => {});
 
 // app.addRedirect -> app.redirect
 app.redirect("*", "/example");
@@ -98,7 +97,7 @@ app.connect("#app");
 ### State Machines
 
 ```js
-const machine = new Machine(({state, transition}) => {
+const machine = new Machine(({ state, transition }) => {
   state("off", transition("toggle", "on"));
   state("on", transition("toggle", "off"));
 });
@@ -120,7 +119,7 @@ What if the API was structured as standalone functions rather than classes?
 
 ```jsx
 import {
-  App,
+  createApp,
   writable,
   readable,
   computed,
@@ -149,33 +148,42 @@ const count = unwrap($$count);
 const $multiplied = computed([$$count, $factor], (c, f) => c * f);
 
 // Go back to .get() and .set() instead of .value getter/setter
-$$count.get()
-$$count.set(12)
+$$count.get();
+$$count.set(12);
 
 // Remove immer from .update() to drop some weight
 $$count.update((current) => current + 1);
 
 // (but you can still import and use it)
-$$complex.update(produce(state => {
-  state.value1 = 2;
-  state.value2 = 3;
-}))
+$$complex.update(
+  produce((state) => {
+    state.value1 = 2;
+    state.value2 = 3;
+  })
+);
 
 // Keep observe unchanged
-const stop = $$count.observe(value => {
+const stop = $$count.observe((value) => {
   // side effects
 });
 
 <div>
   // Current observe() helper replaced by a readable with a renderable in it
   {computed([$$something, $somethingElse], (value1, value2) => {
-    return <h1>{value1} <span>{value2}</span></h1>
+    return (
+      <h1>
+        {value1} <span>{value2}</span>
+      </h1>
+    );
   })}
-
-  {repeat($value, x => x.id, ($item, $index, c) => {
-    return <li>{$item}</li>
-  })}
-</div>
+  {repeat(
+    $value,
+    (x) => x.id,
+    ($item, $index, c) => {
+      return <li>{$item}</li>;
+    }
+  )}
+</div>;
 
 // Go back to exporting m() function for markup out of the box
 m("div", [
@@ -183,10 +191,165 @@ m("div", [
     return m("h1", value1, m("span", value2));
   }),
 
-  repeat($value, x => x.id, ($item, $index, c) => {
-    return m("li", $item);
-  }),
+  repeat(
+    $value,
+    (x) => x.id,
+    ($item, $index, c) => {
+      return m("li", $item);
+    }
+  ),
 
   cond($condition, m("div", "truthy"), m("div", "falsy")),
 ]);
+```
+
+### Synchronous and single node
+
+In order to optimize rendering, all connection and disconnection needs to be synchronous. Preferably, all views need to return a single root node as well.
+
+```jsx
+// IDEA: Make Repeat a view that takes a tagName to construct as its root element.
+// Child is the render function, though this would require that children are accessible inside views.
+<Repeat tagName="ul" list={$values} key={(v) => v.id}>
+  {($value, $index, ctx) => {
+    return <li>{computed($value, (v) => v.title)}</li>;
+  }}
+</Repeat>
+
+// Or without exposing children:
+<Repeat
+  tagName="ul"
+  list={$values}
+  key={(v) => v.id}
+  render={($value, $index, ctx) => {
+    return <li>{computed($value, (v) => v.title)}</li>;
+  }}
+  transitions={{
+    in: (element) => {
+      // Returns the root element
+
+    },
+    out: (element) => {
+      // Returns the root element
+    }
+  }}
+/>
+
+function ExampleView(props, ctx) {
+  // DOM-like API that works with Markup nodes.
+  const root = ctx.createElement("div");
+
+  root.className = {
+    someName: true,
+    otherName: $dynamic
+  }
+
+  root.append(props.children); // Children are Markup objects
+
+  // Runs as soon as this element is connected to the DOM.
+  ctx.onConnected(() => {
+    const el = ctx.querySelector("#example"); // finds elements with this ID only in this view (sort of erases need for refs)
+
+    el.addEventListener("animationend", () => {
+      el.classList.add("animate-in--done");
+    });
+
+    el.classList.add("animate-in");
+  });
+
+  // Element is not removed from the DOM until this promise resolves.
+  ctx.beforeDisconnect(() => {
+    return new Promise((resolve) => {
+      const el = ctx.querySelector("#example");
+      el.addEventListener("animationend", () => {
+        el.classList.add("animate-out--done");
+        resolve();
+      });
+      el.classList.remove("animate-in");
+      el.classList.remove("animate-in--done");
+      el.classList.add("animate-out");
+    })
+  })
+
+  // Changing props and attributes on these nodes is run through queueUpdate automatically
+
+  return root;
+}
+
+// Wraps an HTMLElement with a robotic exosuit that gives it special abilities.
+// Abilities include handling readable props and attributes, transition animations, and batching of DOM updates.
+class ExoElement implements DOMHandle {
+  constructor(element, contexts) {
+    this._element = element;
+    this.uniqueId = nanoid();
+    this.classList = new ExoClassList(element, contexts);
+  }
+
+  addEventListener(name, callback) {
+
+  }
+
+  set className(value) {
+    // Handle various values
+  }
+}
+
+class ExoClassList {
+  constructor(element, contexts) {
+    this._element = element;
+    this._contexts = contexts;
+  }
+
+  has(className) {
+    return this._element.classList.has(className);
+  }
+
+  add(className) {
+    if (!this.has(className)) {
+      this._contexts.app.scheduleUpdate(() => {
+        this._element.classList.add(className);
+      });
+    }
+  }
+
+  remove(className) {
+    if (this.has(className)) {
+      this._contexts.app.scheduleUpdate(() => {
+        this._element.classList.remove(className);
+      });
+    }
+  }
+
+  toggle(className) {
+    this._contexts.app.scheduleUpdate(() => {
+      this._element.classList.toggle(className);
+    });
+  }
+}
+
+
+```
+
+```jsx
+{
+  repeat(
+    "ul",
+    $values,
+    (v) => v.id,
+    ($value, $index, ctx) => {
+      return <li>{computed($value, (v) => v.title)}</li>;
+    }
+  );
+}
+
+{
+  repeat({
+    tagName: "ul",
+    list: $values,
+    key: (v) => v.id,
+    render: ($value, $index, ctx) => {
+      return <li>{computed($value, (v) => v.title)}</li>;
+    },
+  });
+}
 ```

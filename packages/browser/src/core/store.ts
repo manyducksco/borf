@@ -116,6 +116,16 @@ export function initStore<O>(config: StoreConfig<O>) {
         name = store.name;
       }
 
+      if (typeof store !== "string") {
+        let ec: ElementContext | undefined = elementContext;
+        while (ec) {
+          if (ec.stores.has(store)) {
+            return ec.stores.get(store)?.instance!.exports;
+          }
+          ec = ec.parent;
+        }
+      }
+
       if (appContext.stores.has(store)) {
         const _store = appContext.stores.get(store)!;
 

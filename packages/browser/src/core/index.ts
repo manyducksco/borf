@@ -9,10 +9,12 @@ export { readable, writable, computed, unwrap, isReadable, isWritable } from "./
 // Markup
 export { m, cond, repeat } from "./markup.js";
 
-// Fragment
+// Views
 export { Fragment } from "./views/Fragment.js";
+export { StoreScope } from "./views/StoreScope.js";
 
 // Types
+export type { StoreScopeProps } from "./views/StoreScope.js";
 export type { Ref } from "./Ref.js";
 export type { Spring } from "./Spring.js";
 export type { Readable, Writable } from "./state.js";

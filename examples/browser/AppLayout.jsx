@@ -77,6 +77,12 @@ export async function AppLayout(_, c) {
                 name="Deeply Nested Observers"
               />
             </li>
+            <li>
+              <NavLink path="/examples/dynamic-list" name="Dynamic List" />
+            </li>
+            <li>
+              <NavLink path="/examples/scoped-stores" name="Scoped Stores" />
+            </li>
           </ul>
         </section>
 

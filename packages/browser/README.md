@@ -397,7 +397,7 @@ function ExampleView(props, ctx) {
 
 ### Stores
 
-A store is a function that returns a plain JavaScript object. If this store is registered on the app, a single instance of the store is shared across all views and stores in the app. If the store is registered using a `StoreProvider`, a single instance of the store is shared amongst all child elements.
+A store is a function that returns a plain JavaScript object. If this store is registered on the app, a single instance of the store is shared across all views and stores in the app. If the store is registered using a `StoreScope`, a single instance of the store is shared amongst all child elements.
 
 Stores are accessed with the `use` function available on the context object in views and other stores.
 
@@ -459,6 +459,30 @@ The output:
     <p>Hello from the message store!</p>
   </div>
 </div>
+```
+
+#### StoreScope
+
+Stores relevant to only a part of the view tree can be scoped using a `StoreScope`.
+
+```jsx
+function ExampleStore() {
+  return { value: 5 };
+}
+
+function ExampleView(props, ctx) {
+  const store = ctx.getStore(ExampleStore);
+
+  return <div>{store.value}</div>;
+}
+
+function LayoutView() {
+  return (
+    <StoreScope store={ExampleStore}>
+      <ExampleView />
+    </StoreScope>
+  );
+}
 ```
 
 ### Readables &amp; Writables

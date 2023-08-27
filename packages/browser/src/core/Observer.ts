@@ -68,7 +68,7 @@ export class Observer implements DOMHandle {
 
     if (this.connected) {
       await this.cleanup();
-      this.node.parentNode!.removeChild(this.node);
+      this.node.parentNode?.removeChild(this.node);
     }
   }
 
