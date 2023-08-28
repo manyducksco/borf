@@ -14,13 +14,25 @@ export type Store<O, E> = (context: StoreContext<O>) => E | Promise<E>;
 export interface StoreContext<Options = any> extends DebugChannel {
   /**
    * Returns the shared instance of `store`.
+   * @deprecated
    */
   use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
 
   /**
    * Returns the shared instance of a built-in store.
+   * @deprecated
    */
   use<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+
+  /**
+   * Returns the shared instance of `store`.
+   */
+  getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+
+  /**
+   * Returns the shared instance of a built-in store.
+   */
+  getStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
 
   /**
    * Runs `callback` after this store is connected.
@@ -103,11 +115,11 @@ export function initStore<O>(config: StoreConfig<O>) {
   const connectedCallbacks: (() => any)[] = [];
   const disconnectedCallbacks: (() => any)[] = [];
 
-  const c: Omit<StoreContext, keyof DebugChannel> = {
+  const ctx: Omit<StoreContext, keyof DebugChannel | "use"> = {
     name: config.store.name ?? "anonymous",
     options: config.options,
 
-    use(store: keyof BuiltInStores | Store<any, any>) {
+    getStore(store: keyof BuiltInStores | Store<any, any>) {
       let name: string;
 
       if (typeof store === "string") {
@@ -131,7 +143,7 @@ export function initStore<O>(config: StoreConfig<O>) {
 
         if (!_store.instance) {
           appContext.crashCollector.crash({
-            componentName: c.name,
+            componentName: ctx.name,
             error: new Error(
               `Store '${name}' was accessed before it was set up. Make sure '${name}' is registered before components that access it.`
             ),
@@ -142,7 +154,7 @@ export function initStore<O>(config: StoreConfig<O>) {
       }
 
       appContext.crashCollector.crash({
-        componentName: c.name,
+        componentName: ctx.name,
         error: new Error(`Store '${name}' is not registered on this app.`),
       });
     },
@@ -156,7 +168,7 @@ export function initStore<O>(config: StoreConfig<O>) {
     },
 
     crash(error: Error) {
-      config.appContext.crashCollector.crash({ error, componentName: c.name });
+      config.appContext.crashCollector.crash({ error, componentName: ctx.name });
     },
 
     observe(readables: any, callback: any) {
@@ -180,13 +192,20 @@ export function initStore<O>(config: StoreConfig<O>) {
 
   const debugChannel = appContext.debugHub.channel({
     get name() {
-      return c.name;
+      return ctx.name;
     },
   });
 
-  Object.defineProperties(c, Object.getOwnPropertyDescriptors(debugChannel));
+  Object.defineProperty(ctx, "use", {
+    value: (store: any) => {
+      debugChannel.warn("ctx.use is deprecated; use ctx.getStore instead");
+      return ctx.getStore(store);
+    },
+  });
 
-  Object.defineProperty(c, SECRETS, {
+  Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debugChannel));
+
+  Object.defineProperty(ctx, SECRETS, {
     enumerable: false,
     configurable: false,
     value: {
@@ -199,7 +218,7 @@ export function initStore<O>(config: StoreConfig<O>) {
 
   return {
     get name() {
-      return c.name;
+      return ctx.name;
     },
 
     get exports() {
@@ -210,22 +229,22 @@ export function initStore<O>(config: StoreConfig<O>) {
       let result: unknown;
 
       try {
-        result = config.store(c as StoreContext<O>);
+        result = config.store(ctx as StoreContext<O>);
 
         if (result instanceof Promise) {
           result = await result;
         }
       } catch (error) {
         if (error instanceof Error) {
-          appContext.crashCollector.crash({ error, componentName: c.name });
+          appContext.crashCollector.crash({ error, componentName: ctx.name });
         } else {
           throw error;
         }
       }
 
       if (!isObject(result)) {
-        const error = new TypeError(`Expected ${c.name} function to return an object. Got: ${typeOf(result)}`);
-        appContext.crashCollector.crash({ error, componentName: c.name });
+        const error = new TypeError(`Expected ${ctx.name} function to return an object. Got: ${typeOf(result)}`);
+        appContext.crashCollector.crash({ error, componentName: ctx.name });
       }
 
       exports = result;
