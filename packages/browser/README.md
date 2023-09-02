@@ -525,6 +525,14 @@ const $count = readable(42);
 const $doubled = computed($count, (value) => value * 2);
 ```
 
+You can also pass an array of readables to observe simultaneously. The value will be an array of unwrapped values.
+
+```js
+const $multiplied = computed([$count, $doubled], ([count, doubled]) => {
+  return count * doubled;
+});
+```
+
 #### Writable
 
 An object implements the Writable protocol when:
