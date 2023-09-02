@@ -99,7 +99,7 @@ export function readable(value?: unknown): Readable<any> {
 \*==============================*/
 
 export function writable<T>(value: Writable<T>): Writable<Unwrapped<T>>;
-export function writable<T>(value: Readable<T>): void; // TODO: How to throw a type error in TS before runtime?
+export function writable<T>(value: Readable<T>): never; // TODO: How to throw a type error in TS before runtime?
 export function writable<T>(value: undefined): Writable<T | undefined>;
 export function writable<T>(): Writable<T | undefined>;
 export function writable<T>(value: T): Writable<Unwrapped<T>>;
@@ -163,7 +163,7 @@ export function writable(value?: unknown): Writable<any> {
 ||          computed()          ||
 \*==============================*/
 
-export function computed<I, O>(readable: Readable<I>, compute: (currentValue: I) => O): Readable<O>;
+export function computed<I, O>(readable: Readable<I>, compute: (currentValue: I, previousValue?: I) => O): Readable<O>;
 
 export function computed<I extends Readable<any>[], O>(
   readables: [...I],
