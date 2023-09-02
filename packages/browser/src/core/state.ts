@@ -29,8 +29,9 @@ export interface Readable<T> {
 
   /**
    * Receives the latest value with `callback` whenever the value changes.
+   * The `previousValue` is always undefined the first time the callback is called, then the same value as the last time it was called going forward.
    */
-  observe(callback: (currentValue: T) => void): StopFunction;
+  observe(callback: (currentValue: T, previousValue?: T) => void): StopFunction;
 }
 
 export interface Writable<T> extends Readable<T> {
@@ -87,7 +88,7 @@ export function readable(value?: unknown): Readable<any> {
   return {
     get: () => value,
     observe: (callback) => {
-      callback(value); // call with current value
+      callback(value, undefined); // call with current value and undefined for the previous value
       return function stop() {}; // value can never change, so this function is not implemented
     },
   };
@@ -114,7 +115,7 @@ export function writable(value?: unknown): Writable<any> {
     throw new TypeError(`Failed to convert Readable into a Writable; can't add write access to a read-only value.`);
   }
 
-  const observers: ((currentValue: any) => void)[] = [];
+  const observers: ((currentValue: any, previousValue?: any) => void)[] = [];
 
   let currentValue = value;
 
@@ -126,7 +127,7 @@ export function writable(value?: unknown): Writable<any> {
     observe: (callback) => {
       observers.push(callback); // add observer
 
-      callback(currentValue); // call with current value
+      callback(currentValue, undefined); // call with current value
 
       // return function to remove observer
       return function stop() {
@@ -138,18 +139,20 @@ export function writable(value?: unknown): Writable<any> {
 
     set: (newValue) => {
       if (!deepEqual(currentValue, newValue)) {
+        const previousValue = currentValue;
         currentValue = newValue;
         for (const callback of observers) {
-          callback(currentValue);
+          callback(currentValue, previousValue);
         }
       }
     },
     update: (callback) => {
       const newValue = callback(currentValue);
       if (!deepEqual(currentValue, newValue)) {
+        const previousValue = currentValue;
         currentValue = newValue;
         for (const callback of observers) {
-          callback(currentValue);
+          callback(currentValue, previousValue);
         }
       }
     },
@@ -164,7 +167,7 @@ export function computed<I, O>(readable: Readable<I>, compute: (currentValue: I)
 
 export function computed<I extends Readable<any>[], O>(
   readables: [...I],
-  compute: (...currentValues: ReadableValues<I>) => O
+  compute: (currentValues: ReadableValues<I>, previousValues?: ReadableValues<I>) => O
 ): Readable<O>;
 
 export function computed(...args: any): Readable<any> {
@@ -178,11 +181,12 @@ export function computed(...args: any): Readable<any> {
         let lastComputedValue: any = UNOBSERVED;
 
         return readable.observe((currentValue) => {
-          const computedValue = compute(currentValue);
+          const previousValue = lastComputedValue === UNOBSERVED ? undefined : lastComputedValue;
+          const computedValue = compute(currentValue, previousValue);
 
           if (!deepEqual(computedValue, lastComputedValue)) {
             lastComputedValue = computedValue;
-            callback(computedValue);
+            callback(computedValue, previousValue);
           }
         });
       },
@@ -191,23 +195,26 @@ export function computed(...args: any): Readable<any> {
     const readables = args[0];
     const compute = args[1];
 
-    const observers: ((currentValues: any) => void)[] = [];
+    const observers: ((currentValues: any, previousValues?: any) => void)[] = [];
 
     let stopCallbacks: StopFunction[] = [];
     let isObserving = false;
+    let previousObservedValues: any[] = [];
     let observedValues: any[] = [];
     let latestComputedValue: any = UNOBSERVED;
 
     function updateValue() {
-      const computedValue = compute(...observedValues);
+      const computedValue = compute(observedValues, previousObservedValues);
 
       // Skip equality check on initial subscription to guarantee
       // that observers receive an initial value, even if undefined.
       if (!deepEqual(computedValue, latestComputedValue)) {
+        const previousValue = latestComputedValue === UNOBSERVED ? undefined : latestComputedValue;
         latestComputedValue = computedValue;
+        previousObservedValues = observedValues;
 
         for (const callback of observers) {
-          callback(computedValue);
+          callback(computedValue, previousValue);
         }
       }
     }
@@ -229,8 +236,9 @@ export function computed(...args: any): Readable<any> {
         );
       }
 
-      isObserving = true;
+      previousObservedValues = new Array<any>().fill(undefined, 0, readables.length);
       observedValues = readables.map((x) => x.get());
+      isObserving = true;
       updateValue();
     }
 
@@ -248,7 +256,10 @@ export function computed(...args: any): Readable<any> {
         if (isObserving) {
           return latestComputedValue;
         } else {
-          return compute(...readables.map((x) => x.get()));
+          return compute(
+            readables.map((x) => x.get()),
+            new Array<any>().fill(undefined, 0, readables.length)
+          );
         }
       },
       observe: (callback) => {
@@ -258,7 +269,7 @@ export function computed(...args: any): Readable<any> {
         }
 
         // Then call callback and add it to observers for future changes
-        callback(latestComputedValue);
+        callback(latestComputedValue, undefined);
         observers.push(callback);
 
         return function stop() {

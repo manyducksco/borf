@@ -8,7 +8,10 @@ type ObserverControls = {
 /**
  * Observes a readable value while this component is connected. Calls `callback` each time the value changes.
  */
-export function observeMany<T>(readable: Readable<T>, callback: (value: T) => void): ObserverControls;
+export function observeMany<T>(
+  readable: Readable<T>,
+  callback: (currentValue: T, previousValue: T) => void
+): ObserverControls;
 
 /**
  * Observes a set of readable values while this component is connected.
@@ -16,7 +19,7 @@ export function observeMany<T>(readable: Readable<T>, callback: (value: T) => vo
  */
 export function observeMany<T extends Readable<any>[], V>(
   readables: [...T],
-  callback: (...values: ReadableValues<T>) => void
+  callback: (currentValues: ReadableValues<T>, previousValues: ReadableValues<T>) => void
 ): ObserverControls;
 
 /**

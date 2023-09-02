@@ -312,7 +312,8 @@ export class HTML implements DOMHandle {
             // Attribute-aliased props
             case "exportParts":
             case "part":
-            case "translate": {
+            case "translate":
+            case "title": {
               const _key = key.toLowerCase();
               attachProp(
                 value,
@@ -387,13 +388,14 @@ export class HTML implements DOMHandle {
 
         // Set style property or attribute.
         const setProperty = key.startsWith("--")
-          ? (key: string, value: string | null) => element.style.setProperty(key, value)
+          ? (key: string, value: string | null) =>
+              value == null ? element.style.removeProperty(key) : element.style.setProperty(key, value)
           : (key: string, value: string | null) => (element.style[key as any] = value ?? "");
 
         if (isReadable<any>(value)) {
           const stop = value.observe((current) => {
             this.appContext.queueUpdate(() => {
-              if (current) {
+              if (current != null) {
                 setProperty(key, current);
               } else {
                 element.style.removeProperty(key);

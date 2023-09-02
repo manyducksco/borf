@@ -155,7 +155,7 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
         // that contains the translation with interpolated observable values.
         const readableEntries = Object.entries(readableValues);
         if (readableEntries.length > 0) {
-          const merged = computed([$$translation, ...readableEntries.map((x) => x[1])], (t, ...entryValues) => {
+          const merged = computed([$$translation, ...readableEntries.map((x) => x[1])], ([t, ...entryValues]) => {
             const entries = entryValues.map((_, i) => readableEntries[i]);
             const mergedValues = {
               ...values,
