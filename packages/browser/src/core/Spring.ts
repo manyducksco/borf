@@ -1,4 +1,4 @@
-import { unwrap, writable, type Readable, type Writable } from "./state.js";
+import { unwrap, writable, type Readable, type Writable, readable } from "./state.js";
 
 interface SpringOptions {
   /**
@@ -20,6 +20,18 @@ interface SpringOptions {
    * How much force the spring's motion begins with.
    */
   velocity?: number | Readable<number>;
+
+  /**
+   * Difference in average amplitude across the last several frames before the animation is considered done.
+   * The exact number of frames to average is specified by `endWindow`.
+   */
+  endAmplitude?: number | Readable<number>;
+
+  /**
+   * Specifies the number of frames across which to measure the average amplitude to determine when the animation is considered done.
+   * The maximum amplitude is specified by `endAmplitude`.
+   */
+  endWindow?: number | Readable<number>;
 }
 
 export interface Spring extends Writable<number> {
@@ -41,6 +53,8 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
   const stiffness = options?.stiffness ?? 1200;
   const damping = options?.damping ?? 160;
   const velocity = options?.velocity ?? 5;
+  const endAmplitude = options?.endAmplitude ?? 0.001;
+  const endWindow = options?.endWindow ?? 20;
 
   const $$currentValue = writable(initialValue);
 
@@ -59,9 +73,12 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
       return snapTo(endValue);
     }
 
+    const _endAmplitude = readable(options?.endAmplitude ?? endAmplitude).get();
+    const _endWindow = readable(options?.endWindow ?? endWindow).get();
+
     return new Promise<void>((resolve) => {
       const id = nextId++;
-      const amplitude = makeAmplitudeMeasurer();
+      const amplitude = makeAmplitudeMeasurer(_endWindow);
       const solve = makeSpringSolver({
         mass: options?.mass ?? mass,
         stiffness: options?.stiffness ?? stiffness,
@@ -84,7 +101,7 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
 
         // End animation when amplitude falls below threshold.
         amplitude.sample(proportion);
-        if (amplitude.value && amplitude.value < 0.001) {
+        if (amplitude.value && amplitude.value < _endAmplitude) {
           currentAnimationId = undefined;
           $$currentValue.set(endValue);
         }
@@ -113,7 +130,7 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
   };
 }
 
-function makeSpringSolver(options: Required<SpringOptions>) {
+function makeSpringSolver(options: Required<Pick<SpringOptions, "mass" | "stiffness" | "damping" | "velocity">>) {
   return function solve(t: number) {
     // Unwrapping the variables each time allows readable values to change as the spring is animating.
     const mass = unwrap(options.mass);
@@ -142,9 +159,8 @@ function makeSpringSolver(options: Required<SpringOptions>) {
   };
 }
 
-function makeAmplitudeMeasurer() {
+function makeAmplitudeMeasurer(resolution: number) {
   const samples: number[] = [];
-  const resolution = 30;
 
   return {
     sample(value: number) {
