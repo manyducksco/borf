@@ -17,7 +17,7 @@ import { observeMany } from "./utils/observeMany.js";
  */
 export type ViewResult = Node | Readable<any> | Markup | Markup[] | null;
 
-export type View<P> = (props: P, context: ViewContext) => ViewResult | Promise<ViewResult>;
+export type View<P> = (props: P, context: ViewContext) => ViewResult;
 
 export interface ViewContext extends DebugChannel {
   /**
@@ -27,20 +27,8 @@ export interface ViewContext extends DebugChannel {
 
   /**
    * Returns the shared instance of `store`.
-   * @deprecated
    */
-  use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
-
-  /**
-   * Returns the shared instance of a built-in store.
-   * @deprecated
-   */
-  use<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-
-  /**
-   * Returns the shared instance of `store`.
-   */
-  getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+  getStore<T extends Store<any, any>>(store: T): ReturnType<T>;
 
   /**
    * Returns the shared instance of a built-in store.
@@ -48,24 +36,22 @@ export interface ViewContext extends DebugChannel {
   getStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
 
   /**
-   * Runs `callback` and awaits its promise before `onConnected` callbacks are called.
-   * View is not considered connected until all `beforeConnect` promises resolve.
+   * Runs `callback` just before this view is connected. DOM nodes are not yet attached to the page.
    */
-  beforeConnect(callback: () => Promise<void> | void): void;
+  beforeConnect(callback: () => void): void;
 
   /**
-   * Runs `callback` after this view is connected.
+   * Runs `callback` after this view is connected. DOM nodes are now attached to the page.
    */
   onConnected(callback: () => void): void;
 
   /**
-   * Runs `callback` and awaits its promise before `onDisconnected` callbacks are called.
-   * View is not removed from the DOM until all `beforeDisconnect` promises resolve.
+   * Runs `callback` just before this view is disconnected. DOM nodes are still attached to the page.
    */
-  beforeDisconnect(callback: () => Promise<void> | void): void;
+  beforeDisconnect(callback: () => void): void;
 
   /**
-   * Runs `callback` after this view is disconnected.
+   * Runs `callback` after this view is disconnected. DOM nodes are no longer attached to the page.
    */
   onDisconnected(callback: () => void): void;
 
@@ -73,12 +59,6 @@ export interface ViewContext extends DebugChannel {
    * The name of this view for logging and debugging purposes.
    */
   name: string;
-
-  /**
-   * Sets loading content to be displayed while this view's promise is pending.
-   * Only takes effect if this view function is async.
-   */
-  loader: Renderable;
 
   /**
    * Takes an Error object, unmounts the app and displays its crash page.
@@ -170,13 +150,12 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
 
   const uniqueId = nanoid();
 
-  const ctx: Omit<ViewContext, keyof DebugChannel | "use"> = {
+  const ctx: Omit<ViewContext, keyof DebugChannel> = {
     get uniqueId() {
       return uniqueId;
     },
 
     name: config.view.name ?? "anonymous",
-    loader: null,
 
     getStore(store: keyof BuiltInStores | Store<any, any>) {
       let name: string;
@@ -275,13 +254,6 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
     },
   });
 
-  Object.defineProperty(ctx, "use", {
-    value: (store: any) => {
-      debugChannel.warn("ctx.use is deprecated; use ctx.getStore instead");
-      return ctx.getStore(store);
-    },
-  });
-
   Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debugChannel));
 
   Object.defineProperty(ctx, SECRETS, {
@@ -295,21 +267,23 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
 
   let rendered: DOMHandle | undefined;
 
-  async function initialize(parent: Node, after?: Node) {
+  function initialize() {
     let result: unknown;
 
     try {
       result = config.view(config.props, ctx as ViewContext);
-
-      if (result instanceof Promise) {
-        // TODO: Handle loading states
-        result = await result;
-      }
     } catch (error) {
       if (error instanceof Error) {
         appContext.crashCollector.crash({ error, componentName: ctx.name });
       }
       throw error;
+    }
+
+    if (result instanceof Promise) {
+      appContext.crashCollector.crash({
+        error: new TypeError(`View function cannot return a Promise.`),
+        componentName: ctx.name,
+      });
     }
 
     if (result === null) {
@@ -344,45 +318,43 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
       return isConnected;
     },
 
-    async connect(parent: Node, after?: Node) {
+    connect(parent: Node, after?: Node) {
       // Don't run lifecycle hooks or initialize if already connected.
       // Calling connect again can be used to re-order elements that are already connected to the DOM.
       const wasConnected = isConnected;
 
       if (!wasConnected) {
-        await initialize(parent, after);
+        initialize();
+        while (beforeConnectCallbacks.length > 0) {
+          const callback = beforeConnectCallbacks.shift()!;
+          callback();
+        }
       }
 
       if (rendered) {
-        await rendered.connect(parent, after);
+        rendered.connect(parent, after);
       }
 
       if (!wasConnected) {
-        // Defer until DOM nodes are attached so beforeConnect can be used for animation.
-        setTimeout(async () => {
-          while (beforeConnectCallbacks.length > 0) {
-            const callback = beforeConnectCallbacks.shift()!;
-            await callback();
-          }
+        isConnected = true;
 
-          isConnected = true;
-
+        requestAnimationFrame(() => {
           while (connectedCallbacks.length > 0) {
             const callback = connectedCallbacks.shift()!;
             callback();
           }
-        }, 0);
+        });
       }
     },
 
-    async disconnect() {
+    disconnect() {
       while (beforeDisconnectCallbacks.length > 0) {
         const callback = beforeDisconnectCallbacks.shift()!;
-        await callback();
+        callback();
       }
 
       if (rendered) {
-        await rendered.disconnect();
+        rendered.disconnect();
       }
 
       isConnected = false;

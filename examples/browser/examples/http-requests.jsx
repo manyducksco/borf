@@ -8,9 +8,9 @@ export default function HTTPRequests(_, c) {
   const $$loading = writable(false);
   const $$url = writable();
 
-  const http = c.use("http");
+  const http = c.getStore("http");
 
-  const $label = computed([$$loading, $$url], (loading, url) => {
+  const $label = computed([$$loading, $$url], ([loading, url]) => {
     c.log("computing label", { loading, url });
     if (loading) {
       return "LOADING...";

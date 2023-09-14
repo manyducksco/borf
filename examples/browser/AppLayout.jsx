@@ -2,13 +2,12 @@ import { computed } from "@borf/browser";
 import { MouseStore } from "./stores/MouseStore";
 import styles from "./AppLayout.module.css";
 
-export async function AppLayout(_, c) {
+export function AppLayout(_, c) {
   c.name = "🐕";
-  c.loader = <h1>This app is loading!</h1>;
   c.log("hi");
 
-  const { $$title, $visibility } = c.use("document");
-  const { $position } = c.use(MouseStore);
+  const { $$title, $visibility } = c.getStore("document");
+  const { $position } = c.getStore(MouseStore);
 
   // Should throw an error that results in crash page being shown.
   // const crap = useStore("not-exist");
@@ -16,7 +15,7 @@ export async function AppLayout(_, c) {
 
   // Display current mouse coordinates as tab title
   c.observe($position, (pos) => {
-    $$title.value = `x:${Math.round(pos.x)} y:${Math.round(pos.y)}`;
+    $$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
   });
 
   c.observe($visibility, (status) => {
@@ -151,7 +150,7 @@ export async function AppLayout(_, c) {
 }
 
 function NavLink({ path, name }, c) {
-  const { $path } = c.use("router");
+  const { $path } = c.getStore("router");
 
   const $active = computed($path, (routerPath) => {
     return routerPath.startsWith(path);

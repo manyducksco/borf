@@ -6,7 +6,7 @@ import { ExampleFrame } from "../views/ExampleFrame";
  * Component with controls and a mapped label based on a readable inside a store.
  */
 export default function CounterWithStore(_, ctx) {
-  const { $current, reset } = ctx.use(CounterStore);
+  const { $current, reset } = ctx.getStore(CounterStore);
   const $label = computed($current, (n) => `the number is: ${n}`);
 
   return (
@@ -29,7 +29,7 @@ export default function CounterWithStore(_, ctx) {
  * Second component that displays the same information from the same store.
  */
 function CounterViewLabel(_, ctx) {
-  const { $current } = ctx.use(CounterStore);
+  const { $current } = ctx.getStore(CounterStore);
 
   return <h1>{$current}</h1>;
 }

@@ -77,7 +77,7 @@ function TreeNode(props, ctx) {
   return cond(
     computed(
       [$level, $maxLevel, $w],
-      (level, maxLevel, w) => level < maxLevel && w >= 1
+      ([level, maxLevel, w]) => level < maxLevel && w >= 1
     ),
     <Pythagoras {...props} />
   );
@@ -91,7 +91,7 @@ function Pythagoras(props, ctx) {
 
   const $math = computed(
     [$w, $heightFactor, $lean],
-    (w, heightFactor, lean) => {
+    ([w, heightFactor, lean]) => {
       const trigH = heightFactor * w;
 
       return {
@@ -105,7 +105,7 @@ function Pythagoras(props, ctx) {
 
   const $transform = computed(
     [$w, $x, $y, $math, $left, $right],
-    (w, x, y, { A, B }, left, right) => {
+    ([w, x, y, { A, B }, left, right]) => {
       if (left) {
         return `translate(${x} ${y}) rotate(${-A} 0 ${w})`;
       } else if (right) {
@@ -116,7 +116,7 @@ function Pythagoras(props, ctx) {
     }
   );
 
-  const $color = computed([$level, $maxLevel], (level, maxLevel) =>
+  const $color = computed([$level, $maxLevel], ([level, maxLevel]) =>
     interpolateViridis(level / maxLevel)
   );
 
@@ -146,7 +146,7 @@ function Pythagoras(props, ctx) {
         $heightFactor={$heightFactor}
         $lean={$lean}
         $w={computed($math, ({ nextRight }) => nextRight)}
-        $x={computed([$math, $w], ({ nextRight }, w) => w - nextRight)}
+        $x={computed([$math, $w], ([{ nextRight }, w]) => w - nextRight)}
         $y={computed($math, ({ nextRight }) => -nextRight)}
       />
     </g>

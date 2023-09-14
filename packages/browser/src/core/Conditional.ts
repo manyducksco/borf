@@ -42,7 +42,7 @@ export class Conditional implements DOMHandle {
     return this.node.parentNode != null;
   }
 
-  async connect(parent: Node, after?: Node | undefined) {
+  connect(parent: Node, after?: Node | undefined): void {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
       if (this.appContext.mode === "development") {
@@ -55,7 +55,7 @@ export class Conditional implements DOMHandle {
     }
   }
 
-  async disconnect() {
+  disconnect(): void {
     if (this.stopCallback) {
       this.stopCallback();
       this.stopCallback = undefined;
@@ -72,9 +72,10 @@ export class Conditional implements DOMHandle {
     }
   }
 
-  async update(value: any) {
+  update(value: any) {
+    // TODO: Batch with queueUpdate
     for (const handle of this.connectedContent) {
-      await handle.disconnect();
+      handle.disconnect();
     }
     this.connectedContent = [];
 
@@ -87,7 +88,7 @@ export class Conditional implements DOMHandle {
     for (let i = 0; i < this.connectedContent.length; i++) {
       const handle = this.connectedContent[i];
       const previous = this.connectedContent[i - 1]?.node ?? this.node;
-      await handle.connect(this.node.parentNode!, previous);
+      handle.connect(this.node.parentNode!, previous);
     }
 
     if (this.appContext.mode === "development") {

@@ -73,14 +73,14 @@ export class HTML implements DOMHandle {
     this.elementContext = elementContext;
   }
 
-  async connect(parent: Node, after?: Node) {
+  connect(parent: Node, after?: Node) {
     if (parent == null) {
       throw new Error(`HTML element requires a parent element as the first argument to connect. Got: ${parent}`);
     }
 
     if (!this.connected) {
       for (const child of this.children) {
-        await child.connect(this.node);
+        child.connect(this.node);
       }
 
       this.applyProps(this.node, this.props);
@@ -95,10 +95,10 @@ export class HTML implements DOMHandle {
     }, 0);
   }
 
-  async disconnect() {
+  disconnect() {
     if (this.connected) {
       for (const child of this.children) {
-        await child.disconnect();
+        child.disconnect();
       }
 
       this.node.parentNode?.removeChild(this.node);
@@ -112,7 +112,7 @@ export class HTML implements DOMHandle {
     }
   }
 
-  async setChildren(next: DOMHandle[]) {
+  setChildren(next: DOMHandle[]) {
     const current = this.children;
     const patched: DOMHandle[] = [];
     const length = Math.max(current.length, next.length);
@@ -121,7 +121,7 @@ export class HTML implements DOMHandle {
       if (!current[i] && next[i]) {
         // item was added
         patched[i] = next[i];
-        await patched[i].connect(this.node, patched[i - 1]?.node);
+        patched[i].connect(this.node, patched[i - 1]?.node);
       } else if (current[i] && !next[i]) {
         // item was removed
         current[i].disconnect();
@@ -129,7 +129,7 @@ export class HTML implements DOMHandle {
         // item was replaced
         patched[i] = next[i];
         current[i].disconnect();
-        await patched[i].connect(this.node, patched[i - 1]?.node);
+        patched[i].connect(this.node, patched[i - 1]?.node);
       }
     }
 

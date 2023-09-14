@@ -32,11 +32,11 @@ export interface DOMHandle {
   readonly node?: Node;
   readonly connected: boolean;
 
-  connect(parent: Node, after?: Node): Promise<void>;
+  connect(parent: Node, after?: Node): void;
 
-  disconnect(): Promise<void>;
+  disconnect(): void;
 
-  setChildren(children: DOMHandle[]): Promise<void>;
+  setChildren(children: DOMHandle[]): void;
 }
 
 export function isMarkup(value: unknown): value is Markup {

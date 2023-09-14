@@ -36,7 +36,7 @@ export type Renderable =
   | Readable<any>
   | (string | number | Markup | false | null | undefined | Readable<any>)[];
 
-type StoreExports<T> = T extends Store<any, infer O> ? (O extends Promise<infer U> ? U : O) : unknown;
+export type StoreExports<T> = T extends Store<any, infer O> ? O : unknown;
 
 export interface BuiltInStores {
   http: StoreExports<typeof HTTPStore>;

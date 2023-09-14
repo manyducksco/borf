@@ -29,7 +29,7 @@ import {
   type RouteLayer,
   type RouterOptions,
 } from "./stores/router.js";
-import { type BuiltInStores } from "./types.js";
+import { type BuiltInStores, type StoreExports } from "./types.js";
 import { merge } from "./utils/merge.js";
 import { initView, type View, type ViewContext } from "./view.js";
 
@@ -486,95 +486,114 @@ export class App implements AppRouter {
    * @param element - A selector string or a DOM node to attach to. If a string, follows the same format as that taken by `document.querySelector`.
    */
   async connect(selector: string | Node) {
-    let element: HTMLElement | null = null;
+    return new Promise<void>(async (resolve) => {
+      let element: HTMLElement | null = null;
 
-    if (isString(selector)) {
-      element = document.querySelector(selector);
-      assertInstanceOf(HTMLElement, element, `Selector string '${selector}' did not match any element.`);
-    }
+      if (isString(selector)) {
+        element = document.querySelector(selector);
+        assertInstanceOf(HTMLElement, element, `Selector string '${selector}' did not match any element.`);
+      }
 
-    assertInstanceOf(HTMLElement, element, "Expected a DOM node or a selector string. Got type: %t, value: %v");
+      assertInstanceOf(HTMLElement, element, "Expected a DOM node or a selector string. Got type: %t, value: %v");
 
-    const appContext = this.#appContext;
-    const elementContext = this.#elementContext;
-    const debugChannel = this.#debugChannel;
+      const appContext = this.#appContext;
+      const elementContext = this.#elementContext;
+      const debugChannel = this.#debugChannel;
 
-    appContext.rootElement = element!;
+      appContext.rootElement = element!;
 
-    // Sort routes by specificity for correct matching.
-    this.#routes = sortRoutes(this.#routes);
+      // Sort routes by specificity for correct matching.
+      this.#routes = sortRoutes(this.#routes);
 
-    // Pass language options to language store.
-    const language = this.#stores.get("language")!;
-    this.#stores.set("language", {
-      ...language,
-      options: {
-        languages: Object.fromEntries(this.#languages.entries()),
-        currentLanguage: this.#currentLanguage,
-      },
-    });
+      // Pass language options to language store.
+      const language = this.#stores.get("language")!;
+      this.#stores.set("language", {
+        ...language,
+        options: {
+          languages: Object.fromEntries(this.#languages.entries()),
+          currentLanguage: this.#currentLanguage,
+        },
+      });
 
-    // Pass route options to router store.
-    const router = this.#stores.get("router")!;
-    this.#stores.set("router", {
-      ...router,
-      options: {
-        options: this.#options.router,
-        routes: this.#routes,
-      },
-    });
+      // Pass route options to router store.
+      const router = this.#stores.get("router")!;
+      this.#stores.set("router", {
+        ...router,
+        options: {
+          options: this.#options.router,
+          routes: this.#routes,
+        },
+      });
 
-    debugChannel.info(`Total routes: ${this.#routes.length}`);
+      debugChannel.info(`Total routes: ${this.#routes.length}`);
 
-    // First, initialize the root view. The router store needs this to connect the initial route.
-    appContext.rootView = initView({
-      view: this.#mainView.type as View<any>,
-      props: this.#mainView.props,
-      appContext,
-      elementContext,
-    });
-
-    // Initialize stores.
-    for (let [key, item] of this.#stores.entries()) {
-      const { store, options } = item;
-
-      // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
-      // Built-in globals get an additional 'borf/' prefix so it's clear messages are from the framework.
-      // 'borf/*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
-      const channelPrefix = isString(key) ? "borf/store" : "store";
-      const label = isString(key) ? key : store.name ?? "(anonymous)";
-      const config = {
-        store,
+      // First, initialize the root view. The router store needs this to connect the initial route.
+      appContext.rootView = initView({
+        view: this.#mainView.type as View<any>,
+        props: this.#mainView.props,
         appContext,
         elementContext,
-        channelPrefix,
-        label,
-        options: options ?? {},
+      });
+
+      // Initialize stores.
+      for (let [key, item] of this.#stores.entries()) {
+        const { store, options } = item;
+
+        // Channel prefix is displayed before the global's name in console messages that go through a debug channel.
+        // Built-in globals get an additional 'borf/' prefix so it's clear messages are from the framework.
+        // 'borf/*' messages are filtered out by default, but this can be overridden with the app's `debug.filter` option.
+        const channelPrefix = isString(key) ? "borf/store" : "store";
+        const label = isString(key) ? key : store.name ?? "(anonymous)";
+        const config = {
+          store,
+          appContext,
+          elementContext,
+          channelPrefix,
+          label,
+          options: options ?? {},
+        };
+
+        const instance = initStore(config);
+
+        instance.setup();
+
+        // Add instance and mark as ready.
+        this.#stores.set(key, { ...item, instance });
+      }
+
+      for (const { instance } of this.#stores.values()) {
+        instance!.connect();
+      }
+
+      if (this.#configureCallback) {
+        await this.#configureCallback({
+          // TODO: Add context methods
+        });
+      }
+
+      const { $isLoaded } = this.#stores.get("language")!.instance!.exports as StoreExports<typeof LanguageStore>;
+
+      const done = () => {
+        // Then connect the root view.
+        appContext.rootView!.connect(appContext.rootElement!);
+
+        // The app is now connected.
+        this.#isConnected = true;
+
+        resolve();
       };
 
-      const instance = initStore(config);
+      if ($isLoaded.get()) {
+        return done();
+      }
 
-      await instance.setup();
-
-      // Add instance and mark as ready.
-      this.#stores.set(key, { ...item, instance });
-    }
-
-    for (const { instance } of this.#stores.values()) {
-      await instance!.connect();
-    }
-
-    if (this.#configureCallback) {
-      await this.#configureCallback({
-        // TODO: Add context methods
+      const stop = $isLoaded.observe((isLoaded) => {
+        if (isLoaded) {
+          stop();
+          done();
+        }
       });
-    }
-
-    // Then connect the root view.
-    await appContext.rootView!.connect(appContext.rootElement);
-
-    // The app is now connected.
-    this.#isConnected = true;
+    });
   }
 
   /**
@@ -585,7 +604,7 @@ export class App implements AppRouter {
       const appContext = this.#appContext;
 
       // Remove the root view from the page (runs teardown callbacks on all connected views).
-      await appContext.rootView!.disconnect();
+      appContext.rootView!.disconnect();
 
       // The app is considered disconnected at this point
       this.#isConnected = false;
@@ -598,7 +617,7 @@ export class App implements AppRouter {
 
       // Disconnect stores
       for (const { instance } of this.#stores.values()) {
-        await instance!.disconnect();
+        instance!.disconnect();
       }
     }
   }

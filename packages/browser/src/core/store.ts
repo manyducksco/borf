@@ -14,20 +14,8 @@ export type Store<O, E> = (context: StoreContext<O>) => E | Promise<E>;
 export interface StoreContext<Options = any> extends DebugChannel {
   /**
    * Returns the shared instance of `store`.
-   * @deprecated
    */
-  use<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
-
-  /**
-   * Returns the shared instance of a built-in store.
-   * @deprecated
-   */
-  use<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
-
-  /**
-   * Returns the shared instance of `store`.
-   */
-  getStore<T extends Store<any, any>>(store: T): ReturnType<T> extends Promise<infer U> ? U : ReturnType<T>;
+  getStore<T extends Store<any, any>>(store: T): ReturnType<T>;
 
   /**
    * Returns the shared instance of a built-in store.
@@ -118,7 +106,7 @@ export function initStore<O>(config: StoreConfig<O>) {
   const connectedCallbacks: (() => any)[] = [];
   const disconnectedCallbacks: (() => any)[] = [];
 
-  const ctx: Omit<StoreContext, keyof DebugChannel | "use"> = {
+  const ctx: Omit<StoreContext, keyof DebugChannel> = {
     name: config.store.name ?? "anonymous",
     options: config.options,
 
@@ -199,13 +187,6 @@ export function initStore<O>(config: StoreConfig<O>) {
     },
   });
 
-  Object.defineProperty(ctx, "use", {
-    value: (store: any) => {
-      debugChannel.warn("ctx.use is deprecated; use ctx.getStore instead");
-      return ctx.getStore(store);
-    },
-  });
-
   Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debugChannel));
 
   Object.defineProperty(ctx, SECRETS, {
@@ -228,21 +209,24 @@ export function initStore<O>(config: StoreConfig<O>) {
       return exports;
     },
 
-    async setup() {
+    setup() {
       let result: unknown;
 
       try {
         result = config.store(ctx as StoreContext<O>);
-
-        if (result instanceof Promise) {
-          result = await result;
-        }
       } catch (error) {
         if (error instanceof Error) {
           appContext.crashCollector.crash({ error, componentName: ctx.name });
         } else {
           throw error;
         }
+      }
+
+      if (result instanceof Promise) {
+        appContext.crashCollector.crash({
+          error: new TypeError(`Store function cannot return a Promise`),
+          componentName: ctx.name,
+        });
       }
 
       if (!isObject(result)) {
@@ -253,14 +237,14 @@ export function initStore<O>(config: StoreConfig<O>) {
       exports = result;
     },
 
-    async connect() {
+    connect() {
       while (connectedCallbacks.length > 0) {
         const callback = connectedCallbacks.shift()!;
         callback();
       }
     },
 
-    async disconnect() {
+    disconnect() {
       while (disconnectedCallbacks.length > 0) {
         const callback = disconnectedCallbacks.shift()!;
         callback();

@@ -55,7 +55,7 @@ export class Observer implements DOMHandle {
     });
   }
 
-  async connect(parent: Node, after?: Node) {
+  connect(parent: Node, after?: Node) {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
@@ -63,11 +63,11 @@ export class Observer implements DOMHandle {
     }
   }
 
-  async disconnect() {
+  disconnect() {
     this.observerControls.stop();
 
     if (this.connected) {
-      await this.cleanup();
+      this.cleanup();
       this.node.parentNode?.removeChild(this.node);
     }
   }
@@ -76,7 +76,7 @@ export class Observer implements DOMHandle {
     console.warn("setChildren is not implemented for Dynamic");
   }
 
-  async cleanup() {
+  cleanup() {
     while (this.connectedViews.length > 0) {
       // NOTE: Awaiting this disconnect causes problems when transitioning out old elements while new ones are transitioning in.
       // Not awaiting seems to fix this, but may cause problems with error handling or other render order things. Keep an eye on it.
@@ -84,8 +84,8 @@ export class Observer implements DOMHandle {
     }
   }
 
-  async update(...children: Renderable[]) {
-    await this.cleanup();
+  update(...children: Renderable[]) {
+    this.cleanup();
 
     if (children == null || !this.connected) {
       return;
@@ -104,7 +104,7 @@ export class Observer implements DOMHandle {
     for (const handle of handles) {
       const previous = this.connectedViews.at(-1)?.node || this.node;
 
-      await handle.connect(this.node.parentNode!, previous);
+      handle.connect(this.node.parentNode!, previous);
 
       this.connectedViews.push(handle);
     }

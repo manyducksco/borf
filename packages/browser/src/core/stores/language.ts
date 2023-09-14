@@ -35,7 +35,7 @@ type LanguageOptions = {
 
 // ----- Code ----- //
 
-export async function LanguageStore(c: StoreContext<LanguageOptions>) {
+export function LanguageStore(c: StoreContext<LanguageOptions>) {
   c.name = "borf/language";
 
   const languages = new Map<string, Language>();
@@ -49,6 +49,7 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
     `App supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
   );
 
+  const $$isLoaded = writable(false);
   const $$language = writable<string | undefined>(undefined);
   const $$translation = writable<Translation | undefined>(undefined);
 
@@ -92,16 +93,21 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
     ? languages.get(c.options.currentLanguage)
     : languages.get([...languages.keys()][0]);
 
-  if (currentLanguage != null) {
+  if (currentLanguage == null) {
+    $$isLoaded.set(true);
+  } else {
     c.info(`Current language is '${currentLanguage.tag}'.`);
 
-    const translation = await currentLanguage.getTranslation();
+    currentLanguage.getTranslation().then((translation) => {
+      $$language.set(currentLanguage.tag);
+      $$translation.set(translation);
 
-    $$language.set(currentLanguage.tag);
-    $$translation.set(translation);
+      $$isLoaded.set(true);
+    });
   }
 
   return {
+    $isLoaded: readable($$isLoaded),
     $currentLanguage: readable($$language),
     supportedLanguages: [...languages.keys()],
 
@@ -155,7 +161,7 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
         // that contains the translation with interpolated observable values.
         const readableEntries = Object.entries(readableValues);
         if (readableEntries.length > 0) {
-          const merged = computed([$$translation, ...readableEntries.map((x) => x[1])], ([t, ...entryValues]) => {
+          const $merged = computed([$$translation, ...readableEntries.map((x) => x[1])], ([t, ...entryValues]) => {
             const entries = entryValues.map((_, i) => readableEntries[i]);
             const mergedValues = {
               ...values,
@@ -170,9 +176,9 @@ export async function LanguageStore(c: StoreContext<LanguageOptions>) {
             return replaceMustaches(result, mergedValues);
           });
 
-          translationCache.push([key, values, merged]);
+          translationCache.push([key, values, $merged]);
 
-          return merged;
+          return $merged;
         }
       }
 

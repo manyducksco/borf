@@ -1,6 +1,50 @@
 This is an idea for a pattern matching library, but upon re-reading it this might be a bunch of extra complexity that most code wouldn't benefit from.
 
 ```js
+function match(patterns, value) {
+  function compute(value) {
+    for (let i = 0; i < patterns.length; i++) {
+      const pattern = patterns[i];
+      if (Array.isArray(pattern)) {
+        if (typeof pattern[0] === "function") {
+          if (pattern[0](value)) {
+            if (typeof pattern[1] === "function") {
+              return pattern[1](value);
+            } else {
+              return pattern[1];
+            }
+          }
+        } else if (pattern[0] === value) {
+          if (typeof pattern[1] === "function") {
+            return pattern[1](value);
+          } else {
+            return pattern[1];
+          }
+        }
+      } else if (i + 1 === patterns.length) {
+        // Fallback value can be a function or a value
+        if (typeof pattern === "function") {
+          return pattern(value);
+        } else {
+          return pattern;
+        }
+      } else {
+        throw new Error(
+          `Unexpected pattern type at index ${i}: ${typeof pattern}`
+        );
+      }
+    }
+
+    return undefined; // No match
+  }
+
+  if (value === undefined) {
+    return compute;
+  } else {
+    return compute(value);
+  }
+}
+
 // Run against a value:
 const checked = match(
   [[1, "once"], [2, "twice"], [3, "thrice"], (value) => `${value} times`],
@@ -33,7 +77,7 @@ for (let i = 0; i < 100; i++) {
   fizzify(i);
 }
 
-function dividesBy(n) {
+function divisibleBy(n) {
   return (num) => num % n === 0;
 }
 
@@ -47,31 +91,14 @@ function range(start, end) {
   return numbers;
 }
 
-function print(value) {
-  return () => {
-    console.log(value);
-  };
-}
-
 const fizzify = match([
-  [dividesBy(15), "fizzbuzz"],
-  [dividesBy(3), "fizz"],
-  [dividesBy(5), "buzz"],
+  [divisibleBy(15), "fizzbuzz"],
+  [divisibleBy(3), "fizz"],
+  [divisibleBy(5), "buzz"],
   (n) => n.toString(),
 ]);
 
-range(0, 100).forEach(print(fizzify));
-
-range(0, 100).forEach(
-  print(
-    match([
-      [dividesBy(15), "fizzbuzz"],
-      [dividesBy(3), "fizz"],
-      [dividesBy(5), "buzz"],
-      (n) => n.toString(),
-    ])
-  )
-);
+range(0, 100).forEach((n) => console.log(fizzify(n)));
 
 // String matching
 const check = match(contains("substring"));
@@ -84,7 +111,7 @@ for (let i = 0; i < 100; i++) {
 }
 
 // One big convenience feature is that this works as a drop-in for JS .filter and .map
-const evenOnly = range(0, 100).filter(match(dividesBy(2)));
+const evenOnly = range(0, 100).filter(match(divisibleBy(2)));
 
 // This is pretty composable:
 const even = dividesBy(2);

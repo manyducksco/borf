@@ -11,7 +11,7 @@ const languageLabels = {
 
 export default function Languages(_, ctx) {
   const { translate, setLanguage, supportedLanguages, $currentLanguage } =
-    ctx.use("language");
+    ctx.getStore("language");
 
   // TODO: Show a larger component with multiple translated strings to give a better example of what's actually happening here.
   // Possibly something with a few pieces of textual information and an image, like an ID card view.

@@ -9,7 +9,7 @@ export interface StoreScopeProps<O, E> {
 /**
  * Creates an instance of a store available only to children of this StoreScope.
  */
-export async function StoreScope<O, E>(props: StoreScopeProps<O, E>, ctx: ViewContext) {
+export function StoreScope<O, E>(props: StoreScopeProps<O, E>, ctx: ViewContext) {
   const { appContext, elementContext } = getViewSecrets(ctx);
 
   const instance = initStore({
@@ -19,7 +19,7 @@ export async function StoreScope<O, E>(props: StoreScopeProps<O, E>, ctx: ViewCo
     elementContext,
   });
 
-  await instance.setup();
+  instance.setup();
 
   elementContext.stores.set(props.store, {
     store: props.store,
@@ -27,7 +27,7 @@ export async function StoreScope<O, E>(props: StoreScopeProps<O, E>, ctx: ViewCo
     instance,
   });
 
-  ctx.log(Array.from(elementContext.stores.keys()));
+  // ctx.log(Array.from(elementContext.stores.keys()));
 
   ctx.beforeConnect(() => {
     return instance.connect();

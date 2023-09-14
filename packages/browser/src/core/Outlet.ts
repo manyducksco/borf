@@ -38,7 +38,7 @@ export class Outlet implements DOMHandle {
     return this.node?.parentNode != null;
   }
 
-  async connect(parent: Node, after?: Node | undefined) {
+  connect(parent: Node, after?: Node | undefined) {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
@@ -48,7 +48,7 @@ export class Outlet implements DOMHandle {
     }
   }
 
-  async disconnect() {
+  disconnect() {
     if (this.stopCallback) {
       this.stopCallback();
       this.stopCallback = undefined;
@@ -63,7 +63,7 @@ export class Outlet implements DOMHandle {
     }
   }
 
-  async update(newChildren: DOMHandle[]) {
+  update(newChildren: DOMHandle[]) {
     for (const child of this.connectedChildren) {
       child.disconnect();
     }
@@ -73,7 +73,7 @@ export class Outlet implements DOMHandle {
     for (let i = 0; i < this.connectedChildren.length; i++) {
       const child = this.connectedChildren[i];
       const previous = i > 0 ? this.connectedChildren[i] : undefined;
-      await child.connect(this.node.parentElement!, previous?.node);
+      child.connect(this.node.parentElement!, previous?.node);
     }
 
     if (this.appContext.mode === "development") {
@@ -85,5 +85,5 @@ export class Outlet implements DOMHandle {
     }
   }
 
-  async setChildren(children: DOMHandle[]) {}
+  setChildren(children: DOMHandle[]) {}
 }

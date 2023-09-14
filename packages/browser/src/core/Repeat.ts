@@ -54,7 +54,7 @@ export class Repeat<T> implements DOMHandle {
     }
   }
 
-  async connect(parent: Node, after?: Node) {
+  connect(parent: Node, after?: Node) {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
@@ -64,7 +64,7 @@ export class Repeat<T> implements DOMHandle {
     }
   }
 
-  async disconnect() {
+  disconnect() {
     if (this.stopCallback) {
       this.stopCallback();
       this.stopCallback = undefined;
@@ -76,17 +76,17 @@ export class Repeat<T> implements DOMHandle {
     }
   }
 
-  async setChildren() {
+  setChildren() {
     console.warn("setChildren is not implemented for repeat()");
   }
 
-  async cleanup() {
+  cleanup() {
     while (this.connectedItems.length > 0) {
       this.connectedItems.pop()?.handle.disconnect();
     }
   }
 
-  async update(value: Iterable<T>) {
+  update(value: Iterable<T>) {
     if (value == null || !this.connected) {
       return this.cleanup();
     }
@@ -111,7 +111,7 @@ export class Repeat<T> implements DOMHandle {
       const stillPresent = !!potentialItems.find((p) => p.key === connected.key);
 
       if (!stillPresent) {
-        await connected.handle.disconnect();
+        connected.handle.disconnect();
       }
     }
 
@@ -145,7 +145,7 @@ export class Repeat<T> implements DOMHandle {
     for (let i = 0; i < newItems.length; i++) {
       const item = newItems[i];
       const previous = newItems[i - 1]?.handle.node ?? this.node;
-      await item.handle.connect(this.node.parentNode!, previous);
+      item.handle.connect(this.node.parentNode!, previous);
     }
 
     this.connectedItems = newItems;
