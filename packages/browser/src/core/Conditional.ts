@@ -73,7 +73,6 @@ export class Conditional implements DOMHandle {
   }
 
   update(value: any) {
-    // TODO: Batch with queueUpdate
     for (const handle of this.connectedContent) {
       handle.disconnect();
     }

@@ -1,10 +1,10 @@
 import { typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
-import { Readable } from "./state.js";
+import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "./markup.js";
+import { type Readable } from "./state.js";
 import type { Renderable } from "./types.js";
 import { isRenderable } from "./utils/isRenderable.js";
 import { observeMany } from "./utils/observeMany.js";
-import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "./markup.js";
 
 interface ObserverOptions {
   appContext: AppContext;
@@ -58,7 +58,6 @@ export class Observer implements DOMHandle {
   connect(parent: Node, after?: Node) {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
-
       this.observerControls.start();
     }
   }
@@ -78,8 +77,6 @@ export class Observer implements DOMHandle {
 
   cleanup() {
     while (this.connectedViews.length > 0) {
-      // NOTE: Awaiting this disconnect causes problems when transitioning out old elements while new ones are transitioning in.
-      // Not awaiting seems to fix this, but may cause problems with error handling or other render order things. Keep an eye on it.
       this.connectedViews.pop()?.disconnect();
     }
   }
