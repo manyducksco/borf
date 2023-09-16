@@ -59,7 +59,7 @@ export class Repeat<T> implements DOMHandle {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
       this.stopCallback = this.$items.observe((value) => {
-        this.update(value);
+        this._update(Array.from(value));
       });
     }
   }
@@ -80,15 +80,16 @@ export class Repeat<T> implements DOMHandle {
     console.warn("setChildren is not implemented for repeat()");
   }
 
-  cleanup() {
-    while (this.connectedItems.length > 0) {
-      this.connectedItems.pop()?.handle.disconnect();
+  _cleanup() {
+    for (const item of this.connectedItems) {
+      item.handle.disconnect();
     }
+    this.connectedItems = [];
   }
 
-  update(value: Iterable<T>) {
-    if (value == null || !this.connected) {
-      return this.cleanup();
+  _update(value: T[]) {
+    if (value.length === 0 || !this.connected) {
+      return this._cleanup();
     }
 
     type UpdateItem = { key: string | number | symbol; value: T; index: number };
@@ -108,9 +109,9 @@ export class Repeat<T> implements DOMHandle {
 
     // Remove views for items that no longer exist in the new list.
     for (const connected of this.connectedItems) {
-      const stillPresent = !!potentialItems.find((p) => p.key === connected.key);
+      const potentialItem = potentialItems.find((p) => p.key === connected.key);
 
-      if (!stillPresent) {
+      if (!potentialItem) {
         connected.handle.disconnect();
       }
     }
