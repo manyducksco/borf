@@ -6,6 +6,7 @@ import { Observer } from "./Observer.js";
 import { Outlet } from "./Outlet.js";
 import { Repeat } from "./Repeat.js";
 import { Text } from "./Text.js";
+import { List, type ListConfig } from "./list.js";
 import { isReadable, readable, type Readable } from "./state.js";
 import type { Renderable, Stringable } from "./types.js";
 import { initView, type View, type ViewContext, type ViewResult } from "./view.js";
@@ -88,6 +89,10 @@ export interface MarkupAttributes {
     keyFn: (value: any, index: number) => string | number | symbol;
     renderFn: ($item: Readable<any>, $index: Readable<number>, c: ViewContext) => ViewResult;
   };
+  $list: {
+    $source: Readable<Iterable<any>>;
+    config: ListConfig<any>;
+  };
   $observer: {
     readables: Readable<any>[];
     renderFn: (...items: any) => Renderable;
@@ -128,7 +133,6 @@ export function m<P>(type: string | View<P>, props?: P, ...children: Renderable[
  */
 export function cond(predicate: any | Readable<any>, thenContent?: Renderable, elseContent?: Renderable): Markup {
   const $predicate = readable(predicate);
-
   return m("$cond", {
     $predicate,
     thenContent,
@@ -146,8 +150,12 @@ export function repeat<T>(
   renderFn: ($value: Readable<T>, $index: Readable<number>, ctx: ViewContext) => ViewResult
 ): Markup {
   const $items = readable(items);
-
   return m("$repeat", { $items, keyFn, renderFn });
+}
+
+export function list<T>(source: Iterable<T> | Readable<Iterable<T>>, config: ListConfig<T>) {
+  const $source = readable(source);
+  return m("$list", { $source, config });
 }
 
 /*===========================*\
@@ -226,6 +234,15 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
             $items: attrs.$items,
             keyFn: attrs.keyFn,
             renderFn: attrs.renderFn,
+            appContext: ctx.appContext,
+            elementContext: ctx.elementContext,
+          });
+        }
+        case "$list": {
+          const attrs = item.props! as MarkupAttributes["$list"];
+          return new List<any>({
+            $source: attrs.$source,
+            config: attrs.config,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });

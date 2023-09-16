@@ -7,7 +7,7 @@ export { readable, writable, computed, unwrap, isReadable, isWritable } from "./
 //export { store } from "./store.js";
 
 // Markup
-export { m, cond, repeat } from "./markup.js";
+export { m, cond, repeat, list } from "./markup.js";
 
 // Views
 export { Fragment } from "./views/Fragment.js";

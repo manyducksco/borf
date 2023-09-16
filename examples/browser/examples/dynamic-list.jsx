@@ -1,4 +1,4 @@
-import { readable, writable, spring, computed, repeat } from "@borf/browser";
+import { readable, writable, spring, computed, list } from "@borf/browser";
 
 const initialList = ["apple", "banana", "potato", "fried chicken"];
 
@@ -21,7 +21,7 @@ export default function DynamicList(props, ctx) {
   return (
     <div class="example">
       <h3>
-        Dynamic Lists with <code>repeat()</code>
+        Dynamic Lists with <code>list()</code>
       </h3>
 
       <div>
@@ -56,53 +56,71 @@ export default function DynamicList(props, ctx) {
           <button onclick={reset}>Reset List</button>
         </div>
 
-        {repeat(
-          $$shoppingList,
-          (item) => item,
-          ($item) => {
-            return <Item value={$item} />;
-          }
-        )}
+        {list($$shoppingList, {
+          itemKey: (item) => item,
+          itemContent: ($item, $index) => (
+            <Item
+              value={$item}
+              onRemove={() => {
+                const index = $index.get();
+                $$shoppingList.update((list) => {
+                  return list.filter((item, i) => i !== index);
+                });
+              }}
+            />
+          ),
+          // transitions: {
+          //   enter: async ({ li }) => {
+          //     const $$pos = spring(0, { endAmplitude: 0.01, endWindow: 5 });
 
-        {/* <Repeat
-          items={$$shoppingList}
-          key={(item) => item}
-          render={($item, $index, ctx) => {
-            return <Item value={$item} />;
-          }}
-        /> */}
+          //     $$pos.observe((n) => {
+          //       li.style.transform = `translateX(-${(1 - n) * 10}px)`;
+          //       li.style.opacity = String(n);
+          //     });
+
+          //     await $$pos.animateTo(1);
+          //   },
+          //   exit: async ({ li }) => {
+          //     const $$pos = spring(1, { endAmplitude: 0.01, endWindow: 5 });
+          //     const $$size = spring(li.clientHeight);
+
+          //     $$pos.observe((n) => {
+          //       li.style.transform = `translateX(-${(1 - n) * 10}px)`;
+          //       li.style.opacity = String(n);
+          //     });
+          //     $$size.observe((px) => {
+          //       li.style.height = px + "px";
+          //     });
+
+          //     await $$pos.animateTo(0);
+          //     await $$size.animateTo(0);
+          //   },
+          // },
+        })}
       </div>
     </div>
   );
 }
 
 function Item(props, ctx) {
-  const $$opacity = spring(0);
-  const $$x = spring(-10);
-
   const $value = readable(props.value);
 
-  ctx.onConnected(async () => {
-    await Promise.all([$$opacity.animateTo(1), $$x.animateTo(0)]);
-  });
-
-  ctx.beforeDisconnect(async () => {
-    await Promise.all([$$opacity.animateTo(0), $$x.animateTo(-10)]);
-  });
-
-  const onclick = () => {
+  const onClick = () => {
     alert($value.get());
   };
 
   return (
-    <li
-      style={{
-        opacity: $$opacity,
-        transform: computed($$x, (x) => `translateX(${x}px)`),
-      }}
-      onclick={onclick}
-    >
-      {$value}
-    </li>
+    <div onClick={onClick}>
+      {$value}{" "}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          props.onRemove();
+        }}
+      >
+        &times;
+      </button>
+    </div>
   );
 }
