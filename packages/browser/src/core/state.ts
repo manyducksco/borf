@@ -179,14 +179,16 @@ export function computed(...args: any): Readable<any> {
       get: () => compute(readable.get()),
       observe: (callback) => {
         let lastComputedValue: any = UNOBSERVED;
+        let lastObservedValue: any;
 
         return readable.observe((currentValue) => {
-          const previousValue = lastComputedValue === UNOBSERVED ? undefined : lastComputedValue;
-          const computedValue = compute(currentValue, previousValue);
+          const computedValue = compute(currentValue, lastObservedValue);
 
           if (!deepEqual(computedValue, lastComputedValue)) {
-            lastComputedValue = computedValue;
+            const previousValue = lastComputedValue === UNOBSERVED ? undefined : lastComputedValue;
             callback(computedValue, previousValue);
+            lastComputedValue = computedValue;
+            lastObservedValue = currentValue;
           }
         });
       },
