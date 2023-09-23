@@ -1,3 +1,4 @@
+import { typeOf } from "@borf/bedrock";
 import { deepEqual } from "./utils/deepEqual.js";
 
 // Symbol to mark an observed value as unobserved. Callbacks are always called once for unobserved values.
@@ -171,7 +172,15 @@ export function computed<I extends Readable<any>[], O>(
 ): Readable<O>;
 
 export function computed(...args: any): Readable<any> {
-  if (isReadable(args[0]) && typeof args[1] === "function") {
+  if (isReadable(args[0])) {
+    if (typeof args[1] !== "function") {
+      throw new TypeError(
+        `When first argument is a Readable the second argument must be a callback function. Got type: ${typeOf(
+          args[1]
+        )}, value: ${args[1]}`
+      );
+    }
+
     const readable = args[0];
     const compute = args[1];
 
@@ -193,7 +202,15 @@ export function computed(...args: any): Readable<any> {
         });
       },
     };
-  } else if (Array.isArray(args[0]) && typeof args[1] === "function") {
+  } else if (Array.isArray(args[0])) {
+    if (typeof args[1] !== "function") {
+      throw new TypeError(
+        `When first argument is an array of Readables the second argument must be a callback function. Got type: ${typeOf(
+          args[1]
+        )}, value: ${args[1]}`
+      );
+    }
+
     const readables = args[0];
     const compute = args[1];
 
@@ -284,7 +301,9 @@ export function computed(...args: any): Readable<any> {
       },
     };
   } else {
-    throw new TypeError(`Called with incorrect arguments.`);
+    throw new TypeError(
+      `Expected a Readable or array of Readables as a first argument. Got: ${typeOf(args[0])}, value: ${args[0]}`
+    );
   }
 }
 
