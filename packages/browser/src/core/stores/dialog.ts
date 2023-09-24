@@ -3,8 +3,27 @@ import { getStoreSecrets, type StoreContext } from "../store.js";
 import { type DOMHandle } from "../markup.js";
 import { Writable, writable } from "../state.js";
 
-interface DialogProps {
+export interface DialogProps {
+  /**
+   * Whether the dialog is currently open.
+   */
   $$open: Writable<boolean>;
+
+  /**
+   * Calls `callback` immediately after dialog has been connected.
+   */
+  transitionIn: (callback: () => Promise<void>) => void;
+
+  /**
+   * Calls `callback` and awaits its Promise before disconnecting the dialog.
+   */
+  transitionOut: (callback: () => Promise<void>) => void;
+}
+
+export interface OpenDialog {
+  instance: DOMHandle;
+  transitionInCallback?: () => Promise<void>;
+  transitionOutCallback?: () => Promise<void>;
 }
 
 /**
@@ -28,15 +47,28 @@ export function DialogStore(c: StoreContext) {
    * A first-in-last-out queue of dialogs. The last one appears on top.
    * This way if a dialog opens another dialog the new dialog stacks.
    */
-  const $$dialogs = writable<DOMHandle[]>([]);
+  const $$dialogs = writable<OpenDialog[]>([]);
 
-  let activeDialogs: DOMHandle[] = [];
+  let activeDialogs: OpenDialog[] = [];
+
+  function dialogChangedCallback() {
+    // Container is only connected to the DOM when there is at least one dialog to display.
+    if (activeDialogs.length > 0) {
+      if (!container.parentNode) {
+        document.body.appendChild(container);
+      }
+    } else {
+      if (container.parentNode) {
+        document.body.removeChild(container);
+      }
+    }
+  }
 
   // Diff dialogs when value is updated, adding and removing dialogs as necessary.
   c.observe($$dialogs, (dialogs) => {
     requestAnimationFrame(() => {
-      let removed: DOMHandle[] = [];
-      let added: DOMHandle[] = [];
+      let removed: OpenDialog[] = [];
+      let added: OpenDialog[] = [];
 
       for (const dialog of activeDialogs) {
         if (!dialogs.includes(dialog)) {
@@ -51,25 +83,29 @@ export function DialogStore(c: StoreContext) {
       }
 
       for (const dialog of removed) {
-        dialog.disconnect();
-        activeDialogs.splice(activeDialogs.indexOf(dialog), 1);
+        if (dialog.transitionOutCallback) {
+          dialog.transitionOutCallback().then(() => {
+            dialog.instance.disconnect();
+            activeDialogs.splice(activeDialogs.indexOf(dialog), 1);
+            dialogChangedCallback();
+          });
+        } else {
+          dialog.instance.disconnect();
+          activeDialogs.splice(activeDialogs.indexOf(dialog), 1);
+        }
       }
 
       for (const dialog of added) {
-        dialog.connect(container);
+        dialog.instance.connect(container);
+
+        if (dialog.transitionInCallback) {
+          dialog.transitionInCallback();
+        }
+
         activeDialogs.push(dialog);
       }
 
-      // Container is only connected to the DOM when there is at least one dialog to display.
-      if (activeDialogs.length > 0) {
-        if (!container.parentNode) {
-          document.body.appendChild(container);
-        }
-      } else {
-        if (container.parentNode) {
-          document.body.removeChild(container);
-        }
-      }
+      dialogChangedCallback();
     });
   });
 
@@ -79,17 +115,44 @@ export function DialogStore(c: StoreContext) {
     }
   });
 
-  function open<P extends DialogProps>(view: View<P>, props?: Omit<P, "$$open">) {
+  function open<P extends DialogProps>(view: View<P>, props?: Omit<P, keyof DialogProps>) {
     const $$open = writable(true);
 
-    let instance: DOMHandle | undefined = initView({
+    let dialog: OpenDialog | undefined;
+
+    let transitionInCallback: (() => Promise<void>) | undefined;
+    let transitionOutCallback: (() => Promise<void>) | undefined;
+
+    let instance = initView({
       view: view as View<unknown>,
       appContext,
       elementContext,
-      props: { ...props, $$open },
+      props: {
+        ...props,
+        $$open,
+        transitionIn: (callback) => {
+          transitionInCallback = callback;
+        },
+        transitionOut: (callback) => {
+          transitionOutCallback = callback;
+        },
+      } as P,
     });
+
+    dialog = {
+      instance,
+
+      // These must be getters because the fns passed to props aren't called until before connect.
+      get transitionInCallback() {
+        return transitionInCallback;
+      },
+      get transitionOutCallback() {
+        return transitionOutCallback;
+      },
+    };
+
     $$dialogs.update((current) => {
-      return [...current, instance!];
+      return [...current, dialog!];
     });
 
     const stopObserver = $$open.observe((value) => {
@@ -100,9 +163,9 @@ export function DialogStore(c: StoreContext) {
 
     function closeDialog() {
       $$dialogs.update((current) => {
-        return current.filter((x) => x !== instance);
+        return current.filter((x) => x !== dialog);
       });
-      instance = undefined;
+      dialog = undefined;
 
       stopObserver();
     }

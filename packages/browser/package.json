@@ -1,6 +1,6 @@
 {
   "name": "@borf/browser",
-  "version": "0.59.3",
+  "version": "0.60.0",
   "description": "Front-end components, routing and state management.",
   "main": "lib/index.js",
   "types": "./index.d.ts",

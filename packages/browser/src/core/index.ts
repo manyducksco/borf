@@ -14,6 +14,7 @@ export { Fragment } from "./views/Fragment.js";
 export { StoreScope } from "./views/StoreScope.js";
 
 // Types
+export type { DialogProps } from "./stores/dialog.js";
 export type { StoreScopeProps } from "./views/StoreScope.js";
 export type { Ref } from "./Ref.js";
 export type { Spring } from "./Spring.js";
