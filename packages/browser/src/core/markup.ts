@@ -6,6 +6,7 @@ import { Observer } from "./Observer.js";
 import { Outlet } from "./Outlet.js";
 import { Repeat } from "./Repeat.js";
 import { Text } from "./Text.js";
+import { Portal } from "./portal.js";
 import { isReadable, readable, type Readable } from "./state.js";
 import type { Renderable, Stringable } from "./types.js";
 import { initView, type View, type ViewContext, type ViewResult } from "./view.js";
@@ -98,6 +99,10 @@ export interface MarkupAttributes {
   $node: {
     value: Node;
   };
+  $portal: {
+    content: Renderable;
+    parent: Node;
+  };
 
   [tag: string]: Record<string, any>;
 }
@@ -148,6 +153,13 @@ export function repeat<T>(
   const $items = readable(items);
 
   return m("$repeat", { $items, keyFn, renderFn });
+}
+
+/**
+ * Render `content` into a `parent` node anywhere in the page, rather than at its position in the view.
+ */
+export function portal(content: Renderable, parent: Node) {
+  return m("$portal", { content, parent });
 }
 
 /*===========================*\
@@ -243,6 +255,15 @@ export function renderMarkupToDOM(markup: Markup | Markup[], ctx: RenderContext)
           const attrs = item.props! as MarkupAttributes["$outlet"];
           return new Outlet({
             $children: attrs.$children,
+            appContext: ctx.appContext,
+            elementContext: ctx.elementContext,
+          });
+        }
+        case "$portal": {
+          const attrs = item.props! as MarkupAttributes["$portal"];
+          return new Portal({
+            content: attrs.content,
+            parent: attrs.parent,
             appContext: ctx.appContext,
             elementContext: ctx.elementContext,
           });
