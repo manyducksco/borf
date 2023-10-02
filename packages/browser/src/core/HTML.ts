@@ -365,7 +365,9 @@ export class HTML implements DOMHandle {
   applyStyles(element: HTMLElement | SVGElement, styles: Record<string, any>, stopCallbacks: StopFunction[]) {
     const propStopCallbacks: StopFunction[] = [];
 
-    if (isReadable<object>(styles)) {
+    if (styles == undefined) {
+      element.style.cssText = "";
+    } else if (isReadable<object>(styles)) {
       let unapply: () => void;
 
       const stop = styles.observe((current) => {
