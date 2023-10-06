@@ -328,6 +328,27 @@ export class App implements AppRouter {
   }
 
   /**
+   * Returns the shared instance of `store`.
+   */
+  getStore<T extends Store<any, any>>(store: T): ReturnType<T>;
+  /**
+   * Returns the shared instance of a built-in store.
+   */
+  getStore<N extends keyof BuiltInStores>(name: N): BuiltInStores[N];
+
+  getStore(store: keyof BuiltInStores | Store<any, any>) {
+    const match = this.#stores.get(store);
+    const name = isString(store) ? store : store.name;
+    if (!match) {
+      throw new Error(`Store '${name}' is not registered on this app.`);
+    }
+    if (!match.instance) {
+      throw new Error(`Store '${name}' is not yet initialized. App must be connected first.`);
+    }
+    return match.instance.exports;
+  }
+
+  /**
    * Adds a new language translation to the app.
    *
    * @param tag - A valid BCP47 language tag, like `en-US`, `en-GB`, `ja`, etc.
