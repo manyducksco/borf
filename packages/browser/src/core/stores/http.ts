@@ -12,10 +12,10 @@ interface HTTPStoreOptions {
  * A simple HTTP client with middleware support. Middleware applies to all requests made through this store,
  * so it's the perfect way to handle things like auth headers and permission checks for API calls.
  */
-export function HTTPStore(c: StoreContext<HTTPStoreOptions>) {
-  c.name = "borf/http";
+export function HTTPStore(ctx: StoreContext<HTTPStoreOptions>) {
+  ctx.name = "borf/http";
 
-  const fetch = c.options.fetch ?? getDefaultFetch();
+  const fetch = ctx.options.fetch ?? getDefaultFetch();
 
   const middleware: HTTPMiddleware[] = [];
 

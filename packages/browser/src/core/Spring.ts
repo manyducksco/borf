@@ -1,4 +1,4 @@
-import { unwrap, writable, type Readable, type Writable, readable } from "./state.js";
+import { observe, OBSERVE, unwrap, writable, type Readable, type Writable, readable } from "./state.js";
 
 interface SpringOptions {
   /**
@@ -40,12 +40,6 @@ export interface Spring extends Writable<number> {
    * Optionally takes a set of override spring options to animate with.
    */
   animateTo(newValue: number, options?: SpringOptions): Promise<void>;
-
-  /**
-   * Takes a new value and immediately sets the spring's value to it without animating.
-   * Returns a promise that resolves after the new value is set.
-   */
-  snapTo(newValue: number): Promise<void>;
 }
 
 export function spring(initialValue: number, options?: SpringOptions): Spring {
@@ -61,7 +55,7 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
   let nextId = 0;
   let currentAnimationId: number | undefined;
 
-  const snapTo = async (newValue: number) => {
+  const snapTo = (newValue: number) => {
     currentAnimationId = undefined;
     $$currentValue.set(newValue);
   };
@@ -116,17 +110,15 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
 
   return {
     get: $$currentValue.get,
-    observe: $$currentValue.observe,
-    set: (newValue) => {
-      animateTo(newValue);
-    },
+    set: snapTo,
     update: (callback) => {
       const newValue = callback($$currentValue.get());
-      animateTo(newValue);
+      snapTo(newValue);
     },
 
+    [OBSERVE]: $$currentValue[OBSERVE],
+
     animateTo,
-    snapTo,
   };
 }
 

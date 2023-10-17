@@ -4,8 +4,8 @@ import { writable, readable } from "../state.js";
 type ScreenOrientation = "landscape" | "portrait";
 type ColorScheme = "light" | "dark";
 
-export function DocumentStore(c: StoreContext) {
-  c.name = "borf/document";
+export function DocumentStore(ctx: StoreContext) {
+  ctx.name = "borf/document";
 
   const $$title = writable(document.title);
   const $$visibility = writable(document.visibilityState);
@@ -14,7 +14,7 @@ export function DocumentStore(c: StoreContext) {
 
   /* ----- Title and Visibility ----- */
 
-  c.observe($$title, (current) => {
+  ctx.observe($$title, (current) => {
     document.title = current;
   });
 
@@ -51,13 +51,13 @@ export function DocumentStore(c: StoreContext) {
   /* ----- Lifecycle ----- */
 
   // Listen for changes while connected.
-  c.onConnected(function () {
+  ctx.onConnected(function () {
     landscapeQuery.addEventListener("change", onOrientationChange);
     colorSchemeQuery.addEventListener("change", onColorChange);
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("focus", onFocus);
   });
-  c.onDisconnected(function () {
+  ctx.onDisconnected(function () {
     landscapeQuery.removeEventListener("change", onOrientationChange);
     colorSchemeQuery.removeEventListener("change", onColorChange);
     document.removeEventListener("visibilitychange", onVisibilityChange);

@@ -4,6 +4,9 @@ import { deepEqual } from "./utils/deepEqual.js";
 // Symbol to mark an observed value as unobserved. Callbacks are always called once for unobserved values.
 const UNOBSERVED = Symbol("Unobserved");
 
+// Symbol to access observe method used internally by the library.
+export const OBSERVE = Symbol("Observe");
+
 /*==============================*\
 ||             Types            ||
 \*==============================*/
@@ -12,6 +15,7 @@ const UNOBSERVED = Symbol("Unobserved");
  * Stops the observer that created it when called.
  */
 export type StopFunction = () => void;
+type ObserveMethod<T> = (callback: (currentValue: T, previousValue?: T) => void) => StopFunction;
 
 /**
  * Extracts value types from an array of Readables.
@@ -22,17 +26,19 @@ export type ReadableValues<T extends Readable<any>[]> = {
 
 export type Unwrapped<T> = T extends Readable<infer U> ? U : T;
 
-export interface Readable<T> {
-  /**
-   * Returns the current value.
-   */
-  get(): T;
-
+export interface Observable<T> {
   /**
    * Receives the latest value with `callback` whenever the value changes.
    * The `previousValue` is always undefined the first time the callback is called, then the same value as the last time it was called going forward.
    */
-  observe(callback: (currentValue: T, previousValue?: T) => void): StopFunction;
+  [OBSERVE]: ObserveMethod<T>;
+}
+
+export interface Readable<T> extends Observable<T> {
+  /**
+   * Returns the current value.
+   */
+  get(): T;
 }
 
 export interface Writable<T> extends Readable<T> {
@@ -51,9 +57,16 @@ export interface Writable<T> extends Readable<T> {
 ||           Utilities          ||
 \*==============================*/
 
+export function isObservable<T>(value: any): value is Observable<T> {
+  return value != null && typeof value === "object" && typeof value[OBSERVE] === "function";
+}
+
 export function isReadable<T>(value: any): value is Readable<T> {
   return (
-    value != null && typeof value === "object" && typeof value.get === "function" && typeof value.observe === "function"
+    value != null &&
+    typeof value === "object" &&
+    typeof value[OBSERVE] === "function" &&
+    typeof value.get === "function"
   );
 }
 
@@ -76,7 +89,7 @@ export function readable(value?: unknown): Readable<any> {
   if (isWritable(value)) {
     return {
       get: value.get,
-      observe: value.observe,
+      [OBSERVE]: value[OBSERVE],
     };
   }
 
@@ -88,7 +101,7 @@ export function readable(value?: unknown): Readable<any> {
   // Return a new Readable.
   return {
     get: () => value,
-    observe: (callback) => {
+    [OBSERVE]: (callback) => {
       callback(value, undefined); // call with current value and undefined for the previous value
       return function stop() {}; // value can never change, so this function is not implemented
     },
@@ -125,7 +138,7 @@ export function writable(value?: unknown): Writable<any> {
     // ----- Readable ----- //
 
     get: () => currentValue,
-    observe: (callback) => {
+    [OBSERVE]: (callback) => {
       observers.push(callback); // add observer
 
       callback(currentValue, undefined); // call with current value
@@ -161,6 +174,55 @@ export function writable(value?: unknown): Writable<any> {
 }
 
 /*==============================*\
+||          observe()           ||
+\*==============================*/
+
+/**
+ * Observes a readable value. Calls `callback` each time the value changes.
+ * Returns a function to stop observing changes. This MUST be called when you are done
+ * with this observer to prevent memory leaks.
+ */
+export function observe<T>(readable: Readable<T>, callback: (currentValue: T, previousValue: T) => void): StopFunction;
+
+/**
+ * Observes a set of readable values.
+ * Calls `callback` with each value in the same order as `readables` each time any of their values change.
+ * Returns a function to stop observing changes. This MUST be called when you are done
+ * with this observer to prevent memory leaks.
+ */
+export function observe<T extends Readable<any>[]>(
+  readables: [...T],
+  callback: (currentValues: ReadableValues<T>, previousValues: ReadableValues<T>) => void
+): StopFunction;
+
+export function observe(readable: any, callback: (...args: any) => void): StopFunction {
+  const readables: Readable<any>[] = [];
+
+  if (Array.isArray(readable) && readable.every(isReadable)) {
+    readables.push(...readable);
+  } else if (isReadable(readable)) {
+    readables.push(readable);
+  } else {
+    console.warn(readable);
+    throw new TypeError(
+      `Expected one Readable or an array of Readables as the first argument. Got value: ${readable}, type: ${typeOf(
+        readable
+      )}`
+    );
+  }
+
+  if (readables.length === 0) {
+    throw new TypeError(`Expected at least one readable.`);
+  }
+
+  if (readables.length > 1) {
+    return computed(readables, callback)[OBSERVE](() => {});
+  } else {
+    return readables[0][OBSERVE](callback);
+  }
+}
+
+/*==============================*\
 ||          computed()          ||
 \*==============================*/
 
@@ -186,11 +248,11 @@ export function computed(...args: any): Readable<any> {
 
     return {
       get: () => compute(readable.get()),
-      observe: (callback) => {
+      [OBSERVE]: (callback) => {
         let lastComputedValue: any = UNOBSERVED;
         let lastObservedValue: any;
 
-        return readable.observe((currentValue) => {
+        return readable[OBSERVE]((currentValue) => {
           const computedValue = compute(currentValue, lastObservedValue);
 
           if (!deepEqual(computedValue, lastComputedValue)) {
@@ -245,7 +307,7 @@ export function computed(...args: any): Readable<any> {
         const readable = readables[i];
 
         stopCallbacks.push(
-          readable.observe((value: any) => {
+          observe(readable, (value: any) => {
             observedValues[i] = value;
 
             if (isObserving) {
@@ -281,7 +343,7 @@ export function computed(...args: any): Readable<any> {
           );
         }
       },
-      observe: (callback) => {
+      [OBSERVE]: (callback) => {
         // First start observing
         if (!isObserving) {
           startObserving();

@@ -1,7 +1,7 @@
-import { initView, type View } from "../view.js";
-import { getStoreSecrets, type StoreContext } from "../store.js";
 import { type DOMHandle } from "../markup.js";
-import { Writable, writable } from "../state.js";
+import { observe, writable, type Writable } from "../state.js";
+import { getStoreSecrets, type StoreContext } from "../store.js";
+import { initView, type View } from "../view.js";
 
 export interface DialogProps {
   /**
@@ -30,10 +30,10 @@ export interface OpenDialog {
  * Manages dialogs. Also known as modals.
  * TODO: Describe this better.
  */
-export function DialogStore(c: StoreContext) {
-  c.name = "borf/dialog";
+export function DialogStore(ctx: StoreContext) {
+  ctx.name = "borf/dialog";
 
-  const { appContext, elementContext } = getStoreSecrets(c);
+  const { appContext, elementContext } = getStoreSecrets(ctx);
 
   const container = document.createElement("div");
   container.style.position = "fixed";
@@ -65,7 +65,7 @@ export function DialogStore(c: StoreContext) {
   }
 
   // Diff dialogs when value is updated, adding and removing dialogs as necessary.
-  c.observe($$dialogs, (dialogs) => {
+  ctx.observe($$dialogs, (dialogs) => {
     requestAnimationFrame(() => {
       let removed: OpenDialog[] = [];
       let added: OpenDialog[] = [];
@@ -109,7 +109,7 @@ export function DialogStore(c: StoreContext) {
     });
   });
 
-  c.onDisconnected(() => {
+  ctx.onDisconnected(() => {
     if (container.parentNode) {
       document.body.removeChild(container);
     }
@@ -155,7 +155,7 @@ export function DialogStore(c: StoreContext) {
       return [...current, dialog!];
     });
 
-    const stopObserver = $$open.observe((value) => {
+    const stopObserver = observe($$open, (value) => {
       if (!value) {
         closeDialog();
       }

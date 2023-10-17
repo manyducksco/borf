@@ -1,4 +1,4 @@
-import { readable, ref, writable, cond, computed } from "@borf/browser";
+import { readable, writable, cond, computed } from "@borf/browser";
 import { select, mouse } from "d3-selection";
 import { scaleLinear, interpolateViridis } from "d3-scale";
 import { ExampleFrame } from "../views/ExampleFrame";
@@ -17,7 +17,7 @@ export default function BorfFractals(props, ctx) {
   const $$heightFactor = writable(0);
   const $$lean = writable(0);
 
-  const svgRef = ref();
+  const $$svgRef = writable();
 
   let running = false;
 
@@ -32,7 +32,7 @@ export default function BorfFractals(props, ctx) {
     if (running) return;
     running = true;
 
-    const [x, y] = mouse(svgRef.current);
+    const [x, y] = mouse($$svgRef.get());
     const scaleFactor = scaleLinear().domain([svg.height, 0]).range([0, 0.8]);
     const scaleLean = scaleLinear()
       .domain([0, svg.width / 2, svg.width])
@@ -45,7 +45,7 @@ export default function BorfFractals(props, ctx) {
   }
 
   ctx.onConnected(() => {
-    select(svgRef.current).on("mousemove", onMouseMove);
+    select($$svgRef.get()).on("mousemove", onMouseMove);
     next();
   });
 
@@ -54,7 +54,7 @@ export default function BorfFractals(props, ctx) {
       <svg
         width={svg.width}
         height={svg.height}
-        ref={svgRef}
+        ref={$$svgRef}
         style={{ border: "1px solid lightgray" }}
       >
         <TreeNode

@@ -1,4 +1,4 @@
-import { App, ref } from "@borf/browser";
+import { App, writable } from "@borf/browser";
 
 import { CounterStore } from "./stores/CounterStore";
 import { MouseStore } from "./stores/MouseStore";
@@ -85,18 +85,22 @@ app.main(AppLayout);
 app.route("/test/nested-refs", (props, c) => {
   c.name = "Nested Refs";
 
-  const containerRef = ref();
-  const headerRef = ref();
-  const textRef = ref();
+  const $$containerRef = writable();
+  const $$headerRef = writable();
+  const $$textRef = writable();
 
   c.onConnected(() => {
-    c.log({ containerRef, headerRef, textRef });
+    const container = $$containerRef.get();
+    const header = $$headerRef.get();
+    const text = $$textRef.get();
+
+    c.log({ container, header, text });
   });
 
   return (
-    <section ref={containerRef} class="container">
-      <header ref={headerRef} class="header">
-        <h1 ref={textRef} class="text">
+    <section ref={$$containerRef} class="container">
+      <header ref={$$headerRef} class="header">
+        <h1 ref={$$textRef} class="text">
           Header
         </h1>
       </header>

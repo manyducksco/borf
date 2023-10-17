@@ -1,5 +1,4 @@
 import type * as CSS from "csstype";
-import { type Ref } from "./Ref.js";
 import { type Store } from "./store.js";
 import { m, type Markup } from "./markup.js";
 import { type Readable, type Writable } from "./state.js";
@@ -1505,7 +1504,13 @@ export interface PropertiesOf<E extends HTMLElement> extends HTMLElementProps {
   /**
    * A Ref object or function that receives the DOM node when rendered.
    */
-  ref?: Ref<E> | Ref<HTMLElement> | Ref<Element>;
+  ref?:
+    | Writable<E>
+    | Writable<HTMLElement>
+    | Writable<Element>
+    | Writable<E | undefined>
+    | Writable<HTMLElement | undefined>
+    | Writable<Element | undefined>;
 }
 
 /**

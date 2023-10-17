@@ -16,7 +16,7 @@ import {
 import { CrashCollector } from "./CrashCollector.js";
 import { DebugHub, type DebugChannel, type DebugOptions } from "./DebugHub.js";
 import { DOMHandle, Markup, m } from "./markup.js";
-import { type StopFunction } from "./state.js";
+import { observe, type StopFunction } from "./state.js";
 import { initStore, type Store } from "./store.js";
 import { DialogStore } from "./stores/dialog.js";
 import { DocumentStore } from "./stores/document.js";
@@ -608,7 +608,7 @@ export class App implements AppRouter {
         return done();
       }
 
-      const stop = $isLoaded.observe((isLoaded) => {
+      const stop = observe($isLoaded, (isLoaded) => {
         if (isLoaded) {
           stop();
           done();

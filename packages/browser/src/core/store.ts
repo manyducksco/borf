@@ -1,9 +1,8 @@
 import { isObject, typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DebugChannel } from "./DebugHub.js";
-import { Readable, type ReadableValues } from "./state.js";
+import { Readable, observe, type ReadableValues } from "./state.js";
 import type { BuiltInStores } from "./types.js";
-import { observeMany } from "./utils/observeMany.js";
 
 /*=====================================*\
 ||                Types                ||
@@ -163,19 +162,17 @@ export function initStore<O>(config: StoreConfig<O>) {
     },
 
     observe(readables: any, callback: any) {
-      const observer = observeMany(readables, callback);
-
       if (isConnected) {
         // If called when the component is connected, we assume this code is in a lifecycle hook
         // where it will be triggered at some point again after the component is reconnected.
-        observer.start();
-        stopObserverCallbacks.push(observer.stop);
+        const stop = observe(readables, callback);
+        stopObserverCallbacks.push(stop);
       } else {
         // This should only happen if called in the body of the component function.
         // This code is not always re-run between when a component is disconnected and reconnected.
         connectedCallbacks.push(() => {
-          observer.start();
-          stopObserverCallbacks.push(observer.stop);
+          const stop = observe(readables, callback);
+          stopObserverCallbacks.push(stop);
         });
       }
     },

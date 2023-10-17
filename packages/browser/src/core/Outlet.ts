@@ -1,6 +1,6 @@
 import { type ElementContext, type AppContext } from "./App.js";
 import { type DOMHandle } from "./markup.js";
-import { type Readable, type StopFunction } from "./state.js";
+import { observe, type Readable, type StopFunction } from "./state.js";
 
 export interface OutletConfig {
   $children: Readable<DOMHandle[]>;
@@ -42,7 +42,7 @@ export class Outlet implements DOMHandle {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
-      this.stopCallback = this.$children.observe((children) => {
+      this.stopCallback = observe(this.$children, (children) => {
         this.update(children);
       });
     }

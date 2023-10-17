@@ -1,7 +1,7 @@
 import { type AppContext, type ElementContext } from "./App.js";
-import { type Readable, type StopFunction } from "./state.js";
+import { renderMarkupToDOM, toMarkup, type DOMHandle, type Markup } from "./markup.js";
+import { observe, type Readable, type StopFunction } from "./state.js";
 import { type Renderable } from "./types.js";
-import { type Markup, type DOMHandle, toMarkup, renderMarkupToDOM } from "./markup.js";
 
 export interface ConditionalConfig {
   $predicate: Readable<any>;
@@ -49,7 +49,7 @@ export class Conditional implements DOMHandle {
         parent.insertBefore(this.endNode, this.node.nextSibling);
       }
 
-      this.stopCallback = this.$predicate.observe((value) => {
+      this.stopCallback = observe(this.$predicate, (value) => {
         this.update(value);
       });
     }

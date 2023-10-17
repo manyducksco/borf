@@ -1,6 +1,6 @@
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DOMHandle } from "./markup.js";
-import { readable, writable, type Readable, type StopFunction, type Writable } from "./state.js";
+import { observe, readable, writable, type Readable, type StopFunction, type Writable } from "./state.js";
 import { initView, type ViewContext, type ViewResult } from "./view.js";
 
 // ----- Types ----- //
@@ -58,7 +58,7 @@ export class Repeat<T> implements DOMHandle {
     if (!this.connected) {
       parent.insertBefore(this.node, after?.nextSibling ?? null);
 
-      this.stopCallback = this.$items.observe((value) => {
+      this.stopCallback = observe(this.$items, (value) => {
         this._update(Array.from(value));
       });
     }

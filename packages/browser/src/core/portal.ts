@@ -10,7 +10,7 @@ interface PortalConfig {
 }
 
 /**
- * Renders content into any parent element.
+ * Renders content into a specified parent node.
  */
 export class Portal implements DOMHandle {
   config: PortalConfig;

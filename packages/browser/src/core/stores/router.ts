@@ -1,8 +1,8 @@
 import { isFunction, isString, joinPath, matchRoutes, parseQueryParams, resolvePath, type Route } from "@borf/bedrock";
 import { createBrowserHistory, createHashHistory, type History, type Listener } from "history";
-import { getStoreSecrets, type StoreContext } from "../store.js";
 import { DOMHandle, getRenderHandle, Markup, renderMarkupToDOM } from "../markup.js";
 import { readable, writable } from "../state.js";
+import { getStoreSecrets, type StoreContext } from "../store.js";
 import { type Stringable } from "../types";
 import { catchLinks } from "../utils/catchLinks.js";
 
@@ -92,23 +92,23 @@ interface RouterStoreOptions extends RouterOptions {
 
 // ----- Code ----- //
 
-export function RouterStore(c: StoreContext<RouterStoreOptions>) {
-  c.name = "borf/router";
+export function RouterStore(ctx: StoreContext<RouterStoreOptions>) {
+  ctx.name = "borf/router";
 
-  const { appContext, elementContext } = getStoreSecrets(c);
+  const { appContext, elementContext } = getStoreSecrets(ctx);
 
   let history: History;
 
-  if (c.options.history) {
-    history = c.options.history;
-  } else if (c.options.hash) {
+  if (ctx.options.history) {
+    history = ctx.options.history;
+  } else if (ctx.options.hash) {
     history = createHashHistory();
   } else {
     history = createBrowserHistory();
   }
 
   // Test redirects to make sure all possible redirect targets actually exist.
-  for (const route of c.options.routes) {
+  for (const route of ctx.options.routes) {
     if (route.meta.redirect) {
       let redirectPath: string;
 
@@ -120,7 +120,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
         throw new TypeError(`Expected a string or redirect function. Got: ${route.meta.redirect}`);
       }
 
-      const match = matchRoutes(c.options.routes, redirectPath, {
+      const match = matchRoutes(ctx.options.routes, redirectPath, {
         willMatch(r) {
           return r !== route;
         },
@@ -141,7 +141,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
   let isRouteChange = false;
 
   // Update URL when query changes
-  c.observe($$query, (current) => {
+  ctx.observe($$query, (current) => {
     // No-op if this is triggered by a route change.
     if (isRouteChange) {
       isRouteChange = false;
@@ -160,7 +160,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
     });
   });
 
-  c.onConnected(() => {
+  ctx.onConnected(() => {
     history.listen(onRouteChange);
     onRouteChange(history);
 
@@ -191,7 +191,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
       $$query.set(parseQueryParams(location.search));
     }
 
-    const matched = matchRoutes(c.options.routes, location.pathname);
+    const matched = matchRoutes(ctx.options.routes, location.pathname);
 
     if (!matched) {
       $$pattern.set(null);
@@ -202,7 +202,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
       return;
     }
 
-    c.info(`Matched route: '${matched.pattern}'`);
+    ctx.info(`Matched route: '${matched.pattern}'`);
 
     if (matched.meta.redirect != null) {
       if (typeof matched.meta.redirect === "string") {
@@ -214,7 +214,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
 
         // TODO: Update this code to work with new `{param}` style. Looks like it's still for `:params`
 
-        c.info(`Redirecting to: '${path}'`);
+        ctx.info(`Redirecting to: '${path}'`);
         history.replace(path);
       } else if (typeof matched.meta.redirect === "function") {
         // TODO: Implement redirect by function.
@@ -237,7 +237,7 @@ export function RouterStore(c: StoreContext<RouterStoreOptions>) {
           const activeLayer = activeLayers[i];
 
           if (activeLayer?.id !== matchedLayer.id) {
-            c.info(`Replacing layer ${i} (active ID: ${activeLayer?.id}, matched ID: ${matchedLayer.id})`);
+            ctx.info(`Replacing layer ${i} (active ID: ${activeLayer?.id}, matched ID: ${matchedLayer.id})`);
             activeLayers = activeLayers.slice(0, i);
 
             const parentLayer = activeLayers[activeLayers.length - 1];

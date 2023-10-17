@@ -3,10 +3,9 @@ import { nanoid } from "nanoid";
 import { type AppContext, type ElementContext } from "./App.js";
 import { type DebugChannel } from "./DebugHub.js";
 import { getRenderHandle, isMarkup, m, renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
-import { isReadable, readable, writable, type Readable, type ReadableValues } from "./state.js";
+import { isReadable, observe, readable, writable, type Readable, type ReadableValues } from "./state.js";
 import { type Store } from "./store.js";
-import type { BuiltInStores, Renderable } from "./types.js";
-import { observeMany } from "./utils/observeMany.js";
+import type { BuiltInStores } from "./types.js";
 
 /*=====================================*\
 ||                Types                ||
@@ -216,19 +215,17 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
     },
 
     observe(readables: any, callback: any) {
-      const observer = observeMany(readables, callback);
-
       if (isConnected) {
         // If called when the component is connected, we assume this code is in a lifecycle hook
         // where it will be triggered at some point again after the component is reconnected.
-        observer.start();
-        stopObserverCallbacks.push(observer.stop);
+        const stop = observe(readables, callback);
+        stopObserverCallbacks.push(stop);
       } else {
         // This should only happen if called in the body of the component function.
         // This code is not always re-run between when a component is disconnected and reconnected.
         connectedCallbacks.push(() => {
-          observer.start();
-          stopObserverCallbacks.push(observer.stop);
+          const stop = observe(readables, callback);
+          stopObserverCallbacks.push(stop);
         });
       }
     },

@@ -1,10 +1,9 @@
 import { typeOf } from "@borf/bedrock";
 import { type AppContext, type ElementContext } from "./App.js";
 import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "./markup.js";
-import { type Readable } from "./state.js";
+import { observe, type Readable, type StopFunction } from "./state.js";
 import type { Renderable } from "./types.js";
 import { isRenderable } from "./utils/isRenderable.js";
-import { observeMany } from "./utils/observeMany.js";
 
 interface ObserverOptions {
   appContext: AppContext;
@@ -37,22 +36,36 @@ export class Observer implements DOMHandle {
     this.node = document.createComment("Observer");
     this.endNode = document.createComment("/Observer");
 
-    this.observerControls = observeMany(readables, (...values) => {
-      const rendered = this.renderFn(...values);
+    let _stop: StopFunction | undefined;
 
-      if (!isRenderable(rendered)) {
-        console.error(rendered);
-        throw new TypeError(
-          `Observer received invalid value to render. Got type: ${typeOf(rendered)}, value: ${rendered}`
-        );
-      }
+    this.observerControls = {
+      start: () => {
+        if (_stop != null) return;
 
-      if (Array.isArray(rendered)) {
-        this.update(...rendered);
-      } else {
-        this.update(rendered);
-      }
-    });
+        _stop = observe(readables, (...values) => {
+          const rendered = this.renderFn(...values);
+
+          if (!isRenderable(rendered)) {
+            console.error(rendered);
+            throw new TypeError(
+              `Observer received invalid value to render. Got type: ${typeOf(rendered)}, value: ${rendered}`
+            );
+          }
+
+          if (Array.isArray(rendered)) {
+            this.update(...rendered);
+          } else {
+            this.update(rendered);
+          }
+        });
+      },
+      stop: () => {
+        if (_stop == null) return;
+
+        _stop();
+        _stop = undefined;
+      },
+    };
   }
 
   connect(parent: Node, after?: Node) {

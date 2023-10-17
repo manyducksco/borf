@@ -2,24 +2,24 @@ import { computed } from "@borf/browser";
 import { MouseStore } from "./stores/MouseStore";
 import styles from "./AppLayout.module.css";
 
-export function AppLayout(_, c) {
-  c.name = "🐕";
-  c.log("hi");
+export function AppLayout(_, ctx) {
+  ctx.name = "🐕";
+  ctx.log("hi");
 
-  const { $$title, $visibility } = c.getStore("document");
-  const { $position } = c.getStore(MouseStore);
+  const { $$title, $visibility } = ctx.getStore("document");
+  const { $position } = ctx.getStore(MouseStore);
 
   // Should throw an error that results in crash page being shown.
   // const crap = useStore("not-exist");
   // console.log(crap);
 
   // Display current mouse coordinates as tab title
-  c.observe($position, (pos) => {
+  ctx.observe($position, (pos) => {
     $$title.set(`x:${Math.round(pos.x)} y:${Math.round(pos.y)}`);
   });
 
-  c.observe($visibility, (status) => {
-    c.log(`visibility: ${status}`);
+  ctx.observe($visibility, (status) => {
+    ctx.log(`visibility: ${status}`);
   });
 
   const markup = (
@@ -140,11 +140,11 @@ export function AppLayout(_, c) {
         </section>
       </nav>
 
-      {c.outlet()}
+      {ctx.outlet()}
     </div>
   );
 
-  c.log(markup);
+  ctx.log(markup);
 
   return markup;
 }

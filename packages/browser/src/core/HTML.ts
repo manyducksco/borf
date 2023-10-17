@@ -1,9 +1,8 @@
 import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { nanoid } from "nanoid";
 import { type AppContext, type ElementContext } from "./App.js";
-import { isRef } from "./Ref.js";
 import { renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
-import { isReadable, isWritable, type Readable, type StopFunction } from "./state.js";
+import { observe, isReadable, isWritable, type Readable, type StopFunction } from "./state.js";
 import { omit } from "./utils/omit.js";
 //import { eventPropsToEventNames } from "./types.js";
 
@@ -56,8 +55,10 @@ export class HTML implements DOMHandle {
 
     // Set ref if present. Refs can be a Ref object or a function that receives the node.
     if (props.ref) {
-      if (isRef(props.ref)) {
-        props.ref.current = this.node;
+      if (isWritable(props.ref)) {
+        props.ref.set(this.node);
+      } else if (isFunction(props.ref)) {
+        props.ref(this.node);
       } else {
         throw new Error("Expected an instance of Ref. Got: " + props.ref);
       }
@@ -144,7 +145,7 @@ export class HTML implements DOMHandle {
     const attachProp = <T>(value: Readable<T> | T, callback: (value: T) => void, updateKey: string) => {
       if (isReadable(value)) {
         this.stopCallbacks.push(
-          value.observe((value) => {
+          observe(value, (value) => {
             this.appContext.queueUpdate(() => {
               callback(value);
             }, updateKey);
@@ -370,7 +371,7 @@ export class HTML implements DOMHandle {
     } else if (isReadable<object>(styles)) {
       let unapply: () => void;
 
-      const stop = styles.observe((current) => {
+      const stop = observe(styles, (current) => {
         this.appContext.queueUpdate(() => {
           if (isFunction(unapply)) {
             unapply();
@@ -395,7 +396,7 @@ export class HTML implements DOMHandle {
           : (key: string, value: string | null) => (element.style[key as any] = value ?? "");
 
         if (isReadable<any>(value)) {
-          const stop = value.observe((current) => {
+          const stop = observe(value, (current) => {
             this.appContext.queueUpdate(() => {
               if (current != null) {
                 setProperty(key, current);
@@ -433,7 +434,7 @@ export class HTML implements DOMHandle {
     if (isReadable(classes)) {
       let unapply: () => void;
 
-      const stop = classes.observe((current) => {
+      const stop = observe(classes, (current) => {
         this.appContext.queueUpdate(() => {
           if (isFunction(unapply)) {
             unapply();
@@ -452,7 +453,7 @@ export class HTML implements DOMHandle {
         const value = mapped[name];
 
         if (isReadable(value)) {
-          const stop = value.observe((current) => {
+          const stop = observe(value, (current) => {
             this.appContext.queueUpdate(() => {
               if (current) {
                 element.classList.add(name);

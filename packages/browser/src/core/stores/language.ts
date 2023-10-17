@@ -1,6 +1,6 @@
 import { assertObject, isFunction, isObject, isPromise, typeOf } from "@borf/bedrock";
+import { computed, readable, writable, type Readable } from "../state.js";
 import { type StoreContext } from "../store.js";
-import { readable, writable, type Readable, type Writable, computed } from "../state.js";
 import { type Stringable } from "../types";
 import { deepEqual } from "../utils/deepEqual.js";
 
@@ -35,17 +35,17 @@ type LanguageOptions = {
 
 // ----- Code ----- //
 
-export function LanguageStore(c: StoreContext<LanguageOptions>) {
-  c.name = "borf/language";
+export function LanguageStore(ctx: StoreContext<LanguageOptions>) {
+  ctx.name = "borf/language";
 
   const languages = new Map<string, Language>();
 
   // Convert languages into Language instances.
-  Object.entries(c.options.languages).forEach(([tag, config]) => {
+  Object.entries(ctx.options.languages).forEach(([tag, config]) => {
     languages.set(tag, new Language(tag, config));
   });
 
-  c.info(
+  ctx.info(
     `App supports ${languages.size} language${languages.size === 1 ? "" : "s"}: '${[...languages.keys()].join("', '")}'`
   );
 
@@ -89,14 +89,14 @@ export function LanguageStore(c: StoreContext<LanguageOptions>) {
   }
 
   // TODO: Determine and load default language.
-  const currentLanguage = c.options.currentLanguage
-    ? languages.get(c.options.currentLanguage)
+  const currentLanguage = ctx.options.currentLanguage
+    ? languages.get(ctx.options.currentLanguage)
     : languages.get([...languages.keys()][0]);
 
   if (currentLanguage == null) {
     $$isLoaded.set(true);
   } else {
-    c.info(`Current language is '${currentLanguage.tag}'.`);
+    ctx.info(`Current language is '${currentLanguage.tag}'.`);
 
     currentLanguage.getTranslation().then((translation) => {
       $$language.set(currentLanguage.tag);
@@ -124,10 +124,10 @@ export function LanguageStore(c: StoreContext<LanguageOptions>) {
         $$translation.set(translation);
         $$language.set(tag);
 
-        c.info("set language to " + tag);
+        ctx.info("set language to " + tag);
       } catch (error) {
         if (error instanceof Error) {
-          c.crash(error);
+          ctx.crash(error);
         }
       }
     },
