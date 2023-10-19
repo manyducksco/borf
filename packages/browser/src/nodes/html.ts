@@ -1,9 +1,9 @@
 import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { nanoid } from "nanoid";
-import { type AppContext, type ElementContext } from "./App.js";
-import { renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
-import { observe, isReadable, isWritable, type Readable, type StopFunction } from "./state.js";
-import { omit } from "./utils/omit.js";
+import { type AppContext, type ElementContext } from "../app.js";
+import { renderMarkupToDOM, type DOMHandle, type Markup } from "../markup.js";
+import { observe, isReadable, isWritable, type Readable, type StopFunction } from "../state.js";
+import { omit } from "../utils.js";
 //import { eventPropsToEventNames } from "./types.js";
 
 //const eventHandlerProps = Object.values(eventPropsToEventNames).map((event) => "on" + event);

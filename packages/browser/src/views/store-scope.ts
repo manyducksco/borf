@@ -1,5 +1,5 @@
-import { Store, initStore } from "../store";
-import { ViewContext, getViewSecrets } from "../view";
+import { Store, initStore } from "../store.js";
+import { ViewContext, getViewSecrets } from "../view.js";
 
 export interface StoreScopeProps<O, E> {
   store: Store<O, E>;

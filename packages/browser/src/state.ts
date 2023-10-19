@@ -1,5 +1,5 @@
 import { typeOf } from "@borf/bedrock";
-import { deepEqual } from "./utils/deepEqual.js";
+import { deepEqual } from "./utils.js";
 
 // Symbol to mark an observed value as unobserved. Callbacks are always called once for unobserved values.
 const UNOBSERVED = Symbol("Unobserved");

@@ -1,12 +1,12 @@
-import { isArray, isFunction, isNumber, isObject, isString } from "@borf/bedrock";
-import { type AppContext, type ElementContext } from "./App.js";
-import { Conditional } from "./Conditional.js";
-import { HTML } from "./HTML.js";
-import { Observer } from "./Observer.js";
-import { Outlet } from "./Outlet.js";
-import { Repeat } from "./Repeat.js";
-import { Text } from "./Text.js";
-import { Portal } from "./portal.js";
+import { isArray, isArrayOf, isFunction, isNumber, isObject, isString } from "@borf/bedrock";
+import { type AppContext, type ElementContext } from "./app.js";
+import { Conditional } from "./nodes/cond.js";
+import { HTML } from "./nodes/html.js";
+import { Observer } from "./nodes/observer.js";
+import { Outlet } from "./nodes/outlet.js";
+import { Portal } from "./nodes/portal.js";
+import { Repeat } from "./nodes/repeat.js";
+import { Text } from "./nodes/text.js";
 import { isReadable, readable, type Readable } from "./state.js";
 import type { Renderable, Stringable } from "./types.js";
 import { initView, type View, type ViewContext, type ViewResult } from "./view.js";
@@ -328,4 +328,16 @@ export function getRenderHandle(handles: DOMHandle[]): DOMHandle {
     },
     async setChildren() {},
   };
+}
+
+export function isRenderable(value: unknown): value is Renderable {
+  return (
+    value == null ||
+    value === false ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    isMarkup(value) ||
+    isReadable(value) ||
+    isArrayOf(isRenderable, value)
+  );
 }

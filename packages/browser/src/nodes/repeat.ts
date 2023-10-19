@@ -1,7 +1,7 @@
-import { type AppContext, type ElementContext } from "./App.js";
-import { type DOMHandle } from "./markup.js";
-import { observe, readable, writable, type Readable, type StopFunction, type Writable } from "./state.js";
-import { initView, type ViewContext, type ViewResult } from "./view.js";
+import { type AppContext, type ElementContext } from "../app.js";
+import { type DOMHandle } from "../markup.js";
+import { observe, readable, writable, type Readable, type StopFunction, type Writable } from "../state.js";
+import { initView, type ViewContext, type ViewResult } from "../view.js";
 
 // ----- Types ----- //
 

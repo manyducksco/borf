@@ -59,9 +59,9 @@ Code examples are written using [JSX](https://react.dev/learn/writing-markup-wit
 ### App
 
 ```jsx
-import { createApp } from "borf";
+import { makeApp } from "borf";
 
-const app = createApp({
+const app = makeApp({
   // Debug options control what gets printed from messages logged through view and store contexts.
   debug: {
     // A comma-separated list of filters. '*' means allow everything and '-borf/*' means suppress messages with labels beginning with 'borf/'.

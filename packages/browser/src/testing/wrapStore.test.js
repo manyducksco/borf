@@ -1,4 +1,4 @@
-import { Store } from "../core/classes/Store.old.js";
+import { Store } from "../classes/classes/Store.old.js";
 import { MockHTTP } from "./classes/MockHTTP.js";
 import { wrapStore } from "./wrapStore.js";
 

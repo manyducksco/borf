@@ -1,7 +1,7 @@
 import { isArrayOf, typeOf } from "@borf/bedrock";
 import { nanoid } from "nanoid";
-import { type AppContext, type ElementContext } from "./App.js";
-import { type DebugChannel } from "./DebugHub.js";
+import { type AppContext, type ElementContext } from "./app.js";
+import { type DebugChannel } from "./classes/DebugHub.js";
 import { getRenderHandle, isMarkup, m, renderMarkupToDOM, type DOMHandle, type Markup } from "./markup.js";
 import { isReadable, observe, readable, writable, type Readable, type ReadableValues } from "./state.js";
 import { type Store } from "./store.js";

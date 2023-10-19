@@ -1,6 +1,6 @@
-import { type AppContext, type ElementContext } from "./App.js";
-import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "./markup.js";
-import { type Renderable } from "./types.js";
+import { type AppContext, type ElementContext } from "../app.js";
+import { getRenderHandle, isDOMHandle, isMarkup, renderMarkupToDOM, toMarkup, type DOMHandle } from "../markup.js";
+import { type Renderable } from "../types.js";
 
 interface PortalConfig {
   content: Renderable;

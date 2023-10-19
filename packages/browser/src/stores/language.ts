@@ -1,8 +1,8 @@
 import { assertObject, isFunction, isObject, isPromise, typeOf } from "@borf/bedrock";
 import { computed, readable, writable, type Readable } from "../state.js";
 import { type StoreContext } from "../store.js";
-import { type Stringable } from "../types";
-import { deepEqual } from "../utils/deepEqual.js";
+import { type Stringable } from "../types.js";
+import { deepEqual } from "../utils.js";
 
 // ----- Types ----- //
 

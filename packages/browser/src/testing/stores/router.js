@@ -1,5 +1,5 @@
-import { makeState } from "../../core/makeState.js";
-import { Store } from "../../core/classes/Store.old.js";
+import { makeState } from "../../classes/makeState.js";
+import { Store } from "../../classes/classes/Store.old.js";
 
 export class MockRouterStore extends Store {
   static label = "mock:router";

@@ -1,4 +1,4 @@
-import { observe, OBSERVE, unwrap, writable, type Readable, type Writable, readable } from "./state.js";
+import { OBSERVE, readable, unwrap, writable, type Readable, type Writable } from "./state.js";
 
 interface SpringOptions {
   /**

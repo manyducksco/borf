@@ -3,9 +3,9 @@ import { MockRouterStore } from "./stores/router.js";
 import { MockPageStore } from "./stores/page.js";
 import { MockHTTPStore } from "./stores/http.js";
 import { makeMockDOMNode } from "./makeMockDOMNode.js";
-import { isString } from "../core/utils/typeChecking.js";
-import { DebugHub } from "../core/classes/DebugHub.js";
-import { Store } from "../core/classes/Store.old.js";
+import { isString } from "../classes/utils/typeChecking.js";
+import { DebugHub } from "../classes/classes/DebugHub.js";
+import { Store } from "../classes/classes/Store.old.js";
 
 /**
  * Wraps a store in a test adapter that lets you call its lifecycle methods and access its exports.

@@ -1,4 +1,4 @@
-import { Store } from "../../core/classes/Store.old.js";
+import { Store } from "../../classes/classes/Store.old.js";
 
 export class MockHTTPStore extends Store {
   static label = "mock:http";

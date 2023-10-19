@@ -1,6 +1,6 @@
-import { type ElementContext, type AppContext } from "./App.js";
-import { type DOMHandle } from "./markup.js";
-import { observe, type Readable, type StopFunction } from "./state.js";
+import { type ElementContext, type AppContext } from "../app.js";
+import { type DOMHandle } from "../markup.js";
+import { observe, type Readable, type StopFunction } from "../state.js";
 
 export interface OutletConfig {
   $children: Readable<DOMHandle[]>;

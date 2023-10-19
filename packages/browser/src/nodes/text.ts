@@ -1,5 +1,5 @@
-import { isReadable, observe, type Readable, type StopFunction } from "./state.js";
-import { type DOMHandle } from "./markup.js";
+import { isReadable, observe, type Readable, type StopFunction } from "../state.js";
+import { type DOMHandle } from "../markup.js";
 
 interface Stringable {
   toString(): string;
