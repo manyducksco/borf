@@ -82,17 +82,6 @@ export interface ViewContext extends DebugChannel {
    * Returns a Markup element that displays this view's children.
    */
   outlet(): Markup;
-
-  /**
-   * Takes a callback that performs DOM mutations and queues it to be batched with the app's own updates.
-   *
-   * Use this when updating the DOM yourself to prevent [layout thrashing](https://web.dev/avoid-large-complex-layouts-and-layout-thrashing/)
-   * and improve app performance.
-   *
-   * @param callback - Callback function to be called on next frame.
-   * @param key - Identifier for this update; only the most recently queued callback with a particular key will be called.
-   */
-  queueUpdate(callback: () => void, key?: string): void;
 }
 
 /*=====================================*\
@@ -232,16 +221,6 @@ export function initView<P>(config: ViewConfig<P>): DOMHandle {
 
     outlet() {
       return m("$outlet", { $children: readable($$children) });
-    },
-
-    queueUpdate: (callback, key) => {
-      if (key) {
-        // Scope key to this view to avoid collisions with updates from elsewhere.
-        // I can't think of a legitimate use case for updates from two views sharing the same key.
-        key = `${uniqueId}:${key}`;
-      }
-
-      appContext.queueUpdate(callback, key);
     },
   };
 

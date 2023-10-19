@@ -1,11 +1,12 @@
 import type * as CSS from "csstype";
-import { type Store } from "./store.js";
-import { m, type Markup } from "./markup.js";
+import { type Markup } from "./markup.js";
 import { type Readable, type Writable } from "./state.js";
+import { type Store } from "./store.js";
 import { type DialogStore } from "./stores/dialog.js";
 import { type DocumentStore } from "./stores/document.js";
 import { type HTTPStore } from "./stores/http.js";
 import { type LanguageStore } from "./stores/language.js";
+import { RenderStore } from "./stores/render.js";
 import { type RouterStore } from "./stores/router.js";
 
 /**
@@ -43,6 +44,7 @@ export interface BuiltInStores {
   language: StoreExports<typeof LanguageStore>;
   document: StoreExports<typeof DocumentStore>;
   router: StoreExports<typeof RouterStore>;
+  render: StoreExports<typeof RenderStore>;
 }
 
 export type Stringable = { toString(): string };

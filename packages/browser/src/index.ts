@@ -22,3 +22,15 @@ export type { StoreContext } from "./store.js";
 export type { Markup } from "./markup.js";
 export type { HTTPMiddleware } from "./stores/http.js";
 export type { InputType } from "./types.js";
+// export "./types.js";
+
+import type { IntrinsicElements as Elements } from "./types";
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements extends Elements {
+      // Catch all for custom elements
+      [tag: string]: any;
+    }
+  }
+}

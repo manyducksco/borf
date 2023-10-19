@@ -2,9 +2,9 @@ import { isFunction, isNumber, isObject, isString } from "@borf/bedrock";
 import { nanoid } from "nanoid";
 import { type AppContext, type ElementContext } from "../app.js";
 import { renderMarkupToDOM, type DOMHandle, type Markup } from "../markup.js";
-import { observe, isReadable, isWritable, type Readable, type StopFunction } from "../state.js";
+import { isReadable, isWritable, observe, type Readable, type StopFunction } from "../state.js";
+import { BuiltInStores } from "../types.js";
 import { omit } from "../utils.js";
-//import { eventPropsToEventNames } from "./types.js";
 
 //const eventHandlerProps = Object.values(eventPropsToEventNames).map((event) => "on" + event);
 const isCamelCaseEventName = (key: string) => /^on[A-Z]/.test(key);
@@ -142,17 +142,19 @@ export class HTML implements DOMHandle {
   }
 
   applyProps(element: HTMLElement | SVGElement, props: Record<string, unknown>) {
+    const render = this.appContext.stores.get("render")!.instance?.exports as BuiltInStores["render"];
+
     const attachProp = <T>(value: Readable<T> | T, callback: (value: T) => void, updateKey: string) => {
       if (isReadable(value)) {
         this.stopCallbacks.push(
           observe(value, (value) => {
-            this.appContext.queueUpdate(() => {
+            render.update(() => {
               callback(value);
             }, updateKey);
           })
         );
       } else {
-        this.appContext.queueUpdate(() => {
+        render.update(() => {
           callback(value);
         }, updateKey);
       }
@@ -364,6 +366,7 @@ export class HTML implements DOMHandle {
   }
 
   applyStyles(element: HTMLElement | SVGElement, styles: Record<string, any>, stopCallbacks: StopFunction[]) {
+    const render = this.appContext.stores.get("render")!.instance?.exports as BuiltInStores["render"];
     const propStopCallbacks: StopFunction[] = [];
 
     if (styles == undefined) {
@@ -372,7 +375,7 @@ export class HTML implements DOMHandle {
       let unapply: () => void;
 
       const stop = observe(styles, (current) => {
-        this.appContext.queueUpdate(() => {
+        render.update(() => {
           if (isFunction(unapply)) {
             unapply();
           }
@@ -397,7 +400,7 @@ export class HTML implements DOMHandle {
 
         if (isReadable<any>(value)) {
           const stop = observe(value, (current) => {
-            this.appContext.queueUpdate(() => {
+            render.update(() => {
               if (current != null) {
                 setProperty(key, current);
               } else {
@@ -429,13 +432,14 @@ export class HTML implements DOMHandle {
   }
 
   applyClasses(element: HTMLElement | SVGElement, classes: unknown, stopCallbacks: StopFunction[]) {
+    const render = this.appContext.stores.get("render")!.instance?.exports as BuiltInStores["render"];
     const classStopCallbacks: StopFunction[] = [];
 
     if (isReadable(classes)) {
       let unapply: () => void;
 
       const stop = observe(classes, (current) => {
-        this.appContext.queueUpdate(() => {
+        render.update(() => {
           if (isFunction(unapply)) {
             unapply();
           }
@@ -454,7 +458,7 @@ export class HTML implements DOMHandle {
 
         if (isReadable(value)) {
           const stop = observe(value, (current) => {
-            this.appContext.queueUpdate(() => {
+            render.update(() => {
               if (current) {
                 element.classList.add(name);
               } else {

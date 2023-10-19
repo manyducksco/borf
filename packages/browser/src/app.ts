@@ -22,6 +22,7 @@ import { DialogStore } from "./stores/dialog.js";
 import { DocumentStore } from "./stores/document.js";
 import { HTTPStore } from "./stores/http.js";
 import { LanguageStore, type LanguageConfig } from "./stores/language.js";
+import { RenderStore } from "./stores/render.js";
 import {
   RouterStore,
   type RedirectContext,
@@ -59,12 +60,6 @@ export interface AppContext {
   mode: "development" | "production";
   rootElement?: HTMLElement;
   rootView?: DOMHandle;
-
-  /**
-   * Perform DOM updates on next animation frame. Returns a promise that resolves once the changes are applied.
-   * If a key is passed, only the latest callback in a batch with a specified key will be called.
-   */
-  queueUpdate: (callback: () => void, key?: string) => void;
 }
 
 export interface ElementContext {
@@ -234,6 +229,7 @@ export function makeApp(options?: AppOptions): App {
     ["document", { store: DocumentStore }],
     ["http", { store: HTTPStore }],
     ["language", { store: LanguageStore }],
+    ["render", { store: RenderStore }],
   ]);
 
   const languages = new Map<string, LanguageConfig>();
@@ -372,42 +368,42 @@ export function makeApp(options?: AppOptions): App {
   ||     Batched DOM Updates     ||
   \*=============================*/
 
-  let isUpdating = false;
+  // let isUpdating = false;
 
-  // Keyed updates ensure only the most recent callback queued with a certain key
-  // will be called, keeping DOM operations to a minimum.
-  const queuedUpdatesKeyed = new Map<string, () => void>();
-  // All unkeyed updates are run on every batch.
-  let queuedUpdatesUnkeyed: (() => void)[] = [];
+  // // Keyed updates ensure only the most recent callback queued with a certain key
+  // // will be called, keeping DOM operations to a minimum.
+  // const queuedUpdatesKeyed = new Map<string, () => void>();
+  // // All unkeyed updates are run on every batch.
+  // let queuedUpdatesUnkeyed: (() => void)[] = [];
 
-  function runUpdates() {
-    const totalQueued = queuedUpdatesKeyed.size + queuedUpdatesUnkeyed.length;
+  // function runUpdates() {
+  //   const totalQueued = queuedUpdatesKeyed.size + queuedUpdatesUnkeyed.length;
 
-    if (!isConnected || totalQueued === 0) {
-      isUpdating = false;
-    }
+  //   if (!isConnected || totalQueued === 0) {
+  //     isUpdating = false;
+  //   }
 
-    if (!isUpdating) return;
+  //   if (!isUpdating) return;
 
-    requestAnimationFrame(() => {
-      debugChannel.info(`Batching ${queuedUpdatesKeyed.size + queuedUpdatesUnkeyed.length} queued DOM update(s).`);
+  //   requestAnimationFrame(() => {
+  //     debugChannel.info(`Batching ${queuedUpdatesKeyed.size + queuedUpdatesUnkeyed.length} queued DOM update(s).`);
 
-      // Run keyed updates first.
-      for (const callback of queuedUpdatesKeyed.values()) {
-        callback();
-      }
-      queuedUpdatesKeyed.clear();
+  //     // Run keyed updates first.
+  //     for (const callback of queuedUpdatesKeyed.values()) {
+  //       callback();
+  //     }
+  //     queuedUpdatesKeyed.clear();
 
-      // Run unkeyed updates second.
-      for (const callback of queuedUpdatesUnkeyed) {
-        callback();
-      }
-      queuedUpdatesUnkeyed = [];
+  //     // Run unkeyed updates second.
+  //     for (const callback of queuedUpdatesUnkeyed) {
+  //       callback();
+  //     }
+  //     queuedUpdatesUnkeyed = [];
 
-      // Trigger again to catch updates queued while this batch was running.
-      runUpdates();
-    });
-  }
+  //     // Trigger again to catch updates queued while this batch was running.
+  //     runUpdates();
+  //   });
+  // }
 
   /*=============================*\
   ||        App Lifecycle        ||
@@ -553,18 +549,6 @@ export function makeApp(options?: AppOptions): App {
     stores,
     mode: settings.mode ?? "production",
     // $dialogs - added by dialog store
-    queueUpdate: (callback, key) => {
-      if (key) {
-        queuedUpdatesKeyed.set(key, callback);
-      } else {
-        queuedUpdatesUnkeyed.push(callback);
-      }
-
-      if (!isUpdating && isConnected) {
-        isUpdating = true;
-        runUpdates();
-      }
-    },
   };
   const elementContext: ElementContext = {
     stores: new Map(),
