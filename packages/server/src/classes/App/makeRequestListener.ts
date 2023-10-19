@@ -254,7 +254,9 @@ export async function handleMatchedRequest(
     // }
   };
 
-  const debugChannel = appContext.debugHub.channel({ name: `${req.method?.toUpperCase()} ${req.url}` });
+  const debugChannel = appContext.debugHub.channel({
+    name: `${req.method?.toUpperCase()} ${req.url?.split("?")[0]}`,
+  });
 
   Object.defineProperties(ctx, Object.getOwnPropertyDescriptors(debugChannel));
 
