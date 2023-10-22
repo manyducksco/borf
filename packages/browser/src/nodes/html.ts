@@ -464,7 +464,7 @@ export class HTML implements DOMHandle {
               } else {
                 element.classList.remove(name);
               }
-            }, this.getUpdateKey("attr", "class"));
+            }); // NOTE: Not keyed; all update callbacks must run to apply all classes.
           });
 
           stopCallbacks.push(stop);
