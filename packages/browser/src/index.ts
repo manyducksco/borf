@@ -3,7 +3,7 @@ export { makeApp } from "./app.js";
 
 // State
 export { spring } from "./spring.js";
-export { readable, writable, observe, unwrap, computed, isReadable, isWritable } from "./state.js";
+export { readable, writable, computed, proxy, observe, unwrap, isReadable, isWritable } from "./state.js";
 
 // Markup
 export { m, cond, repeat, portal } from "./markup.js";

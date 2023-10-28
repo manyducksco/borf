@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert";
-import { observe, readable, writable, computed, unwrap, isReadable, isWritable } from "../lib/index.js";
+import { proxy, observe, readable, writable, computed, unwrap, isReadable, isWritable } from "../lib/index.js";
 
 test("isReadable, isWritable: returns correct results", (t) => {
   const $$writable = writable(5);
@@ -254,4 +254,37 @@ test("computed: observer only gets new values when they are different", (t) => {
   assert.deepEqual(ageObserver.mock.calls[1].arguments, [347, 346]);
 
   stop();
+});
+
+test("proxy", (t) => {
+  const $$numbers = writable([1, 2, 3]);
+  const $$hasTwo = proxy($$numbers, {
+    get(source) {
+      return source.get().includes(2);
+    },
+    set(source, value) {
+      source.update((numbers) => {
+        if (value && !numbers.includes(2)) {
+          return [...numbers, 2].sort();
+        }
+        if (!value && numbers.includes(2)) {
+          return numbers.filter((n) => n !== 2);
+        }
+        return numbers;
+      });
+    },
+  });
+
+  assert.deepEqual($$numbers.get(), [1, 2, 3]);
+  assert.strictEqual($$hasTwo.get(), true, "numbers should contain 2");
+
+  $$hasTwo.set(false);
+
+  assert.deepEqual($$numbers.get(), [1, 3]);
+  assert.strictEqual($$hasTwo.get(), false, "numbers should not contain 2");
+
+  $$hasTwo.set(true);
+
+  assert.deepEqual($$numbers.get(), [1, 2, 3]);
+  assert.strictEqual($$hasTwo.get(), true, "numbers should again contain 2");
 });

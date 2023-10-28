@@ -370,6 +370,77 @@ export function computed(...args: any): Readable<any> {
 }
 
 /*==============================*\
+||           proxy()            ||
+\*==============================*/
+
+interface ProxyConfig<Source, Value> {
+  get(source: Source): Value;
+  set(source: Source, value: Value): void;
+}
+
+/**
+ * Creates a proxy `Writable` around an existing `Writable`.
+ * The config object takes custom `get` and `set` methods.
+ * All reads of this proxy goes through the `get` method
+ * and all writes go through `set`.
+ */
+export function proxy<Source extends Writable<any>, Value>(
+  source: Source,
+  config: ProxyConfig<Source, Value>
+): Writable<Value>;
+
+/**
+ * Creates a proxy `Writable` around an existing `Readable`.
+ * The config object takes custom `get` and `set` methods.
+ * All reads of this proxy goes through the `get` method
+ * and all writes go through `set`.
+ */
+export function proxy<Source extends Readable<any>, Value>(
+  source: Source,
+  config: ProxyConfig<Source, Value>
+): Writable<Value>;
+
+export function proxy<Source, Value>(source: Source, config: ProxyConfig<Source, Value>): Writable<Value> {
+  // Throw error; can't add write access to a Readable.
+  if (!isReadable(source)) {
+    throw new TypeError(`Proxy source must be a Readable.`);
+  }
+
+  const observers: ((currentValue: any, previousValue?: any) => void)[] = [];
+  const currentValue = () => config.get(source);
+
+  // Return a new Writable.
+  return {
+    // ----- Readable ----- //
+
+    get: () => config.get(source),
+    [OBSERVE]: (callback) => {
+      let lastComputedValue: any = UNOBSERVED;
+
+      return source[OBSERVE]((_) => {
+        const computedValue = config.get(source);
+
+        if (!deepEqual(computedValue, lastComputedValue)) {
+          const previousValue = lastComputedValue === UNOBSERVED ? undefined : lastComputedValue;
+          callback(computedValue, previousValue);
+          lastComputedValue = computedValue;
+        }
+      });
+    },
+
+    // ----- Writable ----- //
+
+    set: (newValue) => {
+      config.set(source, newValue);
+    },
+    update: (callback) => {
+      const newValue = callback(config.get(source));
+      config.set(source, newValue);
+    },
+  };
+}
+
+/*==============================*\
 ||           unwrap()           ||
 \*==============================*/
 

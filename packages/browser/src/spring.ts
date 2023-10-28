@@ -1,26 +1,28 @@
 import { OBSERVE, readable, unwrap, writable, type Readable, type Writable } from "./state.js";
 
-interface SpringOptions {
+export interface SpringParameters {
   /**
    * How heavy the spring is.
    */
-  mass?: number | Readable<number>;
+  mass: number | Readable<number>;
 
   /**
    * Amount of stiffness or tension in the spring.
    */
-  stiffness?: number | Readable<number>;
+  stiffness: number | Readable<number>;
 
   /**
    * Amount of smoothing. Affects the speed of transitions.
    */
-  damping?: number | Readable<number>;
+  damping: number | Readable<number>;
 
   /**
    * How much force the spring's motion begins with.
    */
-  velocity?: number | Readable<number>;
+  velocity: number | Readable<number>;
+}
 
+interface SpringOptions extends Partial<SpringParameters> {
   /**
    * Difference in average amplitude across the last several frames before the animation is considered done.
    * The exact number of frames to average is specified by `endWindow`.
@@ -73,12 +75,13 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
     return new Promise<void>((resolve) => {
       const id = nextId++;
       const amplitude = makeAmplitudeMeasurer(_endWindow);
-      const solve = makeSpringSolver({
+
+      const springParams = {
         mass: options?.mass ?? mass,
         stiffness: options?.stiffness ?? stiffness,
         damping: options?.damping ?? damping,
         velocity: options?.velocity ?? velocity,
-      });
+      };
       const startTime = Date.now();
       const startValue = $$currentValue.get();
 
@@ -89,7 +92,7 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
         }
 
         const elapsedTime = Date.now() - startTime;
-        const proportion = solve(elapsedTime / 1000);
+        const proportion = solve(springParams, elapsedTime / 1000);
 
         $$currentValue.set(startValue + (endValue - startValue) * proportion);
 
@@ -122,33 +125,32 @@ export function spring(initialValue: number, options?: SpringOptions): Spring {
   };
 }
 
-function makeSpringSolver(options: Required<Pick<SpringOptions, "mass" | "stiffness" | "damping" | "velocity">>) {
-  return function solve(t: number) {
-    // Unwrapping the variables each time allows readable values to change as the spring is animating.
-    const mass = unwrap(options.mass);
-    const stiffness = unwrap(options.stiffness);
-    const damping = unwrap(options.damping);
-    const initialVelocity = unwrap(options.velocity);
+function solve(parameters: SpringParameters, elapsedSeconds: number) {
+  const mass = unwrap(parameters.mass);
+  const stiffness = unwrap(parameters.stiffness);
+  const damping = unwrap(parameters.damping);
+  const initialVelocity = unwrap(parameters.velocity);
 
-    const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
-    const speed = Math.sqrt(stiffness / mass);
+  const dampingRatio = damping / (2 * Math.sqrt(stiffness * mass));
+  const speed = Math.sqrt(stiffness / mass);
 
-    let B: number;
-    let position: number;
+  let B: number;
+  let position: number;
 
-    if (dampingRatio < 1) {
-      const dampedSpeed = speed * Math.sqrt(1 - dampingRatio * dampingRatio);
-      B = (dampingRatio * speed + -initialVelocity) / dampedSpeed;
+  if (dampingRatio < 1) {
+    const dampedSpeed = speed * Math.sqrt(1 - dampingRatio * dampingRatio);
+    B = (dampingRatio * speed + -initialVelocity) / dampedSpeed;
 
-      position = (Math.cos(dampedSpeed * t) + B * Math.sin(dampedSpeed * t)) * Math.exp(-t * speed * dampingRatio);
-    } else {
-      B = speed + -initialVelocity;
+    position =
+      (Math.cos(dampedSpeed * elapsedSeconds) + B * Math.sin(dampedSpeed * elapsedSeconds)) *
+      Math.exp(-elapsedSeconds * speed * dampingRatio);
+  } else {
+    B = speed + -initialVelocity;
 
-      position = (1 + B * t) * Math.exp(-t * speed);
-    }
+    position = (1 + B * elapsedSeconds) * Math.exp(-elapsedSeconds * speed);
+  }
 
-    return 1 - position;
-  };
+  return 1 - position;
 }
 
 function makeAmplitudeMeasurer(resolution: number) {
