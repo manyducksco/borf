@@ -74,6 +74,8 @@ export class Repeat<T> implements DOMHandle {
       this.node.parentNode?.removeChild(this.node);
       this.endNode.parentNode?.removeChild(this.endNode);
     }
+
+    this._cleanup();
   }
 
   setChildren() {
