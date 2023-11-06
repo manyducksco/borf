@@ -141,15 +141,14 @@ export function writable(value?: unknown): Writable<any> {
     [OBSERVE]: (callback) => {
       observers.push(callback); // add observer
 
-      // Call after stop function is returned. Allows for calling stop() inside the callback..
-      setTimeout(() => {
-        callback(currentValue, undefined); // call with current value
-      }, 0);
+      function stop() {
+        observers.splice(observers.indexOf(callback), 1);
+      }
+
+      callback(currentValue, undefined); // call with current value
 
       // return function to remove observer
-      return function stop() {
-        observers.splice(observers.indexOf(callback), 1);
-      };
+      return stop;
     },
 
     // ----- Writable ----- //
