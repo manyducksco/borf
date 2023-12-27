@@ -275,6 +275,14 @@ export function computed(...args: any): Readable<any> {
       );
     }
 
+    if (!args[0].every(isReadable)) {
+      throw new TypeError(
+        `Computed expected an array of Readables. Got: [${args[0]
+          .map((x) => (isReadable(x) ? `Readable<${typeOf(x.get())}>` : typeof x))
+          .join(", ")}]`
+      );
+    }
+
     const readables = args[0];
     const compute = args[1];
 
